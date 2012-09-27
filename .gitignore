@@ -1,0 +1,11 @@
+*.py[cod]
+#*#
+*~
+*.egg
+*.egg-info
+*.swp
+*.DS_Store
+*.so
+*.o
+*.out
+*.lock
