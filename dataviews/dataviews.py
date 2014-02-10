@@ -89,16 +89,17 @@ class DataOverlay(DataLayer, Overlay):
 
 
     def add(self, layer):
-        self.xlim = self._find_minmax(self.xlim, layer.xlim)
-        self.ylim = self._find_minmax(self.ylim, layer.ylim)
-        if layer.xlabel != self.xlabel:
-            if self.xlabel == "": self.xlabel = layer.xlabel
-            else: raise Exception("DataLayers do not share a common xlabel,"
-                                  "cannot create a DataOverlay.")
-        if layer.ylabel != self.ylabel:
-            if self.ylabel == "": self.ylabel = layer.ylabel
-            else: raise Exception("DataLayers do not share a common ylabel,"
-                                  "cannot create a DataOverlay.")
+        if not len(self):
+            self.xlim = layer.xlim
+            self.ylim = layer.ylim
+            self.xlabel = layer.xlabel
+            self.ylabel = layer.ylabel
+        else:
+            self.xlim = self._find_minmax(self.xlim, layer.xlim)
+            self.ylim = self._find_minmax(self.ylim, layer.ylim)
+            if layer.xlabel != self.xlabel or layer.ylabel != self.ylabel:
+                raise Exception("DataLayers must share common x- and y-labels.")
+
         self.data.append(layer)
 
 
@@ -124,14 +125,14 @@ class DataStack(Stack):
 
     @property
     def xlim(self):
-        xlim = (0, 0)
+        xlim = self.top.xlim
         for data in self.values():
             xlim = self._find_minmax(xlim, data.xlim)
         return xlim
 
     @property
     def ylim(self):
-        ylim = (0, 0)
+        ylim = self.top.ylim
         for data in self.values():
             ylim = self._find_minmax(ylim, data.ylim)
         return ylim
