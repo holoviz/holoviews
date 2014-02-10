@@ -3,8 +3,12 @@ try:    from matplotlib import animation
 except: animation = None
 
 from IPython.core.pylabtools import print_figure
+from IPython.core import page
+from IPython.core.magic import Magics, magics_class, line_magic
 
+import param
 from tempfile import NamedTemporaryFile
+import textwrap
 
 from dataviews import DataStack, DataLayer
 from plots import Plot, GridLayoutPlot, viewmap
@@ -170,6 +174,214 @@ def update_matplotlib_rc():
     matplotlib.rcParams.update(rc)
 
 
+
+@magics_class
+class ParamMagics(Magics):
+    """
+    Implements the %params magic which is useful for inspecting
+    the parameters of any parameterized class or object. For
+    example you can inspect Imagen's Gaussian pattern as follows:
+
+    %params imagen.Gaussian
+    """
+    def __init__(self, *args, **kwargs):
+        super(ParamMagics, self).__init__(*args, **kwargs)
+        self.red = '\x1b[1;31m%s\x1b[0m'
+        self.blue = '\x1b[1;34m%s\x1b[0m'
+        self.green = '\x1b[1;32m%s\x1b[0m'
+
+    def _get_param_info(self, obj, include_super=True):
+        """
+        Get the parameter dictionary, the list of modifed parameters
+        and the dictionary or parameter values. If include_super is
+        true, parameters are collected from the super classes.
+        """
+        params = dict(obj.params())
+        if isinstance(obj,type):
+            changed = []
+            val_dict = dict((k,p.default) for (k,p) in params.items())
+            self_class = obj
+        else:
+            changed = [name for (name,_) in obj.get_param_values(onlychanged=True)]
+            val_dict = dict(obj.get_param_values())
+            self_class = obj.__class__
+
+        if not include_super:
+            params = dict((k,v) for (k,v) in params.items()
+                          if k in self_class.__dict__.keys())
+
+        params.pop('name') # This is already displayed in the title.
+        return (params, val_dict, changed)
+
+
+    def _param_docstrings(self, info, max_col_len=100, only_changed=False):
+        """
+        Build a string to succinctly display all the parameter
+        docstrings in a clean format.
+        """
+        (params, val_dict, changed) = info
+        contents = []
+        displayed_params = {}
+        for name, p in params.items():
+            if only_changed and not (name in changed):
+                continue
+            displayed_params[name] = p
+
+        right_shift = max(len(name) for name in displayed_params.keys())+2
+
+        for i, (name, p) in enumerate(displayed_params.items()):
+            heading = "%s: " % name
+            unindented = textwrap.dedent(p.doc)
+            # Strip any starting newlines
+            while unindented.startswith("\n"):
+                unindented = unindented[1:]
+
+            lines = unindented.splitlines()
+            tail = ['%s%s' % (' '  * right_shift, line) for line in lines[1:]]
+            all_lines = [ heading.ljust(right_shift) + lines[0]] + tail
+            if i % 2:
+                contents.extend([self.red %el for el in all_lines])
+            else:
+                contents.extend([self.blue %el for el in all_lines])
+
+        return "\n".join(contents)
+
+
+    def _build_table(self, info, order, max_col_len=40, only_changed=False):
+        """
+        Collect the information about parameters needed for
+        tabulation.
+        """
+        constant, info_dict = {}, {}
+        (params, val_dict, changed) = info
+        col_widths = dict((k,0) for k in order)
+
+        for name, p in params.items():
+            if only_changed and not (name in changed):
+                continue
+            info_dict[name] = {'name': name, 'type':p.__class__.__name__}
+            constant[name]= str(p.constant)
+
+            if hasattr(p, 'bounds'):
+                lbound, ubound = (None,None) if p.bounds is None else p.bounds
+
+                # Use soft_bounds when bounds not defined.
+                if hasattr(p, 'get_soft_bounds'):
+                    soft_lbound, soft_ubound = p.get_soft_bounds()
+                    lbound = max([lbound, soft_lbound])
+                    if None not in [ubound, soft_ubound]:
+                        ubound = min([ubound, soft_ubound])
+                    elif ubound is None:
+                        ubound = soft_ubound
+
+                if (lbound, ubound) != (None,None):
+                    info_dict[name]['bounds'] = str((lbound, ubound))
+
+            value = repr(val_dict[name])
+            if len(value) > (max_col_len - 3):
+                value = value[:max_col_len-3] + '...'
+            info_dict[name]['value'] = value
+
+            for col in info_dict[name]:
+                max_width = max([col_widths[col], len(info_dict[name][col])])
+                col_widths[col] = max_width
+
+        return self._tabulate(info_dict, col_widths, changed, constant, order)
+
+
+    def _tabulate(self, info_dict, col_widths, changed, constant, order):
+        """
+        Returns the supplied information as a table of parameter
+        information suitable for printing or paging.
+        """
+        contents, tail = [], []
+        if  all(v == 'True' for v in constant.values()):
+            tail =["\n+ All parameters are declared as constant."]
+        elif  all(v == 'False' for v in constant.values()):
+            tail=["\n+ No parameters are declared as constant."]
+        else:
+            for key in info_dict:
+                info_dict[key].update({'constant':constant[key]})
+
+        column_set = set(k for row in info_dict.values() for k in row)
+        columns = [col for col in order if col in column_set]
+
+        title_row = []
+        # Column headings
+        for i, col in enumerate(columns):
+            width = col_widths[col]+2
+            col = col.capitalize()
+            formatted = col.ljust(width) if i == 0 else col.center(width)
+            title_row.append(formatted)
+        contents.append(self.blue % ''.join(title_row)+"\n")
+
+        # Print rows
+        for row in sorted(info_dict):
+            row_list = []
+            info = info_dict[row]
+            for i,col in enumerate(columns):
+                width = col_widths[col]+2
+                val = info[col] if (col in info) else ''
+                formatted = val.ljust(width) if i==0 else val.center(width)
+                row_list.append(formatted)
+
+            row_text = ''.join(row_list)
+            if row in changed:
+                row_text = self.red % row_text
+
+            contents.append(row_text)
+
+        return '\n'.join(contents+tail)
+
+    @line_magic
+    def params(self, parameter_s='', namespaces=None):
+        """
+        The %params line magic accepts a single argument, the
+        parameterized object to be inspected.
+        """
+        order = ['name', 'changed', 'value', 'type', 'bounds', 'constant']
+        if parameter_s=='':
+            print "Please specify an object to inspect."
+            return
+
+        # Beware! Uses IPython internals that may change in future...
+        obj = self.shell._object_find(parameter_s)
+        if obj.found is False:
+            print "Object %r not found in the namespace." % parameter_s
+            return
+
+        param_obj = obj.obj
+        parameterized_object = isinstance(param_obj, param.Parameterized)
+        parameterized_class = (isinstance(param_obj,type)
+                               and  issubclass(param_obj,param.Parameterized))
+
+        if not (parameterized_object or parameterized_class):
+            print "Object is not a parameterized class or object."
+            return
+
+        param_info = self._get_param_info(param_obj, include_super=True)
+        table = self._build_table(param_info, order, max_col_len=40,
+                                  only_changed=False)
+
+        docstrings = self._param_docstrings(param_info, max_col_len=100, only_changed=False)
+
+
+        title = 'Parameters of %r' % param_obj.name
+        dflt_msg = "Parameters changed from their default values are marked in red."
+        heading_line = '=' * len(title)
+        heading_text = "%s\n%s\n\n%s" % (title,
+                                         heading_line,
+                                         self.red % dflt_msg)
+        top_heading = (self.green % heading_text)
+
+        heading_text = 'Parameter docstrings:'
+        heading_string = "%s\n%s" % (heading_text, '=' * len(heading_text))
+        docstring_heading = (self.green % heading_string)
+        page.page("%s\n\n%s\n\n%s\n\n%s" % (top_heading, table,
+                                            docstring_heading, docstrings))
+
+
+
 message = """Welcome to the Imagen IPython extension! (http://ioam.github.io/imagen/)"""
 
 _loaded = False
@@ -182,6 +394,9 @@ def load_ipython_extension(ip, verbose=True):
     global _loaded
     if not _loaded:
         _loaded = True
+
+        ip.register_magics(ParamMagics)
+
         html_formatter = ip.display_formatter.formatters['text/html']
         html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
         html_formatter.for_type(SheetLayer, view_display)
