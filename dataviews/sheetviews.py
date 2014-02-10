@@ -31,8 +31,7 @@ class SheetLayer(View):
     _abstract = True
 
     def __init__(self, data, bounds, **kwargs):
-        kwargs['bounds'] = bounds
-        super(SheetLayer, self).__init__(data, **kwargs)
+        super(SheetLayer, self).__init__(data, bounds=bounds, **kwargs)
 
 
     def __mul__(self, other):
@@ -475,6 +474,11 @@ class SheetStack(Stack):
         clones = tuple(self.clone(els, bounds=els[0][1].bounds, **kwargs)
                        for (i, els) in enumerate(item_groups))
         return clones if len(clones) > 1 else clones[0]
+
+
+    @property
+    def empty_element(self):
+        return self._type(None, self.bounds)
 
 
     @property

@@ -131,6 +131,11 @@ class Stack(NdMapping):
         return self._type
 
 
+    @property
+    def empty_element(self):
+        return self._type(None)
+
+
     def _item_check(self, dim_vals, data):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of View." %
@@ -191,9 +196,9 @@ class Stack(NdMapping):
                 if (self_key in self) and (other_key in other):
                     items.append((new_key, self[self_key] * other[other_key]))
                 elif self_key in self:
-                    items.append((new_key, self[self_key] * other.type(None)))
+                    items.append((new_key, self[self_key] * other.empty_element))
                 else:
-                    items.append((new_key, self.type(None) * other[other_key]))
+                    items.append((new_key, self.empty_element * other[other_key]))
             return self.clone(items=items, dimension_labels=dim_labels)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
