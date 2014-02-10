@@ -541,6 +541,8 @@ class DataCurvePlot(Plot):
     x value to make the plots easier to interpret.
     """
 
+    center = param.Boolean(default=True)
+
     num_ticks = param.Integer(default=5)
 
     relative_labels = param.Boolean(default=False)
@@ -550,6 +552,7 @@ class DataCurvePlot(Plot):
     def __init__(self, curves, **kwargs):
         self._stack = self._check_stack(curves, DataCurves)
         self.cyclic_range = self._stack.top.cyclic_range
+
         super(DataCurvePlot, self).__init__(**kwargs)
 
 
@@ -615,7 +618,7 @@ class DataCurvePlot(Plot):
         for idx, line in enumerate(lines.data):
             x_values = list(line[:, 0])
             y_values = list(line[:, 1])
-            if self.relative_labels:
+            if self.center:
                 rotate_n = self.peak_argmax+len(x_values)/2
                 y_values = self._rotate(y_values, n=rotate_n)
                 ticks = self._rotate(x_values, n=rotate_n)
@@ -651,7 +654,8 @@ class DataCurvePlot(Plot):
         # Create xticks and reorder data if cyclic
         xvals = lines[0][:, 0]
         if self.cyclic_range is not None:
-            self._find_peak(lines)
+            if self.center:
+                self._find_peak(lines)
             self._cyclic_curves(lines)
             xticks = self._cyclic_reduce_ticks(self.xvalues)
         else:
@@ -711,8 +715,6 @@ class DataPlot(Plot):
     """
 
     color_cycle = param.List(default=['b', 'g', 'r', 'y', 'm'])
-
-    relative_labels = param.Boolean(default=False)
 
     _stack_type = DataStack
 
