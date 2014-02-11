@@ -211,6 +211,10 @@ class BoundingBox(BoundingRegion):
         return self._aarect.lbrt()
 
 
+    def __eq__(self, other):
+        return self.lbrt() == other.lbrt()
+
+
 
 class Cartesian2DPoint(param.Parameter):
     """
