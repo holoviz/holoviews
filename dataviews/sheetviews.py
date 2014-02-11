@@ -407,7 +407,7 @@ class SheetStack(Stack):
                     xy_values = [(x, d[idx]) for x, d in data.items()]
                     data = [np.vstack(zip(*xy_values)).T]
                     x_lim = (0, cyclic_range if cyclic_range else max(x_vals))
-                    y_lim = (0, np.max(data[0][:, 1]))
+                    y_lim = (np.min(data[0][:, 1]), np.max(data[0][:, 1]))
                     overlay_vals = [key[i] for i in overlay_inds]
                     labels = zip(group_by, overlay_vals)
                     curve = DataCurves(data, cyclic_range=cyclic_range,
