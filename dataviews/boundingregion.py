@@ -212,7 +212,10 @@ class BoundingBox(BoundingRegion):
 
 
     def __eq__(self, other):
-        return self.lbrt() == other.lbrt()
+        if isinstance(self, BoundingBox) and isinstance(other, BoundingBox):
+            return self.lbrt() == other.lbrt()
+        else:
+            return False
 
 
 
