@@ -15,7 +15,7 @@ from plots import Plot, GridLayoutPlot, viewmap
 from sheetviews import SheetStack, SheetLayer, GridLayout, CoordinateGrid
 from views import Stack, View
 
-
+WARN_MISFORMATTED_DOCSTRINGS = False
 GIF_TAG = "<img src='data:image/gif;base64,{b64}'/>"
 
 VIDEO_TAG = """<video controls>
@@ -188,6 +188,7 @@ class ParamMagics(Magics):
         super(ParamMagics, self).__init__(*args, **kwargs)
         self.red = '\x1b[1;31m%s\x1b[0m'
         self.blue = '\x1b[1;34m%s\x1b[0m'
+        self.cyan = '\x1b[1;36m%s\x1b[0m'
         self.green = '\x1b[1;32m%s\x1b[0m'
 
     def _get_param_info(self, obj, include_super=True):
@@ -229,16 +230,25 @@ class ParamMagics(Magics):
 
         right_shift = max(len(name) for name in displayed_params.keys())+2
 
-        for i, (name, p) in enumerate(displayed_params.items()):
+        for i, name in enumerate(sorted(displayed_params)):
+            p = displayed_params[name]
             heading = "%s: " % name
-            unindented = textwrap.dedent(p.doc)
+            unindented = textwrap.dedent("< No docstring available >" if p.doc is None else p.doc)
+
+            if (WARN_MISFORMATTED_DOCSTRINGS
+                and not unindented.startswith("\n")  and len(unindented.splitlines()) > 1):
+                param.main.warning("Multi-line docstring for %r is incorrectly formatted (should start with newline)" % name)
             # Strip any starting newlines
             while unindented.startswith("\n"):
                 unindented = unindented[1:]
 
             lines = unindented.splitlines()
-            tail = ['%s%s' % (' '  * right_shift, line) for line in lines[1:]]
-            all_lines = [ heading.ljust(right_shift) + lines[0]] + tail
+            if len(lines) > 1:
+                tail = ['%s%s' % (' '  * right_shift, line) for line in lines[1:]]
+                all_lines = [ heading.ljust(right_shift) + lines[0]] + tail
+            else:
+                all_lines = [ heading.ljust(right_shift) + lines[0]]
+
             if i % 2:
                 contents.extend([self.red %el for el in all_lines])
             else:
@@ -252,30 +262,39 @@ class ParamMagics(Magics):
         Collect the information about parameters needed for
         tabulation.
         """
-        constant, info_dict = {}, {}
+        info_dict, bounds_dict = {}, {}
         (params, val_dict, changed) = info
         col_widths = dict((k,0) for k in order)
 
         for name, p in params.items():
             if only_changed and not (name in changed):
                 continue
-            info_dict[name] = {'name': name, 'type':p.__class__.__name__}
-            constant[name]= str(p.constant)
+
+            constant = 'C' if p.constant else 'V'
+            readonly = 'RO' if p.readonly else 'RW'
+            allow_None = ' AN' if hasattr(p, 'allow_None') and p.allow_None else ''
+
+            mode = '%s %s%s' % (constant, readonly, allow_None)
+            info_dict[name] = {'name': name, 'type':p.__class__.__name__,
+                               'mode':mode}
 
             if hasattr(p, 'bounds'):
                 lbound, ubound = (None,None) if p.bounds is None else p.bounds
 
+                mark_lbound, mark_ubound = False, False
                 # Use soft_bounds when bounds not defined.
                 if hasattr(p, 'get_soft_bounds'):
                     soft_lbound, soft_ubound = p.get_soft_bounds()
-                    lbound = max([lbound, soft_lbound])
-                    if None not in [ubound, soft_ubound]:
-                        ubound = min([ubound, soft_ubound])
-                    elif ubound is None:
+                    if lbound is None and soft_lbound is not None:
+                        lbound = soft_lbound
+                        mark_lbound = True
+                    if ubound is None and soft_ubound is not None:
                         ubound = soft_ubound
+                        mark_ubound = True
 
                 if (lbound, ubound) != (None,None):
-                    info_dict[name]['bounds'] = str((lbound, ubound))
+                    bounds_dict[name] = (mark_lbound, mark_ubound)
+                    info_dict[name]['bounds'] = '(%s, %s)' % (lbound, ubound)
 
             value = repr(val_dict[name])
             if len(value) > (max_col_len - 3):
@@ -286,23 +305,15 @@ class ParamMagics(Magics):
                 max_width = max([col_widths[col], len(info_dict[name][col])])
                 col_widths[col] = max_width
 
-        return self._tabulate(info_dict, col_widths, changed, constant, order)
+        return self._tabulate(info_dict, col_widths, changed, order, bounds_dict)
 
 
-    def _tabulate(self, info_dict, col_widths, changed, constant, order):
+    def _tabulate(self, info_dict, col_widths, changed, order, bounds_dict):
         """
         Returns the supplied information as a table of parameter
         information suitable for printing or paging.
         """
         contents, tail = [], []
-        if  all(v == 'True' for v in constant.values()):
-            tail =["\n+ All parameters are declared as constant."]
-        elif  all(v == 'False' for v in constant.values()):
-            tail=["\n+ No parameters are declared as constant."]
-        else:
-            for key in info_dict:
-                info_dict[key].update({'constant':constant[key]})
-
         column_set = set(k for row in info_dict.values() for k in row)
         columns = [col for col in order if col in column_set]
 
@@ -323,6 +334,15 @@ class ParamMagics(Magics):
                 width = col_widths[col]+2
                 val = info[col] if (col in info) else ''
                 formatted = val.ljust(width) if i==0 else val.center(width)
+
+                if col == 'bounds' and bounds_dict.get(row,False):
+                    (mark_lbound, mark_ubound) = bounds_dict[row]
+                    lval, uval = formatted.rsplit(',')
+                    lspace, lstr = lval.rsplit('(')
+                    ustr, uspace = uval.rsplit(')')
+                    lbound = lspace + '('+(self.cyan % lstr) if mark_lbound else lval
+                    ubound = (self.cyan % ustr)+')'+uspace if mark_ubound else uval
+                    formatted = "%s,%s" % (lbound, ubound)
                 row_list.append(formatted)
 
             row_text = ''.join(row_list)
@@ -339,7 +359,7 @@ class ParamMagics(Magics):
         The %params line magic accepts a single argument, the
         parameterized object to be inspected.
         """
-        order = ['name', 'changed', 'value', 'type', 'bounds', 'constant']
+        order = ['name', 'changed', 'value', 'type', 'bounds', 'mode']
         if parameter_s=='':
             print "Please specify an object to inspect."
             return
@@ -369,10 +389,11 @@ class ParamMagics(Magics):
         title = 'Parameters of %r' % param_obj.name
         dflt_msg = "Parameters changed from their default values are marked in red."
         heading_line = '=' * len(title)
-        heading_text = "%s\n%s\n\n%s" % (title,
-                                         heading_line,
-                                         self.red % dflt_msg)
+        heading_text = "%s\n%s\n" % (title, heading_line)
         top_heading = (self.green % heading_text)
+        top_heading += "\n%s" % (self.red % dflt_msg)
+        top_heading += "\n%s" % (self.cyan % "Soft bound values are marked in cyan.")
+        top_heading += '\nC/V= Constant/Variable, RO/RW = ReadOnly/ReadWrite, AN=Allow None'
 
         heading_text = 'Parameter docstrings:'
         heading_string = "%s\n%s" % (heading_text, '=' * len(heading_text))
