@@ -16,12 +16,12 @@ from sheetviews import SheetStack, SheetLayer, GridLayout, CoordinateGrid
 from views import Stack, View
 
 WARN_MISFORMATTED_DOCSTRINGS = False
-GIF_TAG = "<img src='data:image/gif;base64,{b64}'/>"
+GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
 
-VIDEO_TAG = """<video controls>
+VIDEO_TAG = """<center><video controls>
  <source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
  Your browser does not support the video tag.
-</video>"""
+</video><center/>"""
 
 # 'format name':(animation writer, mime_type,  anim_kwargs, extra_args, tag)
 ANIMATION_OPTS = {
@@ -95,9 +95,9 @@ def figure_display(fig, size=None, format='svg', message=None):
     prefix = 'data:image/png;base64,'
     b64 = prefix + print_figure(fig, 'png').encode("base64")
     if size is not None:
-        html = "<img height='%d' width='%d' src='%s' />" % (size, size, b64)
+        html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
     else:
-        html = "<img src='%s' />" % b64
+        html = "<center><img src='%s' /><center/>" % b64
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
