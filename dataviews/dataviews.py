@@ -70,6 +70,21 @@ class DataCurves(DataLayer):
 
 
 
+class DataHistogram(DataLayer):
+
+    bin_labels = param.List(default=[])
+
+    def __init__(self, hist, edges, **kwargs):
+        self.hist = hist
+        self.edges = edges
+        super(DataHistogram, self).__init__(None, **kwargs)
+
+    @property
+    def ndims(self):
+        return len(self.edges)
+
+
+
 class DataOverlay(DataLayer, Overlay):
     """
     A DataOverlay can contain a number of DataLayer objects, which are to be
