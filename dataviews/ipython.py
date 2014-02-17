@@ -16,8 +16,9 @@ from sheetviews import SheetStack, SheetLayer, GridLayout, CoordinateGrid
 from views import Stack, View
 
 WARN_MISFORMATTED_DOCSTRINGS = False
-GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
+PERCENTAGE_SIZE = 100
 
+GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
 VIDEO_TAG = """<center><video controls>
  <source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
  Your browser does not support the video tag.
@@ -45,11 +46,16 @@ def select_format(format_priority):
         except: pass
     return format_priority[-1]
 
+def get_plot_size():
+    factor = PERCENTAGE_SIZE / 100.0
+    return (Plot.size[0] * factor,
+            Plot.size[1] * factor)
 
-def opts(obj, additional_opts=[]):
-    default_options = ['size']
-    options = default_options + additional_opts
-    return dict((k, obj.metadata.get(k)) for k in options if (k in obj.metadata))
+
+def opts(obj, options=[]):
+    opt_items = [(k, obj.metadata.get(k)) for k in options if (k in obj.metadata)]
+    size = obj.metadata['size'] if 'size' in obj.metadata else get_plot_size()
+    return dict(opt_items + [('size', size)])
 
 
 def anim_opts(obj, additional_opts=[]):
@@ -129,7 +135,8 @@ def stack_display(stack, size=256, format='svg'):
 
 def layout_display(grid, size=256, format='svg'):
     if not isinstance(grid, GridLayout): return None
-    grid_size = grid.shape[1]*Plot.size[1], grid.shape[0]*Plot.size[0]
+    grid_size = (grid.shape[1]*get_plot_size()[1],
+                 grid.shape[0]*get_plot_size()[0])
     gridplot = GridLayoutPlot(grid, **dict(opts(grid), size=grid_size))
     if len(grid)==1:
         fig =  gridplot()
@@ -142,8 +149,8 @@ def layout_display(grid, size=256, format='svg'):
 def projection_display(grid, size=256, format='svg'):
     if not isinstance(grid, CoordinateGrid): return None
     size_factor = 0.17
-    grid_size = (size_factor*grid.shape[1]*Plot.size[1],
-                 size_factor*grid.shape[0]*Plot.size[0])
+    grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
+                 size_factor*grid.shape[0]*get_plot_size()[0])
     gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
     if len(grid)==1:
         fig =  gridplot()
