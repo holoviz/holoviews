@@ -236,7 +236,7 @@ class NdIndexableMapping(param.Parameterized):
 
         dimension_info = self.dim_info.copy()
         if dim_info is not None:
-            dimension_info.update(dim_name, dim_info)
+            dimension_info.update(dim_info)
 
         items = map_type()
         for key, val in self._data.items():
