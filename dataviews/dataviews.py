@@ -4,6 +4,17 @@ import param
 
 from views import View, Stack, Overlay
 
+def find_minmax(lims, olims):
+    """
+    Takes (a1, a2) and (b1, b2) as input and returns
+    (np.min(a1, b1), np.max(a2, b2)).
+    """
+
+    limzip = zip(list(lims), list(olims), [np.min, np.max])
+    return tuple([fn([l, ol]) for l, ol, fn in limzip])
+
+
+
 class DataLayer(View):
     """
     General purpose DataLayer for holding data to be plotted along some
@@ -98,11 +109,6 @@ class DataOverlay(DataLayer, Overlay):
         self.set(overlays)
 
 
-    def _find_minmax(self, lims, olims):
-        limzip = zip(list(lims), list(olims), [np.min, np.max])
-        return tuple([fn([l, ol]) for l, ol, fn in limzip])
-
-
     def add(self, layer):
         if not len(self):
             self.xlim = layer.xlim
@@ -110,8 +116,8 @@ class DataOverlay(DataLayer, Overlay):
             self.xlabel = layer.xlabel
             self.ylabel = layer.ylabel
         else:
-            self.xlim = self._find_minmax(self.xlim, layer.xlim)
-            self.ylim = self._find_minmax(self.ylim, layer.ylim)
+            self.xlim = find_minmax(self.xlim, layer.xlim)
+            self.ylim = find_minmax(self.ylim, layer.ylim)
             if layer.xlabel != self.xlabel or layer.ylabel != self.ylabel:
                 raise Exception("DataLayers must share common x- and y-labels.")
 
@@ -134,22 +140,19 @@ class DataStack(Stack):
 
     overlay_type = DataOverlay
 
-    def _find_minmax(self, lims, olims):
-        limzip = zip(list(lims), list(olims), [np.min, np.max])
-        return tuple([fn([l, ol]) for l, ol, fn in limzip])
-
     @property
     def xlim(self):
         xlim = self.top.xlim
         for data in self.values():
-            xlim = self._find_minmax(xlim, data.xlim)
+            xlim = find_minmax(xlim, data.xlim)
         return xlim
 
     @property
     def ylim(self):
         ylim = self.top.ylim
         for data in self.values():
-            ylim = self._find_minmax(ylim, data.ylim)
+            ylim = find_minmax(ylim, data.ylim)
+        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
         return ylim
 
     @property
