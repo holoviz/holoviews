@@ -405,6 +405,26 @@ class Slice(ndarray):
 
     ### CLEANUP ###
 
+    @staticmethod
+    def findinputslice(coord, sliceshape, sheetshape):
+        """
+        Gets the matrix indices of a slice within an array of size sheetshape from
+        a sliceshape, positioned at coord.
+        """
+
+        # get slice for the submatrix
+        center_row, center_col = coord
+        n_rows, n_cols = sliceshape
+        sheet_rows, sheet_cols = sheetshape
+
+        c1 = -min(0, center_col-n_cols/2)  # assume odd weight matrix so can use n_cols/2
+        r1 = -min(0, center_row-n_rows/2)  # for top and bottom
+        c2 = -max(-n_cols, center_col-sheet_cols-n_cols/2)
+        r2 = -max(-n_rows, center_row-sheet_rows-n_rows/2)
+
+        return (r1, r2, c1, c2)
+
+
     # CEBALERT: unnecessary? use translate and crop and back. or is
     # that more steps? rename
     def positionlesscrop(self,x,y,sheet_coord_system):
@@ -414,20 +434,10 @@ class Slice(ndarray):
         the correct submatrix of the weights or mask in case the
         unit is near the edge of the sheet).
         """
-        sheet_rows,sheet_cols = sheet_coord_system.shape
+        slice_inds = self.findinputslice(sheet_coord_system.sheet2matrixidx(x,y),
+                                         self.shape_on_sheet(), sheet_coord_system.shape)
 
-        # get size of weights matrix
-        n_rows,n_cols = self.shape_on_sheet()
-
-        # get slice for the submatrix
-        center_row,center_col = sheet_coord_system.sheet2matrixidx(x,y)
-
-        c1 = -min(0, center_col-n_cols/2)  # assume odd weight matrix so can use n_cols/2
-        r1 = -min(0, center_row-n_rows/2)  # for top and bottom
-        c2 = -max(-n_cols, center_col-sheet_cols-n_cols/2)
-        r2 = -max(-n_rows, center_row-sheet_rows-n_rows/2)
-
-        self.set((r1,r2,c1,c2))
+        self.set(slice_inds)
 
     # CBALERT: assumes the user wants the bounds to be centered about
     # the unit, which might not be true.
