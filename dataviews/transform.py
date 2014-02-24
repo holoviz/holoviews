@@ -10,6 +10,7 @@ import colorsys
 import param
 
 import numpy as np
+import matplotlib
 from imagen.analysis import SheetOperation
 from sheetviews import SheetView
 
@@ -84,3 +85,39 @@ class colorize(SheetOperation):
          C = SheetView(np.ones(overlay[1].data.shape),
                        bounds=overlay.bounds)
          return HCS(overlay[1] * C * overlay[0].N)
+
+
+
+class cmap2rgb(SheetOperation):
+    """
+    Convert SheetViews using colormaps to RGBA mode.
+    """
+
+    cmap = param.String(default=None, allow_None=True, doc="""
+          Force the use of a specific color map. Otherwise, the mode
+          property of the view is used instead.""")
+
+    def _process(self, sheetview, p=None):
+        if sheetview.depth != 1:
+            raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
+        cmap = matplotlib.cm.get_cmap(sheetview.mode if p.cmap is None else p.cmap)
+        return SheetView(cmap(sheetview.data),
+                         bounds=sheetview.bounds,
+                         cyclic_range=sheetview.cyclic_range,
+                         style=sheetview.style,
+                         metadata=sheetview.metadata,
+                         mode='rgba')
+
+
+
+class split(SheetOperation):
+    """
+    Given SheetViews in RGBA mode, return the R,G,B and A channels as
+    a list of SheetViews.
+    """
+
+    def _process(self, sheetview, p=None):
+        if sheetview.depth not in [3,4]:
+            raise Exception("Can only split SheetViews with a depth of 3 or 4")
+        return tuple(SheetView(sheetview.data[:,:,i], bounds=sheetview.bounds)
+                     for i in range(sheetview.depth))
