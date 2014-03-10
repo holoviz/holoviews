@@ -4,7 +4,11 @@ except: animation = None
 
 from IPython.core.pylabtools import print_figure
 from IPython.core import page
-from IPython.core.magic import Magics, magics_class, line_magic
+try:
+    from IPython.core.magic import Magics, magics_class, line_magic
+except:
+    from nose.plugins.skip import SkipTest
+    raise SkipTest("IPython extension requires IPython >= 0.13")
 
 import param
 from tempfile import NamedTemporaryFile
