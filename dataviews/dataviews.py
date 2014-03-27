@@ -92,6 +92,18 @@ class DataCurves(DataLayer):
         return float(l), float(b), float(r), float(t)
 
 
+    def stack(self):
+        stack = DataStack(None, dim_labels=[self.xlabel], **self.metadata)
+        for curve in self.data:
+            for idx in range(len(curve)):
+                x = curve[idx][0]
+                if x in stack:
+                    stack[x].data.append(curve[0:idx])
+                else:
+                    stack[x] = DataCurves([curve[0:idx]])
+        return stack
+
+
     def __getitem__(self, index):
         return self.data[index]
 
