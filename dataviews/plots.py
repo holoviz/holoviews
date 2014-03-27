@@ -794,7 +794,7 @@ class DataGridPlot(Plot):
         for coord in self.grid.keys():
             view = self.grid.get(coord, None)
             if view is not None:
-                subax = plt.subplot(self._gridspec[r, c])
+                subax = plt.subplot(self._gridspec[c, r])
                 vtype = view.type if isinstance(view, DataStack) else view.__class__
                 subplot = viewmap[vtype](view, show_axes=self.show_axes,
                                          show_legend=self.show_legend,
