@@ -404,7 +404,7 @@ class SheetStack(Stack):
                                         title=title, metadata=self.metadata,
                                         dim_info=self.dim_info)
                 for key, data in data_stack.items():
-                    xy_values = [(x, d[idx]) for x, d in data.items()]
+                    xy_values = [(x, d.data[idx]) for x, d in data.items()]
                     data = [np.vstack(zip(*xy_values)).T]
                     overlay_vals = [key[i] for i in overlay_inds]
                     labels = zip(group_by, overlay_vals)
