@@ -733,8 +733,7 @@ class DataPlot(Plot):
         title = self._format_title(self._stack, -1)
 
         ax = self._axis(axis, title, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
-        ax.set_aspect('auto')
-        
+
         for zorder, stack in enumerate(self._stack.split()):
             plotype = viewmap[stack.type]
             plot = plotype(stack, size=self.size, show_axes=self.show_axes,
