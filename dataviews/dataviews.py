@@ -24,11 +24,7 @@ class DataLayer(View):
 
     xlabel = param.String(default='', doc="X-axis label")
 
-    xlim = param.NumericTuple(default=(0, 0), doc="X-axis limits")
-
     ylabel = param.String(default='', doc="Y-axis label")
-
-    ylim = param.NumericTuple(default=(0, 0), doc="Y-axis limits")
 
     labels = param.List(default=[], doc="Legend labels")
 
@@ -63,6 +59,37 @@ class DataCurves(DataLayer):
     def __init__(self, data, **kwargs):
         data = [] if data is None else data
         super(DataCurves, self).__init__(data, **kwargs)
+
+
+    @property
+    def xlim(self):
+        x_min = 0
+        x_max = 0
+        for curve in self.data:
+            x_vals = curve[:, 0]
+            x_min = min(x_max, min(x_vals))
+            x_max = max(x_max, max(x_vals))
+        x_lim = (0 if x_min > 0 else float(x_min),
+                 self.cyclic_range if self.cyclic_range else float(x_max))
+        return x_lim
+
+
+    @property
+    def ylim(self):
+        y_min = 0
+        y_max = 0
+        for curve in self.data:
+            y_vals = curve[:, 1]
+            y_min = min(y_max, min(y_vals))
+            y_max = max(y_max, max(y_vals))
+        return (float(y_min), float(y_max))
+
+
+    @property
+    def lbrt(self):
+        l, r = self.xlim
+        b, t = self.ylim
+        return float(l), float(b), float(r), float(t)
 
 
     def __getitem__(self, index):
