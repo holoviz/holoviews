@@ -104,31 +104,32 @@ class Plot(param.Parameterized):
             self.handles['fig'] = fig
             fig.set_size_inches(list(self.size))
             axis = fig.add_subplot(111)
-            axis.set_aspect('equal')
+            axis.set_aspect('auto')
+
+            if lbrt is not None:
+                (l, b, r, t) = lbrt
+                axis.set_xlim((l, r))
+                axis.set_ylim((b, t))
+
         if not self.show_axes:
             axis.set_axis_off()
         elif self.show_grid:
             axis.get_xaxis().grid(True)
             axis.get_yaxis().grid(True)
 
-        if lbrt is not None:
-            (l, b, r, t) = lbrt
-            axis.set_xlim((l, r))
-            axis.set_ylim((b, t))
-
         if xticks:
             axis.set_xticks(xticks[0])
             axis.set_xticklabels(xticks[1])
 
         if yticks:
-            y_values, y_labels = zip(*yticks)
-            axis.set_yticks(y_values, y_labels)
+            axis.set_yticks(yticks[0])
+            axis.set_yticklabels(yticks[1])
 
         if self.show_title:
             self.handles['title'] = axis.set_title(title)
 
-        if xlabel: plt.xlabel(xlabel)
-        if ylabel: plt.ylabel(ylabel)
+        if xlabel: axis.set_xlabel(xlabel)
+        if ylabel: axis.set_ylabel(ylabel)
         return axis
 
 
@@ -661,7 +662,10 @@ class DataCurvePlot(Plot):
         else:
             xticks = self._reduce_ticks(xvals)
 
-        ax = self._axis(axis, title, lines.xlabel, lines.ylabel, xticks=xticks)
+        l, r = lines.xlim
+        b, t = lines.ylim
+
+        ax = self._axis(axis, title, lines.xlabel, lines.ylabel, xticks=xticks, lbrt=(l, b, r, t))
         
         # Create line segments and apply style
         line_segments = LineCollection([], zorder=zorder, **lines.style)
