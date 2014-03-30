@@ -210,6 +210,7 @@ class Stack(NdMapping):
 
 
     def _item_check(self, dim_vals, data):
+
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of View." %
                                  self.__class__.__name__)
@@ -313,7 +314,7 @@ class Stack(NdMapping):
         self._check_key_type = False # Speed optimization
 
         x_ndim = self.dim_index(x_axis)
-        keys = self.keys()
+        keys = self._data.keys()
         x_vals, dim_values = self._split_keys_by_axis(keys, x_axis)
 
         split_data = map_type()
@@ -363,7 +364,7 @@ class Stack(NdMapping):
             raise Exception('X axis cannot be included in grouped dimensions.')
 
         # Dimensions of the output stack
-        stack_dims = [d for d in self.dimensions if d.name not in specified_dims_set]
+        stack_dims = [d for d in self._dimensions if d.name not in specified_dims_set]
 
        # Get x_axis and non-x_axis dimension values
         split_data = self.split_axis(x_axis)
@@ -381,6 +382,7 @@ class Stack(NdMapping):
 
         stacks = {}
         for sample_ind, sample in enumerate(self._compute_samples(samples)):
+
             stack = DataStack(dimensions=stack_dims,
                               title=title,
                               metadata=self.metadata)
@@ -389,6 +391,7 @@ class Stack(NdMapping):
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
                 sampled_curve_data = [(x, self._get_sample(view,sample))
                                       for x, view in x_axis_data.items()]
+
                 # Generate a label
                 overlay_items = [(name, key[ind]) for name, ind in zip(group_by, overlay_inds)]
                 label = ', '.join(self.dim_dict[name].pprint_value(val) for name, val in overlay_items)
