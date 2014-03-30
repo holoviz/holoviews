@@ -10,9 +10,9 @@ import matplotlib.gridspec as gridspec
 
 import param
 
-from dataviews import DataCurves, DataStack, DataOverlay
+from dataviews import Stack, DataCurves, DataStack, DataOverlay
 from sheetviews import SheetView, SheetOverlay, SheetLines, SheetStack, SheetPoints, CoordinateGrid, DataGrid
-from views import GridLayout, View, Stack
+from views import GridLayout, View
 
 
 

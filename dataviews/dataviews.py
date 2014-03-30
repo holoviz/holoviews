@@ -1,8 +1,10 @@
 import numpy as np
+from collections import defaultdict
 
 import param
 
-from views import View, Stack, Overlay
+from ndmapping import NdMapping, map_type
+from views import View, Overlay, GridLayout
 
 def find_minmax(lims, olims):
     """
@@ -57,7 +59,7 @@ class DataCurves(DataLayer):
     cyclic_range = param.Number(default=None, allow_None=True)
 
     def __init__(self, data, **kwargs):
-        data = [] if data is None else data
+        data = [] if data is None else [np.array(el) for el in data]
         super(DataCurves, self).__init__(data, **kwargs)
 
 
@@ -167,6 +169,246 @@ class DataOverlay(DataLayer, Overlay):
 
     def cyclic_range(self):
         return self[0].cyclic_range
+
+
+
+class Stack(NdMapping):
+    """
+    A Stack is a stack of Views over some dimensions. The
+    dimension may be a spatial dimension (i.e., a ZStack), time
+    (specifying a frame sequence) or any other dimensions.
+    """
+
+    title = param.String(default=None, doc="""
+       A short description of the stack that may be used as a title
+       (e.g. the title of an animation) but may also accept a
+       formatting string to generate a unique title per layer. For
+       instance the format string '{label0} = {value0}' will generate
+       a title using the first dimension label and corresponding key
+       value. Numbering is by dimension position and extends across
+       all available dimensions e.g. {label1}, {value2} and so on.""")
+
+    data_type = View
+
+    overlay_type = Overlay
+
+    _type = None
+
+    @property
+    def type(self):
+        """
+        The type of elements stored in the stack.
+        """
+        if self._type is None:
+            self._type = None if len(self) == 0 else self.top.__class__
+        return self._type
+
+
+    @property
+    def empty_element(self):
+        return self._type(None)
+
+
+    def _item_check(self, dim_vals, data):
+        if self.type is not None and (type(data) != self.type):
+            raise AssertionError("%s must only contain one type of View." %
+                                 self.__class__.__name__)
+        super(Stack, self)._item_check(dim_vals, data)
+
+
+    def split(self):
+        """
+        Given a SheetStack of SheetOverlays of N layers, split out the
+        layers into N separate SheetStacks.
+        """
+        if self.type is not self.overlay_type:
+            return self.clone(self.items())
+
+        stacks = []
+        item_stacks = defaultdict(list)
+        for k, overlay in self.items():
+            for i, el in enumerate(overlay):
+                item_stacks[i].append((k, el))
+
+        for k in sorted(item_stacks.keys()):
+            stacks.append(self.clone(item_stacks[k]))
+        return stacks
+
+
+    def __mul__(self, other):
+        if isinstance(other, self.__class__):
+            self_set = set(self.dimension_labels)
+            other_set = set(other.dimension_labels)
+
+            # Determine which is the subset, to generate list of keys and
+            # dimension labels for the new view
+            self_in_other = self_set.issubset(other_set)
+            other_in_self = other_set.issubset(self_set)
+            dimensions = self.dimensions
+            if self_in_other and other_in_self: # superset of each other
+                super_keys = sorted(set(self.dimension_keys() + other.dimension_keys()))
+            elif self_in_other: # self is superset
+                dimensions = other.dimensions
+                super_keys = other.dimension_keys()
+            elif other_in_self: # self is superset
+                super_keys = self.dimension_keys()
+            else: # neither is superset
+                raise Exception('One set of keys needs to be a strict subset of the other.')
+
+            items = []
+            for dim_keys in super_keys:
+                # Generate keys for both subset and superset and sort them by the dimension index.
+                self_key = tuple(k for p, k in sorted(
+                    [(self.dim_index(dim), v) for dim, v in dim_keys
+                     if dim in self.dimension_labels]))
+                other_key = tuple(k for p, k in sorted(
+                    [(other.dim_index(dim), v) for dim, v in dim_keys
+                     if dim in other.dimension_labels]))
+                new_key = self_key if other_in_self else other_key
+                # Append SheetOverlay of combined items
+                if (self_key in self) and (other_key in other):
+                    items.append((new_key, self[self_key] * other[other_key]))
+                elif self_key in self:
+                    items.append((new_key, self[self_key] * other.empty_element))
+                else:
+                    items.append((new_key, self.empty_element * other[other_key]))
+            return self.clone(items=items, dimensions=dimensions)
+        elif isinstance(other, self.data_type):
+            items = [(k, v * other) for (k, v) in self.items()]
+            return self.clone(items=items)
+        else:
+            raise Exception("Can only overlay with {data} or {stack}.".format(
+                data=self.data_type, stack=self.__class__.__name__))
+
+
+    def __add__(self, obj):
+        if not isinstance(obj, GridLayout):
+            return GridLayout(initial_items=[[self, obj]])
+
+
+    def _split_keys_by_axis(self, keys, x_axis):
+        """
+        Select an axis by name, returning the keys along the chosen
+        axis and the corresponding shortened tuple keys.
+        """
+        x_ndim = self.dim_index(x_axis)
+        xvals = [k[x_ndim] for k in keys]
+        dim_vals = [k[:x_ndim] + k[x_ndim+1:] for k in keys]
+        return list(map_type.fromkeys(xvals)), list(map_type.fromkeys(dim_vals))
+
+
+    def split_axis(self, x_axis):
+        """
+        Returns all stored views such that the specified x_axis
+        is eliminated from the full set of stack keys (i.e. each tuple
+        key has one element removed corresponding to eliminated dimension).
+
+        As the set of reduced keys is a subset of the original data, each
+        reduced key must store multiple x_axis values.
+
+        The return value is an OrderedDict with reduced tuples keys and
+        OrderedDict x_axis values (views).
+        """
+
+        self._check_key_type = False # Speed optimization
+
+        x_ndim = self.dim_index(x_axis)
+        keys = self.keys()
+        x_vals, dim_values = self._split_keys_by_axis(keys, x_axis)
+
+        split_data = map_type()
+
+        for k in dim_values:  # The shortened keys
+            split_data[k] = map_type()
+            for x in x_vals:  # For a given x_axis value...
+                              # Generate a candidate expanded key
+                expanded_key = k[:x_ndim] + (x,) + k[x_ndim:]
+                if expanded_key in keys:  # If the expanded key actually exists...
+                    split_data[k][x] = self[expanded_key]
+
+        self._check_key_type = True # Re-enable checks
+        return split_data
+
+
+    def _compute_samples(self, samples):
+        """
+        Transform samples as specified to a format suitable for _get_sample.
+
+        May be overridden to compute transformation from sheetcoordinates to matrix
+        coordinates in single pass as an optimization.
+        """
+        return samples
+
+
+    def _get_sample(self, view, sample):
+        """
+        Given a sample as processed by _compute_sample to extract a scalar sample
+        value from the view. Uses __getitem__ by default but can operate on the view's
+        data attribute if this helps optimize performance.
+        """
+        return view[sample]
+
+
+    def sample(self, samples=[], x_axis=None, group_by=[]):
+        if x_axis is None and len(self.dimensions) > 1:
+            raise Exception('Please specify the x_axis.')
+        elif x_axis is None:
+            x_axis = self.dimension_labels[0]
+
+        x_dim = self.dim_dict[x_axis]
+        specified_dims = [x_axis] + group_by
+        specified_dims_set = set(specified_dims)
+
+        if len(specified_dims) != len(specified_dims_set):
+            raise Exception('X axis cannot be included in grouped dimensions.')
+
+        # Dimensions of the output stack
+        stack_dims = [d for d in self.dimensions if d.name not in specified_dims_set]
+
+       # Get x_axis and non-x_axis dimension values
+        split_data = self.split_axis(x_axis)
+
+        # Everything except x_axis
+        output_dims = [d for d in self.dimension_labels if d != x_axis]
+        # Overlays as indexed with the x_axis removed
+        overlay_inds = [i for i, name in enumerate(output_dims) if name in group_by]
+
+        title = ''
+        if len(stack_dims) != 0:
+            title += ', '.join('{{label{0}}}={{value{0}}}'.format(i)
+                                   for i in range(len(stack_dims)))
+        cyclic_range = x_dim.range[1] if x_dim.cyclic else None
+
+        stacks = {}
+        for sample_ind, sample in enumerate(self._compute_samples(samples)):
+            stack = DataStack(dimensions=stack_dims,
+                              title=title,
+                              metadata=self.metadata)
+
+            for key, x_axis_data in split_data.items():
+                # Key contains all dimensions (including overlaid dimensions) except for x_axis
+                sampled_curve_data = [(x, self._get_sample(view,sample))
+                                      for x, view in x_axis_data.items()]
+                # Generate a label
+                overlay_items = [(name, key[ind]) for name, ind in zip(group_by, overlay_inds)]
+                label = ', '.join(self.dim_dict[name].pprint_value(val) for name, val in overlay_items)
+                # Generate the curve view
+                curve = DataCurves([sampled_curve_data], cyclic_range=cyclic_range,
+                                    metadata=self.metadata, xlabel=x_axis.capitalize(),
+                                    label=label)
+
+                # Drop overlay dimensions
+                stack_key = tuple([kval for ind, kval in enumerate(key) if ind not in overlay_inds])
+
+                # Create new overlay if necessary, otherwise add to overlay
+                if stack_key not in stack:
+                    stack[stack_key] = DataOverlay([curve])
+                else:
+                    stack[stack_key] *= curve
+
+            # Completed stack stored for return
+            stacks[samples[sample_ind]] = stack
+        return stacks
 
 
 

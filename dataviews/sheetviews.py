@@ -1,14 +1,12 @@
-from itertools import groupby
-from collections import OrderedDict
 import numpy as np
 
 import param
 
 from boundingregion import BoundingBox, BoundingRegion
-from dataviews import DataStack, DataOverlay, DataCurves
+from dataviews import Stack
 from ndmapping import NdMapping, Dimension
 from sheetcoords import SheetCoordinateSystem, Slice
-from views import View, Overlay, Stack, GridLayout
+from views import View, Overlay, GridLayout
 
 
 class SheetLayer(View):
@@ -347,86 +345,23 @@ class SheetStack(Stack):
         return self[tuple(slices)].reindex(dim_labels)
 
 
-    def sample(self, coords=[], x_axis=None, group_by=[]):
+    def _compute_samples(self, samples):
         """
-        The sampling method provides an easy way of sampling contained SheetViews
-        across various dimensions by providing coordinates. It returns DataStacks
-        of DataCurves, sampled across the x_axis dimensions and grouped into
-        DataOverlays depending on the provided group_by dimensions.
+        Transform samples as specified to a format suitable for _get_sample.
+
+        May be overridden to compute transformation from sheetcoordinates to matrix
+        coordinates in single pass as an optimization.
         """
-        if self.type == SheetView:
-            x_axis = getattr(self.metadata, 'x_axis', self.dimension_labels[-1])\
-                if x_axis is None else x_axis
-            x_dim = self.dim_dict[x_axis]
-            x_ndim = self.dim_index(x_axis)
+        return [tuple(self.top.sheet2matrixidx(*s)) for s in samples]
 
-            # Get non-x_dim dimension labels
-            dimensions = self._dimensions[:]
-            del dimensions[x_ndim]
-            dim_labels = [d.name for d in dimensions]
 
-            # Get x_axis and non-x_axis dimension values
-            keys = self.keys()
-            dim_func = lambda x: [x[i] for i in range(self.ndims) if i != x_ndim]
-            x_func = lambda x: x[x_ndim]
-            dim_values = [tuple(dim) for dim, _ in groupby(keys, dim_func)]
-            x_vals = [dim for dim, _ in groupby(keys, x_func)]
-
-            # Sample all the coords
-            data_stack = OrderedDict()
-            self._check_key_type = False
-            for k in dim_values:
-                for x in x_vals:
-                    if k not in data_stack:
-                        data_stack[k] = OrderedDict()
-                    key = list(k)
-                    key.insert(x_ndim, x)
-                    data_stack[k][x] = self[tuple(key)].data
-            self._check_key_type = True
-
-            cyclic_range = x_dim.range if x_dim.cyclic else None
-
-            # Create stack and overlay dimension indices and titles
-            stack_info = [(d, i) for i, d in enumerate(dimensions)
-                          if d.name not in group_by]
-            stack_dims, stack_inds = ([None], None)
-            title = ""
-            if len(stack_info):
-                stack_dims, stack_inds = zip(*stack_info)
-                title += ', '.join('{{label{0}}}={{value{0}}}'.format(i)
-                                   for i in range(len(stack_dims)))
-                stack_dims = list(stack_dims)
-            overlay_inds = [dim_labels.index(od) for od in group_by]
-
-            coord_stacks = []
-            matrix_indices = [(coord, tuple(self.top.sheet2matrixidx(*coord)))
-                              for coord in coords]
-            for coord, idx in matrix_indices:
-                curve_stack = DataStack(dimensions=stack_dims, title=title,
-                                        metadata=self.metadata)
-                for key, data in data_stack.items():
-                    xy_values = [(x, d[idx]) for x, d in data.items()]
-                    data = [np.vstack(zip(*xy_values)).T]
-                    overlay_vals = [key[i] for i in overlay_inds]
-
-                    label = ', '.join(self.dim_dict[dim].pprint_value(val)
-                                      for dim, val in zip(group_by, overlay_vals))
-
-                    curve = DataCurves(data, cyclic_range=cyclic_range,
-                                       metadata=self.metadata, xlabel=x_axis.capitalize(),
-                                       label=label)
-                    # Overlay curves if stack keys overlap
-                    stack_key = tuple([key[i] for i in stack_inds])\
-                        if stack_inds is not None else (0,)
-                    if stack_key not in curve_stack:
-                        curve_stack[stack_key] = DataOverlay([curve])
-                    else:
-                        curve_stack[stack_key] *= curve
-                coord_stacks.append((coord, curve_stack))
-        elif self.type == self.overlay_type:
-            raise NotImplementedError
-
-        return coord_stacks
+    def _get_sample(self, view, sample):
+        """
+        Given a sample as processed by _compute_sample to extract a scalar sample
+        value from the view. Uses __getitem__ by default but can operate on the view's
+        data attribute if this helps optimize performance.
+        """
+        return view.data[sample]
 
 
     def unit_sample(self, coord, **kwargs):
@@ -435,7 +370,7 @@ class SheetStack(Stack):
         curves along the specified x_axis and grouped according to the groupby
         argument.
         """
-        return self.sample([coord], **kwargs)[0][1]
+        return self.sample([coord], **kwargs)[coord]
 
 
     def grid_sample(self, rows, cols, lbrt=None, **kwargs):
@@ -459,7 +394,7 @@ class SheetStack(Stack):
 
         items = self.sample(coords, **kwargs)
 
-        return DataGrid(bounds, shape, initial_items=items)
+        return DataGrid(bounds, shape, initial_items=items.items())
 
 
     def map(self, map_fn, **kwargs):
