@@ -27,6 +27,41 @@ class AttrDict(dict):
         self.__dict__ = self
 
 
+class Dimension(param.Parameterized):
+
+    cyclic = param.Boolean(default=False, doc="""
+        Whether the range of this feature is cyclic (wraps around at the high
+        end).""")
+
+    name = param.String(default="", doc="Name of the Dimension.")
+
+    range = param.NumericTuple(default=(0, 0), doc="""
+        Lower and upper values for a Dimension.""")
+
+    type = param.Parameter(default=None, doc="""
+        Type associated with Dimension values.""")
+
+    unit = param.String(default=None, doc="Unit string associated with the Dimension.")
+
+
+    def __init__(self, name, **params):
+        """
+        Initializes the Dimension object with a name.
+        """
+        super(Dimension, self).__init__(name=name, **params)
+
+
+    def __call__(self, name=None, **params):
+        settings = dict(self.get_param_values(onlychanged=True), **params)
+        if name is not None: settings['name'] = name
+        return self.__class__(**settings)
+
+
+    def pprint_value(self, value):
+        return "{name} = {val} {unit}".format(name=self.name.capitalize(),
+                                              val=value, unit=self.unit)
+
+
 
 class NdIndexableMapping(param.Parameterized):
     """
@@ -53,16 +88,9 @@ class NdIndexableMapping(param.Parameterized):
     classes easier to understand.
     """
 
-    dimension_labels = param.List(default=[None], constant=True, doc="""
-        The dimension_labels parameter accepts a list of the features
-        along which the data will indexed.""")
+    dimensions = param.List(default=[Dimension("Default")], constant=True)
 
     data_type = param.Parameter(default=None, constant=True)
-
-    dim_info = param.Dict(default={}, constant=True, doc="""
-        Information associated with the dimension labels, supplied as a
-        dictionary. The key 'type' specifies the key type, other potentially
-        useful keys include units and cyclic_range for periodic dimensions.""")
 
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional labels to be associated with the Dataview.""")
@@ -84,6 +112,9 @@ class NdIndexableMapping(param.Parameterized):
 
         super(NdIndexableMapping, self).__init__(metadata=metadata, **kwargs)
 
+        self._dimensions = [d if isinstance(d, Dimension) else Dimension(d)
+                            for d in self.dimensions]
+
         self._next_ind = 0
 
         if isinstance(initial_items, tuple):
@@ -91,6 +122,25 @@ class NdIndexableMapping(param.Parameterized):
         elif initial_items is not None:
             self.update(map_type(initial_items))
 
+
+    @property
+    def dim_dict(self):
+        return dict([(d.name, d) for d in self._dimensions])
+
+
+    @property
+    def dimension_labels(self):
+        return [d.name for d in self._dimensions]
+
+
+    @property
+    def _types(self):
+        return [d.type for d in self._dimensions]
+
+
+    @property
+    def ndims(self):
+        return len(self.dimensions)
 
 
     def write_metadata(self, kwargs):
@@ -116,23 +166,12 @@ class NdIndexableMapping(param.Parameterized):
         returns None, if none is defined.
         """
         if 'Time' in self.dimension_labels:
-            return max([k[self.dimension_labels.index('Time')] if type(k) is tuple
+            return max([k[self.dim_index('Time')] if type(k) is tuple
                         else k for k in self.keys()])
         elif 'timestamp' in self.metadata:
             return self.metadata.timestamp
         else:
             return None
-
-
-    @property
-    def _types(self):
-        return [self.dim_info.get(d, {}).get('type', None)
-                for d in self.dimension_labels]
-
-
-    @property
-    def ndims(self):
-        return len(self.dimension_labels)
 
 
     def _item_check(self, dim_vals, data):
@@ -212,31 +251,29 @@ class NdIndexableMapping(param.Parameterized):
         reindexed_items = map_type(
             (k, v) for (k, v) in zip(keys, self._data.values()))
         reduced_dims = set(self.dimension_labels).difference(dimension_labels)
-        dim_info = dict([(k, v) for k, v in self.dim_info if k not in reduced_dims])
+        dimensions = dict([d for d in self._dimensions if d.name not in reduced_dims])
 
         if len(set(keys)) != len(keys):
             raise Exception("Given dimension labels not sufficient to address all values uniquely")
 
-        return self.clone(reindexed_items, dimension_labels=dimension_labels,
-                          dim_info=dim_info)
+        return self.clone(reindexed_items, dimensions=dimensions)
 
 
-    def add_dimension(self, dim_name, dim_pos, dim_val, dim_info=None, **kwargs):
+    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
         Create a new object with an additional dimension along which items are
         indexed. Requires the dimension name, the desired position in the
         dimension labels and a dimension value that applies to all existing
         elements.
         """
-        if dim_name in self.dimension_labels:
-            raise Exception('{dim} dimension already defined'.format(dim=dim_name))
+        if isinstance(dimension, str):
+            dimension = Dimension(dimension)
 
-        dim_labels = self.dimension_labels[:]
-        dim_labels.insert(dim_pos, dim_name)
+        if dimension.name in self.dimension_labels:
+            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimension_info = self.dim_info.copy()
-        if dim_info is not None:
-            dimension_info.update(dim_info)
+        dimensions = self.dimension_labels[:]
+        dimensions.insert(dim_pos, dimension)
 
         items = map_type()
         for key, val in self._data.items():
@@ -244,8 +281,7 @@ class NdIndexableMapping(param.Parameterized):
             new_key.insert(dim_pos, dim_val)
             items[tuple(new_key)] = val
 
-        return self.clone(items, dimension_labels=dim_labels,
-                          dim_info=dim_info, **kwargs)
+        return self.clone(items, dimensions=dimensions, **kwargs)
 
 
     def clone(self, items=None, **kwargs):
@@ -273,8 +309,8 @@ class NdIndexableMapping(param.Parameterized):
         type to the supplied key.
         """
         typed_key = () 
-        for dim, key in zip(self.dimension_labels, keys):
-            key_type = self.dim_info.get(dim, {}).get('type')
+        for dim, key in zip(self._dimensions, keys):
+            key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
             elif isinstance(key, slice):
@@ -297,7 +333,7 @@ class NdIndexableMapping(param.Parameterized):
             key = (key,)
         map_slice = key[:self.ndims]
         if self._check_key_type:
-            self._apply_key_type(key)
+            map_slice = self._apply_key_type(map_slice)
         if len(key) == self.ndims:
             return map_slice, ()
         else:
@@ -524,4 +560,5 @@ class NdMapping(NdIndexableMapping):
         
 __all__ = ["NdIndexableMapping",
            "NdMapping",
-           "AttrDict"]
+           "AttrDict",
+           "Dimension"]

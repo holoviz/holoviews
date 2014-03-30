@@ -559,7 +559,7 @@ class DataCurvePlot(Plot):
 
     def _format_legend(self, lines):
         units = dict([(dim, info.get('unit', ''))
-                      for dim, info in self._stack.dim_info.items()])
+                      for dim, info in self._stack._dimensions])
         return ', '.join(["%s = %.2f%s" % (l, v, units[l]) for l, v in lines.labels])
 
 

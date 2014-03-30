@@ -6,7 +6,7 @@ import param
 
 from boundingregion import BoundingBox, BoundingRegion
 from dataviews import DataStack, DataOverlay, DataCurves
-from ndmapping import NdMapping
+from ndmapping import NdMapping, Dimension
 from sheetcoords import SheetCoordinateSystem, Slice
 from views import View, Overlay, Stack, GridLayout
 
@@ -133,7 +133,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
     representation.
     """
 
-    cyclic_range = param.Number(default=None, bounds=(0, None), doc="""
+    cyclic_range = param.Number(default=None, bounds=(0, None), allow_None=True, doc="""
         For a cyclic quantity, the range over which the values repeat. For
         instance, the orientation of a mirror-symmetric pattern in a plane is
         pi-periodic, with orientation x the same as orientation x+pi (and
@@ -355,13 +355,15 @@ class SheetStack(Stack):
         DataOverlays depending on the provided group_by dimensions.
         """
         if self.type == SheetView:
-            x_dim = getattr(self.metadata, 'x_axis', self.dimension_labels[-1])\
+            x_axis = getattr(self.metadata, 'x_axis', self.dimension_labels[-1])\
                 if x_axis is None else x_axis
-            x_ndim = self.dim_index(x_dim)
+            x_dim = self.dim_dict[x_axis]
+            x_ndim = self.dim_index(x_axis)
 
             # Get non-x_dim dimension labels
-            dim_labels = self.dimension_labels[:]
-            del dim_labels[x_ndim]
+            dimensions = self._dimensions[:]
+            del dimensions[x_ndim]
+            dim_labels = [d.name for d in dimensions]
 
             # Get x_axis and non-x_axis dimension values
             keys = self.keys()
@@ -382,17 +384,17 @@ class SheetStack(Stack):
                     data_stack[k][x] = self[tuple(key)].data
             self._check_key_type = True
 
-            cyclic_range = self.dim_info.get(x_axis, {}).get('cyclic_range', None)
+            cyclic_range = x_dim.range if x_dim.cyclic else None
 
             # Create stack and overlay dimension indices and titles
-            stack_info = [(dl, dim_labels.index(dl)) for dl in dim_labels
-                          if dl not in group_by]
+            stack_info = [(d, i) for i, d in enumerate(dimensions)
+                          if d.name not in group_by]
             stack_dims, stack_inds = ([None], None)
-            title = x_dim + " Curve"
+            title = ""
             if len(stack_info):
                 stack_dims, stack_inds = zip(*stack_info)
-                title += ': ' + ', '.join(['{{label{0}}}={{value{0}}}'.format(i)
-                                           for i in range(len(stack_dims))])
+                title += ', '.join('{{label{0}}}={{value{0}}}'.format(i)
+                                   for i in range(len(stack_dims)))
                 stack_dims = list(stack_dims)
             overlay_inds = [dim_labels.index(od) for od in group_by]
 
@@ -400,17 +402,19 @@ class SheetStack(Stack):
             matrix_indices = [(coord, tuple(self.top.sheet2matrixidx(*coord)))
                               for coord in coords]
             for coord, idx in matrix_indices:
-                curve_stack = DataStack(dimension_labels=stack_dims,
-                                        title=title, metadata=self.metadata,
-                                        dim_info=self.dim_info)
+                curve_stack = DataStack(dimensions=stack_dims, title=title,
+                                        metadata=self.metadata)
                 for key, data in data_stack.items():
                     xy_values = [(x, d[idx]) for x, d in data.items()]
                     data = [np.vstack(zip(*xy_values)).T]
                     overlay_vals = [key[i] for i in overlay_inds]
-                    labels = zip(group_by, overlay_vals)
+
+                    label = ', '.join(self.dim_dict[dim].pprint_value(val)
+                                      for dim, val in zip(group_by, overlay_vals))
+
                     curve = DataCurves(data, cyclic_range=cyclic_range,
-                                       metadata=self.metadata, xlabel=x_dim,
-                                       labels=labels)
+                                       metadata=self.metadata, xlabel=x_axis.capitalize(),
+                                       label=label)
                     # Overlay curves if stack keys overlap
                     stack_key = tuple([key[i] for i in stack_inds])\
                         if stack_inds is not None else (0,)
@@ -525,7 +529,8 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
     object, allowing for bounds checking and grid-snapping.
     """
 
-    dimension_labels = param.List(default=['X', 'Y'])
+    dimensions = param.List(default=[Dimension(name="X"),
+                                     Dimension(name="Y")])
 
     def __init__(self, bounds, shape, initial_items=None, **kwargs):
         (l, b, r, t) = bounds.lbrt()

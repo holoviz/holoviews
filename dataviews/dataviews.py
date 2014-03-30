@@ -94,7 +94,7 @@ class DataCurves(DataLayer):
 
     def stack(self):
         prefix = "{0}: ".format(self.title) if self.title else ""
-        stack = DataStack(None, dimension_labels=[self.xlabel],
+        stack = DataStack(None, dimensions=[self.xlabel],
                           title=prefix+"{label0}={value0}", **self.metadata)
         for curve in self.data:
             for idx in range(len(curve)):

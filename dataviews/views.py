@@ -9,7 +9,7 @@ import math
 from collections import defaultdict
 import param
 
-from ndmapping import NdMapping, AttrDict, map_type
+from ndmapping import NdMapping, Dimension, AttrDict, map_type
 
 
 class View(param.Parameterized):
@@ -60,6 +60,8 @@ class Overlay(View):
         """
         Overlay a single layer on top of the existing overlay.
         """
+        if layer.label in [o.label for o in self.data]:
+            self.warning('Label %s already defined in Overlay' % layer.label)
         self.data.append(layer)
 
 
@@ -74,6 +76,11 @@ class Overlay(View):
 
 
     def __getitem__(self, ind):
+        if isinstance(ind, str):
+            matches = [o for o in self.data if o.label == ind]
+            if matches == []: raise KeyError('Key %s not found.' % ind)
+            return matches[0]
+
         if ind is ():
             return self
         elif isinstance(ind, tuple):
@@ -171,11 +178,11 @@ class Stack(NdMapping):
             # dimension labels for the new view
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
-            dim_labels = self.dimension_labels
+            dimensions = self.dimensions
             if self_in_other and other_in_self: # superset of each other
                 super_keys = sorted(set(self.dimension_keys() + other.dimension_keys()))
             elif self_in_other: # self is superset
-                dim_labels = other.dimension_labels
+                dimensions = other.dimensions
                 super_keys = other.dimension_keys()
             elif other_in_self: # self is superset
                 super_keys = self.dimension_keys()
@@ -199,7 +206,7 @@ class Stack(NdMapping):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items=items, dimension_labels=dim_labels)
+            return self.clone(items=items, dimensions=dimensions)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
             return self.clone(items=items)
@@ -216,10 +223,8 @@ class Stack(NdMapping):
 
 class GridLayout(NdMapping):
 
-    dim_info = param.Dict(default=dict(Row={'type': int}, Column={'type':int}),
-                          constant=True)
-
-    dimension_labels = param.List(default=['Row', 'Column'], constant=True)
+    dimensions = param.List(default=[Dimension('Row', type=int),
+                                     Dimension('Column', type=int)], constant=True)
 
     def __init__(self, initial_items=[], **kwargs):
         self._max_cols = 4
