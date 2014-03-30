@@ -557,12 +557,6 @@ class DataCurvePlot(Plot):
         super(DataCurvePlot, self).__init__(**kwargs)
 
 
-    def _format_legend(self, lines):
-        units = dict([(dim, info.get('unit', ''))
-                      for dim, info in self._stack._dimensions])
-        return ', '.join(["%s = %.2f%s" % (l, v, units[l]) for l, v in lines.labels])
-
-
     def _format_x_tick_label(self, x):
         return "%g" % round(x, 2)
 
@@ -676,8 +670,7 @@ class DataCurvePlot(Plot):
             line_segments.set_color(color)
 
         # Add legend
-        label = self._format_legend(lines)
-        line_segments.set_label(label)
+        line_segments.set_label(lines.label)
 
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)

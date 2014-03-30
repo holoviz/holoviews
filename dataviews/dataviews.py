@@ -26,7 +26,7 @@ class DataLayer(View):
 
     ylabel = param.String(default='', doc="Y-axis label")
 
-    labels = param.List(default=[], doc="Legend labels")
+    label = param.String(default="", doc="Legend labels")
 
     def __mul__(self, other):
         if isinstance(other, DataStack):
