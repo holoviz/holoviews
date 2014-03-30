@@ -106,16 +106,16 @@ class Plot(param.Parameterized):
             axis = fig.add_subplot(111)
             axis.set_aspect('auto')
 
-            if lbrt is not None:
-                (l, b, r, t) = lbrt
-                axis.set_xlim((l, r))
-                axis.set_ylim((b, t))
-
         if not self.show_axes:
             axis.set_axis_off()
         elif self.show_grid:
             axis.get_xaxis().grid(True)
             axis.get_yaxis().grid(True)
+
+        if lbrt is not None:
+            (l, b, r, t) = lbrt
+            axis.set_xlim((l, r))
+            axis.set_ylim((b, t))
 
         if xticks:
             axis.set_xticks(xticks[0])
@@ -648,7 +648,7 @@ class DataCurvePlot(Plot):
                 self.peak_argmax = np.argmax(y_values)
 
 
-    def __call__(self, axis=None, zorder=0, color='b'):
+    def __call__(self, axis=None, zorder=0, color='b', lbrt=None):
         title = self._format_title(self._stack, -1)
         lines = self._stack.top
 
@@ -662,10 +662,11 @@ class DataCurvePlot(Plot):
         else:
             xticks = self._reduce_ticks(xvals)
 
-        l, r = lines.xlim
-        b, t = lines.ylim
+        if lbrt is None:
+            lbrt = lines.lbrt
 
-        ax = self._axis(axis, title, lines.xlabel, lines.ylabel, xticks=xticks, lbrt=(l, b, r, t))
+        ax = self._axis(axis, title, lines.xlabel, lines.ylabel,
+                        xticks=xticks, lbrt=lbrt)
         
         # Create line segments and apply style
         line_segments = LineCollection([], zorder=zorder, **lines.style)
@@ -739,7 +740,7 @@ class DataPlot(Plot):
             plot = plotype(stack, size=self.size, show_axes=self.show_axes,
                            show_legend=self.show_legend, show_title=self.show_title,
                            **kwargs)
-            plot(ax, zorder=zorder, color=self._color.next())
+            plot(ax, zorder=zorder, color=self._color.next(), lbrt=self._stack.lbrt)
             self.plots.append(plot)
 
         if axis is None: plt.close(self.handles['fig'])
