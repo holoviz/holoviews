@@ -324,9 +324,6 @@ class SheetStack(Stack):
     which SheetLayers may vary.
     """
 
-    cyclic_ranges = param.Dict(default={}, doc="""
-        Determines the periodicity of dimensions, if they are cyclic.""")
-
     bounds = None
 
     data_type = SheetLayer
