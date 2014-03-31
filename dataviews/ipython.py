@@ -431,10 +431,9 @@ def load_ipython_extension(ip, verbose=True):
 
         html_formatter = ip.display_formatter.formatters['text/html']
         html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
-        html_formatter.for_type(SheetLayer, view_display)
-        html_formatter.for_type(DataLayer, view_display)
-        html_formatter.for_type(SheetStack, stack_display)
-        html_formatter.for_type(DataStack, stack_display)
+
+        html_formatter.for_type(View, view_display)
+        html_formatter.for_type(Stack, stack_display)
         html_formatter.for_type(GridLayout, layout_display)
         html_formatter.for_type(CoordinateGrid, projection_display)
 
