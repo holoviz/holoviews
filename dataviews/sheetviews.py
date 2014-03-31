@@ -324,11 +324,10 @@ class SheetStack(Stack):
     which SheetLayers may vary.
     """
 
-    bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
-       The bounding region in sheet coordinates containing the data""")
-
     cyclic_ranges = param.Dict(default={}, doc="""
         Determines the periodicity of dimensions, if they are cyclic.""")
+
+    bounds = None
 
     data_type = SheetLayer
 
