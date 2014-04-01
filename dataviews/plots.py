@@ -95,7 +95,7 @@ class Plot(param.Parameterized):
         else:
             stack = view
 
-        if not stack.type == element_type:
+        if not issubclass(stack.type, element_type):
             raise TypeError("Requires View, Animation or Stack of type %s" % element_type)
         return stack
 
