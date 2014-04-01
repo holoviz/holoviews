@@ -285,6 +285,10 @@ class Stack(NdMapping):
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[[self, obj]])
+        else:
+            grid = GridLayout(initial_items=[[self]])
+            grid.update(obj)
+            return grid
 
 
     def _split_keys_by_axis(self, keys, x_axis):
