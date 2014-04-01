@@ -562,7 +562,7 @@ class TableStack(Stack):
         Sample across the stored TableViews according the the headings
         specified in samples and across the specified x_axis.
         """
-        sample_types = [int, float]
+        sample_types = [int, float] + np.sctypes['float'] + np.sctypes['int']
         if not all(h in self._type_map.keys() for h in samples):
             raise Exception("Invalid list of heading samples.")
 
