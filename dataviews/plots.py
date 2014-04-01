@@ -6,12 +6,14 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from matplotlib.collections import LineCollection
 from matplotlib.font_manager import FontProperties
+from matplotlib.table import Table
 import matplotlib.gridspec as gridspec
 
 import param
 
-from dataviews import Stack, DataCurves, DataStack, DataOverlay
-from sheetviews import SheetView, SheetOverlay, SheetLines, SheetStack, SheetPoints, CoordinateGrid, DataGrid
+from dataviews import Stack, TableView, TableStack, DataCurves, DataStack, DataOverlay
+from sheetviews import SheetView, SheetOverlay, SheetLines, \
+                       SheetStack, SheetPoints, CoordinateGrid, DataGrid
 from views import GridLayout, View
 
 
@@ -56,6 +58,7 @@ class Plot(param.Parameterized):
         """
         if stack.title is None:  return []
         parse = list(string.Formatter().parse(stack.title))
+        if parse == []: return []
         return [f for f in zip(*parse)[1] if f is not None]
 
 
@@ -410,7 +413,7 @@ class GridLayoutPlot(Plot):
             if view is not None:
                 subax = plt.subplot(self._gridspec[r,c])
                 subview = view.roi if self.roi else view
-                vtype = subview.type if isinstance(subview,SheetStack) else subview.__class__
+                vtype = subview.type if isinstance(subview,Stack) else subview.__class__
                 subplot = viewmap[vtype](subview, show_axes=self.show_axes)
             self.subplots.append(subplot)
             subplot(subax)
@@ -661,7 +664,7 @@ class DataCurvePlot(Plot):
 
         ax = self._axis(axis, title, lines.xlabel, lines.ylabel,
                         xticks=xticks, lbrt=lbrt)
-        
+
         # Create line segments and apply style
         line_segments = LineCollection([], zorder=zorder, **lines.style)
         line_segments.set_paths(lines.data)
@@ -815,6 +818,115 @@ class DataGridPlot(Plot):
 
 
 
+class TablePlot(Plot):
+    """
+    A TablePlot can plot both TableViews and TableStacks which display
+    as either a single static table or as an animated table
+    respectively.
+    """
+
+    border = param.Number(default = 0.05, bounds=(0.0, 0.5), doc="""
+        The fraction of the plot that should be empty around the
+        edges.""")
+
+    float_precision = param.Integer(default=3, doc="""
+        The floating point precision to use when printing float
+        numeric data types.""")
+
+    max_value_len = param.Integer(default=20, doc="""
+         The maximum allowable string length of a value shown in any
+         table cell. Any strings longer than this length will be
+         truncated.""")
+
+    max_font_size = param.Integer(default = 20, doc="""
+       The largest allowable font size for the text in each table
+       cell.""")
+
+    font_types = param.Dict(default = {'heading':FontProperties(weight='bold',
+                                                                family='monospace')},
+       doc="""The font style used for heading labels used for emphasis.""")
+
+    _stack_type = TableStack
+
+    def __init__(self, contours, **kwargs):
+        self._stack = self._check_stack(contours, TableView)
+        super(TablePlot, self).__init__(**kwargs)
+
+
+    def pprint_value(self, value):
+        """
+        Generate the pretty printed representation of a value for
+        inclusion in a table cell.
+        """
+        if isinstance(value, float):
+            formatter = '{:.%df}' % self.float_precision
+            formatted = formatter.format(value)
+        else:
+            formatted = str(value)
+
+        if len(formatted) > self.max_value_len:
+            return formatted[:(self.max_value_len-3)]+'...'
+        else:
+            return formatted
+
+
+    def __call__(self, axis=None, zorder=0):
+        title = self._format_title(self._stack, -1)
+        ax = self._axis(axis, title)
+
+        tableview = self._stack.top
+        ax.set_axis_off()
+        size_factor = (1.0 - 2*self.border)
+        table = Table(ax, bbox=[self.border, self.border,
+                                size_factor, size_factor])
+
+        width = size_factor / tableview.cols
+        height = size_factor / tableview.rows
+
+        # Mapping from the cell coordinates to the dictionary key.
+
+        for row in range(tableview.rows):
+            for col in range(tableview.cols):
+                value = tableview.cell_value(row, col)
+                cell_text = self.pprint_value(value)
+
+
+                cellfont = self.font_types.get(tableview.cell_type(row,col), None)
+                font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
+                table.add_cell(row, col, width, height, text=cell_text,  loc='center',
+                               **font_kwargs)
+
+        table.set_fontsize(self.max_font_size)
+        table.auto_set_font_size(True)
+        ax.add_table(table)
+
+        self.handles['table'] = table
+        if axis is None: plt.close(self.handles['fig'])
+        return ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n):
+        n = n if n < len(self) else len(self) - 1
+
+        tableview = self._stack.values()[n]
+        table = self.handles['table']
+
+        for coords, cell in table.get_celld().items():
+            value = tableview.cell_value(*coords)
+            cell.set_text_props(text=self.pprint_value(value))
+
+        # Resize fonts across table as necessary
+        table.set_fontsize(self.max_font_size)
+        table.auto_set_font_size(True)
+
+        if self.show_title:
+            self.handles['title'].set_text(self._format_title(self._stack, n))
+        plt.draw()
+
+    def __len__(self):
+        return len(self._stack)
+
+
 viewmap = {SheetView: SheetViewPlot,
            SheetPoints: SheetPointsPlot,
            SheetLines: SheetLinesPlot,
@@ -822,8 +934,9 @@ viewmap = {SheetView: SheetViewPlot,
            CoordinateGrid: CoordinateGridPlot,
            DataCurves: DataCurvePlot,
            DataOverlay: DataPlot,
-           DataStack: DataPlot,
-           DataGrid: DataGridPlot}
+           DataGrid: DataGridPlot,
+           TableView: TablePlot,
+}
 
 
 __all__ = ['viewmap'] + list(set([_k for _k,_v in locals().items()

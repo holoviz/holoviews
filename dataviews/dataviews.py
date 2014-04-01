@@ -460,5 +460,113 @@ class DataStack(Stack):
         return self.metadata.ylabel if hasattr(self.metadata, 'ylabel') else self.top.ylabel
 
 
+
+class TableView(View):
+    """
+    A tabular view type to allow convenient visualization of either a
+    standard Python dictionary or an OrderedDict. If an OrderedDict is
+    used, the headings will be kept in the correct order.
+    """
+
+    def __init__(self, data, **kwargs):
+
+        if not all(isinstance(k, str) for k in data.keys()):
+            raise Exception("Dictionary keys must be strings.")
+
+        super(TableView, self).__init__(data=data, **kwargs)
+
+        # Assume OrderedDict if not a vanilla Python dict
+        self.headings = self.data.keys()
+        if type(self.data) == dict:
+            self.headings = sorted(self.headings)
+
+    @property
+    def rows(self):
+        return len(self.headings)
+
+    @property
+    def cols(self):
+        return 2
+
+    def __getitem__(self, heading):
+        """
+        Get the value associated with the given heading (key).
+        """
+        if heading not in self.headings:
+            raise IndexError("%r not in available headings." % heading)
+        return self.data[heading]
+
+
+    def cell_value(self, row, col):
+        """
+        Get the stored value for a given row and column indices.
+        """
+        if col > 1:
+            raise Exception("Only two columns available in a TableView.")
+        elif row >= self.rows:
+            raise Exception("Maximum row index is %d" % len(self.headings)-1)
+        elif col == 0:
+            return self.headings[row]
+        else:
+            heading = self.headings[row]
+            return self.data[heading]
+
+
+    def cell_type(self, row, col):
+        """
+        Returns the cell type given a row and column index. The common
+        basic cell types are 'data' and 'heading'.
+        """
+        if col == 0:  return 'heading'
+        else:         return 'data'
+
+
+
+class TableStack(Stack):
+    """
+    A TableStack may hold any number of TableViews indexed by a list
+    of dimension values. It also allows the values of a particular
+    cell to be sampled by name across any valid dimension.
+    """
+    _type = TableView
+
+    _type_map = None
+
+    def _item_check(self, dim_vals, data):
+
+        if self._type_map is None:
+            self._type_map = dict((k,type(v)) for (k,v) in data.data.items())
+
+        if set(self._type_map.keys()) != set(data.data.keys()):
+            raise AssertionError("All TableViews in a TableStack must have"
+                                 " a common set of  headings.")
+
+        for k, v in data.data.items():
+            if k not in self._type_map:
+                self._type_map[k] = None
+            elif type(v) != self._type_map[k]:
+                self._type_map[k] = None
+
+        super(TableStack, self)._item_check(dim_vals, data)
+
+
+    def sample(self, samples=[], x_axis=None, group_by=[]):
+        """
+        Sample across the stored TableViews according the the headings
+        specified in samples and across the specified x_axis.
+        """
+        sample_types = [int, float]
+        if not all(h in self._type_map.keys() for h in samples):
+            raise Exception("Invalid list of heading samples.")
+
+        for sample in samples:
+            if self._type_map[sample] is None:
+                raise Exception("Cannot sample inhomogenous type %r" % sample)
+            if self._type_map[sample] not in sample_types:
+                raise Exception("Cannot sample from type %r" % self._type_map[sample].__name__)
+
+        return super(TableStack, self).sample(samples, x_axis, group_by)
+
+
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v, type) and
                     (issubclass(_v, Stack) or issubclass(_v, View))]))
