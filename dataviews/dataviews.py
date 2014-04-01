@@ -28,7 +28,7 @@ class DataLayer(View):
 
     ylabel = param.String(default='', doc="Y-axis label")
 
-    label = param.String(default="", doc="Legend labels")
+    legend_label = param.String(default="", doc="Legend labels")
 
     def __mul__(self, other):
         if isinstance(other, DataStack):
@@ -409,7 +409,7 @@ class Stack(NdMapping):
                 # Generate the curve view
                 curve = DataCurves([sampled_curve_data], cyclic_range=cyclic_range,
                                     metadata=self.metadata, xlabel=x_axis.capitalize(),
-                                    label=label)
+                                    legend_label=label)
 
                 # Drop overlay dimensions
                 stack_key = tuple([kval for ind, kval in enumerate(key) if ind not in overlay_inds])

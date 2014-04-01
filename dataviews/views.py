@@ -13,10 +13,15 @@ from ndmapping import NdMapping, Dimension, AttrDict, map_type
 
 class View(param.Parameterized):
     """
-    A view is a data structure for holding data, which may be plotted using
-    matplotlib. Views have an associated title, style and metadata and can
-    be composed together into a GridLayout using the plus operator.
+    A view is a data structure for holding data, which may be plotted
+    using matplotlib. Views have an associated title, style and
+    metadata information.  All Views may be composed together into a
+    GridLayout using the addition operator.
     """
+
+    label = param.String(default=None, allow_None=True, doc="""
+      A short label used to indicate what kind of data is contained
+      within the view object.""")
 
     title = param.String(default=None, allow_None=True, doc="""
        A short description of the layer that may be used as a title.""")
