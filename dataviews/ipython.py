@@ -5,7 +5,7 @@ except: animation = None
 from IPython.core.pylabtools import print_figure
 from IPython.core import page
 try:
-    from IPython.core.magic import Magics, magics_class, line_magic
+    from IPython.core.magic import Magics, magics_class, line_magic, cell_magic
 except:
     from nose.plugins.skip import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -14,13 +14,14 @@ import param
 from tempfile import NamedTemporaryFile
 import textwrap
 
-from dataviews import DataStack, DataLayer
+from dataviews import Stack, DataStack, DataLayer
 from plots import Plot, GridLayoutPlot, viewmap
 from sheetviews import SheetStack, SheetLayer, GridLayout, CoordinateGrid
-from views import Stack, View
+from views import View
 
-WARN_MISFORMATTED_DOCSTRINGS = False
-PERCENTAGE_SIZE = 100
+# Variables controlled via the %view magic
+PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
+
 
 GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
 VIDEO_TAG = """<center><video controls>
@@ -40,150 +41,110 @@ ANIMATION_OPTS = {
            GIF_TAG)
 }
 
-def select_format(format_priority):
-    for fmt in format_priority:
+WARN_MISFORMATTED_DOCSTRINGS = False
+
+#========#
+# Magics #
+#========#
+
+
+@magics_class
+class ViewMagic(Magics):
+    """
+    Magic to allow easy control over the display of dataviews. The
+    figure and animation output formats, the animation frame rate and
+    figure size can all be controlled.
+
+    Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
+    """
+    def __init__(self, *args, **kwargs):
+        super(ViewMagic, self).__init__(*args, **kwargs)
+        self.anim_formats = ['webm','h264','gif']
+        self.usage_info = "Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]"
+        self.usage_info += " (Arguments may be in any order)"
+
+
+    def _set_animation_options(self, anim_spec):
+        """
+        Parse the animation format and fps from the specification string.
+        """
+        global VIDEO_FORMAT, FPS
+        format_choice, fps_str = ((anim_spec, None) if (':' not in anim_spec)
+                                  else anim_spec.rsplit(':'))
+        if format_choice not in self.anim_formats:
+            print "Valid animations types: %s" % ', '.join(self.anim_formats)
+            return False
+        elif fps_str is None:
+            VIDEO_FORMAT = format_choice
+            return True
         try:
-            anim = animation.FuncAnimation(plt.figure(),
-                                           lambda x: x, frames=[0,1])
-            animate(anim, *ANIMATION_OPTS[fmt])
-            return fmt
-        except: pass
-    return format_priority[-1]
+            fps = int(fps_str)
+        except:
+            print "Invalid frame rate: %s" %  fps_str
+            return False
 
-def get_plot_size():
-    factor = PERCENTAGE_SIZE / 100.0
-    return (Plot.size[0] * factor,
-            Plot.size[1] * factor)
+        VIDEO_FORMAT, FPS = format_choice, fps
+        if format_choice == 'gif':
+            ANIMATION_OPTS['gif'][2]['fps'] = fps
+        return True
 
 
-def opts(obj, options=[]):
-    opt_items = [(k, obj.metadata.get(k)) for k in options if (k in obj.metadata)]
-    size = obj.metadata['size'] if 'size' in obj.metadata else get_plot_size()
-    return dict(opt_items + [('size', size)])
+    def _set_size(self, size_spec):
+        global PERCENTAGE_SIZE
+        try:     size = int(size_spec)
+        except:  size = None
+
+        if (size is None) or (size < 0):
+            print "Percentage size must be an integer larger than zero."
+            return False
+        else:
+            PERCENTAGE_SIZE = size
+            return True
 
 
-def anim_opts(obj, additional_opts=[]):
-    default_options = ['fps']
-    options = default_options + additional_opts
-    return dict((k, obj.metadata.get(k)) for k in options if (k in obj.metadata))
+    def _parse_settings(self, opts):
+        global FIGURE_FORMAT
+        fig_fmt = [('svg' in opts), ('png' in opts)]
+        if all(fig_fmt):
+            success = False
+            print "Please select either png or svg for static output"
+        elif True in fig_fmt:
+            figure_format = ['svg', 'png'][fig_fmt.index(True)]
+            FIGURE_FORMAT= figure_format
+            opts.remove(figure_format)
+        elif len(opts) == 0: success = True
 
+        if not len(opts) or len(opts) > 2:
+            success = not len(opts)
+        elif len(opts) == 1:
+            success = (self._set_animation_options(opts[0].lower())
+                       if opts[0][0].isalpha() else self._set_size(opts[0]))
+        elif sum(el[0].isalpha() for el in opts) in [0,2]:
+            success = False
+        else:
+            (anim, size) = (opts if opts[0][0].isalpha()
+                            else (opts[1], opts[0]))
+            anim_success = self._set_animation_options(anim.lower())
+            size_success = self._set_size(size)
+            success =  anim_success and size_success
 
-def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
-    if extra_args != []:
-        anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+        return success
 
-    if not hasattr(anim, '_encoded_video'):
-        with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
-            anim.save(f.name, writer=writer, **anim_kwargs)
-            video = open(f.name, "rb").read()
-        anim._encoded_video = video.encode("base64")
-    return tag.format(b64=anim._encoded_video,
-                      mime_type=mime_type)
+    @cell_magic
+    def view(self, line, cell):
+        opts = line.split()
+        success = self._parse_settings(opts)
+        self.shell.run_cell(cell)
 
-
-def HTML_video(plot, view):
-    anim_kwargs =  dict((k, view.metadata[k]) for k in ['fps']
-                        if (k in view.metadata))
-    video_format = view.metadata.get('video_format', VIDEO_FORMAT)
-    if video_format not in ANIMATION_OPTS.keys():
-        raise Exception("Unrecognized video format: %s" % video_format)
-    anim = plot.anim(**anim_kwargs)
-
-    writers = animation.writers.avail
-    for fmt in [video_format] + ANIMATION_OPTS.keys():
-        if ANIMATION_OPTS[fmt][0] in writers:
-            try:
-                return animate(anim, *ANIMATION_OPTS[fmt])
-            except: pass
-    return "<b>Could not generate %s animation</b>" % video_format
-
-
-def figure_display(fig, size=None, format='svg', message=None):
-    if size is not None:
-        inches = size / float(fig.dpi)
-        fig.set_size_inches(inches, inches)
-    prefix = 'data:image/png;base64,'
-    b64 = prefix + print_figure(fig, 'png').encode("base64")
-    if size is not None:
-        html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
-    else:
-        html = "<center><img src='%s' /><center/>" % b64
-    plt.close(fig)
-    return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
-
-
-def figure_fallback(plotobj):
-        message = ('Cannot import matplotlib.animation' if animation is None
-                   else 'Failed to generate matplotlib animation')
-        fig =  plotobj()
-        return figure_display(fig, message=message)
-
-#===============#
-# Display hooks #
-#===============#
-
-def animation_display(anim):
-    return animate(anim, *ANIMATION_OPTS[VIDEO_FORMAT])
-
-
-def stack_display(stack, size=256, format='svg'):
-    if not isinstance(stack, Stack): return None
-    stackplot = viewmap[stack.type](stack, **opts(stack))
-    if len(stack) == 1:
-        fig = stackplot()
-        return figure_display(fig)
-
-    try:    return HTML_video(stackplot, stack)
-    except: return figure_fallback(stackplot)
-
-
-def layout_display(grid, size=256, format='svg'):
-    if not isinstance(grid, GridLayout): return None
-    grid_size = (grid.shape[1]*get_plot_size()[1],
-                 grid.shape[0]*get_plot_size()[0])
-    gridplot = GridLayoutPlot(grid, **dict(opts(grid), size=grid_size))
-    if len(grid)==1:
-        fig =  gridplot()
-        return figure_display(fig)
-
-    try:     return HTML_video(gridplot, grid)
-    except:  return figure_fallback(gridplot)
-
-
-def projection_display(grid, size=256, format='svg'):
-    if not isinstance(grid, CoordinateGrid): return None
-    size_factor = 0.17
-    grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
-                 size_factor*grid.shape[0]*get_plot_size()[0])
-    gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
-    if len(grid)==1:
-        fig =  gridplot()
-        return figure_display(fig)
-
-    try:     return HTML_video(gridplot, grid)
-    except:  return figure_fallback(gridplot)
-
-
-def view_display(view, size=256, format='svg'):
-    if not isinstance(view, View): return None
-    fig = viewmap[view.__class__](view, **opts(view))()
-    return figure_display(fig)
-
-
-def update_matplotlib_rc():
-    """
-    Default changes to the matplotlib rc used by IPython Notebook.
-    """
-    import matplotlib
-    rc= {'figure.figsize': (6.0,4.0),
-         'figure.facecolor': 'white',
-         'figure.edgecolor': 'white',
-         'font.size': 10,
-         'savefig.dpi': 72,
-         'figure.subplot.bottom' : .125
-         }
-    matplotlib.rcParams.update(rc)
-
+    @line_magic
+    def setview(self, parameter_s=''):
+        opts = parameter_s.split()
+        success = self._parse_settings(opts)
+        if success:
+            info = (VIDEO_FORMAT.upper(), FIGURE_FORMAT.upper(), PERCENTAGE_SIZE, FPS)
+            print "Displaying %s animation and %s figures [%d%% size, %s FPS]" % info
+        else:
+            print self.usage_info
 
 
 @magics_class
@@ -248,7 +209,8 @@ class ParamMagics(Magics):
 
             if (WARN_MISFORMATTED_DOCSTRINGS
                 and not unindented.startswith("\n")  and len(unindented.splitlines()) > 1):
-                param.main.warning("Multi-line docstring for %r is incorrectly formatted (should start with newline)" % name)
+                param.main.warning("Multi-line docstring for %r is incorrectly formatted "
+                                   " (should start with newline)" % name)
             # Strip any starting newlines
             while unindented.startswith("\n"):
                 unindented = unindented[1:]
@@ -412,6 +374,145 @@ class ParamMagics(Magics):
         page.page("%s\n\n%s\n\n%s\n\n%s" % (top_heading, table,
                                             docstring_heading, docstrings))
 
+#==================#
+# Helper functions #
+#==================#
+
+def select_format(format_priority):
+    for fmt in format_priority:
+        try:
+            anim = animation.FuncAnimation(plt.figure(),
+                                           lambda x: x, frames=[0,1])
+            animate(anim, *ANIMATION_OPTS[fmt])
+            return fmt
+        except: pass
+    return format_priority[-1]
+
+
+def get_plot_size():
+    factor = PERCENTAGE_SIZE / 100.0
+    return (Plot.size[0] * factor,
+            Plot.size[1] * factor)
+
+
+def opts(obj, options=[]):
+    opt_items = [(k, obj.metadata.get(k)) for k in options if (k in obj.metadata)]
+    size = obj.metadata['size'] if 'size' in obj.metadata else get_plot_size()
+    return dict(opt_items + [('size', size)])
+
+
+def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
+    if extra_args != []:
+        anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+
+    if not hasattr(anim, '_encoded_video'):
+        with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
+            anim.save(f.name, writer=writer, **anim_kwargs)
+            video = open(f.name, "rb").read()
+        anim._encoded_video = video.encode("base64")
+    return tag.format(b64=anim._encoded_video,
+                      mime_type=mime_type)
+
+
+def HTML_video(plot, view):
+    anim = plot.anim(fps=FPS)
+    writers = animation.writers.avail
+    for fmt in [VIDEO_FORMAT] + ANIMATION_OPTS.keys():
+        if ANIMATION_OPTS[fmt][0] in writers:
+            try:
+                return animate(anim, *ANIMATION_OPTS[fmt])
+            except: pass
+    return "<b>Could not generate %s animation</b>" % VIDEO_FORMAT
+
+
+def figure_display(fig, size=None, message=None):
+    if size is not None:
+        inches = size / float(fig.dpi)
+        fig.set_size_inches(inches, inches)
+
+    mime_type = 'svg+xml' if FIGURE_FORMAT.lower()=='svg' else 'png'
+    prefix = 'data:image/%s;base64,' % mime_type
+    b64 = prefix + print_figure(fig, FIGURE_FORMAT).encode("base64")
+    if size is not None:
+        html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
+    else:
+        html = "<center><img src='%s' /><center/>" % b64
+    plt.close(fig)
+    return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
+
+
+def figure_fallback(plotobj):
+        message = ('Cannot import matplotlib.animation' if animation is None
+                   else 'Failed to generate matplotlib animation')
+        fig =  plotobj()
+        return figure_display(fig, message=message)
+
+#===============#
+# Display hooks #
+#===============#
+
+def animation_display(anim):
+    return animate(anim, *ANIMATION_OPTS[VIDEO_FORMAT])
+
+
+def stack_display(stack, size=256):
+    if not isinstance(stack, Stack): return None
+    stackplot = viewmap[stack.type](stack, **opts(stack))
+    if len(stack) == 1:
+        fig = stackplot()
+        return figure_display(fig)
+
+    try:    return HTML_video(stackplot, stack)
+    except: return figure_fallback(stackplot)
+
+
+def layout_display(grid, size=256):
+    if not isinstance(grid, GridLayout): return None
+    grid_size = (grid.shape[1]*get_plot_size()[1],
+                 grid.shape[0]*get_plot_size()[0])
+    gridplot = GridLayoutPlot(grid, **dict(opts(grid), size=grid_size))
+    if len(grid)==1:
+        fig =  gridplot()
+        return figure_display(fig)
+
+    try:     return HTML_video(gridplot, grid)
+    except:  return figure_fallback(gridplot)
+
+
+def projection_display(grid, size=256):
+    if not isinstance(grid, CoordinateGrid): return None
+    size_factor = 0.17
+    grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
+                 size_factor*grid.shape[0]*get_plot_size()[0])
+    gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
+    if len(grid)==1:
+        fig =  gridplot()
+        return figure_display(fig)
+
+    try:     return HTML_video(gridplot, grid)
+    except:  return figure_fallback(gridplot)
+
+
+def view_display(view, size=256):
+    if not isinstance(view, View): return None
+    fig = viewmap[view.__class__](view, **opts(view))()
+    return figure_display(fig)
+
+
+def update_matplotlib_rc():
+    """
+    Default changes to the matplotlib rc used by IPython Notebook.
+    """
+    import matplotlib
+    rc= {'figure.figsize': (6.0,4.0),
+         'figure.facecolor': 'white',
+         'figure.edgecolor': 'white',
+         'font.size': 10,
+         'savefig.dpi': 72,
+         'figure.subplot.bottom' : .125
+         }
+    matplotlib.rcParams.update(rc)
+
 
 
 message = """Welcome to the Imagen IPython extension! (http://ioam.github.io/imagen/)"""
@@ -428,6 +529,7 @@ def load_ipython_extension(ip, verbose=True):
         _loaded = True
 
         ip.register_magics(ParamMagics)
+        ip.register_magics(ViewMagic)
 
         html_formatter = ip.display_formatter.formatters['text/html']
         html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
