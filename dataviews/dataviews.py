@@ -137,6 +137,13 @@ class DataHistogram(DataLayer):
     def ndims(self):
         return len(self.edges)
 
+    @property
+    def xlim(self):
+        return min(self.edges), max(self.edges)
+
+    @property
+    def ylim(self):
+        return min(self.hist), max(self.hist)
 
 
 class DataOverlay(DataLayer, Overlay):
