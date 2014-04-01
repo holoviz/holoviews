@@ -11,7 +11,7 @@ import param
 
 import numpy as np
 import matplotlib
-from imagen.analysis import SheetOperation
+from imagen.analysis import ViewOperation
 from sheetviews import SheetView
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
@@ -19,7 +19,7 @@ hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
 
 
-class HCS(SheetOperation):
+class HCS(ViewOperation):
     """
     Hue-Confidence-Strength plot.
 
@@ -37,7 +37,7 @@ class HCS(SheetOperation):
     flipSC = param.Boolean(default=False, doc="""
         Whether to flip the strength and confidence channels""")
 
-    def _process(self, overlay,p):
+    def _process(self, overlay):
         hue = overlay[0]
         confidence = overlay[1]
 
@@ -55,11 +55,11 @@ class HCS(SheetOperation):
 
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
-        return SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds, mode='rgb')
+        return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds, mode='rgb')]
 
 
 
-class colorize(SheetOperation):
+class colorize(ViewOperation):
     """
     Given a SheetOverlay consisting of a grayscale colormap and a
     second Sheetview with some specified colour map, use the second
@@ -70,7 +70,7 @@ class colorize(SheetOperation):
     value. Arbitrary colorization will be supported in future.
     """
 
-    def _process(self, overlay, p=None):
+    def _process(self, overlay):
 
          if len(overlay) != 2 and overlay[0].mode != 'gray':
              raise Exception("Can only colorize grayscale overlayed with colour map.")
@@ -84,11 +84,11 @@ class colorize(SheetOperation):
 
          C = SheetView(np.ones(overlay[1].data.shape),
                        bounds=overlay.bounds)
-         return HCS(overlay[1] * C * overlay[0].N)
+         return [HCS(overlay[1] * C * overlay[0].N)]
 
 
 
-class cmap2rgb(SheetOperation):
+class cmap2rgb(ViewOperation):
     """
     Convert SheetViews using colormaps to RGBA mode.
     """
@@ -97,27 +97,26 @@ class cmap2rgb(SheetOperation):
           Force the use of a specific color map. Otherwise, the mode
           property of the view is used instead.""")
 
-    def _process(self, sheetview, p=None):
+    def _process(self, sheetview):
         if sheetview.depth != 1:
             raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
-        cmap = matplotlib.cm.get_cmap(sheetview.mode if p.cmap is None else p.cmap)
-        return SheetView(cmap(sheetview.data),
+        cmap = matplotlib.cm.get_cmap(sheetview.mode if self.p.cmap is None else self.p.cmap)
+        return [SheetView(cmap(sheetview.data),
                          bounds=sheetview.bounds,
                          cyclic_range=sheetview.cyclic_range,
                          style=sheetview.style,
                          metadata=sheetview.metadata,
-                         mode='rgba')
+                         mode='rgba')]
 
 
 
-class split(SheetOperation):
+class split(ViewOperation):
     """
     Given SheetViews in RGBA mode, return the R,G,B and A channels as
     a list of SheetViews.
     """
-
-    def _process(self, sheetview, p=None):
+    def _process(self, sheetview):
         if sheetview.depth not in [3,4]:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
-        return tuple(SheetView(sheetview.data[:,:,i], bounds=sheetview.bounds)
-                     for i in range(sheetview.depth))
+        return [SheetView(sheetview.data[:,:,i], bounds=sheetview.bounds)
+                for i in range(sheetview.depth)]
