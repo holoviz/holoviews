@@ -399,14 +399,7 @@ class SheetStack(Stack):
         mapped item.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
-        if isinstance(mapped_items[0][1], tuple):
-            split = [[(k, v) for v in val] for (k, val) in mapped_items]
-            item_groups = [list(el) for el in zip(*split)]
-        else:
-            item_groups = [mapped_items]
-        clones = tuple(self.clone(els, bounds=els[0][1].bounds, **kwargs)
-                       for (i, els) in enumerate(item_groups))
-        return clones if len(clones) > 1 else clones[0]
+        return self.clone(mapped_items, bounds=mapped_items[0][1].bounds, **kwargs)
 
 
     @property
