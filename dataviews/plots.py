@@ -673,7 +673,7 @@ class DataCurvePlot(Plot):
             line_segments.set_color(color)
 
         # Add legend
-        line_segments.set_label(lines.label)
+        line_segments.set_label(lines.legend_label)
 
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)

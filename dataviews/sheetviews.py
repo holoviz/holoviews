@@ -360,15 +360,6 @@ class SheetStack(Stack):
         return view.data[sample]
 
 
-    def unit_sample(self, coord, **kwargs):
-        """
-        Returns a single DataStack for a particular coordinate, containing
-        curves along the specified x_axis and grouped according to the groupby
-        argument.
-        """
-        return self.sample([coord], **kwargs)[coord]
-
-
     def grid_sample(self, rows, cols, lbrt=None, **kwargs):
         """
         Creates a CoordinateGrid of curves according sampled according to
@@ -388,9 +379,9 @@ class SheetStack(Stack):
         shape = (rows, cols)
         bounds = BoundingBox(points=[(l, b), (r, t)])
 
-        items = self.sample(coords, **kwargs)
+        grid = self.sample(coords, **kwargs)
 
-        return DataGrid(bounds, shape, initial_items=items.items())
+        return DataGrid(bounds, shape, initial_items=zip(coords, grid.values()))
 
 
     def map(self, map_fn, **kwargs):

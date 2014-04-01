@@ -391,7 +391,7 @@ class Stack(NdMapping):
                                    for i in range(len(stack_dims)))
         cyclic_range = x_dim.range[1] if x_dim.cyclic else None
 
-        stacks = {}
+        stacks = []
         for sample_ind, sample in enumerate(self._compute_samples(samples)):
 
             stack = DataStack(dimensions=stack_dims,
@@ -400,16 +400,18 @@ class Stack(NdMapping):
 
             for key, x_axis_data in split_data.items():
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
-                sampled_curve_data = [(x, self._get_sample(view,sample))
+                sampled_curve_data = [(x, self._get_sample(view, sample))
                                       for x, view in x_axis_data.items()]
 
                 # Generate a label
                 overlay_items = [(name, key[ind]) for name, ind in zip(group_by, overlay_inds)]
-                label = ', '.join(self.dim_dict[name].pprint_value(val) for name, val in overlay_items)
+                legend_label = ', '.join(self.dim_dict[name].pprint_value(val)
+                                         for name, val in overlay_items)
+                label = " ".join([str(sample), "Curve"])
                 # Generate the curve view
                 curve = DataCurves([sampled_curve_data], cyclic_range=cyclic_range,
                                     metadata=self.metadata, xlabel=x_axis.capitalize(),
-                                    legend_label=label)
+                                    legend_label=legend_label, label=label)
 
                 # Drop overlay dimensions
                 stack_key = tuple([kval for ind, kval in enumerate(key) if ind not in overlay_inds])
@@ -421,8 +423,8 @@ class Stack(NdMapping):
                     stack[stack_key] *= curve
 
             # Completed stack stored for return
-            stacks[samples[sample_ind]] = stack
-        return stacks
+            stacks.append(stack)
+        return GridLayout([stacks])
 
 
 
