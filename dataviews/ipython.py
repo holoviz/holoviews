@@ -14,9 +14,9 @@ import param
 from tempfile import NamedTemporaryFile
 import textwrap
 
-from dataviews import Stack, DataStack, DataLayer
+from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap
-from sheetviews import SheetStack, SheetLayer, GridLayout, CoordinateGrid
+from sheetviews import GridLayout, CoordinateGrid
 from views import View
 
 # Variables controlled via the %view magic
@@ -80,7 +80,7 @@ class ViewMagic(Magics):
         try:
             fps = int(fps_str)
         except:
-            print "Invalid frame rate: %s" %  fps_str
+            print "Invalid frame rate: '%s'" %  fps_str
             return False
 
         VIDEO_FORMAT, FPS = format_choice, fps
@@ -133,7 +133,7 @@ class ViewMagic(Magics):
     @cell_magic
     def view(self, line, cell):
         opts = line.split()
-        success = self._parse_settings(opts)
+        self._parse_settings(opts)
         self.shell.run_cell(cell)
 
     @line_magic
