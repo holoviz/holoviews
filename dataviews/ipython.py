@@ -132,9 +132,12 @@ class ViewMagic(Magics):
 
     @cell_magic
     def view(self, line, cell):
+        global FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS
+        start_opts = [FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS]
         opts = line.split()
         self._parse_settings(opts)
         self.shell.run_cell(cell)
+        [FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS] = start_opts
 
     @line_magic
     def setview(self, parameter_s=''):
