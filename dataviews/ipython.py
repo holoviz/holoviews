@@ -399,9 +399,7 @@ def get_plot_size():
 
 
 def opts(obj, options=[]):
-    opt_items = [(k, obj.metadata.get(k)) for k in options if (k in obj.metadata)]
-    size = obj.metadata['size'] if 'size' in obj.metadata else get_plot_size()
-    return dict(opt_items + [('size', size)])
+    return {'size':get_plot_size()}
 
 
 def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
