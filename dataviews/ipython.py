@@ -12,7 +12,8 @@ except:
 
 import param
 from tempfile import NamedTemporaryFile
-import textwrap
+from functools import wraps
+import textwrap, traceback
 
 from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap
@@ -22,6 +23,7 @@ from views import View
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
 
+ENABLE_TRACEBACKS=False # To assist with debugging of display hooks
 
 GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
 VIDEO_TAG = """<center><video controls>
@@ -586,10 +588,22 @@ def figure_fallback(plotobj):
 # Display hooks #
 #===============#
 
+
+def show_tracebacks(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except:
+            if ENABLE_TRACEBACKS:
+                traceback.print_exc()
+    return wrapped
+
+@show_tracebacks
 def animation_display(anim):
     return animate(anim, *ANIMATION_OPTS[VIDEO_FORMAT])
 
-
+@show_tracebacks
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
     stackplot = viewmap[stack.type](stack, **opts(stack))
@@ -600,7 +614,7 @@ def stack_display(stack, size=256):
     try:    return HTML_video(stackplot, stack)
     except: return figure_fallback(stackplot)
 
-
+@show_tracebacks
 def layout_display(grid, size=256):
     if not isinstance(grid, GridLayout): return None
     grid_size = (grid.shape[1]*get_plot_size()[1],
@@ -613,7 +627,7 @@ def layout_display(grid, size=256):
     try:     return HTML_video(gridplot, grid)
     except:  return figure_fallback(gridplot)
 
-
+@show_tracebacks
 def projection_display(grid, size=256):
     if not isinstance(grid, CoordinateGrid): return None
     size_factor = 0.17
@@ -627,7 +641,7 @@ def projection_display(grid, size=256):
     try:     return HTML_video(gridplot, grid)
     except:  return figure_fallback(gridplot)
 
-
+@show_tracebacks
 def view_display(view, size=256):
     if not isinstance(view, View): return None
     fig = viewmap[view.__class__](view, **opts(view))()
