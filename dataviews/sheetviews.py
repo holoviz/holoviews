@@ -56,7 +56,7 @@ class SheetLayer(View):
         roi_bounds = self.roi_bounds if self.roi_bounds else other.roi_bounds
         roi_bounds = self.bounds if roi_bounds is None else roi_bounds
         return SheetOverlay(overlays, self.bounds,
-                            style=self.style, metadata=self.metadata,
+                            metadata=self.metadata,
                             roi_bounds=roi_bounds)
 
 
@@ -112,7 +112,7 @@ class SheetOverlay(SheetLayer, Overlay):
         """
         return SheetOverlay([el.get_roi(self.roi_bounds) for el in self.data],
                             bounds=self.roi_bounds if self.roi_bounds else self.bounds,
-                            style=self.style, metadata=self.metadata)
+                            metadata=self.metadata)
 
 
     def __len__(self):

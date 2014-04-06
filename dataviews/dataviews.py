@@ -46,7 +46,7 @@ class DataLayer(View):
         else:
             raise TypeError('Can only create an overlay of DataViews.')
 
-        return DataOverlay(overlays, style=self.style, metadata=self.metadata)
+        return DataOverlay(overlays, metadata=self.metadata)
 
 
 
@@ -196,10 +196,10 @@ class Stack(NdMapping):
        all available dimensions e.g. {label1}, {value2} and so on.""")
 
     data_type = View
-
     overlay_type = Overlay
 
     _type = None
+    _style = None
 
     @property
     def type(self):
@@ -212,11 +212,33 @@ class Stack(NdMapping):
 
 
     @property
+    def style(self):
+        """
+        The type of elements stored in the stack.
+        """
+        if self._style is None:
+            self._style = None if len(self) == 0 else self.top.style
+        return self._style
+
+
+    @style.setter
+    def style(self, style_name):
+        self._style = style_name
+        for val in self.values():
+            val.style = style_name
+
+
+    @property
     def empty_element(self):
         return self._type(None)
 
 
     def _item_check(self, dim_vals, data):
+
+        if self.style is not None and (data.style != self.style):
+            raise AssertionError("%s must only contain one type of style." %
+                                 self.__class__.__name__)
+
 
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of View." %

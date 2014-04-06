@@ -14,7 +14,7 @@ from ndmapping import NdMapping, Dimension, AttrDict, map_type
 class View(param.Parameterized):
     """
     A view is a data structure for holding data, which may be plotted
-    using matplotlib. Views have an associated title, style and
+    using matplotlib. Views have an associated title, style name and
     metadata information.  All Views may be composed together into a
     GridLayout using the addition operator.
     """
@@ -26,15 +26,32 @@ class View(param.Parameterized):
     title = param.String(default=None, allow_None=True, doc="""
        A short description of the layer that may be used as a title.""")
 
-    style = param.Dict(default=AttrDict(), doc="""
-        Optional keywords for specifying the display style.""")
-
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional information to be associated with the Layer.""")
 
 
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view. If a style name is not set and but a label is
+        assigned, then this label name will be used instead
+        """
+        if (self._style is None) and self.label:
+            return self.label
+        elif self._style is None:
+            return 'Default'
+        else:
+            return self._style
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
+
     def __init__(self, data, **kwargs):
         self.data = data
+        self._style = kwargs.pop('style', None)
         super(View, self).__init__(**kwargs)
 
 
@@ -58,6 +75,16 @@ class Overlay(View):
     def __init__(self, overlays, **kwargs):
         super(Overlay, self).__init__([], **kwargs)
         self.set(overlays)
+
+    @property
+    def style(self):
+        return [el.style for el in self]
+
+
+    @style.setter
+    def style(self, styles):
+        for layer, style in zip(self, styles):
+            layer.style = style
 
 
     def add(self, layer):
