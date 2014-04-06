@@ -367,8 +367,8 @@ class ParamPager(object):
 @magics_class
 class ParamMagics(Magics):
     """
-    Implements the %params line magic which is useful for inspecting
-    the parameters of a parameterized class or object.
+    Implements the %params line magic used to inspect the parameters
+    of a parameterized class or object.
     """
     def __init__(self, *args, **kwargs):
         super(ParamMagics, self).__init__(*args, **kwargs)
