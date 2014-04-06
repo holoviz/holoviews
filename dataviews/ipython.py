@@ -399,6 +399,117 @@ class ParamMagics(Magics):
 
 
 
+@magics_class
+class PlotOptsMagic(Magics):
+    """
+    Implements the %plotopts line magic used to set the plotting
+    options on view objects.
+    """
+    def __init__(self, *args, **kwargs):
+        super(PlotOptsMagic, self).__init__(*args, **kwargs)
+        self.param_pager = ParamPager()
+
+
+    @classmethod
+    def _get_view(self, shell, token):
+        """
+        Given a string with the object name, return the view
+        object. If the object is a GridLayout with integer indexing,
+        apply the indexing to return the reference view object.
+        """
+        obj =  shell._object_find(token)
+        found, indexed = obj.found, False
+        # Attempt to index (e.g. for GridLayouts)
+        if not found:
+            indexed = (token.count('['), token.count(']')) == (1,1)
+            if indexed:
+                index_split = token.rsplit('[')
+                indexing_string = '['+index_split[1]
+                try:
+                    indices = eval(indexing_string)
+                except:
+                    indices = False
+                    print "Could not evaluate index %s" % indexing_string
+                obj =  shell._object_find(index_split[0])
+                found = obj.found and isinstance(obj.obj, GridLayout)
+
+        # If the object still hasn't been found in the namespace...
+        if not found:
+            print "Object %r not found in the namespace." % token
+            return False
+        if indexed:   return obj.obj[tuple(indices)]
+        else:         return obj.obj
+
+
+    @classmethod
+    def _plot_parameter_list(cls, view):
+        """
+        Lookup the plot type for a given view object and return the
+        list of available parameter names and the plot class.
+        """
+        if not isinstance(view, (View, GridLayout)):
+            print "Object %s is not a View" % view.__class__.__name__
+            param_list =  []
+        plotclass = viewmap.get(view.__class__, None)
+        if not plotclass and isinstance(view, GridLayout):
+            param_list = GridLayoutPlot.params().keys()
+        elif not plotclass:
+            print("Could not find appropriate plotting class for view of type %r "
+                  % view.__class__.__name__)
+            param_list =  []
+        else:
+            param_list =  plotclass.params().keys()
+        return param_list, plotclass
+
+    @classmethod
+    def option_completer(cls, k,v):
+        """
+        Tab completion hook for the %plotopts magic.
+        """
+        view = cls._get_view(k, v.line.split()[1])
+        if view is False: return []
+        return ['%s=' % p for p in cls._plot_parameter_list(view)[0]]
+
+
+    @line_magic
+    def plotopts(self, parameter_s=''):
+        """
+        The %plotopts line magic to set the plotting options on a
+        particular view object using keyword-value pairs. If no
+        keywords are given, parameter information about the
+        corresponding plot type is displayed in the IPython pager.
+
+        Usage: %plotopts <view> [<keyword>=<value>]
+        """
+        if parameter_s=='':
+            print "Please specify a view object to configure."
+            return
+
+        split = parameter_s.split()
+        # Beware! Uses IPython internals that may change in future...
+        obj = self._get_view(self.shell, split[0])
+        if obj is False: return
+
+        params, options = obj.params().keys(), {}
+        for opt in split[1:]:
+            try:
+                option = eval("dict(%s)" % opt)
+                options.update(option)
+            except:
+                print "Could not parse option %s" % opt
+
+        allowed_params, plotclass = self._plot_parameter_list(obj)
+        mismatches = set(options.keys()) - set(allowed_params)
+
+        if mismatches:
+            mismatch_list = ', '.join(repr(el) for el in mismatches)
+            print "Parameters %s are not valid for this object"  % mismatch_list
+        elif len(split) == 1:
+            self.param_pager(plotclass)
+        else:
+            obj.metadata['plot_opts'] = options
+
+
 #==================#
 # Helper functions #
 #==================#
@@ -420,8 +531,9 @@ def get_plot_size():
             Plot.size[1] * factor)
 
 
-def opts(obj, options=[]):
-    return {'size':get_plot_size()}
+def opts(obj):
+    extra_opts = obj.metadata.get('plot_opts', {})
+    return dict({'size':get_plot_size()}, **extra_opts)
 
 
 def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
@@ -551,8 +663,13 @@ def load_ipython_extension(ip, verbose=True):
     if not _loaded:
         _loaded = True
 
+
         ip.register_magics(ParamMagics)
         ip.register_magics(ViewMagic)
+        ip.register_magics(PlotOptsMagic)
+
+        # Configuring tab completion
+        ip.set_hook('complete_command', PlotOptsMagic.option_completer, str_key = '%plotopts')
 
         html_formatter = ip.display_formatter.formatters['text/html']
         html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
