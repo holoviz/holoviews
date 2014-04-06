@@ -19,7 +19,7 @@ class View(param.Parameterized):
     GridLayout using the addition operator.
     """
 
-    label = param.String(default=None, allow_None=True, doc="""
+    label = param.String(default=None, allow_None=True, constant=True, doc="""
       A short label used to indicate what kind of data is contained
       within the view object.""")
 
