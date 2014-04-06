@@ -5,7 +5,7 @@ except: animation = None
 from IPython.core.pylabtools import print_figure
 from IPython.core import page
 try:
-    from IPython.core.magic import Magics, magics_class, line_magic, cell_magic
+    from IPython.core.magic import Magics, magics_class, line_magic, cell_magic, line_cell_magic
 except:
     from nose.plugins.skip import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -59,12 +59,17 @@ class ViewMagic(Magics):
 
     Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
     """
+
+    anim_formats = ['webm','h264','gif']
+
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.anim_formats = ['webm','h264','gif']
         self.usage_info = "Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]"
         self.usage_info += " (Arguments may be in any order)"
 
+    @classmethod
+    def option_completer(cls, k,v):
+        return cls.anim_formats + ['png', 'svg']
 
     def _set_animation_options(self, anim_spec):
         """
@@ -132,25 +137,22 @@ class ViewMagic(Magics):
 
         return success
 
-    @cell_magic
-    def view(self, line, cell):
+    @line_cell_magic
+    def view(self, line, cell=None):
         global FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS
         start_opts = [FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS]
-        opts = line.split()
-        self._parse_settings(opts)
-        self.shell.run_cell(cell)
-        [FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS] = start_opts
 
-    @line_magic
-    def setview(self, parameter_s=''):
-        opts = parameter_s.split()
+        opts = line.split()
         success = self._parse_settings(opts)
-        if success:
+
+        if cell is None and success:
             info = (VIDEO_FORMAT.upper(), FIGURE_FORMAT.upper(), PERCENTAGE_SIZE, FPS)
             print "Displaying %s animation and %s figures [%d%% size, %s FPS]" % info
+        elif cell and success:
+            self.shell.run_cell(cell)
+            [FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS] = start_opts
         else:
             print self.usage_info
-
 
 
 class ParamPager(object):
@@ -684,6 +686,8 @@ def load_ipython_extension(ip, verbose=True):
 
         # Configuring tab completion
         ip.set_hook('complete_command', PlotOptsMagic.option_completer, str_key = '%plotopts')
+        ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
+        ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
 
         html_formatter = ip.display_formatter.formatters['text/html']
         html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
