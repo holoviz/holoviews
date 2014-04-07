@@ -555,16 +555,15 @@ class StyleMagic(Magics):
 
     @classmethod
     def set_style(cls, obj, name_map):
-        if isinstance(obj, Overlay):
+        if isinstance(obj, GridLayout):
+            for subview in obj.values():
+                cls.set_style(subview, name_map)
+        elif isinstance(obj.style, list):
             style_names = [name_map.get(cls.trim(obj, s),None) if cls.trim(obj, s)
                            in name_map else s for s in obj.style]
             obj.style = style_names
-        elif isinstance(obj, (View, Stack)):
-            if cls.trim(obj, obj.style) in name_map:
-                obj.style = name_map[cls.trim(obj, obj.style)]
-        elif isinstance(obj, GridLayout):
-            for subview in obj.values():
-                cls.set_style(subview, name_map)
+        elif cls.trim(obj, obj.style) in name_map:
+            obj.style = name_map[cls.trim(obj, obj.style)]
 
     @classmethod
     def set_object_style(cls, obj):
