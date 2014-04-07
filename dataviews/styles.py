@@ -5,7 +5,6 @@ added to allow customization of display for individual view objects by
 adding the customized Style object to the StyleMap and linking the
 appropriate style name to the object.
 """
-from dataviews import View
 
 
 class Cycle(object):
@@ -157,7 +156,7 @@ class StyleMap(object):
         """
         if isinstance(obj, str):
             return self.fuzzy_match_style(obj)
-        elif isinstance(obj, View):
+        else:
             if obj.name in self.items.keys(): return self.items[obj.name]
             key = obj.label if obj.style == 'Default' else obj.style
             return self.fuzzy_match_style(key)
