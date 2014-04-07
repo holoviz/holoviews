@@ -399,11 +399,11 @@ class GridLayoutPlot(Plot):
                 subax = plt.subplot(self._gridspec[r,c])
                 subview = view.roi if self.roi else view
                 plotopts = view.metadata.get('plot_opts', {})
-                print plotopts
                 vtype = subview.type if isinstance(subview,Stack) else subview.__class__
                 subplot = viewmap[vtype](subview, **dict(layout_opts, **plotopts))
             self.subplots.append(subplot)
             subplot(subax)
+        plt.tight_layout()
 
         if not axis: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -574,7 +574,7 @@ class DataCurvePlot(Plot):
 
     def _reduce_ticks(self, x_values):
         values = [x_values[0]]
-        rangex = x_values[-1] - x_values[0]
+        rangex = float(x_values[-1]) - x_values[0]
         for i in xrange(1, self.num_ticks+1):
             values.append(values[-1]+rangex/(self.num_ticks))
         return values, [self._format_x_tick_label(x) for x in values]
