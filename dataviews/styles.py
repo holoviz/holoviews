@@ -86,13 +86,25 @@ class StyleMap(object):
     def __init__(self):
         self.__dict__['items'] = {}
 
+
+    def fuzzy_matches(self, name):
+        reversed_matches = sorted((len(key), key) for key in self.items.keys()
+                                  if name.endswith(key))[::-1]
+        if reversed_matches:
+            return zip(*reversed_matches)[1]
+        else:
+            return []
+
+
     def fuzzy_match_style(self, name):
         matches = sorted((len(key), style) for key, style in self.items.items()
-                         if name.endswith(key))
+                         if name.endswith(key))[::-1]
+
         if matches == []:
             return Style()
         else:
-            return matches[-1][1]
+            return matches[0][1]
+
 
     def styles(self):
         """
@@ -145,8 +157,8 @@ class StyleMap(object):
         """
         if isinstance(obj, str):
             return self.fuzzy_match_style(obj)
-
         elif isinstance(obj, View):
+            if obj.name in self.items.keys(): return self.items[obj.name]
             key = obj.label if obj.style == 'Default' else obj.style
             return self.fuzzy_match_style(key)
 
