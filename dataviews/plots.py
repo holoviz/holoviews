@@ -1,4 +1,4 @@
-from itertools import groupby, cycle
+from itertools import groupby
 import string
 
 import numpy as np
@@ -11,12 +11,12 @@ import matplotlib.gridspec as gridspec
 
 import param
 
-from dataviews import Stack, TableView, TableStack, DataCurves, DataStack, DataOverlay
+from dataviews import Stack, TableView, TableStack
+from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
 from views import GridLayout, View
-
-
+from styles import Styles
 
 class Plot(param.Parameterized):
     """
@@ -33,9 +33,6 @@ class Plot(param.Parameterized):
 
     show_axes = param.Boolean(default=True, doc="""
       Whether to show labelled axes for the plot.""")
-
-    show_legend = param.Boolean(default=True, doc="""
-      Whether to show legend for the plot.""")
 
     show_grid = param.Boolean(default=False, doc="""
       Whether to show a Cartesian grid on the plot.""")
@@ -203,7 +200,7 @@ class SheetLinesPlot(Plot):
         title = self._format_title(self._stack, -1)
         ax = self._axis(axis, title, 'x','y', self._stack.bounds.lbrt())
         lines = self._stack.top
-        line_segments = LineCollection([], zorder=zorder, **lines.style)
+        line_segments = LineCollection([], zorder=zorder, **Styles[lines].opts)
         line_segments.set_paths(lines.data)
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)
@@ -239,7 +236,7 @@ class SheetPointsPlot(Plot):
         ax = self._axis(axis, title, 'x','y', self._stack.bounds.lbrt())
         points = self._stack.top
         scatterplot = plt.scatter(points.data[:,0], points.data[:,1],
-                                  zorder=zorder, **points.style)
+                                  zorder=zorder, **Styles[points].opts)
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -289,9 +286,12 @@ class SheetViewPlot(Plot):
         (l,b,r,t) = self._stack.bounds.lbrt()
         ax = self._axis(axis, title, 'x','y', (l,b,r,t))
 
-        cmap = {'cmap':sheetview.mode} if sheetview.depth==1 else {}
+        options = Styles[sheetview].opts
+        if sheetview.depth!=1:
+            options.pop('cmap',None)
+
         im = ax.imshow(sheetview.data, extent=[l,r,b,t],
-                       zorder=zorder, interpolation='nearest', **cmap)
+                       zorder=zorder, interpolation='nearest', **options)
         self.handles['im'] = im
 
         normalization = sheetview.data.max()
@@ -318,8 +318,6 @@ class SheetViewPlot(Plot):
         bar = self.handles.get('bar',None)
 
         sheetview = self._stack.values()[n]
-        cmap = 'hsv' if (sheetview.cyclic_range is not None) else 'gray'
-        im.set_cmap(sheetview.style.get('cmap', cmap))
         im.set_data(sheetview.data)
         normalization = sheetview.data.max()
         cmax = max([normalization, sheetview.cyclic_range])
@@ -645,7 +643,7 @@ class DataCurvePlot(Plot):
                 self.peak_argmax = np.argmax(y_values)
 
 
-    def __call__(self, axis=None, zorder=0, color='b', lbrt=None):
+    def __call__(self, axis=None, zorder=0, cyclic_index=0, lbrt=None):
         title = self._format_title(self._stack, -1)
         lines = self._stack.top
 
@@ -666,11 +664,8 @@ class DataCurvePlot(Plot):
                         xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
-        line_segments = LineCollection([], zorder=zorder, **lines.style)
+        line_segments = LineCollection([], zorder=zorder, **Styles[lines][cyclic_index])
         line_segments.set_paths(lines.data)
-        line_segments.set_linewidth(2.0)
-        if 'color' not in lines.style:
-            line_segments.set_color(color)
 
         # Add legend
         line_segments.set_label(lines.legend_label)
@@ -715,7 +710,8 @@ class DataPlot(Plot):
     DataLayer objects.
     """
 
-    color_cycle = param.List(default=['b', 'g', 'r', 'y', 'm'])
+    show_legend = param.Boolean(default=True, doc="""
+      Whether to show legend for the plot.""")
 
     _stack_type = DataStack
 
@@ -723,7 +719,6 @@ class DataPlot(Plot):
         self._stack = self._check_stack(overlays, DataOverlay)
         self.plots = []
         super(DataPlot, self).__init__(**kwargs)
-        self._color = cycle(self.color_cycle)
 
 
     def __call__(self, axis=None, zorder=0, **kwargs):
@@ -731,12 +726,19 @@ class DataPlot(Plot):
 
         ax = self._axis(axis, title, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
 
-        for zorder, stack in enumerate(self._stack.split()):
+
+        stacks = self._stack.split()
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(stacks, lambda s: s.style))
+
+        for zorder, stack in enumerate(stacks):
+            cyclic_index, _ = style_groups[stack.style].next()
+
             plotype = viewmap[stack.type]
             plot = plotype(stack, size=self.size, show_axes=self.show_axes,
                            show_legend=self.show_legend, show_title=self.show_title,
                            **kwargs)
-            plot(ax, zorder=zorder, color=self._color.next(), lbrt=self._stack.lbrt)
+            plot(ax, zorder=zorder, lbrt=self._stack.lbrt, cyclic_index=cyclic_index)
             self.plots.append(plot)
 
         if axis is None: plt.close(self.handles['fig'])
