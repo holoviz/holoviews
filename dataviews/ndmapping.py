@@ -43,6 +43,7 @@ class Dimension(param.Parameterized):
 
     unit = param.String(default=None, doc="Unit string associated with the Dimension.")
 
+    format_string = param.String(default="{name} = {val}")
 
     def __init__(self, name, **params):
         """
@@ -58,8 +59,15 @@ class Dimension(param.Parameterized):
 
 
     def pprint_value(self, value):
-        return "{name} = {val} {unit}".format(name=self.name.capitalize(),
-                                              val=value, unit=self.unit)
+        """
+        Pretty prints the dimension name and value with the format_string
+        parameter and if supplied adds the unit string parameter.
+        """
+
+        unit = '' if self.unit is None else ' ' + self.unit
+        return self.format_string.format(name=self.name.capitalize(),
+                                         val=round(float(value), 2),
+                                         unit=unit)
 
 
 

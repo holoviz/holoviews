@@ -59,34 +59,13 @@ class Plot(param.Parameterized):
         return [f for f in zip(*parse)[1] if f is not None]
 
 
-    def _format_title(self, stack, index):
-        """
-        Format a title string based on the keys/values of the view
-        stack.
-        """
-        if stack.values()[index].title is not None:
-            return stack.values()[index].title
-        labels = stack.dimension_labels
-        vals = stack.keys()[index]
-        if not isinstance(vals, tuple): vals = (vals,)
-        fields = self._title_fields(stack)
-        if fields == []:
-            return stack.title if stack.title else ''
-        label_map = dict(('label%d' % i, l) for (i,l) in enumerate(labels))
-        val_map =   dict(('value%d' % i, float(l)) for (i,l) in enumerate(vals))
-        format_items = dict(label_map,**val_map)
-        if not set(fields).issubset(format_items):
-            raise Exception("Cannot format")
-        return stack.title.format(**format_items)
-
-
     def _check_stack(self, view, element_type=View):
         """
         Helper method that ensures a given view is always returned as
         an imagen.SheetStack object.
         """
         if not isinstance(view, self._stack_type):
-            stack = self._stack_type(initial_items=(0, view), title=view.title)
+            stack = self._stack_type(initial_items=(0, view))
             if self._title_fields(stack) != []:
                 raise Exception('Can only format title string for animation and stacks.')
         else:
@@ -97,7 +76,7 @@ class Plot(param.Parameterized):
         return stack
 
 
-    def _axis(self, axis, title, xlabel=None, ylabel=None, lbrt=None, xticks=None, yticks=None):
+    def _axis(self, axis, title=None, xlabel=None, ylabel=None, lbrt=None, xticks=None, yticks=None):
         "Return an axis which may need to be initialized from a new figure."
         if axis is None:
             fig = plt.figure()
@@ -125,7 +104,7 @@ class Plot(param.Parameterized):
             axis.set_yticks(yticks[0])
             axis.set_yticklabels(yticks[1])
 
-        if self.show_title:
+        if self.show_title and title is not None:
             self.handles['title'] = axis.set_title(title)
 
         if xlabel: axis.set_xlabel(xlabel)
@@ -191,16 +170,17 @@ class SheetLinesPlot(Plot):
 
     _stack_type = SheetStack
 
-    def __init__(self, contours, **kwargs):
+    def __init__(self, contours, zorder=0, **kwargs):
+        self.zorder = zorder
         self._stack = self._check_stack(contours, SheetLines)
         super(SheetLinesPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None, zorder=0):
-        title = self._format_title(self._stack, -1)
-        ax = self._axis(axis, title, 'x','y', self._stack.bounds.lbrt())
+    def __call__(self, axis=None):
         lines = self._stack.top
-        line_segments = LineCollection([], zorder=zorder, **Styles[lines].opts)
+        title = None if self.zorder > 0 else lines.title
+        ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
+        line_segments = LineCollection([], zorder=self.zorder, **Styles[lines].opts)
         line_segments.set_paths(lines.data)
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)
@@ -212,7 +192,7 @@ class SheetLinesPlot(Plot):
         n = n  if n < len(self) else len(self) - 1
         contours = self._stack.values()[n]
         self.handles['line_segments'].set_paths(contours.data)
-        if self.show_title:
+        if self.show_title and self.zorder == 0:
             self.handles['title'].set_text(self._format_title(self._stack, n))
         plt.draw()
 
@@ -226,17 +206,19 @@ class SheetPointsPlot(Plot):
 
     _stack_type = SheetStack
 
-    def __init__(self, contours, **kwargs):
+    def __init__(self, contours, zorder=0, **kwargs):
+        self.zorder = zorder
         self._stack = self._check_stack(contours, SheetPoints)
         super(SheetPointsPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None, zorder=0):
-        title = self._format_title(self._stack, -1)
-        ax = self._axis(axis, title, 'x','y', self._stack.bounds.lbrt())
+    def __call__(self, axis=None):
         points = self._stack.top
-        scatterplot = plt.scatter(points.data[:,0], points.data[:,1],
-                                  zorder=zorder, **Styles[points].opts)
+        title = None if self.zorder > 0 else points.title
+        ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
+
+        scatterplot = plt.scatter(points.data[:, 0], points.data[:, 1],
+                                  zorder=self.zorder, **Styles[points].opts)
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -246,8 +228,8 @@ class SheetPointsPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         points = self._stack.values()[n]
         self.handles['scatter'].set_offsets(points.data)
-        if self.show_title:
-            self.handles['title'].set_text(self._format_title(self._stack, n))
+        if self.show_title and self.zorder == 0:
+            self.handles['title'].set_text(points.title)
         plt.draw()
 
 
@@ -264,7 +246,8 @@ class SheetViewPlot(Plot):
 
     _stack_type = SheetStack
 
-    def __init__(self, sheetview, **kwargs):
+    def __init__(self, sheetview, zorder=0, **kwargs):
+        self.zorder = zorder
         self._stack = self._check_stack(sheetview, SheetView)
         super(SheetViewPlot, self).__init__(**kwargs)
 
@@ -280,18 +263,18 @@ class SheetViewPlot(Plot):
         bar.draw_all()
 
 
-    def __call__(self, axis=None, zorder=0):
+    def __call__(self, axis=None):
         sheetview = self._stack.top
-        title = self._format_title(self._stack, -1)
-        (l,b,r,t) = self._stack.bounds.lbrt()
-        ax = self._axis(axis, title, 'x','y', (l,b,r,t))
+        (l, b, r, t) = self._stack.bounds.lbrt()
+        title = None if self.zorder > 0 else sheetview.title
+        ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
 
         options = Styles[sheetview].opts
-        if sheetview.depth!=1:
-            options.pop('cmap',None)
+        if sheetview.depth != 1:
+            options.pop('cmap', None)
 
-        im = ax.imshow(sheetview.data, extent=[l,r,b,t],
-                       zorder=zorder, interpolation='nearest', **options)
+        im = ax.imshow(sheetview.data, extent=[l, r, b, t],
+                       zorder=self.zorder, interpolation='nearest', **options)
         self.handles['im'] = im
 
         normalization = sheetview.data.max()
@@ -324,8 +307,8 @@ class SheetViewPlot(Plot):
         im.set_clim([0.0, cmax])
         if self.colorbar: self.toggle_colorbar(bar, cmax)
 
-        if self.show_title:
-            self.handles['title'].set_text(self._format_title(self._stack, n))
+        if self.show_title and self.zorder == 0:
+            self.handles['title'].set_text(sheetview.title)
         plt.draw()
 
 
@@ -349,14 +332,14 @@ class SheetPlot(Plot):
         super(SheetPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None, zorder=0):
-        title = self._format_title(self._stack, -1)
-        ax = self._axis(axis, title, 'x','y', self._stack.bounds.lbrt())
+    def __call__(self, axis=None):
+        ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
 
         for zorder, stack in enumerate(self._stack.split()):
             plotype = viewmap[stack.type]
-            plot = plotype(stack, size=self.size, show_axes=self.show_axes)
-            plot(ax, zorder=zorder)
+            plot = plotype(stack, zorder=zorder, size=self.size,
+                           show_axes=self.show_axes)
+            plot(ax)
             self.plots.append(plot)
 
         if axis is None: plt.close(self.handles['fig'])
@@ -399,11 +382,15 @@ class GridLayoutPlot(Plot):
 
 
     def __call__(self, axis=None):
-        ax = self._axis(axis, '', '','', None)
+        ax = self._axis(axis, None, '', '', None)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
         coords = [(r,c) for c in range(self.cols) for r in range(self.rows)]
+
+        layout_opts = dict(show_axes=self.show_axes,
+                           show_grid=self.show_grid,
+                           show_title=self.show_title)
 
         self.subplots = []
         for (r,c) in coords:
@@ -411,8 +398,10 @@ class GridLayoutPlot(Plot):
             if view is not None:
                 subax = plt.subplot(self._gridspec[r,c])
                 subview = view.roi if self.roi else view
+                plotopts = view.metadata.get('plot_opts', {})
+                print plotopts
                 vtype = subview.type if isinstance(subview,Stack) else subview.__class__
-                subplot = viewmap[vtype](subview, show_axes=self.show_axes)
+                subplot = viewmap[vtype](subview, **dict(layout_opts, **plotopts))
             self.subplots.append(subplot)
             subplot(subax)
 
@@ -551,7 +540,8 @@ class DataCurvePlot(Plot):
 
     _stack_type = DataStack
 
-    def __init__(self, curves, **kwargs):
+    def __init__(self, curves, zorder=0, **kwargs):
+        self.zorder = zorder
         self._stack = self._check_stack(curves, DataCurves)
         self.cyclic_range = self._stack.top.cyclic_range
 
@@ -643,8 +633,7 @@ class DataCurvePlot(Plot):
                 self.peak_argmax = np.argmax(y_values)
 
 
-    def __call__(self, axis=None, zorder=0, cyclic_index=0, lbrt=None):
-        title = self._format_title(self._stack, -1)
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         lines = self._stack.top
 
         # Create xticks and reorder data if cyclic
@@ -660,11 +649,12 @@ class DataCurvePlot(Plot):
         if lbrt is None:
             lbrt = lines.lbrt
 
-        ax = self._axis(axis, title, lines.xlabel, lines.ylabel,
+        ax = self._axis(axis, lines.title, lines.xlabel, lines.ylabel,
                         xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
-        line_segments = LineCollection([], zorder=zorder, **Styles[lines][cyclic_index])
+        line_segments = LineCollection([], zorder=self.zorder,
+                                       **Styles[lines][cyclic_index])
         line_segments.set_paths(lines.data)
 
         # Add legend
@@ -687,12 +677,12 @@ class DataCurvePlot(Plot):
 
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
-        contours = self._stack.values()[n]
+        lines = self._stack.values()[n]
         if self.cyclic_range is not None:
-            self._cyclic_curves(contours)
-        self.handles['line_segments'].set_paths(contours.data)
-        if self.show_title:
-            self.handles['title'].set_text(self._format_title(self._stack, n))
+            self._cyclic_curves(lines)
+        self.handles['line_segments'].set_paths(lines.data)
+        if self.show_title and self.zorder == 0:
+            self.handles['title'].set_text(lines.title)
         plt.draw()
 
 
@@ -721,11 +711,8 @@ class DataPlot(Plot):
         super(DataPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None, zorder=0, **kwargs):
-        title = self._format_title(self._stack, -1)
-
-        ax = self._axis(axis, title, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
-
+    def __call__(self, axis=None, **kwargs):
+        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
 
         stacks = self._stack.split()
         style_groups = dict((k, enumerate(list(v))) for k,v
@@ -737,8 +724,8 @@ class DataPlot(Plot):
             plotype = viewmap[stack.type]
             plot = plotype(stack, size=self.size, show_axes=self.show_axes,
                            show_legend=self.show_legend, show_title=self.show_title,
-                           **kwargs)
-            plot(ax, zorder=zorder, lbrt=self._stack.lbrt, cyclic_index=cyclic_index)
+                           show_grid=self.show_grid, zorder=zorder, **kwargs)
+            plot(ax, cyclic_index=cyclic_index, lbrt=self._stack.lbrt)
             self.plots.append(plot)
 
         if axis is None: plt.close(self.handles['fig'])
@@ -784,7 +771,7 @@ class DataGridPlot(Plot):
 
 
     def __call__(self, axis=None):
-        ax = self._axis(axis, '', '','', None)
+        ax = self._axis(axis)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
@@ -850,8 +837,9 @@ class TablePlot(Plot):
 
     _stack_type = TableStack
 
-    def __init__(self, contours, **kwargs):
-        self._stack = self._check_stack(contours, TableView)
+    def __init__(self, tables, zorder=0, **kwargs):
+        self.zorder = zorder
+        self._stack = self._check_stack(tables, TableView)
         super(TablePlot, self).__init__(**kwargs)
 
 
@@ -872,11 +860,11 @@ class TablePlot(Plot):
             return formatted
 
 
-    def __call__(self, axis=None, zorder=0):
-        title = self._format_title(self._stack, -1)
-        ax = self._axis(axis, title)
-
+    def __call__(self, axis=None):
         tableview = self._stack.top
+
+        ax = self._axis(axis, tableview.title)
+
         ax.set_axis_off()
         size_factor = (1.0 - 2*self.border)
         table = Table(ax, bbox=[self.border, self.border,
@@ -921,8 +909,8 @@ class TablePlot(Plot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-        if self.show_title:
-            self.handles['title'].set_text(self._format_title(self._stack, n))
+        if self.show_title and self.zorder == 0:
+            self.handles['title'].set_text(tableview.title)
         plt.draw()
 
     def __len__(self):
@@ -938,19 +926,18 @@ class DataHistogramPlot(Plot):
     """
     _stack_type = DataStack
 
-    def __init__(self, curves, **kwargs):
+    def __init__(self, curves, zorder=0, **kwargs):
+        self.zorder = zorder
         self._stack = self._check_stack(curves, DataHistogram)
         super(DataHistogramPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None, zorder=0, color='b', cyclic_index=0, lbrt=None):
-
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         hist = self._stack.top
-        title = self._format_title(self._stack, -1)
-        ax = self._axis(axis, title, hist.xlabel, hist.ylabel)
+        ax = self._axis(axis, hist.title, hist.xlabel, hist.ylabel)
 
-
-        bars = plt.bar(hist.edges, hist.hist, width=1.0, fc='w', zorder=zorder) # Custom color and width
+        bars = plt.bar(hist.edges, hist.hist, zorder=self.zorder,
+                       **Styles[hist][cyclic_index])
         self.handles['bars'] = bars
 
         if not axis: plt.close(self.handles['fig'])
@@ -958,7 +945,7 @@ class DataHistogramPlot(Plot):
 
 
     def update_frame(self, n):
-        n = n  if n < len(self) else len(self) - 1
+        n = n if n < len(self) else len(self) - 1
         hist = self._stack.values()[n]
         bars = self.handles['bars']
         if hist.ndims != len(bars):
@@ -968,8 +955,8 @@ class DataHistogramPlot(Plot):
             height = hist.hist[i]
             bar.set_height(height)
 
-        if self.show_title:
-            self.handles['title'].set_text(self._format_title(self._stack, n))
+        if self.show_title and self.zorder == 0:
+            self.handles['title'].set_text(hist.title)
         plt.draw()
 
 

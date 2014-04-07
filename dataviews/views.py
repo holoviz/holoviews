@@ -9,6 +9,7 @@ import math
 import param
 
 from ndmapping import NdMapping, Dimension, AttrDict, map_type
+from styles import Styles
 
 
 class View(param.Parameterized):
@@ -23,7 +24,7 @@ class View(param.Parameterized):
       A short label used to indicate what kind of data is contained
       within the view object.""")
 
-    title = param.String(default=None, allow_None=True, doc="""
+    title = param.String(default=None, doc="""
        A short description of the layer that may be used as a title.""")
 
     metadata = param.Dict(default=AttrDict(), doc="""
@@ -35,14 +36,16 @@ class View(param.Parameterized):
         """
         The name of the style that may be used to control display of
         this view. If a style name is not set and but a label is
-        assigned, then this label name will be used instead
+        assigned, then the closest existing style name is returned.
         """
         if (self._style is None) and self.label:
-            return self.label
+            matches = Styles.fuzzy_matches(self.label.replace(' ', '_'))
+            return matches[0] if matches else 'Default'
         elif self._style is None:
             return 'Default'
         else:
             return self._style
+
 
     @style.setter
     def style(self, val):

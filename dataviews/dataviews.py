@@ -234,7 +234,6 @@ class Stack(NdMapping):
 
 
     def _item_check(self, dim_vals, data):
-
         if self.style is not None and (data.style != self.style):
             raise AssertionError("%s must only contain one type of style." %
                                  self.__class__.__name__)
@@ -244,6 +243,21 @@ class Stack(NdMapping):
             raise AssertionError("%s must only contain one type of View." %
                                  self.__class__.__name__)
         super(Stack, self)._item_check(dim_vals, data)
+        self._set_title(dim_vals, data)
+
+
+    def _set_title(self, key, item):
+        """
+        Sets a title string on the element item is added to the Stack, based on
+        the element label and formatted stack dimensions and values.
+        """
+        if self.ndims == 1 and self.dim_dict.get('Default', False):
+            return None
+        label = '' if item.label is None else item.label + '\n'
+        dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
+        dimension_labels = [dim_label+',\n' if ind != 0 and (ind % 2 == 1) else dim_label+', '
+                            for ind, dim_label in enumerate(dimension_labels)]
+        item.title = label + ''.join(dimension_labels)[:-1]
 
 
     def split(self):
@@ -383,6 +397,16 @@ class Stack(NdMapping):
         return view[sample]
 
 
+    def _curve_labels(self, x_axis, sample, ylabel):
+        """
+        Given the x_axis, sample name and ylabel, returns the formatted curve
+        label xlabel and ylabel for a curve. Allows changing the curve labels
+        in subclasses of stack.
+        """
+        curve_label = " ".join([str(sample), "Curve"])
+        return curve_label, x_axis.capitalize(), sample
+
+
     def sample(self, samples=[], x_axis=None, group_by=[]):
         if x_axis is None and len(self.dimensions) > 1:
             raise Exception('Please specify the x_axis.')
@@ -407,36 +431,39 @@ class Stack(NdMapping):
         # Overlays as indexed with the x_axis removed
         overlay_inds = [i for i, name in enumerate(output_dims) if name in group_by]
 
-        title = ''
-        if len(stack_dims) != 0:
-            title += ', '.join('{{label{0}}}={{value{0}}}'.format(i)
-                                   for i in range(len(stack_dims)))
+
         cyclic_range = x_dim.range[1] if x_dim.cyclic else None
 
         stacks = []
         for sample_ind, sample in enumerate(self._compute_samples(samples)):
-
-            stack = DataStack(dimensions=stack_dims,
-                              title=title,
-                              metadata=self.metadata)
-
+            stack = DataStack(dimensions=stack_dims, metadata=self.metadata)
             for key, x_axis_data in split_data.items():
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
                 sampled_curve_data = [(x, self._get_sample(view, sample))
                                       for x, view in x_axis_data.items()]
 
-                # Generate a label
-                overlay_items = [(name, key[ind]) for name, ind in zip(group_by, overlay_inds)]
+                # Compute overlay dimensions
+                overlay_items = [(name, key[ind]) for name, ind in zip(group_by,
+                                                                       overlay_inds)]
+
+
+                # Generate labels
                 legend_label = ', '.join(self.dim_dict[name].pprint_value(val)
                                          for name, val in overlay_items)
-                label = " ".join([str(sample), "Curve"])
+                ylabel = x_axis_data.values()[0].label
+                label, xlabel, ylabel = self._curve_labels(x_axis,
+                                                           samples[sample_ind],
+                                                           ylabel)
+
                 # Generate the curve view
                 curve = DataCurves([sampled_curve_data], cyclic_range=cyclic_range,
-                                    metadata=self.metadata, xlabel=x_axis.capitalize(),
-                                    legend_label=legend_label, label=label)
+                                    metadata=self.metadata, label=label,
+                                    legend_label=legend_label, xlabel=xlabel,
+                                    ylabel=ylabel)
 
                 # Drop overlay dimensions
-                stack_key = tuple([kval for ind, kval in enumerate(key) if ind not in overlay_inds])
+                stack_key = tuple([kval for ind, kval in enumerate(key)
+                                   if ind not in overlay_inds])
 
                 # Create new overlay if necessary, otherwise add to overlay
                 if stack_key not in stack:

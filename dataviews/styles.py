@@ -146,7 +146,7 @@ class StyleMap(object):
     def __setitem__(self, key, value):
         if not isinstance(value, Style):
             raise Exception('A StyleMap must only contain Style objects.')
-        self.items[key] = value
+        self.items[key.replace(' ', '_')] = value
 
 
     def __getitem__(self, obj):
