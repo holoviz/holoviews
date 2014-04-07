@@ -5,7 +5,7 @@ except: animation = None
 from IPython.core.pylabtools import print_figure
 from IPython.core import page
 try:
-    from IPython.core.magic import Magics, magics_class, line_magic, cell_magic, line_cell_magic
+    from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
 except:
     from nose.plugins.skip import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -13,12 +13,13 @@ except:
 import param
 from tempfile import NamedTemporaryFile
 from functools import wraps
-import textwrap, traceback
+import textwrap, traceback, itertools
 
 from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap
 from sheetviews import GridLayout, CoordinateGrid
-from views import View
+from views import View, Overlay
+from styles import Styles
 
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
@@ -44,6 +45,7 @@ ANIMATION_OPTS = {
 }
 
 WARN_MISFORMATTED_DOCSTRINGS = False
+_SET_OBJECT_STYLE_ = {} # Set by %%style magic to update object style
 
 #========#
 # Magics #
@@ -451,10 +453,15 @@ class PlotOptsMagic(Magics):
         Lookup the plot type for a given view object and return the
         list of available parameter names and the plot class.
         """
-        if not isinstance(view, (View, GridLayout)):
+        if not isinstance(view, (View, GridLayout, Stack)):
             print "Object %s is not a View" % view.__class__.__name__
             param_list =  []
-        plotclass = viewmap.get(view.__class__, None)
+
+        if isinstance(view, Stack):
+            plotclass = viewmap[view.type]
+        else:
+            plotclass = viewmap.get(view.__class__, None)
+
         if not plotclass and isinstance(view, GridLayout):
             param_list = GridLayoutPlot.params().keys()
         elif not plotclass:
@@ -512,6 +519,133 @@ class PlotOptsMagic(Magics):
             self.param_pager(plotclass)
         else:
             obj.metadata['plot_opts'] = options
+
+
+@magics_class
+class StyleMagic(Magics):
+    """
+    The %style and %%style line and cell magics allow customization of
+    display style of dataviews. The %style line magic sets a style
+    globally whereas the %%style cell magic creates and sets a new
+    style that belongs to the displayed object.
+    """
+
+    @classmethod
+    def trim(cls, obj, name):
+        split = name.rsplit('__')
+        if len(split) == 1:
+            return name
+        elif len(split)==3 and not split[0]:
+            return split[2]
+        else:
+            print "Invalid style name %s" % name
+            return name
+
+    @classmethod
+    def valid_style_set(cls, obj):
+        style_set = set()
+        if isinstance(obj, (View, Stack, Overlay)):
+            style = obj.style
+            styles = [style] if isinstance(obj.style, str) else style
+            style_set = style_set | set(styles)
+        elif isinstance(obj, GridLayout):
+            for subview in obj.values():
+                style_set = style_set | cls.valid_style_set(subview)
+        return set(cls.trim(obj,s) for s in style_set)
+
+    @classmethod
+    def set_style(cls, obj, name_map):
+        if isinstance(obj, Overlay):
+            style_names = [name_map.get(cls.trim(obj, s),None) if cls.trim(obj, s)
+                           in name_map else s for s in obj.style]
+            obj.style = style_names
+        elif isinstance(obj, (View, Stack)):
+            if cls.trim(obj, obj.style) in name_map:
+                obj.style = name_map[cls.trim(obj, obj.style)]
+        elif isinstance(obj, GridLayout):
+            for subview in obj.values():
+                cls.set_style(subview, name_map)
+
+    @classmethod
+    def set_object_style(cls, obj):
+        if _SET_OBJECT_STYLE_ is not None:
+            name_map = {}
+            for name, new_style in _SET_OBJECT_STYLE_.items():
+                changed_set = set(_SET_OBJECT_STYLE_.keys())
+                style_set = cls.valid_style_set(obj)
+                mismatches = ', '.join(changed_set - style_set)
+                if mismatches:
+                    obj_name = "<b>%s</b> object" % obj.__class__.__name__
+                    if len(style_set) == 0:
+                        return "<b>No styles are defined on the current %s</b>" % obj_name
+                    s = "Applicable styles for current %s:<br><br>" % obj_name
+                    max_len = max(len(s) for s in style_set)
+                    for name in sorted(style_set): #k,v in kwargs.items():
+                        padding = '&nbsp;'*(max_len - len(name))
+                        s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (name, padding, Styles[name])
+                    return s
+                object_style_name = '__' + obj.name + '__' + str(name)
+                # Register new style in the Styles map
+                Styles[object_style_name] = new_style
+                name_map[str(name)] = object_style_name
+            # Link the object to the new custom style
+            cls.set_style(obj, name_map)
+        return
+
+
+    def _parse_style_changes(self, line):
+        """
+        Parse the arguments to the magic, returning a dictionary of style changes.
+        """
+        tokens = line.split()
+        if not tokens[0][0].isupper():
+            raise SyntaxError("First token must be a Style name (a capitalized string)")
+
+        style_names, settings_list = [], []
+        for upper, vals in itertools.groupby(tokens, key=lambda x: x[0].isupper()):
+            values = list(vals)
+            if upper and len(values) != 1:
+                raise SyntaxError("Style names should be split by keywords")
+            elif upper:
+                style_name = values[0]
+                if style_name not in Styles.styles():
+                    raise IndexError("Style '%s' not found" % style_name)
+                style_names.append(values[0])
+            else:
+                settings_str = 'dict(' + ', '.join(values) + ')'
+                try:
+                    settings_list.append(eval(settings_str))
+                except:
+                    raise SyntaxError("Could not parse keywords '%s'" % values)
+
+        return dict(zip(style_names, settings_list))
+
+
+    @line_cell_magic
+    def style(self, line='', cell=None):
+        global _SET_OBJECT_STYLE_
+
+        if cell and line.strip() == '': # Triggers display of available, valid styles
+            _SET_OBJECT_STYLE_ = {'__TRIGGER_STYLE_LIST__':{}}
+            self.shell.run_cell(cell)
+            _SET_OBJECT_STYLE_ = None
+            return
+
+        style_changes = self._parse_style_changes(line)
+
+        object_style = {}
+        for name, kwargs  in style_changes.items():
+            style = Styles[str(name)](**kwargs)
+            if cell:
+                object_style[str(name)] = style
+            else:
+                Styles[str(name)] = style
+
+        if cell:
+            _SET_OBJECT_STYLE_ = object_style
+            # Run the cell in the updated environment
+            self.shell.run_cell(cell)
+            _SET_OBJECT_STYLE_ = None
 
 
 #==================#
@@ -608,6 +742,8 @@ def animation_display(anim):
 @show_tracebacks
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
+    invalid_styles = StyleMagic.set_object_style(stack)
+    if invalid_styles: return invalid_styles
     stackplot = viewmap[stack.type](stack, **opts(stack))
     if len(stack) == 1:
         fig = stackplot()
@@ -619,6 +755,8 @@ def stack_display(stack, size=256):
 @show_tracebacks
 def layout_display(grid, size=256):
     if not isinstance(grid, GridLayout): return None
+    invalid_styles = StyleMagic.set_object_style(grid)
+    if invalid_styles: return invalid_styles
     grid_size = (grid.shape[1]*get_plot_size()[1],
                  grid.shape[0]*get_plot_size()[0])
     gridplot = GridLayoutPlot(grid, **dict(opts(grid), size=grid_size))
@@ -635,6 +773,8 @@ def projection_display(grid, size=256):
     size_factor = 0.17
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
+    invalid_styles = StyleMagic.set_object_style(grid)
+    if invalid_styles: return invalid_styles
     gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
     if len(grid)==1:
         fig =  gridplot()
@@ -646,6 +786,8 @@ def projection_display(grid, size=256):
 @show_tracebacks
 def view_display(view, size=256):
     if not isinstance(view, View): return None
+    invalid_styles = StyleMagic.set_object_style(view)
+    if invalid_styles: return invalid_styles
     fig = viewmap[view.__class__](view, **opts(view))()
     return figure_display(fig)
 
@@ -683,11 +825,16 @@ def load_ipython_extension(ip, verbose=True):
         ip.register_magics(ParamMagics)
         ip.register_magics(ViewMagic)
         ip.register_magics(PlotOptsMagic)
+        ip.register_magics(StyleMagic)
+
 
         # Configuring tab completion
         ip.set_hook('complete_command', PlotOptsMagic.option_completer, str_key = '%plotopts')
         ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
         ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
+        ip.set_hook('complete_command', lambda x,v: Styles.styles(), str_key = '%%style')
+        ip.set_hook('complete_command', lambda x,v: Styles.styles(), str_key = '%style')
+
 
         html_formatter = ip.display_formatter.formatters['text/html']
         html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
