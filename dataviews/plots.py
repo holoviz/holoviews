@@ -927,6 +927,54 @@ class TablePlot(Plot):
         return len(self._stack)
 
 
+
+class DataHistogramPlot(Plot):
+    """
+    DataHistogramPlot can plot DataHistograms and DataStacks of
+    DataHistograms, which can be displayed as a single frame or
+    animation.
+    """
+    _stack_type = DataStack
+
+    def __init__(self, curves, **kwargs):
+        self._stack = self._check_stack(curves, DataHistogram)
+        super(DataHistogramPlot, self).__init__(**kwargs)
+
+
+    def __call__(self, axis=None, zorder=0, color='b', cyclic_index=0, lbrt=None):
+
+        hist = self._stack.top
+        title = self._format_title(self._stack, -1)
+        ax = self._axis(axis, title, hist.xlabel, hist.ylabel)
+
+
+        bars = plt.bar(hist.edges, hist.hist, width=1.0, fc='w', zorder=zorder) # Custom color and width
+        self.handles['bars'] = bars
+
+        if not axis: plt.close(self.handles['fig'])
+        return ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n):
+        n = n  if n < len(self) else len(self) - 1
+        hist = self._stack.values()[n]
+        bars = self.handles['bars']
+        if hist.ndims != len(bars):
+            raise Exception("Histograms must all have the same bin edges.")
+
+        for i, bar in enumerate(bars):
+            height = hist.hist[i]
+            bar.set_height(height)
+
+        if self.show_title:
+            self.handles['title'].set_text(self._format_title(self._stack, n))
+        plt.draw()
+
+
+    def __len__(self):
+        return len(self._stack)
+
+
 viewmap = {SheetView: SheetViewPlot,
            SheetPoints: SheetPointsPlot,
            SheetLines: SheetLinesPlot,
@@ -936,6 +984,7 @@ viewmap = {SheetView: SheetViewPlot,
            DataOverlay: DataPlot,
            DataGrid: DataGridPlot,
            TableView: TablePlot,
+           DataHistogram:DataHistogramPlot
 }
 
 
