@@ -157,9 +157,7 @@ class StyleMap(object):
         if isinstance(obj, str):
             return self.fuzzy_match_style(obj)
         else:
-            if obj.name in self.items.keys(): return self.items[obj.name]
-            key = obj.label if obj.style == 'Default' else obj.style
-            return self.fuzzy_match_style(key)
+            return self.fuzzy_match_style(obj.style)
 
     def __repr__(self):
         return "<StyleMap containing %d styles>" % len(self.items)
