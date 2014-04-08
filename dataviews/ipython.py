@@ -19,7 +19,7 @@ from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap
 from sheetviews import GridLayout, CoordinateGrid
 from views import View, Overlay
-from styles import Styles
+from styles import Styles, Style
 
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
@@ -45,7 +45,6 @@ ANIMATION_OPTS = {
 }
 
 WARN_MISFORMATTED_DOCSTRINGS = False
-_SET_OBJECT_STYLE_ = {} # Set by %%style magic to update object style
 
 #========#
 # Magics #
@@ -525,126 +524,226 @@ class PlotOptsMagic(Magics):
 class StyleMagic(Magics):
     """
     The %style and %%style line and cell magics allow customization of
-    display style of dataviews. The %style line magic sets a style
-    globally whereas the %%style cell magic creates and sets a new
-    style that belongs to the displayed object.
+    display style of dataviews. The %style line magic updates or
+    creates a new style in the global StyleMap whereas the %%style
+    cell magic sets a custom style that is associated with the
+    displayed view object.
     """
 
-    @classmethod
-    def trim(cls, obj, name):
-        split = name.rsplit('__')
-        if len(split) == 1:
-            return name
-        elif len(split)==3 and not split[0]:
-            return split[2]
-        else:
-            print "Invalid style name %s" % name
-            return name
+    invalid_styles = []
+    custom_styles = {}
+    show_info = False
 
     @classmethod
-    def valid_style_set(cls, obj):
-        style_set = set()
-        if isinstance(obj, (View, Stack, Overlay)):
-            style = obj.style
-            styles = [style] if isinstance(obj.style, str) else style
-            style_set = style_set | set(styles)
-        elif isinstance(obj, GridLayout):
-            for subview in obj.values():
-                style_set = style_set | cls.valid_style_set(subview)
-        return set(cls.trim(obj,s) for s in style_set)
-
-    @classmethod
-    def set_style(cls, obj, name_map):
+    def collect_styles(cls, obj):
+        """
+        Given a view object, find the list of base style names across
+        overlay layers and across grid layouts. The return value is a
+        list of all the style names.
+        """
+        styles = set()
         if isinstance(obj, GridLayout):
             for subview in obj.values():
-                cls.set_style(subview, name_map)
-        elif isinstance(obj.style, list):
-            style_names = [name_map.get(cls.trim(obj, s),None) if cls.trim(obj, s)
-                           in name_map else s for s in obj.style]
-            obj.style = style_names
-        elif cls.trim(obj, obj.style) in name_map:
-            obj.style = name_map[cls.trim(obj, obj.style)]
+                styles = styles | cls.collect_styles(subview)
+
+        style = [obj.style] if isinstance(obj.style, str) else obj.style
+        return styles | set(style)
+
 
     @classmethod
-    def set_object_style(cls, obj):
-        if _SET_OBJECT_STYLE_ is not None:
-            name_map = {}
-            for name, new_style in _SET_OBJECT_STYLE_.items():
-                changed_set = set(_SET_OBJECT_STYLE_.keys())
-                style_set = cls.valid_style_set(obj)
-                mismatches = ', '.join(changed_set - style_set)
-                if mismatches:
-                    obj_name = "<b>%s</b> object" % obj.__class__.__name__
-                    if len(style_set) == 0:
-                        return "<b>No styles are defined on the current %s</b>" % obj_name
-                    s = "Applicable styles for current %s:<br><br>" % obj_name
-                    max_len = max(len(s) for s in style_set)
-                    for name in sorted(style_set): #k,v in kwargs.items():
-                        padding = '&nbsp;'*(max_len - len(name))
-                        s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (name, padding, Styles[name])
-                    return s
-                object_style_name = '__' + obj.name + '__' + str(name)
-                # Register new style in the Styles map
-                Styles[object_style_name] = new_style
-                name_map[str(name)] = object_style_name
-            # Link the object to the new custom style
-            cls.set_style(obj, name_map)
-        return
+    def basename(cls, name):
+        """
+        Strips out the 'Custom' prefix of styles names that have been
+        customized with an object identifier string.
+        """
+        split = name.rsplit('>]_')
+        if not name.startswith('Custom'):   return name
+        elif len(split) == 2:               return split[1]
+        else:
+            raise Exception("Invalid style name %s" % name)
 
 
-    def _parse_style_changes(self, line):
+    @classmethod
+    def _set_style_names(cls, obj, custom_name_map):
         """
-        Parse the arguments to the magic, returning a dictionary of style changes.
+        Update the style names on a view to the custom style name when
+        there is a basename match as specified by the supplied
+        dictionary.
         """
+        if isinstance(obj, GridLayout):
+            for subview in obj.values():
+                cls._set_style_names(subview, custom_name_map)
+        elif isinstance(obj.style, list):
+            obj.style = [custom_name_map.get(cls.basename(s), s) for s in obj.style]
+        elif cls.basename(obj.style) in custom_name_map:
+            obj.style = custom_name_map[cls.basename(obj.style)]
+
+
+    @classmethod
+    def set_view_style(cls, obj, custom=True):
+        """
+        To be called by the display hook which supplies the view
+        object on which the style is to be customized.
+        """
+        if (cls.invalid_styles,
+            cls.custom_styles,
+            cls.show_info) == ([],{}, False): return
+
+        styles = cls.collect_styles(obj)
+        # The set of available style basenames in the view object
+        available_styles = set(cls.basename(s) for s in styles)
+        custom_styles = set(s for s in styles if s.startswith('Custom'))
+        mismatch_set = set(cls.custom_styles.keys()) - available_styles
+        mismatches = sorted(set(cls.invalid_styles) | mismatch_set)
+
+        if cls.show_info or mismatches:
+            return cls._style_info(obj, available_styles, mismatches, custom_styles)
+
+        # The name map associates the style basename to the custom name
+        name_mapping = {}
+        for name, new_style in cls.custom_styles.items():
+            # Create a custom style name for the object
+            style_name = 'Custom[<' + obj.name + '>]_' + name if custom else name
+            # Register the new style in the StyleMap
+            Styles[style_name] = new_style
+            name_mapping[str(name)] = style_name
+
+        # Link the object to the new custom style
+        cls._set_style_names(obj, name_mapping)
+
+
+    @classmethod
+    def _style_info(cls, obj, available_styles, mismatches, custom_styles):
+        """
+        Format the style information as HTML, listing any mismatched
+        names, the styles available for manipulation and the list of
+        objects with customized styles.
+        """
+        obj_name = "<b>%s</b>" % obj.__class__.__name__
+        if len(available_styles) == 0:
+            return "<b>No styles are defined on the current %s</b>" % obj_name
+
+        mismatch_str = ', '.join('<b>%r</b>' % el for el in mismatches)
+        unavailable_msg = '%s not in ' % mismatch_str if mismatch_str else ''
+        s = "%s %s customizable Styles:<br><br>" % (unavailable_msg, obj_name)
+        max_len = max(len(s) for s in available_styles)
+        for name in sorted(available_styles):
+            padding = '&nbsp;'*(max_len - len(name))
+            s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (name, padding, Styles[name])
+
+        if custom_styles:
+            s += '<br>Views with custom styles:<br><br>'
+            object_names = [style_name[8:].rsplit('>]_')[0] for style_name in custom_styles]
+            max_len = max(len(s) for s in object_names)
+            for custom_style, obj_name in zip(custom_styles, object_names):
+                padding = '&nbsp;'*(max_len - len(obj_name))
+                s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (obj_name,
+                                                                  padding,
+                                                                  Styles[custom_style])
+        return s
+
+
+    def _parse_styles(self, line):
+        """
+        Parse the arguments to the magic, returning one dictionary of
+        updated Style objects for existing styles and a second
+        dictionary containing new Style objects for styles that have
+        not yet been defined.
+        """
+        updated_styles, new_styles  = {}, {}
         tokens = line.split()
-        if not tokens[0][0].isupper():
+        if tokens == []:
+            return {}, []
+        elif not tokens[0][0].isupper():
             raise SyntaxError("First token must be a Style name (a capitalized string)")
 
-        style_names, settings_list = [], []
+        # Split the input by the capitalized tokens
+        style_names, settings_list, updates = [], [], []
         for upper, vals in itertools.groupby(tokens, key=lambda x: x[0].isupper()):
             values = list(vals)
             if upper and len(values) != 1:
                 raise SyntaxError("Style names should be split by keywords")
             elif upper:
                 style_name = values[0]
-                if style_name not in Styles.styles():
-                    raise IndexError("Style '%s' not found" % style_name)
-                style_names.append(values[0])
+                matches = Styles.fuzzy_matches(style_name)
+                style_names.append(style_name)
+                updates.append(style_name in Styles.styles())
             else:
                 settings_str = 'dict(' + ', '.join(values) + ')'
-                try:
-                    settings_list.append(eval(settings_str))
-                except:
-                    raise SyntaxError("Could not parse keywords '%s'" % values)
+                try:     settings_list.append(eval(settings_str))
+                except:  raise SyntaxError("Could not parse keywords '%s'" % values)
 
-        return dict(zip(style_names, settings_list))
+        for name, kwargs, update  in zip(style_names, settings_list, updates):
+            if update:
+                updated_styles[name] = Styles[str(name)](**kwargs)
+            else:
+                new_styles[name] = Styles[str(name)] = Style(**kwargs)
+        return updated_styles, new_styles
+
+
+    def _style_linemagic(self, line):
+        """
+        Update or create a Style in the StyleMap.
+
+        Usage: %setstyle [-v] [StyleName] [<keyword>=<value>]
+
+        The -v flag toggles verbose output.
+        """
+        verbose = False
+        if str(line).startswith('-v'):
+            verbose = True
+            line = line.replace('-v', '')
+
+        info = False
+        if str(line).startswith('info'):
+            verbose = True
+            line = line.replace('info', '')
+
+
+        updated_styles, new_styles = self._parse_styles(str(line))
+
+        if not updated_styles and not new_styles:
+            info = (len(Styles.keys()), len([k for k in Styles.keys() if k.startswith('Custom')]))
+            print "There are a total of %d Styles defined including %d custom object styles." % info
+            return
+
+        for name, style in updated_styles.items():
+            if verbose:
+                print "Updated existing style %r : %r" % (name, style)
+            Styles[name] = style
+
+        for name, style in new_styles.items():
+            if verbose:
+                print "Created new style %r : %r" % (name, style)
+            Styles[name] = style
 
 
     @line_cell_magic
     def style(self, line='', cell=None):
-        global _SET_OBJECT_STYLE_
+        """
+        Set a custom display style uniquely assigned to the views presented.
 
-        if cell and line.strip() == '': # Triggers display of available, valid styles
-            _SET_OBJECT_STYLE_ = {'__TRIGGER_STYLE_LIST__':{}}
-            self.shell.run_cell(cell)
-            _SET_OBJECT_STYLE_ = None
-            return
+        Usage: %%style [StyleName] [<keyword>=<value>]
 
-        style_changes = self._parse_style_changes(line)
+        Keyword-value pairs are assumed to separate the capitalized
+        Style names to which they are assigned.
+        """
 
-        object_style = {}
-        for name, kwargs  in style_changes.items():
-            style = Styles[str(name)](**kwargs)
-            if cell:
-                object_style[str(name)] = style
-            else:
-                Styles[str(name)] = style
+        if cell is None:
+            return self._style_linemagic(line)
+        elif not line.strip():
+            StyleMagic.show_info=True
+        else:
+            updated_styles, new_styles = self._parse_styles(str(line))
+            (StyleMagic.custom_styles,
+             StyleMagic.invalid_styles) = (updated_styles, new_styles.keys())
+        # Run the cell in the updated environment
+        self.shell.run_cell(cell)
+        # Reset the class attributes
+        StyleMagic.invalid_styles = []
+        StyleMagic.custom_styles = {}
+        StyleMagic.show_info=False
 
-        if cell:
-            _SET_OBJECT_STYLE_ = object_style
-            # Run the cell in the updated environment
-            self.shell.run_cell(cell)
-            _SET_OBJECT_STYLE_ = None
 
 
 #==================#
@@ -741,7 +840,7 @@ def animation_display(anim):
 @show_tracebacks
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
-    invalid_styles = StyleMagic.set_object_style(stack)
+    invalid_styles = StyleMagic.set_view_style(stack)
     if invalid_styles: return invalid_styles
     stackplot = viewmap[stack.type](stack, **opts(stack))
     if len(stack) == 1:
@@ -754,7 +853,7 @@ def stack_display(stack, size=256):
 @show_tracebacks
 def layout_display(grid, size=256):
     if not isinstance(grid, GridLayout): return None
-    invalid_styles = StyleMagic.set_object_style(grid)
+    invalid_styles = StyleMagic.set_view_style(grid)
     if invalid_styles: return invalid_styles
     grid_size = (grid.shape[1]*get_plot_size()[1],
                  grid.shape[0]*get_plot_size()[0])
@@ -772,7 +871,7 @@ def projection_display(grid, size=256):
     size_factor = 0.17
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
-    invalid_styles = StyleMagic.set_object_style(grid)
+    invalid_styles = StyleMagic.set_view_style(grid)
     if invalid_styles: return invalid_styles
     gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
     if len(grid)==1:
@@ -785,7 +884,7 @@ def projection_display(grid, size=256):
 @show_tracebacks
 def view_display(view, size=256):
     if not isinstance(view, View): return None
-    invalid_styles = StyleMagic.set_object_style(view)
+    invalid_styles = StyleMagic.set_view_style(view)
     if invalid_styles: return invalid_styles
     fig = viewmap[view.__class__](view, **opts(view))()
     return figure_display(fig)
