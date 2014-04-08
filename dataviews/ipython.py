@@ -24,7 +24,7 @@ from styles import Styles
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
 
-ENABLE_TRACEBACKS=False # To assist with debugging of display hooks
+ENABLE_TRACEBACKS=True # To assist with debugging of display hooks
 
 GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
 VIDEO_TAG = """<center><video controls>
