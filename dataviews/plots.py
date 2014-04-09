@@ -18,6 +18,8 @@ from sheetviews import SheetView, SheetOverlay, SheetLines, \
 from views import GridLayout, View
 from styles import Styles
 
+
+
 class Plot(param.Parameterized):
     """
     A Plot object returns either a matplotlib figure object (when
@@ -177,11 +179,11 @@ class SheetLinesPlot(Plot):
         super(SheetLinesPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None):
+    def __call__(self, axis=None, cyclic_index=0):
         lines = self._stack.top
         title = None if self.zorder > 0 else lines.title
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
-        line_segments = LineCollection([], zorder=self.zorder, **Styles[lines].opts)
+        line_segments = LineCollection([], zorder=self.zorder, **Styles[lines][cyclic_index])
         line_segments.set_paths(lines.data)
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)
@@ -209,13 +211,13 @@ class SheetPointsPlot(Plot):
         super(SheetPointsPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None):
+    def __call__(self, axis=None, cyclic_index=0):
         points = self._stack.top
         title = None if self.zorder > 0 else points.title
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
         scatterplot = plt.scatter(points.data[:, 0], points.data[:, 1],
-                                  zorder=self.zorder, **Styles[points].opts)
+                                  zorder=self.zorder, **Styles[points][cyclic_index])
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -256,13 +258,13 @@ class SheetViewPlot(Plot):
         bar.draw_all()
 
 
-    def __call__(self, axis=None):
+    def __call__(self, axis=None, cyclic_index=0):
         sheetview = self._stack.top
         (l, b, r, t) = self._stack.bounds.lbrt()
         title = None if self.zorder > 0 else sheetview.title
         ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
 
-        options = Styles[sheetview].opts
+        options = Styles[sheetview][cyclic_index]
         if sheetview.depth != 1:
             options.pop('cmap', None)
 
@@ -324,11 +326,21 @@ class SheetPlot(Plot):
     def __call__(self, axis=None):
         ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
 
-        for zorder, stack in enumerate(self._stack.split()):
+
+
+        stacks = self._stack.split()
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(stacks, lambda s: s.style))
+
+        #for zorder, stack in enumerate(self._stack.split()):
+
+        for zorder, stack in enumerate(stacks):
+            cyclic_index, _ = style_groups[stack.style].next()
             plotype = viewmap[stack.type]
-            plot = plotype(stack, zorder=zorder, size=self.size,
+            plot = plotype(stack, zorder=zorder,
+                           size=self.size,
                            show_axes=self.show_axes)
-            plot(ax)
+            plot(ax, cyclic_index=cyclic_index)
             self.plots.append(plot)
 
         if axis is None: plt.close(self.handles['fig'])
