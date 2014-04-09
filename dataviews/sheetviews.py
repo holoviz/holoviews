@@ -176,7 +176,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
                          bounds, cyclic_range=self.cyclic_range,
-                         style=self.style, metadata=self.metadata)
+                         label=self.label,  style=self.style, metadata=self.metadata)
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None):
