@@ -652,7 +652,7 @@ class StyleMagic(Magics):
             custom_names = [style_name.rsplit('>]_')[1] for style_name in custom_styles]
             max_len = max(len(s) for s in custom_names)
             for custom_style, custom_name in zip(custom_styles, custom_names):
-                padding = '&nbsp;'*(max_len - len(obj_name))
+                padding = '&nbsp;'*(max_len - len(custom_name))
                 s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (custom_name,
                                                                   padding,
                                                                   Styles[custom_style])
