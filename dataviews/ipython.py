@@ -5,7 +5,7 @@ except: animation = None
 from IPython.core.pylabtools import print_figure
 from IPython.core import page
 try:
-    from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
+    from IPython.core.magic import Magics, magics_class, line_magic, cell_magic, line_cell_magic
 except:
     from nose.plugins.skip import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -520,6 +520,7 @@ class PlotOptsMagic(Magics):
             obj.metadata['plot_opts'] = options
 
 
+
 @magics_class
 class StyleMagic(Magics):
     """
@@ -533,25 +534,26 @@ class StyleMagic(Magics):
     invalid_styles = []
     custom_styles = {}
     show_info = False
+    show_labels = False
 
     @classmethod
-    def collect_styles(cls, obj):
+    def collect(cls, obj, attr='style'):
         """
-        Given a view object, find the list of base style names across
-        overlay layers and across grid layouts. The return value is a
-        list of all the style names.
+        Given a view object, find the list of either the 'style' or
+        'label' attributes across overlays and grid layouts. The
+        return value is a list of all the collected string.
         """
-        styles = set()
-        if isinstance(obj, GridLayout):
-            for subview in obj.values():
-                styles = styles | cls.collect_styles(subview)
+        group = []
+        if isinstance(obj, (Overlay, GridLayout)):
+            for subview in obj:
+                group += cls.collect(subview, attr)
 
-        style = [obj.style] if isinstance(obj.style, str) else obj.style
-        return styles | set(style)
+        value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
+        return group + [value] if isinstance(value, str) else value
 
 
     @classmethod
-    def basename(cls, name):
+    def _basename(cls, name):
         """
         Strips out the 'Custom' prefix of styles names that have been
         customized with an object identifier string.
@@ -574,9 +576,9 @@ class StyleMagic(Magics):
             for subview in obj.values():
                 cls._set_style_names(subview, custom_name_map)
         elif isinstance(obj.style, list):
-            obj.style = [custom_name_map.get(cls.basename(s), s) for s in obj.style]
-        elif cls.basename(obj.style) in custom_name_map:
-            obj.style = custom_name_map[cls.basename(obj.style)]
+            obj.style = [custom_name_map.get(cls._basename(s), s) for s in obj.style]
+        elif cls._basename(obj.style) in custom_name_map:
+            obj.style = custom_name_map[cls._basename(obj.style)]
 
 
     @classmethod
@@ -585,13 +587,21 @@ class StyleMagic(Magics):
         To be called by the display hook which supplies the view
         object on which the style is to be customized.
         """
+
+        if cls.show_labels:
+            labels = cls.collect(obj, 'label')
+            info = (len(labels), labels.count(''))
+            summary = '%d objects inspected, %d without labels. The set of labels found:<br><br>' % info
+            label_list = '<br>'.join(['<b>%s</b>' % l for l in set(labels) if l])
+            return summary + label_list
+
         if (cls.invalid_styles,
             cls.custom_styles,
             cls.show_info) == ([],{}, False): return
 
-        styles = cls.collect_styles(obj)
+        styles = set(cls.collect(obj, 'style'))
         # The set of available style basenames in the view object
-        available_styles = set(cls.basename(s) for s in styles)
+        available_styles = set(cls._basename(s) for s in styles)
         custom_styles = set(s for s in styles if s.startswith('Custom'))
         mismatch_set = set(cls.custom_styles.keys()) - available_styles
         mismatches = sorted(set(cls.invalid_styles) | mismatch_set)
@@ -681,7 +691,7 @@ class StyleMagic(Magics):
         return updated_styles, new_styles
 
 
-    def _style_linemagic(self, line):
+    def _linemagic(self, line):
         """
         Update or create a Style in the StyleMap.
 
@@ -718,6 +728,12 @@ class StyleMagic(Magics):
             Styles[name] = style
 
 
+    @cell_magic
+    def labels(self, line='', cell=None):
+        StyleMagic.show_labels = True
+        self.shell.run_cell(cell)
+        StyleMagic.show_labels = False
+
     @line_cell_magic
     def style(self, line='', cell=None):
         """
@@ -730,7 +746,7 @@ class StyleMagic(Magics):
         """
 
         if cell is None:
-            return self._style_linemagic(line)
+            return self._linemagic(line)
         elif not line.strip():
             StyleMagic.show_info=True
         else:
