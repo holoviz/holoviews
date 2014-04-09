@@ -11,7 +11,7 @@ import matplotlib.gridspec as gridspec
 
 import param
 
-from dataviews import Stack, TableView, TableStack
+from dataviews import NdMapping, Stack, TableView, TableStack
 from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
@@ -398,9 +398,8 @@ class GridLayoutPlot(Plot):
         for subplot in self.subplots:
             subplot.update_frame(n)
 
-
     def __len__(self):
-        return len(self.grid)
+        return max([len(v) for v in self.grid if isinstance(v, NdMapping)]+[1])
 
 
 
@@ -501,7 +500,7 @@ class CoordinateGridPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) for v in self.grid ]+[1])
+        return max([len(v) for v in self.grid if isinstance(v, NdMapping)]+[1])
 
 
 

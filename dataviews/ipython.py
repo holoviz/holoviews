@@ -859,7 +859,7 @@ def stack_display(stack, size=256):
     invalid_styles = StyleMagic.set_view_style(stack)
     if invalid_styles: return invalid_styles
     stackplot = viewmap[stack.type](stack, **opts(stack))
-    if len(stack) == 1:
+    if len(stackplot) == 1:
         fig = stackplot()
         return figure_display(fig)
 
@@ -874,7 +874,7 @@ def layout_display(grid, size=256):
     grid_size = (grid.shape[1]*get_plot_size()[1],
                  grid.shape[0]*get_plot_size()[0])
     gridplot = GridLayoutPlot(grid, **dict(opts(grid), size=grid_size))
-    if len(grid)==1:
+    if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
 
@@ -890,7 +890,7 @@ def projection_display(grid, size=256):
     invalid_styles = StyleMagic.set_view_style(grid)
     if invalid_styles: return invalid_styles
     gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
-    if len(grid)==1:
+    if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
 
