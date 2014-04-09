@@ -40,9 +40,9 @@ class View(param.Parameterized):
         """
         if (self._style is None) and self.label:
             matches = Styles.fuzzy_matches(self.label.replace(' ', '_'))
-            return matches[0] if matches else 'Default'
+            return matches[0] if matches else 'DefaultStyle'
         elif self._style is None:
-            return 'Default'
+            return 'DefaultStyle'
         else:
             return self._style
 

@@ -184,4 +184,4 @@ class StyleMap(object):
 
 
 Styles = StyleMap()
-Styles['Default'] = Style()
+Styles['Style'] = Style()
