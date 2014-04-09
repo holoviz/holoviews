@@ -14,6 +14,8 @@ import matplotlib
 from imagen.analysis import ViewOperation
 from sheetviews import SheetView
 
+from styles import Styles, Style
+
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
@@ -55,7 +57,8 @@ class HCS(ViewOperation):
 
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
-        return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds, mode='rgb')]
+        return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds,
+                          mode='rgb', label=hue.label+' HCS Plot')]
 
 
 
@@ -84,28 +87,40 @@ class colorize(ViewOperation):
 
          C = SheetView(np.ones(overlay[1].data.shape),
                        bounds=overlay.bounds)
-         return [HCS(overlay[1] * C * overlay[0].N)]
+         hcs = HCS(overlay[1] * C * overlay[0].N)
+         return [SheetView(hsc.data, hsc.bounds,
+                           mode='rgb',
+                           roi_bounds=hcs.roi_bounds,
+                           label=sheetview.label+' Colorized')]
 
 
 
 class cmap2rgb(ViewOperation):
     """
-    Convert SheetViews using colormaps to RGBA mode.
+    Convert SheetViews using colormaps to RGBA mode.  The colormap of
+    the style is used, if available. Otherwise, the colormap may be
+    forced.
     """
 
     cmap = param.String(default=None, allow_None=True, doc="""
-          Force the use of a specific color map. Otherwise, the mode
-          property of the view is used instead.""")
+          Force the use of a specific color map. Otherwise, the cmap
+          property of the applicable style is used.""")
 
     def _process(self, sheetview):
         if sheetview.depth != 1:
             raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
-        cmap = matplotlib.cm.get_cmap(sheetview.mode if self.p.cmap is None else self.p.cmap)
+
+        style_cmap = Styles[sheetview][0].get('cmap', None)
+        if not any([self.p.cmap, style_cmap]):
+            raise Exception("No color map supplied and no cmap in the active style.")
+
+        cmap = matplotlib.cm.get_cmap(style_cmap if self.p.cmap is None else self.p.cmap)
         return [SheetView(cmap(sheetview.data),
                          bounds=sheetview.bounds,
                          cyclic_range=sheetview.cyclic_range,
                          style=sheetview.style,
                          metadata=sheetview.metadata,
+                         label = sheetview.label+' RGB',
                          mode='rgba')]
 
 
@@ -113,10 +128,19 @@ class cmap2rgb(ViewOperation):
 class split(ViewOperation):
     """
     Given SheetViews in RGBA mode, return the R,G,B and A channels as
-    a list of SheetViews.
+    a GridLayout.
     """
     def _process(self, sheetview):
         if sheetview.depth not in [3,4]:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
-        return [SheetView(sheetview.data[:,:,i], bounds=sheetview.bounds)
+        return [SheetView(sheetview.data[:,:,i],
+                          bounds=sheetview.bounds,
+                          label='RGBA'[i] + ' Channel')
                 for i in range(sheetview.depth)]
+
+
+
+Styles.R_Channel = Style(cmap='gray')
+Styles.G_Channel = Style(cmap='gray')
+Styles.B_Channel = Style(cmap='gray')
+Styles.A_Channel = Style(cmap='gray')
