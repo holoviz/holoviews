@@ -539,17 +539,24 @@ class StyleMagic(Magics):
     @classmethod
     def collect(cls, obj, attr='style'):
         """
-        Given a view object, find the list of either the 'style' or
-        'label' attributes across overlays and grid layouts. The
-        return value is a list of all the collected string.
+        Given a view object, build a dictionary of either the 'style'
+        or 'label' attributes across overlays and grid layouts. The
+        return value is a dictionary with the collected strings as
+        keys and the associated view type as values.
         """
-        group = []
+        group = {}
         if isinstance(obj, (Overlay, GridLayout)):
             for subview in obj:
-                group += cls.collect(subview, attr)
-
-        value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
-        return group + [value] if isinstance(value, str) else value
+                group.update(cls.collect(subview, attr))
+        elif isinstance(obj, Stack):
+            key_lists = [cls.collect(el, attr).keys() for el in obj]
+            values = set(el for els in key_lists for el in els)
+            for val in values:
+                group.update({val:obj.type})
+        else:
+            value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
+            group.update({value:obj})
+        return group
 
 
     @classmethod
@@ -582,27 +589,26 @@ class StyleMagic(Magics):
 
 
     @classmethod
-    def set_view_style(cls, obj, custom=True):
+    def set_view_style(cls, obj):
         """
         To be called by the display hook which supplies the view
         object on which the style is to be customized.
         """
 
         if cls.show_labels:
-            labels = cls.collect(obj, 'label')
+            labels = cls.collect(obj, 'label').keys()
             info = (len(labels), labels.count(''))
-            summary = '%d objects inspected, %d without labels. The set of labels found:<br><br>' % info
-            label_list = '<br>'.join(['<b>%s</b>' % l for l in set(labels) if l])
+            summary = '%d objects inspected, %d without labels. The set of labels found:<br><br>&emsp;' % info
+            label_list = '<br>&emsp;'.join(['<b>%s</b>' % l for l in sorted(set(labels)) if l])
             return summary + label_list
 
-        if (cls.invalid_styles,
-            cls.custom_styles,
-            cls.show_info) == ([],{}, False): return
+        if not any([cls.invalid_styles, cls.custom_styles, cls.show_info]): return
 
-        styles = set(cls.collect(obj, 'style'))
+        styles = cls.collect(obj, 'style')
         # The set of available style basenames in the view object
         available_styles = set(cls._basename(s) for s in styles)
         custom_styles = set(s for s in styles if s.startswith('Custom'))
+
         mismatch_set = set(cls.custom_styles.keys()) - available_styles
         mismatches = sorted(set(cls.invalid_styles) | mismatch_set)
 
@@ -613,7 +619,7 @@ class StyleMagic(Magics):
         name_mapping = {}
         for name, new_style in cls.custom_styles.items():
             # Create a custom style name for the object
-            style_name = 'Custom[<' + obj.name + '>]_' + name if custom else name
+            style_name = 'Custom[<' + obj.name + '>]_' + name
             # Register the new style in the StyleMap
             Styles[style_name] = new_style
             name_mapping[str(name)] = style_name
@@ -642,12 +648,12 @@ class StyleMagic(Magics):
             s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (name, padding, Styles[name])
 
         if custom_styles:
-            s += '<br>Views with custom styles:<br><br>'
-            object_names = [style_name[8:].rsplit('>]_')[0] for style_name in custom_styles]
-            max_len = max(len(s) for s in object_names)
-            for custom_style, obj_name in zip(custom_styles, object_names):
+            s += '<br>Styles that have been customized for the displayed view:<br><br>'
+            custom_names = [style_name.rsplit('>]_')[1] for style_name in custom_styles]
+            max_len = max(len(s) for s in custom_names)
+            for custom_style, custom_name in zip(custom_styles, custom_names):
                 padding = '&nbsp;'*(max_len - len(obj_name))
-                s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (obj_name,
+                s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (custom_name,
                                                                   padding,
                                                                   Styles[custom_style])
         return s
