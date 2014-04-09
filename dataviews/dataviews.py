@@ -253,7 +253,7 @@ class Stack(NdMapping):
         """
         if self.ndims == 1 and self.dim_dict.get('Default', False):
             return None
-        label = '' if item.label is None else item.label + '\n'
+        label = '' if not item.label else item.label + '\n'
         dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
         dimension_labels = [dim_label+',\n' if ind != 0 and (ind % 2 == 1) else dim_label+', '
                             for ind, dim_label in enumerate(dimension_labels)]
