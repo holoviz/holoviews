@@ -52,12 +52,12 @@ class Style(object):
 
 
     def __getitem__(self, index):
-        return self.styles[index % len(self.styles)]
+        return dict(self.styles[index % len(self.styles)])
 
     @property
     def opts(self):
         if len(self.styles) == 1:
-            return self.styles[0]
+            return dict(self.styles[0])
         else:
             raise Exception("The opts property may only be used with non-cyclic styles")
 
@@ -107,11 +107,10 @@ class StyleMap(object):
 
     def styles(self):
         """
-        The full list of base Style objects in the StyleMap
-        (i.e. styles that are not specific to any one particular view
-        object).
+        The full list of base Style objects in the StyleMap, excluding
+        styles customized per object.
         """
-        return [k for k in self.keys() if not k.startswith('__')]
+        return [k for k in self.keys() if not k.startswith('Custom')]
 
 
     def __dir__(self):
