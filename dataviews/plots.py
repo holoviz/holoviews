@@ -155,7 +155,7 @@ class Plot(param.Parameterized):
         """
         Returns the total number of available frames.
         """
-        raise NotImplementedError
+        return len(self._stack)
 
 
     def __call__(self, ax=False, zorder=0):
@@ -197,10 +197,6 @@ class SheetLinesPlot(Plot):
         plt.draw()
 
 
-    def __len__(self):
-        return len(self._stack)
-
-
 
 class SheetPointsPlot(Plot):
 
@@ -231,10 +227,6 @@ class SheetPointsPlot(Plot):
         if self.show_title and self.zorder == 0:
             self.handles['title'].set_text(points.title)
         plt.draw()
-
-
-    def __len__(self):
-        return len(self._stack)
 
 
 
@@ -312,10 +304,6 @@ class SheetViewPlot(Plot):
         plt.draw()
 
 
-    def __len__(self):
-        return len(self._stack)
-
-
 
 class SheetPlot(Plot):
     """
@@ -350,10 +338,6 @@ class SheetPlot(Plot):
         n = n  if n < len(self) else len(self) - 1
         for plot in self.plots:
             plot.update_frame(n)
-
-
-    def __len__(self):
-        return len(self._stack)
 
 
 
@@ -516,7 +500,7 @@ class CoordinateGridPlot(Plot):
 
 
     def __len__(self):
-        return len(self.grid)
+        return max([len(v) for v in self.grid ]+[1])
 
 
 
@@ -686,10 +670,6 @@ class DataCurvePlot(Plot):
         plt.draw()
 
 
-    def __len__(self):
-        return len(self._stack)
-
-
 
 class DataPlot(Plot):
     """
@@ -736,10 +716,6 @@ class DataPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         for plot in self.plots:
             plot.update_frame(n)
-
-
-    def __len__(self):
-        return len(self._stack)
 
 
 
@@ -803,7 +779,7 @@ class DataGridPlot(Plot):
 
 
     def __len__(self):
-        return len(self.grid)
+        return max([len(v) for v in self.grid ]+[1])
 
 
 
@@ -913,9 +889,6 @@ class TablePlot(Plot):
             self.handles['title'].set_text(tableview.title)
         plt.draw()
 
-    def __len__(self):
-        return len(self._stack)
-
 
 
 class DataHistogramPlot(Plot):
@@ -959,9 +932,6 @@ class DataHistogramPlot(Plot):
             self.handles['title'].set_text(hist.title)
         plt.draw()
 
-
-    def __len__(self):
-        return len(self._stack)
 
 
 viewmap = {SheetView: SheetViewPlot,

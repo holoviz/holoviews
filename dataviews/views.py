@@ -272,9 +272,6 @@ class GridLayout(NdMapping):
         return self.clone(new_values+self.values())
 
 
-    def __len__(self):
-        return max([len(v) for v in self.values() if isinstance(v, NdMapping)]+[1])
-
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v,type) and
                     (issubclass(_v, NdMapping) or issubclass(_v, View))]))
