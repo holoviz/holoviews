@@ -50,6 +50,9 @@ class Style(object):
         cyclic_tuples = zip(*[val.elements for val in filter_values])
         return [ dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
 
+    def keys(self):
+        "The keyword names defined in the Style."
+        return self._kwargs.keys()
 
     def __getitem__(self, index):
         return dict(self.styles[index % len(self.styles)])
