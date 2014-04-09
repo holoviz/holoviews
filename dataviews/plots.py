@@ -104,7 +104,8 @@ class Plot(param.Parameterized):
             axis.set_yticks(yticks[0])
             axis.set_yticklabels(yticks[1])
 
-        if self.show_title and title is not None:
+        if self.show_title:
+            title = '' if title is None else title
             self.handles['title'] = axis.set_title(title)
 
         if xlabel: axis.set_xlabel(xlabel)
