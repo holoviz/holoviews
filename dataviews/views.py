@@ -269,7 +269,7 @@ class GridLayout(NdMapping):
 
     def __add__(self, other):
         new_values = other.values() if isinstance(other, GridLayout) else [other]
-        return self.clone(new_values+self.values())
+        return self.clone([new_values+self.values()])
 
 
 
