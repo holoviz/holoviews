@@ -921,8 +921,10 @@ def update_matplotlib_rc():
     matplotlib.rcParams.update(rc)
 
 
-
-message = """Welcome to the Imagen IPython extension! (http://ioam.github.io/imagen/)"""
+all_line_magics = sorted(['%params', '%style', '%view', '%plotopts'])
+all_cell_magics = sorted(['%%view', '%%style', '%%labels'])
+message = """Welcome to the Dataviews IPython extension! (http://ioam.github.io/imagen/)"""
+message += '\nAvailable magics: %s' % ', '.join(all_line_magics + all_cell_magics)
 
 _loaded = False
 VIDEO_FORMAT = select_format(['webm','h264','gif'])
