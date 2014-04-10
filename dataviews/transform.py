@@ -14,7 +14,7 @@ import matplotlib
 from imagen.analysis import ViewOperation
 from sheetviews import SheetView
 
-from styles import Styles, Style
+from styles import Styles, GrayNearest
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -137,7 +137,7 @@ class split(ViewOperation):
 
 
 
-Styles.R_Channel = Style(cmap='gray')
-Styles.G_Channel = Style(cmap='gray')
-Styles.B_Channel = Style(cmap='gray')
-Styles.A_Channel = Style(cmap='gray')
+Styles.R_Channel = GrayNearest
+Styles.G_Channel = GrayNearest
+Styles.B_Channel = GrayNearest
+Styles.A_Channel = GrayNearest

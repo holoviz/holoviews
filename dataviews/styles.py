@@ -185,3 +185,6 @@ class StyleMap(object):
 
 Styles = StyleMap()
 Styles['Style'] = Style()
+
+# Defining the most common styles in dataviews
+GrayNearest = Style(cmap='gray', interpolation='nearest')
