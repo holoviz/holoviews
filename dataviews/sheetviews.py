@@ -100,9 +100,8 @@ class SheetOverlay(SheetLayer, Overlay):
         if not all(el.depth == 1 for el in self.data):
             raise Exception("All SheetViews must have a depth of one for"
                             " conversion to RGB(A) format")
-        mode = 'rgb' if len(self) == 3 else 'rgba'
         return SheetView(np.dstack([el.data for el in self.data]), self.bounds,
-                         roi_bounds=self.roi_bounds, mode=mode)
+                         roi_bounds=self.roi_bounds)
 
 
     @property
@@ -149,7 +148,6 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         xdensity = dim1/(r-l)
         ydensity = dim2/(t-b)
 
-        self._mode = kwargs.pop('mode', None)
         SheetLayer.__init__(self, data, bounds, **kwargs)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
 
@@ -199,23 +197,16 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
     @property
     def mode(self):
         """
-        Mode specifying the color space for visualizing the array
-        data. The string returned corresponds to the matplotlib colour
-        map name unless depth is 3 or 4 with modes 'rgb' or 'rgba'
-        respectively.
-
-        If not explicitly specified, the mode defaults to 'gray'
-        unless the cyclic_range is set, in which case 'hsv' is
-        returned.
+        Mode specifying the color space for visualizing the array data
+        and is a function of the depth. For a depth of one, a colormap
+        is used as determined by the style. If the depth is 3 or 4,
+        the mode is 'rgb' or 'rgba' respectively.
         """
-        if self._mode is not None:
-            return self._mode
-        return 'gray' if (self.cyclic_range is None) else 'hsv'
-
-
-    @mode.setter
-    def mode(self, val):
-        self._mode = val
+        if   self.depth == 1:  return 'cmap'
+        elif self.depth == 3:  return 'rgb'
+        elif self.depth == 4:  return 'rgba'
+        else:
+            raise Exception("Mode cannot be determined from the depth")
 
 
     @property

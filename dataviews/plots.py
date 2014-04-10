@@ -269,7 +269,7 @@ class SheetViewPlot(Plot):
             options.pop('cmap', None)
 
         im = ax.imshow(sheetview.data, extent=[l, r, b, t],
-                       zorder=self.zorder, interpolation='nearest', **options)
+                       zorder=self.zorder, **options)
         self.handles['im'] = im
 
         normalization = sheetview.data.max()
@@ -457,14 +457,12 @@ class CoordinateGridPlot(Plot):
                 w, h = self._get_dims(view)
                 if view.type == SheetOverlay:
                     data = view.top[-1].data if self.situate else view.top[-1].roi.data
-                    cmap = {'cmap':view.top[-1].mode} if view.top[-1].depth==1 else {}
+                    opts = Styles[view.top[0]].opts
                 else:
                     data = view.top.data if self.situate else view.top.roi.data
-                    cmap = {'cmap':view.top.mode} if view.top.depth==1 else {}
+                    opts = Styles[view.top].opts
 
-                self.handles['projs'].append(plt.imshow(data, extent=(x,x+w, y, y+h),
-                                                        interpolation='nearest',
-                                                        **cmap))
+                self.handles['projs'].append(plt.imshow(data, extent=(x,x+w, y, y+h), **opts))
                 y += h + b_h
             y = b_h
             x += w + b_w

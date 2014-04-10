@@ -58,7 +58,7 @@ class HCS(ViewOperation):
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
         return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds,
-                          mode='rgb', label=hue.label+' HCS Plot')]
+                          label=hue.label+' HCS Plot')]
 
 
 
@@ -75,16 +75,14 @@ class colorize(ViewOperation):
 
     def _process(self, overlay):
 
-         if len(overlay) != 2 and overlay[0].mode != 'gray':
+         if len(overlay) != 2 and overlay[0].mode != 'cmap':
              raise Exception("Can only colorize grayscale overlayed with colour map.")
          if [overlay[0].depth, overlay[1].depth ] != [1,1]:
              raise Exception("Depth one layers required.")
          if overlay[0].shape != overlay[1].shape:
              raise Exception("Shapes don't match.")
 
-         if overlay[1].mode != 'hsv':
-             raise NotImplementedError
-
+         # Needs a general approach which works with any color map
          C = SheetView(np.ones(overlay[1].data.shape),
                        bounds=overlay.bounds)
          hcs = HCS(overlay[1] * C * overlay[0].N)
@@ -120,8 +118,7 @@ class cmap2rgb(ViewOperation):
                          cyclic_range=sheetview.cyclic_range,
                          style=sheetview.style,
                          metadata=sheetview.metadata,
-                         label = sheetview.label+' RGB',
-                         mode='rgba')]
+                         label = sheetview.label+' RGB')]
 
 
 
@@ -131,7 +128,7 @@ class split(ViewOperation):
     a GridLayout.
     """
     def _process(self, sheetview):
-        if sheetview.depth not in [3,4]:
+        if sheetview.mode not in ['rgb','rgba']:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
         return [SheetView(sheetview.data[:,:,i],
                           bounds=sheetview.bounds,
