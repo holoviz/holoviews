@@ -10,6 +10,7 @@ import param
 
 from ndmapping import NdMapping, Dimension, AttrDict, map_type
 from styles import Styles
+from boundingregion import BoundingBox
 
 
 class View(param.Parameterized):
@@ -62,6 +63,91 @@ class View(param.Parameterized):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[[self, obj]])
 
+
+class Annotation(View):
+    """
+    An annotation is a type of View that is displayed on the top of an
+    overlay. Annotations elements do not depend on the details of the
+    data displayed and are generally for the convenience of the user
+    (e.g. to draw attention to specific areas of the figure using
+    arrows, boxes or labels).
+
+    All annotations have an optional interval argument that indicates
+    which stack elements they apply to. For instance, this allows
+    annotations for a specific time interval when overlaid over a
+    SheetStack or DataStack with a 'time' dimension. The interval
+    argument is a dictionary of dimension keys and tuples containing
+    (start, end) values. A value of None, indicates an unspecified
+    constraint.
+    """
+
+    def __init__(self, data=[], **kwargs):
+        super(Annotation, self).__init__(data, **kwargs)
+        self.data = []
+
+
+    def arrow(self, xy, text='', direction='<', points=40,
+              arrowstyle='->', interval=None):
+        """
+        Draw an arrow along one of the cardinal directions with option
+        text. The direction indicates the direction the arrow is
+        pointing and the points argument defines the length of the
+        arrow in points. Different arrow head styles are supported via
+        the arrowstyle argument.
+        """
+        directions = ['<', '^', '>', 'v']
+        if direction.lower() not in directions:
+            raise Exception("Valid arrow directions are: %s"
+                            % ', '.join(repr(d) for d in directions))
+
+        arrowstyles = ['-', '->', '-[', '-|>', '<->', '<|-|>']
+        if arrowstyle not in arrowstyles:
+            raise Exception("Valid arrow styles are: %s"
+                            % ', '.join(repr(a) for a in arrowstyles))
+
+        self.data.append((direction.lower(), text, xy, points, arrowstyle, interval))
+
+
+    def line(self, coords, interval=None):
+        """
+        Draw an arbitrary polyline that goes through the listed
+        coordinates.  Coordinates are specified using a list of (x,y)
+        tuples.
+        """
+        self.data.append(('line', coords, interval))
+
+
+    def box(self, coords, interval=None):
+        """
+        Draw a box with corners specified in the positions specified
+        by ((left, bottom), (right, top)). Alternatively, a
+        BoundingBox may be supplied.
+        """
+        if isinstance(coords, BoundingBox):
+            (l,b,r,t) = coords.lbrt()
+        else:
+            ((l,b), (r,t)) = coords
+
+        self.line([(t,l), (t,r), (b,r), (b,l), (t,l)],
+                  interval=interval)
+
+
+    def vline(self, x, interval=None):
+        """
+        Draw an axis vline (vertical line) at the given x value.
+        """
+        self.data.append(('vline', x, interval))
+
+
+    def hline(self, y, interval=None):
+        """
+        Draw an axis hline (horizontal line) at the given y value.
+        """
+        self.data.append(('hline', y, interval))
+
+
+    def __mul__(self, other):
+        raise Exception("An annotation can only be overlaid over a different View type.")
 
 
 class Overlay(View):

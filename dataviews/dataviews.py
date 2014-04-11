@@ -4,7 +4,7 @@ from collections import defaultdict
 import param
 
 from ndmapping import NdMapping, map_type
-from views import View, Overlay, GridLayout
+from views import View, Overlay, Annotation, GridLayout
 
 def find_minmax(lims, olims):
     """
@@ -160,7 +160,9 @@ class DataOverlay(DataLayer, Overlay):
 
 
     def add(self, layer):
-        if not len(self):
+
+        if isinstance(layer, Annotation): pass
+        elif not len(self):
             self.xlim = layer.xlim
             self.ylim = layer.ylim
             self.xlabel = layer.xlabel
@@ -170,7 +172,6 @@ class DataOverlay(DataLayer, Overlay):
             self.ylim = find_minmax(self.ylim, layer.ylim)
             if layer.xlabel != self.xlabel or layer.ylabel != self.ylabel:
                 raise Exception("DataLayers must share common x- and y-labels.")
-
         self.data.append(layer)
 
 
@@ -484,7 +485,7 @@ class DataStack(Stack):
     the x- and y-dimension limits and labels.
     """
 
-    data_type = DataLayer
+    data_type = (DataLayer, Annotation)
 
     overlay_type = DataOverlay
 

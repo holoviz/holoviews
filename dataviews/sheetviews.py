@@ -6,7 +6,7 @@ from boundingregion import BoundingBox, BoundingRegion
 from dataviews import Stack
 from ndmapping import NdMapping, Dimension
 from sheetcoords import SheetCoordinateSystem, Slice
-from views import View, Overlay, GridLayout
+from views import View, Overlay, Annotation, GridLayout
 
 
 class SheetLayer(View):
@@ -33,7 +33,13 @@ class SheetLayer(View):
 
 
     def __mul__(self, other):
-        if isinstance(other, SheetStack):
+
+        if isinstance(other, Annotation):
+            return SheetOverlay([self, other],
+                                self.bounds,
+                                roi_bounds=self.roi_bounds,
+                                metadata=self.metadata)
+        elif isinstance(other, SheetStack):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
         elif isinstance(self, SheetOverlay):
@@ -78,7 +84,10 @@ class SheetOverlay(SheetLayer, Overlay):
         """
         Overlay a single layer on top of the existing overlay.
         """
-        if layer.bounds.lbrt() != self.bounds.lbrt():
+        if isinstance(layer, Annotation):
+            self.data.append(layer)
+            return
+        elif layer.bounds.lbrt() != self.bounds.lbrt():
             if layer.bounds is None:
                 layer.bounds = self.bounds
             else:
@@ -317,7 +326,7 @@ class SheetStack(Stack):
 
     bounds = None
 
-    data_type = SheetLayer
+    data_type = (SheetLayer, Annotation)
 
     overlay_type = SheetOverlay
 
@@ -417,9 +426,11 @@ class SheetStack(Stack):
 
 
     def _item_check(self, dim_vals, data):
-        if self.bounds is None:
+
+        if isinstance(data, Annotation): pass
+        elif self.bounds is None:
             self.bounds = data.bounds
-        if not data.bounds.lbrt() == self.bounds.lbrt():
+        elif not data.bounds.lbrt() == self.bounds.lbrt():
             raise AssertionError("All SheetLayer elements must have matching bounds.")
         super(SheetStack, self)._item_check(dim_vals, data)
 
