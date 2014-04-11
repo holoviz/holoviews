@@ -183,8 +183,7 @@ class SheetLinesPlot(Plot):
         lines = self._stack.top
         title = None if self.zorder > 0 else lines.title
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
-        line_segments = LineCollection([], zorder=self.zorder, **Styles[lines][cyclic_index])
-        line_segments.set_paths(lines.data)
+        line_segments = LineCollection(lines.data, zorder=self.zorder, **Styles[lines][cyclic_index])
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)
         if axis is None: plt.close(self.handles['fig'])
@@ -647,9 +646,8 @@ class DataCurvePlot(Plot):
                         xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
-        line_segments = LineCollection([], zorder=self.zorder,
+        line_segments = LineCollection(lines.data, zorder=self.zorder,
                                        **Styles[lines][cyclic_index])
-        line_segments.set_paths(lines.data)
 
         # Add legend
         line_segments.set_label(lines.legend_label)
