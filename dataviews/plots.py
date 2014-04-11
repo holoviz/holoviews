@@ -1,5 +1,4 @@
 from itertools import groupby
-import string
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -15,7 +14,7 @@ from dataviews import NdMapping, Stack, TableView, TableStack
 from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
-from views import GridLayout, View
+from views import GridLayout, View, Annotation
 from styles import Styles
 
 
@@ -183,6 +182,129 @@ class SheetLinesPlot(Plot):
         self.handles['line_segments'].set_paths(contours.data)
         if self.show_title and self.zorder == 0:
             self.handles['title'].set_text(contours.title)
+        plt.draw()
+
+
+
+class AnnotationPlot(Plot):
+    """
+    Draw the Annotation view on the supplied axis. Supports axis
+    vlines, hlines, arrows (with or without labels), boxes and
+    arbitrary polygonal lines. Note, unlike other Plot types,
+    AnnotationPlot must always operate on a supplied axis as
+    Annotations may only be used as part of Overlays.
+    """
+
+    def __init__(self, annotation, zorder=0, **kwargs):
+        self.zorder = zorder
+        self._annotation = annotation
+        self._stack = self._check_stack(annotation, Annotation)
+        self._warn_invalid_intervals(self._stack)
+        super(AnnotationPlot, self).__init__(**kwargs)
+        self.handles['annotations'] = []
+
+
+    def _warn_invalid_intervals(self, stack):
+        "Check if the annotated intervals have appropriate keys"
+        dim_labels = self._stack.dimension_labels
+
+        mismatch_set = set()
+        for annotation in stack.values():
+            for spec in annotation.data:
+                interval = spec[-1]
+                if interval is None or dim_labels == ['Default']:
+                    continue
+                mismatches = set(interval.keys()) - set(dim_labels)
+                mismatch_set = mismatch_set | mismatches
+
+        if mismatch_set:
+            mismatch_list= ', '.join('%r' % el for el in mismatch_set)
+            print "<WARNING>: Invalid annotation interval key(s) ignored: %r" % mismatch_list
+
+
+    def _active_interval(self, key, interval):
+        """
+        Given an interval specification, determine whether the
+        annotation should be shown or not.
+        """
+        dim_labels = self._stack.dimension_labels
+        if (interval is None) or dim_labels == ['Default']:
+            return True
+
+        key = key if isinstance(key, tuple) else (key,)
+        key_dict = dict(zip(dim_labels, key))
+        for key, (start, end) in interval.items():
+            if (start is not None) and key_dict.get(key, -float('inf')) <= start:
+                return False
+            if (end is not None) and key_dict.get(key, float('inf')) > end:
+                return False
+
+        return True
+
+
+    def _draw_annotations(self, annotation, axis, key):
+        """
+        Draw the elements specified by the Annotation View on the
+        axis, return a list of handles.
+        """
+        handles = []
+        options = Styles[annotation].opts
+        color = options.get('color', 'k')
+
+        for spec in annotation.data:
+            mode, info,interval = spec[0], spec[1:-1], spec[-1]
+            if not self._active_interval(key, interval):
+                continue
+            if mode == 'vline':
+                handles.append(axis.axvline(spec[1], **options))
+                continue
+            elif mode == 'hline':
+                handles.append(axis.axhline(spec[1], **options))
+                continue
+            elif mode == 'line':
+                line = LineCollection([np.array(info[0])], **options)
+                axis.add_collection(line)
+                handles.append(line)
+                continue
+
+            text, xy, points, arrowstyle = info
+            arrowprops = dict(arrowstyle=arrowstyle, color=color)
+            if mode in ['v', '^']:
+                xytext = (0, points if mode=='v' else -points)
+            elif mode in ['>', '<']:
+                xytext = (points if mode=='<' else -points, 0)
+            arrow = axis.annotate(text, xy=xy,
+                                  textcoords='offset points',
+                                  xytext=xytext,
+                                  ha="center", va="center",
+                                  arrowprops=arrowprops,
+                                  **options)
+            handles.append(arrow)
+        return handles
+
+
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+
+        if axis is None:
+            raise Exception("Annotations can only be plotted as part of overlays.")
+
+        self.handles['axis'] = axis
+        handles = self._draw_annotations(self._stack.top, axis, self._stack.keys()[-1])
+        self.handles['annotations'] = handles
+        return axis
+
+
+    def update_frame(self, n):
+        n = n  if n < len(self) else len(self) - 1
+        annotation = self._stack.values()[n]
+        key = self._stack.keys()[n]
+
+        axis = self.handles['axis']
+        # Cear all existing annotations
+        for element in self.handles['annotations']:
+            element.remove()
+
+        self.handles['annotations'] = self._draw_annotations(annotation, axis, key)
         plt.draw()
 
 
@@ -696,7 +818,9 @@ class DataPlot(Plot):
             plot = plotype(stack, size=self.size, show_axes=self.show_axes,
                            show_legend=self.show_legend, show_title=self.show_title,
                            show_grid=self.show_grid, zorder=zorder, **kwargs)
-            plot(ax, cyclic_index=cyclic_index, lbrt=self._stack.lbrt)
+
+            lbrt= None if stack.type == Annotation else self._stack.lbrt
+            plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
             self.plots.append(plot)
 
         if axis is None: plt.close(self.handles['fig'])
@@ -934,7 +1058,8 @@ viewmap = {SheetView: SheetViewPlot,
            DataOverlay: DataPlot,
            DataGrid: DataGridPlot,
            TableView: TablePlot,
-           DataHistogram:DataHistogramPlot
+           DataHistogram:DataHistogramPlot,
+           Annotation: AnnotationPlot
 }
 
 

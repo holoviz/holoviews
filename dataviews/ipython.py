@@ -906,6 +906,7 @@ def projection_display(grid, size=256):
 @show_tracebacks
 def view_display(view, size=256):
     if not isinstance(view, View): return None
+    if isinstance(view, Annotation): return None
     invalid_styles = StyleMagic.set_view_style(view)
     if invalid_styles: return invalid_styles
     fig = viewmap[view.__class__](view, **opts(view))()
