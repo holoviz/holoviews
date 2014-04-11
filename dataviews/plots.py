@@ -50,17 +50,6 @@ class Plot(param.Parameterized):
         self.handles = {'fig':None}
 
 
-    def _title_fields(self, stack):
-        """
-        Returns the formatting fields in the title string supplied by
-        the view object.
-        """
-        if stack.title is None:  return []
-        parse = list(string.Formatter().parse(stack.title))
-        if parse == []: return []
-        return [f for f in zip(*parse)[1] if f is not None]
-
-
     def _check_stack(self, view, element_type=View):
         """
         Helper method that ensures a given view is always returned as
@@ -68,8 +57,6 @@ class Plot(param.Parameterized):
         """
         if not isinstance(view, self._stack_type):
             stack = self._stack_type(initial_items=(0, view))
-            if self._title_fields(stack) != []:
-                raise Exception('Can only format title string for animation and stacks.')
         else:
             stack = view
 
@@ -195,7 +182,7 @@ class SheetLinesPlot(Plot):
         contours = self._stack.values()[n]
         self.handles['line_segments'].set_paths(contours.data)
         if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(self._format_title(self._stack, n))
+            self.handles['title'].set_text(contours.title)
         plt.draw()
 
 
@@ -324,14 +311,10 @@ class SheetPlot(Plot):
 
     def __call__(self, axis=None):
         ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
-
-
-
         stacks = self._stack.split()
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(stacks, lambda s: s.style))
 
-        #for zorder, stack in enumerate(self._stack.split()):
 
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
