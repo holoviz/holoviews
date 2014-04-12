@@ -203,6 +203,12 @@ class AnnotationPlot(Plot):
         super(AnnotationPlot, self).__init__(**kwargs)
         self.handles['annotations'] = []
 
+        line_opts = ['color', 'linewidth', 'linestyle']
+        arrow_opts = ['color', 'style', 'family', 'weight', 'rotation', 'fontsize']
+        self.opt_filter = {'hline':line_opts, 'vline':line_opts, 'line':line_opts,
+                           '<':arrow_opts, '^':arrow_opts,
+                           '>':arrow_opts, 'v':arrow_opts}
+
 
     def _warn_invalid_intervals(self, stack):
         "Check if the annotated intervals have appropriate keys"
@@ -252,17 +258,20 @@ class AnnotationPlot(Plot):
         color = options.get('color', 'k')
 
         for spec in annotation.data:
-            mode, info,interval = spec[0], spec[1:-1], spec[-1]
+            mode, info, interval = spec[0], spec[1:-1], spec[-1]
+            opts = dict(el for el in options.items()
+                        if el[0] in self.opt_filter[mode])
+
             if not self._active_interval(key, interval):
                 continue
             if mode == 'vline':
-                handles.append(axis.axvline(spec[1], **options))
+                handles.append(axis.axvline(spec[1], **opts))
                 continue
             elif mode == 'hline':
-                handles.append(axis.axhline(spec[1], **options))
+                handles.append(axis.axhline(spec[1], **opts))
                 continue
             elif mode == 'line':
-                line = LineCollection([np.array(info[0])], **options)
+                line = LineCollection([np.array(info[0])], **opts)
                 axis.add_collection(line)
                 handles.append(line)
                 continue
@@ -278,7 +287,7 @@ class AnnotationPlot(Plot):
                                   xytext=xytext,
                                   ha="center", va="center",
                                   arrowprops=arrowprops,
-                                  **options)
+                                  **opts)
             handles.append(arrow)
         return handles
 
