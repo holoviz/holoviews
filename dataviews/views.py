@@ -81,9 +81,35 @@ class Annotation(View):
     constraint.
     """
 
-    def __init__(self, data=[], **kwargs):
-        super(Annotation, self).__init__(data, **kwargs)
-        self.data = []
+    def __init__(self, boxes=[], vlines=[], hlines=[], arrows=[], **kwargs):
+        """
+        Annotations may be added via method calls or supplied directly
+        to the constructor using lists of specification elements or
+        (specification, interval) tuples. The specification element
+        formats are listed below:
+
+        box: A BoundingBox or ((left, bottom), (right, top)) tuple.
+
+        hline/vline specification: The vertical/horizontal coordinate.
+
+        arrow: An (xy, kwargs) tuple where xy is a coordinate tuple
+        and kwargs is a dictionary of the optional arguments accepted
+        by the arrow method.
+        """
+        super(Annotation, self).__init__([], **kwargs)
+
+        for box in boxes:
+            self.box(*(box if isinstance(box, tuple) else (box, None)))
+
+        for vline in vlines:
+            self.vline(*(vline if isinstance(vline, tuple) else (vline, None)))
+
+        for hline in hlines:
+            self.hline(*(hline if isinstance(hline, tuple) else (hline, None)))
+
+        for arrow in arrows:
+            spec, interval = arrow if isinstance(arrow, tuple) else (arrow, None)
+            self.arrow(spec[0], **dict(spec[1], interval=interval))
 
 
     def arrow(self, xy, text='', direction='<', points=40,
@@ -117,16 +143,16 @@ class Annotation(View):
         self.data.append(('line', coords, interval))
 
 
-    def box(self, coords, interval=None):
+    def box(self, box, interval=None):
         """
         Draw a box with corners specified in the positions specified
         by ((left, bottom), (right, top)). Alternatively, a
         BoundingBox may be supplied.
         """
-        if isinstance(coords, BoundingBox):
-            (l,b,r,t) = coords.lbrt()
+        if isinstance(box, BoundingBox):
+            (l,b,r,t) = box.lbrt()
         else:
-            ((l,b), (r,t)) = coords
+            ((l,b), (r,t)) = box
 
         self.line([(t,l), (t,r), (b,r), (b,l), (t,l)],
                   interval=interval)
