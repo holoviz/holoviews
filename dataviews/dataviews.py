@@ -474,7 +474,9 @@ class Stack(NdMapping):
 
             # Completed stack stored for return
             stacks.append(stack)
-        return GridLayout([stacks])
+
+        if len(stacks) == 1:  return stacks[0]
+        else:                 return GridLayout([stacks])
 
 
 
