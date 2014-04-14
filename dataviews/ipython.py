@@ -18,7 +18,7 @@ import textwrap, traceback, itertools
 from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap
 from sheetviews import GridLayout, CoordinateGrid
-from views import View, Overlay
+from views import View, Overlay, Annotation
 from styles import Styles, Style
 
 # Variables controlled via the %view magic
@@ -681,7 +681,6 @@ class StyleMagic(Magics):
                 raise SyntaxError("Style names should be split by keywords")
             elif upper:
                 style_name = values[0]
-                matches = Styles.fuzzy_matches(style_name)
                 style_names.append(style_name)
                 updates.append(style_name in Styles.styles())
             else:
@@ -844,22 +843,33 @@ def figure_fallback(plotobj):
 # Display hooks #
 #===============#
 
+HOOK_OPTIONS = ['display_tracebacks']
+CAPTURED = {'view':   None, 'display':None}
 
-def show_tracebacks(fn):
+def display_hook(fn):
     @wraps(fn)
-    def wrapped(*args, **kwargs):
+    def wrapped(view, **kwargs):
+        global CAPTURED
+        if 'view' in HOOK_OPTIONS:
+            CAPTURED['view'] = view
         try:
-            return fn(*args, **kwargs)
+            retval = fn(view, **kwargs)
         except:
-            if ENABLE_TRACEBACKS:
+            if 'display_tracebacks' in HOOK_OPTIONS:
                 traceback.print_exc()
+            return
+
+        if 'display' in HOOK_OPTIONS:
+            CAPTURED['display'] = retval
+        return retval
     return wrapped
 
-@show_tracebacks
+
+@display_hook
 def animation_display(anim):
     return animate(anim, *ANIMATION_OPTS[VIDEO_FORMAT])
 
-@show_tracebacks
+@display_hook
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
     invalid_styles = StyleMagic.set_view_style(stack)
@@ -872,7 +882,7 @@ def stack_display(stack, size=256):
     try:    return HTML_video(stackplot, stack)
     except: return figure_fallback(stackplot)
 
-@show_tracebacks
+@display_hook
 def layout_display(grid, size=256):
     if not isinstance(grid, GridLayout): return None
     invalid_styles = StyleMagic.set_view_style(grid)
@@ -887,7 +897,7 @@ def layout_display(grid, size=256):
     try:     return HTML_video(gridplot, grid)
     except:  return figure_fallback(gridplot)
 
-@show_tracebacks
+@display_hook
 def projection_display(grid, size=256):
     if not isinstance(grid, CoordinateGrid): return None
     size_factor = 0.17
@@ -903,7 +913,7 @@ def projection_display(grid, size=256):
     try:     return HTML_video(gridplot, grid)
     except:  return figure_fallback(gridplot)
 
-@show_tracebacks
+@display_hook
 def view_display(view, size=256):
     if not isinstance(view, View): return None
     if isinstance(view, Annotation): return None
