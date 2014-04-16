@@ -41,6 +41,11 @@ class Plot(param.Parameterized):
     show_title = param.Boolean(default=True, doc="""
       Whether to display the plot title.""")
 
+    style_opts = param.List(default=[], constant=True, doc="""
+     A list of matplotlib keyword arguments that may be supplied via a
+     style options object. Each subclass should override this
+     parameter to list every option that works correctly.""")
+
     _stack_type = Stack
 
     def __init__(self, **kwargs):
@@ -157,6 +162,13 @@ class Plot(param.Parameterized):
 
 class SheetLinesPlot(Plot):
 
+
+    style_opts = param.List(default=['alpha', 'color', 'linestyle',
+                                     'linewidth', 'visible'],
+                            constant=True, doc="""
+        The style options for SheetLinesPlot match those of matplotlib's
+        LineCollection class.""")
+
     _stack_type = SheetStack
 
     def __init__(self, contours, zorder=0, **kwargs):
@@ -194,6 +206,14 @@ class AnnotationPlot(Plot):
     AnnotationPlot must always operate on a supplied axis as
     Annotations may only be used as part of Overlays.
     """
+
+    style_opts = param.List(default=['alpha', 'color', 'linewidth',
+                                     'linestyle', 'rotation', 'family',
+                                     'weight', 'fontsize', 'visible'],
+                            constant=True, doc="""
+     Box annotations, hlines and vlines and lines all accept
+     matplotlib line style options. Arrow annotations also accept
+     additional text options.""")
 
     def __init__(self, annotation, zorder=0, **kwargs):
         self.zorder = zorder
@@ -320,6 +340,11 @@ class AnnotationPlot(Plot):
 
 class SheetPointsPlot(Plot):
 
+    style_opts = param.List(default=['alpha', 'color', 'marker', 's', 'visible'],
+                            constant=True, doc="""
+     The style options for SheetPointsPlot match those of matplotlib's
+     scatter plot command.""")
+
     _stack_type = SheetStack
 
     def __init__(self, contours, zorder=0, **kwargs):
@@ -355,6 +380,15 @@ class SheetViewPlot(Plot):
     colorbar = param.ObjectSelector(default=None,
                                     objects=['horizontal','vertical', None],
         doc="""The style of the colorbar if applicable. """)
+
+
+    style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
+                                     'visible', 'filterrad', 'origin'],
+                            constant=True, doc="""
+        The style options for SheetViewPlot are a subset of those used
+        by matplotlib's imshow command. If supplied, the clim option
+        will be ignored as it is computed from the input SheetView.""")
+
 
     _stack_type = SheetStack
 
@@ -432,6 +466,11 @@ class SheetPlot(Plot):
     objects.
     """
 
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     SheetPlot renders overlay layers which individually have style
+     options but SheetPlot itself does not.""")
+
     _stack_type = SheetStack
 
     def __init__(self, overlays, **kwargs):
@@ -477,6 +516,10 @@ class GridLayoutPlot(Plot):
 
     show_axes= param.Boolean(default=True, constant=True, doc="""
       Whether to show labelled axes for individual subplots.""")
+
+    style_opts = param.List(default=[], constant=True, doc="""
+      GridLayoutPlot renders a group of views which individually have
+      style options but GridLayoutPlot itself does not.""")
 
     def __init__(self, grid, **kwargs):
 
@@ -538,6 +581,13 @@ class CoordinateGridPlot(Plot):
     situate = param.Boolean(default=False, doc="""
         Determines whether to situate the projection in the full bounds or
         apply the ROI.""")
+
+    style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
+                                     'visible', 'filterrad', 'origin'],
+                            constant=True, doc="""
+       The style options for CoordinateGridPlot match those of
+       matplotlib's imshow command.""")
+
 
     def __init__(self, grid, **kwargs):
         if not isinstance(grid, CoordinateGrid):
@@ -639,6 +689,11 @@ class DataCurvePlot(Plot):
     num_ticks = param.Integer(default=5)
 
     relative_labels = param.Boolean(default=False)
+
+    style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
+                                     'visible'], constant=True, doc="""
+       The style options for DataCurvePlot match those of matplotlib's
+       LineCollection object.""")
 
     _stack_type = DataStack
 
@@ -802,6 +857,11 @@ class DataPlot(Plot):
 
     _stack_type = DataStack
 
+    style_opts = param.List(default=[], constant=True, doc="""
+     DataPlot renders overlay layers which individually have style
+     options but DataPlot itself does not.""")
+
+
     def __init__(self, overlays, **kwargs):
         self._stack = self._check_stack(overlays, DataOverlay)
         self.plots = []
@@ -851,6 +911,10 @@ class DataGridPlot(Plot):
       Legends add to much clutter in a grid and are disabled by default.""")
 
     show_title = param.Boolean(default=False)
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     DataGridPlot renders groups of DataLayers which individually have
+     style options but DataGridPlot itself does not.""")
 
     def __init__(self, grid, **kwargs):
 
@@ -929,6 +993,12 @@ class TablePlot(Plot):
     font_types = param.Dict(default = {'heading':FontProperties(weight='bold',
                                                                 family='monospace')},
        doc="""The font style used for heading labels used for emphasis.""")
+
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     TablePlot has specialized options which are controlled via plot
+     options instead of matplotlib options.""")
+
 
     _stack_type = TableStack
 
@@ -1016,6 +1086,13 @@ class DataHistogramPlot(Plot):
     DataHistograms, which can be displayed as a single frame or
     animation.
     """
+    style_opts = param.List(default=['alpha', 'color', 'align', 'width',
+                                     'visible', 'edgecolor', 'log',
+                                     'ecolor', 'capsize', 'error_kw',
+                                     'hatch'], constant=True, doc="""
+     The style options for DataHistogramPlot match those of
+     matplotlib's bar command.""")
+
     _stack_type = DataStack
 
     def __init__(self, curves, zorder=0, **kwargs):
