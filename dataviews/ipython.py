@@ -449,11 +449,14 @@ class OptsMagic(Magics):
         if isinstance(obj, (Overlay, GridLayout)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
-        elif isinstance(obj, Stack):
+        elif isinstance(obj, Stack) and not issubclass(obj.type, Overlay):
             key_lists = [cls.collect(el, attr).keys() for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
                 group.update({val:obj.type})
+        elif isinstance(obj, Stack):
+            for layer in obj.top:
+                group.update(cls.collect(layer, attr))
         else:
             value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
             group.update({value:type(obj)})
