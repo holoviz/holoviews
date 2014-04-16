@@ -275,12 +275,12 @@ class AnnotationPlot(Plot):
         axis, return a list of handles.
         """
         handles = []
-        options = options.style[annotation].opts
-        color = options.get('color', 'k')
+        opts = options.style[annotation].opts
+        color = opts.get('color', 'k')
 
         for spec in annotation.data:
             mode, info, interval = spec[0], spec[1:-1], spec[-1]
-            opts = dict(el for el in options.items()
+            opts = dict(el for el in opts.items()
                         if el[0] in self.opt_filter[mode])
 
             if not self._active_interval(key, interval):
@@ -490,7 +490,7 @@ class SheetPlot(Plot):
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
             plotype = viewmap[stack.type]
-            plot = plotype(stack, **options.plotting[stack].opts)
+            plot = plotype(stack, **dict(options.plotting[stack].opts, zorder=zorder))
 
             plot(ax, cyclic_index=cyclic_index)
             self.plots.append(plot)
