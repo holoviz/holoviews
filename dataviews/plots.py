@@ -223,8 +223,9 @@ class AnnotationPlot(Plot):
         super(AnnotationPlot, self).__init__(**kwargs)
         self.handles['annotations'] = []
 
-        line_opts = ['color', 'linewidth', 'linestyle']
-        arrow_opts = ['color', 'style', 'family', 'weight', 'rotation', 'fontsize']
+        line_only = ['linewidth', 'linestyle']
+        arrow_opts = [opt for opt in self.style_opts if opt not in line_only]
+        line_opts = line_only + ['color']
         self.opt_filter = {'hline':line_opts, 'vline':line_opts, 'line':line_opts,
                            '<':arrow_opts, '^':arrow_opts,
                            '>':arrow_opts, 'v':arrow_opts}
