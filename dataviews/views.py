@@ -9,7 +9,7 @@ import math
 import param
 
 from ndmapping import NdMapping, Dimension, AttrDict, map_type
-from styles import Styles
+from options import options
 from boundingregion import BoundingBox
 
 
@@ -40,7 +40,7 @@ class View(param.Parameterized):
         assigned, then the closest existing style name is returned.
         """
         if (self._style is None) and self.label:
-            matches = Styles.fuzzy_matches(self.label.replace(' ', '_'))
+            matches = options.fuzzy_matches(self.label.replace(' ', '_'))
             return matches[0] if matches else 'DefaultStyle'
         elif self._style is None:
             return 'DefaultStyle'

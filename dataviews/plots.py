@@ -15,7 +15,7 @@ from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
 from views import GridLayout, View, Annotation
-from styles import Styles
+from options import options
 
 
 
@@ -169,7 +169,7 @@ class SheetLinesPlot(Plot):
         lines = self._stack.top
         title = None if self.zorder > 0 else lines.title
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
-        line_segments = LineCollection(lines.data, zorder=self.zorder, **Styles[lines][cyclic_index])
+        line_segments = LineCollection(lines.data, zorder=self.zorder, **options.style[lines][cyclic_index])
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)
         if axis is None: plt.close(self.handles['fig'])
@@ -254,7 +254,7 @@ class AnnotationPlot(Plot):
         axis, return a list of handles.
         """
         handles = []
-        options = Styles[annotation].opts
+        options = options.style[annotation].opts
         color = options.get('color', 'k')
 
         for spec in annotation.data:
@@ -334,7 +334,7 @@ class SheetPointsPlot(Plot):
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
         scatterplot = plt.scatter(points.data[:, 0], points.data[:, 1],
-                                  zorder=self.zorder, **Styles[points][cyclic_index])
+                                  zorder=self.zorder, **options.style[points][cyclic_index])
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -381,12 +381,12 @@ class SheetViewPlot(Plot):
         title = None if self.zorder > 0 else sheetview.title
         ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
 
-        options = Styles[sheetview][cyclic_index]
+        opts = options.style[sheetview][cyclic_index]
         if sheetview.depth != 1:
-            options.pop('cmap', None)
+            opts.pop('cmap', None)
 
         im = ax.imshow(sheetview.data, extent=[l, r, b, t],
-                       zorder=self.zorder, **options)
+                       zorder=self.zorder, **opts)
         self.handles['im'] = im
 
         normalization = sheetview.data.max()
@@ -450,9 +450,8 @@ class SheetPlot(Plot):
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
             plotype = viewmap[stack.type]
-            plot = plotype(stack, zorder=zorder,
-                           size=self.size,
-                           show_axes=self.show_axes)
+            plot = plotype(stack, **options.plotting[stack].opts)
+
             plot(ax, cyclic_index=cyclic_index)
             self.plots.append(plot)
 
@@ -498,19 +497,15 @@ class GridLayoutPlot(Plot):
 
         coords = [(r,c) for c in range(self.cols) for r in range(self.rows)]
 
-        layout_opts = dict(show_axes=self.show_axes,
-                           show_grid=self.show_grid,
-                           show_title=self.show_title)
-
         self.subplots = []
         for (r,c) in coords:
             view = self.grid.get((r,c),None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r,c])
                 subview = view.roi if self.roi else view
-                plotopts = view.metadata.get('plot_opts', {})
+                #plotopts = view.metadata.get('plot_opts', {})
                 vtype = subview.type if isinstance(subview,Stack) else subview.__class__
-                subplot = viewmap[vtype](subview, **dict(layout_opts, **plotopts))
+                subplot = viewmap[vtype](subview, **options.plotting[subview].opts)
             self.subplots.append(subplot)
             subplot(subax)
         plt.tight_layout()
@@ -570,10 +565,10 @@ class CoordinateGridPlot(Plot):
                 w, h = self._get_dims(view)
                 if view.type == SheetOverlay:
                     data = view.top[-1].data if self.situate else view.top[-1].roi.data
-                    opts = Styles[view.top[0]].opts
+                    opts = options.style[view.top[0]].opts
                 else:
                     data = view.top.data if self.situate else view.top.roi.data
-                    opts = Styles[view.top].opts
+                    opts = options.style[view.top].opts
 
                 self.handles['projs'].append(plt.imshow(data, extent=(x,x+w, y, y+h), **opts))
                 y += h + b_h
@@ -761,7 +756,7 @@ class DataCurvePlot(Plot):
 
         # Create line segments and apply style
         line_segments = LineCollection(lines.data, zorder=self.zorder,
-                                       **Styles[lines][cyclic_index])
+                                       **options.style[lines][cyclic_index])
 
         # Add legend
         line_segments.set_label(lines.legend_label)
@@ -1034,7 +1029,7 @@ class DataHistogramPlot(Plot):
         ax = self._axis(axis, hist.title, hist.xlabel, hist.ylabel)
 
         bars = plt.bar(hist.edges, hist.hist, zorder=self.zorder,
-                       **Styles[hist][cyclic_index])
+                       **options.style[hist][cyclic_index])
         self.handles['bars'] = bars
 
         if not axis: plt.close(self.handles['fig'])
