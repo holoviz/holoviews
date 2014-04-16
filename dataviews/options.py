@@ -165,8 +165,10 @@ class OptionMap(object):
         """
         if isinstance(obj, str):
             return self.fuzzy_match_style(obj)
-        else:
+        elif hasattr(obj, 'style') and not isinstance(obj.style, list):
             return self.fuzzy_match_style(obj.style)
+        else:
+            return Opts()
 
     def __repr__(self):
         return "<OptionMap containing %d options>" % len(self._items)
