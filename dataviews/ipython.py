@@ -19,7 +19,7 @@ from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap
 from sheetviews import GridLayout, CoordinateGrid
 from views import View, Overlay, Annotation
-from styles import Styles, Style
+from options import options, PlotOpts, StyleOpts
 
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
@@ -49,6 +49,16 @@ WARN_MISFORMATTED_DOCSTRINGS = False
 #========#
 # Magics #
 #========#
+
+# ANSI color codes for the IPython pager
+red   = '\x1b[1;31m%s\x1b[0m'
+blue  = '\x1b[1;34m%s\x1b[0m'
+green = '\x1b[1;32m%s\x1b[0m'
+cyan = '\x1b[1;36m%s\x1b[0m'
+
+# Corresponding HTML color codes
+html_red = '#980f00'
+html_blue = '#00008e'
 
 
 @magics_class
@@ -164,10 +174,6 @@ class ParamPager(object):
     def __init__(self):
 
         self.order = ['name', 'changed', 'value', 'type', 'bounds', 'mode']
-        self.red = '\x1b[1;31m%s\x1b[0m'
-        self.blue = '\x1b[1;34m%s\x1b[0m'
-        self.cyan = '\x1b[1;36m%s\x1b[0m'
-        self.green = '\x1b[1;32m%s\x1b[0m'
 
     def _get_param_info(self, obj, include_super=True):
         """
@@ -229,9 +235,9 @@ class ParamPager(object):
                 all_lines = [ heading.ljust(right_shift) + lines[0]]
 
             if i % 2:
-                contents.extend([self.red %el for el in all_lines])
+                contents.extend([red %el for el in all_lines])
             else:
-                contents.extend([self.blue %el for el in all_lines])
+                contents.extend([blue %el for el in all_lines])
 
         return "\n".join(contents)
 
@@ -303,7 +309,7 @@ class ParamPager(object):
             col = col.capitalize()
             formatted = col.ljust(width) if i == 0 else col.center(width)
             title_row.append(formatted)
-        contents.append(self.blue % ''.join(title_row)+"\n")
+        contents.append(blue % ''.join(title_row)+"\n")
 
         # Print rows
         for row in sorted(info_dict):
@@ -319,14 +325,14 @@ class ParamPager(object):
                     lval, uval = formatted.rsplit(',')
                     lspace, lstr = lval.rsplit('(')
                     ustr, uspace = uval.rsplit(')')
-                    lbound = lspace + '('+(self.cyan % lstr) if mark_lbound else lval
-                    ubound = (self.cyan % ustr)+')'+uspace if mark_ubound else uval
+                    lbound = lspace + '('+(cyan % lstr) if mark_lbound else lval
+                    ubound = (cyan % ustr)+')'+uspace if mark_ubound else uval
                     formatted = "%s,%s" % (lbound, ubound)
                 row_list.append(formatted)
 
             row_text = ''.join(row_list)
             if row in changed:
-                row_text = self.red % row_text
+                row_text = red % row_text
 
             contents.append(row_text)
 
@@ -356,14 +362,14 @@ class ParamPager(object):
         dflt_msg = "Parameters changed from their default values are marked in red."
         heading_line = '=' * len(title)
         heading_text = "%s\n%s\n" % (title, heading_line)
-        top_heading = (self.green % heading_text)
-        top_heading += "\n%s" % (self.red % dflt_msg)
-        top_heading += "\n%s" % (self.cyan % "Soft bound values are marked in cyan.")
+        top_heading = (green % heading_text)
+        top_heading += "\n%s" % (red % dflt_msg)
+        top_heading += "\n%s" % (cyan % "Soft bound values are marked in cyan.")
         top_heading += '\nC/V= Constant/Variable, RO/RW = ReadOnly/ReadWrite, AN=Allow None'
 
         heading_text = 'Parameter docstrings:'
         heading_string = "%s\n%s" % (heading_text, '=' * len(heading_text))
-        docstring_heading = (self.green % heading_string)
+        docstring_heading = (green % heading_string)
         page.page("%s\n\n%s\n\n%s\n\n%s" % (top_heading, table,
                                             docstring_heading, docstrings))
 
@@ -405,144 +411,39 @@ class ParamMagics(Magics):
 
 
 @magics_class
-class PlotOptsMagic(Magics):
+class OptsMagic(Magics):
     """
-    Implements the %plotopts line magic used to set the plotting
-    options on view objects.
+    The %opts and %%opts line and cell magics allow customization of
+    how dataviews are displayed. The %opts line magic updates or
+    creates new options for either StyleOpts (i.e. matplotlib options)
+    or in the PlotOpts (plot settings). The %%opts cell magic sets
+    custom display options associated on the displayed view object
+    which will persist every time that object is displayed.
     """
-    def __init__(self, *args, **kwargs):
-        super(PlotOptsMagic, self).__init__(*args, **kwargs)
-        self.param_pager = ParamPager()
-
-
-    @classmethod
-    def _get_view(self, shell, token):
-        """
-        Given a string with the object name, return the view
-        object. If the object is a GridLayout with integer indexing,
-        apply the indexing to return the reference view object.
-        """
-        obj =  shell._object_find(token)
-        found, indexed = obj.found, False
-        # Attempt to index (e.g. for GridLayouts)
-        if not found:
-            indexed = (token.count('['), token.count(']')) == (1,1)
-            if indexed:
-                index_split = token.rsplit('[')
-                indexing_string = '['+index_split[1]
-                try:
-                    indices = eval(indexing_string)
-                except:
-                    indices = False
-                    print "Could not evaluate index %s" % indexing_string
-                obj =  shell._object_find(index_split[0])
-                found = obj.found and isinstance(obj.obj, GridLayout)
-
-        # If the object still hasn't been found in the namespace...
-        if not found:
-            print "Object %r not found in the namespace." % token
-            return False
-        if indexed:   return obj.obj[tuple(indices)]
-        else:         return obj.obj
-
-
-    @classmethod
-    def _plot_parameter_list(cls, view):
-        """
-        Lookup the plot type for a given view object and return the
-        list of available parameter names and the plot class.
-        """
-        if not isinstance(view, (View, GridLayout, Stack)):
-            print "Object %s is not a View" % view.__class__.__name__
-            param_list =  []
-
-        if isinstance(view, Stack):
-            plotclass = viewmap[view.type]
-        else:
-            plotclass = viewmap.get(view.__class__, None)
-
-        if not plotclass and isinstance(view, GridLayout):
-            param_list = GridLayoutPlot.params().keys()
-        elif not plotclass:
-            print("Could not find appropriate plotting class for view of type %r "
-                  % view.__class__.__name__)
-            param_list =  []
-        else:
-            param_list =  plotclass.params().keys()
-        return param_list, plotclass
-
-    @classmethod
-    def option_completer(cls, k,v):
-        """
-        Tab completion hook for the %plotopts magic.
-        """
-        view = cls._get_view(k, v.line.split()[1])
-        if view is False: return []
-        return ['%s=' % p for p in cls._plot_parameter_list(view)[0]]
-
-
-    @line_magic
-    def plotopts(self, parameter_s=''):
-        """
-        The %plotopts line magic to set the plotting options on a
-        particular view object using keyword-value pairs. If no
-        keywords are given, parameter information about the
-        corresponding plot type is displayed in the IPython pager.
-
-        Usage: %plotopts <view> [<keyword>=<value>]
-        """
-        if parameter_s=='':
-            print "Please specify a view object to configure."
-            return
-
-        split = parameter_s.split()
-        # Beware! Uses IPython internals that may change in future...
-        obj = self._get_view(self.shell, split[0])
-        if obj is False: return
-
-        params, options = obj.params().keys(), {}
-        for opt in split[1:]:
-            try:
-                option = eval("dict(%s)" % opt)
-                options.update(option)
-            except:
-                print "Could not parse option %s" % opt
-
-        allowed_params, plotclass = self._plot_parameter_list(obj)
-        mismatches = set(options.keys()) - set(allowed_params)
-
-        if mismatches:
-            mismatch_list = ', '.join(repr(el) for el in mismatches)
-            print "Parameters %s are not valid for this object"  % mismatch_list
-        elif len(split) == 1:
-            self.param_pager(plotclass)
-        else:
-            obj.metadata['plot_opts'] = options
-
-
-
-@magics_class
-class StyleMagic(Magics):
-    """
-    The %style and %%style line and cell magics allow customization of
-    display style of dataviews. The %style line magic updates or
-    creates a new style in the global StyleMap whereas the %%style
-    cell magic sets a custom style that is associated with the
-    displayed view object.
-    """
-
-    invalid_styles = []
-    custom_styles = {}
+    # Attributes set by the magic and read when display hooks run
+    custom_options = {}
     show_info = False
     show_labels = False
+
+    def __init__(self, *args, **kwargs):
+        super(OptsMagic, self).__init__(*args, **kwargs)
+        styles_list = [el.style_opts for el in viewmap.values()]
+        params_lists = [[k for (k,v) in el.params().items()
+                         if not v.constant] for el in viewmap.values()]
+
+        # List of all parameters and styles for tab completion
+        OptsMagic.all_styles = sorted(set([s for styles in styles_list for s in styles]))
+        OptsMagic.all_params = sorted(set([p for plist in params_lists for p in plist]))
+
 
     @classmethod
     def collect(cls, obj, attr='style'):
         """
-        Given a view object, build a dictionary of either the 'style'
-        or 'label' attributes across overlays and grid layouts. The
-        return value is a dictionary with the collected strings as
-        keys and the associated view type as values.
+        Given a composite view object, build a dictionary of either
+        the 'style' or 'label' attributes across all contained
+        atoms. This method works across overlays, grid layouts and
+        stacks. The return is a dictionary with the collected string
+        values as keys for the the associated view type.
         """
         group = {}
         if isinstance(obj, (Overlay, GridLayout)):
@@ -555,15 +456,15 @@ class StyleMagic(Magics):
                 group.update({val:obj.type})
         else:
             value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
-            group.update({value:obj})
+            group.update({value:type(obj)})
         return group
 
 
     @classmethod
     def _basename(cls, name):
         """
-        Strips out the 'Custom' prefix of styles names that have been
-        customized with an object identifier string.
+        Strips out the 'Custom' prefix from styles names that have
+        been customized by an object identifier.
         """
         split = name.rsplit('>]_')
         if not name.startswith('Custom'):   return name
@@ -575,9 +476,9 @@ class StyleMagic(Magics):
     @classmethod
     def _set_style_names(cls, obj, custom_name_map):
         """
-        Update the style names on a view to the custom style name when
-        there is a basename match as specified by the supplied
-        dictionary.
+        Update the style names on a composite view to the custom style
+        name for all matches. A match occurs when the basename of the
+        view.style is found in the supplied dictionary.
         """
         if isinstance(obj, GridLayout):
             for subview in obj.values():
@@ -585,186 +486,275 @@ class StyleMagic(Magics):
         elif isinstance(obj.style, list):
             obj.style = [custom_name_map.get(cls._basename(s), s) for s in obj.style]
         elif cls._basename(obj.style) in custom_name_map:
-            obj.style = custom_name_map[cls._basename(obj.style)]
+            obj.style = custom_name_map.get(cls._basename(obj.style), obj.style)
 
 
     @classmethod
-    def set_view_style(cls, obj):
+    def set_view_options(cls, obj):
         """
         To be called by the display hook which supplies the view
-        object on which the style is to be customized.
+        object to be displayed and on which the options are to be set.
         """
-
+        # Implements the %%labels magic
         if cls.show_labels:
             labels = cls.collect(obj, 'label').keys()
             info = (len(labels), labels.count(''))
-            summary = '%d objects inspected, %d without labels. The set of labels found:<br><br>&emsp;' % info
+            summary = ("%d objects inspected, %d without labels. "
+                       "The set of labels found:<br><br>&emsp;" % info)
             label_list = '<br>&emsp;'.join(['<b>%s</b>' % l for l in sorted(set(labels)) if l])
             return summary + label_list
 
-        if not any([cls.invalid_styles, cls.custom_styles, cls.show_info]): return
+        # Nothing to be done
+        if not any([cls.custom_options, cls.show_info]): return
 
         styles = cls.collect(obj, 'style')
-        # The set of available style basenames in the view object
+        # The set of available style basenames present in the object
         available_styles = set(cls._basename(s) for s in styles)
         custom_styles = set(s for s in styles if s.startswith('Custom'))
 
-        mismatch_set = set(cls.custom_styles.keys()) - available_styles
-        mismatches = sorted(set(cls.invalid_styles) | mismatch_set)
-
+        mismatches = set(cls.custom_options.keys()) - available_styles
         if cls.show_info or mismatches:
-            return cls._style_info(obj, available_styles, mismatches, custom_styles)
+            return cls._option_key_info(obj, available_styles, mismatches, custom_styles)
 
-        # The name map associates the style basename to the custom name
-        name_mapping = {}
-        for name, new_style in cls.custom_styles.items():
-            # Create a custom style name for the object
-            style_name = 'Custom[<' + obj.name + '>]_' + name
-            # Register the new style in the StyleMap
-            Styles[style_name] = new_style
-            name_mapping[str(name)] = style_name
+        # Test the options are valid
+        error = cls._keyword_info(styles, cls.custom_options)
+        if error: return error
 
         # Link the object to the new custom style
-        cls._set_style_names(obj, name_mapping)
+        prefix = 'Custom[<' + obj.name + '>]_'
+        cls._set_style_names(obj, dict((k, prefix + k) for k in cls.custom_options))
+        # Define the Styles in the OptionMaps
+        cls._define_options(cls.custom_options, prefix=prefix)
 
 
     @classmethod
-    def _style_info(cls, obj, available_styles, mismatches, custom_styles):
+    def _keyword_info(cls, styles, custom_options):
         """
-        Format the style information as HTML, listing any mismatched
-        names, the styles available for manipulation and the list of
-        objects with customized styles.
+        Check that the keywords in the StyleOpts or PlotOpts are
+        valid. If not, the appropriate HTML error message is returned.
         """
+        errmsg = ''
+        for key, (plot_kws, style_kws) in custom_options.items():
+            for name, viewtype in styles.items():
+                plottype = viewmap[viewtype]
+                if cls._basename(name) != key: continue
+                # Plot options checks
+                params = [k for (k,v) in plottype.params().items() if not v.constant]
+                mismatched_params = set(plot_kws.keys()) - set(params)
+                if mismatched_params:
+                    info = (', '.join('<b>%r</b>' % el for el in mismatched_params),
+                            '<b>%r</b>' % plottype.name,
+                            ', '.join('<b>%s</b>' % el for el in params))
+                    errmsg += "Keywords %s not in valid %s plot options: <br>&nbsp;&nbsp;%s" % info
+
+                # Style options checks
+                style_opts = plottype.style_opts
+                mismatched_opts = set(style_kws.keys()) - set(style_opts)
+                if mismatched_opts:
+                    spacing = '<br><br>' if errmsg else ''
+                    info = (spacing,
+                            ', '.join('<b>%r</b>' % el for el in mismatched_opts),
+                            '<b>%r</b>' % plottype.name,
+                            ', '.join('<b>%s</b>' % el for el in style_opts))
+                    errmsg += "%sKeywords %s not in valid %s style options: <br>&nbsp;&nbsp;%s" % info
+        return errmsg
+
+
+    @classmethod
+    def _option_key_info(cls, obj, available_styles, mismatches, custom_styles):
+        """
+        Format the information about valid options keys as HTML,
+        listing mismatched names and the available keys.
+        """
+        fmt = '&emsp;<code><font color="%s">%%s</font>%%s : ' % html_red
+        fmt+= '<font color="%s">[%%s]</font> %%s</code><br>' % html_blue
         obj_name = "<b>%s</b>" % obj.__class__.__name__
         if len(available_styles) == 0:
-            return "<b>No styles are defined on the current %s</b>" % obj_name
+            return "<b>No keys are available in the current %s</b>" % obj_name
 
         mismatch_str = ', '.join('<b>%r</b>' % el for el in mismatches)
-        unavailable_msg = '%s not in ' % mismatch_str if mismatch_str else ''
-        s = "%s %s customizable Styles:<br><br>" % (unavailable_msg, obj_name)
+        unavailable_msg = '%s not in customizable' % mismatch_str if mismatch_str else 'Customizable'
+        s = "%s %s options:<br>" % (unavailable_msg, obj_name)
         max_len = max(len(s) for s in available_styles)
         for name in sorted(available_styles):
             padding = '&nbsp;'*(max_len - len(name))
-            s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (name, padding, Styles[name])
+            s += fmt % (name, padding,
+                        options.plotting[name].keywords,
+                        options.style[name].keywords)
 
         if custom_styles:
-            s += '<br>Styles that have been customized for the displayed view:<br><br>'
+            s += '<br>Options that have been customized for the displayed view only:<br>'
             custom_names = [style_name.rsplit('>]_')[1] for style_name in custom_styles]
             max_len = max(len(s) for s in custom_names)
             for custom_style, custom_name in zip(custom_styles, custom_names):
                 padding = '&nbsp;'*(max_len - len(custom_name))
-                s += '&emsp;<code><b>%s</b>%s : %r</code><br>' % (custom_name,
-                                                                  padding,
-                                                                  Styles[custom_style])
+                s += fmt % (custom_name, padding,
+                            options.plotting[custom_style].keywords,
+                            options.style[custom_style].keywords)
         return s
 
 
-    def _parse_styles(self, line):
+    def _parse_keywords(self, line):
         """
-        Parse the arguments to the magic, returning one dictionary of
-        updated Style objects for existing styles and a second
-        dictionary containing new Style objects for styles that have
-        not yet been defined.
+        Parse the arguments to the magic, returning a dictionary with
+        style name keys and tuples of keywords as values. The first
+        element of the tuples are the plot keyword options and the
+        second element are the style keyword options.
         """
-        updated_styles, new_styles  = {}, {}
         tokens = line.split()
-        if tokens == []:
-            return {}, []
+        if tokens == []: return {}
         elif not tokens[0][0].isupper():
-            raise SyntaxError("First token must be a Style name (a capitalized string)")
+            raise SyntaxError("First token must be a option name (a capitalized string)")
 
         # Split the input by the capitalized tokens
-        style_names, settings_list, updates = [], [], []
+        style_names, tuples = [], []
         for upper, vals in itertools.groupby(tokens, key=lambda x: x[0].isupper()):
             values = list(vals)
             if upper and len(values) != 1:
-                raise SyntaxError("Style names should be split by keywords")
+                raise SyntaxError("Options should be split by keywords")
             elif upper:
-                style_name = values[0]
-                style_names.append(style_name)
-                updates.append(style_name in Styles.styles())
+                style_names.append(values[0])
             else:
-                settings_str = 'dict(' + ', '.join(values) + ')'
-                try:     settings_list.append(eval(settings_str))
-                except:  raise SyntaxError("Could not parse keywords '%s'" % values)
+                parse_string = ' '.join(values).replace(',', ' ')
+                if not parse_string.startswith('[') and parse_string.count(']')==0:
+                    plotstr, stylestr = '',  parse_string
+                elif [parse_string.count(el) for el in '[]'] != [1,1]:
+                    raise SyntaxError("Plot options not supplied in a well formed list.")
+                else:
+                    split_ind = parse_string.index(']')
+                    plotstr = parse_string[1:split_ind]
+                    stylestr = parse_string[split_ind+1:]
+                try:
+                    # Evalute the strings to obtain dictionaries
+                    dicts = [eval('dict(%s)' % ', '.join(els))
+                             for els in [plotstr.split(), stylestr.split()]]
+                    tuples.append(tuple(dicts))
+                except:
+                    raise SyntaxError("Could not parse keywords from '%s'" % parse_string)
 
-        for name, kwargs, update  in zip(style_names, settings_list, updates):
-            if update:
-                updated_styles[name] = Styles[str(name)](**kwargs)
-            else:
-                new_styles[name] = Styles[str(name)] = Style(**kwargs)
-        return updated_styles, new_styles
+        return dict((k,v) for (k,v) in zip(style_names, tuples) if v != ({},{}))
 
 
-    def _linemagic(self, line):
+
+    @classmethod
+    def _define_options(cls, kwarg_map, prefix='', verbose=False):
         """
-        Update or create a Style in the StyleMap.
+        Define the style and plot options.
+        """
+        lens, strs = [0,0,0], []
+        for name, (plot_kws, style_kws) in kwarg_map.items():
+            plot_update = name in options.plotting
+            if plot_update and plot_kws:
+                options[prefix+name] = options.plotting[name](**plot_kws)
+            elif plot_kws:
+                options[prefix+name] = PlotOpts(**plot_kws)
 
-        Usage: %setstyle [-v] [StyleName] [<keyword>=<value>]
+            style_update = name in options.style
+            if style_update and style_kws:
+                options[prefix+name] = options.style[name](**style_kws)
+            elif style_kws:
+                options[prefix+name] = StyleOpts(**style_kws)
 
-        The -v flag toggles verbose output.
+            if verbose:
+                plotstr = '[%s]' % options.plotting[name].keywords if name in options.plotting else ''
+                stylestr = options.style[name].keywords if name in options.style else ''
+                strs.append((name+':', plotstr, stylestr))
+                lens = [max(len(name)+1, lens[0]),
+                        max(len(plotstr), lens[1]),
+                        max(len(stylestr),lens[2])]
+
+        if verbose:
+            heading = "Plot and Style Options"
+            title = '%s\n%s' % (heading, '='*len(heading))
+            description = "Each line describes the options associated with a single key:"
+            msg = '%s\n\n%s\n\n    %s %s %s\n\n' % (green % title, description,
+                                                    red % 'Name:', blue % '[Plot Options]',
+                                                    'Style Options')
+            for (name, plot_str, style_str) in strs:
+                msg += "%s %s %s\n" % (red % name.ljust(lens[0]),
+                                       blue % plot_str.ljust(lens[1]),
+                                       style_str.ljust(lens[2]))
+            page.page(msg)
+
+
+    @classmethod
+    def option_completer(cls, k,v):
+        """
+        Tab completion hook for the %opts and %%opts magic.
+        """
+        if (v.line.count('[') - v.line.count(']')) % 2:
+            return [el+'=' for el in cls.all_params]
+        else:
+            return [el+'=' for el in cls.all_styles] + options.options()
+
+
+    def _line_magic(self, line):
+        """
+        Update or create new options in for the plot or style
+        options. Plot options keyword-value pairs, when supplied need
+        to be give in square brackets after the option key. Any style
+        keywords then following the closing square bracket. The -v
+        flag toggles verbose output.
+
+        Usage: %opts [-v] <Key> [ [<keyword>=<value>...]] [<keyword>=<value>...]
         """
         verbose = False
         if str(line).startswith('-v'):
             verbose = True
             line = line.replace('-v', '')
 
-        info = False
-        if str(line).startswith('info'):
-            verbose = True
-            line = line.replace('info', '')
+        kwarg_map = self._parse_keywords(str(line))
 
-
-        updated_styles, new_styles = self._parse_styles(str(line))
-
-        if not updated_styles and not new_styles:
-            info = (len(Styles.keys()), len([k for k in Styles.keys() if k.startswith('Custom')]))
-            print "There are a total of %d Styles defined including %d custom object styles." % info
+        if not kwarg_map:
+            info = (len(options.style.keys()),
+                    len([k for k in options.style.keys() if k.startswith('Custom')]))
+            print "There are %d style options defined (%d custom object styles)." % info
+            info = (len(options.plotting.keys()),
+                    len([k for k in options.plotting.keys() if k.startswith('Custom')]))
+            print "There are %d plot options defined (%d custom object plot settings)." % info
             return
 
-        for name, style in updated_styles.items():
-            if verbose:
-                print "Updated existing style %r : %r" % (name, style)
-            Styles[name] = style
-
-        for name, style in new_styles.items():
-            if verbose:
-                print "Created new style %r : %r" % (name, style)
-            Styles[name] = style
+        self._define_options(kwarg_map, verbose=verbose)
 
 
     @cell_magic
-    def labels(self, line='', cell=None):
-        StyleMagic.show_labels = True
+    def labels(self, line, cell=None):
+        """
+        Simple magic to see the full list of defined labels for the
+        displayed view object.
+        """
+        if line != '':
+            raise Exception("%%labels magics accepts no arguments.")
+        OptsMagic.show_labels = True
         self.shell.run_cell(cell)
-        StyleMagic.show_labels = False
+        OptsMagic.show_labels = False
+
 
     @line_cell_magic
-    def style(self, line='', cell=None):
+    def opts(self, line='', cell=None):
         """
-        Set a custom display style uniquely assigned to the views presented.
+        Set custom display options unique to the displayed view. The
+        keyword-value pairs in the square brackets (if present) set
+        the plot parameters. Keyword-value pairs outside the square
+        brackets are matplotlib style options.
 
-        Usage: %%style [StyleName] [<keyword>=<value>]
+        Usage: %%opts <Key> [ [<keyword>=<value>...] ] [<keyword>=<value>...]
 
-        Keyword-value pairs are assumed to separate the capitalized
-        Style names to which they are assigned.
+        Multiple keys may be listed, setting plot and style options in
+        this way.
         """
-
         if cell is None:
-            return self._linemagic(line)
+            return self._line_magic(str(line))
         elif not line.strip():
-            StyleMagic.show_info=True
+            OptsMagic.show_info=True
         else:
-            updated_styles, new_styles = self._parse_styles(str(line))
-            (StyleMagic.custom_styles,
-             StyleMagic.invalid_styles) = (updated_styles, new_styles.keys())
+            OptsMagic.custom_options = self._parse_keywords(str(line))
+
         # Run the cell in the updated environment
         self.shell.run_cell(cell)
         # Reset the class attributes
-        StyleMagic.invalid_styles = []
-        StyleMagic.custom_styles = {}
-        StyleMagic.show_info=False
-
+        OptsMagic.custom_options = {}
+        OptsMagic.show_info=False
 
 
 #==================#
@@ -786,11 +776,6 @@ def get_plot_size():
     factor = PERCENTAGE_SIZE / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
-
-
-def opts(obj):
-    extra_opts = obj.metadata.get('plot_opts', {})
-    return dict({'size':get_plot_size()}, **extra_opts)
 
 
 def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
@@ -872,9 +857,10 @@ def animation_display(anim):
 @display_hook
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
-    invalid_styles = StyleMagic.set_view_style(stack)
+    invalid_styles = OptsMagic.set_view_options(stack)
     if invalid_styles: return invalid_styles
-    stackplot = viewmap[stack.type](stack, **opts(stack))
+    opts = dict(options.plotting[stack].opts, size=get_plot_size())
+    stackplot = viewmap[stack.type](stack, **opts)
     if len(stackplot) == 1:
         fig = stackplot()
         return figure_display(fig)
@@ -885,11 +871,13 @@ def stack_display(stack, size=256):
 @display_hook
 def layout_display(grid, size=256):
     if not isinstance(grid, GridLayout): return None
-    invalid_styles = StyleMagic.set_view_style(grid)
+    invalid_styles = OptsMagic.set_view_options(grid)
     if invalid_styles: return invalid_styles
     grid_size = (grid.shape[1]*get_plot_size()[1],
                  grid.shape[0]*get_plot_size()[0])
-    gridplot = GridLayoutPlot(grid, **dict(opts(grid), size=grid_size))
+
+    opts = dict(options.plotting[grid].opts, size=grid_size)
+    gridplot = GridLayoutPlot(grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
@@ -903,9 +891,10 @@ def projection_display(grid, size=256):
     size_factor = 0.17
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
-    invalid_styles = StyleMagic.set_view_style(grid)
+    invalid_styles = OptsMagic.set_view_options(grid)
     if invalid_styles: return invalid_styles
-    gridplot = viewmap[grid.__class__](grid, **dict(opts(grid), size=grid_size))
+    opts = dict(options.plotting[grid].opts, size=grid_size)
+    gridplot = viewmap[grid.__class__](grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
@@ -917,10 +906,12 @@ def projection_display(grid, size=256):
 def view_display(view, size=256):
     if not isinstance(view, View): return None
     if isinstance(view, Annotation): return None
-    invalid_styles = StyleMagic.set_view_style(view)
+    invalid_styles = OptsMagic.set_view_options(view)
     if invalid_styles: return invalid_styles
-    fig = viewmap[view.__class__](view, **opts(view))()
+    opts = dict(options.plotting[view].opts, size=get_plot_size())
+    fig = viewmap[view.__class__](view, **opts)()
     return figure_display(fig)
+
 
 
 def update_matplotlib_rc():
@@ -938,8 +929,8 @@ def update_matplotlib_rc():
     matplotlib.rcParams.update(rc)
 
 
-all_line_magics = sorted(['%params', '%style', '%view', '%plotopts'])
-all_cell_magics = sorted(['%%view', '%%style', '%%labels'])
+all_line_magics = sorted(['%params', '%opts', '%view'])
+all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
 message = """Welcome to the Dataviews IPython extension! (http://ioam.github.io/imagen/)"""
 message += '\nAvailable magics: %s' % ', '.join(all_line_magics + all_cell_magics)
 
@@ -957,16 +948,17 @@ def load_ipython_extension(ip, verbose=True):
 
         ip.register_magics(ParamMagics)
         ip.register_magics(ViewMagic)
-        ip.register_magics(PlotOptsMagic)
-        ip.register_magics(StyleMagic)
+        ip.register_magics(OptsMagic)
 
 
         # Configuring tab completion
-        ip.set_hook('complete_command', PlotOptsMagic.option_completer, str_key = '%plotopts')
         ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
         ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
-        ip.set_hook('complete_command', lambda x,v: Styles.styles(), str_key = '%%style')
-        ip.set_hook('complete_command', lambda x,v: Styles.styles(), str_key = '%style')
+
+
+        #option_completer
+        ip.set_hook('complete_command', OptsMagic.option_completer, str_key = '%%opts')
+        ip.set_hook('complete_command', OptsMagic.option_completer, str_key = '%opts')
 
 
         html_formatter = ip.display_formatter.formatters['text/html']

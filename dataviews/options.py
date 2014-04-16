@@ -273,6 +273,15 @@ class OptionsGroup(object):
         optmap._settable = False
         self._keys.add(key)
 
+
+    def options(self):
+        """
+        The full list of option keys in the OptionGroup, excluding
+        options customized per object.
+        """
+        return [k for k in self.keys() if not k.startswith('Custom')]
+
+
     def keys(self):
         return sorted(list(self._keys))
 
