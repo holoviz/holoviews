@@ -483,9 +483,10 @@ class SheetPlot(Plot):
     def __call__(self, axis=None):
         ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
         stacks = self._stack.split()
-        style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(stacks, lambda s: s.style))
 
+        sorted_stacks = sorted(stacks, key=lambda x: x.style)
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(sorted_stacks, lambda s: s.style))
 
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
@@ -873,8 +874,9 @@ class DataPlot(Plot):
         ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
 
         stacks = self._stack.split()
+        sorted_stacks = sorted(stacks, key=lambda x: x.style)
         style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(stacks, lambda s: s.style))
+                            in groupby(sorted_stacks, lambda s: s.style))
 
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
