@@ -685,7 +685,7 @@ class OptsMagic(Magics):
         """
         Tab completion hook for the %opts and %%opts magic.
         """
-        if (v.line.count('[') - v.line.count(']')) % 2:
+        if v.line.endswith(']') or (v.line.count('[') - v.line.count(']')) % 2:
             return [el+'=' for el in cls.all_params]
         else:
             return [el+'=' for el in cls.all_styles] + options.options()
