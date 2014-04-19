@@ -13,13 +13,13 @@ except:
 import param
 from tempfile import NamedTemporaryFile
 from functools import wraps
-import textwrap, traceback, itertools
+import textwrap, traceback, itertools, string
 
 from dataviews import Stack
-from plots import Plot, GridLayoutPlot, viewmap
+from plots import Plot, GridLayoutPlot, viewmap, channel_modes
 from sheetviews import GridLayout, CoordinateGrid
 from views import View, Overlay, Annotation
-from options import options, PlotOpts, StyleOpts
+from options import options, channels, PlotOpts, StyleOpts, ChannelOpts
 
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
@@ -411,6 +411,104 @@ class ParamMagics(Magics):
 
 
 @magics_class
+class ChannelMagic(Magics):
+
+    custom_channels = {}
+
+    @cell_magic
+    def channels(self, line, cell=None):
+        ChannelMagic.custom_channels = self._parse_channels(str(line))
+        self.shell.run_cell(cell)
+        ChannelMagic.custom_channels = {}
+
+
+    @classmethod
+    def _set_overlay_labels(cls, obj, label):
+        """
+        Labels on Overlays are used to index channel definitions.
+        """
+        if isinstance(obj, GridLayout):
+            for subview in obj.values():
+                cls._set_overlay_labels(subview, label)
+        elif isinstance(obj, Stack) and issubclass(obj.type, Overlay):
+            for overlay in obj:
+                overlay.label = label
+        elif isinstance(obj, Overlay):
+            obj.label = label
+
+
+    @classmethod
+    def _set_channels(cls, obj, custom_channels, prefix):
+        cls._set_overlay_labels(obj, prefix)
+        for name, (pattern, params) in custom_channels.items():
+            channels[prefix + '_' + name] = ChannelOpts(name, pattern,
+                                                        **params)
+
+
+    @classmethod
+    def set_channels(cls, obj):
+        prefix = 'Custom[<' + obj.name + '>]'
+        if cls.custom_channels:
+            cls._set_channels(obj, cls.custom_channels, prefix)
+
+
+    def _parse_channels(self, line):
+        """
+        Parse the arguments to the magic, returning a dictionary of
+        {'channel op name' : ('pattern', kwargs).
+        """
+        tokens = line.split()
+        if tokens == []: return {}
+
+        channel_split = [(el+']') for el in line.rsplit(']') if el.strip()]
+        spec_split = [el.rsplit('=>') for el in channel_split]
+        channels = {}
+        for head, tail in spec_split:
+            head = head.strip()
+            op_match = [op for op in channel_modes if tail.strip().startswith(op)]
+            if len(op_match) != 1:
+                raise Exception("Unrecognized channel operation: ", tail.split()[0])
+            argument_str = tail.replace(op_match[0],'')
+            try:
+                eval_str = argument_str.replace('[','dict(').replace(']', ')')
+                args = eval(eval_str)
+            except:
+                raise Exception("Could not evaluate: %s" % argument_str)
+
+            op = op_match[0]
+            params = set(p for p in channel_modes[op].params().keys() if p!='name')
+
+            mismatch_keys = set(args.keys()) - params
+            if mismatch_keys:
+                raise Exception("Parameter(s) %r not accepted by %s operation"
+                                % (', '.join(mismatch_keys), op))
+
+            valid_chars = string.letters + string.digits + '_* '
+            if not head.count('*') or any(l not in valid_chars for l in head):
+                raise Exception("Invalid characters in overlay pattern specification: %s" % head)
+
+            pattern =  ' * '.join(el.strip() for el in head.rsplit('*'))
+            channel_modes[op].instance(**args)
+            channels[op] =  (pattern, args)
+        return channels
+
+
+    @classmethod
+    def option_completer(cls, k,v):
+        """
+        Tab completion hook for the %opts and %%opts magic.
+        """
+        line = v.text_until_cursor
+        if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
+            line_tail = line[len('%%channels'):]
+            op_name = line_tail[::-1].rsplit('[')[1][::-1].strip().split()[-1]
+            if op_name in  channel_modes:
+                return channel_modes[op_name].params().keys()
+        else:
+            return channel_modes.keys()
+
+
+@magics_class
 class OptsMagic(Magics):
     """
     The %opts and %%opts line and cell magics allow customization of
@@ -520,7 +618,7 @@ class OptsMagic(Magics):
         available_styles = set(cls._basename(s) for s in styles)
         custom_styles = set(s for s in styles if s.startswith('Custom'))
 
-        mismatches = set(cls.custom_options.keys()) - available_styles
+        mismatches = set(cls.custom_options.keys()) - (available_styles | set(channel_modes))
         if cls.show_info or mismatches:
             return cls._option_key_info(obj, available_styles, mismatches, custom_styles)
 
@@ -832,9 +930,19 @@ def figure_fallback(plotobj):
         fig =  plotobj()
         return figure_display(fig, message=message)
 
+
 #===============#
 # Display hooks #
 #===============#
+
+
+def process_view_magics(obj):
+    "Hook into %%opts and %%channels magics to process display view"
+    invalid_styles = OptsMagic.set_view_options(obj)
+    if invalid_styles: return invalid_styles
+    invalid_channels = ChannelMagic.set_channels(obj)
+    if invalid_channels: return invalid_channels
+
 
 HOOK_OPTIONS = ['display_tracebacks']
 CAPTURED = {'view':   None, 'display':None}
@@ -865,8 +973,8 @@ def animation_display(anim):
 @display_hook
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
-    invalid_styles = OptsMagic.set_view_options(stack)
-    if invalid_styles: return invalid_styles
+    magic_info = process_view_magics(stack)
+    if magic_info: return magic_info
     opts = dict(options.plotting[stack].opts, size=get_plot_size())
     stackplot = viewmap[stack.type](stack, **opts)
     if len(stackplot) == 1:
@@ -879,8 +987,8 @@ def stack_display(stack, size=256):
 @display_hook
 def layout_display(grid, size=256):
     if not isinstance(grid, GridLayout): return None
-    invalid_styles = OptsMagic.set_view_options(grid)
-    if invalid_styles: return invalid_styles
+    magic_info = process_view_magics(grid)
+    if magic_info: return magic_info
     grid_size = (grid.shape[1]*get_plot_size()[1],
                  grid.shape[0]*get_plot_size()[0])
 
@@ -899,8 +1007,8 @@ def projection_display(grid, size=256):
     size_factor = 0.17
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
-    invalid_styles = OptsMagic.set_view_options(grid)
-    if invalid_styles: return invalid_styles
+    magic_info = process_view_magics(grid)
+    if magic_info: return magic_info
     opts = dict(options.plotting[grid].opts, size=grid_size)
     gridplot = viewmap[grid.__class__](grid, **opts)
     if len(gridplot)==1:
@@ -914,8 +1022,8 @@ def projection_display(grid, size=256):
 def view_display(view, size=256):
     if not isinstance(view, View): return None
     if isinstance(view, Annotation): return None
-    invalid_styles = OptsMagic.set_view_options(view)
-    if invalid_styles: return invalid_styles
+    magic_info = process_view_magics(view)
+    if magic_info: return magic_info
     opts = dict(options.plotting[view].opts, size=get_plot_size())
     fig = viewmap[view.__class__](view, **opts)()
     return figure_display(fig)
@@ -957,14 +1065,16 @@ def load_ipython_extension(ip, verbose=True):
         ip.register_magics(ParamMagics)
         ip.register_magics(ViewMagic)
         ip.register_magics(OptsMagic)
+        ip.register_magics(ChannelMagic)
 
 
         # Configuring tab completion
+        ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
+        ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%%channels')
+
         ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
         ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
 
-
-        #option_completer
         ip.set_hook('complete_command', OptsMagic.option_completer, str_key = '%%opts')
         ip.set_hook('complete_command', OptsMagic.option_completer, str_key = '%opts')
 
