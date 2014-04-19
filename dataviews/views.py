@@ -183,6 +183,15 @@ class Overlay(View):
     over the contained layers.
     """
 
+
+    label = param.String(doc="""
+      A short label used to indicate what kind of data is contained
+      within the view object.
+
+      Overlays should not have their label set directly by the user as
+      the label is only for defining custom channel operations.""")
+
+
     _abstract = True
 
     _deep_indexable = True
@@ -190,6 +199,12 @@ class Overlay(View):
     def __init__(self, overlays, **kwargs):
         super(Overlay, self).__init__([], **kwargs)
         self.set(overlays)
+
+
+    @property
+    def labels(self):
+        return [el.label for el in self]
+
 
     @property
     def style(self):
