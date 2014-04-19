@@ -304,6 +304,7 @@ class StyleOpts(Opts):
     display Style of View objects.
     """
 
+
 class PlotOpts(Opts):
     """
     A subclass of Opts designed to hold plotting options that set the
@@ -311,6 +312,27 @@ class PlotOpts(Opts):
     """
 
 
+class ChannelOpts(Opts):
+    """
+    A subclass of Opts designed to hold channel mode definitions that
+    control how particular labelled layer combinations in an Overlay
+    are displayed.
+    """
+    def __init__(self, mode, pattern, **kwargs):
+        self.mode = mode
+        self.pattern = pattern
+        self.size = len(pattern.rsplit('*'))
+        self.options = self._expand_styles(kwargs)
+        self._kwargs = kwargs
+
+    def __repr__(self):
+        return "%s(%s%s)" % (self.__class__.__name__,
+                              self.mode+(', ' if self._kwargs else ''),
+                              self.keywords)
+
+
+
+channels = OptionsGroup([OptionMap('definitions', ChannelOpts)])
 options = OptionsGroup([OptionMap('plotting', PlotOpts),
                         OptionMap('style',StyleOpts)])
 
