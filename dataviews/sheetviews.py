@@ -96,24 +96,6 @@ class SheetOverlay(SheetLayer, Overlay):
 
 
     @property
-    def rgb(self):
-        """
-        Convert an overlay of three or four SheetViews into a
-        SheetView in RGB(A) mode.
-        """
-        if len(self) not in [3, 4]:
-            raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
-        if not all(isinstance(el, SheetView) for el in self.data):
-            raise Exception("All layers must be SheetViews to convert"
-                            " to RGB(A) format")
-        if not all(el.depth == 1 for el in self.data):
-            raise Exception("All SheetViews must have a depth of one for"
-                            " conversion to RGB(A) format")
-        return SheetView(np.dstack([el.data for el in self.data]), self.bounds,
-                         roi_bounds=self.roi_bounds)
-
-
-    @property
     def roi(self):
         """
         Apply the roi_bounds to all elements in the SheetOverlay
