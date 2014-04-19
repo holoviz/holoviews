@@ -239,7 +239,7 @@ class OptionsGroup(object):
         keys.add(k)
 
         if type(v) not in opttypes:
-            raise Exception("Options of type %s not applicable" % type(value))
+            raise Exception("Options of type %s not applicable" % type(v))
 
         optmap = opttypes[type(v)]
         optmap._settable = True
@@ -263,7 +263,8 @@ class OptionsGroup(object):
     def __getitem__(self, key):
         if key not in self._keys:
             raise IndexError('Key not available in the OptionGroup')
-        return tuple(optmap[key] for optmap in self._opttypes.values())
+        retval = tuple(optmap[key] for optmap in self._opttypes.values())
+        return retval[0] if len(retval) == 1 else retval
 
 
     def __setitem__(self, key, value):
