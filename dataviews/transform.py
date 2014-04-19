@@ -43,6 +43,20 @@ class RGBA(ViewOperation):
                           roi_bounds=overlay.roi_bounds)]
 
 
+class AlphaOverlay(ViewOperation):
+    """
+    Accepts an overlay of a SheetView defined with a cmap and converts
+    it to an RGBA SheetView. The alpha channel of the result is
+    defined by the second layer of the overlay.
+    """
+
+    def _process(self, overlay):
+        R,G,B,_ = split(cmap2rgb(overlay[0]))
+        return [SheetView(RGBA(R*G*B*overlay[1]).data,
+                          overlay.bounds,
+                          label='AlphaOverlay')]
+
+
 
 class HCS(ViewOperation):
     """
