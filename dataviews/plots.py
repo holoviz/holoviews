@@ -1,3 +1,4 @@
+import copy
 from itertools import groupby
 
 import numpy as np
@@ -14,9 +15,10 @@ from dataviews import NdMapping, Stack, TableView, TableStack
 from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
-from views import GridLayout, View, Annotation
-from options import options
+from views import GridLayout, View, Overlay, Annotation
 
+from options import options, channels
+from transform import RGBA, HCS, AlphaOverlay
 
 
 class Plot(param.Parameterized):
@@ -475,9 +477,67 @@ class SheetPlot(Plot):
     _stack_type = SheetStack
 
     def __init__(self, overlays, **kwargs):
-        self._stack = self._check_stack(overlays, SheetOverlay)
+        stack = self._check_stack(overlays, SheetOverlay)
+        self._stack = self._collapse_channels(stack)
         self.plots = []
         super(SheetPlot, self).__init__(**kwargs)
+
+
+
+    def _collapse(self, overlay, pattern, fn, style_key):
+        """
+        Given an overlay object collapse the channels according to
+        pattern using the supplied function. Any collapsed View is
+        then given the supplied style key.
+        """
+        pattern = [el.strip() for el in pattern.rsplit('*')]
+        if len(pattern) > len(overlay): return
+
+        skip=0
+        collapsed_views = []
+        for i in range(len(overlay)):
+            layer_labels = overlay.labels[i:len(pattern)+i]
+            matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
+            if matching and len(layer_labels)==len(pattern):
+                views = [overlay[label] for label in layer_labels]
+                overlay_slice = SheetOverlay(views, overlay.bounds)
+                collapsed_view = fn(overlay_slice)
+                collapsed_view.style = style_key
+                collapsed_views.append(collapsed_view)
+                skip = len(views)-1
+            elif skip:
+                skip = 0 if skip <= 0 else (skip - 1)
+            else:
+                collapsed_views.append(overlay[i])
+        overlay.data = collapsed_views
+
+
+    def _collapse_channels(self, stack):
+        """
+        Given a stack of Overlays, apply all applicable channel
+        reductions.
+        """
+        if not issubclass(stack.type, Overlay):
+            return stack
+        elif not channels.keys(): # No potential channel reductions
+            return stack
+        else:
+            # The original stack should not be mutated by this operation
+            stack = copy.deepcopy(stack)
+
+        # Apply all customized channel operations
+        for overlay in stack:
+            customized = [k for k in channels.keys() if overlay.label and k.startswith(overlay.label)]
+            # Largest reductions should be applied first
+            sorted_customized = sorted(customized, key=lambda k: -channels[k].size)
+            sorted_reductions = sorted(channels.options(), key=lambda k: -channels[k].size)
+            # Collapse the customized channel before the other definitions
+            for key in sorted_customized + sorted_reductions:
+                channel = channels[key]
+                collapse_fn = channel_modes[channel.mode]
+                fn = collapse_fn.instance(**channel.opts)
+                self._collapse(overlay, channel.pattern, fn, key)
+        return stack
 
 
     def __call__(self, axis=None):
@@ -1145,6 +1205,16 @@ viewmap = {SheetView: SheetViewPlot,
            DataHistogram:DataHistogramPlot,
            Annotation: AnnotationPlot
 }
+
+
+# The channel_modes dictionary contains the available channel processing
+# modes. These modes are ViewOperations that accept Sheet Overlays as
+# input and process them in some way to return a single RGB(A)
+# SheetView.
+
+channel_modes={'RGBA':RGBA,
+               'HCS':HCS,
+               'AlphaOverlay':AlphaOverlay}
 
 
 __all__ = ['viewmap'] + list(set([_k for _k,_v in locals().items()
