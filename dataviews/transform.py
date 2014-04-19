@@ -14,10 +14,33 @@ import matplotlib
 from imagen.analysis import ViewOperation
 from sheetviews import SheetView
 
-from styles import options, GrayNearest
+from options import options, GrayNearest
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
+
+
+
+class RGBA(ViewOperation):
+    """
+    Accepts an overlay containing either 3 or 4 layers. The first
+    three layers are the R,G, B channels and the last layer (if given)
+    is the alpha channel.
+    """
+
+    def _process(self, overlay):
+        if len(overlay) not in [3, 4]:
+            raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
+        if not all(isinstance(el, SheetView) for el in overlay.data):
+            raise Exception("All layers must be SheetViews to convert"
+                            " to RGB(A) format")
+        if not all(el.depth == 1 for el in overlay.data):
+            raise Exception("All SheetViews must have a depth of one for"
+                            " conversion to RGB(A) format")
+
+        return [SheetView(np.dstack([el.data for el in overlay.data]), overlay.bounds,
+                          label='RGBA',
+                          roi_bounds=overlay.roi_bounds)]
 
 
 
