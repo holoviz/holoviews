@@ -455,8 +455,8 @@ class OptsMagic(Magics):
             for val in values:
                 group.update({val:obj.type})
         elif isinstance(obj, Stack):
-            for layer in obj.top:
-                group.update(cls.collect(layer, attr))
+            for subview in obj.top:
+                group.update(cls.collect(subview, attr))
         else:
             value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
             group.update({value:type(obj)})
@@ -488,16 +488,21 @@ class OptsMagic(Magics):
                 cls._set_style_names(subview, custom_name_map)
         elif isinstance(obj.style, list):
             obj.style = [custom_name_map.get(cls._basename(s), s) for s in obj.style]
-        elif cls._basename(obj.style) in custom_name_map:
-            obj.style = custom_name_map.get(cls._basename(obj.style), obj.style)
+        else:
+            style = cls._basename(obj.style)
+            obj.style = custom_name_map.get(style, obj.style)
 
 
     @classmethod
     def set_view_options(cls, obj):
         """
         To be called by the display hook which supplies the view
-        object to be displayed and on which the options are to be set.
+        object to be displayed. Any custom options are defined on the
+        object as necessary and if there is an error, an HTML message
+        is returned.
         """
+        prefix = 'Custom[<' + obj.name + '>]_'
+
         # Implements the %%labels magic
         if cls.show_labels:
             labels = cls.collect(obj, 'label').keys()
@@ -524,7 +529,6 @@ class OptsMagic(Magics):
         if error: return error
 
         # Link the object to the new custom style
-        prefix = 'Custom[<' + obj.name + '>]_'
         cls._set_style_names(obj, dict((k, prefix + k) for k in cls.custom_options))
         # Define the Styles in the OptionMaps
         cls._define_options(cls.custom_options, prefix=prefix)
