@@ -124,9 +124,9 @@ class Colorize(ViewOperation):
                        bounds=overlay.bounds)
          hcs = HCS(overlay[1] * C * overlay[0].N)
 
-         return [SheetView(hsc.data, hsc.bounds,
+         return [SheetView(hcs.data, hcs.bounds,
                            roi_bounds=hcs.roi_bounds,
-                           label=sheetview.label+' Colorize')]
+                           label= overlay[0].label+' Colorize')]
 
 
 
