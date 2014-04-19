@@ -81,11 +81,11 @@ class HCS(ViewOperation):
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
         return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds,
-                          label=hue.label+' HCS Plot')]
+                          label=hue.label+' HCS')]
 
 
 
-class colorize(ViewOperation):
+class Colorize(ViewOperation):
     """
     Given a SheetOverlay consisting of a grayscale colormap and a
     second Sheetview with some specified colour map, use the second
@@ -109,10 +109,10 @@ class colorize(ViewOperation):
          C = SheetView(np.ones(overlay[1].data.shape),
                        bounds=overlay.bounds)
          hcs = HCS(overlay[1] * C * overlay[0].N)
+
          return [SheetView(hsc.data, hsc.bounds,
-                           mode='rgb',
                            roi_bounds=hcs.roi_bounds,
-                           label=sheetview.label+' Colorized')]
+                           label=sheetview.label+' Colorize')]
 
 
 
@@ -120,7 +120,7 @@ class cmap2rgb(ViewOperation):
     """
     Convert SheetViews using colormaps to RGBA mode.  The colormap of
     the style is used, if available. Otherwise, the colormap may be
-    forced.
+    forced as a parameter.
     """
 
     cmap = param.String(default=None, allow_None=True, doc="""
@@ -131,7 +131,7 @@ class cmap2rgb(ViewOperation):
         if sheetview.depth != 1:
             raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
 
-        style_cmap = Styles[sheetview][0].get('cmap', None)
+        style_cmap = options.style[sheetview][0].get('cmap', None)
         if not any([self.p.cmap, style_cmap]):
             raise Exception("No color map supplied and no cmap in the active style.")
 
