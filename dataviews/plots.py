@@ -4,6 +4,7 @@ from itertools import groupby
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
+from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table
@@ -1384,24 +1385,146 @@ class DataHistogramPlot(Plot):
      The style options for DataHistogramPlot match those of
      matplotlib's bar command.""")
 
+    cmap_range = param.NumericTuple(default=(0, 0), doc="""
+        Allows customization of colormap range.""")
+
+    colormap = param.String(default=None, doc="""
+        If colormap is supplied style color is ignored, the colormap
+        is mapped to the bin range and the bins are colored accordingly. """)
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a baseline colorbar to the histogram.""")
+
+    force_square = param.Boolean(default=False, doc="""
+      If enabled forces plot to be square.""")
+
+    num_ticks = param.Integer(default=5, doc="""
+        If colorbar is enabled the number of labels will be overwritten.""")
+
+    rescale_individually = param.Boolean(default=True, doc="""
+        Whether to use redraw the axes per stack or per view.""")
+
+    show_xaxis = param.String(default='bottom', allow_None=True, doc="""
+      Whether to display the right axis.""")
+
+    show_yaxis = param.String(default='left',  allow_None=True, doc="""
+      Whether to display the right axis.""")
+
+    vertical = param.Boolean(default=False, doc="""
+       Invert the axes of the plot.""")
+
+    colorbar_offset = 0.2
+
     _stack_type = DataStack
 
     def __init__(self, curves, zorder=0, **kwargs):
         self.zorder = zorder
+        self.cyclic = False
+        self.ax = None
+
         self._stack = self._check_stack(curves, DataHistogram)
         super(DataHistogramPlot, self).__init__(**kwargs)
+
+        if self.vertical:
+            self.offset_linefn = plt.axvline
+            self.plotfn = plt.barh
+        else:
+            self.plotfn = plt.bar
+            self.offset_linefn = plt.axhline
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         hist = self._stack.top
-        ax = self._axis(axis, hist.title, hist.xlabel, hist.ylabel)
+        # Compute edge widths
+        widths = np.diff(hist.edges)
 
-        bars = plt.bar(hist.edges, hist.hist, zorder=self.zorder,
-                       **options.style[hist][cyclic_index])
+        # Compute range bin range and hist range
+        cr = hist.cyclic_range
+        self.cyclic = False if cr is None else True
+        if self.cyclic:
+            bin_range = (0., cr)
+        elif self.rescale_individually:
+            bin_range = hist.xlim
+        else:
+            bin_range = self._stack.xlim
+        hist_lims = hist.ylim
+
+        # Compute colorbar offset
+        offset = 0
+        if self.colorbar and (self.colormap is not None):
+            full_range = hist_lims[1] - hist_lims[0]
+            if full_range == 0:
+                hist_lims = (hist_lims[0], hist_lims[0]+1.)
+                full_range = 1.
+            offset = full_range*self.colorbar_offset
+
+        ticks = self._compute_ticks(bin_range)
+
+        # Set plot orientation settings
+        if self.vertical:
+            axis_settings = dict(xlabel=hist.xlabel,
+                                 ylabel=hist.ylabel,
+                                 lbrt=(0, bin_range[0],
+                                       hist_lims[1]+offset,
+                                       bin_range[1]),
+                                 yticks=ticks)
+        else:
+            axis_settings = dict(xlabel=hist.ylabel,
+                                 ylabel=hist.xlabel,
+                                 lbrt=(bin_range[0], 0,
+                                       bin_range[1],
+                                       hist_lims[1]+offset),
+                                 xticks=ticks)
+
+        # Set up axis and plot data
+        self.ax = self._axis(axis, hist.title, **axis_settings)
+
+        # Plot and customize bars
+        bars = self.plotfn(hist.edges[:-1],
+                           np.array(hist.hist)+offset,
+                           widths,  zorder=self.zorder,
+                           **options.style[hist][cyclic_index])
+        self._apply_colorbar(bars, bin_range, offset)
         self.handles['bars'] = bars
 
         if not axis: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        return self.ax if axis else self.handles['fig']
+
+
+    def _apply_colorbar(self, bars, bin_range, offset):
+        """
+        Override existing color if cmap has been defined, applying the
+        correct color ranges.
+        """
+        cmap = cm.get_cmap(self.colormap)
+        if cmap is not None:
+            if self.colorbar:
+                self.handles['offset_line'] = self.offset_linefn(offset,
+                                                                 linewidth=1.0,
+                                                                 color='k')
+            custom = self.cmap_range != (0, 0)
+            supplied_range = bin_range[1] - bin_range[0]
+            custom_range = self.cmap_range[1] - self.cmap_range[0]
+            cmap_range = custom_range if custom else supplied_range
+            lower_bound = self.cmap_range[0] if custom else bin_range[0]
+
+            for bar in bars:
+                bar_bin = bar.get_y() if self.vertical else bar.get_x()
+                color_val = (bar_bin-lower_bound)/cmap_range
+                bar.set_facecolor(cmap(color_val))
+                bar.set_clip_on(False)
+
+
+    def _compute_ticks(self, bin_range):
+        xvals = np.linspace(bin_range[0], bin_range[1],
+                            self.num_ticks)
+        xpos = xvals[:]
+        if self.cyclic:
+            labels = ["%.0f" % np.rad2deg(x) + u'\N{DEGREE SIGN}'
+                      for x in xvals]
+        else:
+            labels = ["%.2f" % x for x in xvals]
+        return [xpos, labels]
 
 
     def update_frame(self, n):
@@ -1411,12 +1534,56 @@ class DataHistogramPlot(Plot):
         if hist.ndims != len(bars):
             raise Exception("Histograms must all have the same bin edges.")
 
+        # Compute x and y limits
+        x0, x1 = hist.xlim if self.rescale_individually else self._stack.xlim
+        y0, y1 = hist.ylim
+
+        # Compute colorbar offset and update separator line if stack is non-zero
+        offset = 0
+        if self.colorbar and (self.colormap is not None):
+            offset_line = self.handles['offset_line']
+            full_range = y1 - y0
+            if full_range == 0:
+                full_range = 1.
+                y1 = y0 + 1.
+            offset = full_range*self.colorbar_offset
+            if y1 == 0:
+                offset_line.set_visible(False)
+            else:
+                offset_line.set_visible(True)
+                if self.vertical:
+                    offset_line.set_xdata(offset)
+                else:
+                    offset_line.set_ydata(offset)
+
+        # Compute axis settings
+        ticks = self._compute_ticks((x0, x1))
+        if self.vertical:
+            ax_settings = dict(lbrt=(0, x0, y1+offset, x1),
+                               yticks=ticks)
+        else:
+            ax_settings = dict(lbrt=(x0, 0, x1, y1+offset),
+                               xticks=ticks)
+        self._axis(self.ax, **ax_settings)
+
+        # Update bars
+        widths = np.diff(hist.edges)
         for i, bar in enumerate(bars):
-            height = hist.hist[i]
-            bar.set_height(height)
+            height = hist.hist[i] + offset
+            edge = hist.edges[i]
+            width = widths[i]
+            if self.vertical:
+                bar.set_y(edge)
+                bar.set_width(height)
+                bar.set_height(width)
+            else:
+                bar.set_x(edge)
+                bar.set_height(height)
+                bar.set_width(width)
 
         if self.show_title and self.zorder == 0:
             self.handles['title'].set_text(hist.title)
+
         plt.draw()
 
 
