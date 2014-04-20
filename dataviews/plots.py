@@ -37,6 +37,9 @@ class Plot(param.Parameterized):
     show_axes = param.Boolean(default=True, doc="""
       Whether to show labelled axes for the plot.""")
 
+    show_frame = param.Boolean(default=True, doc="""
+      Whether to show the frame around the axis.""")
+
     show_grid = param.Boolean(default=False, doc="""
       Whether to show a Cartesian grid on the plot.""")
 
@@ -85,6 +88,8 @@ class Plot(param.Parameterized):
             fig.set_size_inches(list(self.size))
             axis = fig.add_subplot(111)
             axis.set_aspect('auto')
+
+        axis.set_frame_on(self.show_frame)
 
         if not self.show_axes:
             axis.set_axis_off()
