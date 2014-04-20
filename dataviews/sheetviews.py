@@ -3,10 +3,11 @@ import numpy as np
 import param
 
 from boundingregion import BoundingBox, BoundingRegion
-from dataviews import Stack
+from dataviews import Stack, DataHistogram, DataStack, find_minmax
 from ndmapping import NdMapping, Dimension
+from options import options, PlotOpts
 from sheetcoords import SheetCoordinateSystem, Slice
-from views import View, Overlay, Annotation, GridLayout
+from views import View, Overlay, Annotation, Layout, GridLayout
 
 
 class SheetLayer(View):
@@ -105,6 +106,19 @@ class SheetOverlay(SheetLayer, Overlay):
                             metadata=self.metadata)
 
 
+    @property
+    def range(self):
+        range = self[0].range
+        cyclic = self[0].cyclic_range is not None
+        for view in self:
+            if isinstance(view, SheetView):
+                if cyclic != (self[0].cyclic_range is not None):
+                    raise Exception("Overlay contains cyclic and non-cyclic "
+                                    "SheetViews, cannot compute range.")
+                range = find_minmax(range, view.range)
+        return range
+
+
     def __len__(self):
         return len(self.data)
 
@@ -178,6 +192,52 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         return SheetView(norm_data, self.bounds, cyclic_range=self.cyclic_range,
                          metadata=self.metadata, roi_bounds=self.roi_bounds,
                          style=self.style)
+
+
+    def hist(self, num_bins=50, bin_range=None, individually=True, style_prefix=None):
+        """
+        Returns a Layout of the SheetView with an attached histogram.
+        num_bins allows customizing the bin number. The container_name
+        can additionally be specified to set a common cmap when viewing
+        a Stack or Overlay.
+        """
+        range = find_minmax(self.range, (0, None)) if individually else bin_range
+
+        # Avoids range issues including zero bin range and empty bins
+        if range == (0, 0):
+            range = (0.0, 0.01)
+        try:
+            hist, edges = np.histogram(self.data.flatten(), normed=True,
+                                       range=range, bins=num_bins)
+        except:
+            edges = np.linspace(range[0], range[1], num_bins+1)
+            hist = np.zeros(num_bins)
+        hist[np.isnan(hist)] = 0
+
+        hist_view = DataHistogram(hist, edges, cyclic_range=self.cyclic_range,
+                                  label=self.label + " Histogram",
+                                  metadata=self.metadata)
+
+        # Set plot and style options
+        plotopts_map = options.plotting[self]
+        hist_plotopts = dict(colormap=options.style[self].opts.get('cmap', None),
+                             rescale_individually=individually)
+        if bin_range is not None: hist_plotopts.update(cmap_range=self.range)
+        options[self.style] = plotopts_map(normalize_individually=individually)
+        style_prefix = 'Custom[<' + self.name + '>]_' if style_prefix is None else style_prefix
+        opts_name = style_prefix + hist_view.label.replace(' ', '_')
+        hist_view.style = opts_name
+        options[opts_name] = options.plotting[opts_name](**hist_plotopts)
+
+        return self << hist_view
+
+
+    @property
+    def range(self):
+        if self.cyclic_range:
+            return (0, self.cyclic_range)
+        else:
+            return (self.data.min(), self.data.max())
 
 
     @property
@@ -405,6 +465,28 @@ class SheetStack(Stack):
     @property
     def roi(self):
         return self.map(lambda x, _: x.roi)
+
+
+    def hist(self, num_bins=50, individually=False, bin_range=None):
+        histstack = DataStack(dimensions=self.dimensions,
+                              metadata=self.metadata)
+
+        bin_range = self.range if bin_range is None else bin_range
+        for k, v in self.items():
+            bin_range = None if individually else bin_range
+            histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
+                                  individually=individually,
+                                  style_prefix='Custom[<' + self.name + '>]_')[1]
+
+        return Layout([self, histstack])
+
+
+    @property
+    def range(self):
+        range = self.top.range
+        for view in self._data.values():
+            range = find_minmax(range, view.range)
+        return range
 
 
     def _item_check(self, dim_vals, data):
