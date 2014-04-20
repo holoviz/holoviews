@@ -31,7 +31,7 @@ class Plot(param.Parameterized):
     animation via the anim() method.
     """
 
-    size = param.NumericTuple(default=(5,5), doc="""
+    size = param.NumericTuple(default=(5, 5), doc="""
       The matplotlib figure size in inches.""")
 
     show_axes = param.Boolean(default=True, doc="""
@@ -620,7 +620,6 @@ class LayoutPlot(Plot):
 
             # Customize plotopts depending on position.
             plotopts = options.plotting[view].opts
-            #print plotopts
             if view is not self.layout.main:
                 plotopts.update(show_title=False, colorbar=True,
                                 show_frame=False)
