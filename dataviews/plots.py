@@ -411,10 +411,7 @@ class SheetPointsPlot(Plot):
 
 class SheetViewPlot(Plot):
 
-    colorbar = param.ObjectSelector(default=None,
-                                    objects=['horizontal','vertical', None],
-        doc="""The style of the colorbar if applicable. """)
-
+    normalize_individually = param.Boolean(default=False)
 
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
                                      'visible', 'filterrad', 'origin'],
@@ -432,17 +429,6 @@ class SheetViewPlot(Plot):
         super(SheetViewPlot, self).__init__(**kwargs)
 
 
-    def toggle_colorbar(self, bar, cmax):
-        visible = not (cmax == 0.0)
-        bar.set_clim(vmin=0.0, vmax=cmax if visible else 1.0)
-        elements = (bar.ax.get_xticklines()
-                    + bar.ax.get_ygridlines()
-                    + bar.ax.get_children())
-        for el in elements:
-            el.set_visible(visible)
-        bar.draw_all()
-
-
     def __call__(self, axis=None, cyclic_index=0):
         sheetview = self._stack.top
         (l, b, r, t) = self._stack.bounds.lbrt()
@@ -455,21 +441,9 @@ class SheetViewPlot(Plot):
 
         im = ax.imshow(sheetview.data, extent=[l, r, b, t],
                        zorder=self.zorder, **opts)
+        clims = sheetview.range if self.normalize_individually else self._stack.range
+        im.set_clim(clims)
         self.handles['im'] = im
-
-        normalization = sheetview.data.max()
-        cyclic_range = sheetview.cyclic_range
-        im.set_clim([0.0, cyclic_range if cyclic_range else normalization])
-
-        if self.colorbar is not None:
-            np.seterr(divide='ignore')
-            bar = plt.colorbar(im, ax=ax,
-                               orientation=self.colorbar)
-            np.seterr(divide='raise')
-            self.toggle_colorbar(bar, normalization)
-            self.handles['bar'] = bar
-        else:
-            plt.tight_layout()
 
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -477,15 +451,13 @@ class SheetViewPlot(Plot):
 
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
-        im = self.handles.get('im',None)
-        bar = self.handles.get('bar',None)
+        im = self.handles.get('im', None)
 
         sheetview = self._stack.values()[n]
         im.set_data(sheetview.data)
-        normalization = sheetview.data.max()
-        cmax = max([normalization, sheetview.cyclic_range])
-        im.set_clim([0.0, cmax])
-        if self.colorbar: self.toggle_colorbar(bar, cmax)
+
+        if self.normalize_individually:
+            im.set_clim(sheetview.range)
 
         if self.show_title and self.zorder == 0:
             self.handles['title'].set_text(sheetview.title)
