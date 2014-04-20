@@ -720,7 +720,7 @@ class GridLayoutPlot(Plot):
     object.
     """
 
-    horizontal_spacing = param.Number(default=0.4, doc="""
+    horizontal_spacing = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
@@ -734,7 +734,7 @@ class GridLayoutPlot(Plot):
       GridLayoutPlot renders a group of views which individually have
       style options but GridLayoutPlot itself does not.""")
 
-    vertical_spacing = param.Number(default=0.0, doc="""
+    vertical_spacing = param.Number(default=0.2, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
