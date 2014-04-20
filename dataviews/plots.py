@@ -12,7 +12,7 @@ import matplotlib.gridspec as gridspec
 import param
 
 from dataviews import NdMapping, Stack, TableView, TableStack
-from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
+from dataviews import DataStack, DataOverlay, DataLayer, DataCurves, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
 from views import GridLayout, Layout, Overlay, View, Annotation
@@ -624,6 +624,9 @@ class LayoutPlot(Plot):
             if view is not self.layout.main:
                 plotopts.update(show_title=False, colorbar=True,
                                 show_frame=False)
+            else:
+                if isinstance(view, (DataOverlay, DataLayer)):
+                    plotopts.update(force_square=True)
 
             if pos == 'right':
                 plotopts.update(vertical=True, show_xaxis=None, show_yaxis='left')
@@ -1014,7 +1017,16 @@ class DataCurvePlot(Plot):
 
     num_ticks = param.Integer(default=5)
 
+    force_square = param.Boolean(default=False, doc="""
+      If enabled forces plot to be square.""")
+
     relative_labels = param.Boolean(default=False)
+
+    show_xaxis = param.String(default='bottom', allow_None=True, doc="""
+      Whether to display the right axis.""")
+
+    show_yaxis = param.String(default='left', allow_None=True, doc="""
+      Whether to display the right axis.""")
 
     style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
                                      'visible'], constant=True, doc="""
@@ -1153,6 +1165,11 @@ class DataCurvePlot(Plot):
             leg = ax.legend(handles[::-1], labels[::-1], prop=fontP)
             leg.get_frame().set_alpha(0.5)
 
+        if self.force_square:
+            xrange = lbrt[2] - lbrt[0]
+            yrange = lbrt[3] - lbrt[1]
+            ax.set_aspect(xrange/yrange)
+
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
 
@@ -1174,6 +1191,9 @@ class DataGridPlot(Plot):
     Plot a group of views in a grid layout based on a DataGrid view
     object.
     """
+
+    force_square = param.Boolean(default=False, doc="""
+      If enabled forces plot to be square.""")
 
     show_axes= param.Boolean(default=False, constant=True, doc="""
       Whether to show labelled axes for individual subplots.""")
@@ -1357,6 +1377,7 @@ class DataHistogramPlot(Plot):
     DataHistograms, which can be displayed as a single frame or
     animation.
     """
+
     style_opts = param.List(default=['alpha', 'color', 'align', 'width',
                                      'visible', 'edgecolor', 'log',
                                      'ecolor', 'capsize', 'error_kw',
