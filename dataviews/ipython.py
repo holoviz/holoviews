@@ -18,7 +18,7 @@ import textwrap, traceback, itertools, string
 from dataviews import Stack
 from plots import Plot, GridLayoutPlot, viewmap, channel_modes
 from sheetviews import GridLayout, CoordinateGrid
-from views import View, Overlay, Annotation
+from views import View, Overlay, Annotation, Layout
 from options import options, channels, PlotOpts, StyleOpts, ChannelOpts
 
 # Variables controlled via the %view magic
@@ -544,7 +544,7 @@ class OptsMagic(Magics):
         values as keys for the the associated view type.
         """
         group = {}
-        if isinstance(obj, (Overlay, GridLayout)):
+        if isinstance(obj, (Overlay, Layout, GridLayout)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
         elif isinstance(obj, Stack) and not issubclass(obj.type, Overlay):
@@ -986,7 +986,8 @@ def stack_display(stack, size=256):
 
 @display_hook
 def layout_display(grid, size=256):
-    if not isinstance(grid, GridLayout): return None
+    grid = GridLayout([[grid]]) if isinstance(grid, Layout) else grid
+    if not isinstance(grid, (GridLayout)): return None
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
     grid_size = (grid.shape[1]*get_plot_size()[1],
@@ -1084,6 +1085,7 @@ def load_ipython_extension(ip, verbose=True):
 
         html_formatter.for_type(View, view_display)
         html_formatter.for_type(Stack, stack_display)
+        html_formatter.for_type(Layout, layout_display)
         html_formatter.for_type(GridLayout, layout_display)
         html_formatter.for_type(CoordinateGrid, projection_display)
 

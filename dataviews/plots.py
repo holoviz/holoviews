@@ -566,6 +566,150 @@ class SheetPlot(Plot):
             plot.update_frame(n)
 
 
+class LayoutPlot(Plot):
+    """
+    LayoutPlot allows placing up to three Views in a number of
+    predefined and fixed layouts, which are defined in the
+    layout_dict. This allows placing subviews next to a main
+    plot. It initially computes a layout based on the number
+    of Views it has been given, but when embedded in a GridLayout
+    can recompute its internal layout to match the number of rows
+    and columns of the larger grid.
+    """
+
+    layout_dict = {'Single':          {'shape': (1, 1),
+                                       'width_ratios': [4],
+                                       'height_ratios': [4],
+                                       'layout': ['main']},
+                   'Dual':            {'shape': (1, 2),
+                                       'width_ratios': [4, 1],
+                                       'height_ratios': [4],
+                                       'layout': ['main', 'right']},
+                   'Triple':          {'shape': (2, 2),
+                                       'width_ratios': [4, 1],
+                                       'height_ratios': [1, 4],
+                                       'layout': ['top', None,
+                                                  'main', 'right']},
+                   'Embedded Dual':   {'shape': (2, 1),
+                                       'width_ratios': [4],
+                                       'height_ratios': [1, 4],
+                                       'layout': [None, 'main']}}
+
+    # Expressed as fraction of main plot
+    border_size = 0.25
+    subplot_size = 0.25
+
+    def __init__(self, layout, **params):
+        self.layout = layout
+        self._set_layout()
+        super(LayoutPlot, self).__init__(**params)
+
+
+    def __call__(self, subaxes=[]):
+        self.subplots = {}
+        self.plot_axes = dict([(pos, (ax, self.layout.get(pos, None)))
+                               for ax, pos in zip(subaxes, self.layout_spec)
+                               if pos is not None])
+        for pos, (ax, view) in self.plot_axes.items():
+            if view is None:
+                ax.set_axis_off()
+                continue
+
+            # Customize plotopts depending on position.
+            plotopts = options.plotting[view].opts
+            #print plotopts
+            if view is not self.layout.main:
+                plotopts.update(show_title=False, colorbar=True,
+                                show_frame=False)
+
+            if pos == 'right':
+                plotopts.update(vertical=True, show_xaxis=None, show_yaxis='left')
+            elif pos == 'top':
+                plotopts.update(show_xaxis='bottom', show_yaxis=None)
+
+            vtype = view.type if isinstance(view, Stack) else view.__class__
+            subplot = viewmap[vtype](view, **plotopts)
+            subplot(ax)
+            self.subplots[pos] = subplot
+
+        # Disable remaining axes
+        off_axes = [ax for ax, pos in zip(subaxes, self.layout_spec)
+                    if pos is None]
+        for ax in off_axes: ax.set_axis_off()
+
+
+    def _set_layout(self, embedded_type=None):
+        """
+        Sets the layout based on the number of views contained
+        in it or the supplied embedded_type.
+        """
+
+        if embedded_type is not None:
+            layout_type = embedded_type
+        elif len(self.layout) == 1:
+            layout_type = 'Single'
+        elif len(self.layout) == 2:
+            layout_type = 'Dual'
+        elif len(self.layout) == 3:
+            layout_type = 'Triple'
+
+        layout_info = self.layout_dict[layout_type]
+        self.layout_spec = layout_info['layout']
+        self.shape = layout_info['shape']
+        self.width_ratios = layout_info['width_ratios']
+        self.height_ratios = layout_info['height_ratios']
+
+
+    def adjust_positions(self):
+        """
+        Adjusts the positions of the subplots relative to the main plot.
+        """
+        main_ax = self.plot_axes['main'][0]
+        bbox = main_ax.get_position()
+        if 'right' in self.layout_spec:
+            ax, _ = self.plot_axes['right']
+            ax.set_position([bbox.x1 + bbox.width*self.border_size,
+                             bbox.y0,
+                             bbox.width*self.subplot_size, bbox.height])
+        if 'top' in self.layout_spec:
+            ax, _ = self.plot_axes['top']
+            ax.set_position([bbox.x0,
+                             bbox.y1 + bbox.height*self.border_size,
+                             bbox.width, bbox.height*self.subplot_size])
+
+
+    def grid_situate(self, current_idx, layout_type, subgrid_width):
+        """
+        Computes gridspec indices for a Layout embedded within
+        a GridLayout.
+        """
+        self._set_layout(layout_type)
+        if layout_type == 'Single':
+            return current_idx+1, [current_idx]
+        elif layout_type == 'Dual':
+            return current_idx+2, [current_idx, current_idx+1]
+
+        bottom_idx = current_idx+subgrid_width
+        if layout_type == 'Embedded Dual':
+            grid_idx = bottom_idx+1 if ((current_idx+1) % subgrid_width) == 0\
+                else current_idx+1
+            return grid_idx, [current_idx, bottom_idx]
+        elif layout_type == 'Triple':
+            grid_idx = bottom_idx+2 if ((current_idx+2) % subgrid_width) == 0\
+                else current_idx+2
+            return grid_idx, [current_idx, current_idx+1,
+                              bottom_idx, bottom_idx+1]
+
+
+    def update_frame(self, n):
+        for pos, subplot in self.subplots.items():
+            if subplot is not None:
+                subplot.update_frame(n)
+
+
+    def __len__(self):
+        return max([len(v) for v in self.layout if isinstance(v, NdMapping)]+[1])
+
 
 class GridLayoutPlot(Plot):
     """
@@ -573,26 +717,89 @@ class GridLayoutPlot(Plot):
     object.
     """
 
+    horizontal_spacing = param.Number(default=0.4, doc="""
+      Specifies the space between horizontally adjacent elements in the grid.
+      Default value is set conservatively to avoid overlap of subplots.""")
+
     roi = param.Boolean(default=False, doc="""
       Whether to apply the ROI to each element of the grid.""")
 
-    show_axes= param.Boolean(default=True, constant=True, doc="""
+    show_axes = param.Boolean(default=True, constant=True, doc="""
       Whether to show labelled axes for individual subplots.""")
 
     style_opts = param.List(default=[], constant=True, doc="""
       GridLayoutPlot renders a group of views which individually have
       style options but GridLayoutPlot itself does not.""")
 
-    def __init__(self, grid, **kwargs):
+    vertical_spacing = param.Number(default=0.0, doc="""
+      Specifies the space between vertically adjacent elements in the grid.
+      Default value is set conservatively to avoid overlap of subplots.""")
 
+    def __init__(self, grid, **kwargs):
         if not isinstance(grid, GridLayout):
             raise Exception("GridLayoutPlot only accepts GridLayouts.")
 
         self.grid = grid
-        self.subplots = []
+        self.subplots = {}
+        self.subplot_specs = {}
         self.rows, self.cols = grid.shape
-        self._gridspec = gridspec.GridSpec(self.rows, self.cols)
+        self.coords = [(r, c) for r in range(self.rows)
+                       for c in range(self.cols)]
+
         super(GridLayoutPlot, self).__init__(**kwargs)
+        self._compute_gridspecs()
+
+
+    def _compute_gridspecs(self):
+        """
+        Computes the tallest and widest cell for each row and column
+        respectively by looking at the Layouts in the Grid. Then
+        instantiates the GridSpec, sets the embedded layout_type on
+        the Layouts and gathers the appropriate gridspecs to instantiate
+        the correct axes for each Layout.
+        """
+
+        row_heightratios = {}
+        col_widthratios = {}
+        for (r, c) in self.coords:
+            view = self.grid.get((r, c), None)
+            layout_view = view if isinstance(view, Layout) else Layout([view])
+            layout = LayoutPlot(layout_view)
+            self.subplots[(r, c)] = layout
+
+            # Calculate row height ratios and column width ratios
+            if layout.shape[0] > row_heightratios.get(r, (0, None))[0]:
+                row_heightratios[r] = (layout.shape[1], layout.height_ratios)
+            if layout.shape[1] > col_widthratios.get(c, (0, None))[0]:
+                col_widthratios[c] = (layout.shape[0], layout.width_ratios)
+
+        # Compute number of rows and cols as well as width and height ratios
+        width_ratios = [v[1] for k, v in
+                        sorted([(k, v) for k, v in col_widthratios.items()])]
+        height_ratios = [v[1] for k, v in
+                         sorted([(k, v) for k, v in row_heightratios.items()])]
+        cols = np.sum([len(wr) for wr in width_ratios])
+        rows = np.sum([len(hr) for hr in height_ratios])
+        wr_list = [wr for wrs in width_ratios for wr in wrs]
+        hr_list = [hr for hrs in height_ratios for hr in hrs]
+
+        self.gs = gridspec.GridSpec(rows, cols, width_ratios=wr_list,
+                                    height_ratios=hr_list, wspace=self.horizontal_spacing,
+                                    hspace=self.vertical_spacing)
+
+        # Situate all the Layouts in the grid and compute the
+        # gridspec indices for each
+        gidx = 0
+        for (r, c) in self.coords:
+            layout_type = 'Single'
+            if len(width_ratios[c]) > 1 and len(height_ratios[r]) > 1:
+                layout_type = 'Triple'
+            elif len(height_ratios[r]) > 1:
+                layout_type = 'Embedded Dual'
+            elif len(width_ratios[c]) > 1:
+                layout_type = 'Dual'
+            gidx, gsinds = self.subplots[(r, c)].grid_situate(gidx, layout_type, cols)
+            self.subplot_specs[(r, c)] = [self.gs[i] for i in gsinds]
 
 
     def __call__(self, axis=None):
@@ -600,31 +807,27 @@ class GridLayoutPlot(Plot):
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
-        coords = [(r,c) for c in range(self.cols) for r in range(self.rows)]
+        for (r, c) in self.coords:
+            layout_plot = self.subplots.get((r, c), None)
+            subaxes = [plt.subplot(spec) for spec in self.subplot_specs[(r, c)]]
+            layout_plot(subaxes)
+        plt.draw()
 
-        self.subplots = []
-        for (r,c) in coords:
-            view = self.grid.get((r,c),None)
-            if view is not None:
-                subax = plt.subplot(self._gridspec[r,c])
-                subview = view.roi if self.roi else view
-                #plotopts = view.metadata.get('plot_opts', {})
-                vtype = subview.type if isinstance(subview,Stack) else subview.__class__
-                subplot = viewmap[vtype](subview, **options.plotting[subview].opts)
-            self.subplots.append(subplot)
-            subplot(subax)
-        plt.tight_layout()
+        # Adjusts the Layout subplot positions
+        for (r, c) in self.coords:
+            self.subplots.get((r, c), None).adjust_positions()
 
         if not axis: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
 
 
     def update_frame(self, n):
-        for subplot in self.subplots:
+        for subplot in self.subplots.values():
             subplot.update_frame(n)
 
+
     def __len__(self):
-        return max([len(v) for v in self.grid if isinstance(v, NdMapping)]+[1])
+        return max([len(v) for v in self.subplots.values()]+[1])
 
 
 
@@ -1202,7 +1405,8 @@ viewmap = {SheetView: SheetViewPlot,
            DataOverlay: DataPlot,
            DataGrid: DataGridPlot,
            TableView: TablePlot,
-           DataHistogram:DataHistogramPlot,
+           DataHistogram: DataHistogramPlot,
+           Layout: GridLayoutPlot,
            Annotation: AnnotationPlot
 }
 

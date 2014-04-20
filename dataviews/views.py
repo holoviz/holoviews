@@ -64,6 +64,15 @@ class View(param.Parameterized):
             return GridLayout(initial_items=[[self, obj]])
 
 
+    def __lshift__(self, other):
+        if isinstance(other, (View, Overlay, NdMapping)):
+            return Layout([self, other])
+        elif isinstance(other, Layout):
+            return Layout(other.data+[self])
+        else:
+            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+
+
 class Annotation(View):
     """
     An annotation is a type of View that is displayed on the top of an
@@ -264,6 +273,107 @@ class Overlay(View):
         while i < len(self):
             yield self[i]
             i += 1
+
+
+class Layout(param.Parameterized):
+    """
+    A Layout provides a convenient container to lay out a primary plot with
+    some additional supplemental plots, e.g. an image in a SheetView annotated
+    with a luminance histogram. Layout accepts a list of three View elements,
+    which are laid out as follows:
+
+    _____________________ _______
+    |         3         | |empty|
+    |___________________| |_____|
+    _____________________  ______
+    |                   | |     |
+    |                   | |     |
+    |                   | |     |
+    |         1         | |  2  |
+    |                   | |     |
+    |                   | |     |
+    |                   | |     |
+    |___________________| |_____|
+
+    """
+
+    layout_order = ['main', 'right', 'top']
+
+    def __init__(self, views, **params):
+        if len(views) > 3:
+            raise Exception('Layout accepts no more than three elements.')
+
+        self.data = dict(zip(self.layout_order, views))
+        super(Layout, self).__init__(**params)
+
+
+    def __len__(self):
+        return len(self.data)
+
+
+    def get(self, key, default=None):
+        return self.data[key] if key in self.data else default
+
+
+    def __getitem__(self, key):
+        if isinstance(key, int) and key <= len(self):
+            if key == 0:
+                return self['main']
+            if key == 1:
+                return self['right']
+            if key == 2:
+                return self['top']
+        elif isinstance(key, str) and key in self.data:
+            return self.data[key]
+        else:
+            raise KeyError("Key {0} not found in Layout.".format(key))
+
+
+    @property
+    def style(self):
+        return [el.style for el in self]
+
+
+    @style.setter
+    def style(self, styles):
+        for layer, style in zip(self, styles):
+            layer.style = style
+
+
+    def __lshift__(self, other):
+        if isinstance(other, Layout):
+            return Layout(self.data.values()+other.data.values())
+        else:
+            return Layout(self.data.values()+[other])
+
+
+    @property
+    def main(self):
+        return self.data['main']
+
+
+    @property
+    def right(self):
+        return self.data['right']
+
+
+    def top(self):
+        return self.data['top']
+
+
+    def __iter__(self):
+        i = 0
+        while i < len(self):
+            yield self[i]
+            i += 1
+
+
+    def __add__(self, other):
+        if isinstance(other, GridLayout):
+            elements = [self] + other.values()
+        else:
+            elements = [self, other]
+        return GridLayout([elements])
 
 
 
