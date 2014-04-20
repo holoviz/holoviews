@@ -248,9 +248,12 @@ class Stack(NdMapping):
 
 
     def _item_check(self, dim_vals, data):
-        if self.style is not None and (data.style != self.style):
-            raise AssertionError("%s must only contain one type of style." %
-                                 self.__class__.__name__)
+        if self.style is not None and self.style != data.style:
+            if self.style.endswith(data.style):
+                data.style = self.style
+            else:
+                raise AssertionError("%s must only contain one type of style." %
+                                     self.__class__.__name__)
 
 
         if self.type is not None and (type(data) != self.type):
