@@ -125,25 +125,38 @@ class DataCurves(DataLayer):
 
 
 class DataHistogram(DataLayer):
+    """
+    DataHistogram contains a number of bins, which are defined by the upper
+    and lower bounds of their edges and the computed bin values.
+    """
 
-    bin_labels = param.List(default=[])
+    cyclic_range = param.Number(default=None, allow_None=True, doc="""
+       Cyclic-range should be set when the bins are sampling a cyclic
+       quantity.""")
 
     def __init__(self, hist, edges, **kwargs):
+        if len(hist) != len(edges):
+            Exception("DataHistogram requires inclusive edges to be defined.")
         self.hist = hist
         self.edges = edges
+
         super(DataHistogram, self).__init__(None, **kwargs)
 
     @property
     def ndims(self):
-        return len(self.edges)
+        return len(self.edges)-1
 
     @property
     def xlim(self):
-        return min(self.edges), max(self.edges)
+        if self.cyclic_range is not None:
+            return (0, self.cyclic_range)
+        else:
+            return (min(self.edges), max(self.edges))
 
     @property
     def ylim(self):
-        return min(self.hist), max(self.hist)
+        return (min(self.hist), max(self.hist))
+
 
 
 class DataOverlay(DataLayer, Overlay):
