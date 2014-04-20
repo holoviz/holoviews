@@ -940,6 +940,64 @@ class CoordinateGridPlot(Plot):
 
 
 
+class DataPlot(Plot):
+    """
+    A high-level plot, which will plot any DataView or DataStack type
+    including DataOverlays.
+
+    A generic plot that visualizes DataStacks containing DataOverlay or
+    DataLayer objects.
+    """
+
+    force_square = param.Boolean(default=False, doc="""
+      If enabled forces plot to be square.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+      Whether to show legend for the plot.""")
+
+    _stack_type = DataStack
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     DataPlot renders overlay layers which individually have style
+     options but DataPlot itself does not.""")
+
+
+    def __init__(self, overlays, **kwargs):
+        self._stack = self._check_stack(overlays, DataOverlay)
+        self.plots = []
+        super(DataPlot, self).__init__(**kwargs)
+
+
+    def __call__(self, axis=None, **kwargs):
+        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
+
+        stacks = self._stack.split()
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(stacks, lambda s: s.style))
+
+        for zorder, stack in enumerate(stacks):
+            cyclic_index, _ = style_groups[stack.style].next()
+
+            plotype = viewmap[stack.type]
+            plot = plotype(stack, force_square=self.force_square, size=self.size,
+                           show_axes=self.show_axes, show_legend=self.show_legend,
+                           show_title=self.show_title, show_grid=self.show_grid,
+                           zorder=zorder, **kwargs)
+
+            lbrt= None if stack.type == Annotation else self._stack.lbrt
+            plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
+            self.plots.append(plot)
+
+        if axis is None: plt.close(self.handles['fig'])
+        return ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n):
+        n = n if n < len(self) else len(self) - 1
+        for plot in self.plots:
+            plot.update_frame(n)
+
+
 class DataCurvePlot(Plot):
     """
     DataCurvePlot can plot DataCurves and DataStacks of DataCurves,
@@ -1108,62 +1166,6 @@ class DataCurvePlot(Plot):
         if self.show_title and self.zorder == 0:
             self.handles['title'].set_text(lines.title)
         plt.draw()
-
-
-
-class DataPlot(Plot):
-    """
-    A high-level plot, which will plot any DataView or DataStack type
-    including DataOverlays.
-
-    A generic plot that visualizes DataStacks containing DataOverlay or
-    DataLayer objects.
-    """
-
-    show_legend = param.Boolean(default=True, doc="""
-      Whether to show legend for the plot.""")
-
-    _stack_type = DataStack
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     DataPlot renders overlay layers which individually have style
-     options but DataPlot itself does not.""")
-
-
-    def __init__(self, overlays, **kwargs):
-        self._stack = self._check_stack(overlays, DataOverlay)
-        self.plots = []
-        super(DataPlot, self).__init__(**kwargs)
-
-
-    def __call__(self, axis=None, **kwargs):
-        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
-
-        stacks = self._stack.split()
-        sorted_stacks = sorted(stacks, key=lambda x: x.style)
-        style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(sorted_stacks, lambda s: s.style))
-
-        for zorder, stack in enumerate(stacks):
-            cyclic_index, _ = style_groups[stack.style].next()
-
-            plotype = viewmap[stack.type]
-            plot = plotype(stack, size=self.size, show_axes=self.show_axes,
-                           show_legend=self.show_legend, show_title=self.show_title,
-                           show_grid=self.show_grid, zorder=zorder, **kwargs)
-
-            lbrt= None if stack.type == Annotation else self._stack.lbrt
-            plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
-            self.plots.append(plot)
-
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
-
-
-    def update_frame(self, n):
-        n = n if n < len(self) else len(self) - 1
-        for plot in self.plots:
-            plot.update_frame(n)
 
 
 
