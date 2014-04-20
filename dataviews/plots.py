@@ -43,6 +43,12 @@ class Plot(param.Parameterized):
     show_title = param.Boolean(default=True, doc="""
       Whether to display the plot title.""")
 
+    show_xaxis = param.String(default='both', allow_None=True, doc="""
+      Whether and where to display the xaxis.""")
+
+    show_yaxis = param.String(default='both', allow_None=True, doc="""
+      Whether and where to display the yaxis.""")
+
     style_opts = param.List(default=[], constant=True, doc="""
      A list of matplotlib keyword arguments that may be supplied via a
      style options object. Each subclass should override this
@@ -85,6 +91,26 @@ class Plot(param.Parameterized):
         elif self.show_grid:
             axis.get_xaxis().grid(True)
             axis.get_yaxis().grid(True)
+
+        if self.show_xaxis is not None:
+            if self.show_xaxis == 'top':
+                axis.spines['bottom'].set_visible(False)
+                axis.xaxis.tick_top()
+            elif self.show_xaxis == 'bottom':
+                axis.spines['top'].set_visible(False)
+                axis.xaxis.tick_bottom()
+        else:
+            axis.xaxis.set_visible(False)
+
+        if self.show_yaxis is not None:
+            if self.show_yaxis == 'left':
+                axis.spines['right'].set_visible(False)
+                axis.yaxis.tick_left()
+            elif self.show_yaxis == 'right':
+                axis.spines['left'].set_visible(False)
+                axis.yaxis.tick_right()
+        else:
+            axis.yaxis.set_visible(False)
 
         if lbrt is not None:
             (l, b, r, t) = lbrt
