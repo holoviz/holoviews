@@ -15,7 +15,7 @@ from dataviews import NdMapping, Stack, TableView, TableStack
 from dataviews import DataCurves, DataStack, DataOverlay, DataHistogram
 from sheetviews import SheetView, SheetOverlay, SheetLines, \
                        SheetStack, SheetPoints, CoordinateGrid, DataGrid
-from views import GridLayout, View, Overlay, Annotation
+from views import GridLayout, Layout, Overlay, View, Annotation
 
 from options import options, channels
 from transform import RGBA, HCS, AlphaOverlay
