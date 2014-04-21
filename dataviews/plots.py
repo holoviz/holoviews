@@ -769,10 +769,6 @@ class GridLayoutPlot(Plot):
     object.
     """
 
-    horizontal_spacing = param.Number(default=0.5, doc="""
-      Specifies the space between horizontally adjacent elements in the grid.
-      Default value is set conservatively to avoid overlap of subplots.""")
-
     roi = param.Boolean(default=False, doc="""
       Whether to apply the ROI to each element of the grid.""")
 
@@ -783,75 +779,90 @@ class GridLayoutPlot(Plot):
       GridLayoutPlot renders a group of views which individually have
       style options but GridLayoutPlot itself does not.""")
 
+    horizontal_spacing = param.Number(default=0.5, doc="""
+      Specifies the space between horizontally adjacent elements in the grid.
+      Default value is set conservatively to avoid overlap of subplots.""")
+
     vertical_spacing = param.Number(default=0.2, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
+
 
     def __init__(self, grid, **kwargs):
         if not isinstance(grid, GridLayout):
             raise Exception("GridLayoutPlot only accepts GridLayouts.")
 
         self.grid = grid
+        # LayoutPlots indexed by their row and column indices
         self.subplots = {}
-        self.subplot_specs = {}
         self.rows, self.cols = grid.shape
         self.coords = [(r, c) for r in range(self.rows)
                        for c in range(self.cols)]
 
         super(GridLayoutPlot, self).__init__(**kwargs)
-        self._compute_gridspecs()
+        self.subplots, self.grid_indices = self._compute_gridspecs()
 
 
     def _compute_gridspecs(self):
         """
         Computes the tallest and widest cell for each row and column
-        respectively by looking at the Layouts in the Grid. Then
-        instantiates the GridSpec, sets the embedded layout_type on
-        the Layouts and gathers the appropriate gridspecs to instantiate
-        the correct axes for each Layout.
+        by examining the Layouts in the Grid. The GridSpec is then
+        instantiated and the LayoutPlots are configured with the
+        appropriate embedded layout_types. The first element of the
+        returned tuple is a dictionary of all the LayoutPlots indexed
+        by row and column. The second dictionary in the tuple supplies
+        the grid indicies needed to instantiate the axes for each
+        LayoutPlot.
         """
-
-        row_heightratios = {}
-        col_widthratios = {}
+        subplots, grid_indices = {}, {}
+        row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
             view = self.grid.get((r, c), None)
             layout_view = view if isinstance(view, Layout) else Layout([view])
             layout = LayoutPlot(layout_view)
-            self.subplots[(r, c)] = layout
-
-            # Calculate row height ratios and column width ratios
+            subplots[(r, c)] = layout
+            # For each row and column record the width and height ratios
+            # of the LayoutPlot with the most horizontal or vertical splits
             if layout.shape[0] > row_heightratios.get(r, (0, None))[0]:
                 row_heightratios[r] = (layout.shape[1], layout.height_ratios)
             if layout.shape[1] > col_widthratios.get(c, (0, None))[0]:
                 col_widthratios[c] = (layout.shape[0], layout.width_ratios)
 
-        # Compute number of rows and cols as well as width and height ratios
-        width_ratios = [v[1] for k, v in
-                        sorted([(k, v) for k, v in col_widthratios.items()])]
-        height_ratios = [v[1] for k, v in
-                         sorted([(k, v) for k, v in row_heightratios.items()])]
+        # In order of row/column collect the largest width and height ratios
+        height_ratios = [v[1] for k, v in sorted(row_heightratios.items())]
+        width_ratios = [v[1] for k, v in sorted(col_widthratios.items())]
+        # Compute the number of rows and cols
         cols = np.sum([len(wr) for wr in width_ratios])
         rows = np.sum([len(hr) for hr in height_ratios])
+        # Flatten the width and height ratio lists
         wr_list = [wr for wrs in width_ratios for wr in wrs]
         hr_list = [hr for hrs in height_ratios for hr in hrs]
 
-        self.gs = gridspec.GridSpec(rows, cols, width_ratios=wr_list,
-                                    height_ratios=hr_list, wspace=self.horizontal_spacing,
+        self.gs = gridspec.GridSpec(rows, cols,
+                                    width_ratios=wr_list,
+                                    height_ratios=hr_list,
+                                    wspace=self.horizontal_spacing,
                                     hspace=self.vertical_spacing)
 
-        # Situate all the Layouts in the grid and compute the
-        # gridspec indices for each
+        # Situate all the Layouts in the grid and compute the gridspec
+        # indices for all the axes required by each LayoutPlot.
         gidx = 0
         for (r, c) in self.coords:
-            layout_type = 'Single'
-            if len(width_ratios[c]) > 1 and len(height_ratios[r]) > 1:
-                layout_type = 'Triple'
-            elif len(height_ratios[r]) > 1:
-                layout_type = 'Embedded Dual'
-            elif len(width_ratios[c]) > 1:
+            wsplits = len(width_ratios[c])
+            hsplits = len(height_ratios[r])
+            if (wsplits, hsplits) == (1,1):
+                layout_type = 'Single'
+            elif (wsplits, hsplits) == (2,1):
                 layout_type = 'Dual'
-            gidx, gsinds = self.subplots[(r, c)].grid_situate(gidx, layout_type, cols)
-            self.subplot_specs[(r, c)] = [self.gs[i] for i in gsinds]
+            elif (wsplits, hsplits) == (1,2):
+                layout_type = 'Embedded Dual'
+            elif (wsplits, hsplits) == (2,2):
+                layout_type = 'Triple'
+
+            gidx, gsinds = subplots[(r, c)].grid_situate(gidx, layout_type, cols)
+            grid_indices[(r, c)] = gsinds
+
+        return subplots, grid_indices
 
 
     def __call__(self, axis=None):
@@ -861,7 +872,7 @@ class GridLayoutPlot(Plot):
 
         for (r, c) in self.coords:
             layout_plot = self.subplots.get((r, c), None)
-            subaxes = [plt.subplot(spec) for spec in self.subplot_specs[(r, c)]]
+            subaxes = [plt.subplot(self.gs[ind]) for ind in self.grid_indices[(r, c)]]
             layout_plot(subaxes)
         plt.draw()
 
