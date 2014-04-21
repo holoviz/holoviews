@@ -573,136 +573,181 @@ class SheetPlot(Plot):
 class LayoutPlot(Plot):
     """
     LayoutPlot allows placing up to three Views in a number of
-    predefined and fixed layouts, which are defined in the
-    layout_dict. This allows placing subviews next to a main
-    plot. It initially computes a layout based on the number
-    of Views it has been given, but when embedded in a GridLayout
-    can recompute its internal layout to match the number of rows
-    and columns of the larger grid.
+    predefined and fixed layouts, which are defined by the layout_dict
+    class attribute. This allows placing subviews next to a main plot
+    in either a 'top' or 'right' position.
+
+    Initially, a LayoutPlot computes an appropriate layout based for
+    the number of Views in the Layout object it has been given, but
+    when embedded in a GridLayout, it can recompute the layout to
+    match the number of rows and columns as part of a larger grid.
     """
 
-    layout_dict = {'Single':          {'shape': (1, 1),
-                                       'width_ratios': [4],
+    layout_dict = {'Single':          {'width_ratios': [4],
                                        'height_ratios': [4],
-                                       'layout': ['main']},
-                   'Dual':            {'shape': (1, 2),
-                                       'width_ratios': [4, 1],
+                                       'positions': ['main']},
+                   'Dual':            {'width_ratios': [4, 1],
                                        'height_ratios': [4],
-                                       'layout': ['main', 'right']},
-                   'Triple':          {'shape': (2, 2),
-                                       'width_ratios': [4, 1],
+                                       'positions': ['main', 'right']},
+                   'Triple':          {'width_ratios': [4, 1],
                                        'height_ratios': [1, 4],
-                                       'layout': ['top', None,
-                                                  'main', 'right']},
-                   'Embedded Dual':   {'shape': (2, 1),
-                                       'width_ratios': [4],
+                                       'positions': ['top',   None,
+                                                     'main', 'right']},
+                   'Embedded Dual':   {'width_ratios': [4],
                                        'height_ratios': [1, 4],
-                                       'layout': [None, 'main']}}
+                                       'positions': [None, 'main']}}
 
-    # Expressed as fraction of main plot
-    border_size = 0.25
-    subplot_size = 0.25
+    border_size = param.Number(default=0.25, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
+    subplot_size = param.Number(default=0.25, doc="""
+        The size subplots as expressed as a fraction of the main plot.""")
+
 
     def __init__(self, layout, **params):
+        # The Layout View object
         self.layout = layout
-        self._set_layout()
+        layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
+        # Type may be set to 'Embedded Dual' by a call it grid_situate
+        self.layout_type = layout_lens[len(self.layout)]
+        # Handles on subplots by position: 'main', 'top' or 'right'
+        self.subplots = {}
+
+        # The supplied (axes, view) objects as indexed by position
+        self.plot_axes = {} # Populated by call, used in adjust_positions
         super(LayoutPlot, self).__init__(**params)
 
 
+    @property
+    def shape(self):
+        """
+        Property used by GridLayoutPlot to compute an overall grid
+        structure in which to position LayoutPlots.
+        """
+        return (len(self.height_ratios), len(self.width_ratios))
+
+
+    @property
+    def width_ratios(self):
+        """
+        The relative distances for horizontal divisions between the
+        primary plot and associated  subplots (if any).
+        """
+        return self.layout_dict[self.layout_type]['width_ratios']
+
+    @property
+    def height_ratios(self):
+        """
+        The relative distances for the vertical divisions between the
+        primary plot and associated subplots (if any).
+        """
+        return self.layout_dict[self.layout_type]['height_ratios']
+
+    @property
+    def view_positions(self):
+        """
+        A list of position names used in the plot, matching the
+        corresponding properties of Layouts. Valid positions are
+        'main', 'top', 'right' or None.
+        """
+        return self.layout_dict[self.layout_type]['positions']
+
+
     def __call__(self, subaxes=[]):
-        self.subplots = {}
-        self.plot_axes = dict([(pos, (ax, self.layout.get(pos, None)))
-                               for ax, pos in zip(subaxes, self.layout_spec)
-                               if pos is not None])
-        for pos, (ax, view) in self.plot_axes.items():
-            if view is None:
+        """
+        Plot all the views contained in the Layout Object using axes
+        appropriate to the layout configuration. All the axes are
+        supplied by GridLayoutPlot - the purpose of the call is to
+        invoke subplots with correct options and styles and hide any
+        empty axes as necessary.
+        """
+        for ax, pos in zip(subaxes, self.view_positions):
+            # Pos will be one of 'main', 'top' or 'right' or None
+            view = self.layout.get(pos, None)
+            # Record the axis and view at this position
+            self.plot_axes[pos] = (ax, view)
+            # If no view object or empty position, disable the axis
+            if None in [view, pos]:
                 ax.set_axis_off()
                 continue
-
             # Customize plotopts depending on position.
             plotopts = options.plotting[view].opts
-            if view is not self.layout.main:
-                plotopts.update(show_title=False, colorbar=True,
-                                show_frame=False)
-            else:
-                if isinstance(view, (DataOverlay, DataLayer)):
-                    plotopts.update(force_square=True)
+            # Options common for any subplot
+            subplot_opts = dict(show_title=False, colorbar=True, show_frame=False)
+            override_opts = {}
 
             if pos == 'right':
-                plotopts.update(vertical=True, show_xaxis=None, show_yaxis='left')
+                right_opts = dict(vertical=True, show_xaxis=None, show_yaxis='left')
+                override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
-                plotopts.update(show_xaxis='bottom', show_yaxis=None)
+                top_opts = dict(show_xaxis='bottom', show_yaxis=None)
+                override_opts = dict(subplot_opts, **top_opts)
+
+            # Override the plotopts as required
+            plotopts.update(override_opts)
+            # Views that should be displayed with square aspect
+            if isinstance(view, (DataOverlay, DataLayer)):
+                plotopts['force_square'] = True
 
             vtype = view.type if isinstance(view, Stack) else view.__class__
             subplot = viewmap[vtype](view, **plotopts)
             subplot(ax)
+            # Save subplot handles and the axis/views pairs by position
             self.subplots[pos] = subplot
-
-        # Disable remaining axes
-        off_axes = [ax for ax, pos in zip(subaxes, self.layout_spec)
-                    if pos is None]
-        for ax in off_axes: ax.set_axis_off()
-
-
-    def _set_layout(self, embedded_type=None):
-        """
-        Sets the layout based on the number of views contained
-        in it or the supplied embedded_type.
-        """
-
-        if embedded_type is not None:
-            layout_type = embedded_type
-        elif len(self.layout) == 1:
-            layout_type = 'Single'
-        elif len(self.layout) == 2:
-            layout_type = 'Dual'
-        elif len(self.layout) == 3:
-            layout_type = 'Triple'
-
-        layout_info = self.layout_dict[layout_type]
-        self.layout_spec = layout_info['layout']
-        self.shape = layout_info['shape']
-        self.width_ratios = layout_info['width_ratios']
-        self.height_ratios = layout_info['height_ratios']
 
 
     def adjust_positions(self):
         """
-        Adjusts the positions of the subplots relative to the main plot.
+        Make adjustments to the positions of subplots (if available)
+        relative to the main plot axes as required.
+
+        This method is called by GridLayoutPlot after an initial pass
+        used to position all the Layouts together. This method allows
+        LayoutPlots to make final adjustments to the axis positions.
         """
-        main_ax = self.plot_axes['main'][0]
+        main_ax, _ = self.plot_axes['main']
         bbox = main_ax.get_position()
-        if 'right' in self.layout_spec:
+        if 'right' in self.view_positions:
             ax, _ = self.plot_axes['right']
-            ax.set_position([bbox.x1 + bbox.width*self.border_size,
+            ax.set_position([bbox.x1 + bbox.width * self.border_size,
                              bbox.y0,
-                             bbox.width*self.subplot_size, bbox.height])
-        if 'top' in self.layout_spec:
+                             bbox.width * self.subplot_size, bbox.height])
+        if 'top' in self.view_positions:
             ax, _ = self.plot_axes['top']
             ax.set_position([bbox.x0,
-                             bbox.y1 + bbox.height*self.border_size,
-                             bbox.width, bbox.height*self.subplot_size])
+                             bbox.y1 + bbox.height * self.border_size,
+                             bbox.width, bbox.height * self.subplot_size])
 
 
     def grid_situate(self, current_idx, layout_type, subgrid_width):
         """
-        Computes gridspec indices for a Layout embedded within
-        a GridLayout.
+        Situate the current LayoutPlot in a GridLayoutPlot. The
+        GridLayout specifies a layout_type into which the LayoutPlot
+        must be embedded. This enclosing layout is guaranteed to have
+        enough cells to display all the views.
+
+        Based on this enforced layout format, a starting index
+        supplied by GridLayoutPlot (indexing into a large gridspec
+        arrangement) is updated to the appropriate embedded value. It
+        will also return a list of gridspec indices associated with
+        the all the required layout axes.
         """
-        self._set_layout(layout_type)
+        # Set the layout configuration as situated in a GridLayout
+        self.layout_type = layout_type
+
         if layout_type == 'Single':
             return current_idx+1, [current_idx]
         elif layout_type == 'Dual':
             return current_idx+2, [current_idx, current_idx+1]
 
-        bottom_idx = current_idx+subgrid_width
+        bottom_idx = current_idx + subgrid_width
         if layout_type == 'Embedded Dual':
-            grid_idx = bottom_idx+1 if ((current_idx+1) % subgrid_width) == 0\
-                else current_idx+1
+            bottom = ((current_idx+1) % subgrid_width) == 0
+            grid_idx = (bottom_idx if bottom else current_idx)+1
             return grid_idx, [current_idx, bottom_idx]
         elif layout_type == 'Triple':
-            grid_idx = bottom_idx+2 if ((current_idx+2) % subgrid_width) == 0\
-                else current_idx+2
+            bottom = ((current_idx+2) % subgrid_width) == 0
+            grid_idx = (bottom_idx if bottom else current_idx) + 2
             return grid_idx, [current_idx, current_idx+1,
                               bottom_idx, bottom_idx+1]
 
@@ -715,6 +760,7 @@ class LayoutPlot(Plot):
 
     def __len__(self):
         return max([len(v) for v in self.layout if isinstance(v, NdMapping)]+[1])
+
 
 
 class GridLayoutPlot(Plot):
