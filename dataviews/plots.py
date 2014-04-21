@@ -1419,7 +1419,9 @@ class DataHistogramPlot(Plot):
 
     def __init__(self, curves, zorder=0, **kwargs):
         self.zorder = zorder
+        self.center = False
         self.cyclic = False
+        self.cyclic_index = 0
         self.ax = None
 
         self._stack = self._check_stack(curves, DataHistogram)
@@ -1435,56 +1437,39 @@ class DataHistogramPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         hist = self._stack.top
-        # Compute edge widths
-        widths = np.diff(hist.edges)
+        self.cyclic_index = cyclic_index
+        style = options.style[hist][cyclic_index]
 
-        # Compute range bin range and hist range
-        cr = hist.cyclic_range
-        self.cyclic = False if cr is None else True
-        if self.cyclic:
-            bin_range = (0., cr)
-        elif self.rescale_individually:
-            bin_range = hist.xlim
-        else:
-            bin_range = self._stack.xlim
-        hist_lims = hist.ylim
+        edges, hvals, widths, _, ranges = self._process_hist(hist, style)
+        x0, x1, y0, y1 = ranges
 
         # Compute colorbar offset
         offset = 0
         if self.colorbar and (self.colormap is not None):
-            full_range = hist_lims[1] - hist_lims[0]
+            full_range = y1 - y0
             if full_range == 0:
-                hist_lims = (hist_lims[0], hist_lims[0]+1.)
+                y1 = y0+1.
                 full_range = 1.
             offset = full_range*self.colorbar_offset
 
-        ticks = self._compute_ticks(bin_range)
-
-        # Set plot orientation settings
+        # Set axis settings
+        ticks = self._compute_ticks((x0, x1), edges)
         if self.vertical:
             axis_settings = dict(xlabel=hist.xlabel,
                                  ylabel=hist.ylabel,
-                                 lbrt=(0, bin_range[0],
-                                       hist_lims[1]+offset,
-                                       bin_range[1]),
+                                 lbrt=(0, x0, y1+offset, x1),
                                  yticks=ticks)
         else:
             axis_settings = dict(xlabel=hist.ylabel,
                                  ylabel=hist.xlabel,
-                                 lbrt=(bin_range[0], 0,
-                                       bin_range[1],
-                                       hist_lims[1]+offset),
+                                 lbrt=(x0, 0, x1, y1+offset),
                                  xticks=ticks)
-
-        # Set up axis and plot data
         self.ax = self._axis(axis, hist.title, **axis_settings)
 
-        # Plot and customize bars
-        bars = self.plotfn(hist.edges[:-1],
-                           np.array(hist.hist)+offset,
-                           widths,  zorder=self.zorder,
-                           **options.style[hist][cyclic_index])
-        self._apply_colorbar(bars, bin_range, offset)
+        # Plot bars, apply styles and create colorbar
+        bars = self.plotfn(edges, hvals+offset, widths,
+                           zorder=self.zorder, **style)
+        self._apply_colorbar(bars, (x0, x1), offset)
         self.handles['bars'] = bars
 
         if not axis: plt.close(self.handles['fig'])
@@ -1496,7 +1481,7 @@ class DataHistogramPlot(Plot):
         Override existing color if cmap has been defined, applying the
         correct color ranges.
         """
-        cmap = cm.get_cmap(self.colormap)
+        cmap = None if self.colormap is None else cm.get_cmap(self.colormap)
         if cmap is not None:
             if self.colorbar:
                 self.handles['offset_line'] = self.offset_linefn(offset,
@@ -1515,32 +1500,55 @@ class DataHistogramPlot(Plot):
                 bar.set_clip_on(False)
 
 
-    def _compute_ticks(self, bin_range):
-        xvals = np.linspace(bin_range[0], bin_range[1],
-                            self.num_ticks)
+    def _process_hist(self, hist, style):
+        """
+        Get data from histogram and center bins if required.
+        """
+        # Compute x and y limits
+        self.cyclic = False if hist.cyclic_range is None else True
+        bin_range = hist.xlim if self.rescale_individually else self._stack.xlim
+        x0, x1 = bin_range
+
+        if len(hist.edges) == len(hist.hist):
+            style_width = style.pop('width')
+            self.center = True
+            style.update(align='center')
+            edges = np.array(hist.edges)
+            hist_values = np.array(hist.hist)
+            widths = np.ones(len(hist.edges)) * style_width
+            x0 -= style_width/2.
+            x1 += style_width/2.
+        elif len(hist.edges) == len(hist.hist)+1:
+            edges = np.array(hist.edges[:-1])
+            hist_values = np.array(hist.hist)
+            widths = np.diff(hist.edges)
+        return edges, hist_values, widths, style, (x0, x1) + hist.ylim
+
+
+    def _compute_ticks(self, bin_range, edges):
+        if self.center:
+            edge_inds = range(len(edges))
+            step = len(edges)/float(self.num_ticks-1)
+            xvals = [edges[0]] + [edges[edge_inds[int(i*step)-1]]
+                                  for i in range(1, self.num_ticks)]
+        else:
+            xvals = np.linspace(bin_range[0], bin_range[1],
+                                self.num_ticks)
         xpos = xvals[:]
         if self.cyclic:
             labels = ["%.0f" % np.rad2deg(x) + u'\N{DEGREE SIGN}'
                       for x in xvals]
         else:
-            labels = ["%.2f" % x for x in xvals]
+            labels = ["%g" % round(x, 2) for x in xvals]
         return [xpos, labels]
 
 
-    def update_frame(self, n):
-        n = n if n < len(self) else len(self) - 1
-        hist = self._stack.values()[n]
-        bars = self.handles['bars']
-        if hist.ndims != len(bars):
-            raise Exception("Histograms must all have the same bin edges.")
-
-        # Compute x and y limits
-        x0, x1 = hist.xlim if self.rescale_individually else self._stack.xlim
-        y0, y1 = hist.ylim
-
-        # Compute colorbar offset and update separator line if stack is non-zero
-        offset = 0
-        if self.colorbar and (self.colormap is not None):
+    def _update_colorbar(self, offset, y0, y1):
+        """
+        Compute colorbar offset and update separator line
+        if stack is non-zero.
+        """
+        if self.colorbar:
             offset_line = self.handles['offset_line']
             full_range = y1 - y0
             if full_range == 0:
@@ -1555,23 +1563,33 @@ class DataHistogramPlot(Plot):
                     offset_line.set_xdata(offset)
                 else:
                     offset_line.set_ydata(offset)
+        return offset
 
-        # Compute axis settings
-        ticks = self._compute_ticks((x0, x1))
+
+    def update_frame(self, n):
+        n = n if n < len(self) else len(self) - 1
+        hist = self._stack.values()[n]
+        bars = self.handles['bars']
+
+        # Process values, axes and style
+        style = options.style[hist][self.cyclic_index]
+        edges, hvals, widths, _, ranges = self._process_hist(hist, style)
+        x0, x1, y0, y1 = ranges
+
+        offset = self._update_colorbar(0, y0, y1)
+        ticks = self._compute_ticks((x0, x1), edges)
         if self.vertical:
-            ax_settings = dict(lbrt=(0, x0, y1+offset, x1),
-                               yticks=ticks)
+            ax_settings = dict(lbrt=(0, x0, y1+offset, x1), yticks=ticks)
         else:
-            ax_settings = dict(lbrt=(x0, 0, x1, y1+offset),
-                               xticks=ticks)
+            ax_settings = dict(lbrt=(x0, 0, x1, y1+offset), xticks=ticks)
         self._axis(self.ax, **ax_settings)
 
         # Update bars
-        widths = np.diff(hist.edges)
         for i, bar in enumerate(bars):
-            height = hist.hist[i] + offset
-            edge = hist.edges[i]
+            height = hvals[i] + offset
+            edge = edges[i]
             width = widths[i]
+            edge -= width/2. if self.center else 0
             if self.vertical:
                 bar.set_y(edge)
                 bar.set_width(height)
