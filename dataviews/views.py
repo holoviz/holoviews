@@ -277,24 +277,18 @@ class Overlay(View):
 
 class Layout(param.Parameterized):
     """
-    A Layout provides a convenient container to lay out a primary plot with
-    some additional supplemental plots, e.g. an image in a SheetView annotated
-    with a luminance histogram. Layout accepts a list of three View elements,
-    which are laid out as follows:
-
-    _____________________ _______
-    |         3         | |empty|
-    |___________________| |_____|
-    _____________________  ______
-    |                   | |     |
-    |                   | |     |
-    |                   | |     |
-    |         1         | |  2  |
-    |                   | |     |
-    |                   | |     |
-    |                   | |     |
-    |___________________| |_____|
-
+    A Layout provides a convenient container to lay out a primary plot
+    with some additional supplemental plots, e.g. an image in a
+    SheetView annotated with a luminance histogram. Layout accepts a
+    list of three View elements, which are laid out as follows with
+    the names 'main', 'top' and 'right':
+     ___________ __
+    |____ 3_____|__|
+    |           |  |  1:  main
+    |           |  |  2:  right
+    |     1     |2 |  3:  top
+    |           |  |
+    |___________|__|
     """
 
     layout_order = ['main', 'right', 'top']
@@ -317,12 +311,9 @@ class Layout(param.Parameterized):
 
     def __getitem__(self, key):
         if isinstance(key, int) and key <= len(self):
-            if key == 0:
-                return self['main']
-            if key == 1:
-                return self['right']
-            if key == 2:
-                return self['top']
+            if key == 0:  return self.main
+            if key == 1:  return self.right
+            if key == 2:  return self.top
         elif isinstance(key, str) and key in self.data:
             return self.data[key]
         else:
@@ -341,22 +332,19 @@ class Layout(param.Parameterized):
 
 
     def __lshift__(self, other):
-        if isinstance(other, Layout):
-            return Layout(self.data.values()+other.data.values())
-        else:
-            return Layout(self.data.values()+[other])
+        subviews = other.data.values() if isinstance(other, Layout) else [other]
+        return Layout(self.data.values() + subviews)
 
 
     @property
     def main(self):
         return self.data['main']
 
-
     @property
     def right(self):
         return self.data['right']
 
-
+    @property
     def top(self):
         return self.data['top']
 
