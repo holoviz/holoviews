@@ -61,7 +61,7 @@ class View(param.Parameterized):
 
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[[self, obj]])
+            return GridLayout(initial_items=[self, obj])
 
 
     def __lshift__(self, other):
@@ -361,7 +361,7 @@ class Layout(param.Parameterized):
             elements = [self] + other.values()
         else:
             elements = [self, other]
-        return GridLayout([elements])
+        return GridLayout(elements)
 
 
 
@@ -372,10 +372,10 @@ class GridLayout(NdMapping):
 
     def __init__(self, initial_items=[], **kwargs):
         self._max_cols = 4
-        initial_items = [[]] if initial_items == [] else initial_items
-        if any(isinstance(el, list) for el in initial_items):
-            initial_items = self._grid_to_items(initial_items)
+        if all(isinstance(el, (View, NdMapping, Layout)) for el in initial_items):
+            initial_items = self._grid_to_items([initial_items])
         super(GridLayout, self).__init__(initial_items=initial_items, **kwargs)
+
 
 
     @property
@@ -494,7 +494,7 @@ class GridLayout(NdMapping):
 
     def __add__(self, other):
         new_values = other.values() if isinstance(other, GridLayout) else [other]
-        return self.clone([self.values()+new_values])
+        return self.clone(self.values()+new_values)
 
 
 

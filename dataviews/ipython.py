@@ -986,7 +986,7 @@ def stack_display(stack, size=256):
 
 @display_hook
 def layout_display(grid, size=256):
-    grid = GridLayout([[grid]]) if isinstance(grid, Layout) else grid
+    grid = GridLayout([grid]) if isinstance(grid, Layout) else grid
     if not isinstance(grid, (GridLayout)): return None
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info

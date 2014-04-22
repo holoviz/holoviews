@@ -620,7 +620,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[[self, obj]])
+            return GridLayout(initial_items=[self, obj])
 
 
     def map(self, map_fn, **kwargs):

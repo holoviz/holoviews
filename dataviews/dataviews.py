@@ -344,9 +344,9 @@ class Stack(NdMapping):
 
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[[self, obj]])
+            return GridLayout(initial_items=[self, obj])
         else:
-            grid = GridLayout(initial_items=[[self]])
+            grid = GridLayout(initial_items=[self])
             grid.update(obj)
             return grid
 
