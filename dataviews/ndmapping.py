@@ -103,15 +103,7 @@ class NdIndexableMapping(param.Parameterized):
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional labels to be associated with the Dataview.""")
 
-    sorted = param.Boolean(default=True, doc="""
-        Determines whether to keep internal data structure sorted, using
-        all dimensions indices to sort on. Important if data is not added in
-        a consistently increasing order but the order matters for plotting
-        or other purposes.""")
-
     _deep_indexable = True
-
-    _check_key_type = True
 
     def __init__(self, initial_items=None, **kwargs):
         self._data = map_type()
@@ -124,6 +116,7 @@ class NdIndexableMapping(param.Parameterized):
                             for d in self.dimensions]
 
         self._next_ind = 0
+        self._check_key_type = True
 
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
@@ -211,7 +204,7 @@ class NdIndexableMapping(param.Parameterized):
         dim_types = zip(self._types, dim_vals)
         dim_vals = tuple(v if t is None else t(v) for t, v in dim_types)
         self._update_item(dim_vals, data)
-        if sort and self.sorted:
+        if sort:
             self._resort()
 
 
@@ -234,8 +227,7 @@ class NdIndexableMapping(param.Parameterized):
         """
         for key, data in other.items():
             self._add_item(key, data, sort=False)
-        if self.sorted:
-            self._resort()
+        self._resort()
 
 
     def reindex(self, dimension_labels):
