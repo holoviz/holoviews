@@ -35,9 +35,6 @@ class Plot(param.Parameterized):
     size = param.NumericTuple(default=(5, 5), doc="""
       The matplotlib figure size in inches.""")
 
-    show_axes = param.Boolean(default=True, doc="""
-      Whether to show labelled axes for the plot.""")
-
     show_frame = param.Boolean(default=True, doc="""
       Whether to show the frame around the axis.""")
 
@@ -47,10 +44,12 @@ class Plot(param.Parameterized):
     show_title = param.Boolean(default=True, doc="""
       Whether to display the plot title.""")
 
-    show_xaxis = param.String(default='both', allow_None=True, doc="""
+    show_xaxis = param.ObjectSelector(default='bottom',
+                                      objects=['both','top', 'bottom', None], doc="""
       Whether and where to display the xaxis.""")
 
-    show_yaxis = param.String(default='both', allow_None=True, doc="""
+    show_yaxis = param.ObjectSelector(default='left',
+                                      objects=['both', 'left', 'right', None], doc="""
       Whether and where to display the yaxis.""")
 
     style_opts = param.List(default=[], constant=True, doc="""
@@ -92,19 +91,23 @@ class Plot(param.Parameterized):
 
         axis.set_frame_on(self.show_frame)
 
-        if not self.show_axes:
-            axis.set_axis_off()
-        elif self.show_grid:
+        if self.show_grid:
             axis.get_xaxis().grid(True)
             axis.get_yaxis().grid(True)
+
+        if xlabel: axis.set_xlabel(xlabel)
+        if ylabel: axis.set_ylabel(ylabel)
 
         if self.show_xaxis is not None:
             if self.show_xaxis == 'top':
                 axis.spines['bottom'].set_visible(False)
                 axis.xaxis.tick_top()
+                axis.xaxis.set_label_position("top")
             elif self.show_xaxis == 'bottom':
                 axis.spines['top'].set_visible(False)
                 axis.xaxis.tick_bottom()
+            elif self.show_xaxis == 'both':
+                axis.twiny()
         else:
             axis.xaxis.set_visible(False)
 
@@ -115,6 +118,9 @@ class Plot(param.Parameterized):
             elif self.show_yaxis == 'right':
                 axis.spines['left'].set_visible(False)
                 axis.yaxis.tick_right()
+                axis.yaxis.set_label_position("right")
+            elif self.show_yaxis == 'both':
+                axis.twinx()
         else:
             axis.yaxis.set_visible(False)
 
@@ -135,8 +141,6 @@ class Plot(param.Parameterized):
             title = '' if title is None else title
             self.handles['title'] = axis.set_title(title)
 
-        if xlabel: axis.set_xlabel(xlabel)
-        if ylabel: axis.set_ylabel(ylabel)
         return axis
 
 
@@ -772,9 +776,6 @@ class GridLayoutPlot(Plot):
     roi = param.Boolean(default=False, doc="""
       Whether to apply the ROI to each element of the grid.""")
 
-    show_axes = param.Boolean(default=True, constant=True, doc="""
-      Whether to show labelled axes for individual subplots.""")
-
     style_opts = param.List(default=[], constant=True, doc="""
       GridLayoutPlot renders a group of views which individually have
       style options but GridLayoutPlot itself does not.""")
@@ -1040,9 +1041,9 @@ class DataPlot(Plot):
 
             plotype = viewmap[stack.type]
             plot = plotype(stack, force_square=self.force_square, size=self.size,
-                           show_axes=self.show_axes, show_legend=self.show_legend,
-                           show_title=self.show_title, show_grid=self.show_grid,
-                           zorder=zorder, **kwargs)
+                           show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
+                           show_legend=self.show_legend, show_title=self.show_title,
+                           show_grid=self.show_grid, zorder=zorder, **kwargs)
 
             lbrt= None if stack.type == Annotation else self._stack.lbrt
             plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
@@ -1252,9 +1253,6 @@ class DataGridPlot(Plot):
     force_square = param.Boolean(default=False, doc="""
       If enabled forces plot to be square.""")
 
-    show_axes= param.Boolean(default=False, constant=True, doc="""
-      Whether to show labelled axes for individual subplots.""")
-
     show_legend = param.Boolean(default=False, doc="""
       Legends add to much clutter in a grid and are disabled by default.""")
 
@@ -1263,6 +1261,15 @@ class DataGridPlot(Plot):
     style_opts = param.List(default=[], constant=True, doc="""
      DataGridPlot renders groups of DataLayers which individually have
      style options but DataGridPlot itself does not.""")
+
+    show_xaxis = param.ObjectSelector(default=None,
+                                      objects=['both','top', 'bottom', None], doc="""
+      Whether and where to display the xaxis.""")
+
+    show_yaxis = param.ObjectSelector(default=None,
+                                      objects=['both', 'left', 'right', None], doc="""
+      Whether and where to display the yaxis.""")
+
 
     def __init__(self, grid, **kwargs):
 
@@ -1289,8 +1296,9 @@ class DataGridPlot(Plot):
             if view is not None:
                 subax = plt.subplot(self._gridspec[c, r])
                 vtype = view.type if isinstance(view, DataStack) else view.__class__
-                subplot = viewmap[vtype](view, show_axes=self.show_axes,
-                                         show_legend=self.show_legend,
+                subplot = viewmap[vtype](view, show_legend=self.show_legend,
+                                         show_xaxis=self.show_xaxis,
+                                         show_yaxis=self.show_yaxis,
                                          show_title=self.show_title)
             self.subplots.append(subplot)
             subplot(subax)
