@@ -35,9 +35,6 @@ class Plot(param.Parameterized):
     size = param.NumericTuple(default=(5, 5), doc="""
       The matplotlib figure size in inches.""")
 
-    show_frame = param.Boolean(default=True, doc="""
-      Whether to show the frame around the axis.""")
-
     show_grid = param.Boolean(default=False, doc="""
       Whether to show a Cartesian grid on the plot.""")
 
@@ -45,11 +42,11 @@ class Plot(param.Parameterized):
       Whether to display the plot title.""")
 
     show_xaxis = param.ObjectSelector(default='bottom',
-                                      objects=['both','top', 'bottom', None], doc="""
+                                      objects=['top', 'bottom', None], doc="""
       Whether and where to display the xaxis.""")
 
     show_yaxis = param.ObjectSelector(default='left',
-                                      objects=['both', 'left', 'right', None], doc="""
+                                      objects=['left', 'right', None], doc="""
       Whether and where to display the yaxis.""")
 
     style_opts = param.List(default=[], constant=True, doc="""
@@ -89,8 +86,6 @@ class Plot(param.Parameterized):
             axis = fig.add_subplot(111)
             axis.set_aspect('auto')
 
-        axis.set_frame_on(self.show_frame)
-
         if self.show_grid:
             axis.get_xaxis().grid(True)
             axis.get_yaxis().grid(True)
@@ -106,8 +101,6 @@ class Plot(param.Parameterized):
             elif self.show_xaxis == 'bottom':
                 axis.spines['top'].set_visible(False)
                 axis.xaxis.tick_bottom()
-            elif self.show_xaxis == 'both':
-                axis.twiny()
         else:
             axis.xaxis.set_visible(False)
 
@@ -119,10 +112,11 @@ class Plot(param.Parameterized):
                 axis.spines['left'].set_visible(False)
                 axis.yaxis.tick_right()
                 axis.yaxis.set_label_position("right")
-            elif self.show_yaxis == 'both':
-                axis.twinx()
         else:
             axis.yaxis.set_visible(False)
+
+        if not any([self.show_xaxis, self.show_yaxis]):
+            axis.set_frame_on(False)
 
         if lbrt is not None:
             (l, b, r, t) = lbrt
@@ -677,7 +671,7 @@ class LayoutPlot(Plot):
             # Customize plotopts depending on position.
             plotopts = options.plotting[view].opts
             # Options common for any subplot
-            subplot_opts = dict(show_title=False, colorbar=True, show_frame=False)
+            subplot_opts = dict(show_title=False, colorbar=True)
             override_opts = {}
 
             if pos == 'right':
@@ -1468,12 +1462,6 @@ class DataHistogramPlot(Plot):
 
     rescale_individually = param.Boolean(default=True, doc="""
         Whether to use redraw the axes per stack or per view.""")
-
-    show_xaxis = param.String(default='bottom', allow_None=True, doc="""
-      Whether to display the right axis.""")
-
-    show_yaxis = param.String(default='left',  allow_None=True, doc="""
-      Whether to display the right axis.""")
 
     vertical = param.Boolean(default=False, doc="""
        Invert the axes of the plot.""")
