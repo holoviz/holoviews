@@ -54,13 +54,21 @@ class Plot(param.Parameterized):
      style options object. Each subclass should override this
      parameter to list every option that works correctly.""")
 
+    aspect = param.ObjectSelector(default=None,
+                                  objects=['auto', 'equal','square', None],
+                                  doc="""
+    The aspect ratio mode of the plot. By default, a plot may select
+    its own appropriate aspect ratio but sometimes it may be necessary
+    to force a square aspect ratio (e.g. to display the plot as an
+    element of a grid). The modes 'auto' and 'equal' correspond to the
+    axis modes of the same name in matplotlib.""" )
+
     _stack_type = Stack
 
     def __init__(self, **kwargs):
         super(Plot, self).__init__(**kwargs)
         # List of handles to matplotlib objects for animation update
         self.handles = {'fig':None}
-
 
     def _check_stack(self, view, element_type=View):
         """
@@ -77,7 +85,8 @@ class Plot(param.Parameterized):
         return stack
 
 
-    def _axis(self, axis, title=None, xlabel=None, ylabel=None, lbrt=None, xticks=None, yticks=None):
+    def _axis(self, axis, title=None, xlabel=None, ylabel=None,
+              lbrt=None, xticks=None, yticks=None):
         "Return an axis which may need to be initialized from a new figure."
         if axis is None:
             fig = plt.figure()
@@ -122,6 +131,13 @@ class Plot(param.Parameterized):
             (l, b, r, t) = lbrt
             axis.set_xlim((l, r))
             axis.set_ylim((b, t))
+
+        if self.aspect == 'square':
+            xrange = lbrt[2] - lbrt[0]
+            yrange = lbrt[3] - lbrt[1]
+            axis.set_aspect(xrange/yrange)
+        elif self.aspect is not None:
+            axis.set_aspect(self.aspect)
 
         if xticks:
             axis.set_xticks(xticks[0])
@@ -683,12 +699,13 @@ class LayoutPlot(Plot):
 
             # Override the plotopts as required
             plotopts.update(override_opts)
-            # Views that should be displayed with square aspect
-            if isinstance(view, (DataOverlay, DataLayer)):
-                plotopts['force_square'] = True
-
             vtype = view.type if isinstance(view, Stack) else view.__class__
             subplot = viewmap[vtype](view, **plotopts)
+
+            # 'Main' views that should be displayed with square aspect
+            if pos == 'main' and issubclass(vtype, (DataOverlay, DataLayer)):
+                subplot.aspect='square'
+
             subplot(ax)
             # Save subplot handles and the axis/views pairs by position
             self.subplots[pos] = subplot
@@ -1004,9 +1021,6 @@ class DataPlot(Plot):
     DataLayer objects.
     """
 
-    force_square = param.Boolean(default=False, doc="""
-      If enabled forces plot to be square.""")
-
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
@@ -1034,10 +1048,11 @@ class DataPlot(Plot):
             cyclic_index, _ = style_groups[stack.style].next()
 
             plotype = viewmap[stack.type]
-            plot = plotype(stack, force_square=self.force_square, size=self.size,
+            plot = plotype(stack, size=self.size,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
                            show_grid=self.show_grid, zorder=zorder, **kwargs)
+            plot.aspect = self.aspect
 
             lbrt= None if stack.type == Annotation else self._stack.lbrt
             plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
@@ -1068,9 +1083,6 @@ class DataCurvePlot(Plot):
     center = param.Boolean(default=True)
 
     num_ticks = param.Integer(default=5)
-
-    force_square = param.Boolean(default=False, doc="""
-      If enabled forces plot to be square.""")
 
     relative_labels = param.Boolean(default=False)
 
@@ -1217,11 +1229,6 @@ class DataCurvePlot(Plot):
             leg = ax.legend(handles[::-1], labels[::-1], prop=fontP)
             leg.get_frame().set_alpha(0.5)
 
-        if self.force_square:
-            xrange = lbrt[2] - lbrt[0]
-            yrange = lbrt[3] - lbrt[1]
-            ax.set_aspect(xrange/yrange)
-
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
 
@@ -1237,15 +1244,11 @@ class DataCurvePlot(Plot):
         plt.draw()
 
 
-
 class DataGridPlot(Plot):
     """
     Plot a group of views in a grid layout based on a DataGrid view
     object.
     """
-
-    force_square = param.Boolean(default=False, doc="""
-      If enabled forces plot to be square.""")
 
     show_legend = param.Boolean(default=False, doc="""
       Legends add to much clutter in a grid and are disabled by default.""")
@@ -1453,9 +1456,6 @@ class DataHistogramPlot(Plot):
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a baseline colorbar to the histogram.""")
-
-    force_square = param.Boolean(default=False, doc="""
-      If enabled forces plot to be square.""")
 
     num_ticks = param.Integer(default=5, doc="""
         If colorbar is enabled the number of labels will be overwritten.""")
