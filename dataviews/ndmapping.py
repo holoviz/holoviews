@@ -207,9 +207,9 @@ class NdIndexableMapping(param.Parameterized):
         """
         if not isinstance(dim_vals, tuple):
             dim_vals = (dim_vals,)
+        self._item_check(dim_vals, data)
         dim_types = zip(self._types, dim_vals)
         dim_vals = tuple(v if t is None else t(v) for t, v in dim_types)
-        self._item_check(dim_vals, data)
         self._update_item(dim_vals, data)
         if sort and self.sorted:
             self._resort()
