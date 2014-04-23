@@ -194,18 +194,18 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
                          style=self.style)
 
 
-    def hist(self, num_bins=50, bin_range=None, individually=True, style_prefix=None):
+    def hist(self, num_bins=20, bin_range=None, individually=True, style_prefix=None):
         """
         Returns a Layout of the SheetView with an attached histogram.
         num_bins allows customizing the bin number. The container_name
         can additionally be specified to set a common cmap when viewing
         a Stack or Overlay.
         """
-        range = find_minmax(self.range, (0, None)) if individually else bin_range
+        range = find_minmax(self.range, (0, None)) if bin_range is None else bin_range
 
         # Avoids range issues including zero bin range and empty bins
         if range == (0, 0):
-            range = (0.0, 0.01)
+            range = (0.0, 0.1)
         try:
             hist, edges = np.histogram(self.data.flatten(), normed=True,
                                        range=range, bins=num_bins)
@@ -219,17 +219,12 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
                                   metadata=self.metadata)
 
         # Set plot and style options
-        plotopts_map = options.plotting[self]
-        hist_plotopts = dict(colormap=options.style[self].opts.get('cmap', None),
-                             rescale_individually=individually)
-        if bin_range is not None: hist_plotopts.update(cmap_range=self.range)
-        options[self.style] = plotopts_map(normalize_individually=individually)
         style_prefix = 'Custom[<' + self.name + '>]_' if style_prefix is None else style_prefix
         opts_name = style_prefix + hist_view.label.replace(' ', '_')
         hist_view.style = opts_name
-        options[opts_name] = options.plotting[opts_name](**hist_plotopts)
+        options[opts_name] = options.plotting[opts_name](**dict(rescale_individually=individually))
 
-        return self << hist_view
+        return hist_view
 
 
     @property
@@ -467,18 +462,18 @@ class SheetStack(Stack):
         return self.map(lambda x, _: x.roi)
 
 
-    def hist(self, num_bins=50, individually=False, bin_range=None):
+    def hist(self, num_bins=20, individually=False, bin_range=None):
         histstack = DataStack(dimensions=self.dimensions,
                               metadata=self.metadata)
 
-        bin_range = self.range if bin_range is None else bin_range
+        stack_range = None if individually else self.range
+        bin_range = stack_range if bin_range is None else bin_range
         for k, v in self.items():
-            bin_range = None if individually else bin_range
             histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
                                   individually=individually,
-                                  style_prefix='Custom[<' + self.name + '>]_')[1]
+                                  style_prefix='Custom[<' + self.name + '>]_')
 
-        return Layout([self, histstack])
+        return histstack
 
 
     @property
