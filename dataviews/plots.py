@@ -687,11 +687,11 @@ class LayoutPlot(Plot):
             # Customize plotopts depending on position.
             plotopts = options.plotting[view].opts
             # Options common for any subplot
-            subplot_opts = dict(show_title=False, colorbar=True)
+            subplot_opts = dict(show_title=False, main=self.layout.main)
             override_opts = {}
 
             if pos == 'right':
-                right_opts = dict(vertical=True, show_xaxis=None, show_yaxis='left')
+                right_opts = dict(orientation='vertical', show_xaxis=None, show_yaxis='left')
                 override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
                 top_opts = dict(show_xaxis='bottom', show_yaxis=None)
@@ -700,7 +700,10 @@ class LayoutPlot(Plot):
             # Override the plotopts as required
             plotopts.update(override_opts)
             vtype = view.type if isinstance(view, Stack) else view.__class__
-            subplot = viewmap[vtype](view, **plotopts)
+            if pos == 'main':
+                subplot = viewmap[vtype](view, **plotopts)
+            else:
+                subplot = sideviewmap[vtype](view, **plotopts)
 
             # 'Main' views that should be displayed with square aspect
             if pos == 'main' and issubclass(vtype, (DataOverlay, DataLayer)):
@@ -1440,22 +1443,12 @@ class DataHistogramPlot(Plot):
     animation.
     """
 
-    style_opts = param.List(default=['alpha', 'color', 'align', 'width',
+    style_opts = param.List(default=['alpha', 'color', 'align',
                                      'visible', 'edgecolor', 'log',
                                      'ecolor', 'capsize', 'error_kw',
                                      'hatch'], constant=True, doc="""
      The style options for DataHistogramPlot match those of
      matplotlib's bar command.""")
-
-    cmap_range = param.NumericTuple(default=(0, 0), doc="""
-        Allows customization of colormap range.""")
-
-    colormap = param.String(default=None, doc="""
-        If colormap is supplied style color is ignored, the colormap
-        is mapped to the bin range and the bins are colored accordingly. """)
-
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to add a baseline colorbar to the histogram.""")
 
     num_ticks = param.Integer(default=5, doc="""
         If colorbar is enabled the number of labels will be overwritten.""")
@@ -1463,10 +1456,8 @@ class DataHistogramPlot(Plot):
     rescale_individually = param.Boolean(default=True, doc="""
         Whether to use redraw the axes per stack or per view.""")
 
-    vertical = param.Boolean(default=False, doc="""
-       Invert the axes of the plot.""")
-
-    colorbar_offset = 0.2
+    orientation = param.ObjectSelector(default='horizontal',
+                                       objects=['horizontal', 'vertical'])
 
     _stack_type = DataStack
 
@@ -1480,170 +1471,98 @@ class DataHistogramPlot(Plot):
         self._stack = self._check_stack(curves, DataHistogram)
         super(DataHistogramPlot, self).__init__(**kwargs)
 
-        if self.vertical:
+        if self.orientation == 'vertical':
+            self.axis_settings = ['ylabel', 'xlabel', 'yticks']
             self.offset_linefn = plt.axvline
             self.plotfn = plt.barh
         else:
-            self.plotfn = plt.bar
+            self.axis_settings = ['xlabel', 'ylabel', 'xticks']
             self.offset_linefn = plt.axhline
+            self.plotfn = plt.bar
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         hist = self._stack.top
         self.cyclic_index = cyclic_index
+
+        # Get plot ranges and values
+        edges, hvals, widths, lims = self._process_hist(hist)
+
+        # Process and apply axis settings
+        ticks = self._compute_ticks(edges, widths, lims)
+        ax_settings = self._process_axsettings(hist, lims, ticks)
+        self.ax = self._axis(axis, **ax_settings)
+
+        # Plot bars and make any adjustments
         style = options.style[hist][cyclic_index]
-
-        edges, hvals, widths, _, ranges = self._process_hist(hist, style)
-        x0, x1, y0, y1 = ranges
-
-        # Compute colorbar offset
-        offset = 0
-        if self.colorbar and (self.colormap is not None):
-            full_range = y1 - y0
-            if full_range == 0:
-                y1 = y0+1.
-                full_range = 1.
-            offset = full_range*self.colorbar_offset
-
-        # Set axis settings
-        ticks = self._compute_ticks((x0, x1), edges)
-        if self.vertical:
-            axis_settings = dict(xlabel=hist.xlabel,
-                                 ylabel=hist.ylabel,
-                                 lbrt=(0, x0, y1+offset, x1),
-                                 yticks=ticks)
-        else:
-            axis_settings = dict(xlabel=hist.ylabel,
-                                 ylabel=hist.xlabel,
-                                 lbrt=(x0, 0, x1, y1+offset),
-                                 xticks=ticks)
-        self.ax = self._axis(axis, hist.title, **axis_settings)
-
-        # Plot bars, apply styles and create colorbar
-        bars = self.plotfn(edges, hvals+offset, widths,
-                           zorder=self.zorder, **style)
-        self._apply_colorbar(bars, (x0, x1), offset)
-        self.handles['bars'] = bars
+        bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
+        self.handles['bars'] = self._process_bars(-1, bars, lims)
 
         if not axis: plt.close(self.handles['fig'])
         return self.ax if axis else self.handles['fig']
 
 
-    def _apply_colorbar(self, bars, bin_range, offset):
+    def _process_hist(self, hist):
         """
-        Override existing color if cmap has been defined, applying the
-        correct color ranges.
+        Get data from histogram, including bin_ranges and values.
         """
-        cmap = None if self.colormap is None else cm.get_cmap(self.colormap)
-        if cmap is not None:
-            if self.colorbar:
-                self.handles['offset_line'] = self.offset_linefn(offset,
-                                                                 linewidth=1.0,
-                                                                 color='k')
-            custom = self.cmap_range != (0, 0)
-            supplied_range = bin_range[1] - bin_range[0]
-            custom_range = self.cmap_range[1] - self.cmap_range[0]
-            cmap_range = custom_range if custom else supplied_range
-            lower_bound = self.cmap_range[0] if custom else bin_range[0]
-
-            for bar in bars:
-                bar_bin = bar.get_y() if self.vertical else bar.get_x()
-                color_val = (bar_bin-lower_bound)/cmap_range
-                bar.set_facecolor(cmap(color_val))
-                bar.set_clip_on(False)
-
-
-    def _process_hist(self, hist, style):
-        """
-        Get data from histogram and center bins if required.
-        """
-        # Compute x and y limits
         self.cyclic = False if hist.cyclic_range is None else True
-        bin_range = hist.xlim if self.rescale_individually else self._stack.xlim
-        x0, x1 = bin_range
-
-        if len(hist.edges) == len(hist.hist):
-            style_width = style.pop('width')
-            self.center = True
-            style.update(align='center')
-            edges = np.array(hist.edges)
-            hist_values = np.array(hist.hist)
-            widths = np.ones(len(hist.edges)) * style_width
-            x0 -= style_width/2.
-            x1 += style_width/2.
-        elif len(hist.edges) == len(hist.hist)+1:
-            edges = np.array(hist.edges[:-1])
-            hist_values = np.array(hist.hist)
-            widths = np.diff(hist.edges)
-        return edges, hist_values, widths, style, (x0, x1) + hist.ylim
+        edges = hist.edges[:-1]
+        hist_vals = np.array(hist.hist[:])
+        widths = np.diff(hist.edges)
+        xlims = hist.xlim if self.rescale_individually else self._stack.xlim
+        lims = xlims + hist.ylim
+        return edges, hist_vals, widths, lims
 
 
-    def _compute_ticks(self, bin_range, edges):
-        if self.center:
-            edge_inds = range(len(edges))
-            step = len(edges)/float(self.num_ticks-1)
-            xvals = [edges[0]] + [edges[edge_inds[int(i*step)-1]]
-                                  for i in range(1, self.num_ticks)]
-        else:
-            xvals = np.linspace(bin_range[0], bin_range[1],
-                                self.num_ticks)
-        xpos = xvals[:]
+    def _compute_ticks(self, edges, widths, lims):
+        """
+        Compute the ticks either as cyclic values in degrees or as roughly
+        evenly spaced bin centers.
+        """
         if self.cyclic:
+            x0, x1, _, _ = lims
+            xvals = np.linspace(x0, x1, self.num_ticks)
             labels = ["%.0f" % np.rad2deg(x) + u'\N{DEGREE SIGN}'
                       for x in xvals]
         else:
+            edge_inds = range(len(edges))
+            step = len(edges)/float(self.num_ticks-1)
+            inds = [0] + [edge_inds[int(i*step)-1] for i in range(1, self.num_ticks)]
+            xvals = [edges[i]+widths[i]/2. for i in inds]
             labels = ["%g" % round(x, 2) for x in xvals]
-        return [xpos, labels]
+        return [xvals, labels]
 
 
-    def _update_colorbar(self, offset, y0, y1):
+    def _process_axsettings(self, hist, lims, ticks):
         """
-        Compute colorbar offset and update separator line
-        if stack is non-zero.
+        Get axis settings options including ticks, x- and y-labels
+        and limits.
         """
-        if self.colorbar:
-            offset_line = self.handles['offset_line']
-            full_range = y1 - y0
-            if full_range == 0:
-                full_range = 1.
-                y1 = y0 + 1.
-            offset = full_range*self.colorbar_offset
-            if y1 == 0:
-                offset_line.set_visible(False)
-            else:
-                offset_line.set_visible(True)
-                if self.vertical:
-                    offset_line.set_xdata(offset)
-                else:
-                    offset_line.set_ydata(offset)
-        return offset
+        axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
+        x0, x1, y0, y1 = lims
+        axis_settings['lbrt'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+        if self.zorder == 0: axis_settings['title'] = hist.title
+
+        return axis_settings
 
 
-    def update_frame(self, n):
-        n = n if n < len(self) else len(self) - 1
-        hist = self._stack.values()[n]
-        bars = self.handles['bars']
+    def _process_bars(self, n, bars, lims):
+        """
+        Process bars is subclasses to manually adjust bars after
+        being plotted.
+        """
+        return bars
 
-        # Process values, axes and style
-        style = options.style[hist][self.cyclic_index]
-        edges, hvals, widths, _, ranges = self._process_hist(hist, style)
-        x0, x1, y0, y1 = ranges
 
-        offset = self._update_colorbar(0, y0, y1)
-        ticks = self._compute_ticks((x0, x1), edges)
-        if self.vertical:
-            ax_settings = dict(lbrt=(0, x0, y1+offset, x1), yticks=ticks)
-        else:
-            ax_settings = dict(lbrt=(x0, 0, x1, y1+offset), xticks=ticks)
-        self._axis(self.ax, **ax_settings)
-
-        # Update bars
-        for i, bar in enumerate(bars):
-            height = hvals[i] + offset
-            edge = edges[i]
-            width = widths[i]
-            edge -= width/2. if self.center else 0
-            if self.vertical:
+    def _update_artists(self, n, edges, hvals, widths, lims):
+        """
+        Update all the artists in the histogram. Subclassable to
+        allow updating of further artists.
+        """
+        plot_vals = zip(self.handles['bars'], edges, hvals, widths)
+        for bar, edge, height, width in plot_vals:
+            if self.orientation == 'vertical':
                 bar.set_y(edge)
                 bar.set_width(height)
                 bar.set_height(width)
@@ -1651,12 +1570,117 @@ class DataHistogramPlot(Plot):
                 bar.set_x(edge)
                 bar.set_height(height)
                 bar.set_width(width)
-
-        if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(hist.title)
-
+                bar.set_clip_on(False)
         plt.draw()
 
+
+    def update_frame(self, n):
+        """
+        Update the plot for an animation.
+        """
+        n = n if n < len(self) else len(self) - 1
+        hist = self._stack.values()[n]
+
+        # Process values, axes and style
+        edges, hvals, widths, lims = self._process_hist(hist)
+
+        ticks = self._compute_ticks(edges, widths, lims)
+        ax_settings = self._process_axsettings(hist, lims, ticks)
+        self._axis(self.ax, **ax_settings)
+        self._update_artists(n, edges, hvals, widths, lims)
+        if self.show_title: self.handles['title'] = self.ax.set_title(hist.title)
+
+
+
+class SideHistogramPlot(DataHistogramPlot):
+
+    cmap_range = param.NumericTuple(default=(0, 0), doc="""
+        Allows customization of colormap range.""")
+
+    main = param.Parameterized(doc="""
+        The main View or Stack this SideHistogramPlot is attached to.""")
+
+    offset = param.Number(default=0.2, doc="""
+        Histogram value offset for a colorbar.""")
+
+    show_title = param.Boolean(default=False, doc="""
+        Titles should be disabled on all SidePlots to avoid clutter.""")
+
+    def _process_hist(self, hist):
+        """
+        Subclassed to offset histogram by defined amount.
+        """
+        edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist)
+        offset = self.offset * lims[3]
+        hvals += offset
+        lims = lims[0:3] + (lims[3] + offset,)
+        return edges, hvals, widths, lims
+
+
+    def _update_artists(self, n, edges, hvals, widths, lims):
+        super(SideHistogramPlot, self)._update_artists(n, edges, hvals, widths, lims)
+        self._process_bars(n, self.handles['bars'], lims)
+
+
+    def _process_bars(self, n, bars, lims):
+        """
+        Override existing color if cmap has been defined, applying the
+        correct color ranges, depending on the current normalization
+        settings on the main view.
+        """
+        offset = self.offset * lims[3] * (1-self.offset)
+        main_style = options.style[self.main].opts
+        individually = options.plotting[self.main].opts.get('normalize_individually', False)
+        cmap = cm.get_cmap(main_style['cmap']) if self.offset else None
+        if cmap is not None:
+            if offset:
+                if n == -1:
+                    self.handles['offset_line'] = self.offset_linefn(offset,
+                                                                     linewidth=1.0,
+                                                                     color='k')
+                else:
+                    self._update_separator(lims)
+            if isinstance(self.main, Stack):
+                full_range = self.main.values()[n].range if individually else self.main.range
+            elif isinstance(self.main, View):
+                full_range = self.main.range
+            cmap_range = full_range[1] - full_range[0]
+            lower_bound = full_range[0]
+            for bar in bars:
+                bar_bin = bar.get_y() if self.orientation == 'vertical' else bar.get_x()
+                width = bar.get_height() if self.orientation == 'vertical' else bar.get_width()
+                color_val = (bar_bin+width/2.-lower_bound)/cmap_range
+                bar.set_facecolor(cmap(color_val))
+                bar.set_clip_on(False)
+        return bars
+
+    def _update_separator(self, lims):
+        """
+        Compute colorbar offset and update separator line
+        if stack is non-zero.
+        """
+        _, _, y0, y1 = lims
+        if self.offset:
+            offset_line = self.handles['offset_line']
+            full_range = y1 - y0
+            if full_range == 0:
+                full_range = 1.
+                y1 = y0 + 1.
+            offset = (full_range*self.offset)*(1-self.offset)
+            if y1 == 0:
+                offset_line.set_visible(False)
+            else:
+                offset_line.set_visible(True)
+                if self.orientation == 'vertical':
+                    offset_line.set_xdata(offset)
+                else:
+                    offset_line.set_ydata(offset)
+
+
+
+sideviewmap = {DataHistogram: SideHistogramPlot,
+               TableView: TablePlot,
+               CoordinateGrid: CoordinateGridPlot}
 
 
 viewmap = {SheetView: SheetViewPlot,
