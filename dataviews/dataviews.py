@@ -4,7 +4,7 @@ from collections import defaultdict
 import param
 
 from ndmapping import NdMapping, map_type
-from views import View, Overlay, Annotation, GridLayout
+from views import View, Overlay, Annotation, Layout, GridLayout
 
 def find_minmax(lims, olims):
     """
@@ -367,6 +367,16 @@ class Stack(NdMapping):
             grid = GridLayout(initial_items=[self])
             grid.update(obj)
             return grid
+
+
+    def __lshift__(self, other):
+        if isinstance(other, (View, Overlay, NdMapping)):
+            return Layout([self, other])
+        elif isinstance(other, Layout):
+            return Layout(other.data+[self])
+        else:
+            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+
 
 
     def _split_keys_by_axis(self, keys, x_axis):
