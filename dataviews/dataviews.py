@@ -137,10 +137,28 @@ class DataHistogram(DataLayer):
     def __init__(self, hist, edges, **kwargs):
         if len(hist) != len(edges):
             Exception("DataHistogram requires inclusive edges to be defined.")
-        self.hist = hist
-        self.edges = edges
+        self.hist, self.edges = self._process_data(hist, edges)
 
         super(DataHistogram, self).__init__(None, **kwargs)
+
+
+    def _process_data(self, hist, edges):
+        """
+        Ensure that edges are specified as left and right edges of the
+        histogram bins rather than bin centers.
+        """
+        hist = np.array(hist)
+        edges = np.array(edges, dtype=np.float)
+        if len(edges) == len(hist):
+            widths = list(set(np.diff(edges)))
+            if len(widths) == 1:
+                width = widths[0]
+            else:
+                raise Exception('Centered bins have to be of equal width.')
+            edges -= width/2.
+            edges = np.concatenate([edges, [edges[-1]+width]])
+        return hist, edges
+
 
     @property
     def ndims(self):
