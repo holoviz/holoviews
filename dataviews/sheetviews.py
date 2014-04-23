@@ -5,7 +5,7 @@ import param
 from boundingregion import BoundingBox, BoundingRegion
 from dataviews import Stack, DataHistogram, DataStack, find_minmax
 from ndmapping import NdMapping, Dimension
-from options import options, PlotOpts
+from options import options
 from sheetcoords import SheetCoordinateSystem, Slice
 from views import View, Overlay, Annotation, Layout, GridLayout
 
