@@ -123,6 +123,18 @@ class Annotation(View):
             self.arrow(spec[0], **dict(spec[1], interval=interval))
 
 
+    def _tuples(self, interval):
+        """
+        Dictionaries are not hashable, making set comparison between
+        annotations difficult. This method turns intervals as a
+        hashable tuple-of-tuples format.
+        """
+        if interval is None:             return None
+        elif isinstance(interval, dict): return tuple(interval.items())
+        else:
+            raise Exception("Interval needs to be specified as a dictionary of tuples.")
+
+
     def arrow(self, xy, text='', direction='<', points=40,
               arrowstyle='->', interval=None):
         """
@@ -142,7 +154,8 @@ class Annotation(View):
             raise Exception("Valid arrow styles are: %s"
                             % ', '.join(repr(a) for a in arrowstyles))
 
-        self.data.append((direction.lower(), text, xy, points, arrowstyle, interval))
+        self.data.append((direction.lower(), text, xy, points, arrowstyle,
+                          self._tuples(interval)))
 
 
     def line(self, coords, interval=None):
@@ -165,22 +178,22 @@ class Annotation(View):
         else:
             ((l,b), (r,t)) = box
 
-        self.line([(t,l), (t,r), (b,r), (b,l), (t,l)],
-                  interval=interval)
+        self.line(((t,l), (t,r), (b,r), (b,l), (t,l)),
+                  interval=self._tuples(interval))
 
 
     def vline(self, x, interval=None):
         """
         Draw an axis vline (vertical line) at the given x value.
         """
-        self.data.append(('vline', x, interval))
+        self.data.append(('vline', x, self._tuples(interval)))
 
 
     def hline(self, y, interval=None):
         """
         Draw an axis hline (horizontal line) at the given y value.
         """
-        self.data.append(('hline', y, interval))
+        self.data.append(('hline', y, self._tuples(interval)))
 
 
     def __mul__(self, other):
