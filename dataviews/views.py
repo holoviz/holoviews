@@ -108,7 +108,9 @@ class Annotation(View):
         super(Annotation, self).__init__([], **kwargs)
 
         for box in boxes:
-            self.box(*(box if isinstance(box, tuple) else (box, None)))
+            if isinstance(box, BoundingBox): self.box(box, None)
+            elif isinstance(box[1], dict):   self.box(*box)
+            else:                            self.box(box, None)
 
         for vline in vlines:
             self.vline(*(vline if isinstance(vline, tuple) else (vline, None)))
@@ -117,7 +119,7 @@ class Annotation(View):
             self.hline(*(hline if isinstance(hline, tuple) else (hline, None)))
 
         for arrow in arrows:
-            spec, interval = arrow if isinstance(arrow, tuple) else (arrow, None)
+            spec, interval = (arrow, None) if isinstance(arrow[0], tuple) else arrow
             self.arrow(spec[0], **dict(spec[1], interval=interval))
 
 
