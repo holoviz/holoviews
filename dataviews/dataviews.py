@@ -492,7 +492,7 @@ class Stack(NdMapping):
             stacks.append(stack)
 
         if len(stacks) == 1:  return stacks[0]
-        else:                 return GridLayout([stacks])
+        else:                 return GridLayout(stacks)
 
 
 
