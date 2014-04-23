@@ -1,9 +1,8 @@
 """
-Transforms are SheetOperations that manipulate dataviews, typically
-for the purposes of visualization. Such transformations often apply to
-SheetViews or SheetStacks and compose the data together in ways that
-can be viewed conveniently, often by creating or manipulating color
-channels.
+ViewOperations manipulate dataviews, typically for the purposes of
+visualization. Such operations often apply to SheetViews or
+SheetStacks and compose the data together in ways that can be viewed
+conveniently, often by creating or manipulating color channels.
 """
 
 import colorsys
@@ -208,7 +207,7 @@ class Colorize(ViewOperation):
     layer to colorize the data of the first layer.
 
     Currently, colorize only support the 'hsv' color map and is just a
-    shortcut to the HCS transform using a constant confidence
+    shortcut to the HCS operation using a constant confidence
     value. Arbitrary colorization will be supported in future.
     """
 

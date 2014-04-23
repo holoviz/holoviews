@@ -19,7 +19,7 @@ from sheetviews import SheetView, SheetOverlay, SheetLines, \
 from views import GridLayout, Layout, Overlay, View, Annotation
 
 from options import options, channels
-from transform import RGBA, HCS, AlphaOverlay
+from operation import RGBA, HCS, AlphaOverlay
 
 
 class Plot(param.Parameterized):
