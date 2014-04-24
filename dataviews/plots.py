@@ -1496,7 +1496,7 @@ class DataHistogramPlot(Plot):
         # Plot bars and make any adjustments
         style = options.style[hist][cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
-        self.handles['bars'] = self._process_bars(-1, bars, lims)
+        self.handles['bars'] = self._update_plot(-1, bars, lims) # Indexing top
 
         if not axis: plt.close(self.handles['fig'])
         return self.ax if axis else self.handles['fig']
@@ -1547,7 +1547,7 @@ class DataHistogramPlot(Plot):
         return axis_settings
 
 
-    def _process_bars(self, n, bars, lims):
+    def _update_plot(self, n, bars, lims):
         """
         Process bars is subclasses to manually adjust bars after
         being plotted.
@@ -1594,9 +1594,6 @@ class DataHistogramPlot(Plot):
 
 class SideHistogramPlot(DataHistogramPlot):
 
-    cmap_range = param.NumericTuple(default=(0, 0), doc="""
-        Allows customization of colormap range.""")
-
     main = param.Parameterized(doc="""
         The main View or Stack this SideHistogramPlot is attached to.""")
 
@@ -1605,6 +1602,7 @@ class SideHistogramPlot(DataHistogramPlot):
 
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
+
 
     def _process_hist(self, hist):
         """
@@ -1619,62 +1617,75 @@ class SideHistogramPlot(DataHistogramPlot):
 
     def _update_artists(self, n, edges, hvals, widths, lims):
         super(SideHistogramPlot, self)._update_artists(n, edges, hvals, widths, lims)
-        self._process_bars(n, self.handles['bars'], lims)
+        self._update_plot(n, self.handles['bars'], lims)
 
 
-    def _process_bars(self, n, bars, lims):
+    def _update_plot(self, n, bars, lims):
         """
-        Override existing color if cmap has been defined, applying the
-        correct color ranges, depending on the current normalization
-        settings on the main view.
+        Process the bars and draw the offset line as necessary. If a
+        color map is set in the style of the 'main' View object, color
+        the bars appropriately, respecting the required normalization
+        settings.
         """
         offset = self.offset * lims[3] * (1-self.offset)
         main_style = options.style[self.main].opts
         individually = options.plotting[self.main].opts.get('normalize_individually', False)
+
+        if isinstance(self.main, Stack):
+            main_range = self.main.values()[n].range if individually else self.main.range
+        elif isinstance(self.main, View):
+            main_range = self.main.range
+
+        if offset and ('offset_line' not in self.handles):
+            self.handles['offset_line'] = self.offset_linefn(offset,
+                                                             linewidth=1.0,
+                                                             color='k')
+        elif offset:
+            self._update_separator(lims, offset)
+
         cmap = cm.get_cmap(main_style['cmap']) if self.offset else None
         if cmap is not None:
-            if offset:
-                if n == -1:
-                    self.handles['offset_line'] = self.offset_linefn(offset,
-                                                                     linewidth=1.0,
-                                                                     color='k')
-                else:
-                    self._update_separator(lims)
-            if isinstance(self.main, Stack):
-                full_range = self.main.values()[n].range if individually else self.main.range
-            elif isinstance(self.main, View):
-                full_range = self.main.range
-            cmap_range = full_range[1] - full_range[0]
-            lower_bound = full_range[0]
-            for bar in bars:
-                bar_bin = bar.get_y() if self.orientation == 'vertical' else bar.get_x()
-                width = bar.get_height() if self.orientation == 'vertical' else bar.get_width()
-                color_val = (bar_bin+width/2.-lower_bound)/cmap_range
-                bar.set_facecolor(cmap(color_val))
-                bar.set_clip_on(False)
+            self._colorize_bars(cmap, bars, main_range)
         return bars
 
-    def _update_separator(self, lims):
+
+    def _colorize_bars(self, cmap, bars, main_range):
+        """
+        Use the given cmap to color the bars, applying the correct
+        color ranges as necessary.
+        """
+        vertical = (self.orientation == 'vertical')
+        cmap_range = main_range[1] - main_range[0]
+        lower_bound = main_range[0]
+        for bar in bars:
+            bar_bin = bar.get_y() if vertical else bar.get_x()
+            width = bar.get_height() if vertical else bar.get_width()
+            color_val = (bar_bin+width/2.-lower_bound)/cmap_range
+            bar.set_facecolor(cmap(color_val))
+            bar.set_clip_on(False)
+
+
+
+    def _update_separator(self, lims, offset):
         """
         Compute colorbar offset and update separator line
         if stack is non-zero.
         """
         _, _, y0, y1 = lims
-        if self.offset:
-            offset_line = self.handles['offset_line']
-            full_range = y1 - y0
-            if full_range == 0:
-                full_range = 1.
-                y1 = y0 + 1.
-            offset = (full_range*self.offset)*(1-self.offset)
-            if y1 == 0:
-                offset_line.set_visible(False)
+        offset_line = self.handles['offset_line']
+        full_range = y1 - y0
+        if full_range == 0:
+            full_range = 1.
+            y1 = y0 + 1.
+        offset = (full_range*self.offset)*(1-self.offset)
+        if y1 == 0:
+            offset_line.set_visible(False)
+        else:
+            offset_line.set_visible(True)
+            if self.orientation == 'vertical':
+                offset_line.set_xdata(offset)
             else:
-                offset_line.set_visible(True)
-                if self.orientation == 'vertical':
-                    offset_line.set_xdata(offset)
-                else:
-                    offset_line.set_ydata(offset)
+                offset_line.set_ydata(offset)
 
 
 
