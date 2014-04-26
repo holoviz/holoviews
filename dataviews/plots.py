@@ -294,7 +294,7 @@ class AnnotationPlot(Plot):
 
         if mismatch_set:
             mismatch_list= ', '.join('%r' % el for el in mismatch_set)
-            print "<WARNING>: Invalid annotation interval key(s) ignored: %r" % mismatch_list
+            self.warning("Invalid annotation interval key(s) ignored: %r" % mismatch_list)
 
 
     def _active_interval(self, key, interval):
