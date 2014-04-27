@@ -1594,7 +1594,7 @@ class DataHistogramPlot(Plot):
 
 class SideHistogramPlot(DataHistogramPlot):
 
-    main = param.Parameterized(doc="""
+    main = param.Parameter(doc="""
         The main View or Stack this SideHistogramPlot is attached to.""")
 
     offset = param.Number(default=0.2, doc="""
