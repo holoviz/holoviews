@@ -7,7 +7,7 @@ from dataviews import Stack, DataHistogram, DataStack, find_minmax
 from ndmapping import NdMapping, Dimension
 from options import options
 from sheetcoords import SheetCoordinateSystem, Slice
-from views import View, Overlay, Annotation, Layout, GridLayout
+from views import View, Overlay, Annotation, GridLayout
 
 
 class SheetLayer(View):
