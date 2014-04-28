@@ -81,9 +81,8 @@ class ViewOperation(param.ParameterizedFunction):
             for v in views:
                 if type(v) in [CoordinateGrid, DataGrid]:
                     raise NotImplementedError("CoordinateGrid and DataGrid not supported yet")
-                matches = [k for k in stack_mapping if issubclass(type(v),k)]
-                assert len(matches) == 1
-                view_signature.append(matches[0])
+                stack_type = [k for k in stack_mapping if issubclass(type(v), k)][0]
+                view_signature.append(stack_type)
 
             if signature is None:
                 signature = view_signature
