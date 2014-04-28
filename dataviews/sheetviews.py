@@ -20,7 +20,7 @@ class SheetLayer(View):
     representation such as Bezier splines.
     """
 
-    bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
+    bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
     roi_bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
