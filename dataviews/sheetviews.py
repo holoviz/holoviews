@@ -146,7 +146,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
 
     _deep_indexable = True
 
-    def __init__(self, data, bounds, **kwargs):
+    def __init__(self, data, bounds=None, **kwargs):
+        bounds = bounds if bounds else BoundingBox()
         data = np.array([[0]]) if data is None else data
         (l, b, r, t) = bounds.lbrt()
         (dim1, dim2) = data.shape[0], data.shape[1]
