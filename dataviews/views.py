@@ -417,11 +417,11 @@ class GridLayout(NdMapping):
     @max_cols.setter
     def max_cols(self, n):
         self._max_cols = n
-        self.update({}, n)
+        self.reorder({}, n)
 
 
     def cols(self, n):
-        self.update({}, n)
+        self.reorder({}, n)
         return self
 
 
@@ -437,7 +437,7 @@ class GridLayout(NdMapping):
         return items
 
 
-    def update(self, other, cols=None):
+    def reorder(self, other, cols=None):
         """
         Given a mapping or iterable of additional views, extend the
         grid in scanline order, obeying max_cols (if applicable).
