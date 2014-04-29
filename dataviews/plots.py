@@ -7,15 +7,15 @@ from matplotlib import animation
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.font_manager import FontProperties
-from matplotlib.table import Table
+from matplotlib.table import Table as mpl_Table
 import matplotlib.gridspec as gridspec
 
 import param
 
-from dataviews import NdMapping, Stack, TableView, TableStack
-from dataviews import DataStack, DataOverlay, DataLayer, DataCurves, DataHistogram
-from sheetviews import SheetView, SheetOverlay, SheetLines, \
-                       SheetStack, SheetPoints, CoordinateGrid, DataGrid
+from dataviews import NdMapping, Stack, Table, TableStack
+from dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram
+from sheetviews import SheetView, SheetOverlay, Contours, \
+                       SheetStack, Points, CoordinateGrid, DataGrid
 from views import GridLayout, Layout, Overlay, View, Annotation
 
 from options import options, channels
@@ -27,7 +27,7 @@ class Plot(param.Parameterized):
     A Plot object returns either a matplotlib figure object (when
     called or indexed) or a matplotlib animation object as
     appropriate. Plots take view objects such as SheetViews,
-    SheetLines or SheetPoints as inputs and plots them in the
+    Contours or Points as inputs and plots them in the
     appropriate format. As views may vary over time, all plots support
     animation via the anim() method.
     """
@@ -223,21 +223,20 @@ class Plot(param.Parameterized):
 
 
 
-class SheetLinesPlot(Plot):
-
+class ContourPlot(Plot):
 
     style_opts = param.List(default=['alpha', 'color', 'linestyle',
                                      'linewidth', 'visible'],
                             constant=True, doc="""
-        The style options for SheetLinesPlot match those of matplotlib's
+        The style options for ContourPlot match those of matplotlib's
         LineCollection class.""")
 
     _stack_type = SheetStack
 
     def __init__(self, contours, zorder=0, **kwargs):
         self.zorder = zorder
-        self._stack = self._check_stack(contours, SheetLines)
-        super(SheetLinesPlot, self).__init__(**kwargs)
+        self._stack = self._check_stack(contours, Contours)
+        super(ContourPlot, self).__init__(**kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0):
@@ -401,19 +400,19 @@ class AnnotationPlot(Plot):
 
 
 
-class SheetPointsPlot(Plot):
+class PointPlot(Plot):
 
     style_opts = param.List(default=['alpha', 'color', 'marker', 's', 'visible'],
                             constant=True, doc="""
-     The style options for SheetPointsPlot match those of matplotlib's
+     The style options for PointPlot match those of matplotlib's
      scatter plot command.""")
 
     _stack_type = SheetStack
 
     def __init__(self, contours, zorder=0, **kwargs):
         self.zorder = zorder
-        self._stack = self._check_stack(contours, SheetPoints)
-        super(SheetPointsPlot, self).__init__(**kwargs)
+        self._stack = self._check_stack(contours, Points)
+        super(PointPlot, self).__init__(**kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0):
@@ -495,8 +494,7 @@ class SheetViewPlot(Plot):
 class SheetPlot(Plot):
     """
     A generic plot that visualizes SheetOverlays which themselves may
-    contain SheetLayers of type SheetView, SheetPoints or SheetLine
-    objects.
+    contain SheetLayers of type SheetView, Points or Contour objects.
     """
 
 
@@ -1083,9 +1081,9 @@ class DataPlot(Plot):
             plot.update_frame(n)
 
 
-class DataCurvePlot(Plot):
+class CurvePlot(Plot):
     """
-    DataCurvePlot can plot DataCurves and DataStacks of DataCurves,
+    CurvePlot can plot Curve and DataStacks of Curve,
     which can be displayed as a single frame or animation. Axes,
     titles and legends are automatically generated from the metadata
     and dim_info.
@@ -1109,17 +1107,17 @@ class DataCurvePlot(Plot):
 
     style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
                                      'visible'], constant=True, doc="""
-       The style options for DataCurvePlot match those of matplotlib's
+       The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
     _stack_type = DataStack
 
     def __init__(self, curves, zorder=0, **kwargs):
         self.zorder = zorder
-        self._stack = self._check_stack(curves, DataCurves)
+        self._stack = self._check_stack(curves, Curve)
         self.cyclic_range = self._stack.top.cyclic_range
 
-        super(DataCurvePlot, self).__init__(**kwargs)
+        super(CurvePlot, self).__init__(**kwargs)
 
 
     def _format_x_tick_label(self, x):
@@ -1371,7 +1369,7 @@ class TablePlot(Plot):
 
     def __init__(self, tables, zorder=0, **kwargs):
         self.zorder = zorder
-        self._stack = self._check_stack(tables, TableView)
+        self._stack = self._check_stack(tables, Table)
         super(TablePlot, self).__init__(**kwargs)
 
 
@@ -1399,8 +1397,8 @@ class TablePlot(Plot):
 
         ax.set_axis_off()
         size_factor = (1.0 - 2*self.border)
-        table = Table(ax, bbox=[self.border, self.border,
-                                size_factor, size_factor])
+        table = mpl_Table(ax, bbox=[self.border, self.border,
+                         size_factor, size_factor])
 
         width = size_factor / tableview.cols
         height = size_factor / tableview.rows
@@ -1446,9 +1444,9 @@ class TablePlot(Plot):
 
 
 
-class DataHistogramPlot(Plot):
+class HistogramPlot(Plot):
     """
-    DataHistogramPlot can plot DataHistograms and DataStacks of
+    HistogramPlot can plot DataHistograms and DataStacks of
     DataHistograms, which can be displayed as a single frame or
     animation.
     """
@@ -1457,7 +1455,7 @@ class DataHistogramPlot(Plot):
                                      'visible', 'edgecolor', 'log',
                                      'ecolor', 'capsize', 'error_kw',
                                      'hatch'], constant=True, doc="""
-     The style options for DataHistogramPlot match those of
+     The style options for HistogramPlot match those of
      matplotlib's bar command.""")
 
     num_ticks = param.Integer(default=5, doc="""
@@ -1478,8 +1476,8 @@ class DataHistogramPlot(Plot):
         self.cyclic_index = 0
         self.ax = None
 
-        self._stack = self._check_stack(curves, DataHistogram)
-        super(DataHistogramPlot, self).__init__(**kwargs)
+        self._stack = self._check_stack(curves, Histogram)
+        super(HistogramPlot, self).__init__(**kwargs)
 
         if self.orientation == 'vertical':
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
@@ -1602,7 +1600,7 @@ class DataHistogramPlot(Plot):
 
 
 
-class SideHistogramPlot(DataHistogramPlot):
+class SideHistogramPlot(HistogramPlot):
 
     main = param.Parameter(doc="""
         The main View or Stack this SideHistogramPlot is attached to.""")
@@ -1699,21 +1697,21 @@ class SideHistogramPlot(DataHistogramPlot):
 
 
 
-sideviewmap = {DataHistogram: SideHistogramPlot,
-               TableView: TablePlot,
+sideviewmap = {Histogram: SideHistogramPlot,
+               Table: TablePlot,
                CoordinateGrid: CoordinateGridPlot}
 
 
 viewmap = {SheetView: SheetViewPlot,
-           SheetPoints: SheetPointsPlot,
-           SheetLines: SheetLinesPlot,
+           Points: PointPlot,
+           Contours: ContourPlot,
            SheetOverlay: SheetPlot,
            CoordinateGrid: CoordinateGridPlot,
-           DataCurves: DataCurvePlot,
+           Curve: CurvePlot,
            DataOverlay: DataPlot,
            DataGrid: DataGridPlot,
-           TableView: TablePlot,
-           DataHistogram: DataHistogramPlot,
+           Table: TablePlot,
+           Histogram: HistogramPlot,
            Layout: GridLayoutPlot,
            Annotation: AnnotationPlot
 }

@@ -14,7 +14,7 @@ from param import ParamOverrides
 
 from views import Overlay
 from sheetviews import SheetView, SheetStack, SheetLayer, DataGrid
-from dataviews import DataLayer, DataStack, Stack, TableView, TableStack
+from dataviews import DataLayer, DataStack, Stack, Table, TableStack
 from sheetviews import GridLayout, CoordinateGrid
 
 from options import options, GrayNearest
@@ -26,7 +26,7 @@ hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
 stack_mapping = {SheetLayer:SheetStack,
                  DataLayer:DataStack,
-                 TableView:TableStack}
+                 Table:TableStack}
 
 
 

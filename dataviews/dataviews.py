@@ -50,9 +50,9 @@ class DataLayer(View):
 
 
 
-class DataCurves(DataLayer):
+class Curve(DataLayer):
     """
-    DataCurves can contain a list of curves with associated metadata and
+    Curve can contain a list of curves with associated metadata and
     cyclic_range parameter to indicate with what periodicity the curve wraps.
     """
 
@@ -60,7 +60,7 @@ class DataCurves(DataLayer):
 
     def __init__(self, data, **kwargs):
         data = [] if data is None else [np.array(el) for el in data]
-        super(DataCurves, self).__init__(data, **kwargs)
+        super(Curve, self).__init__(data, **kwargs)
 
 
     @property
@@ -104,7 +104,7 @@ class DataCurves(DataLayer):
                 if x in stack:
                     stack[x].data.append(curve[0:idx])
                 else:
-                    stack[x] = DataCurves([curve[0:idx]])
+                    stack[x] = Curve([curve[0:idx]])
         return stack
 
 
@@ -124,9 +124,9 @@ class DataCurves(DataLayer):
 
 
 
-class DataHistogram(DataLayer):
+class Histogram(DataLayer):
     """
-    DataHistogram contains a number of bins, which are defined by the upper
+    Histogram contains a number of bins, which are defined by the upper
     and lower bounds of their edges and the computed bin values.
     """
 
@@ -136,10 +136,10 @@ class DataHistogram(DataLayer):
 
     def __init__(self, hist, edges, **kwargs):
         if len(hist) != len(edges):
-            Exception("DataHistogram requires inclusive edges to be defined.")
+            Exception("Histogram requires inclusive edges to be defined.")
         self.hist, self.edges = self._process_data(hist, edges)
 
-        super(DataHistogram, self).__init__(None, **kwargs)
+        super(Histogram, self).__init__(None, **kwargs)
 
 
     def _process_data(self, hist, edges):
@@ -500,7 +500,7 @@ class Stack(NdMapping):
                                                            ylabel)
 
                 # Generate the curve view
-                curve = DataCurves([sampled_curve_data], cyclic_range=cyclic_range,
+                curve = Curve([sampled_curve_data], cyclic_range=cyclic_range,
                                     metadata=self.metadata, label=label,
                                     legend_label=legend_label, xlabel=xlabel,
                                     ylabel=ylabel)
@@ -565,7 +565,7 @@ class DataStack(Stack):
 
 
 
-class TableView(View):
+class Table(View):
     """
     A tabular view type to allow convenient visualization of either a
     standard Python dictionary or an OrderedDict. If an OrderedDict is
@@ -577,7 +577,7 @@ class TableView(View):
         if not all(isinstance(k, str) for k in data.keys()):
             raise Exception("Dictionary keys must be strings.")
 
-        super(TableView, self).__init__(data=data, **kwargs)
+        super(Table, self).__init__(data=data, **kwargs)
 
         # Assume OrderedDict if not a vanilla Python dict
         self.headings = self.data.keys()
@@ -606,7 +606,7 @@ class TableView(View):
         Get the stored value for a given row and column indices.
         """
         if col > 1:
-            raise Exception("Only two columns available in a TableView.")
+            raise Exception("Only two columns available in a Table.")
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % len(self.headings)-1)
         elif col == 0:
@@ -632,7 +632,7 @@ class TableStack(Stack):
     of dimension values. It also allows the values of a particular
     cell to be sampled by name across any valid dimension.
     """
-    _type = TableView
+    _type = Table
 
     _type_map = None
 

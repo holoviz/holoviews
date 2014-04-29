@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from boundingregion import BoundingBox, BoundingRegion
-from dataviews import Stack, DataHistogram, DataStack, find_minmax
+from dataviews import Stack, Histogram, DataStack, find_minmax
 from ndmapping import NdMapping, Dimension
 from options import options
 from sheetcoords import SheetCoordinateSystem, Slice
@@ -215,9 +215,9 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             hist = np.zeros(num_bins)
         hist[np.isnan(hist)] = 0
 
-        hist_view = DataHistogram(hist, edges, cyclic_range=self.cyclic_range,
-                                  label=self.label + " Histogram",
-                                  metadata=self.metadata)
+        hist_view = Histogram(hist, edges, cyclic_range=self.cyclic_range,
+                              label=self.label + " Histogram",
+                              metadata=self.metadata)
 
         # Set plot and style options
         style_prefix = 'Custom[<' + self.name + '>]_' if style_prefix is None else style_prefix
@@ -278,7 +278,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
 
 
 
-class SheetPoints(SheetLayer):
+class Points(SheetLayer):
     """
     Allows sets of points to be positioned over a sheet coordinate
     system.
@@ -291,11 +291,11 @@ class SheetPoints(SheetLayer):
 
     def __init__(self, data, bounds, **kwargs):
         data = np.array([[], []]).T if data is None else data
-        super(SheetPoints, self).__init__(data, bounds, **kwargs)
+        super(Points, self).__init__(data, bounds, **kwargs)
 
 
     def resize(self, bounds):
-        return SheetPoints(self.points, bounds, style=self.style, metadata=self.metadata)
+        return Points(self.points, bounds, style=self.style, metadata=self.metadata)
 
 
     def __len__(self):
@@ -308,7 +308,7 @@ class SheetPoints(SheetLayer):
         roi_data = self.data[[n for n in range(N)
                               if self.data[n, :] in self.roi_bounds]]
         roi_bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return SheetPoints(roi_data, roi_bounds, style=self.style,
+        return Points(roi_data, roi_bounds, style=self.style,
                            metadata=self.metadata)
 
 
@@ -320,7 +320,7 @@ class SheetPoints(SheetLayer):
 
 
 
-class SheetLines(SheetLayer):
+class Contours(SheetLayer):
     """
     Allows sets of contour lines to be defined over a
     SheetCoordinateSystem.
@@ -332,11 +332,11 @@ class SheetLines(SheetLayer):
 
     def __init__(self, data, bounds, **kwargs):
         data = [] if data is None else data
-        super(SheetLines, self).__init__(data, bounds, **kwargs)
+        super(Contours, self).__init__(data, bounds, **kwargs)
 
 
     def resize(self, bounds):
-        return SheetLines(self.contours, bounds, style=self.style)
+        return Contours(self.contours, bounds, style=self.style)
 
 
     def __len__(self):
@@ -349,7 +349,7 @@ class SheetLines(SheetLayer):
         # outside the bounds need to be snapped to the bounding box
         # edges.
         bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return SheetLines(self.data, bounds, style=self.style,
+        return Contours(self.data, bounds, style=self.style,
                           metadata=self.metadata)
 
 
