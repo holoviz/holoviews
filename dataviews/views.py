@@ -25,7 +25,7 @@ class View(param.Parameterized):
       A short label used to indicate what kind of data is contained
       within the view object.""")
 
-    title = param.String(default='{label} {type} \n {dimensions}', doc="""
+    title = param.String(default='{label}', doc="""
        The title formatting string allows the title to be composed from
        the view label and view type but can also be set to a simple string.""")
 

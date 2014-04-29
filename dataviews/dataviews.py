@@ -275,7 +275,7 @@ class Stack(NdMapping):
         self._set_title(dim_vals, data)
 
 
-    def _set_title(self, key, item):
+    def _set_title(self, key, item, group_size=2):
         """
         Sets a title string on the element item is added to the Stack, based on
         the element label and formatted stack dimensions and values.
@@ -285,11 +285,9 @@ class Stack(NdMapping):
         format_dict = {}
         if '{dims}' in self.title:
             dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
-            dimension_labels = [dim_label+',\n' if ind != 0 and (ind % 2 == 1) else dim_label+', '
-                                for ind, dim_label in enumerate(dimension_labels)]
-            dimension_labels[-1] = dimension_labels[-1].replace(',\n', '')
-            dimension_labels[-1] = dimension_labels[-1].replace(',', '')
-            format_dict['dims'] = ' '.join(dimension_labels)
+            groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
+                      for i in range(len(dimension_labels))]
+            format_dict['dims'] = '\n '.join(g for g in groups if g)
         if '{label}' in self.title: format_dict['label'] = item.label
         if '{type}' in self.title: format_dict['type'] = item.__class__.__name__
         item.title = self.title.format(**format_dict)
