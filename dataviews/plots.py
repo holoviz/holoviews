@@ -85,6 +85,22 @@ class Plot(param.Parameterized):
         return stack
 
 
+    def _format_title(self, view):
+        if view.title is None:
+            return None
+        format_dict = {}
+        if '{label}' in view.title: format_dict.update(label=view.label)
+        if '{type}' in view.title: format_dict.update(type=view.__class__.__name__)
+        return view.title.format(**format_dict)
+
+
+    def _update_title(self, view):
+        if self.show_title and self.zorder == 0:
+            title = self._format_title(view)
+            if title is not None:
+                self.handles['title'].set_text(title)
+
+
     def _axis(self, axis, title=None, xlabel=None, ylabel=None,
               lbrt=None, xticks=None, yticks=None):
         "Return an axis which may need to be initialized from a new figure."
@@ -147,8 +163,7 @@ class Plot(param.Parameterized):
             axis.set_yticks(yticks[0])
             axis.set_yticklabels(yticks[1])
 
-        if self.show_title:
-            title = '' if title is None else title
+        if self.show_title and title is not None:
             self.handles['title'] = axis.set_title(title)
 
         return axis
@@ -227,7 +242,7 @@ class SheetLinesPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0):
         lines = self._stack.top
-        title = None if self.zorder > 0 else lines.title
+        title = None if self.zorder > 0 else self._format_title(lines)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
         line_segments = LineCollection(lines.data, zorder=self.zorder, **options.style[lines][cyclic_index])
         self.handles['line_segments'] = line_segments
@@ -240,8 +255,7 @@ class SheetLinesPlot(Plot):
         n = n  if n < len(self) else len(self) - 1
         contours = self._stack.values()[n]
         self.handles['line_segments'].set_paths(contours.data)
-        if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(contours.title)
+        self._update_title(contours)
         plt.draw()
 
 
@@ -404,7 +418,7 @@ class SheetPointsPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0):
         points = self._stack.top
-        title = None if self.zorder > 0 else points.title
+        title = None if self.zorder > 0 else self._format_title(points)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
         scatterplot = plt.scatter(points.data[:, 0], points.data[:, 1],
@@ -418,8 +432,7 @@ class SheetPointsPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         points = self._stack.values()[n]
         self.handles['scatter'].set_offsets(points.data)
-        if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(points.title)
+        self._update_title(points)
         plt.draw()
 
 
@@ -447,7 +460,7 @@ class SheetViewPlot(Plot):
     def __call__(self, axis=None, cyclic_index=0):
         sheetview = self._stack.top
         (l, b, r, t) = self._stack.bounds.lbrt()
-        title = None if self.zorder > 0 else sheetview.title
+        title = None if self.zorder > 0 else self._format_title(sheetview)
         ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
 
         opts = options.style[sheetview][cyclic_index]
@@ -473,9 +486,8 @@ class SheetViewPlot(Plot):
 
         if self.normalize_individually:
             im.set_clim(sheetview.range)
+        self._update_title(sheetview)
 
-        if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(sheetview.title)
         plt.draw()
 
 
@@ -1211,8 +1223,8 @@ class DataCurvePlot(Plot):
         if lbrt is None:
             lbrt = lines.lbrt
 
-        ax = self._axis(axis, lines.title, lines.xlabel, lines.ylabel,
-                        xticks=xticks, lbrt=lbrt)
+        ax = self._axis(axis, self._format_title(lines), lines.xlabel,
+                        lines.ylabel, xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
         line_segments = LineCollection(lines.data, zorder=self.zorder,
@@ -1242,8 +1254,7 @@ class DataCurvePlot(Plot):
         if self.cyclic_range is not None:
             self._cyclic_curves(lines)
         self.handles['line_segments'].set_paths(lines.data)
-        if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(lines.title)
+        self._update_title(lines)
         plt.draw()
 
 
@@ -1384,7 +1395,7 @@ class TablePlot(Plot):
     def __call__(self, axis=None):
         tableview = self._stack.top
 
-        ax = self._axis(axis, tableview.title)
+        ax = self._axis(axis, self._format_title(tableview))
 
         ax.set_axis_off()
         size_factor = (1.0 - 2*self.border)
@@ -1430,8 +1441,7 @@ class TablePlot(Plot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-        if self.show_title and self.zorder == 0:
-            self.handles['title'].set_text(tableview.title)
+        self._update_title(tableview)
         plt.draw()
 
 
@@ -1542,7 +1552,7 @@ class DataHistogramPlot(Plot):
         axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
         x0, x1, y0, y1 = lims
         axis_settings['lbrt'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
-        if self.zorder == 0: axis_settings['title'] = hist.title
+        if self.zorder == 0: axis_settings['title'] = self._format_title(hist)
 
         return axis_settings
 
@@ -1588,7 +1598,7 @@ class DataHistogramPlot(Plot):
         ax_settings = self._process_axsettings(hist, lims, ticks)
         self._axis(self.ax, **ax_settings)
         self._update_artists(n, edges, hvals, widths, lims)
-        if self.show_title: self.handles['title'] = self.ax.set_title(hist.title)
+        self._update_title(hist)
 
 
 

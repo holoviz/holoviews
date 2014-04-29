@@ -218,14 +218,13 @@ class Stack(NdMapping):
     (specifying a frame sequence) or any other dimensions.
     """
 
-    title = param.String(default=None, doc="""
+    title = param.String(default='{label} \n {dims}', doc="""
        A short description of the stack that may be used as a title
        (e.g. the title of an animation) but may also accept a
-       formatting string to generate a unique title per layer. For
-       instance the format string '{label0} = {value0}' will generate
-       a title using the first dimension label and corresponding key
-       value. Numbering is by dimension position and extends across
-       all available dimensions e.g. {label1}, {value2} and so on.""")
+       formatting string to generate a unique title per layer.
+       The formatters {label}, {type} and {dims} referring to
+       the View lable, type and dimensions key/value pairs
+       respectively.""")
 
     data_type = View
     overlay_type = Overlay
@@ -283,11 +282,17 @@ class Stack(NdMapping):
         """
         if self.ndims == 1 and self.dim_dict.get('Default', False):
             return None
-        label = '' if not item.label else item.label + '\n'
-        dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
-        dimension_labels = [dim_label+',\n' if ind != 0 and (ind % 2 == 1) else dim_label+', '
-                            for ind, dim_label in enumerate(dimension_labels)]
-        item.title = label + ''.join(dimension_labels)[:-1]
+        format_dict = {}
+        if '{dims}' in self.title:
+            dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
+            dimension_labels = [dim_label+',\n' if ind != 0 and (ind % 2 == 1) else dim_label+', '
+                                for ind, dim_label in enumerate(dimension_labels)]
+            dimension_labels[-1] = dimension_labels[-1].replace(',\n', '')
+            dimension_labels[-1] = dimension_labels[-1].replace(',', '')
+            format_dict['dims'] = ' '.join(dimension_labels)
+        if '{label}' in self.title: format_dict['label'] = item.label
+        if '{type}' in self.title: format_dict['type'] = item.__class__.__name__
+        item.title = self.title.format(**format_dict)
 
 
     def split(self):
@@ -443,8 +448,7 @@ class Stack(NdMapping):
         label xlabel and ylabel for a curve. Allows changing the curve labels
         in subclasses of stack.
         """
-        curve_label = " ".join([str(sample), "Curve"])
-        return curve_label, x_axis.capitalize(), sample
+        return str(sample), x_axis.capitalize(), sample
 
 
     def sample(self, samples=[], x_axis=None, group_by=[]):
@@ -471,12 +475,12 @@ class Stack(NdMapping):
         # Overlays as indexed with the x_axis removed
         overlay_inds = [i for i, name in enumerate(output_dims) if name in group_by]
 
-
         cyclic_range = x_dim.range[1] if x_dim.cyclic else None
 
         stacks = []
         for sample_ind, sample in enumerate(self._compute_samples(samples)):
-            stack = DataStack(dimensions=stack_dims, metadata=self.metadata)
+            stack = DataStack(dimensions=stack_dims, metadata=self.metadata,
+                              title=self.title+' {type}')
             for key, x_axis_data in split_data.items():
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
                 sampled_curve_data = [(x, self._get_sample(view, sample))

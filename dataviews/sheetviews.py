@@ -403,7 +403,7 @@ class SheetStack(Stack):
         Subclasses _curve_labels in regular Stack to correctly label curves
         sampled from a SheetStack.
         """
-        curve_label = " ".join(["Coord:", str(sample), ylabel, "Curve"])
+        curve_label = " ".join(["Coord:", str(sample), ylabel])
         return curve_label, x_axis.capitalize(), ylabel
 
 
@@ -464,7 +464,7 @@ class SheetStack(Stack):
 
 
     def hist(self, num_bins=20, individually=False, bin_range=None):
-        histstack = DataStack(dimensions=self.dimensions,
+        histstack = DataStack(dimensions=self.dimensions, title=self.title,
                               metadata=self.metadata)
 
         stack_range = None if individually else self.range
