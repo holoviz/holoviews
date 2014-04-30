@@ -128,12 +128,14 @@ class Options(object):
 
 
     def __call__(self, obj):
-        if not hasattr(obj, 'style'):
-            raise Exception('Supplied object requires style attribute.')
+
+        if isinstance(obj, str):
+            name = obj
         elif isinstance(obj.style, list):
             return self.opt_type()
+        else:
+            name = obj.style
 
-        name = obj.style
         matches = sorted((len(key), style) for key, style in self._items.items()
                          if name.endswith(key))
         if matches == []:
