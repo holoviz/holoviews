@@ -137,15 +137,6 @@ class Options(object):
             return base_match
 
 
-    def fuzzy_match_keys(self, name):
-        reversed_matches = sorted((len(key), key) for key in self._items.keys()
-                                  if name.endswith(key))[::-1]
-        if reversed_matches:
-            return zip(*reversed_matches)[1]
-        else:
-            return []
-
-
     def options(self):
         """
         The full list of base Style objects in the Options, excluding
@@ -256,7 +247,8 @@ class OptionsGroup(object):
         optmap._settable = False
 
 
-    def fuzzy_matches(self, name):
+    def fuzzy_match_keys(self, name):
+
         reversed_matches = sorted((len(key), key) for key in self.keys()
                                   if name.endswith(key))[::-1]
         if reversed_matches:
