@@ -45,8 +45,8 @@ class View(param.Parameterized):
 
         class_name = self.__class__.__name__
         if self.label:
-            style_str = '_'.join([self.label.replace(' ', '_'), class_name])
-            matches = options.fuzzy_matches(style_str)
+            style_str = '_'.join([self.label, class_name])
+            matches = options.fuzzy_match_keys(style_str)
             return matches[0] if matches else class_name
         else:
             return class_name

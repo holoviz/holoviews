@@ -109,6 +109,14 @@ class Options(object):
     from 'Example_Options'.
     """
 
+    @classmethod
+    def normalize_key(self, key):
+        """
+        Given a key which may contain spaces, such as a view label,
+        convert it to a string suitable for attribute access.
+        """
+        return key.replace(' ', '_')
+
 
     def __init__(self, name, opt_type):
         if not issubclass(opt_type, Opts):
@@ -199,7 +207,7 @@ class Options(object):
             raise Exception("OptionMaps should be set via OptionGroup")
         if not isinstance(value, Opts):
             raise Exception('An OptionMap must only contain Opts.')
-        self._items[key.replace(' ', '_')] = value
+        self._items[self.normalize_key(key)] = value
 
 
 
@@ -216,6 +224,9 @@ class OptionsGroup(object):
     instance, PlotOpts will set plotting options while StyleOpts are
     designed for setting style options.
     """
+
+
+    normalize_key = Options.normalize_key
 
     def __init__(self, optmaps):
 
@@ -248,7 +259,7 @@ class OptionsGroup(object):
 
 
     def fuzzy_match_keys(self, name):
-
+        name = Options.normalize_key(name)
         reversed_matches = sorted((len(key), key) for key in self.keys()
                                   if name.endswith(key))[::-1]
         if reversed_matches:
@@ -273,7 +284,7 @@ class OptionsGroup(object):
             raise Exception("Options of type %s not applicable" % type(value))
         optmap = self._opttypes[type(value)]
         optmap._settable = True
-        optmap.set(key.replace(' ', '_'), value)
+        optmap.set(key, value)
         optmap._settable = False
         self._keys.add(key)
 
