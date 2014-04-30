@@ -115,7 +115,7 @@ class Options(object):
         Given a key which may contain spaces, such as a view label,
         convert it to a string suitable for attribute access.
         """
-        return key.replace(' ', '_')
+        return key.replace(' ', '')
 
 
     def __init__(self, name, opt_type):
