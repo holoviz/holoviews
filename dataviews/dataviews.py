@@ -282,15 +282,17 @@ class Stack(NdMapping):
         """
         if self.ndims == 1 and self.dim_dict.get('Default', False):
             return None
-        format_dict = {}
-        if '{dims}' in self.title:
-            dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
-            groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
+        dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
+        groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                       for i in range(len(dimension_labels))]
-            format_dict['dims'] = '\n '.join(g for g in groups if g)
-        if '{label}' in self.title: format_dict['label'] = item.label
-        if '{type}' in self.title: format_dict['type'] = item.__class__.__name__
-        item.title = self.title.format(**format_dict)
+        dims = '\n '.join(g for g in groups if g)
+        if isinstance(item, Overlay):
+            for layer in item:
+                format_dict = dict(dims=dims, label=layer.label, type=layer.__class__.__name__)
+                layer.title = self.title.format(**format_dict)
+        else:
+            format_dict = dict(dims=dims, label=item.label, type=item.__class__.__name__)
+            item.title = self.title.format(**format_dict)
 
 
     def split(self):
