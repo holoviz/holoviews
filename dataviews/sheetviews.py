@@ -403,7 +403,7 @@ class SheetStack(Stack):
         Subclasses _curve_labels in regular Stack to correctly label curves
         sampled from a SheetStack.
         """
-        curve_label = " ".join(["Coord:", str(sample), ylabel])
+        curve_label = " ".join(["Coord:", str(sample), x_axis.capitalize(), ylabel])
         return curve_label, x_axis.capitalize(), ylabel
 
 

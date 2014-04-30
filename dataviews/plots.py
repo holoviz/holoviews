@@ -1101,11 +1101,8 @@ class CurvePlot(Plot):
 
     relative_labels = param.Boolean(default=False)
 
-    show_xaxis = param.String(default='bottom', allow_None=True, doc="""
-      Whether to display the right axis.""")
-
-    show_yaxis = param.String(default='left', allow_None=True, doc="""
-      Whether to display the right axis.""")
+    show_legend = param.Boolean(default=True, doc="""
+      Whether to show legend for the plot.""")
 
     style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
                                      'visible'], constant=True, doc="""
@@ -1171,70 +1168,52 @@ class CurvePlot(Plot):
         return values, [self._cyclic_format_x_tick_label(x) for x in labels]
 
 
-    def _cyclic_curves(self, lines):
+    def _cyclic_curves(self, curveview):
         """
         Mutate the lines object to generate a rotated cyclic curves.
         """
-        for idx, line in enumerate(lines.data):
-            x_values = list(line[:, 0])
-            y_values = list(line[:, 1])
-            if self.center:
-                rotate_n = self.peak_argmax+len(x_values)/2
-                y_values = self._rotate(y_values, n=rotate_n)
-                ticks = self._rotate(x_values, n=rotate_n)
-            else:
-                ticks = list(x_values)
+        x_values = list(curveview.data[:, 0])
+        y_values = list(curveview.data[:, 1])
+        if self.center:
+            rotate_n = self.peak_argmax+len(x_values)/2
+            y_values = self._rotate(y_values, n=rotate_n)
+            ticks = self._rotate(x_values, n=rotate_n)
+        else:
+            ticks = list(x_values)
 
-            ticks.append(ticks[0])
-            x_values.append(x_values[0]+self.cyclic_range)
-            y_values.append(y_values[0])
+        ticks.append(ticks[0])
+        x_values.append(x_values[0]+self.cyclic_range)
+        y_values.append(y_values[0])
 
-            lines.data[idx] = np.vstack([x_values, y_values]).T
+        curveview.data = np.vstack([x_values, y_values]).T
         self.xvalues = x_values
 
 
-    def _find_peak(self, lines):
-        """
-        Finds the peak value in the supplied lines object to center the
-        relative labels around if the relative_labels option is enabled.
-        """
-        self.peak_argmax = 0
-        max_y = 0.0
-        for line in lines:
-            y_values = line[:, 1]
-            if np.max(y_values) > max_y:
-                max_y = np.max(y_values)
-                self.peak_argmax = np.argmax(y_values)
-
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        lines = self._stack.top
+        curveview = self._stack.top
 
         # Create xticks and reorder data if cyclic
-        xvals = lines[0][:, 0]
+        xvals = curveview.data[:, 0]
         if self.cyclic_range is not None:
             if self.center:
-                self._find_peak(lines)
-            self._cyclic_curves(lines)
+                self.peak_argmax = np.argmax(curveview.data[:, 1])
+            self._cyclic_curves(curveview)
             xticks = self._cyclic_reduce_ticks(self.xvalues)
         else:
             xticks = self._reduce_ticks(xvals)
 
         if lbrt is None:
-            lbrt = lines.lbrt
+            lbrt = curveview.lbrt
 
-        ax = self._axis(axis, self._format_title(lines), lines.xlabel,
-                        lines.ylabel, xticks=xticks, lbrt=lbrt)
+        ax = self._axis(axis, self._format_title(curveview), curveview.xlabel,
+                        curveview.ylabel, xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
-        line_segments = LineCollection(lines.data, zorder=self.zorder,
-                                       **options.style(lines)[cyclic_index])
+        line_segment = plt.plot(curveview.data[:, 0], curveview.data[:, 1],
+                                zorder=self.zorder, label=curveview.legend_label,
+                                **options.style(curveview)[cyclic_index])[0]
 
-        # Add legend
-        line_segments.set_label(lines.legend_label)
-
-        self.handles['line_segments'] = line_segments
-        ax.add_collection(line_segments)
+        self.handles['line_segment'] = line_segment
 
         # If legend enabled update handles and labels
         handles, labels = ax.get_legend_handles_labels()
@@ -1250,11 +1229,12 @@ class CurvePlot(Plot):
 
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
-        lines = self._stack.values()[n]
+        curveview = self._stack.values()[n]
         if self.cyclic_range is not None:
-            self._cyclic_curves(lines)
-        self.handles['line_segments'].set_paths(lines.data)
-        self._update_title(lines)
+            self._cyclic_curves(curveview)
+        self.handles['line_segment'].set_xdata(curveview.data[:, 0])
+        self.handles['line_segment'].set_ydata(curveview.data[:, 1])
+        self._update_title(curveview)
         plt.draw()
 
 
@@ -1273,15 +1253,6 @@ class DataGridPlot(Plot):
      DataGridPlot renders groups of DataLayers which individually have
      style options but DataGridPlot itself does not.""")
 
-    show_xaxis = param.ObjectSelector(default=None,
-                                      objects=['both','top', 'bottom', None], doc="""
-      Whether and where to display the xaxis.""")
-
-    show_yaxis = param.ObjectSelector(default=None,
-                                      objects=['both', 'left', 'right', None], doc="""
-      Whether and where to display the yaxis.""")
-
-
     def __init__(self, grid, **kwargs):
 
         if not isinstance(grid, DataGrid):
@@ -1292,7 +1263,8 @@ class DataGridPlot(Plot):
         x, y = zip(*grid.keys())
         self.rows, self.cols = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
-        super(DataGridPlot, self).__init__(**kwargs)
+        super(DataGridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
+                                           **kwargs)
 
 
     def __call__(self, axis=None):

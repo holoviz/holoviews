@@ -58,32 +58,24 @@ class Curve(DataLayer):
 
     cyclic_range = param.Number(default=None, allow_None=True)
 
-    def __init__(self, data, **kwargs):
-        data = [] if data is None else [np.array(el) for el in data]
-        super(Curve, self).__init__(data, **kwargs)
 
+    def __init__(self, data, **kwargs):
+        super(Curve, self).__init__(np.array(data), **kwargs)
 
     @property
     def xlim(self):
-        x_min = 0
-        x_max = 0
-        for curve in self.data:
-            x_vals = curve[:, 0]
-            x_min = min(x_max, min(x_vals))
-            x_max = max(x_max, max(x_vals))
-        x_lim = (0 if x_min > 0 else float(x_min),
-                 self.cyclic_range if self.cyclic_range else float(x_max))
-        return x_lim
+        x_vals = self.data[:, 0]
+        x_min = min(x_vals)
+        x_max = max(x_vals)
+        return (0 if x_min > 0 else float(x_min),
+                self.cyclic_range if self.cyclic_range else float(x_max))
 
 
     @property
     def ylim(self):
-        y_min = 0
-        y_max = 0
-        for curve in self.data:
-            y_vals = curve[:, 1]
-            y_min = min(y_max, min(y_vals))
-            y_max = max(y_max, max(y_vals))
+        y_vals = self.data[:, 1]
+        y_min = min(y_vals)
+        y_max = max(y_vals)
         return (float(y_min), float(y_max))
 
 
@@ -95,32 +87,15 @@ class Curve(DataLayer):
 
 
     def stack(self):
-        prefix = "{0}: ".format(self.title) if self.title else ""
         stack = DataStack(None, dimensions=[self.xlabel],
-                          title=prefix+"{label0}={value0}", **self.metadata)
-        for curve in self.data:
-            for idx in range(len(curve)):
-                x = curve[idx][0]
-                if x in stack:
-                    stack[x].data.append(curve[0:idx])
-                else:
-                    stack[x] = Curve([curve[0:idx]])
+                          title=self.title+' {dims}', **self.metadata)
+        for idx in range(len(self.data)):
+            x = self.data[0]
+            if x in stack:
+                stack[x].data.append(self.data[0:idx])
+            else:
+                stack[x] = Curve(self.data[0:idx])
         return stack
-
-
-    def __getitem__(self, index):
-        return self.data[index]
-
-
-    def __len__(self):
-        return len(self.data)
-
-
-    def __iter__(self):
-        i = 0
-        while i < len(self):
-            yield self[i]
-            i += 1
 
 
 
@@ -480,7 +455,7 @@ class Stack(NdMapping):
         stacks = []
         for sample_ind, sample in enumerate(self._compute_samples(samples)):
             stack = DataStack(dimensions=stack_dims, metadata=self.metadata,
-                              title=self.title+' {type}')
+                              title=self.title)
             for key, x_axis_data in split_data.items():
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
                 sampled_curve_data = [(x, self._get_sample(view, sample))
@@ -500,10 +475,10 @@ class Stack(NdMapping):
                                                            ylabel)
 
                 # Generate the curve view
-                curve = Curve([sampled_curve_data], cyclic_range=cyclic_range,
-                                    metadata=self.metadata, label=label,
-                                    legend_label=legend_label, xlabel=xlabel,
-                                    ylabel=ylabel)
+                curve = Curve(sampled_curve_data, cyclic_range=cyclic_range,
+                              metadata=self.metadata, label=label,
+                              legend_label=legend_label, xlabel=xlabel,
+                              ylabel=ylabel)
 
                 # Drop overlay dimensions
                 stack_key = tuple([kval for ind, kval in enumerate(key)
