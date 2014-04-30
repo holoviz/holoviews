@@ -347,13 +347,13 @@ class ChannelOpts(Opts):
 
 channels = OptionsGroup([Options('definitions', ChannelOpts)])
 options = OptionsGroup([Options('plotting', PlotOpts),
-                        Options('style',StyleOpts)])
+                        Options('style', StyleOpts)])
 
 # Default Styles
 options.Style = StyleOpts()
 options.Contours = StyleOpts(color=Cycle(['k', 'w']))
 options.SheetView = StyleOpts(cmap='gray', interpolation='nearest')
-options.Curve = StyleOpts(color=Cycle(['r', 'g', 'b']), linewidth=2)
+options.Curve = StyleOpts(color=Cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k']), linewidth=2)
 options.Annotation = StyleOpts()
 options.Histogram = StyleOpts(ec='k', fc='w')
 options.Table = StyleOpts()
