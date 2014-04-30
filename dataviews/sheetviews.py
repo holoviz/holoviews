@@ -223,7 +223,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         style_prefix = 'Custom[<' + self.name + '>]_' if style_prefix is None else style_prefix
         opts_name = style_prefix + hist_view.label.replace(' ', '_')
         hist_view.style = opts_name
-        options[opts_name] = options.plotting[opts_name](**dict(rescale_individually=individually))
+        options[opts_name] = options.plotting(self)(**dict(rescale_individually=individually))
 
         return hist_view
 
@@ -611,7 +611,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         of __len__ used by SheetStack. For the total number of
         elements, count the full set of keys.
         """
-        return max(len(v) for v in self.values())
+        return max([len(v) for v in self.values()] + [0])
 
 
     def __add__(self, obj):

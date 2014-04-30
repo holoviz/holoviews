@@ -975,7 +975,7 @@ def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
     magic_info = process_view_magics(stack)
     if magic_info: return magic_info
-    opts = dict(options.plotting[stack].opts, size=get_plot_size())
+    opts = dict(options.plotting(stack).opts, size=get_plot_size())
     stackplot = viewmap[stack.type](stack, **opts)
     if len(stackplot) == 1:
         fig = stackplot()
@@ -993,7 +993,7 @@ def layout_display(grid, size=256):
     grid_size = (grid.shape[1]*get_plot_size()[1],
                  grid.shape[0]*get_plot_size()[0])
 
-    opts = dict(options.plotting[grid].opts, size=grid_size)
+    opts = dict(size=grid_size)
     gridplot = GridLayoutPlot(grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
@@ -1010,7 +1010,7 @@ def projection_display(grid, size=256):
                  size_factor*grid.shape[0]*get_plot_size()[0])
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
-    opts = dict(options.plotting[grid].opts, size=grid_size)
+    opts = dict(options.plotting(grid.values()[-1]).opts, size=grid_size)
     gridplot = viewmap[grid.__class__](grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
@@ -1025,7 +1025,7 @@ def view_display(view, size=256):
     if isinstance(view, Annotation): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
-    opts = dict(options.plotting[view].opts, size=get_plot_size())
+    opts = dict(options.plotting(view).opts, size=get_plot_size())
     fig = viewmap[view.__class__](view, **opts)()
     return figure_display(fig)
 

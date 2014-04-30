@@ -245,7 +245,7 @@ class cmap2rgb(ViewOperation):
         if sheetview.depth != 1:
             raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
 
-        style_cmap = options.style[sheetview][0].get('cmap', None)
+        style_cmap = options.style(sheetview)[0].get('cmap', None)
         if not any([self.p.cmap, style_cmap]):
             raise Exception("No color map supplied and no cmap in the active style.")
 

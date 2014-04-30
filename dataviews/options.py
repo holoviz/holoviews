@@ -36,12 +36,12 @@ class Opts(object):
     """
 
     def __init__(self, **kwargs):
-        self._kwargs = kwargs
+        self.items = kwargs
         self.options = self._expand_styles(kwargs)
 
 
     def __call__(self, **kwargs):
-        new_style = dict(self._kwargs, **kwargs)
+        new_style = dict(self.items, **kwargs)
         return self.__class__(**new_style)
 
 
@@ -64,7 +64,7 @@ class Opts(object):
 
     def keys(self):
         "The keyword names defined in the options."
-        return self._kwargs.keys()
+        return self.items.keys()
 
 
     def __getitem__(self, index):
@@ -88,25 +88,29 @@ class Opts(object):
 
     @property
     def keywords(self):
-        return ', '.join("%s=%r" % (k,v) for (k,v) in self._kwargs.items())
+        return ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items())
 
 
 
-class OptionMap(object):
+class Options(object):
     """
-    A OptionMap is a collection of Opts objects that allows convenient
-    attribute access. In addition, OptionMaps allows fuzzy matching
-    when indexed.
+    A Option is a collection of Opts objects that allows convenient
+    attribute access and can compose styles through inheritance.
+    Options are inherited by finding all matches which end in the
+    same substring as the supplied style.
 
-    If an indexing key matches a known Option exactly, it will be
-    returned as expected. If there is no exact match but a Style has a
-    more specific name (i.e. there is an arbitrary prefix before the
-    supplied key) then this matched object will be returned
-    instead. This simple mechanism allows a hierarchy of option
-    classes of different generality.
+    For example supplying 'Example_View' as a style would match
+    these styles (if they are defined):
+
+    'View' : Opts(a=1, b=2)
+    'Example_View': Opts(b=3)
+
+    The resulting Opts object inherits a=1 from 'Options' and b=3
+    from 'Example_Options'.
     """
+
+
     def __init__(self, name, opt_type):
-
         if not issubclass(opt_type, Opts):
             raise Exception("The opt_type needs to be a subclass of Opts.")
         self.name = name
@@ -115,7 +119,25 @@ class OptionMap(object):
         self.__dict__['_items'] = {}
 
 
-    def fuzzy_matches(self, name):
+    def __call__(self, obj):
+        if not hasattr(obj, 'style'):
+            raise Exception('Supplied object requires style attribute.')
+        elif isinstance(obj.style, list):
+            return self.opt_type()
+
+        name = obj.style
+        matches = sorted((len(key), style) for key, style in self._items.items()
+                         if name.endswith(key))
+        if matches == []:
+            return self.opt_type()
+        else:
+            base_match = matches[0][1]
+            for _, match in matches[1:]:
+                base_match = base_match(**match.items)
+            return base_match
+
+
+    def fuzzy_match_keys(self, name):
         reversed_matches = sorted((len(key), key) for key in self._items.keys()
                                   if name.endswith(key))[::-1]
         if reversed_matches:
@@ -124,18 +146,9 @@ class OptionMap(object):
             return []
 
 
-    def fuzzy_match_style(self, name):
-        matches = sorted((len(key), style) for key, style in self._items.items()
-                         if name.endswith(key))[::-1]
-        if matches == []:
-            return self.opt_type()
-        else:
-            return matches[0][1]
-
-
     def options(self):
         """
-        The full list of base Style objects in the OptionMap, excluding
+        The full list of base Style objects in the Options, excluding
         options customized per object.
         """
         return [k for k in self.keys() if not k.startswith('Custom')]
@@ -151,24 +164,21 @@ class OptionMap(object):
 
     def __getattr__(self, name):
         """
-        Provide attribute access for the options in the OptionMap.
+        Provide attribute access for the Opts in the Options.
         """
         keys = self.__dict__['_items'].keys()
         if name in keys:
             return self[name]
         raise AttributeError(name)
 
+
     def __getitem__(self, obj):
         """
         Fuzzy matching allows a more specific key to be matched
         against a general style entry that has a common suffix.
         """
-        if isinstance(obj, str):
-            return self.fuzzy_match_style(obj)
-        elif hasattr(obj, 'style') and not isinstance(obj.style, list):
-            return self.fuzzy_match_style(obj.style)
-        else:
-            return Opts()
+        return self._items[obj]
+
 
     def __repr__(self):
         return "<OptionMap containing %d options>" % len(self._items)
@@ -194,7 +204,6 @@ class OptionMap(object):
 
 
     def set(self, key, value):
-
         if not self._settable:
             raise Exception("OptionMaps should be set via OptionGroup")
         if not isinstance(value, Opts):
@@ -288,6 +297,7 @@ class OptionsGroup(object):
     def keys(self):
         return sorted(list(self._keys))
 
+
     def __dir__(self):
         """
         Extend dir() to include base options in IPython tab completion.
@@ -332,12 +342,18 @@ class ChannelOpts(Opts):
 
 
 
-channels = OptionsGroup([OptionMap('definitions', ChannelOpts)])
-options = OptionsGroup([OptionMap('plotting', PlotOpts),
-                        OptionMap('style',StyleOpts)])
+channels = OptionsGroup([Options('definitions', ChannelOpts)])
+options = OptionsGroup([Options('plotting', PlotOpts),
+                        Options('style',StyleOpts)])
 
+# Default Styles
 options.Style = StyleOpts()
+options.Contours = StyleOpts(color=Cycle(['k', 'w']))
+options.SheetView = StyleOpts(cmap='gray', interpolation='nearest')
 options.Curve = StyleOpts(color=Cycle(['r', 'g', 'b']), linewidth=2)
+options.Annotation = StyleOpts()
+options.Histogram = StyleOpts(ec='k', fc='w')
+options.Table = StyleOpts()
 
 # Defining the most common style options for dataviews
 GrayNearest = StyleOpts(cmap='gray', interpolation='nearest')

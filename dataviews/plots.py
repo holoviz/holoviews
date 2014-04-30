@@ -243,7 +243,8 @@ class ContourPlot(Plot):
         lines = self._stack.top
         title = None if self.zorder > 0 else self._format_title(lines)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
-        line_segments = LineCollection(lines.data, zorder=self.zorder, **options.style[lines][cyclic_index])
+        line_segments = LineCollection(lines.data, zorder=self.zorder,
+                                       **options.style(lines)[cyclic_index])
         self.handles['line_segments'] = line_segments
         ax.add_collection(line_segments)
         if axis is None: plt.close(self.handles['fig'])
@@ -336,7 +337,7 @@ class AnnotationPlot(Plot):
         axis, return a list of handles.
         """
         handles = []
-        opts = options.style[annotation].opts
+        opts = options.style(annotation).opts
         color = opts.get('color', 'k')
 
         for spec in annotation.data:
@@ -421,7 +422,8 @@ class PointPlot(Plot):
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
         scatterplot = plt.scatter(points.data[:, 0], points.data[:, 1],
-                                  zorder=self.zorder, **options.style[points][cyclic_index])
+                                  zorder=self.zorder,
+                                  **options.style(points)[cyclic_index])
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -462,7 +464,7 @@ class SheetViewPlot(Plot):
         title = None if self.zorder > 0 else self._format_title(sheetview)
         ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
 
-        opts = options.style[sheetview][cyclic_index]
+        opts = options.style(sheetview)[cyclic_index]
         if sheetview.depth != 1:
             opts.pop('cmap', None)
 
@@ -579,7 +581,7 @@ class SheetPlot(Plot):
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
             plotype = viewmap[stack.type]
-            plot = plotype(stack, **dict(options.plotting[stack].opts, zorder=zorder))
+            plot = plotype(stack, zorder=zorder, **options.plotting(stack).opts)
 
             plot(ax, cyclic_index=cyclic_index)
             self.plots.append(plot)
@@ -695,7 +697,7 @@ class LayoutPlot(Plot):
                 ax.set_axis_off()
                 continue
             # Customize plotopts depending on position.
-            plotopts = options.plotting[view].opts
+            plotopts = options.plotting(view.top).opts
             # Options common for any subplot
             subplot_opts = dict(show_title=False, main=self.layout.main)
             override_opts = {}
@@ -968,10 +970,10 @@ class CoordinateGridPlot(Plot):
                 w, h = self._get_dims(view)
                 if view.type == SheetOverlay:
                     data = view.top[-1].data if self.situate else view.top[-1].roi.data
-                    opts = options.style[view.top[0]].opts
+                    opts = options.style(view).opts
                 else:
                     data = view.top.data if self.situate else view.top.roi.data
-                    opts = options.style[view.top].opts
+                    opts = options.style(view).opts
 
                 self.handles['projs'].append(plt.imshow(data, extent=(x,x+w, y, y+h), **opts))
                 y += h + b_h
@@ -1226,7 +1228,7 @@ class CurvePlot(Plot):
 
         # Create line segments and apply style
         line_segments = LineCollection(lines.data, zorder=self.zorder,
-                                       **options.style[lines][cyclic_index])
+                                       **options.style(lines)[cyclic_index])
 
         # Add legend
         line_segments.set_label(lines.legend_label)
@@ -1502,7 +1504,7 @@ class HistogramPlot(Plot):
         self.ax = self._axis(axis, **ax_settings)
 
         # Plot bars and make any adjustments
-        style = options.style[hist][cyclic_index]
+        style = options.style(hist)[cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(-1, bars, lims) # Indexing top
 
@@ -1636,8 +1638,8 @@ class SideHistogramPlot(HistogramPlot):
         settings.
         """
         offset = self.offset * lims[3] * (1-self.offset)
-        main_style = options.style[self.main].opts
-        individually = options.plotting[self.main].opts.get('normalize_individually', False)
+        main_style = options.style(self.main).opts
+        individually = options.plotting(self.main).opts.get('normalize_individually', False)
 
         if isinstance(self.main, Stack):
             main_range = self.main.values()[n].range if individually else self.main.range

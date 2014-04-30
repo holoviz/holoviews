@@ -40,13 +40,16 @@ class View(param.Parameterized):
         this view. If a style name is not set and but a label is
         assigned, then the closest existing style name is returned.
         """
-        if (self._style is None) and self.label:
-            matches = options.fuzzy_matches(self.label.replace(' ', '_'))
-            return matches[0] if matches else 'DefaultStyle'
-        elif self._style is None:
-            return 'DefaultStyle'
-        else:
+        if self._style:
             return self._style
+
+        class_name = self.__class__.__name__
+        if self.label:
+            style_str = '_'.join([self.label.replace(' ', '_'), class_name])
+            matches = options.fuzzy_matches(style_str)
+            return matches[0] if matches else class_name
+        else:
+            return class_name
 
 
     @style.setter
