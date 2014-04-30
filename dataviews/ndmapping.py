@@ -272,7 +272,7 @@ class NdIndexableMapping(param.Parameterized):
         if dimension.name in self.dimension_labels:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.dimension_labels[:]
+        dimensions = self._dimensions
         dimensions.insert(dim_pos, dimension)
 
         items = map_type()
