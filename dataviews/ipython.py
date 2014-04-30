@@ -535,6 +535,11 @@ class OptsMagic(Magics):
 
 
     @classmethod
+    def pprint_kws(cls, style):
+        return ', '.join("%s=%r" % (k,v) for (k,v) in style.items.items())
+
+
+    @classmethod
     def collect(cls, obj, attr='style'):
         """
         Given a composite view object, build a dictionary of either
@@ -684,8 +689,8 @@ class OptsMagic(Magics):
         for name in sorted(available_styles):
             padding = '&nbsp;'*(max_len - len(name))
             s += fmt % (name, padding,
-                        options.plotting[name].keywords,
-                        options.style[name].keywords)
+                        cls.pprint_kws(options.plotting(name)),
+                        cls.pprint_kws(options.style(name)))
 
         if custom_styles:
             s += '<br>Options that have been customized for the displayed view only:<br>'
@@ -694,8 +699,8 @@ class OptsMagic(Magics):
             for custom_style, custom_name in zip(custom_styles, custom_names):
                 padding = '&nbsp;'*(max_len - len(custom_name))
                 s += fmt % (custom_name, padding,
-                            options.plotting[custom_style].keywords,
-                            options.style[custom_style].keywords)
+                            cls.pprint_kws(options.plotting(custom_style)),
+                            cls.pprint_kws(options.style(custom_style)))
         return s
 
 
@@ -761,8 +766,8 @@ class OptsMagic(Magics):
                 options[prefix+name] = StyleOpts(**style_kws)
 
             if verbose:
-                plotstr = '[%s]' % options.plotting[name].keywords if name in options.plotting else ''
-                stylestr = options.style[name].keywords if name in options.style else ''
+                plotstr = '[%s]' % cls.pprint_kws(options.plotting[name]) if name in options.plotting else ''
+                stylestr = cls.pprint_kws(options.style[name]) if name in options.style else ''
                 strs.append((name+':', plotstr, stylestr))
                 lens = [max(len(name)+1, lens[0]),
                         max(len(plotstr), lens[1]),

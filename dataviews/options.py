@@ -83,12 +83,8 @@ class Opts(object):
 
 
     def __repr__(self):
-        return "%s(%s)" % (self.__class__.__name__, self.keywords)
-
-
-    @property
-    def keywords(self):
-        return ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items())
+        kws = ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items())
+        return "%s(%s)" % (self.__class__.__name__,  kws)
 
 
 
