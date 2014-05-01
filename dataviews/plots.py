@@ -35,6 +35,9 @@ class Plot(param.Parameterized):
     size = param.NumericTuple(default=(5, 5), doc="""
       The matplotlib figure size in inches.""")
 
+    show_frame = param.Boolean(default=True, doc="""
+      Whether or not to show a complete frame around the plot.""")
+
     show_grid = param.Boolean(default=False, doc="""
       Whether to show a Cartesian grid on the plot.""")
 
@@ -118,30 +121,33 @@ class Plot(param.Parameterized):
         if xlabel: axis.set_xlabel(xlabel)
         if ylabel: axis.set_ylabel(ylabel)
 
+        disabled_spines = []
         if self.show_xaxis is not None:
             if self.show_xaxis == 'top':
-                axis.spines['bottom'].set_visible(False)
-                axis.xaxis.tick_top()
+                axis.xaxis.set_ticks_position("top")
                 axis.xaxis.set_label_position("top")
             elif self.show_xaxis == 'bottom':
-                axis.spines['top'].set_visible(False)
-                axis.xaxis.tick_bottom()
+                axis.xaxis.set_ticks_position("bottom")
         else:
             axis.xaxis.set_visible(False)
+            disabled_spines.extend(['top', 'bottom'])
 
         if self.show_yaxis is not None:
             if self.show_yaxis == 'left':
-                axis.spines['right'].set_visible(False)
-                axis.yaxis.tick_left()
+                axis.yaxis.set_ticks_position("left")
             elif self.show_yaxis == 'right':
-                axis.spines['left'].set_visible(False)
-                axis.yaxis.tick_right()
+                axis.yaxis.set_ticks_position("right")
                 axis.yaxis.set_label_position("right")
         else:
             axis.yaxis.set_visible(False)
+            disabled_spines.extend(['left', 'right'])
 
-        if not any([self.show_xaxis, self.show_yaxis]):
-            axis.set_frame_on(False)
+        for pos in disabled_spines:
+            axis.spines[pos].set_visible(False)
+
+        if not self.show_frame:
+            axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
+            axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
 
         if lbrt is not None:
             (l, b, r, t) = lbrt
@@ -1103,6 +1109,9 @@ class CurvePlot(Plot):
 
     relative_labels = param.Boolean(default=False)
 
+    show_frame = param.Boolean(default=False, doc="""
+       Disabled by default for clarity.""")
+
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
@@ -1268,7 +1277,9 @@ class DataGridPlot(Plot):
         x, y = zip(*grid.keys())
         self.rows, self.cols = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
+        extra_opts = options.plotting(self.grid).opts
         super(DataGridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
+                                           show_frame=False,
                                            **dict(kwargs, **extra_opts))
 
 
@@ -1451,6 +1462,9 @@ class HistogramPlot(Plot):
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'])
 
+    show_frame = param.Boolean(default=False, doc="""
+       Disabled by default for clarity.""")
+
     _stack_type = DataStack
 
     def __init__(self, curves, zorder=0, **kwargs):
@@ -1594,7 +1608,6 @@ class SideHistogramPlot(HistogramPlot):
 
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
-
 
     def _process_hist(self, hist):
         """
