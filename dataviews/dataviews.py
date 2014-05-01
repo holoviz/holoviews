@@ -13,7 +13,7 @@ def find_minmax(lims, olims):
     """
 
     limzip = zip(list(lims), list(olims), [np.min, np.max])
-    return tuple([fn([l, ol]) for l, ol, fn in limzip])
+    return tuple([float(fn([l, ol])) for l, ol, fn in limzip])
 
 
 
@@ -62,13 +62,11 @@ class Curve(DataLayer):
     def __init__(self, data, **kwargs):
         super(Curve, self).__init__(np.array(data), **kwargs)
 
+
     @property
     def xlim(self):
         x_vals = self.data[:, 0]
-        x_min = min(x_vals)
-        x_max = max(x_vals)
-        return (0 if x_min > 0 else float(x_min),
-                self.cyclic_range if self.cyclic_range else float(x_max))
+        return (min(x_vals), self.cyclic_range if self.cyclic_range else float(max(x_vals)))
 
 
     @property
@@ -497,6 +495,29 @@ class Stack(NdMapping):
         else:                 return GridLayout(stacks)
 
 
+    @property
+    def xlim(self):
+        xlim = self.top.xlim
+        for data in self.values():
+            xlim = find_minmax(xlim, data.xlim)
+        return xlim
+
+
+    @property
+    def ylim(self):
+        ylim = self.top.ylim
+        for data in self.values():
+            ylim = find_minmax(ylim, data.ylim)
+        return ylim
+
+
+    @property
+    def lbrt(self):
+        l, r = self.xlim
+        b, t = self.ylim
+        return float(l), float(b), float(r), float(t)
+
+
 
 class DataStack(Stack):
     """
@@ -508,27 +529,6 @@ class DataStack(Stack):
     data_type = (DataLayer, Annotation)
 
     overlay_type = DataOverlay
-
-    @property
-    def xlim(self):
-        xlim = self.top.xlim
-        for data in self.values():
-            xlim = find_minmax(xlim, data.xlim)
-        return xlim
-
-    @property
-    def ylim(self):
-        ylim = self.top.ylim
-        for data in self.values():
-            ylim = find_minmax(ylim, data.ylim)
-        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
-        return ylim
-
-    @property
-    def lbrt(self):
-        l, r = self.xlim
-        b, t = self.ylim
-        return float(l), float(b), float(r), float(t)
 
     @property
     def xlabel(self):

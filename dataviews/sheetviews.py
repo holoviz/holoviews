@@ -67,6 +67,18 @@ class SheetLayer(View):
                             roi_bounds=roi_bounds)
 
 
+    @property
+    def xlim(self):
+        l, _, r, _ = self.bounds.lbrt()
+        return (l, r)
+
+
+    @property
+    def ylim(self):
+        _, b, _, t = self.bounds.lbrt()
+        return (b, t)
+
+
 
 class SheetOverlay(SheetLayer, Overlay):
     """
@@ -633,6 +645,24 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         clones = tuple(self.clone(els, **kwargs)
                        for (i, els) in enumerate(item_groups))
         return clones if len(clones) > 1 else clones[0]
+
+
+    @property
+    def xlim(self):
+        xlim = self.values()[-1].xlim
+        for data in self.values():
+            xlim = find_minmax(xlim, data.xlim)
+        return xlim
+
+
+    @property
+    def ylim(self):
+        ylim = self.values()[-1].ylim
+        for data in self.values():
+            ylim = find_minmax(ylim, data.ylim)
+        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
+        return ylim
+
 
 
 class DataGrid(CoordinateGrid):

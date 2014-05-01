@@ -146,6 +146,7 @@ class Plot(param.Parameterized):
         if lbrt is not None:
             (l, b, r, t) = lbrt
             axis.set_xlim((l, r))
+            if b == t: t += 1. # Arbitrary y-extent if zero range
             axis.set_ylim((b, t))
 
         if self.aspect == 'square':
