@@ -251,7 +251,7 @@ class NdIndexableMapping(param.Parameterized):
         reindexed_items = map_type(
             (k, v) for (k, v) in zip(keys, self._data.values()))
         reduced_dims = set(self.dimension_labels).difference(dimension_labels)
-        dimensions = dict([d for d in self._dimensions if d.name not in reduced_dims])
+        dimensions = [d for d in self._dimensions if d.name not in reduced_dims]
 
         if len(set(keys)) != len(keys):
             raise Exception("Given dimension labels not sufficient to address all values uniquely")
@@ -345,6 +345,8 @@ class NdIndexableMapping(param.Parameterized):
         Allows indexing in the indexed dimensions, passing any additional
         indices to the data elements.
         """
+        if key in [Ellipsis, ()]:
+            return self
         map_slice, data_slice = self._split_index(key)
         return self._dataslice(self._data[map_slice], data_slice)
 
