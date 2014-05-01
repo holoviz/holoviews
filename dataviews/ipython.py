@@ -415,7 +415,9 @@ class OptsMagic(Magics):
                 # Style options checks
                 style_opts = plottype.style_opts
                 mismatched_opts = set(style_kws.keys()) - set(style_opts)
-                if mismatched_opts:
+                if style_opts == [] and mismatched_opts:
+                    errmsg += 'No styles accepted by %s. <br>' % plottype.name
+                elif mismatched_opts:
                     spacing = '<br><br>' if errmsg else ''
                     info = (spacing,
                             ', '.join('<b>%r</b>' % el for el in mismatched_opts),
