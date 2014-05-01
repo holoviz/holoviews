@@ -1053,8 +1053,9 @@ class DataPlot(Plot):
         super(DataPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None, **kwargs):
-        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, self._stack.lbrt)
+    def __call__(self, axis=None, lbrt=None, **kwargs):
+        lbrt = self._stack.lbrt if lbrt is None else lbrt
+        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, lbrt)
 
         stacks = self._stack.split()
         style_groups = dict((k, enumerate(list(v))) for k,v
@@ -1070,7 +1071,7 @@ class DataPlot(Plot):
                            show_grid=self.show_grid, zorder=zorder, **kwargs)
             plot.aspect = self.aspect
 
-            lbrt= None if stack.type == Annotation else self._stack.lbrt
+            lbrt = None if stack.type == Annotation else lbrt
             plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
             self.plots.append(plot)
 
@@ -1245,6 +1246,9 @@ class DataGridPlot(Plot):
     object.
     """
 
+    joint_axes = param.Boolean(default=True, doc="""
+     Share axes between all elements in the DataGrid.""")
+
     show_legend = param.Boolean(default=False, doc="""
       Legends add to much clutter in a grid and are disabled by default.""")
 
@@ -1265,13 +1269,18 @@ class DataGridPlot(Plot):
         self.rows, self.cols = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         super(DataGridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
-                                           **kwargs)
+                                           **dict(kwargs, **extra_opts))
 
 
     def __call__(self, axis=None):
         ax = self._axis(axis)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
+
+        # Get the lbrt of the grid elements (not the whole grid)
+        l, r = self.grid.xlim
+        b, t = self.grid.ylim
+        lbrt = (l, b, r, t) if self.joint_axes else None
 
         self.subplots = []
         r, c = (self.rows-1, 0)
@@ -1285,7 +1294,7 @@ class DataGridPlot(Plot):
                                          show_yaxis=self.show_yaxis,
                                          show_title=self.show_title)
             self.subplots.append(subplot)
-            subplot(subax)
+            subplot(subax, lbrt=lbrt)
             if c != self.cols-1:
                 c += 1
             else:

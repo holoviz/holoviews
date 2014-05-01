@@ -356,5 +356,10 @@ options.Annotation = StyleOpts()
 options.Histogram = StyleOpts(ec='k', fc='w')
 options.Table = StyleOpts()
 
+
+# Default Plotopts
+options.CoordinateGrid = PlotOpts()
+options.DataGrid = PlotOpts()
+
 # Defining the most common style options for dataviews
 GrayNearest = StyleOpts(cmap='gray', interpolation='nearest')
