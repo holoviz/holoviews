@@ -516,6 +516,19 @@ class GridLayout(NdMapping):
         return self.clone(self.values()+new_values)
 
 
+    @property
+    def top(self):
+        """
+        The top of a GridLayout is another GridLayout constituted of
+        the top of the individual elements (if they are stacks).
+        """
+
+        top_items = [(k, v.clone(items=(v.keys()[-1], v.top)))
+                     if isinstance(v, NdMapping) else v
+                     for (k, v) in self.items()]
+        return self.clone(top_items)
+
+
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v,type) and
                     (issubclass(_v, NdMapping) or issubclass(_v, View))]))
