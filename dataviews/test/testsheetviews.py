@@ -18,4 +18,4 @@ class TestSheetView(unittest.TestCase):
 
 if __name__ == "__main__":
     import nose
-    nose.runmodule()
+    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])
