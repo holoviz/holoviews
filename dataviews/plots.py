@@ -704,7 +704,7 @@ class LayoutPlot(Plot):
                 ax.set_axis_off()
                 continue
             # Customize plotopts depending on position.
-            plotopts = options.plotting(view.top).opts
+            plotopts = options.plotting(view).opts
             # Options common for any subplot
             subplot_opts = dict(show_title=False, main=self.layout.main)
             override_opts = {}
