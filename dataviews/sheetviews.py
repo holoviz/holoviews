@@ -546,8 +546,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         Subclassed to provide bounds checking.
         """
         if not self.bounds.contains(*coords):
-            self.warning('Specified coordinate is outside grid bounds,'
-                         ' data could not be added')
+            self.warning('Specified coordinate %s is outside grid bounds %s' % (coords, self.lbrt))
         self._item_check(coords, data)
         coords = self._transform_indices(coords)
         super(CoordinateGrid, self)._add_item(coords, data, sort=sort)
