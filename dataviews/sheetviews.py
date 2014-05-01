@@ -535,6 +535,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         (dim1, dim2) = shape
         xdensity = dim1 / (r-l) if (r-l) else 1
         ydensity = dim2 / (t-b) if (t-b) else 1
+        self._style = None
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         super(CoordinateGrid, self).__init__(initial_items, **kwargs)
@@ -662,6 +663,26 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
             ylim = find_minmax(ylim, data.ylim)
         if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
         return ylim
+
+
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view. If a style name is not set and but a label is
+        assigned, then the closest existing style name is returned.
+        """
+        if self._style:
+            return self._style
+
+        class_name = self.__class__.__name__
+        matches = options.fuzzy_match_keys(class_name)
+        return matches[0] if matches else class_name
+
+
+    @style.setter
+    def style(self, val):
+        self._style = val
 
 
 
