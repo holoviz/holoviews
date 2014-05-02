@@ -1514,7 +1514,7 @@ class HistogramPlot(Plot):
         """
         self.cyclic = False if hist.cyclic_range is None else True
         edges = hist.edges[:-1]
-        hist_vals = np.array(hist.hist[:])
+        hist_vals = np.array(hist.values[:])
         widths = np.diff(hist.edges)
         xlims = hist.xlim if self.rescale_individually else self._stack.xlim
         lims = xlims + hist.ylim

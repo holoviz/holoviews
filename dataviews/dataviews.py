@@ -107,22 +107,19 @@ class Histogram(DataLayer):
        Cyclic-range should be set when the bins are sampling a cyclic
        quantity.""")
 
-    def __init__(self, hist, edges, **kwargs):
-        if len(hist) != len(edges):
-            Exception("Histogram requires inclusive edges to be defined.")
-        self.hist, self.edges = self._process_data(hist, edges)
-
-        super(Histogram, self).__init__(None, **kwargs)
+    def __init__(self, values, edges, **kwargs):
+        self.values, self.edges = self._process_data(values, edges)
+        super(Histogram, self).__init__((self.values, self.edges), **kwargs)
 
 
-    def _process_data(self, hist, edges):
+    def _process_data(self, values, edges):
         """
         Ensure that edges are specified as left and right edges of the
         histogram bins rather than bin centers.
         """
-        hist = np.array(hist)
+        values = np.array(values)
         edges = np.array(edges, dtype=np.float)
-        if len(edges) == len(hist):
+        if len(edges) == len(values):
             widths = list(set(np.diff(edges)))
             if len(widths) == 1:
                 width = widths[0]
@@ -130,12 +127,13 @@ class Histogram(DataLayer):
                 raise Exception('Centered bins have to be of equal width.')
             edges -= width/2.
             edges = np.concatenate([edges, [edges[-1]+width]])
-        return hist, edges
+        return values, edges
 
 
     @property
     def ndims(self):
         return len(self.edges)-1
+
 
     @property
     def xlim(self):
@@ -144,9 +142,10 @@ class Histogram(DataLayer):
         else:
             return (min(self.edges), max(self.edges))
 
+
     @property
     def ylim(self):
-        return (min(self.hist), max(self.hist))
+        return (min(self.values), max(self.values))
 
 
 
