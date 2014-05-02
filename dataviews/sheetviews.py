@@ -35,25 +35,18 @@ class SheetLayer(View):
 
     def __mul__(self, other):
 
-        if isinstance(other, Annotation):
-            return SheetOverlay([self, other],
-                                self.bounds,
-                                roi_bounds=self.roi_bounds,
-                                metadata=self.metadata)
-        elif isinstance(other, SheetStack):
+        if isinstance(other, SheetStack):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
-        elif isinstance(self, SheetOverlay):
-            if isinstance(other, SheetOverlay):
-                overlays = self.data + other.data
-            else:
-                overlays = self.data + [other]
-        elif isinstance(other, SheetOverlay):
-            overlays = [self] + other.data
-        elif isinstance(other, SheetLayer):
-            overlays = [self, other]
-        else:
-            raise TypeError('Can only create an overlay of SheetLayers.')
+
+        self_layers = self.data if isinstance(self, SheetOverlay) else [self]
+        other_layers = other.data if isinstance(other, SheetOverlay) else [other]
+        combined_layers = self_layers + other_layers
+
+        if isinstance(other, Annotation):
+            return SheetOverlay(combined_layers, self.bounds,
+                                roi_bounds=self.roi_bounds,
+                                metadata=self.metadata)
 
         if self.bounds is None:
             self.bounds = other.bounds
@@ -62,7 +55,7 @@ class SheetLayer(View):
 
         roi_bounds = self.roi_bounds if self.roi_bounds else other.roi_bounds
         roi_bounds = self.bounds if roi_bounds is None else roi_bounds
-        return SheetOverlay(overlays, self.bounds,
+        return SheetOverlay(combined_layers, self.bounds,
                             metadata=self.metadata,
                             roi_bounds=roi_bounds)
 
