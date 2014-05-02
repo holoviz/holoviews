@@ -294,7 +294,8 @@ class Points(SheetLayer):
     """
 
 
-    def __init__(self, data, bounds, **kwargs):
+    def __init__(self, data, bounds=None, **kwargs):
+        bounds = bounds if bounds else BoundingBox()
         data = np.array([[], []]).T if data is None else data
         super(Points, self).__init__(data, bounds, **kwargs)
 
@@ -335,7 +336,8 @@ class Contours(SheetLayer):
     array corresponds to an X,Y coordinate.
     """
 
-    def __init__(self, data, bounds, **kwargs):
+    def __init__(self, data, bounds=None, **kwargs):
+        bounds = bounds if bounds else BoundingBox()
         data = [] if data is None else data
         super(Contours, self).__init__(data, bounds, **kwargs)
 
