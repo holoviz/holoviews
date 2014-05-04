@@ -126,7 +126,7 @@ class NdIndexableMapping(param.Parameterized):
 
     @property
     def dim_dict(self):
-        return dict([(d.name, d) for d in self._dimensions])
+        return OrderedDict([(d.name, d) for d in self._dimensions])
 
 
     @property
