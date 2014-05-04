@@ -229,17 +229,14 @@ class NdIndexableMapping(param.Parameterized):
         created object as the new labels must be sufficient to address each
         value uniquely.
         """
-        if dimension_labels in self.dimension_labels:
-            indices = [self.dim_index(dimension_labels)]
-            dimension_labels = [dimension_labels]
-        else:
-            indices = [self.dim_index(el) for el in dimension_labels]
+
+        indices = [self.dim_index(el) for el in dimension_labels]
 
         keys = [tuple(k[i] for i in indices) for k in self._data.keys()]
         reindexed_items = map_type(
             (k, v) for (k, v) in zip(keys, self._data.values()))
         reduced_dims = set(self.dimension_labels).difference(dimension_labels)
-        dimensions = [d for d in self._dimensions if d.name not in reduced_dims]
+        dimensions = [self.dim_dict[d] for d in dimension_labels if d not in reduced_dims]
 
         if len(set(keys)) != len(keys):
             raise Exception("Given dimension labels not sufficient to address all values uniquely")
