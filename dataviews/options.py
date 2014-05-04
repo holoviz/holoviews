@@ -127,7 +127,7 @@ class Options(object):
 
         if isinstance(obj, str):
             name = obj
-        elif isinstance(obj.style, list):
+        elif isinstance(obj.style, list) or  (obj.style is None):
             return self.opt_type()
         else:
             name = obj.style
