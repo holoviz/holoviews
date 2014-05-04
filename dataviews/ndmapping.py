@@ -43,7 +43,7 @@ class Dimension(param.Parameterized):
 
     unit = param.String(default=None, doc="Unit string associated with the Dimension.")
 
-    format_string = param.String(default="{name} = {val}")
+    format_string = param.String(default="{name} = {val}{unit}")
 
     def __init__(self, name, **params):
         """
@@ -65,9 +65,13 @@ class Dimension(param.Parameterized):
         """
 
         unit = '' if self.unit is None else ' ' + self.unit
+        try: # Try formatting numeric types as floats with rounding
+            val=round(float(value), rounding)
+        except:
+            val = value
+
         return self.format_string.format(name=self.name.capitalize(),
-                                         val=round(float(value), rounding),
-                                         unit=unit)
+                                         val=val, unit=unit)
 
 
 
