@@ -159,22 +159,6 @@ class NdIndexableMapping(param.Parameterized):
         return kwargs, metadata
 
 
-    @property
-    def timestamp(self):
-        """
-        Looks for the latest timestamp along the indexed dimensions, if 'Time'
-        is one of the dimension labels, otherwise looks in the metadata or
-        returns None, if none is defined.
-        """
-        if 'Time' in self.dimension_labels:
-            return max([k[self.dim_index('Time')] if type(k) is tuple
-                        else k for k in self.keys()])
-        elif 'timestamp' in self.metadata:
-            return self.metadata.timestamp
-        else:
-            return None
-
-
     def _item_check(self, dim_vals, data):
         """
         Applies checks to individual data elements before they are inserted

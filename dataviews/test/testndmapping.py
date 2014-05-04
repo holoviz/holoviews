@@ -67,12 +67,6 @@ class NdIndexableMappingTest(unittest.TestCase):
         idxmap = NdIndexableMapping(dimensions=dims)
         self.assertEqual(idxmap.ndims, len(dims))
 
-    def test_idxmapping_timestamp(self):
-        idxmap = NdIndexableMapping(self.init_item_odict,
-                                    dimensions=[self.dim1, self.dim2],
-                                    timestamp=0.0)
-        self.assertEqual(idxmap.metadata.timestamp, 0.0)
-
     def test_idxmapping_data_type_check(self):
         NdIndexableMapping(self.init_item_odict, data_type=str,
                            dimensions=[self.dim1, self.dim2])
