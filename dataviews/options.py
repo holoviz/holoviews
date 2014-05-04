@@ -355,6 +355,7 @@ options.Curve = StyleOpts(color=Cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k']), line
 options.Annotation = StyleOpts()
 options.Histogram = StyleOpts(ec='k', fc='w')
 options.Table = StyleOpts()
+options.Points = StyleOpts(color='r', marker='x')
 
 
 # Default Plotopts
