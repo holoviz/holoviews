@@ -372,8 +372,9 @@ class NdIndexableMapping(param.Parameterized):
         return repr(self)
 
 
-    def dim_max(self, dim):
-        return np.max([k[self.dim_index(dim)] for k in self.keys()])
+    def dim_range(self, dim):
+        dim_values = [k[self.dim_index(dim)] for k in self._data.keys()]
+        return np.min(dim_values), np.max(dim_values)
 
 
     @property
