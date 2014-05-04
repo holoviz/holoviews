@@ -277,6 +277,9 @@ class NdIndexableMapping(param.Parameterized):
         settings = dict(self.get_param_values(), **kwargs)
         return self.__class__(initial_items=items, **settings)
 
+    def copy(self):
+        return self.clone(self.items())
+
 
     def dframe(self, value_label='data'):
         try:
