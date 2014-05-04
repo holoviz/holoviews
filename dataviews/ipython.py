@@ -739,7 +739,9 @@ def stack_display(stack, size=256):
     if magic_info: return magic_info
     opts = dict(options.plotting(stack).opts, size=get_plot_size())
     stackplot = viewmap[stack.type](stack, **opts)
-    if len(stackplot) == 1:
+    if len(stackplot) == 0:
+        return repr(stack)
+    elif len(stackplot) == 1:
         fig = stackplot()
         return figure_display(fig)
 
