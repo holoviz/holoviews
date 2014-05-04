@@ -449,10 +449,10 @@ class Stack(NdMapping):
 
         cyclic_range = x_dim.range[1] if x_dim.cyclic else None
 
-        stacks = []
+        dataviews = []
         for sample_ind, sample in enumerate(self._compute_samples(samples)):
-            stack = DataStack(dimensions=stack_dims, metadata=self.metadata,
-                              title=self.title)
+            dataview = DataStack(dimensions=stack_dims, metadata=self.metadata,
+                                 title=self.title) if stack_dims else None
             for key, x_axis_data in split_data.items():
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
                 sampled_curve_data = [(x, self._get_sample(view, sample))
@@ -477,21 +477,30 @@ class Stack(NdMapping):
                               legend_label=legend_label, xlabel=xlabel,
                               ylabel=ylabel)
 
+
+                # Return contains no stacks
+                if not stack_dims:
+                    if dataview is None:
+                        dataview = curve
+                    else:
+                        dataview *= curve
+                    continue
+
                 # Drop overlay dimensions
                 stack_key = tuple([kval for ind, kval in enumerate(key)
                                    if ind not in overlay_inds])
 
                 # Create new overlay if necessary, otherwise add to overlay
-                if stack_key not in stack:
-                    stack[stack_key] = DataOverlay([curve])
+                if stack_key not in dataview._data.keys():
+                    dataview[stack_key] = DataOverlay([curve])
                 else:
-                    stack[stack_key] *= curve
+                    dataview[stack_key] *= curve
 
             # Completed stack stored for return
-            stacks.append(stack)
+            dataviews.append(dataview)
 
-        if len(stacks) == 1:  return stacks[0]
-        else:                 return GridLayout(stacks)
+        if len(dataviews) == 1:  return dataviews[0]
+        else:                    return GridLayout(dataviews)
 
 
     @property
