@@ -1070,11 +1070,13 @@ class DataPlot(Plot):
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
 
+            plotopts = options.plotting[stack].opts
             plotype = viewmap[stack.type]
             plot = plotype(stack, size=self.size,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
-                           show_grid=self.show_grid, zorder=zorder, **kwargs)
+                           show_grid=self.show_grid, zorder=zorder,
+                           **dict(plotopts, **kwargs))
             plot.aspect = self.aspect
 
             lbrt = None if stack.type == Annotation else lbrt
