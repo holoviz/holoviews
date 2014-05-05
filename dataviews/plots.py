@@ -68,8 +68,9 @@ class Plot(param.Parameterized):
 
     _stack_type = Stack
 
-    def __init__(self, **kwargs):
+    def __init__(self, zorder=0, **kwargs):
         super(Plot, self).__init__(**kwargs)
+        self.zorder = zorder
         # List of handles to matplotlib objects for animation update
         self.handles = {'fig':None}
 
@@ -113,6 +114,10 @@ class Plot(param.Parameterized):
             fig.set_size_inches(list(self.size))
             axis = fig.add_subplot(111)
             axis.set_aspect('auto')
+
+        # First plot layer determines axis settings
+        if self.zorder != 0:
+            return axis
 
         if self.show_grid:
             axis.get_xaxis().grid(True)
@@ -241,9 +246,8 @@ class ContourPlot(Plot):
     _stack_type = SheetStack
 
     def __init__(self, contours, zorder=0, **kwargs):
-        self.zorder = zorder
         self._stack = self._check_stack(contours, Contours)
-        super(ContourPlot, self).__init__(**kwargs)
+        super(ContourPlot, self).__init__(zorder, **kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0):
@@ -285,11 +289,10 @@ class AnnotationPlot(Plot):
      additional text options.""")
 
     def __init__(self, annotation, zorder=0, **kwargs):
-        self.zorder = zorder
         self._annotation = annotation
         self._stack = self._check_stack(annotation, Annotation)
         self._warn_invalid_intervals(self._stack)
-        super(AnnotationPlot, self).__init__(**kwargs)
+        super(AnnotationPlot, self).__init__(zorder, **kwargs)
         self.handles['annotations'] = []
 
         line_only = ['linewidth', 'linestyle']
@@ -393,7 +396,7 @@ class AnnotationPlot(Plot):
         return axis
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
         annotation = self._stack.values()[n]
         key = self._stack.keys()[n]
@@ -418,9 +421,8 @@ class PointPlot(Plot):
     _stack_type = SheetStack
 
     def __init__(self, contours, zorder=0, **kwargs):
-        self.zorder = zorder
         self._stack = self._check_stack(contours, Points)
-        super(PointPlot, self).__init__(**kwargs)
+        super(PointPlot, self).__init__(zorder, **kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0):
@@ -428,9 +430,10 @@ class PointPlot(Plot):
         title = None if self.zorder > 0 else self._format_title(points)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
-        scatterplot = plt.scatter(points.data[:, 0], points.data[:, 1],
-                                  zorder=self.zorder,
-                                  **options.style(points)[cyclic_index])
+        scatterplot = ax.scatter(points.data[:, 0], points.data[:, 1],
+                                 zorder=self.zorder,
+                                 **options.style(points)[cyclic_index])
+        ax.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -460,9 +463,8 @@ class SheetViewPlot(Plot):
     _stack_type = SheetStack
 
     def __init__(self, sheetview, zorder=0, **kwargs):
-        self.zorder = zorder
         self._stack = self._check_stack(sheetview, SheetView)
-        super(SheetViewPlot, self).__init__(**kwargs)
+        super(SheetViewPlot, self).__init__(zorder, **kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0):
@@ -518,7 +520,6 @@ class SheetPlot(Plot):
         self._stack = self._collapse_channels(stack)
         self.plots = []
         super(SheetPlot, self).__init__(**kwargs)
-
 
 
     def _collapse(self, overlay, pattern, fn, style_key):
@@ -959,16 +960,13 @@ class CoordinateGridPlot(Plot):
 
 
     def __call__(self, axis=None):
-        ax = self._axis(axis, '', '','', None)
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
-
         grid_shape = [[v for (k,v) in col[1]] for col in groupby(self.grid.items(),
                                                                  lambda (k,v): k[0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
-        plt.xlim(0, width)
-        plt.ylim(0, height)
+        ax = self._axis(axis, lbrt=(0, 0, width, height))
+        ax.get_xaxis().set_visible(False)
+        ax.get_yaxis().set_visible(False)
 
         self.handles['projs'] = []
         x, y = b_w, b_h
@@ -982,7 +980,7 @@ class CoordinateGridPlot(Plot):
                     data = view.last.data if self.situate else view.last.roi.data
                     opts = options.style(view).opts
 
-                self.handles['projs'].append(plt.imshow(data, extent=(x,x+w, y, y+h), **opts))
+                self.handles['projs'].append(ax.imshow(data, extent=(x,x+w, y, y+h), **opts))
                 y += h + b_h
             y = b_h
             x += w + b_w
@@ -1056,12 +1054,13 @@ class DataPlot(Plot):
     def __init__(self, overlays, **kwargs):
         self._stack = self._check_stack(overlays, DataOverlay)
         self.plots = []
+        self.rescale = False
         super(DataPlot, self).__init__(**kwargs)
 
 
     def __call__(self, axis=None, lbrt=None, **kwargs):
-        lbrt = self._stack.lbrt if lbrt is None else lbrt
-        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel, lbrt)
+
+        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel)
 
         stacks = self._stack.split()
         style_groups = dict((k, enumerate(list(v))) for k,v
@@ -1069,8 +1068,12 @@ class DataPlot(Plot):
 
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
-
             plotopts = options.plotting(stack).opts
+
+            if zorder == 0:
+                self.rescale = plotopts.get('rescale_individually', False)
+                lbrt = self._stack.last.lbrt if self.rescale else self._stack.lbrt
+
             plotype = viewmap[stack.type]
             plot = plotype(stack, size=self.size,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
@@ -1089,8 +1092,10 @@ class DataPlot(Plot):
 
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
-        for plot in self.plots:
-            plot.update_frame(n)
+        for zorder, plot in enumerate(self.plots):
+            if zorder == 0:
+                lbrt = self._stack.values()[n].lbrt if self.rescale else self._stack.lbrt
+            plot.update_frame(n, lbrt)
 
 
 class CurvePlot(Plot):
@@ -1111,6 +1116,8 @@ class CurvePlot(Plot):
 
     relative_labels = param.Boolean(default=False)
 
+    rescale_individually = param.Boolean(default=False)
+
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")
 
@@ -1125,11 +1132,11 @@ class CurvePlot(Plot):
     _stack_type = DataStack
 
     def __init__(self, curves, zorder=0, **kwargs):
-        self.zorder = zorder
         self._stack = self._check_stack(curves, Curve)
         self.cyclic_range = self._stack.last.cyclic_range
+        self.ax = None
 
-        super(CurvePlot, self).__init__(**kwargs)
+        super(CurvePlot, self).__init__(zorder, **kwargs)
 
 
     def _format_x_tick_label(self, x):
@@ -1216,37 +1223,42 @@ class CurvePlot(Plot):
             xticks = self._reduce_ticks(xvals)
 
         if lbrt is None:
-            lbrt = curveview.lbrt
+            lbrt = curveview.lbrt if self.rescale_individually else self._stack.lbrt
 
-        ax = self._axis(axis, self._format_title(curveview), curveview.xlabel,
-                        curveview.ylabel, xticks=xticks, lbrt=lbrt)
+        self.ax = self._axis(axis, self._format_title(curveview), curveview.xlabel,
+                             curveview.ylabel, xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
-        line_segment = plt.plot(curveview.data[:, 0], curveview.data[:, 1],
-                                zorder=self.zorder, label=curveview.legend_label,
-                                **options.style(curveview)[cyclic_index])[0]
+        line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
+                                    zorder=self.zorder, label=curveview.legend_label,
+                                    **options.style(curveview)[cyclic_index])[0]
 
         self.handles['line_segment'] = line_segment
 
         # If legend enabled update handles and labels
-        handles, labels = ax.get_legend_handles_labels()
+        handles, labels = self.ax.get_legend_handles_labels()
         if len(handles) and self.show_legend:
             fontP = FontProperties()
             fontP.set_size('small')
-            leg = ax.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
             leg.get_frame().set_alpha(0.5)
 
         if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        return self.ax if axis else self.handles['fig']
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
         curveview = self._stack.values()[n]
+        if lbrt is None:
+            lbrt = curveview.lbrt if self.rescale_individually else self._stack.lbrt
+
         if self.cyclic_range is not None:
             self._cyclic_curves(curveview)
         self.handles['line_segment'].set_xdata(curveview.data[:, 0])
         self.handles['line_segment'].set_ydata(curveview.data[:, 1])
+
+        self._axis(self.ax, lbrt=lbrt)
         self._update_title(curveview)
         plt.draw()
 
@@ -1270,7 +1282,6 @@ class DataGridPlot(Plot):
      style options but DataGridPlot itself does not.""")
 
     def __init__(self, grid, **kwargs):
-
         if not isinstance(grid, DataGrid):
             raise Exception("DataGridPlot only accepts DataGrids.")
 
@@ -1365,9 +1376,8 @@ class TablePlot(Plot):
     _stack_type = TableStack
 
     def __init__(self, tables, zorder=0, **kwargs):
-        self.zorder = zorder
         self._stack = self._check_stack(tables, Table)
-        super(TablePlot, self).__init__(**kwargs)
+        super(TablePlot, self).__init__(zorder, **kwargs)
 
 
     def pprint_value(self, value):
@@ -1470,23 +1480,18 @@ class HistogramPlot(Plot):
     _stack_type = DataStack
 
     def __init__(self, curves, zorder=0, **kwargs):
-        self.zorder = zorder
         self.center = False
         self.cyclic = False
         self.cyclic_index = 0
         self.ax = None
 
         self._stack = self._check_stack(curves, Histogram)
-        super(HistogramPlot, self).__init__(**kwargs)
+        super(HistogramPlot, self).__init__(zorder, **kwargs)
 
         if self.orientation == 'vertical':
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
-            self.offset_linefn = plt.axvline
-            self.plotfn = plt.barh
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
-            self.offset_linefn = plt.axhline
-            self.plotfn = plt.bar
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -1494,12 +1499,19 @@ class HistogramPlot(Plot):
         self.cyclic_index = cyclic_index
 
         # Get plot ranges and values
-        edges, hvals, widths, lims = self._process_hist(hist)
+        edges, hvals, widths, lims = self._process_hist(hist, lbrt)
 
         # Process and apply axis settings
         ticks = self._compute_ticks(edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
         self.ax = self._axis(axis, **ax_settings)
+
+        if self.orientation == 'vertical':
+            self.offset_linefn = self.ax.axvline
+            self.plotfn = self.ax.barh
+        else:
+            self.offset_linefn = self.ax.axhline
+            self.plotfn = self.ax.bar
 
         # Plot bars and make any adjustments
         style = options.style(hist)[cyclic_index]
@@ -1510,7 +1522,7 @@ class HistogramPlot(Plot):
         return self.ax if axis else self.handles['fig']
 
 
-    def _process_hist(self, hist):
+    def _process_hist(self, hist, lbrt=None):
         """
         Get data from histogram, including bin_ranges and values.
         """
@@ -1518,8 +1530,14 @@ class HistogramPlot(Plot):
         edges = hist.edges[:-1]
         hist_vals = np.array(hist.values[:])
         widths = np.diff(hist.edges)
-        xlims = hist.xlim if self.rescale_individually else self._stack.xlim
-        lims = xlims + hist.ylim
+        if lbrt is None:
+            xlims = hist.xlim if self.rescale_individually else self._stack.xlim
+            ylims = hist.ylim
+        else:
+            l, b, r, t = lbrt
+            xlims = (l, r)
+            ylims = (b, t)
+        lims = xlims + ylims
         return edges, hist_vals, widths, lims
 
 
@@ -1583,7 +1601,7 @@ class HistogramPlot(Plot):
         plt.draw()
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         """
         Update the plot for an animation.
         """
@@ -1591,7 +1609,7 @@ class HistogramPlot(Plot):
         hist = self._stack.values()[n]
 
         # Process values, axes and style
-        edges, hvals, widths, lims = self._process_hist(hist)
+        edges, hvals, widths, lims = self._process_hist(hist, lbrt)
 
         ticks = self._compute_ticks(edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -1612,11 +1630,11 @@ class SideHistogramPlot(HistogramPlot):
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
 
-    def _process_hist(self, hist):
+    def _process_hist(self, hist, lbrt):
         """
         Subclassed to offset histogram by defined amount.
         """
-        edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist)
+        edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist, lbrt)
         offset = self.offset * lims[3]
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
