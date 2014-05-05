@@ -366,11 +366,19 @@ class NdIndexableMapping(param.Parameterized):
 
 
     @property
-    def top(self):
+    def last(self):
         """"
         Returns the item highest data item along the map dimensions.
         """
-        return self._data.values()[-1] if len(self.keys()) > 0 else None
+        return self._data.values()[-1] if len(self) else None
+
+
+    @property
+    def last_key(self):
+        """"
+        Returns the last key.
+        """
+        return self.keys()[-1] if len(self) else None
 
 
     def dim_index(self, dimension_label):

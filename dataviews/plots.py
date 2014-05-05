@@ -247,7 +247,7 @@ class ContourPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0):
-        lines = self._stack.top
+        lines = self._stack.last
         title = None if self.zorder > 0 else self._format_title(lines)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
         line_segments = LineCollection(lines.data, zorder=self.zorder,
@@ -388,7 +388,7 @@ class AnnotationPlot(Plot):
             raise Exception("Annotations can only be plotted as part of overlays.")
 
         self.handles['axis'] = axis
-        handles = self._draw_annotations(self._stack.top, axis, self._stack.keys()[-1])
+        handles = self._draw_annotations(self._stack.last, axis, self._stack.keys()[-1])
         self.handles['annotations'] = handles
         return axis
 
@@ -424,7 +424,7 @@ class PointPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0):
-        points = self._stack.top
+        points = self._stack.last
         title = None if self.zorder > 0 else self._format_title(points)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
@@ -466,7 +466,7 @@ class SheetViewPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0):
-        sheetview = self._stack.top
+        sheetview = self._stack.last
         (l, b, r, t) = self._stack.bounds.lbrt()
         title = None if self.zorder > 0 else self._format_title(sheetview)
         ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
@@ -976,10 +976,10 @@ class CoordinateGridPlot(Plot):
             for view in row:
                 w, h = self._get_dims(view)
                 if view.type == SheetOverlay:
-                    data = view.top[-1].data if self.situate else view.top[-1].roi.data
+                    data = view.last[-1].data if self.situate else view.last[-1].roi.data
                     opts = options.style(view).opts
                 else:
-                    data = view.top.data if self.situate else view.top.roi.data
+                    data = view.last.data if self.situate else view.last.roi.data
                     opts = options.style(view).opts
 
                 self.handles['projs'].append(plt.imshow(data, extent=(x,x+w, y, y+h), **opts))
@@ -1127,7 +1127,7 @@ class CurvePlot(Plot):
     def __init__(self, curves, zorder=0, **kwargs):
         self.zorder = zorder
         self._stack = self._check_stack(curves, Curve)
-        self.cyclic_range = self._stack.top.cyclic_range
+        self.cyclic_range = self._stack.last.cyclic_range
 
         super(CurvePlot, self).__init__(**kwargs)
 
@@ -1203,7 +1203,7 @@ class CurvePlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        curveview = self._stack.top
+        curveview = self._stack.last
 
         # Create xticks and reorder data if cyclic
         xvals = curveview.data[:, 0]
@@ -1388,7 +1388,7 @@ class TablePlot(Plot):
 
 
     def __call__(self, axis=None):
-        tableview = self._stack.top
+        tableview = self._stack.last
 
         ax = self._axis(axis, self._format_title(tableview))
 
@@ -1490,7 +1490,7 @@ class HistogramPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        hist = self._stack.top
+        hist = self._stack.last
         self.cyclic_index = cyclic_index
 
         # Get plot ranges and values

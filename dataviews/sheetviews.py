@@ -393,7 +393,7 @@ class SheetStack(Stack):
         May be overridden to compute transformation from sheetcoordinates to matrix
         coordinates in single pass as an optimization.
         """
-        return [tuple(self.top.sheet2matrixidx(*s)) for s in samples]
+        return [tuple(self.last.sheet2matrixidx(*s)) for s in samples]
 
 
     def _get_sample(self, view, sample):
@@ -421,10 +421,10 @@ class SheetStack(Stack):
         using the lbrt argument, which expresses the subsampling in sheet
         coordinates. The usual sampling semantics apply.
         """
-        dim1, dim2 = self.top.shape
+        dim1, dim2 = self.last.shape
         if lbrt is None:
-            l, t = self.top.matrixidx2sheet(0, 0)
-            r, b = self.top.matrixidx2sheet(dim1-1, dim2-1)
+            l, t = self.last.matrixidx2sheet(0, 0)
+            r, b = self.last.matrixidx2sheet(dim1-1, dim2-1)
         else:
             l, b, r, t = lbrt
         x, y = np.meshgrid(np.linspace(l, r, cols),
@@ -486,7 +486,7 @@ class SheetStack(Stack):
 
     @property
     def range(self):
-        range = self.top.range
+        range = self.last.range
         for view in self._data.values():
             range = find_minmax(range, view.range)
         return range
@@ -593,23 +593,23 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
     def __mul__(self, other):
         if isinstance(other, SheetStack) and len(other) == 1:
-            other = other.top
+            other = other.last
         overlayed_items = [(k, el * other) for k, el in self.items()]
         return self.clone(overlayed_items)
 
 
     @property
-    def top(self):
+    def last(self):
         """
-        The top of a ProjectionGrid is another ProjectionGrid
-        constituted of the top of the individual elements. To access
+        The last of a ProjectionGrid is another ProjectionGrid
+        constituted of the last of the individual elements. To access
         the elements by their X,Y position, either index the position
         directly or use the items() method.
         """
 
-        top_items = [(k, v.clone(items=(v.keys()[-1], v.top)))
+        last_items = [(k, v.clone(items=(v.keys()[-1], v.last)))
                      for (k, v) in self.items()]
-        return self.clone(top_items)
+        return self.clone(last_items)
 
 
     def __len__(self):

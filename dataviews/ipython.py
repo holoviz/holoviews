@@ -313,7 +313,7 @@ class OptsMagic(Magics):
             for val in values:
                 group.update({val:obj.type})
         elif isinstance(obj, Stack):
-            for subview in obj.top:
+            for subview in obj.last:
                 group.update(cls.collect(subview, attr))
         else:
             value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)

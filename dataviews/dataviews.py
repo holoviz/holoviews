@@ -210,7 +210,7 @@ class Stack(NdMapping):
         The type of elements stored in the stack.
         """
         if self._type is None:
-            self._type = None if len(self) == 0 else self.top.__class__
+            self._type = None if len(self) == 0 else self.last.__class__
         return self._type
 
 
@@ -220,7 +220,7 @@ class Stack(NdMapping):
         The type of elements stored in the stack.
         """
         if self._style is None:
-            self._style = None if len(self) == 0 else self.top.style
+            self._style = None if len(self) == 0 else self.last.style
         return self._style
 
 
@@ -505,7 +505,7 @@ class Stack(NdMapping):
 
     @property
     def xlim(self):
-        xlim = self.top.xlim
+        xlim = self.last.xlim
         for data in self.values():
             xlim = find_minmax(xlim, data.xlim)
         return xlim
@@ -513,7 +513,7 @@ class Stack(NdMapping):
 
     @property
     def ylim(self):
-        ylim = self.top.ylim
+        ylim = self.last.ylim
         for data in self.values():
             ylim = find_minmax(ylim, data.ylim)
         return ylim
@@ -540,11 +540,11 @@ class DataStack(Stack):
 
     @property
     def xlabel(self):
-        return self.top.xlabel
+        return self.last.xlabel
 
     @property
     def ylabel(self):
-        return self.metadata.ylabel if hasattr(self.metadata, 'ylabel') else self.top.ylabel
+        return self.metadata.ylabel if hasattr(self.metadata, 'ylabel') else self.last.ylabel
 
 
 

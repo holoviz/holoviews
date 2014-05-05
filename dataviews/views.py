@@ -316,7 +316,14 @@ class Layout(param.Parameterized):
         if len(views) > 3:
             raise Exception('Layout accepts no more than three elements.')
 
-        self.data = dict(zip(self.layout_order, views))
+        if isinstance(views, dict):
+            wrong_pos = [k for k in views if k not in self.layout_order]
+            if wrong_pos:
+                raise Exception('Wrong Layout positions provided.')
+            else:
+                self.data = views
+        elif isinstance(views, list):
+            self.data = dict(zip(self.layout_order, views))
         super(Layout, self).__init__(**params)
 
 
@@ -367,6 +374,11 @@ class Layout(param.Parameterized):
     def top(self):
         return self.data['top']
 
+    @property
+    def last(self):
+        items = [(k, v.last) if isinstance(v, NdMapping) else (k, v)
+                 for k, v in self.data.items()]
+        return self.__class__(items)
 
     def __iter__(self):
         i = 0
@@ -517,16 +529,21 @@ class GridLayout(NdMapping):
 
 
     @property
-    def top(self):
+    def last(self):
         """
-        The top of a GridLayout is another GridLayout constituted of
-        the top of the individual elements (if they are stacks).
+        Returns another GridLayout constituted of the last views of the
+        individual elements (if they are stacks).
         """
-
-        top_items = [(k, v.clone(items=(v.keys()[-1], v.top)))
-                     if isinstance(v, NdMapping) else v
-                     for (k, v) in self.items()]
-        return self.clone(top_items)
+        last_items = []
+        for (k, v) in self.items():
+            if isinstance(v, NdMapping):
+                item = (k, v.clone((v.last_key, v.last)))
+            elif isinstance(v, Layout):
+                item = (k, v.last)
+            else:
+                item = (k, v)
+            last_items.append(item)
+        return self.clone(last_items)
 
 
 
