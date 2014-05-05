@@ -378,7 +378,7 @@ class Layout(param.Parameterized):
     def last(self):
         items = [(k, v.last) if isinstance(v, NdMapping) else (k, v)
                  for k, v in self.data.items()]
-        return self.__class__(items)
+        return self.__class__(dict(items))
 
     def __iter__(self):
         i = 0
