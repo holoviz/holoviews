@@ -1070,7 +1070,7 @@ class DataPlot(Plot):
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = style_groups[stack.style].next()
 
-            plotopts = options.plotting[stack].opts
+            plotopts = options.plotting(stack).opts
             plotype = viewmap[stack.type]
             plot = plotype(stack, size=self.size,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
