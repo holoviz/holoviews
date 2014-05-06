@@ -659,7 +659,7 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
                       mime_type=mime_type)
 
 
-def HTML_video(plot, view):
+def HTML_video(plot):
     anim = plot.anim(fps=FPS)
     writers = animation.writers.avail
     for fmt in [VIDEO_FORMAT] + ANIMATION_OPTS.keys():
@@ -668,6 +668,20 @@ def HTML_video(plot, view):
                 return animate(anim, *ANIMATION_OPTS[fmt])
             except: pass
     return "<b>Could not generate %s animation</b>" % VIDEO_FORMAT
+
+
+def first_frame(plot):
+    "Only display the first frame of an animated plot"
+    return figure_display(plot[0])
+
+def middle_frame(plot):
+    "Only display the (approximately) middle frame of an animated plot"
+    middle_frame = int(len(plot) / 2)
+    return figure_display(plot[middle_frame])
+
+def last_frame(plot):
+    "Only display the last frame of an animated plot"
+    return figure_display(plot[len(plot)])
 
 
 def figure_display(fig, size=None, message=None):
