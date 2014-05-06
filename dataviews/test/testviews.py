@@ -179,5 +179,6 @@ class GridLayoutTest(CompositeTest):
 
 
 if __name__ == "__main__":
+    import sys
     import nose
     nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

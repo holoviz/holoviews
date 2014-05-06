@@ -22,8 +22,8 @@ class DimensionTest(unittest.TestCase):
 
     def test_dimension_pprint(self):
         dim = Dimension('Test dimension', cyclic=True, type=float, unit='Twilight zones')
-        self.assertEqual(dim.pprint_value(3.2345), 'Test dimension = 3.23')
-        self.assertEqual(dim.pprint_value(4.2345, rounding=3), 'Test dimension = 4.234')
+        self.assertEqual(dim.pprint_value(3.2345), 'Test dimension = 3.23 Twilight zones')
+        self.assertEqual(dim.pprint_value(4.2345, rounding=3),  'Test dimension = 4.234 Twilight zones')
 
 
 class NdIndexableMappingTest(unittest.TestCase):
@@ -131,5 +131,6 @@ class NdIndexableMappingTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    import sys
     import nose
     nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

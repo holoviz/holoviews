@@ -100,7 +100,7 @@ class SheetComparisonTest(SheetViewTestCase):
             self.assertEqual(self.sv1, self.sv2)
             raise AssertionError("Array mismatch not detected")
         except AssertionError as e:
-            assert e.message.startswith('\nArrays are not almost equal to 6 decimals')
+            assert e.message.startswith('SheetView: \nArrays are not almost equal to 6 decimals')
 
     def test_bounds_mismatch(self):
         try:
@@ -116,13 +116,13 @@ class SheetOverlayComparisonTest(SheetOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay4_depth3)
         except AssertionError as e:
-            assert e.message.startswith("Overlays have different lengths.")
+            assert e.message.startswith("SheetOverlays have different lengths.")
 
     def test_element_mismatch(self):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            assert e.message.startswith('\nArrays are not almost equal to 6 decimals')
+            assert e.message.startswith('SheetView: \nArrays are not almost equal to 6 decimals')
 
     def test_bounds_mismatch(self):
         try:
@@ -175,7 +175,7 @@ class StackComparisonTest(StackTestCase):
             self.assertEqual(self.stack1_1D, self.stack4_1D)
             raise AssertionError("Element mismatch in array data not detected.")
         except AssertionError as e:
-            assert e.message.startswith('\nArrays are not almost equal to 6 decimals')
+            assert e.message.startswith('SheetView: \nArrays are not almost equal to 6 decimals')
 
 
     def test_overlay_mismatch(self):
@@ -183,9 +183,10 @@ class StackComparisonTest(StackTestCase):
             self.assertEqual(self.stack7_1D, self.stack8_1D)
             raise AssertionError("Overlay element mismatch in array data not detected.")
         except AssertionError as e:
-            assert e.message.startswith('\nArrays are not almost equal to 6 decimals')
+            assert e.message.startswith('SheetView: \nArrays are not almost equal to 6 decimals')
 
 
 if __name__ == "__main__":
+    import sys
     import nose
     nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])
