@@ -364,15 +364,15 @@ class Layout(param.Parameterized):
 
     @property
     def main(self):
-        return self.data['main']
+        return self.data.get('main', None)
 
     @property
     def right(self):
-        return self.data['right']
+        return self.data.get('right', None)
 
     @property
     def top(self):
-        return self.data['top']
+        return self.data.get('top', None)
 
     @property
     def last(self):
