@@ -748,8 +748,9 @@ def stack_display(stack, size=256):
         fig = stackplot()
         return figure_display(fig)
 
-    try:    return HTML_video(stackplot, stack)
+    try:    return render_anim(stackplot)
     except: return figure_fallback(stackplot)
+
 
 @display_hook
 def layout_display(grid, size=256):
@@ -766,7 +767,7 @@ def layout_display(grid, size=256):
         fig =  gridplot()
         return figure_display(fig)
 
-    try:     return HTML_video(gridplot, grid)
+    try:     return render_anim(gridplot)
     except:  return figure_fallback(gridplot)
 
 @display_hook
@@ -783,7 +784,7 @@ def projection_display(grid, size=256):
         fig =  gridplot()
         return figure_display(fig)
 
-    try:     return HTML_video(gridplot, grid)
+    try:     return render_anim(gridplot)
     except:  return figure_fallback(gridplot)
 
 @display_hook
@@ -820,6 +821,11 @@ message += '\nAvailable magics: %s' % ', '.join(all_line_magics + all_cell_magic
 
 _loaded = False
 VIDEO_FORMAT = select_format(['webm','h264','gif'])
+
+# HTML_video output by default, but may be set to first_frame,
+# middle_frame or last_frame (e.g. for testing purposes)
+
+render_anim = HTML_video
 
 def load_ipython_extension(ip, verbose=True):
 
