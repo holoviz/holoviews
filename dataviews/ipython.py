@@ -705,25 +705,14 @@ def process_view_magics(obj):
     invalid_channels = ChannelMagic.set_channels(obj)
     if invalid_channels: return invalid_channels
 
-
-HOOK_OPTIONS = ['display_tracebacks']
-CAPTURED = {'view':   None, 'display':None}
-
 def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
-        global CAPTURED
-        if 'view' in HOOK_OPTIONS:
-            CAPTURED['view'] = view
         try:
             retval = fn(view, **kwargs)
         except:
-            if 'display_tracebacks' in HOOK_OPTIONS:
+            if ENABLE_TRACEBACKS:
                 traceback.print_exc()
-            return
-
-        if 'display' in HOOK_OPTIONS:
-            CAPTURED['display'] = retval
         return retval
     return wrapped
 
