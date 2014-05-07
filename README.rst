@@ -1,8 +1,7 @@
 DataViews
 =========
 
-**Composable, declarative data structures for building complex
- visualizations.**
+**Composable, declarative data structures for building complex visualizations.**
 
 To obtain DataViews, run::
 
