@@ -56,9 +56,10 @@ Limitations
 import sys, os, pickle,  shutil, time, zipfile
 from StringIO import StringIO
 
+import IPython
 from IPython import get_ipython
-from IPython.nbformat import current
 from IPython.display import clear_output
+from IPython.nbformat import current
 
 from utils import IPTestCase
 from dataviews import ipython
@@ -136,8 +137,8 @@ class Capture(object):
             info = (self.counter['code'], self.code_cell_count,
                     ' reference ' if self.reference else ' ', self.name)
             pprinter.text("[Code cell %d/%d] Captured%sdata from '%s' notebook" % info)
-            clear_output(stdout=True, stderr=True, other=True)
             self.display_data = None
+            clear_output()
         return capture_hook
 
 
@@ -152,7 +153,7 @@ class Capture(object):
             info = (self.counter['code'], self.code_cell_count,
                     ' reference ' if self.reference else ' ', self.name)
             pprinter.text("[%d/%d] Captured%sdisplay from '%s' notebook" % info)
-            clear_output(stdout=True, stderr=True, other=True)
+            clear_output()
         return capture_hook
 
 
@@ -164,13 +165,17 @@ class Capture(object):
         plain_formatter = self.shell.display_formatter.formatters['text/plain']
         plain_printers = dict((tp, self.empty_hook(tp))
                               for (tp,h) in plain_formatter.type_printers.items())
+        for tp, hook in plain_printers.items():
+            plain_formatter.for_type(tp, hook)
         # Transfer custom HTML hooks over to plain/text hooks for views
         html_formatter = self.shell.display_formatter.formatters['text/html']
         html_printers = dict((tp, self.html_hook(h))
                              for (tp,h) in html_formatter.type_printers.items())
-        # Set the combined set of patched hooks on text/plain (html only works in notebook)
-        replacement_hooks = dict(plain_printers, **html_printers)
-        self.shell.display_formatter.formatters['text/plain'].type_printers = replacement_hooks
+
+        # Set the combined set of patched hooks on text/plain (html notebook only)
+        for tp, hook in html_printers.items():
+            plain_formatter.for_type(tp, hook)
+
         # Attempt to capture anything that is of type object...
         plain_formatter.for_type(object, self.empty_hook(object))
 
@@ -189,7 +194,11 @@ class NBRunner(object):
 
         self.code_cells = self.get_code_cells(nb)
         self.capture = Capture(shell, name, reference, len(self.code_cells))
-        self.shell.register_post_execute(self.capture.post_execute)
+        if IPython.version_info[0] < 2:
+            self.shell.register_post_execute(self.capture.post_execute)
+        else:
+            self.shell.events.register('post_run_cell', self.capture.post_execute)
+
 
 
     def get_code_cells(self, nb):
