@@ -56,6 +56,10 @@ Limitations
 import sys, os, pickle,  shutil, time, zipfile
 from StringIO import StringIO
 
+# Standardize backend due to random inconsistencies
+from matplotlib import pyplot
+pyplot.switch_backend('agg')
+
 import IPython
 from IPython import get_ipython
 from IPython.display import clear_output
