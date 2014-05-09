@@ -1,8 +1,10 @@
-import sys, os
-sys.path.insert(0, os.path.abspath('../..'))
-
 import unittest
 from numpy.testing import assert_array_almost_equal
+
+import sys, os
+
+cwd = os.path.abspath(os.path.split(__file__)[0])
+sys.path.insert(0, os.path.join(cwd, '..', '..'))
 
 from dataviews.views import Layout, GridLayout
 from dataviews import DataOverlay,  DataStack,  Annotation, Curve, Histogram

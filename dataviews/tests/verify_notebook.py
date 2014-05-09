@@ -60,11 +60,8 @@ from IPython import get_ipython
 from IPython.nbformat import current
 from IPython.display import clear_output
 
-sys.path.insert(0, os.path.abspath('../../'))
-sys.path.insert(0, os.path.abspath('../../../'))
-
+from utils import IPTestCase
 from dataviews import ipython
-from dataviews.test.utils import IPTestCase
 
 from nose.plugins.skip import SkipTest
 

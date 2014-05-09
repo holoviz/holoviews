@@ -1,5 +1,6 @@
 import unittest
 
+import utils # pyflakes:ignore (set sys.path)
 from dataviews.ndmapping import Dimension, NdIndexableMapping
 from collections import OrderedDict
 

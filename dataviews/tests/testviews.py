@@ -1,4 +1,6 @@
 import unittest
+
+import utils # pyflakes:ignore (set sys.path)
 from dataviews.boundingregion import BoundingBox
 from dataviews.views import View, Annotation, Layout, Overlay, GridLayout
 
