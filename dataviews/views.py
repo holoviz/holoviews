@@ -358,8 +358,10 @@ class Layout(param.Parameterized):
 
 
     def __lshift__(self, other):
-        subviews = list(other.data.values()) if isinstance(other, Layout) else [other]
-        return Layout(list(self.data.values()) + subviews)
+        if isinstance(other, Layout):
+            raise Exception("Cannot adjoin two Layout objects.")
+        views = [self.data.get(k, None) for k in self.layout_order]
+        return Layout([v for v in views if v is not None] + [other])
 
 
     @property
