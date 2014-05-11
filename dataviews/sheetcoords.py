@@ -79,7 +79,7 @@ __version__ = '$Revision$'
 
 from numpy import array,floor,ceil,round_,arange
 
-from boundingregion import BoundingBox
+from .boundingregion import BoundingBox
 
 
 

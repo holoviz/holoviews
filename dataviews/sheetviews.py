@@ -2,12 +2,12 @@ import numpy as np
 
 import param
 
-from boundingregion import BoundingBox, BoundingRegion
-from dataviews import Stack, Histogram, DataStack, find_minmax
-from ndmapping import NdMapping, Dimension
-from options import options
-from sheetcoords import SheetCoordinateSystem, Slice
-from views import View, Overlay, Annotation, GridLayout
+from .boundingregion import BoundingBox, BoundingRegion
+from .dataviews import Stack, Histogram, DataStack, find_minmax
+from .ndmapping import NdMapping, Dimension
+from .options import options
+from .sheetcoords import SheetCoordinateSystem, Slice
+from .views import View, Overlay, Annotation, GridLayout
 
 
 class SheetLayer(View):
@@ -429,13 +429,13 @@ class SheetStack(Stack):
             l, b, r, t = lbrt
         x, y = np.meshgrid(np.linspace(l, r, cols),
                            np.linspace(b, t, rows))
-        coords = zip(x.flat, y.flat)
+        coords = list(zip(x.flat, y.flat))
         shape = (rows, cols)
         bounds = BoundingBox(points=[(l, b), (r, t)])
 
         grid = self.sample(coords, **kwargs)
 
-        return DataGrid(bounds, shape, initial_items=zip(coords, grid.values()))
+        return DataGrid(bounds, shape, initial_items=list(zip(coords, grid.values())))
 
 
     def map(self, map_fn, **kwargs):
@@ -607,7 +607,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         directly or use the items() method.
         """
 
-        last_items = [(k, v.clone(items=(v.keys()[-1], v.last)))
+        last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
                      for (k, v) in self.items()]
         return self.clone(last_items)
 
@@ -644,7 +644,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
     @property
     def xlim(self):
-        xlim = self.values()[-1].xlim
+        xlim = list(self.values())[-1].xlim
         for data in self.values():
             xlim = find_minmax(xlim, data.xlim)
         return xlim
@@ -652,7 +652,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
     @property
     def ylim(self):
-        ylim = self.values()[-1].ylim
+        ylim = list(self.values())[-1].ylim
         for data in self.values():
             ylim = find_minmax(ylim, data.ylim)
         if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)

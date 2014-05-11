@@ -3,8 +3,8 @@ from collections import defaultdict
 
 import param
 
-from ndmapping import NdMapping, map_type
-from views import View, Overlay, Annotation, Layout, GridLayout
+from .ndmapping import NdMapping, map_type
+from .views import View, Overlay, Annotation, Layout, GridLayout
 
 def find_minmax(lims, olims):
     """
@@ -378,7 +378,7 @@ class Stack(NdMapping):
         self._check_key_type = False # Speed optimization
 
         x_ndim = self.dim_index(x_axis)
-        keys = self._data.keys()
+        keys = list(self._data.keys())
         x_vals, dim_values = self._split_keys_by_axis(keys, x_axis)
 
         split_data = map_type()
@@ -466,7 +466,7 @@ class Stack(NdMapping):
                 # Generate labels
                 legend_label = ', '.join(self.dim_dict[name].pprint_value(val)
                                          for name, val in overlay_items)
-                ylabel = x_axis_data.values()[0].label
+                ylabel = list(x_axis_data.values())[0].label
                 label, xlabel, ylabel = self._curve_labels(x_axis,
                                                            samples[sample_ind],
                                                            ylabel)
@@ -563,7 +563,7 @@ class Table(View):
         super(Table, self).__init__(data=data, **kwargs)
 
         # Assume OrderedDict if not a vanilla Python dict
-        self.headings = self.data.keys()
+        self.headings = list(self.data.keys())
         if type(self.data) == dict:
             self.headings = sorted(self.headings)
 

@@ -1,6 +1,6 @@
 import unittest
 
-import utils # pyflakes:ignore (set sys.path)
+from . import utils # pyflakes:ignore (set sys.path)
 from dataviews.ndmapping import Dimension, NdIndexableMapping
 try:
     from collections import OrderedDict
@@ -63,7 +63,7 @@ class NdIndexableMappingTest(unittest.TestCase):
 
     def test_idxmapping_dim_dict(self):
         idxmap = NdIndexableMapping(dimensions=[self.dim1, self.dim2])
-        dim_labels, dim_objs = zip(*idxmap.dim_dict.items())
+        dim_labels, dim_objs = list(zip(*list(idxmap.dim_dict.items())))
         self.assertEqual(dim_labels, tuple(self.dimension_labels))
         self.assertEqual(dim_objs, (self.dim1, self.dim2))
 
@@ -101,10 +101,10 @@ class NdIndexableMappingTest(unittest.TestCase):
         ndmap_list = [(0.5, ndmap1), (1.5, ndmap2)]
         nested_ndmap = NdIndexableMapping(ndmap_list, dimensions=[self.dim2])
         nested_ndmap[(0.5,)].update(dict([(0, 'c'), (1, 'd')]))
-        self.assertEquals(nested_ndmap[0.5].values(), ['c', 'd'])
+        self.assertEquals(list(nested_ndmap[0.5].values()), ['c', 'd'])
 
         nested_ndmap[1.5] = ndmap3
-        self.assertEquals(nested_ndmap[1.5].values(), ['e', 'f'])
+        self.assertEquals(list(nested_ndmap[1.5].values()), ['e', 'f'])
 
     def test_idxmapping_reindex(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
@@ -119,7 +119,7 @@ class NdIndexableMappingTest(unittest.TestCase):
         ndmap = NdIndexableMapping(self.init_items_1D_list, dimensions=[self.dim1])
         ndmap2d = ndmap.add_dimension(self.dim2, 0, 0.5)
 
-        self.assertEqual(ndmap2d.keys(), [(0.5, 1), (0.5, 5)])
+        self.assertEqual(list(ndmap2d.keys()), [(0.5, 1), (0.5, 5)])
         self.assertEqual(ndmap2d.dimensions, [self.dim2, self.dim1])
 
     def test_idxmapping_clone(self):
@@ -132,7 +132,7 @@ class NdIndexableMappingTest(unittest.TestCase):
         data = dict([(0.5, 'a'), (1.5, 'b')])
         ndmap = NdIndexableMapping(data, dimensions=[self.dim1])
 
-        self.assertEqual(ndmap.keys(), [0, 1])
+        self.assertEqual(list(ndmap.keys()), [0, 1])
 
 
 if __name__ == "__main__":

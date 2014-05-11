@@ -12,12 +12,12 @@ import matplotlib
 import param
 from param import ParamOverrides
 
-from views import Overlay
-from sheetviews import SheetView, SheetStack, SheetLayer, DataGrid
-from dataviews import DataLayer, DataStack, Stack, Table, TableStack
-from sheetviews import GridLayout, CoordinateGrid
+from .views import Overlay
+from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid
+from .dataviews import DataLayer, DataStack, Stack, Table, TableStack
+from .sheetviews import GridLayout, CoordinateGrid
 
-from options import options, GrayNearest
+from .options import options, GrayNearest
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)

@@ -11,7 +11,7 @@ import numpy as np
 try:
     from collections import OrderedDict
 except:
-    from odict import OrderedDict # pyflakes:ignore (try/except import)
+    from .odict import OrderedDict # pyflakes:ignore (try/except import)
 
 map_type = OrderedDict
 
@@ -153,9 +153,9 @@ class NdIndexableMapping(param.Parameterized):
         Acts as a param override, placing any kwargs, which are not parameters
         into the metadata dictionary.
         """
-        items = kwargs.items()
+        items = list(kwargs.items())
         if 'metadata' in kwargs:
-            items = kwargs.pop('metadata').items() + items
+            items = list(kwargs.pop('metadata').items()) + items
         metadata = AttrDict(self.metadata, **dict([(k, v) for k, v in items
                                                    if k not in self.params()]))
         for key in metadata:
@@ -278,7 +278,7 @@ class NdIndexableMapping(param.Parameterized):
         return self.__class__(initial_items=items, **settings)
 
     def copy(self):
-        return self.clone(self.items())
+        return self.clone(list(self.items()))
 
 
     def dframe(self, value_label='data'):
@@ -370,7 +370,7 @@ class NdIndexableMapping(param.Parameterized):
         """"
         Returns the item highest data item along the map dimensions.
         """
-        return self._data.values()[-1] if len(self) else None
+        return list(self._data.values())[-1] if len(self) else None
 
 
     @property
@@ -378,7 +378,7 @@ class NdIndexableMapping(param.Parameterized):
         """"
         Returns the last key.
         """
-        return self.keys()[-1] if len(self) else None
+        return list(self.keys())[-1] if len(self) else None
 
 
     def dim_index(self, dimension_label):
@@ -403,15 +403,15 @@ class NdIndexableMapping(param.Parameterized):
         if self.ndims == 1:
             return [k[0] for k in self._data.keys()]
         else:
-            return self._data.keys()
+            return list(self._data.keys())
 
 
     def values(self):
-        return self._data.values()
+        return list(self._data.values())
 
 
     def items(self):
-        return zip(self.keys(), self.values())
+        return list(zip(list(self.keys()), list(self.values())))
 
 
     def get(self, key, default=None):
@@ -432,14 +432,16 @@ class NdIndexableMapping(param.Parameterized):
     def __iter__(self):
         return self
 
+    def next(self): # For Python 2 and 3 compatibility
+        return self.__next__()
 
-    def next(self):
+    def __next__(self):
         """
         Implements the iterable interface, returning values unlike a standard
         dictionary.
         """
         if self._next_ind < len(self):
-            val = self.values()[self._next_ind]
+            val = list(self.values())[self._next_ind]
             self._next_ind += 1
             return val
         else:

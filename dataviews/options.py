@@ -11,7 +11,7 @@ displayed if they have the appropriate style name.
 try:
     from collections import OrderedDict
 except:
-    from odict import OrderedDict # pyflakes:ignore (try/except import)
+    from .odict import OrderedDict # pyflakes:ignore (try/except import)
 
 
 class Cycle(object):
@@ -57,17 +57,17 @@ class Opts(object):
 
         if not filter_cycles: return [kwargs]
 
-        filter_names, filter_values = zip(*filter_cycles)
+        filter_names, filter_values = list(zip(*filter_cycles))
         if not all(len(c)==len(filter_values[0]) for c in filter_values):
             raise Exception("Cycle objects supplied with different lengths")
 
-        cyclic_tuples = zip(*[val.elements for val in filter_values])
+        cyclic_tuples = list(zip(*[val.elements for val in filter_values]))
         return [ dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
 
 
     def keys(self):
         "The keyword names defined in the options."
-        return self.items.keys()
+        return list(self.items.keys())
 
 
     def __getitem__(self, index):
@@ -166,7 +166,7 @@ class Options(object):
         """
         Provide attribute access for the Opts in the Options.
         """
-        keys = self.__dict__['_items'].keys()
+        keys = list(self.__dict__['_items'].keys())
         if name in keys:
             return self[name]
         raise AttributeError(name)
@@ -189,14 +189,14 @@ class Options(object):
         The list of all options in the OptionMap, including options
         associated with individual view objects.
         """
-        return self._items.keys()
+        return list(self._items.keys())
 
 
     def values(self):
         """
         All the Style objects in the OptionMap.
         """
-        return self._items.values()
+        return list(self._items.values())
 
 
     def __contains__(self, k):
@@ -308,7 +308,7 @@ class OptionsGroup(object):
         """
         default_dir = dir(type(self)) + list(self.__dict__)
         names = [o.name for o in self._opttypes.values()]
-        return sorted(set(default_dir + self.keys() + names))
+        return sorted(set(default_dir + list(self.keys()) + names))
 
 
 
