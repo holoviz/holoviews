@@ -1,12 +1,19 @@
 """
 Test cases for ViewTestCase which implements view comparison.
 """
+import sys
+from nose.plugins.skip import SkipTest
+
 from utils import ViewTestCase
 from dataviews import SheetView, SheetStack
 from dataviews.boundingregion import BoundingBox
 from dataviews.ndmapping import Dimension
 
 import numpy as np
+
+if sys.version_info.major == 2 and sys.version_info.minor < 7:
+    SkipTest('assertEqual cannot be extended in '
+             'unittest.TestCase for Python < 2.7')
 
 
 class SheetViewTestCase(ViewTestCase):
