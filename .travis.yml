@@ -4,7 +4,7 @@ python:
   - "2.7"
 
 before_install:
-  - time pip install ipython jinja2 tornado pyzmq
+  - time pip install ipython==1.0 jinja2 tornado pyzmq
 
 # no dependencies
 install: true
