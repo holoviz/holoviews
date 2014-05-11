@@ -8,7 +8,10 @@ defined, allowing customization of how individual View objects are
 displayed if they have the appropriate style name.
 """
 
-from collections import OrderedDict
+try:
+    from collections import OrderedDict
+except:
+    from odict import OrderedDict # pyflakes:ignore (try/except import)
 
 
 class Cycle(object):
