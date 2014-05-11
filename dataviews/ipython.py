@@ -14,6 +14,7 @@ from param import ipython as param_ext
 from tempfile import NamedTemporaryFile
 from functools import wraps
 import traceback, itertools, string
+import base64
 
 from .dataviews import Stack
 from .plots import Plot, GridLayoutPlot, viewmap, channel_modes
@@ -654,7 +655,7 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
             anim.save(f.name, writer=writer, **anim_kwargs)
             video = open(f.name, "rb").read()
-        anim._encoded_video = video.encode("base64")
+        anim._encoded_video = base64.b64encode(video).decode("utf-8")
     return tag.format(b64=anim._encoded_video,
                       mime_type=mime_type)
 
@@ -691,7 +692,7 @@ def figure_display(fig, size=None, message=None):
 
     mime_type = 'svg+xml' if FIGURE_FORMAT.lower()=='svg' else 'png'
     prefix = 'data:image/%s;base64,' % mime_type
-    b64 = prefix + print_figure(fig, FIGURE_FORMAT).encode("base64")
+    b64 = prefix + base64.b64encode(print_figure(fig, FIGURE_FORMAT)).decode("utf-8")
     if size is not None:
         html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
     else:
