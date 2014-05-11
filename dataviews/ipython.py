@@ -723,11 +723,10 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            retval = fn(view, **kwargs)
+            return fn(view, **kwargs)
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
-        return retval
     return wrapped
 
 
