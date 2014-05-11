@@ -1,3 +1,5 @@
+|BuildStatus|_
+
 DataViews
 =========
 
@@ -21,3 +23,6 @@ ____________
 `Jean-Luc Stevens <https://github.com/jlstevens>`_
 
 `Philipp Rudiger <https://github.com/philippjfr>`_
+
+.. |BuildStatus| image:: https://travis-ci.org/ioam/dataviews.svg?branch=master
+.. _BuildStatus: https://travis-ci.org/ioam/dataviews
