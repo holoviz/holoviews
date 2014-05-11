@@ -53,7 +53,7 @@ class ViewTestCase(unittest.TestCase):
         try:
             assert_array_almost_equal(arr1, arr2)
         except AssertionError as e:
-            raise self.failureException(name+': '+e.message)
+            raise self.failureException(name+': '+str(e))
 
 
     def bounds_check(self, view1, view2):
