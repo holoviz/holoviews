@@ -264,7 +264,7 @@ class OptionsGroup(object):
         reversed_matches = sorted((len(key), key) for key in self.keys()
                                   if name.endswith(key))[::-1]
         if reversed_matches:
-            return zip(*reversed_matches)[1]
+            return list(zip(*reversed_matches))[1]
         else:
             return []
 
