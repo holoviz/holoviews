@@ -162,11 +162,11 @@ class Plot(param.Parameterized):
             if b == t: t += 1. # Arbitrary y-extent if zero range
             axis.set_ylim((b, t))
 
-        if self.aspect == 'square':
+        if self.aspect == 'square' and lbrt:
             xrange = lbrt[2] - lbrt[0]
             yrange = lbrt[3] - lbrt[1]
             axis.set_aspect(xrange/yrange)
-        elif self.aspect is not None:
+        elif self.aspect not in [None, 'square']:
             axis.set_aspect(self.aspect)
 
         if xticks:
