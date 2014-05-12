@@ -2,11 +2,14 @@ language: python
 python:
   - "2.6"
   - "2.7"
-
-before_install:
-  - time pip install ipython==1.0 jinja2 tornado pyzmq
+  - "3.3"
+  - "3.4"
 
 # no dependencies
 install: true
+
+install:   
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0 jinja2 tornado pyzmq; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython jinja2 tornado pyzmq; fi
 
 script: nosetests

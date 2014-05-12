@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import copy
 from itertools import groupby
 
@@ -12,14 +14,14 @@ import matplotlib.gridspec as gridspec
 
 import param
 
-from dataviews import NdMapping, Stack, Table, TableStack
-from dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram
-from sheetviews import SheetView, SheetOverlay, Contours, \
+from .dataviews import NdMapping, Stack, Table, TableStack
+from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram
+from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
-from views import GridLayout, Layout, Overlay, View, Annotation
+from .views import GridLayout, Layout, Overlay, View, Annotation
 
-from options import options, channels
-from operation import RGBA, HCS, AlphaOverlay
+from .options import options, channels
+from .operation import RGBA, HCS, AlphaOverlay
 
 
 class Plot(param.Parameterized):
@@ -160,11 +162,11 @@ class Plot(param.Parameterized):
             if b == t: t += 1. # Arbitrary y-extent if zero range
             axis.set_ylim((b, t))
 
-        if self.aspect == 'square':
+        if self.aspect == 'square' and lbrt:
             xrange = lbrt[2] - lbrt[0]
             yrange = lbrt[3] - lbrt[1]
             axis.set_aspect(xrange/yrange)
-        elif self.aspect is not None:
+        elif self.aspect not in [None, 'square']:
             axis.set_aspect(self.aspect)
 
         if xticks:
@@ -198,7 +200,7 @@ class Plot(param.Parameterized):
         frames may be specified as well as the fps.
         """
         figure = self()
-        frames = range(len(self))[slice(start, stop, 1)]
+        frames = list(range(len(self)))[slice(start, stop, 1)]
         anim = animation.FuncAnimation(figure, self.update_frame,
                                        frames=frames,
                                        interval = 1000.0/fps)
@@ -264,7 +266,7 @@ class ContourPlot(Plot):
 
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
-        contours = self._stack.values()[n]
+        contours = list(self._stack.values())[n]
         self.handles['line_segments'].set_paths(contours.data)
         self._update_title(contours)
         plt.draw()
@@ -391,15 +393,15 @@ class AnnotationPlot(Plot):
             raise Exception("Annotations can only be plotted as part of overlays.")
 
         self.handles['axis'] = axis
-        handles = self._draw_annotations(self._stack.last, axis, self._stack.keys()[-1])
+        handles = self._draw_annotations(self._stack.last, axis, list(self._stack.keys())[-1])
         self.handles['annotations'] = handles
         return axis
 
 
     def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
-        annotation = self._stack.values()[n]
-        key = self._stack.keys()[n]
+        annotation = list(self._stack.values())[n]
+        key = list(self._stack.keys())[n]
 
         axis = self.handles['axis']
         # Cear all existing annotations
@@ -441,7 +443,7 @@ class PointPlot(Plot):
 
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
-        points = self._stack.values()[n]
+        points = list(self._stack.values())[n]
         self.handles['scatter'].set_offsets(points.data)
         self._update_title(points)
         plt.draw()
@@ -491,7 +493,7 @@ class SheetViewPlot(Plot):
         n = n  if n < len(self) else len(self) - 1
         im = self.handles.get('im', None)
 
-        sheetview = self._stack.values()[n]
+        sheetview = list(self._stack.values())[n]
         im.set_data(sheetview.data)
 
         if self.normalize_individually:
@@ -587,7 +589,7 @@ class SheetPlot(Plot):
                             in groupby(sorted_stacks, lambda s: s.style))
 
         for zorder, stack in enumerate(stacks):
-            cyclic_index, _ = style_groups[stack.style].next()
+            cyclic_index, _ = next(style_groups[stack.style])
             plotype = viewmap[stack.type]
             plot = plotype(stack, zorder=zorder, **options.plotting(stack).opts)
 
@@ -960,8 +962,7 @@ class CoordinateGridPlot(Plot):
 
 
     def __call__(self, axis=None):
-        grid_shape = [[v for (k,v) in col[1]] for col in groupby(self.grid.items(),
-                                                                 lambda (k,v): k[0])]
+        grid_shape = [[v for (k,v) in col[1]] for col in groupby(self.grid.items(), lambda k,v: k[0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
         ax = self._axis(axis, lbrt=(0, 0, width, height))
@@ -992,7 +993,7 @@ class CoordinateGridPlot(Plot):
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
         for i, plot in enumerate(self.handles['projs']):
-            view = self.grid.values()[i].values()[n]
+            view = list(self.grid.values())[i].values()[n]
             if isinstance(view, SheetOverlay):
                 data = view[-1].data if self.situate else view[-1].roi.data
             else:
@@ -1067,7 +1068,7 @@ class DataPlot(Plot):
                             in groupby(stacks, lambda s: s.style))
 
         for zorder, stack in enumerate(stacks):
-            cyclic_index, _ = style_groups[stack.style].next()
+            cyclic_index, _ = next(style_groups[stack.style])
             plotopts = options.plotting(stack).opts
 
             if zorder == 0:
@@ -1094,7 +1095,7 @@ class DataPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         for zorder, plot in enumerate(self.plots):
             if zorder == 0:
-                lbrt = self._stack.values()[n].lbrt if self.rescale else self._stack.lbrt
+                lbrt = list(self._stack.values())[n].lbrt if self.rescale else self._stack.lbrt
             plot.update_frame(n, lbrt)
 
 
@@ -1157,7 +1158,7 @@ class CurvePlot(Plot):
     def _curve_values(self, coord, curve):
         """Return the x, y, and x ticks values for the specified curve from the curve_dict"""
         x, y = coord
-        x_values = curve.keys()
+        x_values = list(curve.keys())
         y_values = [curve[k, x, y] for k in x_values]
         self.x_values = x_values
         return x_values, y_values, x_values
@@ -1166,7 +1167,7 @@ class CurvePlot(Plot):
     def _reduce_ticks(self, x_values):
         values = [x_values[0]]
         rangex = float(x_values[-1]) - x_values[0]
-        for i in xrange(1, self.num_ticks+1):
+        for i in range(1, self.num_ticks+1):
             values.append(values[-1]+rangex/(self.num_ticks))
         return values, [self._format_x_tick_label(x) for x in values]
 
@@ -1182,7 +1183,7 @@ class CurvePlot(Plot):
             labels.append(x_values[0])
             label_step = step
         values.append(x_values[0])
-        for i in xrange(0, self.num_ticks - 1):
+        for i in range(0, self.num_ticks - 1):
             labels.append(labels[-1] + label_step)
             values.append(values[-1] + step)
         return values, [self._cyclic_format_x_tick_label(x) for x in labels]
@@ -1249,7 +1250,7 @@ class CurvePlot(Plot):
 
     def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
-        curveview = self._stack.values()[n]
+        curveview = list(self._stack.values())[n]
         if lbrt is None:
             lbrt = curveview.lbrt if self.rescale_individually else self._stack.lbrt
 
@@ -1287,7 +1288,7 @@ class DataGridPlot(Plot):
 
         self.grid = grid
         self.subplots = []
-        x, y = zip(*grid.keys())
+        x, y = list(zip(*list(grid.keys())))
         self.rows, self.cols = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         extra_opts = options.plotting(self.grid).opts
@@ -1435,7 +1436,7 @@ class TablePlot(Plot):
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
 
-        tableview = self._stack.values()[n]
+        tableview = list(self._stack.values())[n]
         table = self.handles['table']
 
         for coords, cell in table.get_celld().items():
@@ -1549,10 +1550,10 @@ class HistogramPlot(Plot):
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.num_ticks)
-            labels = ["%.0f" % np.rad2deg(x) + u'\N{DEGREE SIGN}'
+            labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}'
                       for x in xvals]
         else:
-            edge_inds = range(len(edges))
+            edge_inds = list(range(len(edges)))
             step = len(edges)/float(self.num_ticks-1)
             inds = [0] + [edge_inds[int(i*step)-1] for i in range(1, self.num_ticks)]
             xvals = [edges[i]+widths[i]/2. for i in inds]
@@ -1606,7 +1607,7 @@ class HistogramPlot(Plot):
         Update the plot for an animation.
         """
         n = n if n < len(self) else len(self) - 1
-        hist = self._stack.values()[n]
+        hist = list(self._stack.values())[n]
 
         # Process values, axes and style
         edges, hvals, widths, lims = self._process_hist(hist, lbrt)
@@ -1658,7 +1659,7 @@ class SideHistogramPlot(HistogramPlot):
         individually = options.plotting(self.main).opts.get('normalize_individually', False)
 
         if isinstance(self.main, Stack):
-            main_range = self.main.values()[n].range if individually else self.main.range
+            main_range = list(self.main.values())[n].range if individually else self.main.range
         elif isinstance(self.main, View):
             main_range = self.main.range
 

@@ -8,9 +8,9 @@ __version__='$Revision$'
 import math
 import param
 
-from ndmapping import NdMapping, Dimension, AttrDict, map_type
-from options import options
-from boundingregion import BoundingBox
+from .ndmapping import NdMapping, Dimension, AttrDict, map_type
+from .options import options
+from .boundingregion import BoundingBox
 
 
 class View(param.Parameterized):
@@ -358,8 +358,10 @@ class Layout(param.Parameterized):
 
 
     def __lshift__(self, other):
-        subviews = other.data.values() if isinstance(other, Layout) else [other]
-        return Layout(self.data.values() + subviews)
+        if isinstance(other, Layout):
+            raise Exception("Cannot adjoin two Layout objects.")
+        views = [self.data.get(k, None) for k in self.layout_order]
+        return Layout([v for v in views if v is not None] + [other])
 
 
     @property
@@ -389,7 +391,7 @@ class Layout(param.Parameterized):
 
     def __add__(self, other):
         if isinstance(other, GridLayout):
-            elements = [self] + other.values()
+            elements = [self] + list(other.values())
         else:
             elements = [self, other]
         return GridLayout(elements)
@@ -411,7 +413,7 @@ class GridLayout(NdMapping):
 
     @property
     def shape(self):
-        rows, cols = zip(*self.keys())
+        rows, cols = list(zip(*list(self.keys())))
         return max(rows)+1, max(cols)+1
 
 
@@ -421,8 +423,8 @@ class GridLayout(NdMapping):
         Compute the list of (row,column,view) elements from the
         current set of items (i.e. tuples of form ((row, column), view))
         """
-        if self.keys() == []:  return []
-        return [(r, c, v) for ((r, c), v) in zip(self.keys(), self.values())]
+        if list(self.keys()) == []:  return []
+        return [(r, c, v) for ((r, c), v) in zip(list(self.keys()), list(self.values()))]
 
 
     @property
@@ -458,7 +460,7 @@ class GridLayout(NdMapping):
         Given a mapping or iterable of additional views, extend the
         grid in scanline order, obeying max_cols (if applicable).
         """
-        values = other if isinstance(other, list) else other.values()
+        values = other if isinstance(other, list) else list(other.values())
         grid = [[]] if self.coords == [] else self._grid(self.coords)
         new_grid = grid[:-1] + ([grid[-1]+ values])
         cols = self.max_cols if cols is None else cols
@@ -524,8 +526,8 @@ class GridLayout(NdMapping):
 
 
     def __add__(self, other):
-        new_values = other.values() if isinstance(other, GridLayout) else [other]
-        return self.clone(self.values()+new_values)
+        new_values = list(other.values()) if isinstance(other, GridLayout) else [other]
+        return self.clone(list(self.values())+new_values)
 
 
     @property

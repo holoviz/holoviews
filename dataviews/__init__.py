@@ -4,10 +4,10 @@ import sys, os
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..', 'param'))
 
-from views import * # pyflakes:ignore (API import)
-from dataviews import * # pyflakes:ignore (API import)
-from sheetviews import * # pyflakes:ignore (API import)
-from ndmapping import * # pyflakes:ignore (API import)
+from .views import * # pyflakes:ignore (API import)
+from .dataviews import * # pyflakes:ignore (API import)
+from .sheetviews import * # pyflakes:ignore (API import)
+from .ndmapping import * # pyflakes:ignore (API import)
 
 
 def public(obj):

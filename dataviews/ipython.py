@@ -1,3 +1,4 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 try:    from matplotlib import animation
 except: animation = None
@@ -14,12 +15,14 @@ from param import ipython as param_ext
 from tempfile import NamedTemporaryFile
 from functools import wraps
 import traceback, itertools, string
+import base64
+import sys
 
-from dataviews import Stack
-from plots import Plot, GridLayoutPlot, viewmap, channel_modes
-from sheetviews import GridLayout, CoordinateGrid
-from views import View, Overlay, Annotation, Layout
-from options import options, channels, PlotOpts, StyleOpts, ChannelOpts
+from .dataviews import Stack
+from .plots import Plot, GridLayoutPlot, viewmap, channel_modes
+from .sheetviews import GridLayout, CoordinateGrid
+from .views import View, Overlay, Annotation, Layout
+from .options import options, channels, PlotOpts, StyleOpts, ChannelOpts
 
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
@@ -88,7 +91,7 @@ class ViewMagic(Magics):
         format_choice, fps_str = ((anim_spec, None) if (':' not in anim_spec)
                                   else anim_spec.rsplit(':'))
         if format_choice not in self.anim_formats:
-            print "Valid animations types: %s" % ', '.join(self.anim_formats)
+            print("Valid animations types: %s" % ', '.join(self.anim_formats))
             return False
         elif fps_str is None:
             VIDEO_FORMAT = format_choice
@@ -96,7 +99,7 @@ class ViewMagic(Magics):
         try:
             fps = int(fps_str)
         except:
-            print "Invalid frame rate: '%s'" %  fps_str
+            print("Invalid frame rate: '%s'" %  fps_str)
             return False
 
         VIDEO_FORMAT, FPS = format_choice, fps
@@ -111,7 +114,7 @@ class ViewMagic(Magics):
         except:  size = None
 
         if (size is None) or (size < 0):
-            print "Percentage size must be an integer larger than zero."
+            print("Percentage size must be an integer larger than zero.")
             return False
         else:
             PERCENTAGE_SIZE = size
@@ -123,7 +126,7 @@ class ViewMagic(Magics):
         fig_fmt = [('svg' in opts), ('png' in opts)]
         if all(fig_fmt):
             success = False
-            print "Please select either png or svg for static output"
+            print("Please select either png or svg for static output")
         elif True in fig_fmt:
             figure_format = ['svg', 'png'][fig_fmt.index(True)]
             FIGURE_FORMAT= figure_format
@@ -156,12 +159,12 @@ class ViewMagic(Magics):
 
         if cell is None and success:
             info = (VIDEO_FORMAT.upper(), FIGURE_FORMAT.upper(), PERCENTAGE_SIZE, FPS)
-            print "Displaying %s animation and %s figures [%d%% size, %s FPS]" % info
+            print("Displaying %s animation and %s figures [%d%% size, %s FPS]" % info)
         elif cell and success:
             self.shell.run_cell(cell)
             [FIGURE_FORMAT,  VIDEO_FORMAT, PERCENTAGE_SIZE,  FPS] = start_opts
         else:
-            print self.usage_info
+            print(self.usage_info)
 
 
 
@@ -258,9 +261,9 @@ class ChannelMagic(Magics):
             line_tail = line[len('%%channels'):]
             op_name = line_tail[::-1].rsplit('[')[1][::-1].strip().split()[-1]
             if op_name in  channel_modes:
-                return channel_modes[op_name].params().keys()
+                return list(channel_modes[op_name].params().keys())
         else:
-            return channel_modes.keys()
+            return list(channel_modes.keys())
 
 
 @magics_class
@@ -308,7 +311,7 @@ class OptsMagic(Magics):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
         elif isinstance(obj, Stack) and not issubclass(obj.type, Overlay):
-            key_lists = [cls.collect(el, attr).keys() for el in obj]
+            key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
                 group.update({val:obj.type})
@@ -363,7 +366,7 @@ class OptsMagic(Magics):
 
         # Implements the %%labels magic
         if cls.show_labels:
-            labels = cls.collect(obj, 'label').keys()
+            labels = list(cls.collect(obj, 'label').keys())
             info = (len(labels), labels.count(''))
             summary = ("%d objects inspected, %d without labels. "
                        "The set of labels found:<br><br>&emsp;" % info)
@@ -576,10 +579,10 @@ class OptsMagic(Magics):
         if not kwarg_map:
             info = (len(options.style.keys()),
                     len([k for k in options.style.keys() if k.startswith('Custom')]))
-            print "There are %d style options defined (%d custom object styles)." % info
+            print("There are %d style options defined (%d custom object styles)." % info)
             info = (len(options.plotting.keys()),
                     len([k for k in options.plotting.keys() if k.startswith('Custom')]))
-            print "There are %d plot options defined (%d custom object plot settings)." % info
+            print("There are %d plot options defined (%d custom object plot settings)." % info)
             return
 
         self._define_options(kwarg_map, verbose=verbose)
@@ -654,7 +657,7 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
             anim.save(f.name, writer=writer, **anim_kwargs)
             video = open(f.name, "rb").read()
-        anim._encoded_video = video.encode("base64")
+        anim._encoded_video = base64.b64encode(video).decode("utf-8")
     return tag.format(b64=anim._encoded_video,
                       mime_type=mime_type)
 
@@ -662,12 +665,15 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
 def HTML_video(plot):
     anim = plot.anim(fps=FPS)
     writers = animation.writers.avail
-    for fmt in [VIDEO_FORMAT] + ANIMATION_OPTS.keys():
+    for fmt in [VIDEO_FORMAT] + list(ANIMATION_OPTS.keys()):
         if ANIMATION_OPTS[fmt][0] in writers:
             try:
                 return animate(anim, *ANIMATION_OPTS[fmt])
             except: pass
-    return "<b>Could not generate %s animation</b>" % VIDEO_FORMAT
+    msg = "<b>Could not generate %s animation</b>" % VIDEO_FORMAT
+    if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+        msg = "<b>Python 3 Matplotlib animation support broken &lt;= 1.3</b>"
+    raise Exception(msg)
 
 
 def first_frame(plot):
@@ -691,7 +697,7 @@ def figure_display(fig, size=None, message=None):
 
     mime_type = 'svg+xml' if FIGURE_FORMAT.lower()=='svg' else 'png'
     prefix = 'data:image/%s;base64,' % mime_type
-    b64 = prefix + print_figure(fig, FIGURE_FORMAT).encode("base64")
+    b64 = prefix + base64.b64encode(print_figure(fig, FIGURE_FORMAT)).decode("utf-8")
     if size is not None:
         html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
     else:
@@ -700,11 +706,6 @@ def figure_display(fig, size=None, message=None):
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
-def figure_fallback(plotobj):
-        message = ('Cannot import matplotlib.animation' if animation is None
-                   else 'Failed to generate matplotlib animation')
-        fig =  plotobj()
-        return figure_display(fig, message=message)
 
 
 #===============#
@@ -723,13 +724,17 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            retval = fn(view, **kwargs)
+            return fn(view, **kwargs)
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
-        return retval
     return wrapped
 
+def render(plot):
+    try:
+        return render_anim(plot)
+    except Exception as e:
+        return str(e)+'<br/>'+figure_display(plot())
 
 @display_hook
 def animation_display(anim):
@@ -748,9 +753,7 @@ def stack_display(stack, size=256):
         fig = stackplot()
         return figure_display(fig)
 
-    try:    return render_anim(stackplot)
-    except: return figure_fallback(stackplot)
-
+    return render(stackplot)
 
 @display_hook
 def layout_display(grid, size=256):
@@ -767,8 +770,7 @@ def layout_display(grid, size=256):
         fig =  gridplot()
         return figure_display(fig)
 
-    try:     return render_anim(gridplot)
-    except:  return figure_fallback(gridplot)
+    return render(gridplot)
 
 @display_hook
 def projection_display(grid, size=256):
@@ -778,14 +780,13 @@ def projection_display(grid, size=256):
                  size_factor*grid.shape[0]*get_plot_size()[0])
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
-    opts = dict(options.plotting(grid.values()[-1]).opts, size=grid_size)
+    opts = dict(options.plotting(list(grid.values())[-1]).opts, size=grid_size)
     gridplot = viewmap[grid.__class__](grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
 
-    try:     return render_anim(gridplot)
-    except:  return figure_fallback(gridplot)
+    return render(gridplot)
 
 @display_hook
 def view_display(view, size=256):
@@ -829,13 +830,13 @@ render_anim = HTML_video
 
 def load_ipython_extension(ip, verbose=True):
 
-    if verbose: print message
+    if verbose: print(message)
 
     global _loaded
     if not _loaded:
         _loaded = True
 
-        param_ext.load_ipython_extension(ip)
+        param_ext.load_ipython_extension(ip, verbose=False)
 
         ip.register_magics(ViewMagic)
         ip.register_magics(OptsMagic)
