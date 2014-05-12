@@ -207,7 +207,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         can additionally be specified to set a common cmap when viewing
         a Stack or Overlay.
         """
-        range = find_minmax(self.range, (0, None)) if bin_range is None else bin_range
+        range = find_minmax(self.range, (0, -float('inf'))) if bin_range is None else bin_range
 
         # Avoids range issues including zero bin range and empty bins
         if range == (0, 0):
