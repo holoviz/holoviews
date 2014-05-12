@@ -835,7 +835,7 @@ def load_ipython_extension(ip, verbose=True):
     if not _loaded:
         _loaded = True
 
-        param_ext.load_ipython_extension(ip)
+        param_ext.load_ipython_extension(ip, verbose=False)
 
         ip.register_magics(ViewMagic)
         ip.register_magics(OptsMagic)
