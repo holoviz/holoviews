@@ -1,3 +1,4 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 try:    from matplotlib import animation
 except: animation = None
@@ -15,6 +16,7 @@ from tempfile import NamedTemporaryFile
 from functools import wraps
 import traceback, itertools, string
 import base64
+import sys
 
 from .dataviews import Stack
 from .plots import Plot, GridLayoutPlot, viewmap, channel_modes
@@ -668,7 +670,10 @@ def HTML_video(plot):
             try:
                 return animate(anim, *ANIMATION_OPTS[fmt])
             except: pass
-    return "<b>Could not generate %s animation</b>" % VIDEO_FORMAT
+    msg = "<b>Could not generate %s animation</b>" % VIDEO_FORMAT
+    if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+        msg = "<b>Python 3 Matplotlib animation support broken &lt;= 1.3</b>"
+    raise Exception(msg)
 
 
 def first_frame(plot):
@@ -701,11 +706,6 @@ def figure_display(fig, size=None, message=None):
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
-def figure_fallback(plotobj):
-        message = ('Cannot import matplotlib.animation' if animation is None
-                   else 'Failed to generate matplotlib animation')
-        fig =  plotobj()
-        return figure_display(fig, message=message)
 
 
 #===============#
@@ -730,6 +730,11 @@ def display_hook(fn):
                 traceback.print_exc()
     return wrapped
 
+def render(plot):
+    try:
+        return render_anim(plot)
+    except Exception as e:
+        return str(e)+'<br/>'+figure_display(plot())
 
 @display_hook
 def animation_display(anim):
@@ -748,9 +753,7 @@ def stack_display(stack, size=256):
         fig = stackplot()
         return figure_display(fig)
 
-    try:    return render_anim(stackplot)
-    except: return figure_fallback(stackplot)
-
+    return render(stackplot)
 
 @display_hook
 def layout_display(grid, size=256):
@@ -767,8 +770,7 @@ def layout_display(grid, size=256):
         fig =  gridplot()
         return figure_display(fig)
 
-    try:     return render_anim(gridplot)
-    except:  return figure_fallback(gridplot)
+    return render(gridplot)
 
 @display_hook
 def projection_display(grid, size=256):
@@ -784,8 +786,7 @@ def projection_display(grid, size=256):
         fig =  gridplot()
         return figure_display(fig)
 
-    try:     return render_anim(gridplot)
-    except:  return figure_fallback(gridplot)
+    return render(gridplot)
 
 @display_hook
 def view_display(view, size=256):
