@@ -60,7 +60,8 @@ class Curve(DataLayer):
 
 
     def __init__(self, data, **kwargs):
-        super(Curve, self).__init__(np.array(data), **kwargs)
+        data = data if isinstance(data, np.ndarray) else np.array(list(data))
+        super(Curve, self).__init__(data, **kwargs)
 
 
     @property
