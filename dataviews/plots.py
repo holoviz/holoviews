@@ -189,9 +189,9 @@ class Plot(param.Parameterized):
         """
         if frame > len(self):
             self.warn("Showing last frame available: %d" % len(self))
-        fig = self()
+        if self.handles['fig'] is None: self.handles['fig'] = self()
         self.update_frame(frame)
-        return fig
+        return self.handles['fig']
 
 
     def anim(self, start=0, stop=None, fps=30):
