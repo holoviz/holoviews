@@ -1,6 +1,5 @@
 language: python
 python:
-  - "2.6"
   - "2.7"
   - "3.3"
   - "3.4"
@@ -9,7 +8,6 @@ python:
 install: true
 
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install matplotlib ipython==1.0 jinja2 tornado pyzmq; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython jinja2 tornado pyzmq; fi
 
