@@ -8,8 +8,9 @@ python:
 install: true
 
 install:
-  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install matplotlib ipython==1.0 jinja2 tornado pyzmq; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython jinja2 tornado pyzmq; fi
+  - pip install matplotlib jinja2 tornado pyzmq
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython; fi
 
 script:
   - nosetests
