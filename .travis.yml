@@ -8,12 +8,11 @@ python:
 # no dependencies
 install: true
 
-install:   
+install:
+  - pip install matplotlib
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0 jinja2 tornado pyzmq; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython jinja2 tornado pyzmq; fi
 
 script:
   - nosetests
-  - cd doc/nbpublisher
-  - chmod +x test_notebooks.py
-  - ./test_notebooks.py
+  - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py; fi
