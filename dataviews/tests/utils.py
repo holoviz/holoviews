@@ -1,4 +1,9 @@
-import unittest
+import sys
+if sys.version_info[0] == 2 and sys.version_info[1] < 7:
+    from unittest2 import TestCase
+else:
+    from unittest import TestCase
+
 from numpy.testing import assert_array_almost_equal
 
 import sys, os
@@ -14,7 +19,7 @@ from dataviews import CoordinateGrid, DataGrid
 
 from IPython.display import HTML, SVG
 
-class ViewTestCase(unittest.TestCase):
+class ViewTestCase(TestCase):
     """
     The class implements comparisons between View objects for the
     purposes of testing. The most important attribute that needs to be

@@ -11,10 +11,6 @@ from dataviews.ndmapping import Dimension
 
 import numpy as np
 
-if sys.version_info[0] == 2 and sys.version_info[1] < 7:
-    raise SkipTest('assertEqual cannot be extended in '
-                   'unittest.TestCase for Python < 2.7')
-
 
 class SheetViewTestCase(ViewTestCase):
 
