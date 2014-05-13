@@ -360,7 +360,7 @@ class Stack(NdMapping):
         x_ndim = self.dim_index(x_axis)
         xvals = [k[x_ndim] for k in keys]
         dim_vals = [k[:x_ndim] + k[x_ndim+1:] for k in keys]
-        return list(map_type.fromkeys(xvals)), list(map_type.fromkeys(dim_vals))
+        return list(OrderedDict.fromkeys(xvals)), list(OrderedDict.fromkeys(dim_vals))
 
 
     def split_axis(self, x_axis):
