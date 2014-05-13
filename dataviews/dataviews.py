@@ -1,9 +1,9 @@
 import numpy as np
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 import param
 
-from .ndmapping import NdMapping, map_type
+from .ndmapping import NdMapping
 from .views import View, Overlay, Annotation, Layout, GridLayout
 
 def find_minmax(lims, olims):
@@ -382,10 +382,10 @@ class Stack(NdMapping):
         keys = list(self._data.keys())
         x_vals, dim_values = self._split_keys_by_axis(keys, x_axis)
 
-        split_data = map_type()
+        split_data = OrderedDict()
 
         for k in dim_values:  # The shortened keys
-            split_data[k] = map_type()
+            split_data[k] = OrderedDict()
             for x in x_vals:  # For a given x_axis value...
                               # Generate a candidate expanded key
                 expanded_key = k[:x_ndim] + (x,) + k[x_ndim:]

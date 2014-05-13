@@ -8,12 +8,7 @@ import param
 
 import numpy as np
 
-try:
-    from collections import OrderedDict
-except:
-    from .odict import OrderedDict # pyflakes:ignore (try/except import)
-
-map_type = OrderedDict
+from collections import OrderedDict
 
 
 class AttrDict(dict):
@@ -110,7 +105,7 @@ class NdIndexableMapping(param.Parameterized):
     _deep_indexable = True
 
     def __init__(self, initial_items=None, **kwargs):
-        self._data = map_type()
+        self._data = OrderedDict()
 
         kwargs, metadata = self.write_metadata(kwargs)
 
@@ -125,7 +120,7 @@ class NdIndexableMapping(param.Parameterized):
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif initial_items is not None:
-            self.update(map_type(initial_items))
+            self.update(OrderedDict(initial_items))
 
 
     @property
@@ -179,7 +174,7 @@ class NdIndexableMapping(param.Parameterized):
 
 
     def _resort(self):
-        self._data = map_type(sorted(self._data.items()))
+        self._data = OrderedDict(sorted(self._data.items()))
 
 
     def _add_item(self, dim_vals, data, sort=True):
@@ -209,7 +204,7 @@ class NdIndexableMapping(param.Parameterized):
 
     def update(self, other):
         """
-        Updates the NdMapping with another NdMapping or map_type
+        Updates the NdMapping with another NdMapping or OrderedDict
         instance, checking that they are indexed along the same number
         of dimensions.
         """
@@ -233,7 +228,7 @@ class NdIndexableMapping(param.Parameterized):
         indices = [self.dim_index(el) for el in dimension_labels]
 
         keys = [tuple(k[i] for i in indices) for k in self._data.keys()]
-        reindexed_items = map_type(
+        reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self._data.values()))
         reduced_dims = set(self.dimension_labels).difference(dimension_labels)
         dimensions = [self.dim_dict[d] for d in dimension_labels if d not in reduced_dims]
@@ -260,7 +255,7 @@ class NdIndexableMapping(param.Parameterized):
         dimensions = self._dimensions[:]
         dimensions.insert(dim_pos, dimension)
 
-        items = map_type()
+        items = OrderedDict()
         for key, val in self._data.items():
             new_key = list(key)
             new_key.insert(dim_pos, dim_val)

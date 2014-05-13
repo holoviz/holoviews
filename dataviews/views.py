@@ -6,9 +6,11 @@ systems.
 __version__='$Revision$'
 
 import math
+from collections import OrderedDict
+
 import param
 
-from .ndmapping import NdMapping, Dimension, AttrDict, map_type
+from .ndmapping import NdMapping, Dimension, AttrDict
 from .options import options
 from .boundingregion import BoundingBox
 
@@ -465,7 +467,7 @@ class GridLayout(NdMapping):
         new_grid = grid[:-1] + ([grid[-1]+ values])
         cols = self.max_cols if cols is None else cols
         reshaped_grid = self._reshape_grid(new_grid, cols)
-        self._data = map_type(self._grid_to_items(reshaped_grid))
+        self._data = OrderedDict(self._grid_to_items(reshaped_grid))
 
 
     def __call__(self, cols=None):
@@ -493,7 +495,7 @@ class GridLayout(NdMapping):
             coords.append((row, col, view))
 
         grid = self._reshape_grid(self._grid(coords), cols)
-        self._data = map_type(self._grid_to_items(grid))
+        self._data = OrderedDict(self._grid_to_items(grid))
         return self
 
 
