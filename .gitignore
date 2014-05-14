@@ -10,3 +10,5 @@
 *.o
 *.out
 *.lock
+/doc/Reference_Manual/*
+!/doc/Reference_Manual/index.rst

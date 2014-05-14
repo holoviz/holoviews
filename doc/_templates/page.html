@@ -1,0 +1,43 @@
+{% extends "!page.html" %}
+{# add our custom css and js #}
+{% set css_files = css_files + ["_static/dataviews.css"] %}
+{% set script_files = script_files + ["_static/dataviews.js"] %}
+
+{# the menu at the top #}
+{% block rootrellink %}
+<li><a href="{{ pathto('index') }}">DataViews Home</a></li>
+<li><a href="{{ pathto('Tutorials/index') }}">Tutorials</a></li>
+<li><a href="{{ pathto('Reference_Manual/index') }}">Reference Manual</a></li>
+{# display "Current section:" when in a manual subpage #}
+{% if parents %}
+<li><ul class="parents">
+{% endif %}
+
+{% endblock %}
+
+{# close the above #}
+{% block relbaritems %}
+{% if parents %}
+</ul></li>
+{% endif %}
+{% endblock %}
+
+{% block sidebarsourcelink %}
+<h3>{{ _('This Page') }}</h3>
+<ul class="this-page-menu">
+	<li><a	href="https://github.com/ioam/dataviews/edit/master/doc/{{ pagename }}.rst" rel="nofollow">Edit on GitHub</a></li>
+</ul>
+{% endblock %}
+
+{% block sidebartoc %}
+<div align="center"><h1>DataViews</h1></div>
+<ul class="global-toc">
+<li><a href="{{ pathto('index') }}">Home</a></li>
+<li><a href="{{ pathto('Tutorials/index') }}">Tutorials</a></li>
+<li><a href="{{ pathto('Reference_Manual/index') }}">Reference Manual</a></li>
+<li><a href="http://github.com/ioam/dataviews">Github Source Code</a></li>
+<li><a href="{{ pathto('site_map') }}">Site Map</a></li>
+</ul>
+<h3><a href="{{ pathto(master_doc) }}">{{ _('Table Of Contents') }}</a></h3>
+{{ toc }}
+{% endblock %}
