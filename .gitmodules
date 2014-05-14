@@ -4,9 +4,10 @@
 [submodule "doc/nbpublisher"]
 	path = doc/nbpublisher
 	url = https://github.com/ioam/ioam-builder.git
-[submodule "doc/reference_data"]
-	path = doc/reference_data
-	url = https://github.com/ioam/ioam.github.com.git
 [submodule "doc/extensions"]
 	path = doc/extensions
 	url = https://github.com/ioam/ioam-builder.git
+[submodule "doc/reference_data"]
+	path = doc/reference_data
+	url = https://github.com/ioam/ioam.github.com.git
+	branch = dataviews-data
