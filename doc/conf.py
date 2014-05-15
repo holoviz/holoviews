@@ -285,6 +285,8 @@ texinfo_documents = [
 intersphinx_mapping = {'http://docs.python.org/': None}
 
 from extensions.paramdoc import param_formatter
+from nbpublisher import nbbuild
 
 def setup(app):
 	app.connect('autodoc-process-docstring', param_formatter)
+	nbbuild.setup(app)
