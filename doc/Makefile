@@ -177,6 +177,21 @@ pseudoxml:
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
 
+publish-ipynb:
+	python ./nbpublisher/nbpublish.py dataviews
+
+buildbot-publish-ipynb:
+	python ./nbpublisher/nbpublish.py dataviews NO_PROMPT
+	@echo "Committed static notebooks to IOAM."
+
+ipynb-rst:
+	python ./nbpublisher/nbpagebuild.py
+	@echo "Created RST for documented notebooks."
+
+clean-ipynb-rst:
+	ls Tutorials/*.rst|grep -v index.rst|xargs rm -rf
+	@echo "Cleaned Notebook RST files."
+
 refmanual:
 	python ./extensions/manualgen.py dataviews
 	@echo "Build finished for reference manual."
@@ -184,3 +199,11 @@ refmanual:
 clean-refmanual:
 	- rm ./Reference_Manual/dataviews*
 	@echo "Cleaned reference manual files."
+
+clean-rst: clean-refmanual clean-ipynb-rst
+
+html-doc: clean-rst clean refmanual ipynb-rst html publish-ipynb
+
+buildbot-html-doc: clean-rst clean refmanual ipynb-rst html buildbot-publish-ipynb
+
+
