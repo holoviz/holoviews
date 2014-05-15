@@ -18,10 +18,11 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../param/'))
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath('sphinxext'))
+paths = ['../param/', '.', '..']
+for path in paths:
+    abs_path = os.path.abspath(path)
+    sys.path.insert(0, abs_path)
+    os.environ["PYTHONPATH"] = abs_path # PYTHONPATH needs to be set for runipy
 
 # -- General configuration ------------------------------------------------
 
