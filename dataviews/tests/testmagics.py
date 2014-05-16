@@ -10,11 +10,16 @@ import sys, os
 import IPython
 from .utils import IPTestCase
 
+import matplotlib
+matplotlib.use('Agg')
+
 from dataviews import ipython
 from dataviews import SheetOverlay
 from dataviews.options import OptionsGroup, Options
 from dataviews.options import PlotOpts, StyleOpts, ChannelOpts
 from dataviews.views import View
+
+
 
 
 class ExtensionTestCase(IPTestCase):
