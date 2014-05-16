@@ -13,3 +13,4 @@
 /doc/_build
 /doc/Reference_Manual/*
 !/doc/Reference_Manual/index.rst
+.ipynb_checkpoints
