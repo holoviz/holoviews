@@ -242,8 +242,9 @@ class ChannelMagic(Magics):
             if mismatch_keys:
                 raise Exception("Parameter(s) %r not accepted by %s operation"
                                 % (', '.join(mismatch_keys), op))
-
-            valid_chars = string.letters + string.digits + '_* '
+            # As string.letters (Python 2) does not exist in Python 3
+            letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            valid_chars = letters + string.digits + '_* '
             if not head.count('*') or any(l not in valid_chars for l in head):
                 raise Exception("Invalid characters in overlay pattern specification: %s" % head)
 
