@@ -177,6 +177,22 @@ class ChannelMagic(Magics):
 
     @cell_magic
     def channels(self, line, cell=None):
+        """
+        The %%channels cell magic allows channel definitions to be
+        defined on the displayed SheetOverlay.
+
+        For instance, if you have three SheetViews (R,G and B)
+        together in a SheetOverlay with labels 'R_Channel',
+        'G_Channel', 'B_Channel' respectively, you can display this
+        object as an RGB image using:
+
+        %%channels R_Channel * G_Channel * B_Channel => RGBA []
+        R * G * B
+
+        The available operators are defined in the plots.channel_modes
+        dictionary and additional arguments to the channel operator
+        are supplied via keywords in the square brackets.
+        """
         ChannelMagic.custom_channels = self._parse_channels(str(line))
         self.shell.run_cell(cell)
         ChannelMagic.custom_channels = {}
