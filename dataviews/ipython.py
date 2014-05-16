@@ -868,3 +868,7 @@ def load_ipython_extension(ip, verbose=True):
         html_formatter.for_type(CoordinateGrid, projection_display)
 
         update_matplotlib_rc()
+
+def unload_ipython_extension(ip):
+    global _loaded
+    _loaded = False
