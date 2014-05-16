@@ -177,7 +177,7 @@ class Options(object):
         Fuzzy matching allows a more specific key to be matched
         against a general style entry that has a common suffix.
         """
-        return self._items[obj]
+        return self._items.get(obj, self.opt_type())
 
 
     def __repr__(self):
@@ -332,7 +332,7 @@ class ChannelOpts(Opts):
     control how particular labelled layer combinations in an Overlay
     are displayed.
     """
-    def __init__(self, mode, pattern, **kwargs):
+    def __init__(self, mode=None, pattern='', **kwargs):
         self.mode = mode
         self.pattern = pattern
         self.size = len(pattern.rsplit('*'))

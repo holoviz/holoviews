@@ -573,6 +573,7 @@ class SheetPlot(Plot):
             # Collapse the customized channel before the other definitions
             for key in sorted_customized + sorted_reductions:
                 channel = SheetOverlay.channels[key]
+                if channel.mode is None: continue
                 collapse_fn = channel_modes[channel.mode]
                 fn = collapse_fn.instance(**channel.opts)
                 self._collapse(overlay, channel.pattern, fn, key)
