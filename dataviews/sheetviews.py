@@ -140,6 +140,11 @@ class SheetOverlay(SheetLayer, Overlay):
         """
         When unpickled, restore the saved channel definitions.
         """
+
+        if 'channel_definitions' not in d:
+            self.__dict__.update(d)
+            return
+
         unpickled_channels = d.pop('channel_definitions')
         for key, defs in unpickled_channels.items():
             self.channels[key] = defs

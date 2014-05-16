@@ -72,9 +72,10 @@ class View(param.Parameterized):
         When unpickled, restore the saved style and plotting options
         to View.options.
         """
-        if isinstance(self, Overlay):
+        if isinstance(self, Overlay) or 'style_objects' not in d:
             self.__dict__.update(d)
             return
+
         for name, match in d.pop('style_objects').items():
             for style in match:
                 self.options[name] = style
