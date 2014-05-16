@@ -126,6 +126,26 @@ class SheetOverlay(SheetLayer, Overlay):
         return range
 
 
+    def __getstate__(self):
+        """
+        When pickling, make sure to save the relevant channel
+        definitions.
+        """
+        obj_dict = self.__dict__.copy()
+        channels = dict((k, self.channels[k]) for k in self.channels.keys())
+        obj_dict['channel_definitions'] = channels
+        return obj_dict
+
+    def __setstate__(self, d):
+        """
+        When unpickled, restore the saved channel definitions.
+        """
+        unpickled_channels = d.pop('channel_definitions')
+        for key, defs in unpickled_channels.items():
+            self.channels[key] = defs
+        self.__dict__.update(d)
+
+
     def __len__(self):
         return len(self.data)
 
