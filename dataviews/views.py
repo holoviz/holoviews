@@ -35,6 +35,8 @@ class View(param.Parameterized):
         Additional information to be associated with the Layer.""")
 
 
+    options = options
+
     @property
     def style(self):
         """
@@ -48,7 +50,7 @@ class View(param.Parameterized):
         class_name = self.__class__.__name__
         if self.label:
             style_str = '_'.join([self.label, class_name])
-            matches = options.fuzzy_match_keys(style_str)
+            matches = self.options.fuzzy_match_keys(style_str)
             return matches[0] if matches else class_name
         else:
             return class_name

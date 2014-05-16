@@ -18,11 +18,13 @@ import traceback, itertools, string
 import base64
 import sys
 
-from .dataviews import Stack
+from .dataviews import Stack, View
 from .plots import Plot, GridLayoutPlot, viewmap, channel_modes
 from .sheetviews import GridLayout, CoordinateGrid
 from .views import View, Overlay, Annotation, Layout
-from .options import options, channels, PlotOpts, StyleOpts, ChannelOpts
+from .options import channels, PlotOpts, StyleOpts, ChannelOpts
+
+
 
 # Variables controlled via the %view magic
 PERCENTAGE_SIZE, FPS, FIGURE_FORMAT  = 100, 20, 'png'
@@ -449,8 +451,8 @@ class OptsMagic(Magics):
         for name in sorted(available_styles):
             padding = '&nbsp;'*(max_len - len(name))
             s += fmt % (name, padding,
-                        cls.pprint_kws(options.plotting(name)),
-                        cls.pprint_kws(options.style(name)))
+                        cls.pprint_kws(View.options.plotting(name)),
+                        cls.pprint_kws(View.options.style(name)))
 
         if custom_styles:
             s += '<br>Options that have been customized for the displayed view only:<br>'
@@ -459,8 +461,8 @@ class OptsMagic(Magics):
             for custom_style, custom_name in zip(custom_styles, custom_names):
                 padding = '&nbsp;'*(max_len - len(custom_name))
                 s += fmt % (custom_name, padding,
-                            cls.pprint_kws(options.plotting(custom_style)),
-                            cls.pprint_kws(options.style(custom_style)))
+                            cls.pprint_kws(View.options.plotting(custom_style)),
+                            cls.pprint_kws(View.options.style(custom_style)))
         return s
 
 
@@ -513,21 +515,23 @@ class OptsMagic(Magics):
         """
         lens, strs = [0,0,0], []
         for name, (plot_kws, style_kws) in kwarg_map.items():
-            plot_update = name in options.plotting
+            plot_update = name in View.options.plotting
             if plot_update and plot_kws:
-                options[prefix+name] = options.plotting[name](**plot_kws)
+                View.options[prefix+name] = View.options.plotting[name](**plot_kws)
             elif plot_kws:
-                options[prefix+name] = PlotOpts(**plot_kws)
+                View.options[prefix+name] = PlotOpts(**plot_kws)
 
-            style_update = name in options.style
+            style_update = name in View.options.style
             if style_update and style_kws:
-                options[prefix+name] = options.style[name](**style_kws)
+                View.options[prefix+name] = View.options.style[name](**style_kws)
             elif style_kws:
-                options[prefix+name] = StyleOpts(**style_kws)
+                View.options[prefix+name] = StyleOpts(**style_kws)
 
             if verbose:
-                plotstr = '[%s]' % cls.pprint_kws(options.plotting[name]) if name in options.plotting else ''
-                stylestr = cls.pprint_kws(options.style[name]) if name in options.style else ''
+                plotstr = ('[%s]' % cls.pprint_kws(View.options.plotting[name])
+                           if name in View.options.plotting else '')
+                stylestr = (cls.pprint_kws(View.options.style[name])
+                            if name in View.options.style else '')
                 strs.append((name+':', plotstr, stylestr))
                 lens = [max(len(name)+1, lens[0]),
                         max(len(plotstr), lens[1]),
@@ -556,7 +560,7 @@ class OptsMagic(Magics):
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             return [el+'=' for el in cls.all_params]
         else:
-            return [el+'=' for el in cls.all_styles] + options.options()
+            return [el+'=' for el in cls.all_styles] + View.options.options()
 
 
     def _line_magic(self, line):
@@ -577,11 +581,11 @@ class OptsMagic(Magics):
         kwarg_map = self._parse_keywords(str(line))
 
         if not kwarg_map:
-            info = (len(options.style.keys()),
-                    len([k for k in options.style.keys() if k.startswith('Custom')]))
+            info = (len(View.options.style.keys()),
+                    len([k for k in View.options.style.keys() if k.startswith('Custom')]))
             print("There are %d style options defined (%d custom object styles)." % info)
-            info = (len(options.plotting.keys()),
-                    len([k for k in options.plotting.keys() if k.startswith('Custom')]))
+            info = (len(View.options.plotting.keys()),
+                    len([k for k in View.options.plotting.keys() if k.startswith('Custom')]))
             print("There are %d plot options defined (%d custom object plot settings)." % info)
             return
 
@@ -745,7 +749,7 @@ def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
     magic_info = process_view_magics(stack)
     if magic_info: return magic_info
-    opts = dict(options.plotting(stack).opts, size=get_plot_size())
+    opts = dict(View.options.plotting(stack).opts, size=get_plot_size())
     stackplot = viewmap[stack.type](stack, **opts)
     if len(stackplot) == 0:
         return repr(stack)
@@ -780,7 +784,7 @@ def projection_display(grid, size=256):
                  size_factor*grid.shape[0]*get_plot_size()[0])
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
-    opts = dict(options.plotting(list(grid.values())[-1]).opts, size=grid_size)
+    opts = dict(View.options.plotting(list(grid.values())[-1]).opts, size=grid_size)
     gridplot = viewmap[grid.__class__](grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
@@ -794,7 +798,7 @@ def view_display(view, size=256):
     if isinstance(view, Annotation): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
-    opts = dict(options.plotting(view).opts, size=get_plot_size())
+    opts = dict(View.options.plotting(view).opts, size=get_plot_size())
     fig = viewmap[view.__class__](view, **opts)()
     return figure_display(fig)
 
