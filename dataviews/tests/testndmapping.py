@@ -2,10 +2,7 @@ import unittest
 
 from . import utils # pyflakes:ignore (set sys.path)
 from dataviews.ndmapping import Dimension, NdIndexableMapping
-try:
-    from collections import OrderedDict
-except:
-    from dataviews.odict import OrderedDict # pyflakes:ignore (try/except import)
+from collections import OrderedDict
 
 
 class DimensionTest(unittest.TestCase):
