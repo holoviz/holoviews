@@ -19,7 +19,6 @@ from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import GridLayout, Layout, Overlay, View, Annotation
-from .options import channels
 from .operation import RGBA, HCS, AlphaOverlay
 
 
@@ -558,7 +557,7 @@ class SheetPlot(Plot):
         """
         if not issubclass(stack.type, Overlay):
             return stack
-        elif not channels.keys(): # No potential channel reductions
+        elif not SheetOverlay.channels.keys(): # No potential channel reductions
             return stack
         else:
             # The original stack should not be mutated by this operation
@@ -566,13 +565,15 @@ class SheetPlot(Plot):
 
         # Apply all customized channel operations
         for overlay in stack:
-            customized = [k for k in channels.keys() if overlay.label and k.startswith(overlay.label)]
+            customized = [k for k in SheetOverlay.channels.keys()
+                          if overlay.label and k.startswith(overlay.label)]
             # Largest reductions should be applied first
-            sorted_customized = sorted(customized, key=lambda k: -channels[k].size)
-            sorted_reductions = sorted(channels.options(), key=lambda k: -channels[k].size)
+            sorted_customized = sorted(customized, key=lambda k: -SheetOverlay.channels[k].size)
+            sorted_reductions = sorted(SheetOverlay.channels.options(),
+                                       key=lambda k: -SheetOverlay.channels[k].size)
             # Collapse the customized channel before the other definitions
             for key in sorted_customized + sorted_reductions:
-                channel = channels[key]
+                channel = SheetOverlay.channels[key]
                 collapse_fn = channel_modes[channel.mode]
                 fn = collapse_fn.instance(**channel.opts)
                 self._collapse(overlay, channel.pattern, fn, key)

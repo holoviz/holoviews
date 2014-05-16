@@ -20,7 +20,7 @@ import sys
 
 from .dataviews import Stack, View
 from .plots import Plot, GridLayoutPlot, viewmap, channel_modes
-from .sheetviews import GridLayout, CoordinateGrid
+from .sheetviews import GridLayout, CoordinateGrid, SheetOverlay
 from .views import View, Overlay, Annotation, Layout
 from .options import channels, PlotOpts, StyleOpts, ChannelOpts
 
@@ -201,7 +201,7 @@ class ChannelMagic(Magics):
     def _set_channels(cls, obj, custom_channels, prefix):
         cls._set_overlay_labels(obj, prefix)
         for name, (pattern, params) in custom_channels.items():
-            channels[prefix + '_' + name] = ChannelOpts(name, pattern,
+            SheetOverlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
                                                         **params)
 
 

@@ -5,7 +5,7 @@ import param
 from .boundingregion import BoundingBox, BoundingRegion
 from .dataviews import Stack, Histogram, DataStack, find_minmax
 from .ndmapping import NdMapping, Dimension
-from .options import options
+from .options import options, channels
 from .sheetcoords import SheetCoordinateSystem, Slice
 from .views import View, Overlay, Annotation, GridLayout
 
@@ -85,6 +85,8 @@ class SheetOverlay(SheetLayer, Overlay):
     SheetViews of depth 1, the overlay may be converted to an RGB(A)
     SheetView via the rgb property.
     """
+
+    channels = channels
 
     def add(self, layer):
         """
