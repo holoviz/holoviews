@@ -18,11 +18,11 @@ import traceback, itertools, string
 import base64
 import sys
 
-from .dataviews import Stack, View
-from .plots import Plot, GridLayoutPlot, viewmap, channel_modes
-from .sheetviews import GridLayout, CoordinateGrid, SheetOverlay
-from .views import View, Overlay, Annotation, Layout
-from .options import channels, PlotOpts, StyleOpts, ChannelOpts
+from ..dataviews import Stack, View
+from ..plots import Plot, GridLayoutPlot, viewmap, channel_modes
+from ..sheetviews import GridLayout, CoordinateGrid, SheetOverlay
+from ..views import View, Overlay, Annotation, Layout
+from ..options import channels, PlotOpts, StyleOpts, ChannelOpts
 
 
 
