@@ -1,13 +1,3 @@
-import unittest
-from functools import wraps
-
-import nose
-from nose.plugins.skip import SkipTest
-
-import param
-import sys, os
-
-import IPython
 from .utils import IPTestCase
 
 import matplotlib

@@ -1,9 +1,6 @@
 """
 Test cases for ViewTestCase which implements view comparison.
 """
-import sys
-from nose.plugins.skip import SkipTest
-
 from .utils import ViewTestCase
 from dataviews import SheetView, SheetStack
 from dataviews.boundingregion import BoundingBox

@@ -1,9 +1,8 @@
-import sys
+import sys, os
 import unittest
 
+from nose.plugins.skip import SkipTest
 from numpy.testing import assert_array_almost_equal
-
-import sys, os
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..', '..'))
