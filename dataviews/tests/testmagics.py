@@ -10,8 +10,6 @@ from dataviews.options import PlotOpts, StyleOpts, ChannelOpts
 from dataviews.views import View
 
 
-
-
 class ExtensionTestCase(IPTestCase):
 
     def setUp(self):
@@ -136,39 +134,39 @@ class TestOptsMagic(ExtensionTestCase):
 class ViewsMagic(ExtensionTestCase):
 
     def setUp(self):
-        ipython.PERCENTAGE_SIZE = 100
-        ipython.FIGURE_FORMAT = None
-        ipython.VIDEO_FORMAT = 'webm'
-        ipython.FPS = None
+        ipython.ViewMagic.PERCENTAGE_SIZE = 100
+        ipython.ViewMagic.FIGURE_FORMAT = None
+        ipython.ViewMagic.VIDEO_FORMAT = 'webm'
+        ipython.ViewMagic.FPS = None
         super(ViewsMagic, self).setUp()
 
     def test_view_svg(self):
         self.line_magic('view', 'svg')
-        self.assertEqual(ipython.FIGURE_FORMAT, 'svg')
+        self.assertEqual(ipython.ViewMagic.FIGURE_FORMAT, 'svg')
 
     def test_view_png(self):
         self.line_magic('view', 'png')
-        self.assertEqual(ipython.FIGURE_FORMAT, 'png')
+        self.assertEqual(ipython.ViewMagic.FIGURE_FORMAT, 'png')
 
     def test_view_svg_gif(self):
         self.line_magic('view', 'svg gif')
-        self.assertEqual(ipython.FIGURE_FORMAT, 'svg')
-        self.assertEqual(ipython.VIDEO_FORMAT, 'gif')
+        self.assertEqual(ipython.ViewMagic.FIGURE_FORMAT, 'svg')
+        self.assertEqual(ipython.ViewMagic.VIDEO_FORMAT, 'gif')
 
 
     def test_view_svg_gif_10fps(self):
         self.line_magic('view', 'svg gif:10')
-        self.assertEqual(ipython.FIGURE_FORMAT, 'svg')
-        self.assertEqual(ipython.VIDEO_FORMAT, 'gif')
-        self.assertEqual(ipython.FPS, 10)
+        self.assertEqual(ipython.ViewMagic.FIGURE_FORMAT, 'svg')
+        self.assertEqual(ipython.ViewMagic.VIDEO_FORMAT, 'gif')
+        self.assertEqual(ipython.ViewMagic.FPS, 10)
 
 
     def test_view_png_h264_20fps_half_size(self):
         self.line_magic('view', 'png h264:20 50')
-        self.assertEqual(ipython.FIGURE_FORMAT, 'png')
-        self.assertEqual(ipython.VIDEO_FORMAT, 'h264')
-        self.assertEqual(ipython.FPS, 20)
-        self.assertEqual(ipython.PERCENTAGE_SIZE, 50)
+        self.assertEqual(ipython.ViewMagic.FIGURE_FORMAT, 'png')
+        self.assertEqual(ipython.ViewMagic.VIDEO_FORMAT, 'h264')
+        self.assertEqual(ipython.ViewMagic.FPS, 20)
+        self.assertEqual(ipython.ViewMagic.PERCENTAGE_SIZE, 50)
 
     def tearDown(self):
         super(ViewsMagic, self).tearDown()
