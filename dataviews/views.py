@@ -55,6 +55,32 @@ class View(param.Parameterized):
         else:
             return class_name
 
+    def __getstate__(self):
+        """
+        When pickling, make sure to save the relevant style and
+        plotting options as well.
+        """
+        obj_dict = self.__dict__.copy()
+        if isinstance(self, Overlay): return obj_dict
+        obj_dict['style_objects'] = {}
+        for match in self.options.fuzzy_match_keys(self.style):
+            obj_dict['style_objects'][match] = self.options[match]
+        return obj_dict
+
+    def __setstate__(self, d):
+        """
+        When unpickled, restore the saved style and plotting options
+        to View.options.
+        """
+        if isinstance(self, Overlay):
+            self.__dict__.update(d)
+            return
+        for name, match in d.pop('style_objects').items():
+            for style in match:
+                self.options[name] = style
+        self.__dict__.update(d)
+
+
 
     @style.setter
     def style(self, val):
