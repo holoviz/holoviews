@@ -540,7 +540,6 @@ class SheetPlot(Plot):
                 views = [overlay[label] for label in layer_labels]
                 overlay_slice = SheetOverlay(views, overlay.bounds)
                 collapsed_view = fn(overlay_slice)
-                collapsed_view.style = style_key
                 collapsed_views.append(collapsed_view)
                 skip = len(views)-1
             elif skip:
