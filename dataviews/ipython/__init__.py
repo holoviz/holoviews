@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 
 from param import ipython as param_ext
-from magics import ViewMagic, load_magics
-from display_hooks import animate, set_display_hooks
+from .magics import ViewMagic, load_magics
+from .display_hooks import animate, set_display_hooks
 
 try:    from matplotlib import animation
 except: animation = None

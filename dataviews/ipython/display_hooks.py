@@ -19,7 +19,7 @@ from ..plots import viewmap
 from ..plots import Plot, GridLayoutPlot
 
 
-from magics import ViewMagic, ChannelMagic, OptsMagic
+from .magics import ViewMagic, ChannelMagic, OptsMagic
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
 
