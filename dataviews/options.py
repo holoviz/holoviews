@@ -340,9 +340,10 @@ class ChannelOpts(Opts):
         self._kwargs = kwargs
 
     def __repr__(self):
-        return "%s(%s%s)" % (self.__class__.__name__,
+        return "%s(%s, %r,%s)" % (self.__class__.__name__,
                               self.mode+(', ' if self._kwargs else ''),
-                              self.keywords)
+                             self.pattern,
+                              ', '.join("%s=%r" % (k,v) for (k,v) in self._kwargs.items()))
 
 
 
