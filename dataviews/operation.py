@@ -8,16 +8,17 @@ conveniently, often by creating or manipulating color channels.
 import colorsys
 import numpy as np
 import matplotlib
+from matplotlib import pyplot as plt
 
 import param
 from param import ParamOverrides
 
 from .views import Overlay
-from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid
+from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
 from .dataviews import DataLayer, DataStack, Stack, Table, TableStack
 from .sheetviews import GridLayout, CoordinateGrid
 
-from .options import options, GrayNearest
+from .options import options, GrayNearest, StyleOpts, Cycle
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -282,7 +283,45 @@ class split(ViewOperation):
 
 
 
+
+class contours(ViewOperation):
+    """
+    Given a SheetView with a single channel, annotate it with contour
+    lines for a given set of contour levels.
+
+    The return is a overlay with a Contours layer for each given
+    level, overlaid on top of the input SheetView.
+    """
+
+    levels = param.NumericTuple(default=(0.5,), doc="""
+         A list of scalar values used to specify the contour levels.""")
+
+    def _process(self, sheetview):
+
+        figure_handle = plt.figure()
+        (l,b,r,t) = sheetview.bounds.lbrt()
+        contour_set = plt.contour(sheetview.data,
+                                  extent=(l,r,t,b),
+                                  levels=self.p.levels)
+
+        contours = []
+        for level, cset in zip(self.p.levels, contour_set.collections):
+            paths = cset.get_paths()
+            lines = [path.vertices for path in paths]
+            contours.append(Contours(lines, sheetview.bounds,
+                            metadata={'level': level},
+                            label=sheetview.label+' Level'))
+
+        plt.close(figure_handle)
+
+        if len(contours) == 1:
+            return [(sheetview * contours[0])]
+        else:
+            return [sheetview * SheetOverlay(contours, sheetview.bounds)]
+
+
 options.R_Channel = GrayNearest
 options.G_Channel = GrayNearest
 options.B_Channel = GrayNearest
 options.A_Channel = GrayNearest
+options.Level_Contours = StyleOpts(color=Cycle(['b', 'g', 'r']))
