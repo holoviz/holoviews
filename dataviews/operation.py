@@ -138,7 +138,15 @@ class RGBA(ViewOperation):
             raise Exception("All SheetViews must have a depth of one for"
                             " conversion to RGB(A) format")
 
-        return [SheetView(np.dstack([el.data for el in overlay.data]), overlay.bounds,
+        arrays = []
+        for el in overlay.data:
+            if el.data.max() > 1.0 or el.data.min() < 0:
+                self.warning("Clipping data into the interval [0, 1]")
+                el.data.clip(0,1.0)
+            arrays.append(el.data)
+
+
+        return [SheetView(np.dstack(arrays), overlay.bounds,
                           label='RGBA',
                           roi_bounds=overlay.roi_bounds)]
 
