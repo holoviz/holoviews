@@ -334,13 +334,13 @@ class ChannelOpts(Opts):
         self.pattern = pattern
         self.size = len(pattern.rsplit('*'))
         self.options = self._expand_styles(kwargs)
-        self._kwargs = kwargs
+        self.items = kwargs
 
     def __repr__(self):
-        return "%s(%s, %r,%s)" % (self.__class__.__name__,
-                              self.mode+(', ' if self._kwargs else ''),
-                             self.pattern,
-                              ', '.join("%s=%r" % (k,v) for (k,v) in self._kwargs.items()))
+        return "%s(%s, %r%s)" % (self.__class__.__name__,
+                                  self.mode + ', ',
+                                  self.pattern + ', ' if self.items else '',
+                                  ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items()))
 
 
 
