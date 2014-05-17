@@ -13,6 +13,9 @@ from dataviews import TableStack, Table
 from dataviews import SheetOverlay, SheetStack, SheetView, Points, Contours
 from dataviews import CoordinateGrid, DataGrid
 
+
+from dataviews.options import StyleOpts, PlotOpts, ChannelOpts
+
 from IPython.display import HTML, SVG
 
 class ViewTestCase(unittest.TestCase):
@@ -45,6 +48,22 @@ class ViewTestCase(unittest.TestCase):
         # CoordinateGrid and DataGrid
         self.addTypeEqualityFunc(CoordinateGrid, self.compare_coordgrids)
         self.addTypeEqualityFunc(DataGrid,       self.compare_datagrids)
+        # Option objects
+        self.addTypeEqualityFunc(StyleOpts, self.compare_opts)
+        self.addTypeEqualityFunc(PlotOpts, self.compare_opts)
+        self.addTypeEqualityFunc(ChannelOpts, self.compare_channelopts)
+
+
+    def compare_opts(self, opt1, opt2, msg):
+        self.assertEqual(opt1.items, opt2.items)
+
+
+    def compare_channelopts(self, opt1, opt2, msg):
+        self.assertEqual(opt1.mode, opt2.mode)
+        self.assertEqual(opt1.pattern, opt2.pattern)
+        self.assertEqual(opt1.patter, opt2.pattern)
+
+
 
     #================#
     # Helper methods #
