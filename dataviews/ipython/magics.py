@@ -309,7 +309,7 @@ class OptsMagic(Magics):
 
     @classmethod
     def pprint_kws(cls, style):
-        return ', '.join("%s=%r" % (k,v) for (k,v) in style.items.items())
+        return ', '.join("%s=%r" % (k,v) for (k,v) in sorted(style.items.items()))
 
 
     @classmethod
@@ -471,7 +471,7 @@ class OptsMagic(Magics):
             s += '<br>Options that have been customized for the displayed view only:<br>'
             custom_names = [style_name.rsplit('>]_')[1] for style_name in custom_styles]
             max_len = max(len(s) for s in custom_names)
-            for custom_style, custom_name in zip(custom_styles, custom_names):
+            for custom_name, custom_style  in sorted(zip(custom_names, custom_styles)):
                 padding = '&nbsp;'*(max_len - len(custom_name))
                 s += fmt % (custom_name, padding,
                             cls.pprint_kws(View.options.plotting(custom_style)),
