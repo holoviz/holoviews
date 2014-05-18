@@ -7,6 +7,8 @@ from .display_hooks import animate, set_display_hooks
 try:    from matplotlib import animation
 except: animation = None
 
+import magics
+
 all_line_magics = sorted(['%params', '%opts', '%view'])
 all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
 message = """Welcome to the Dataviews IPython extension! (http://ioam.github.io/imagen/)"""
@@ -18,7 +20,7 @@ def select_format(format_priority):
         try:
             anim = animation.FuncAnimation(plt.figure(),
                                            lambda x: x, frames=[0,1])
-            animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
+            animate(anim, *magics.ANIMATION_OPTS[fmt])
             return fmt
         except: pass
     return format_priority[-1]

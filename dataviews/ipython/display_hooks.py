@@ -19,6 +19,7 @@ from ..plots import viewmap
 from ..plots import Plot, GridLayoutPlot
 
 
+import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
@@ -50,10 +51,10 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
 def HTML_video(plot):
     anim = plot.anim(fps=ViewMagic.FPS)
     writers = animation.writers.avail
-    for fmt in [ViewMagic.VIDEO_FORMAT] + list(ViewMagic.ANIMATION_OPTS.keys()):
-        if ViewMagic.ANIMATION_OPTS[fmt][0] in writers:
+    for fmt in [ViewMagic.VIDEO_FORMAT] + list(magics.ANIMATION_OPTS.keys()):
+        if magics.ANIMATION_OPTS[fmt][0] in writers:
             try:
-                return animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
+                return animate(anim, *magics.ANIMATION_OPTS[fmt])
             except: pass
     msg = "<b>Could not generate %s animation</b>" % ViewMagic.VIDEO_FORMAT
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
@@ -122,7 +123,7 @@ def render(plot):
 
 @display_hook
 def animation_display(anim):
-    return animate(anim, *ViewMagic.ANIMATION_OPTS[ViewMagic.VIDEO_FORMAT])
+    return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.VIDEO_FORMAT])
 
 @display_hook
 def stack_display(stack, size=256):
