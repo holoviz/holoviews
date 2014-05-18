@@ -1,13 +1,15 @@
 import matplotlib.pyplot as plt
 
-from param import ipython as param_ext
+from . import magics
 from .magics import ViewMagic, load_magics
 from .display_hooks import animate, set_display_hooks
+
+from param import ipython as param_ext
 
 try:    from matplotlib import animation
 except: animation = None
 
-import magics
+
 
 all_line_magics = sorted(['%params', '%opts', '%view'])
 all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
