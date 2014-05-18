@@ -11,7 +11,6 @@ install:
   - pip install matplotlib jinja2 tornado pyzmq
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython; fi
-  - echo "backend : agg" > matplotlibrc
 
 script:
   - nosetests
