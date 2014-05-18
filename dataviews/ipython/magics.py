@@ -39,6 +39,9 @@ ANIMATION_OPTS = {
 }
 
 
+# Set to True to automatically run notebooks.
+STORE_HISTORY = False
+
 
 # ANSI color codes for the IPython pager
 red   = '\x1b[1;31m%s\x1b[0m'
@@ -67,6 +70,7 @@ class ViewMagic(Magics):
     FPS = 20
     FIGURE_FORMAT = 'png'
     VIDEO_FORMAT = 'webm'
+
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
@@ -154,7 +158,7 @@ class ViewMagic(Magics):
                     ViewMagic.PERCENTAGE_SIZE, ViewMagic.FPS)
             print("Displaying %s animation and %s figures [%d%% size, %s FPS]" % info)
         elif cell and success:
-            self.shell.run_cell(cell)
+            self.shell.run_cell(cell, store_history=STORE_HISTORY)
             [ViewMagic.FIGURE_FORMAT,  ViewMagic.VIDEO_FORMAT,
              ViewMagic.PERCENTAGE_SIZE,  ViewMagic.FPS] = start_opts
         else:
@@ -186,7 +190,7 @@ class ChannelMagic(Magics):
         are supplied via keywords in the square brackets.
         """
         ChannelMagic.custom_channels = self._parse_channels(str(line))
-        self.shell.run_cell(cell)
+        self.shell.run_cell(cell, store_history=STORE_HISTORY)
         ChannelMagic.custom_channels = {}
 
 
@@ -610,7 +614,7 @@ class OptsMagic(Magics):
         if line != '':
             raise Exception("%%labels magics accepts no arguments.")
         OptsMagic.show_labels = True
-        self.shell.run_cell(cell)
+        self.shell.run_cell(cell, store_history=STORE_HISTORY)
         OptsMagic.show_labels = False
 
 
@@ -635,7 +639,7 @@ class OptsMagic(Magics):
             OptsMagic.custom_options = self._parse_keywords(str(line))
 
         # Run the cell in the updated environment
-        self.shell.run_cell(cell)
+        self.shell.run_cell(cell, store_history=STORE_HISTORY)
         # Reset the class attributes
         OptsMagic.custom_options = {}
         OptsMagic.show_info=False
