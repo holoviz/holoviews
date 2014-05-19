@@ -243,17 +243,7 @@ class OptionsGroup(object):
         """
         Attribute style addition of Style objects to the OptionMap.
         """
-        opttypes = self.__dict__['_opttypes']
-        keys = self.__dict__['_keys']
-        keys.add(k)
-
-        if type(v) not in opttypes:
-            raise Exception("Options of type %s not applicable" % type(v))
-
-        optmap = opttypes[type(v)]
-        optmap._settable = True
-        optmap.set(k, v)
-        optmap._settable = False
+        self[k]= v
 
 
     def fuzzy_match_keys(self, name):
