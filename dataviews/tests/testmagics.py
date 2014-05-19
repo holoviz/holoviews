@@ -1,8 +1,5 @@
 from .utils import IPTestCase
 
-import matplotlib
-matplotlib.use('Agg')
-
 from dataviews import ipython
 from dataviews import SheetOverlay
 from dataviews.options import OptionsGroup, Options
