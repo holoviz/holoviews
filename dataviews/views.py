@@ -104,6 +104,11 @@ class View(param.Parameterized):
         else:
             raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
 
+    def __repr__(self):
+        params = ', '.join('%s=%r' % (k,v) for (k,v) in self.get_param_values())
+        return "%s(%r, %s)" % (self.__class__.__name__, self.data, params)
+
+
 
 class Annotation(View):
     """
