@@ -171,8 +171,7 @@ class Options(object):
 
     def __getitem__(self, obj):
         """
-        Fuzzy matching allows a more specific key to be matched
-        against a general style entry that has a common suffix.
+        Get a style by name via dictionary style access.
         """
         return self._items.get(obj, self.opt_type())
 
@@ -236,7 +235,8 @@ class OptionsGroup(object):
             self.__dict__[optmap.name] = optmap
 
         self.__dict__['_keys'] = set()
-        self.__dict__['_opttypes'] = OrderedDict([(optmap.opt_type, optmap) for optmap in optmaps])
+        self.__dict__['_opttypes'] = OrderedDict([(optmap.opt_type, optmap)
+                                                  for optmap in optmaps])
 
 
     def __setattr__(self, k, v):
