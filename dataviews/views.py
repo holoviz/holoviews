@@ -34,8 +34,12 @@ class View(param.Parameterized):
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional information to be associated with the Layer.""")
 
-
     options = options
+
+    def __init__(self, data, **kwargs):
+        self.data = data
+        self._style = kwargs.pop('style', None)
+        super(View, self).__init__(**kwargs)
 
     @property
     def style(self):
@@ -54,6 +58,11 @@ class View(param.Parameterized):
             return matches[0] if matches else class_name
         else:
             return class_name
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
 
     def __getstate__(self):
         """
@@ -80,18 +89,6 @@ class View(param.Parameterized):
             for style in match:
                 self.options[name] = style
         self.__dict__.update(d)
-
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
-
-
-    def __init__(self, data, **kwargs):
-        self.data = data
-        self._style = kwargs.pop('style', None)
-        super(View, self).__init__(**kwargs)
 
 
     def __add__(self, obj):
