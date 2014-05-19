@@ -29,6 +29,11 @@ class SheetLayer(View):
 
     _abstract = True
 
+
+    @property
+    def stack_type(self):
+        return SheetStack
+
     def __init__(self, data, bounds, **kwargs):
         super(SheetLayer, self).__init__(data, bounds=bounds, **kwargs)
 

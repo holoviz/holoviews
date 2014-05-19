@@ -30,6 +30,11 @@ class DataLayer(View):
 
     legend_label = param.String(default="", doc="Legend labels")
 
+    @property
+    def stack_type(self):
+        return DataStack
+
+
     def __mul__(self, other):
         if isinstance(other, DataStack):
             items = [(k, self * v) for (k, v) in other.items()]
@@ -555,6 +560,10 @@ class Table(View):
     standard Python dictionary or an OrderedDict. If an OrderedDict is
     used, the headings will be kept in the correct order.
     """
+
+    @property
+    def stack_type(self):
+        return TableStack
 
     def __init__(self, data, **kwargs):
 
