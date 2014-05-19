@@ -64,7 +64,7 @@ class Opts(object):
 
     def keys(self):
         "The keyword names defined in the options."
-        return list(self.items.keys())
+        return sorted(list(self.items.keys()))
 
 
     def __getitem__(self, index):
@@ -186,7 +186,7 @@ class Options(object):
         The list of all options in the OptionMap, including options
         associated with individual view objects.
         """
-        return list(self._items.keys())
+        return sorted(self._items.keys())
 
 
     def values(self):
@@ -292,7 +292,7 @@ class OptionsGroup(object):
         The full list of option keys in the OptionGroup, excluding
         options customized per object.
         """
-        return [k for k in self.keys() if not k.startswith('Custom')]
+        return sorted(k for k in self.keys() if not k.startswith('Custom'))
 
 
     def keys(self):
