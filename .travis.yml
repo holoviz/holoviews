@@ -4,6 +4,10 @@ python:
   - "3.3"
   - "3.4"
 
+notifications:
+  email:
+    on_failure: change # [always|never|change] default: always
+
 # no dependencies
 install: true
 
@@ -12,7 +16,9 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython; fi
 
+before-script:
+  - "echo 'backend : agg' > matplotlibrc"
+
 script:
-  - 'echo ' 'backend : agg' ' > matplotlibrc'
   - nosetests
   - cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py
