@@ -505,7 +505,7 @@ class curve_collapse(StackOperation):
     def _generate_curves(self, stack, stack_dims, split_data, overlay_inds, cyclic_range):
 
         dataviews = []
-        for sample_ind, sample in enumerate(stack.heading_values()):
+        for sample in self.p.samples:
             dataview = DataStack(dimensions=stack_dims, metadata=stack.metadata,
                                  title=stack.title) if stack_dims else None
             for key, x_axis_data in split_data.items():
@@ -519,8 +519,7 @@ class curve_collapse(StackOperation):
                 legend_label = ', '.join(stack.dim_dict[name].pprint_value(val)
                                          for name, val in overlay_items)
                 ylabel = list(x_axis_data.values())[0].label
-                label, xlabel, ylabel = self._curve_labels(self.p.x_axis,
-                                                           self.p.samples[sample_ind],
+                label, xlabel, ylabel = self._curve_labels(self.p.x_axis, str(sample),
                                                            ylabel)
                 # Generate the curve view
                 curve = Curve(sampled_curve_data, cyclic_range=cyclic_range,
