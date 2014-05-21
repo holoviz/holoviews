@@ -5,6 +5,7 @@ SheetStacks and compose the data together in ways that can be viewed
 conveniently, often by creating or manipulating color channels.
 """
 
+from collections import OrderedDict
 import colorsys
 import numpy as np
 import matplotlib
@@ -15,7 +16,7 @@ from param import ParamOverrides
 
 from .views import Overlay
 from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
-from .dataviews import DataLayer, DataStack, Stack, Table, TableStack
+from .dataviews import DataLayer, DataOverlay, DataStack, Stack, Table, TableStack, Curve
 from .sheetviews import GridLayout, CoordinateGrid
 
 from .options import options, GrayNearest, StyleOpts, Cycle
@@ -348,6 +349,32 @@ class contours(ViewOperation):
             return [(sheetview * contours[0])]
         else:
             return [sheetview * SheetOverlay(contours, sheetview.bounds)]
+
+
+class sample(ViewOperation):
+    """
+    Given a SheetStack or TableStack sample the data at the sample values
+    and return the corresponding TableStack.
+    """
+
+    samples = param.List(doc="The list of table headings or sheet coordinate tuples to sample.")
+
+    def _process(self, view):
+        if not isinstance(view, (SheetLayer, Table)):
+            raise Exception('sample_sheet can only sample SheetLayers.')
+
+        if isinstance(view, Table):
+            data = OrderedDict((k, v) for k, v in view.data.items() if k in self.p.samples)
+            return [Table(data, label=view.label, metadata=view.metadata)]
+
+        sheetviews = self.get_views(view, '')
+        if len(sheetviews) != 1:
+            raise Exception('Can only sample, Overlays containing a single SheetView')
+        sv = sheetviews[0]
+        sample_inds = [(s, tuple(sv.sheet2matrixidx(*s))) for s in self.p.samples]
+        data = OrderedDict((sample, sv.data[idx]) for sample, idx in sample_inds)
+        return [Table(data, label=sv.label, metadata=sv.metadata)]
+
 
 
 options.R_Channel = GrayNearest
