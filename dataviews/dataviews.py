@@ -338,6 +338,11 @@ class TableStack(Stack):
         super(TableStack, self)._item_check(dim_vals, data)
 
 
+    def sample(self, **kwargs):
+        from operation import curve_collapse
+        return curve_collapse(self, **kwargs)
+
+
 
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v, type) and
