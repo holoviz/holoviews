@@ -14,8 +14,9 @@ import matplotlib.gridspec as gridspec
 
 import param
 
-from .dataviews import NdMapping, Stack, Table, TableStack
-from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram
+from .views import NdMapping, Stack
+from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
+    Table, TableStack
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import GridLayout, Layout, Overlay, View, Annotation

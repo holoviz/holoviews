@@ -6,7 +6,7 @@ systems.
 __version__='$Revision$'
 
 import math
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import param
 
@@ -325,6 +325,175 @@ class Overlay(View):
         while i < len(self):
             yield self[i]
             i += 1
+
+
+
+class Stack(NdMapping):
+    """
+    A Stack is a stack of Views over some dimensions. The
+    dimension may be a spatial dimension (i.e., a ZStack), time
+    (specifying a frame sequence) or any other dimensions.
+    """
+
+    title = param.String(default='{label} \n {dims}', doc="""
+       A short description of the stack that may be used as a title
+       (e.g. the title of an animation) but may also accept a
+       formatting string to generate a unique title per layer.
+       The formatters {label}, {type} and {dims} referring to
+       the View lable, type and dimensions key/value pairs
+       respectively.""")
+
+    data_type = View
+    overlay_type = Overlay
+
+    _type = None
+    _style = None
+
+    @property
+    def type(self):
+        """
+        The type of elements stored in the stack.
+        """
+        if self._type is None:
+            self._type = None if len(self) == 0 else self.last.__class__
+        return self._type
+
+
+    @property
+    def style(self):
+        """
+        The type of elements stored in the stack.
+        """
+        if self._style is None:
+            self._style = None if len(self) == 0 else self.last.style
+        return self._style
+
+
+    @style.setter
+    def style(self, style_name):
+        self._style = style_name
+        for val in self.values():
+            val.style = style_name
+
+
+    @property
+    def empty_element(self):
+        return self._type(None)
+
+
+    def _item_check(self, dim_vals, data):
+        if self.style is not None and self.style != data.style:
+            data.style = self.style
+
+        if self.type is not None and (type(data) != self.type):
+            raise AssertionError("%s must only contain one type of View." %
+                                 self.__class__.__name__)
+        super(Stack, self)._item_check(dim_vals, data)
+        self._set_title(dim_vals, data)
+
+
+    def _set_title(self, key, item, group_size=2):
+        """
+        Sets a title string on the element item is added to the Stack, based on
+        the element label and formatted stack dimensions and values.
+        """
+        if self.ndims == 1 and self.dim_dict.get('Default', False):
+            return None
+        dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
+        groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
+                      for i in range(len(dimension_labels))]
+        dims = '\n '.join(g for g in groups if g)
+        if isinstance(item, Overlay):
+            for layer in item:
+                format_dict = dict(dims=dims, label=layer.label, type=layer.__class__.__name__)
+                layer.title = self.title.format(**format_dict)
+        else:
+            format_dict = dict(dims=dims, label=item.label, type=item.__class__.__name__)
+            item.title = self.title.format(**format_dict)
+
+
+    def split(self):
+        """
+        Given a SheetStack of SheetOverlays of N layers, split out the
+        layers into N separate SheetStacks.
+        """
+        if self.type is not self.overlay_type:
+            return self.clone(self.items())
+
+        stacks = []
+        item_stacks = defaultdict(list)
+        for k, overlay in self.items():
+            for i, el in enumerate(overlay):
+                item_stacks[i].append((k, el))
+
+        for k in sorted(item_stacks.keys()):
+            stacks.append(self.clone(item_stacks[k]))
+        return stacks
+
+
+    def __mul__(self, other):
+        if isinstance(other, self.__class__):
+            self_set = set(self.dimension_labels)
+            other_set = set(other.dimension_labels)
+
+            # Determine which is the subset, to generate list of keys and
+            # dimension labels for the new view
+            self_in_other = self_set.issubset(other_set)
+            other_in_self = other_set.issubset(self_set)
+            dimensions = self.dimensions
+            if self_in_other and other_in_self: # superset of each other
+                super_keys = sorted(set(self.dimension_keys() + other.dimension_keys()))
+            elif self_in_other: # self is superset
+                dimensions = other.dimensions
+                super_keys = other.dimension_keys()
+            elif other_in_self: # self is superset
+                super_keys = self.dimension_keys()
+            else: # neither is superset
+                raise Exception('One set of keys needs to be a strict subset of the other.')
+
+            items = []
+            for dim_keys in super_keys:
+                # Generate keys for both subset and superset and sort them by the dimension index.
+                self_key = tuple(k for p, k in sorted(
+                    [(self.dim_index(dim), v) for dim, v in dim_keys
+                     if dim in self.dimension_labels]))
+                other_key = tuple(k for p, k in sorted(
+                    [(other.dim_index(dim), v) for dim, v in dim_keys
+                     if dim in other.dimension_labels]))
+                new_key = self_key if other_in_self else other_key
+                # Append SheetOverlay of combined items
+                if (self_key in self) and (other_key in other):
+                    items.append((new_key, self[self_key] * other[other_key]))
+                elif self_key in self:
+                    items.append((new_key, self[self_key] * other.empty_element))
+                else:
+                    items.append((new_key, self.empty_element * other[other_key]))
+            return self.clone(items=items, dimensions=dimensions)
+        elif isinstance(other, self.data_type):
+            items = [(k, v * other) for (k, v) in self.items()]
+            return self.clone(items=items)
+        else:
+            raise Exception("Can only overlay with {data} or {stack}.".format(
+                data=self.data_type, stack=self.__class__.__name__))
+
+
+    def __add__(self, obj):
+        if not isinstance(obj, GridLayout):
+            return GridLayout(initial_items=[self, obj])
+        else:
+            grid = GridLayout(initial_items=[self])
+            grid.update(obj)
+            return grid
+
+
+    def __lshift__(self, other):
+        if isinstance(other, (View, Overlay, NdMapping)):
+            return Layout([self, other])
+        elif isinstance(other, Layout):
+            return Layout(other.data+[self])
+        else:
+            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+
 
 
 class Layout(param.Parameterized):

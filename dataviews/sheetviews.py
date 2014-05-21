@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from .boundingregion import BoundingBox, BoundingRegion
-from .dataviews import Stack, Histogram, DataStack, find_minmax
+from .dataviews import Histogram, DataStack, find_minmax
 from .ndmapping import NdMapping, Dimension
 from .options import options, channels
 from .sheetcoords import SheetCoordinateSystem, Slice
@@ -393,7 +393,7 @@ class Contours(SheetLayer):
 
 
 
-class SheetStack(Stack):
+class SheetStack(DataStack):
     """
     A SheetStack is a stack of SheetLayers over some dimensions. The
     dimension may be a spatial dimension (i.e., a ZStack), time
@@ -418,32 +418,9 @@ class SheetStack(Stack):
         return self[tuple(slices)].reindex(dim_labels)
 
 
-    def _compute_samples(self, samples):
-        """
-        Transform samples as specified to a format suitable for _get_sample.
-
-        May be overridden to compute transformation from sheetcoordinates to matrix
-        coordinates in single pass as an optimization.
-        """
-        return [tuple(self.last.sheet2matrixidx(*s)) for s in samples]
-
-
-    def _get_sample(self, view, sample):
-        """
-        Given a sample as processed by _compute_sample to extract a scalar sample
-        value from the view. Uses __getitem__ by default but can operate on the view's
-        data attribute if this helps optimize performance.
-        """
-        return view.data[sample]
-
-
-    def _curve_labels(self, x_axis, sample, ylabel):
-        """
-        Subclasses _curve_labels in regular Stack to correctly label curves
-        sampled from a SheetStack.
-        """
-        curve_label = " ".join(["Coord:", str(sample), x_axis.capitalize(), ylabel])
-        return curve_label, x_axis.capitalize(), ylabel
+    def sample(self, **kwargs):
+        from operation import curve_collapse
+        return curve_collapse(self, **kwargs)
 
 
     def grid_sample(self, rows, cols, lbrt=None, **kwargs):
