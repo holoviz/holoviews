@@ -248,9 +248,9 @@ class Table(View):
         super(Table, self).__init__(data=data, **kwargs)
 
         # Assume OrderedDict if not a vanilla Python dict
-        self.heading_map = OrderedDict([(el, str(el)) for el in self.data.keys()])
-        if type(self.data) == dict:
-            self.heading_map = OrderedDict(sorted(self.heading_map))
+        headings = self.data.keys()
+        if type(self.data) == dict: headings = sorted(headings)
+        self.heading_map = OrderedDict([(el, str(el)) for el in headings])
 
     @property
     def rows(self):
