@@ -351,7 +351,7 @@ class contours(ViewOperation):
             return [sheetview * SheetOverlay(contours, sheetview.bounds)]
 
 
-class sample(ViewOperation):
+class sample_table(ViewOperation):
     """
     Given a SheetStack or TableStack sample the data at the sample values
     and return the corresponding TableStack.
@@ -377,9 +377,9 @@ class sample(ViewOperation):
 
 
 
-class curve_collapse(StackOperation):
+class sample_curve(StackOperation):
     """
-    Collapse a stack into a set of Curves or Curve Overlays, where each curve
+    Sample a stack into a set of Curves or Curve Overlays, where each curve
     corresponds to a given sample. Different dimensions can be chosen for the
     x-axis and by specifying group_by dimensions it is possible to group the
     curves into Overlays.
@@ -400,7 +400,7 @@ class curve_collapse(StackOperation):
     def _process(self, stack):
         self.stack_type = type(stack)
 
-        sampled_stack = sample(stack, samples=self.p.samples)
+        sampled_stack = sample_table(stack, samples=self.p.samples)
         self._check_table_stack(sampled_stack)
 
         x_dim = sampled_stack.dim_dict[self.p.x_axis]

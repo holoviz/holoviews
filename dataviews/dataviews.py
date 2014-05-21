@@ -339,8 +339,8 @@ class TableStack(Stack):
 
 
     def sample(self, **kwargs):
-        from operation import curve_collapse
-        return curve_collapse(self, **kwargs)
+        from operation import sample_curve
+        return sample_curve(self, **kwargs)
 
 
 

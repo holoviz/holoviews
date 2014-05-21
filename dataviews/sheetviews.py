@@ -419,8 +419,8 @@ class SheetStack(DataStack):
 
 
     def sample(self, **kwargs):
-        from operation import curve_collapse
-        return curve_collapse(self, **kwargs)
+        from operation import sample_curve
+        return sample_curve(self, **kwargs)
 
 
     def grid_sample(self, rows, cols, lbrt=None, **kwargs):
