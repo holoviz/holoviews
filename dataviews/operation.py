@@ -496,10 +496,11 @@ class curve_collapse(StackOperation):
         in subclasses of stack.
         """
         if self.stack_type == SheetStack:
-            curve_label = " ".join(["Coord:", str(sample), x_axis.capitalize(), ylabel])
-            return curve_label, x_axis.capitalize(), ylabel
+            title_prefix = "Coord: %s " % str(sample)
+            curve_label = " ".join([x_axis.capitalize(), ylabel])
+            return title_prefix, curve_label.title(), x_axis.title(), ylabel.title()
         elif self.stack_type == TableStack:
-            return str(sample), x_axis.capitalize(), str(sample)
+            return ylabel+' ', str(sample).title(), x_axis.title(), str(sample).title()
 
 
     def _generate_curves(self, stack, stack_dims, split_data, overlay_inds, cyclic_range):
@@ -519,8 +520,10 @@ class curve_collapse(StackOperation):
                 legend_label = ', '.join(stack.dim_dict[name].pprint_value(val)
                                          for name, val in overlay_items)
                 ylabel = list(x_axis_data.values())[0].label
-                label, xlabel, ylabel = self._curve_labels(self.p.x_axis, str(sample),
-                                                           ylabel)
+                title_prefix, label, xlabel, ylabel = self._curve_labels(self.p.x_axis,
+                                                                         str(sample),
+                                                                         ylabel)
+
                 # Generate the curve view
                 curve = Curve(sampled_curve_data, cyclic_range=cyclic_range,
                               metadata=stack.metadata, label=label,
@@ -531,6 +534,8 @@ class curve_collapse(StackOperation):
                 if not stack_dims:
                     dataview = curve if dataview is None else dataview * curve
                     continue
+
+                dataview.title = title_prefix + dataview.title
 
                 # Drop overlay dimensions
                 stack_key = tuple([kval for ind, kval in enumerate(key)
