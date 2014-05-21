@@ -566,20 +566,16 @@ class Table(View):
         return TableStack
 
     def __init__(self, data, **kwargs):
-
-        if not all(isinstance(k, str) for k in data.keys()):
-            raise Exception("Dictionary keys must be strings.")
-
         super(Table, self).__init__(data=data, **kwargs)
 
         # Assume OrderedDict if not a vanilla Python dict
-        self.headings = list(self.data.keys())
+        self.heading_map = OrderedDict([(el, str(el)) for el in self.data.keys()])
         if type(self.data) == dict:
-            self.headings = sorted(self.headings)
+            self.heading_map = OrderedDict(sorted(self.heading_map))
 
     @property
     def rows(self):
-        return len(self.headings)
+        return len(self.heading_map)
 
     @property
     def cols(self):
@@ -589,7 +585,7 @@ class Table(View):
         """
         Get the value associated with the given heading (key).
         """
-        if heading not in self.headings:
+        if heading not in self.heading_map:
             raise IndexError("%r not in available headings." % heading)
         return self.data[heading]
 
@@ -603,10 +599,18 @@ class Table(View):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % len(self.headings)-1)
         elif col == 0:
-            return self.headings[row]
+            return list(self.heading_map.values())[row]
         else:
-            heading = self.headings[row]
+            heading = list(self.heading_map.keys())[row]
             return self.data[heading]
+
+
+    def heading_values(self):
+        return list(self.heading_map.keys())
+
+
+    def heading_names(self):
+        return list(self.heading_map.values())
 
 
     def cell_type(self, row, col):
@@ -629,6 +633,14 @@ class TableStack(Stack):
 
     _type_map = None
 
+    def heading_values(self):
+        return self.last.heading_values() if len(self) else []
+
+
+    def heading_names(self):
+        return self.last.heading_names() if len(self) else []
+
+
     def _item_check(self, dim_vals, data):
 
         if self._type_map is None:
@@ -636,7 +648,7 @@ class TableStack(Stack):
 
         if set(self._type_map.keys()) != set(data.data.keys()):
             raise AssertionError("All TableViews in a TableStack must have"
-                                 " a common set of  headings.")
+                                 " a common set of headings.")
 
         for k, v in data.data.items():
             if k not in self._type_map:
