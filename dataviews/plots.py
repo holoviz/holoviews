@@ -962,7 +962,8 @@ class CoordinateGridPlot(Plot):
 
 
     def __call__(self, axis=None):
-        grid_shape = [[v for (k,v) in col[1]] for col in groupby(self.grid.items(), lambda (k, v): k[0])]
+        grid_shape = [[v for (k, v) in col[1]]
+                      for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
         ax = self._axis(axis, lbrt=(0, 0, width, height))
