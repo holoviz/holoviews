@@ -122,6 +122,36 @@ class ViewOperation(param.ParameterizedFunction):
 
 
 
+class StackOperation(param.ParameterizedFunction):
+    """
+    A StackOperation takes a Stack of Views or Overlays as inputs
+    and processes them, returning arbitrary new Stack objects as output.
+    """
+
+    def __call__(self, stack, **params):
+        self.p = ParamOverrides(self, params)
+
+        if not isinstance(stack, Stack):
+            raise Exception('StackOperation can only process Stacks.')
+
+        stacks = self._process(stack)
+
+        if len(stacks) == 1:
+            return stacks[0]
+        else:
+            return GridLayout(stacks)
+
+
+    def _process(self, view):
+        """
+        Process a single input Stack and output a list of Stacks. When
+        multiple Stacks are returned as a list, they will be returned
+        to the user as a GridLayout.
+        """
+        raise NotImplementedError
+
+
+
 class RGBA(ViewOperation):
     """
     Accepts an overlay containing either 3 or 4 layers. The first
