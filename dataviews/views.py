@@ -40,6 +40,11 @@ class View(param.Parameterized):
         self._style = kwargs.pop('style', None)
         super(View, self).__init__(**kwargs)
 
+
+    @property
+    def stack_type(self):
+        return Stack
+
     @property
     def style(self):
         """
