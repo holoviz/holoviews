@@ -74,8 +74,6 @@ Of course, it would be an error to try to pass matrix coordinates like
 outside of the actual matrix.
 """
 
-__version__ = '$Revision$'
-
 
 from numpy import array,floor,ceil,round_,arange
 

@@ -2,9 +2,6 @@
 Views objects used to hold data and provide indexing into different coordinate
 systems.
 """
-
-__version__='$Revision$'
-
 import math
 from collections import OrderedDict, defaultdict
 

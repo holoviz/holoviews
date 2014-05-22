@@ -2,8 +2,6 @@
 Bounding regions and bounding boxes.
 """
 
-__version__='$Revision$'
-
 from numpy import inf
 
 ### JABALERT: The aarect information should probably be rewritten in

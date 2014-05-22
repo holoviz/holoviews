@@ -1,13 +1,8 @@
 """
 NdIndexableMapping and NdMapping objects.
 """
-
-__version__='$Revision$'
-
 import param
-
 import numpy as np
-
 from collections import OrderedDict
 
 
