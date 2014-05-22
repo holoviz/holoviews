@@ -166,10 +166,10 @@ class ViewTestCase(unittest.TestCase):
         if view1.cols != view2.cols:
             raise self.failureException("Tables have different numbers of columns.")
 
-        if view1.headings != view2.headings:
+        if view1.heading_map != view2.heading_map:
             raise self.failureException("Tables have different headings.")
 
-        for heading in view1.headings:
+        for heading in view1.heading_values():
             self.assertEqual(view1[heading], view2[heading])
 
     #=============#
