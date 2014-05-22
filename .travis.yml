@@ -20,5 +20,5 @@ before-script:
   - "echo 'backend : agg' > matplotlibrc"
 
 script:
-  - nosetests
+  - nosetests --with-doctest
   - cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py
