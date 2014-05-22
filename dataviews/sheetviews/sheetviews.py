@@ -3,11 +3,12 @@ import numpy as np
 import param
 
 from .boundingregion import BoundingBox, BoundingRegion
-from .dataviews import Histogram, DataStack, find_minmax
-from .ndmapping import NdMapping, Dimension
-from .options import options, channels
 from .sheetcoords import SheetCoordinateSystem, Slice
-from .views import View, Overlay, Annotation, GridLayout
+
+from ..dataviews import Histogram, DataStack, find_minmax
+from ..ndmapping import NdMapping, Dimension
+from ..options import options, channels
+from ..views import View, Overlay, Annotation, GridLayout
 
 
 class SheetLayer(View):

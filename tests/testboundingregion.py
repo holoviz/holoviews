@@ -5,7 +5,7 @@ Test cases for boundingregion
 import unittest
 
 from . import utils # pyflakes:ignore (set sys.path)
-from dataviews.boundingregion import BoundingBox, BoundingCircle, BoundingEllipse, AARectangle
+from dataviews.sheetviews import BoundingBox, BoundingCircle, BoundingEllipse, AARectangle
 
 # Currently duplicating tests in topographica
 

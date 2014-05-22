@@ -1,6 +1,6 @@
 import unittest
 
-from dataviews.boundingregion import BoundingBox
+from dataviews.sheetviews import BoundingBox
 from dataviews.views import View, Annotation, Layout, Overlay, GridLayout
 
 

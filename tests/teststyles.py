@@ -3,7 +3,6 @@ from collections import namedtuple
 
 from .utils import ViewTestCase
 
-from dataviews import SheetOverlay
 from dataviews.options import OptionsGroup, Options
 from dataviews.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
 from dataviews.views import View

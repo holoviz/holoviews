@@ -12,7 +12,6 @@ import param
 
 from .ndmapping import NdMapping, Dimension, AttrDict
 from .options import options
-from .boundingregion import BoundingBox
 
 
 class View(param.Parameterized):
@@ -145,7 +144,7 @@ class Annotation(View):
         super(Annotation, self).__init__([], **kwargs)
 
         for box in boxes:
-            if isinstance(box, BoundingBox): self.box(box, None)
+            if hasattr(box, 'lbrt'):         self.box(box, None)
             elif isinstance(box[1], dict):   self.box(*box)
             else:                            self.box(box, None)
 
@@ -210,7 +209,7 @@ class Annotation(View):
         by ((left, bottom), (right, top)). Alternatively, a
         BoundingBox may be supplied.
         """
-        if isinstance(box, BoundingBox):
+        if hasattr(box, 'lbrt'):
             (l,b,r,t) = box.lbrt()
         else:
             ((l,b), (r,t)) = box

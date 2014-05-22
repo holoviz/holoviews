@@ -25,7 +25,7 @@ class TestOptsMagic(ExtensionTestCase):
     def setUp(self):
         super(TestOptsMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from dataviews.boundingregion import BoundingBox")
+        self.cell("from dataviews.sheetviews import BoundingBox")
         self.cell("from dataviews import SheetView, Points, SheetOverlay")
 
         # Clear the options map
@@ -174,7 +174,7 @@ class TestChannelMagic(ExtensionTestCase):
     def setUp(self):
         super(TestChannelMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from dataviews.boundingregion import BoundingBox")
+        self.cell("from dataviews.sheetviews import BoundingBox")
         self.cell("from dataviews import SheetView, SheetOverlay")
         self.channels = OptionsGroup([Options('definitions',
                                               ChannelOpts)])

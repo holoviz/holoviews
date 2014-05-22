@@ -2,8 +2,9 @@ import unittest
 import numpy as np
 
 from . import utils # pyflakes:ignore (set sys.path)
-from dataviews.boundingregion import BoundingBox
+from dataviews.sheetviews import BoundingBox
 from dataviews import SheetView
+
 
 # Duplicates testsheetview from topographica
 
