@@ -339,7 +339,7 @@ class TableStack(Stack):
 
 
     def sample(self, **kwargs):
-        from operation import sample_curve
+        from .operation import sample_curve
         return sample_curve(self, **kwargs)
 
 
