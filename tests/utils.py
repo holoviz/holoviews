@@ -5,7 +5,7 @@ from nose.plugins.skip import SkipTest
 from numpy.testing import assert_array_almost_equal
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
-sys.path.insert(0, os.path.join(cwd, '..', '..'))
+sys.path.insert(0, os.path.join(cwd, '..'))
 
 from dataviews.views import Layout, GridLayout
 from dataviews import DataOverlay,  DataStack,  Annotation, Curve, Histogram
