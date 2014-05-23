@@ -410,7 +410,7 @@ class Analysis(Aggregator):
             return None
         else:
             view = self.reference.resolve(viewgroup)
-            return self.analysis(view.last, *self.args, **self.kwargs)
+            return self.analysis(view, *self.args, **self.kwargs)
 
     def __str__(self):
         return "Analysis(%r)" % self.analysis
@@ -559,8 +559,15 @@ class Collector(ViewGroup):
         self._schedule_tasks()
         for t in np.diff([0]+times):
             self.time_hook(float(t))
+            # An empty viewgroup buffer stops analysis repeatedly
+            # computing results over the entire accumulated stack
+            viewgroup_buffer = ViewGroup()
             for task in self._scheduled_tasks:
-                task(viewgroup, self.time_fn(), times)
+                if isinstance(task, Analysis) and task.stackwise:
+                    task(viewgroup, self.time_fn(), times)
+                else:
+                    task(viewgroup_buffer, self.time_fn(), times)
+                    viewgroup.update(viewgroup_buffer)
         return viewgroup
 
 
