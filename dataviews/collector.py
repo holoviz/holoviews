@@ -2,7 +2,6 @@
 ViewGroup, Collector and related classes offer optional functionality
 for holding and collecting DataView objects.
 """
-
 import time, uuid
 import numpy as np
 from collections import OrderedDict
@@ -427,7 +426,7 @@ class Collector(ViewGroup):
     True
 
     >>> times = data.target.path.keys()
-    >>> print "Collected the data for %d time values" % len(times)
+    >>> print("Collected the data for %d time values" % len(times))
     Collected the data for 5 time values
 
     >>> data.target.path.last                 #doctest: +ELLIPSIS
