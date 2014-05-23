@@ -122,7 +122,7 @@ class ViewGroup(object):
 
         super(ViewGroup, self).__setattr__(label, val)
 
-        if not label.startswith('_') and label not in self.children:
+        if not (label.startswith('_') or label =='fixed' or label in self.children):
             self.children.append(label)
             self._propagate((label,), val)
 
@@ -511,6 +511,9 @@ class Collector(ViewGroup):
         self.__dict__['refs'] = []
         self._scheduled_tasks = []
 
+        fixed_error = 'Collector specification disabled after first call.'
+        self.__dict__['_fixed_error'] = fixed_error
+
 
     @property
     def ref(self):
@@ -556,6 +559,9 @@ class Collector(ViewGroup):
 
 
     def __call__(self, viewgroup=ViewGroup(), times=[]):
+        self.fixed = False
+        viewgroup.fixed = False
+
         self._schedule_tasks()
         for t in np.diff([0]+times):
             self.time_hook(float(t))
@@ -568,6 +574,9 @@ class Collector(ViewGroup):
                 else:
                     task(viewgroup_buffer, self.time_fn(), times)
                     viewgroup.update(viewgroup_buffer)
+
+        self.fixed = True
+        viewgroup.fixed = True
         return viewgroup
 
 
