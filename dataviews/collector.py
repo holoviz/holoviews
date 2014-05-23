@@ -34,6 +34,19 @@ class ViewGroup(object):
         # Path items will only be populated at root node
         self.__dict__['path_items'] = OrderedDict()
 
+        self.__dict__['_fixed'] = False
+        fixed_error = 'ViewGroup attribute access disabled with fixed=True'
+        self.__dict__['_fixed_error'] = fixed_error
+
+    @property
+    def fixed(self):
+        "If fixed, no new paths can be created via attribute access"
+        return self.__dict__['_fixed']
+
+    @fixed.setter
+    def fixed(self, val):
+        self.__dict__['_fixed'] = val
+
 
     def grid(self, ordering='alphanumeric'):
         """
@@ -101,6 +114,12 @@ class ViewGroup(object):
 
 
     def __setattr__(self, label, val):
+
+        # Getattr is skipped for root and first set of children
+        shallow = (self.parent is None or self.parent.parent is None)
+        if label != 'fixed' and self.fixed and shallow:
+            raise AttributeError(self._fixed_error)
+
         super(ViewGroup, self).__setattr__(label, val)
 
         if not label.startswith('_') and label not in self.children:
@@ -115,9 +134,10 @@ class ViewGroup(object):
         """
         try:
             return super(ViewGroup, self).__getattr__(label)
-        except AttributeError as e:
-            if label.startswith('_'):
-                raise AttributeError(str(label))
+        except AttributeError: pass
+
+        if label.startswith('_'):   raise AttributeError(str(label))
+        elif self.fixed==True:      raise AttributeError(self._fixed_error)
 
         if label in self.children:
             return self.__dict__[label]
