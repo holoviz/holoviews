@@ -532,8 +532,15 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
     object, allowing for bounds checking and grid-snapping.
     """
 
-    dimensions = param.List(default=[Dimension(name="X"),
-                                     Dimension(name="Y")])
+    dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")])
+
+    label = param.String(constant=True, doc="""
+      A short label used to indicate what kind of data is contained
+      within the CoordinateGrid.""")
+
+    title = param.String(default='{label}', doc="""
+       The title formatting string allows the title to be composed
+       from the label and type.""")
 
     def __init__(self, bounds, shape, initial_items=None, **kwargs):
         (l, b, r, t) = bounds.lbrt()

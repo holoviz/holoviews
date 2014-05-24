@@ -966,7 +966,7 @@ class CoordinateGridPlot(Plot):
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
-        ax = self._axis(axis, lbrt=(0, 0, width, height))
+        ax = self._axis(axis, self._format_title(-1) ,lbrt=(0, 0, width, height))
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
@@ -994,13 +994,21 @@ class CoordinateGridPlot(Plot):
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
         for i, plot in enumerate(self.handles['projs']):
-            view = list(self.grid.values())[i].values()[n]
+            key, view = list(self.grid.values())[i].items()[n]
             if isinstance(view, SheetOverlay):
                 data = view[-1].data if self.situate else view[-1].roi.data
             else:
                 data = view.data if self.situate else view.roi.data
-
             plot.set_data(data)
+        self._update_title(n)
+        plt.draw()
+
+
+    def _format_title(self, n):
+        stack = self.grid.values()[0]
+        key, _ = stack.items()[n]
+        title_format = stack.get_title(key if isinstance(key, tuple) else (key,), self.grid)
+        return title_format.format(label=self.grid.label, type=self.grid.__class__.__name__)
 
 
     def _get_dims(self, view):
