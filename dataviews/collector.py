@@ -10,6 +10,7 @@ import param
 from .sheetviews import SheetView, SheetStack, CoordinateGrid, BoundingBox
 from .views import GridLayout,Stack, View, NdMapping, Dimension
 
+from .ipython.widgets import RunProgress
 
 Time = Dimension("time", type=param.Dynamic.time_fn.time_type)
 
@@ -452,9 +453,11 @@ class Collector(ViewGroup):
     View('example string'...title='target path \\n Time = 5.0')
     """
 
-    time_hook = param.Callable(param.Dynamic.time_fn.advance, doc="""
+    interval_hook = param.Callable(RunProgress, doc="""
        A callable that advances by the specified time before the next
-       batch of collection tasks is executed.""")
+       batch of collection tasks is executed. If set to a subclass of
+       RunProgress, the class will be instantiated and precent_range
+       updated to allow a progress bar to be displayed.""")
 
     time_fn = param.Callable(default=param.Dynamic.time_fn, doc="""
         A callable that returns the time where the time may be the
@@ -514,6 +517,11 @@ class Collector(ViewGroup):
         fixed_error = 'Collector specification disabled after first call.'
         self.__dict__['_fixed_error'] = fixed_error
 
+        update_progress = (isinstance(self.interval_hook, type)
+                           and issubclass(self.interval_hook, RunProgress))
+        self.__dict__['update_progress'] = update_progress
+        self.__dict__['progress_label'] = 'Completion'
+
 
     @property
     def ref(self):
@@ -559,12 +567,30 @@ class Collector(ViewGroup):
 
 
     def __call__(self, viewgroup=ViewGroup(), times=[]):
-        self.fixed = False
-        viewgroup.fixed = False
+
+        current_time = self.time_fn()
+        if times != sorted(times):
+            raise Exception("Please supply the list of times in ascending order")
+        if times[0] < current_time:
+            raise Exception("The first time value is priort to the current time.")
+
+        times = np.array([current_time] + times)
+        increments = np.diff([current_time] + times)
+        completion = 100 * (times - times.min()) / (times.max() - times.min())
+
+        # If an instance of RunProgress, instantiate the progress bar
+        interval_hook = (self.interval_hook(label=self.progress_label)
+                         if self.update_progress else self.interval_hook)
 
         self._schedule_tasks()
-        for t in np.diff([0]+times):
-            self.time_hook(float(t))
+        (self.fixed, viewgroup.fixed) = (False, False)
+
+        for i, t in enumerate(increments):
+            if self.update_progress:
+                interval_hook.percent_range = (completion[i], completion[i+1])
+
+            interval_hook(float(t))
+
             # An empty viewgroup buffer stops analysis repeatedly
             # computing results over the entire accumulated stack
             viewgroup_buffer = ViewGroup()
