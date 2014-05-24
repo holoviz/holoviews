@@ -360,7 +360,7 @@ class Stack(NdMapping):
     @property
     def style(self):
         """
-        The type of elements stored in the stack.
+        The style of elements stored in the stack.
         """
         if self._style is None:
             self._style = None if len(self) == 0 else self.last.style
