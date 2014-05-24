@@ -45,6 +45,10 @@ class ViewOperation(param.ParameterizedFunction):
     dataviews, processing each layer on an input Stack independently.
     """
 
+    label = param.String(default='ViewOperation', doc="""
+        The label to identify the output of the ViewOperation. By
+        default this will match the name of the ViewOperation itself.""")
+
     def _process(self, view):
         """
         Process a single input view and output a list of views. When
@@ -129,6 +133,11 @@ class StackOperation(param.ParameterizedFunction):
     and processes them, returning arbitrary new Stack objects as output.
     """
 
+    label = param.String(default='StackOperation', doc="""
+        The label to identifiy the output of the StackOperation. By
+        default this will match the name of the StackOperation.""")
+
+
     def __call__(self, stack, **params):
         self.p = ParamOverrides(self, params)
 
@@ -160,6 +169,9 @@ class RGBA(ViewOperation):
     is the alpha channel.
     """
 
+    label = param.String(default='RGBA', doc="""
+        The label to use for the resulting RGBA SheetView.""")
+
     def _process(self, overlay):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
@@ -179,7 +191,7 @@ class RGBA(ViewOperation):
 
 
         return [SheetView(np.dstack(arrays), overlay.bounds,
-                          label='RGBA',
+                          label=self.p.label,
                           roi_bounds=overlay.roi_bounds)]
 
 
@@ -190,11 +202,15 @@ class AlphaOverlay(ViewOperation):
     defined by the second layer of the overlay.
     """
 
+    label = param.String(default='AlphaOverlay', doc="""
+        The label suffix to use for the alpha overlay result where the
+        suffix is added to the label of the first layer.""")
+
     def _process(self, overlay):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
         return [SheetView(RGBA(R*G*B*overlay[1]).data,
                           overlay.bounds,
-                          label='AlphaOverlay')]
+                          label=self.overlay[0].label+' '+self.p.label)]
 
 
 
@@ -216,6 +232,10 @@ class HCS(ViewOperation):
     flipSC = param.Boolean(default=False, doc="""
         Whether to flip the strength and confidence channels""")
 
+    label = param.String(default='HCS', doc="""
+        The label suffix to use for the resulting HCS plot where the
+        suffix is added to the label of the Hue channel.""")
+
     def _process(self, overlay):
         hue = overlay[0]
         confidence = overlay[1]
@@ -235,7 +255,7 @@ class HCS(ViewOperation):
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
         return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds,
-                          label=hue.label+' HCS')]
+                          label=hue.label +' '+ self.p.label)]
 
 
 
@@ -249,6 +269,10 @@ class Colorize(ViewOperation):
     shortcut to the HCS operation using a constant confidence
     value. Arbitrary colorization will be supported in future.
     """
+
+    label = param.String(default='Colorized', doc="""
+        The label suffix to use for the resulting colorized plot where
+        the suffix is added to the label of the first layer.""")
 
     def _process(self, overlay):
 
@@ -266,7 +290,7 @@ class Colorize(ViewOperation):
 
          return [SheetView(hcs.data, hcs.bounds,
                            roi_bounds=hcs.roi_bounds,
-                           label= overlay[0].label+' Colorize')]
+                           label= overlay[0].label + ' ' + self.p.label)]
 
 
 
@@ -280,6 +304,11 @@ class cmap2rgb(ViewOperation):
     cmap = param.String(default=None, allow_None=True, doc="""
           Force the use of a specific color map. Otherwise, the cmap
           property of the applicable style is used.""")
+
+    label = param.String(default='RGB', doc="""
+        The label suffix to use for the resulting RGB SheetView where
+        the suffix is added to the label of the SheetView to be
+        colored.""")
 
     def _process(self, sheetview):
         if sheetview.depth != 1:
@@ -295,7 +324,7 @@ class cmap2rgb(ViewOperation):
                          cyclic_range=sheetview.cyclic_range,
                          style=sheetview.style,
                          metadata=sheetview.metadata,
-                         label = sheetview.label+' RGB')]
+                         label = sheetview.label +' ' + self.p.label)]
 
 
 
@@ -304,12 +333,17 @@ class split(ViewOperation):
     Given SheetViews in RGBA mode, return the R,G,B and A channels as
     a GridLayout.
     """
+
+    label = param.String(default='Channel', doc="""
+      The label suffix used to label the components of the split
+      following the character selected from output_names.""")
+
     def _process(self, sheetview):
         if sheetview.mode not in ['rgb','rgba']:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
         return [SheetView(sheetview.data[:,:,i],
                           bounds=sheetview.bounds,
-                          label='RGBA'[i] + ' Channel')
+                          label='RGBA'[i] + ' ' + self.p.label)
                 for i in range(sheetview.depth)]
 
 
@@ -327,6 +361,10 @@ class contours(ViewOperation):
     levels = param.NumericTuple(default=(0.5,), doc="""
          A list of scalar values used to specify the contour levels.""")
 
+    label = param.String(default='Level', doc="""
+      The label suffix used to label the resulting contour curves
+      where the suffix is added to the label of the  input SheetView""")
+
     def _process(self, sheetview):
 
         figure_handle = plt.figure()
@@ -341,7 +379,7 @@ class contours(ViewOperation):
             lines = [path.vertices for path in paths]
             contours.append(Contours(lines, sheetview.bounds,
                             metadata={'level': level},
-                            label=sheetview.label+' Level'))
+                            label=sheetview.label + ' ' + self.p.label))
 
         plt.close(figure_handle)
 
@@ -359,13 +397,17 @@ class sample_table(ViewOperation):
 
     samples = param.List(doc="The list of table headings or sheet coordinate tuples to sample.")
 
+    label = param.String(default='Samples', doc="""
+      The suffix used to label the resulting sample table where the
+      suffix is added to the label of the input Tables or SheetViews.""")
+
     def _process(self, view):
         if not isinstance(view, (SheetLayer, Table)):
             raise Exception('sample_sheet can only sample SheetLayers.')
 
         if isinstance(view, Table):
             data = OrderedDict((k, v) for k, v in view.data.items() if k in self.p.samples)
-            return [Table(data, label=view.label, metadata=view.metadata)]
+            return [Table(data, label=view.label + ' ' + self.p.label, metadata=view.metadata)]
 
         sheetviews = self.get_views(view, '')
         if len(sheetviews) != 1:
@@ -373,7 +415,7 @@ class sample_table(ViewOperation):
         sv = sheetviews[0]
         sample_inds = [(s, tuple(sv.sheet2matrixidx(*s))) for s in self.p.samples]
         data = OrderedDict((sample, sv.data[idx]) for sample, idx in sample_inds)
-        return [Table(data, label=sv.label, metadata=sv.metadata)]
+        return [Table(data, label=sv.label + ' ' + self.p.label, metadata=sv.metadata)]
 
 
 
@@ -395,6 +437,9 @@ class sample_curve(StackOperation):
     samples = param.List(default=[], doc="""
         The list of table headings or sheet coordinate tuples to sample into
         curves.""")
+
+    label = param.String(default='SampleCurve', doc="""
+      The label the for the resulting Curves.""")
 
 
     def _process(self, stack):
