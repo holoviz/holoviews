@@ -357,10 +357,9 @@ class Aggregator(object):
 
         if self.path not in viewgroup:
             if not isinstance(val, NdMapping):
-                no_title =  (val.label == '') and val.title == '{label}'
-                title = ((' '.join(self.path) + val.stack_type.title)
-                         if no_title else val.stack_type.title)
-                val = val.stack_type([((time,), val)], dimensions=[Time], title=title)
+                if val.title == '{label}':
+                    val.title = ' '.join(self.path[::-1]) + val.title
+                val = val.stack_type([((time,), val)], dimensions=[Time])
         else:
             current_val = viewgroup.path_items[self.path]
             val = self._merge_views(current_val, val, time)

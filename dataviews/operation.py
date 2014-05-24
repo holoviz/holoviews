@@ -507,8 +507,7 @@ class sample_curve(StackOperation):
 
         dataviews = []
         for sample in self.p.samples:
-            dataview = DataStack(dimensions=stack_dims, metadata=stack.metadata,
-                                 title=stack.title) if stack_dims else None
+            dataview = DataStack(dimensions=stack_dims, metadata=stack.metadata) if stack_dims else None
             for key, x_axis_data in split_data.items():
                 # Key contains all dimensions (including overlaid dimensions) except for x_axis
                 sampled_curve_data = [(x, view[sample]) for x, view in x_axis_data.items()]

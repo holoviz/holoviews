@@ -336,13 +336,10 @@ class Stack(NdMapping):
     (specifying a frame sequence) or any other dimensions.
     """
 
-    title = param.String(default='{label} \n {dims}', doc="""
-       A short description of the stack that may be used as a title
-       (e.g. the title of an animation) but may also accept a
-       formatting string to generate a unique title per layer.
-       The formatters {label}, {type} and {dims} referring to
-       the View lable, type and dimensions key/value pairs
-       respectively.""")
+    title_suffix = param.String(default='\n {dims}', doc="""
+       A string appended to the View titles when they are added to the
+       Stack. Default adds a new line with the formatted dimensions
+       of the Stack inserted using the {dims} formatting keyword.""")
 
     data_type = View
     overlay_type = Overlay
@@ -390,27 +387,22 @@ class Stack(NdMapping):
             raise AssertionError("%s must only contain one type of View." %
                                  self.__class__.__name__)
         super(Stack, self)._item_check(dim_vals, data)
-        self._set_title(dim_vals, data)
 
 
-    def _set_title(self, key, item, group_size=2):
+    def get_title(self, key, item, group_size=2):
         """
-        Sets a title string on the element item is added to the Stack, based on
-        the element label and formatted stack dimensions and values.
+        Resolves the title string on the View being added to the
+        Stack, adding the Stacks title suffix.
         """
         if self.ndims == 1 and self.dim_dict.get('Default', False):
             return None
-        dimension_labels = [dim.pprint_value(k) for dim, k in zip(self._dimensions, key)]
+        dimension_labels = [dim.pprint_value(k) for dim, k in
+                            zip(self._dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
-                      for i in range(len(dimension_labels))]
+                  for i in range(len(dimension_labels))]
         dims = '\n '.join(g for g in groups if g)
-        if isinstance(item, Overlay):
-            for layer in item:
-                format_dict = dict(dims=dims, label=layer.label, type=layer.__class__.__name__)
-                layer.title = self.title.format(**format_dict)
-        else:
-            format_dict = dict(dims=dims, label=item.label, type=item.__class__.__name__)
-            item.title = self.title.format(**format_dict)
+        title_suffix = self.title_suffix.format(dims=dims)
+        return item.title + title_suffix
 
 
     def split(self):

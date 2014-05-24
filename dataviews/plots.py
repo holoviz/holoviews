@@ -90,18 +90,17 @@ class Plot(param.Parameterized):
         return stack
 
 
-    def _format_title(self, view):
+    def _format_title(self, n):
+        key, view = self._stack.items()[n]
+        title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
         if view.title is None:
             return None
-        format_dict = {}
-        if '{label}' in view.title: format_dict.update(label=view.label)
-        if '{type}' in view.title: format_dict.update(type=view.__class__.__name__)
-        return view.title.format(**format_dict)
+        return title_format.format(label=view.label, type=view.__class__.__name__)
 
 
-    def _update_title(self, view):
+    def _update_title(self, n):
         if self.show_title and self.zorder == 0:
-            title = self._format_title(view)
+            title = self._format_title(n)
             if title is not None:
                 self.handles['title'].set_text(title)
 
@@ -253,7 +252,7 @@ class ContourPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0):
         lines = self._stack.last
-        title = None if self.zorder > 0 else self._format_title(lines)
+        title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
         line_segments = LineCollection(lines.data, zorder=self.zorder,
                                        **View.options.style(lines)[cyclic_index])
@@ -267,7 +266,7 @@ class ContourPlot(Plot):
         n = n  if n < len(self) else len(self) - 1
         contours = list(self._stack.values())[n]
         self.handles['line_segments'].set_paths(contours.data)
-        self._update_title(contours)
+        self._update_title(n)
         plt.draw()
 
 
@@ -428,7 +427,7 @@ class PointPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0):
         points = self._stack.last
-        title = None if self.zorder > 0 else self._format_title(points)
+        title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
         scatterplot = ax.scatter(points.data[:, 0], points.data[:, 1],
@@ -444,7 +443,7 @@ class PointPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         points = list(self._stack.values())[n]
         self.handles['scatter'].set_offsets(points.data)
-        self._update_title(points)
+        self._update_title(n)
         plt.draw()
 
 
@@ -471,7 +470,7 @@ class SheetViewPlot(Plot):
     def __call__(self, axis=None, cyclic_index=0):
         sheetview = self._stack.last
         (l, b, r, t) = self._stack.bounds.lbrt()
-        title = None if self.zorder > 0 else self._format_title(sheetview)
+        title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
 
         opts = View.options.style(sheetview)[cyclic_index]
@@ -497,7 +496,7 @@ class SheetViewPlot(Plot):
 
         if self.normalize_individually:
             im.set_clim(sheetview.range)
-        self._update_title(sheetview)
+        self._update_title(n)
 
         plt.draw()
 
@@ -1228,7 +1227,7 @@ class CurvePlot(Plot):
         if lbrt is None:
             lbrt = curveview.lbrt if self.rescale_individually else self._stack.lbrt
 
-        self.ax = self._axis(axis, self._format_title(curveview), curveview.xlabel,
+        self.ax = self._axis(axis, self._format_title(-1), curveview.xlabel,
                              curveview.ylabel, xticks=xticks, lbrt=lbrt)
 
         # Create line segments and apply style
@@ -1262,7 +1261,7 @@ class CurvePlot(Plot):
         self.handles['line_segment'].set_ydata(curveview.data[:, 1])
 
         self._axis(self.ax, lbrt=lbrt)
-        self._update_title(curveview)
+        self._update_title(n)
         plt.draw()
 
 
@@ -1403,7 +1402,7 @@ class TablePlot(Plot):
     def __call__(self, axis=None):
         tableview = self._stack.last
 
-        ax = self._axis(axis, self._format_title(tableview))
+        ax = self._axis(axis, self._format_title(-1))
 
         ax.set_axis_off()
         size_factor = (1.0 - 2*self.border)
@@ -1449,7 +1448,7 @@ class TablePlot(Plot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-        self._update_title(tableview)
+        self._update_title(n)
         plt.draw()
 
 
@@ -1507,6 +1506,7 @@ class HistogramPlot(Plot):
         # Process and apply axis settings
         ticks = self._compute_ticks(edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
+        if self.zorder == 0: ax_settings['title'] = self._format_title(-1)
         self.ax = self._axis(axis, **ax_settings)
 
         if self.orientation == 'vertical':
@@ -1571,7 +1571,6 @@ class HistogramPlot(Plot):
         axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
         x0, x1, y0, y1 = lims
         axis_settings['lbrt'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
-        if self.zorder == 0: axis_settings['title'] = self._format_title(hist)
 
         return axis_settings
 
@@ -1618,7 +1617,7 @@ class HistogramPlot(Plot):
         ax_settings = self._process_axsettings(hist, lims, ticks)
         self._axis(self.ax, **ax_settings)
         self._update_artists(n, edges, hvals, widths, lims)
-        self._update_title(hist)
+        self._update_title(n)
 
 
 
