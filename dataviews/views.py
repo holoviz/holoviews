@@ -401,7 +401,7 @@ class Stack(NdMapping):
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         dims = '\n '.join(g for g in groups if g)
-        title_suffix = title_suffix.format(dims=dims)
+        title_suffix = self.title_suffix.format(dims=dims)
         return item.title + title_suffix
 
 
