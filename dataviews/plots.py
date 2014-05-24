@@ -709,7 +709,7 @@ class LayoutPlot(Plot):
             # Customize plotopts depending on position.
             plotopts = View.options.plotting(view).opts
             # Options common for any subplot
-            subplot_opts = dict(show_title=False, main=self.layout.main)
+            subplot_opts = dict(show_title=False, layout=self.layout)
             override_opts = {}
 
             if pos == 'right':
@@ -1633,8 +1633,8 @@ class HistogramPlot(Plot):
 
 class SideHistogramPlot(HistogramPlot):
 
-    main = param.Parameter(doc="""
-        The main View or Stack this SideHistogramPlot is attached to.""")
+    layout = param.Parameter(doc="""
+        The layout object to which this SideHistogramPlot belongs.""")
 
     offset = param.Number(default=0.2, doc="""
         Histogram value offset for a colorbar.""")
@@ -1665,14 +1665,14 @@ class SideHistogramPlot(HistogramPlot):
         the bars appropriately, respecting the required normalization
         settings.
         """
+        main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
-        main_style = View.options.style(self.main).opts
-        individually = View.options.plotting(self.main).opts.get('normalize_individually', False)
+        individually = View.options.plotting(main).opts.get('normalize_individually', False)
 
-        if isinstance(self.main, Stack):
-            main_range = list(self.main.values())[n].range if individually else self.main.range
-        elif isinstance(self.main, View):
-            main_range = self.main.range
+        if isinstance(main, Stack):
+            main_range = list(main.values())[n].range if individually else main.range
+        elif isinstance(main, View):
+            main_range = main.range
 
         if offset and ('offset_line' not in self.handles):
             self.handles['offset_line'] = self.offset_linefn(offset,
@@ -1681,7 +1681,16 @@ class SideHistogramPlot(HistogramPlot):
         elif offset:
             self._update_separator(lims, offset)
 
-        cmap = cm.get_cmap(main_style['cmap']) if self.offset else None
+
+        # If .main is an Overlay or a Stack of Overlays get the correct style
+        if isinstance(main, Stack) and issubclass(main.type, Overlay):
+            style =  main.style[self.layout.main_layer]
+        elif isinstance(main, Overlay):
+            style = main.style[self.layout.main_layer]
+        else:
+            style = main.style
+
+        cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
         if cmap is not None:
             self._colorize_bars(cmap, bars, main_range)
         return bars
