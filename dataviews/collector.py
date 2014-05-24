@@ -50,9 +50,9 @@ class ViewGroup(object):
 
     def grid(self, ordering='alphanumeric'):
         """
-        Turn the ViewGroup into a GridLayout with the View object
-        ordering specified by a list of labels or by the specified
-        ordering mode ('alphanumeric' or 'insertion').
+        Turn the ViewGroup into a GridLayout with the available View
+        objects ordering specified by a list of labels or by the
+        specified ordering mode ('alphanumeric' or 'insertion').
         """
         if ordering == 'alphanumeric':
             child_ordering = sorted(self.children)
@@ -62,7 +62,8 @@ class ViewGroup(object):
             child_ordering = ordering
 
         children = [self.__dict__[l] for l in child_ordering]
-        return GridLayout(list(child for child in children if not isinstance(child, ViewGroup)))
+        dataview_types = (View, Stack, GridLayout, CoordinateGrid)
+        return GridLayout(list(child for child in children if isinstance(child, dataview_types)))
 
 
     def update(self, other):
