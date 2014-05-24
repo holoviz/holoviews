@@ -508,6 +508,8 @@ class Layout(param.Parameterized):
     layout_order = ['main', 'right', 'top']
 
     def __init__(self, views, **params):
+
+        self.main_layer = 0 # The index of the main layer if .main is an overlay
         if len(views) > 3:
             raise Exception('Layout accepts no more than three elements.')
 
