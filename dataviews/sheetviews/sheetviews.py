@@ -485,8 +485,9 @@ class SheetStack(DataStack):
         return self.map(lambda x, _: x.roi)
 
 
-    def hist(self, num_bins=20, individually=False, bin_range=None):
-        histstack = DataStack(dimensions=self.dimensions, title=self.title,
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        histstack = DataStack(dimensions=self.dimensions,
+                              title_suffix=self.title_suffix,
                               metadata=self.metadata)
 
         stack_range = None if individually else self.range
@@ -494,9 +495,16 @@ class SheetStack(DataStack):
         for k, v in self.items():
             histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
                                   individually=individually,
-                                  style_prefix='Custom[<' + self.name + '>]_')
+                                  style_prefix='Custom[<' + self.name + '>]_',
+                                  adjoin=False,
+                                  **kwargs)
 
-        return histstack
+        if adjoin and issubclass(self.type, Overlay):
+            layout = (self << histstack)
+            layout.main_layer = kwargs['index']
+            return layout
+
+        return (self << histstack) if adjoin else histstack
 
 
     @property
