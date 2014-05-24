@@ -94,21 +94,6 @@ class SheetOverlay(SheetLayer, Overlay):
 
     channels = channels
 
-    def add(self, layer):
-        """
-        Overlay a single layer on top of the existing overlay.
-        """
-        if isinstance(layer, Annotation):
-            self.data.append(layer)
-            return
-        elif layer.bounds.lbrt() != self.bounds.lbrt():
-            if layer.bounds is None:
-                layer.bounds = self.bounds
-            else:
-                raise Exception("Layer must have same bounds as SheetOverlay")
-        self.data.append(layer)
-
-
     @property
     def roi(self):
         """
@@ -130,6 +115,31 @@ class SheetOverlay(SheetLayer, Overlay):
                                     "SheetViews, cannot compute range.")
                 range = find_minmax(range, view.range)
         return range
+
+
+    def add(self, layer):
+        """
+        Overlay a single layer on top of the existing overlay.
+        """
+        if isinstance(layer, Annotation):
+            self.data.append(layer)
+            return
+        elif layer.bounds.lbrt() != self.bounds.lbrt():
+            if layer.bounds is None:
+                layer.bounds = self.bounds
+            else:
+                raise Exception("Layer must have same bounds as SheetOverlay")
+        self.data.append(layer)
+
+
+    def hist(self, index=None, adjoin=True, **kwargs):
+        hist = self[index].hist(adjoin=False, **kwargs)
+        if adjoin:
+            adjoint = self << hist
+            adjoint.main_layer = index
+            return adjoint
+        else:
+            return hist
 
 
     def __getstate__(self):
