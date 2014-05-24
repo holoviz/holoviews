@@ -93,7 +93,7 @@ class Plot(param.Parameterized):
     def _format_title(self, n):
         key, view = self._stack.items()[n]
         title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
-        if view.title is None:
+        if title_format is None:
             return None
         return title_format.format(label=view.label, type=view.__class__.__name__)
 
@@ -1008,6 +1008,8 @@ class CoordinateGridPlot(Plot):
         stack = self.grid.values()[0]
         key, _ = stack.items()[n]
         title_format = stack.get_title(key if isinstance(key, tuple) else (key,), self.grid)
+        if title_format is None:
+            return None
         return title_format.format(label=self.grid.label, type=self.grid.__class__.__name__)
 
 
