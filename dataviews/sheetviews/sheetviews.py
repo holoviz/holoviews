@@ -628,8 +628,21 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
 
     def __mul__(self, other):
-        if isinstance(other, SheetStack) and len(other) == 1:
-            other = other.last
+
+        if isinstance(other, CoordinateGrid):
+            if set(self.keys()) != set(other.keys()):
+                raise KeyError("Can only overlay two CoordinateGrids if their keys match")
+            zipped = zip(self.keys(), self.values(), other.values())
+            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
+            return self.clone(overlayed_items)
+
+        elif isinstance(other, SheetStack) and len(other) == 1:
+            sheetview = other.last
+        elif isinstance(other, SheetStack) and len(other) != 1:
+            raise Exception("Can only overlay with SheetStack of length 1")
+        else:
+            sheetview = other
+
         overlayed_items = [(k, el * other) for k, el in self.items()]
         return self.clone(overlayed_items)
 
