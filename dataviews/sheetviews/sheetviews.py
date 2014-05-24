@@ -233,12 +233,16 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
                          style=self.style)
 
 
-    def hist(self, num_bins=20, bin_range=None, individually=True, style_prefix=None):
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         """
-        Returns a Layout of the SheetView with an attached histogram.
-        num_bins allows customizing the bin number. The container_name
-        can additionally be specified to set a common cmap when viewing
-        a Stack or Overlay.
+        Returns a Histogram of the SheetView data, binned into
+        num_bins over the bin_range (if specified).
+
+        If adjoin is True, the histogram will be returned adjoined to
+        the SheetView as a side-plot.
+
+        The 'individually' argument specifies whether the histogram
+        will be rescaled for each for SheetViews in a SheetStack
         """
         range = find_minmax(self.range, (0, -float('inf'))) if bin_range is None else bin_range
 
@@ -258,12 +262,11 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
                               metadata=self.metadata)
 
         # Set plot and style options
-        style_prefix = 'Custom[<' + self.name + '>]_' if style_prefix is None else style_prefix
+        style_prefix = kwargs.get('style_prefix','Custom[<' + self.name + '>]_')
         opts_name = style_prefix + hist_view.label.replace(' ', '_')
         hist_view.style = opts_name
         options[opts_name] = options.plotting(self)(**dict(rescale_individually=individually))
-
-        return hist_view
+        return (self << hist_view) if adjoin else hist_view
 
 
     @property
