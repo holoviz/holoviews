@@ -133,11 +133,17 @@ class SheetOverlay(SheetLayer, Overlay):
 
 
     def hist(self, index=None, adjoin=True, **kwargs):
+
+        valid_ind = isinstance(index, int) and (0 <= index < len(self))
+        valid_label = index in [el.label for el in self.data]
+        if index is None or not any([valid_ind, valid_label]):
+            raise TypeError("Please supply a suitable index for the histogram data")
+
         hist = self[index].hist(adjoin=False, **kwargs)
         if adjoin:
-            adjoint = self << hist
-            adjoint.main_layer = index
-            return adjoint
+            layout = self << hist
+            layout.main_layer = index
+            return layout
         else:
             return hist
 

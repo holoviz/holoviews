@@ -1684,9 +1684,9 @@ class SideHistogramPlot(HistogramPlot):
 
         # If .main is an Overlay or a Stack of Overlays get the correct style
         if isinstance(main, Stack) and issubclass(main.type, Overlay):
-            style =  main.style[self.layout.main_layer]
+            style =  main.last[self.layout.main_layer].style
         elif isinstance(main, Overlay):
-            style = main.style[self.layout.main_layer]
+            style = main[self.layout.main_layer].style
         else:
             style = main.style
 
