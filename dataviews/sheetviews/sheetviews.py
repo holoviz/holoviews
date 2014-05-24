@@ -463,14 +463,6 @@ class SheetStack(DataStack):
 
 
     @property
-    def rgb(self):
-        if self.type == self.overlay_type:
-            return self.map(lambda x, _: x.rgb)
-        else:
-            raise Exception("Can only convert %s of overlays to RGB(A)" % self.__class__.__name__)
-
-
-    @property
     def N(self):
         return self.normalize()
 
