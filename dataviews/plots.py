@@ -941,7 +941,7 @@ class GridLayoutPlot(Plot):
 
 
 
-class CoordinateGridPlot(Plot):
+class CoordinateGridPlot(OverlayPlot):
     """
     CoordinateGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. The projections can be situated
@@ -967,6 +967,9 @@ class CoordinateGridPlot(Plot):
     def __init__(self, grid, **kwargs):
         if not isinstance(grid, CoordinateGrid):
             raise Exception("CoordinateGridPlot only accepts ProjectionGrids.")
+        grid = copy.deepcopy(grid)
+        for k, stack in grid.items():
+            grid[k] = self._collapse_channels(grid[k])
         self.grid = grid
         super(CoordinateGridPlot, self).__init__(**kwargs)
 
