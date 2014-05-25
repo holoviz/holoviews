@@ -585,11 +585,13 @@ class Collector(ViewGroup):
         if times != sorted(times):
             raise Exception("Please supply the list of times in ascending order")
         if times[0] < current_time:
-            raise Exception("The first time value is priort to the current time.")
+            raise Exception("The first time value is prior to the current time.")
 
         times = np.array([current_time] + times)
-        increments = np.diff([current_time] + times)
-        completion = 100 * (times - times.min()) / (times.max() - times.min())
+        if len(set(times)) == 1:
+            completion = [0,100]
+        else:
+            completion = 100 * (times - times.min()) / (times.max() - times.min())
 
         # If an instance of RunProgress, instantiate the progress bar
         interval_hook = (self.interval_hook(label=self.progress_label)
@@ -598,7 +600,7 @@ class Collector(ViewGroup):
         self._schedule_tasks()
         (self.fixed, viewgroup.fixed) = (False, False)
 
-        for i, t in enumerate(increments):
+        for i, t in enumerate(np.diff(times)):
             if self.update_progress:
                 interval_hook.percent_range = (completion[i], completion[i+1])
 
@@ -614,8 +616,7 @@ class Collector(ViewGroup):
                     task(viewgroup_buffer, self.time_fn(), times)
                     viewgroup.update(viewgroup_buffer)
 
-        self.fixed = True
-        viewgroup.fixed = True
+        (self.fixed, viewgroup.fixed) = (True, True)
         return viewgroup
 
 
