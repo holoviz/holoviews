@@ -82,6 +82,8 @@ class ViewGroup(object):
         Updated the contents of the current ViewGroup with the
         contents of a second ViewGroup.
         """
+        fixed_status = (self.fixed, other.fixed)
+        (self.fixed, other.fixed) = (False, False)
         if self.parent is None:
             self.path_items.update(other.path_items)
         for label in other.children:
@@ -90,6 +92,7 @@ class ViewGroup(object):
                 self[label] = item
             else:
                 self[label].update(item)
+        (self.fixed, other.fixed) =  fixed_status
 
 
     def set_path(self, path, val):
