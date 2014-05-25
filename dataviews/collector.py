@@ -28,6 +28,16 @@ class ViewGroup(object):
     View('data1', label='', metadata={}, name='view1', title='{label}')
     """
 
+    @classmethod
+    def merge(cls, viewgroups):
+        """
+        Merge a collection of ViewGroups.
+        """
+        first = viewgroups[0]
+        for group in viewgroups:
+            first.update(group)
+        return first
+
     def __init__(self, label=None, parent=None):
         self.__dict__['parent'] = parent
         self.__dict__['label'] = label
