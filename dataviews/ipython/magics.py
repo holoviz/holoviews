@@ -11,10 +11,13 @@ except:
 
 
 from ..options import PlotOpts, StyleOpts, ChannelOpts
-from ..plots import viewmap, channel_modes
+from ..plots import viewmap
 from ..views import Overlay, Layout,  GridLayout
 from ..dataviews import Stack, View
 from ..sheetviews import SheetOverlay
+
+
+channel_ops = ChannelOpts.operations
 
 #========#
 # Magics #
@@ -185,8 +188,8 @@ class ChannelMagic(Magics):
         %%channels R_Channel * G_Channel * B_Channel => RGBA []
         R * G * B
 
-        The available operators are defined in the plots.channel_modes
-        dictionary and additional arguments to the channel operator
+        The available operators are defined in the modes dictionary of
+        ChannelOpts and additional arguments to the channel operator
         are supplied via keywords in the square brackets.
         """
         ChannelMagic.custom_channels = self._parse_channels(str(line))
@@ -237,7 +240,7 @@ class ChannelMagic(Magics):
         channels = {}
         for head, tail in spec_split:
             head = head.strip()
-            op_match = [op for op in channel_modes if tail.strip().startswith(op)]
+            op_match = [op for op in channel_ops if tail.strip().startswith(op)]
             if len(op_match) != 1:
                 raise Exception("Unrecognized channel operation: ", tail.split()[0])
             argument_str = tail.replace(op_match[0],'')
@@ -248,7 +251,7 @@ class ChannelMagic(Magics):
                 raise Exception("Could not evaluate: %s" % argument_str)
 
             op = op_match[0]
-            params = set(p for p in channel_modes[op].params().keys() if p!='name')
+            params = set(p for p in channel_ops[op].params().keys() if p!='name')
 
             mismatch_keys = set(args.keys()) - params
             if mismatch_keys:
@@ -261,7 +264,7 @@ class ChannelMagic(Magics):
                 raise Exception("Invalid characters in overlay pattern specification: %s" % head)
 
             pattern =  ' * '.join(el.strip() for el in head.rsplit('*'))
-            channel_modes[op].instance(**args)
+            channel_ops[op].instance(**args)
             channels[op] =  (pattern, args)
         return channels
 
@@ -275,10 +278,10 @@ class ChannelMagic(Magics):
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             line_tail = line[len('%%channels'):]
             op_name = line_tail[::-1].rsplit('[')[1][::-1].strip().split()[-1]
-            if op_name in  channel_modes:
-                return list(channel_modes[op_name].params().keys())
+            if op_name in  channel_ops:
+                return list(channel_ops[op_name].params().keys())
         else:
-            return list(channel_modes.keys())
+            return list(channel_ops.keys())
 
 
 @magics_class
@@ -396,7 +399,7 @@ class OptsMagic(Magics):
         available_styles = set(cls._basename(s) for s in styles)
         custom_styles = set(s for s in styles if s.startswith('Custom'))
 
-        mismatches = set(cls.custom_options.keys()) - (available_styles | set(channel_modes))
+        mismatches = set(cls.custom_options.keys()) - (available_styles | set(channel_ops))
         if cls.show_info or mismatches:
             return cls._option_key_info(obj, available_styles, mismatches, custom_styles)
 

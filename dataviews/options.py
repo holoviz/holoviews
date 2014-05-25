@@ -320,6 +320,13 @@ class ChannelOpts(Opts):
     control how particular labelled layer combinations in an Overlay
     are displayed.
     """
+
+    # This dictionary specifies the available channel processing
+    # operations. An channel operation is a ViewOperation that accept
+    # Sheet Overlays as input and process them to return a single
+    # RGB(A) SheetView.
+    operations={}
+
     def __init__(self, mode=None, pattern='', **kwargs):
         self.mode = mode
         self.pattern = pattern
@@ -327,17 +334,22 @@ class ChannelOpts(Opts):
         self.options = self._expand_styles(kwargs)
         self.items = kwargs
 
+    @property
+    def operation(self):
+        """Get the channel operation from the set of operations"""
+        return self.operations[self.mode]
+
     def __repr__(self):
         return "%s(%s, %r%s)" % (self.__class__.__name__,
-                                  self.mode + ', ',
-                                  self.pattern + ', ' if self.items else '',
-                                  ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items()))
+                                 self.mode + ', ',
+                                 self.pattern + ', ' if self.items else '',
+                                 ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items()))
 
 
 
 channels = OptionsGroup([Options('definitions', ChannelOpts)])
-options = OptionsGroup([Options('plotting', PlotOpts),
-                        Options('style', StyleOpts)])
+options =  OptionsGroup([Options('plotting', PlotOpts),
+                         Options('style', StyleOpts)])
 
 # Default Styles
 options.Style = StyleOpts()

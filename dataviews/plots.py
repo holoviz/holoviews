@@ -563,7 +563,7 @@ class OverlayPlot(Plot):
             for key in sorted_customized + sorted_reductions:
                 channel = SheetOverlay.channels[key]
                 if channel.mode is None: continue
-                collapse_fn = channel_modes[channel.mode]
+                collapse_fn = channel.operation
                 fn = collapse_fn.instance(**channel.opts)
                 self._collapse(overlay, channel.pattern, fn, key)
         return stack
@@ -1766,16 +1766,6 @@ viewmap = {SheetView: SheetViewPlot,
            Layout: GridLayoutPlot,
            Annotation: AnnotationPlot
 }
-
-
-# The channel_modes dictionary contains the available channel processing
-# modes. These modes are ViewOperations that accept Sheet Overlays as
-# input and process them in some way to return a single RGB(A)
-# SheetView.
-
-channel_modes={'RGBA':RGBA,
-               'HCS':HCS,
-               'AlphaOverlay':AlphaOverlay}
 
 
 __all__ = ['viewmap'] + list(set([_k for _k,_v in locals().items()

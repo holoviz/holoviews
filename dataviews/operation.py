@@ -19,7 +19,7 @@ from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, S
 from .dataviews import View, Stack, DataLayer, DataOverlay, DataStack, Table, TableStack, Curve
 from .sheetviews import GridLayout, CoordinateGrid
 
-from .options import options, GrayNearest, StyleOpts, Cycle
+from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -612,6 +612,10 @@ class sample_curve(StackOperation):
         return dataviews
 
 
+
+ChannelOpts.operations['RGBA'] = RGBA
+ChannelOpts.operations['HCS'] = HCS
+ChannelOpts.operations['AlphaOverlay'] = AlphaOverlay
 
 options.R_Channel = GrayNearest
 options.G_Channel = GrayNearest
