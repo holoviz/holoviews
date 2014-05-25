@@ -526,7 +526,7 @@ class OverlayPlot(Plot):
             layer_labels = overlay.labels[i:len(pattern)+i]
             matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
             if matching and len(layer_labels)==len(pattern):
-                views = [overlay[label] for label in layer_labels]
+                views = [el for el in overlay.data if el.label in layer_labels]
                 overlay_slice = SheetOverlay(views, overlay.bounds)
                 collapsed_view = fn(overlay_slice)
                 collapsed_views.append(collapsed_view)
