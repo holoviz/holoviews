@@ -502,25 +502,14 @@ class SheetViewPlot(Plot):
 
 
 
-class SheetPlot(Plot):
+class OverlayPlot(Plot):
     """
-    A generic plot that visualizes SheetOverlays which themselves may
-    contain SheetLayers of type SheetView, Points or Contour objects.
+    An OverlayPlot supports processing of channel operations on
+    Overlays across stacks. SheetPlot and CoordinateGridPlot are
+    examples of OverlayPlots.
     """
 
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     SheetPlot renders overlay layers which individually have style
-     options but SheetPlot itself does not.""")
-
-    _stack_type = SheetStack
-
-    def __init__(self, overlays, **kwargs):
-        stack = self._check_stack(overlays, SheetOverlay)
-        self._stack = self._collapse_channels(stack)
-        self.plots = []
-        super(SheetPlot, self).__init__(**kwargs)
-
+    _abstract = True
 
     def _collapse(self, overlay, pattern, fn, style_key):
         """
@@ -578,6 +567,27 @@ class SheetPlot(Plot):
                 fn = collapse_fn.instance(**channel.opts)
                 self._collapse(overlay, channel.pattern, fn, key)
         return stack
+
+
+
+class SheetPlot(OverlayPlot):
+    """
+    A generic plot that visualizes SheetOverlays which themselves may
+    contain SheetLayers of type SheetView, Points or Contour objects.
+    """
+
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     SheetPlot renders overlay layers which individually have style
+     options but SheetPlot itself does not.""")
+
+    _stack_type = SheetStack
+
+    def __init__(self, overlays, **kwargs):
+        stack = self._check_stack(overlays, SheetOverlay)
+        self._stack = self._collapse_channels(stack)
+        self.plots = []
+        super(SheetPlot, self).__init__(**kwargs)
 
 
     def __call__(self, axis=None):
