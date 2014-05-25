@@ -444,6 +444,7 @@ class Collector(ViewGroup):
     ViewOperation.
 
     >>> Collector.for_type(str, lambda x: View(x, name=x))
+    >>> Collector.interval_hook = param.Dynamic.time_fn.advance
 
     >>> c = Collector()
     >>> c.target.path = c.collect('example string')
@@ -460,7 +461,7 @@ class Collector(ViewGroup):
     Collected the data for 5 time values
 
     >>> data.target.path.last                 #doctest: +ELLIPSIS
-    View('example string'...title='target path \\n Time = 5.0')
+    View('example string'...)
     """
 
     interval_hook = param.Callable(RunProgress, doc="""
