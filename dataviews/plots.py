@@ -967,10 +967,9 @@ class CoordinateGridPlot(OverlayPlot):
     def __init__(self, grid, **kwargs):
         if not isinstance(grid, CoordinateGrid):
             raise Exception("CoordinateGridPlot only accepts ProjectionGrids.")
-        grid = copy.deepcopy(grid)
-        for k, stack in grid.items():
-            grid[k] = self._collapse_channels(grid[k])
-        self.grid = grid
+        self.grid = copy.deepcopy(grid)
+        for k, stack in self.grid.items():
+            self.grid[k] = self._collapse_channels(self.grid[k])
         super(CoordinateGridPlot, self).__init__(**kwargs)
 
 
