@@ -129,10 +129,9 @@ class ViewGroup(object):
 
 
     def __setattr__(self, label, val):
-
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        if label != 'fixed' and self.fixed and shallow:
+        if label != 'fixed' and not label.startswith('_') and self.fixed and shallow:
             raise AttributeError(self._fixed_error)
 
         super(ViewGroup, self).__setattr__(label, val)
