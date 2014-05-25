@@ -178,6 +178,27 @@ class StackOperation(param.ParameterizedFunction):
         raise NotImplementedError
 
 
+class chain(ViewOperation):
+    """
+    Definining a viewoperation chain is an easy way to define a new
+    ViewOperation from a series of existing ones. The single argument
+    is a callable that accepts an input view and returns a list of
+    output views. To create the custom ViewOperation, you will need to
+    supply this argument to a new instance of chain. For example:
+
+    chain.instance(chain=lambda x: [cmap2rgb(operator(x).N, cmap='jet')])
+
+    This is now a ViewOperation that sums the data in the input
+    overlay and turns it into an RGB SheetView with the 'jet'
+    colormap.
+    """
+
+    chain = param.Callable(doc="""A chain of existing ViewOperations.""")
+
+    def _process(self, view):
+        return self.p.chain(view)
+
+
 
 class RGBA(ViewOperation):
     """
