@@ -237,12 +237,18 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
                          label=self.label,  style=self.style, metadata=self.metadata)
 
 
-    def normalize(self, min=0.0, max=1.0, norm_factor=None):
+    def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
         norm_factor = self.cyclic_range if norm_factor is None else norm_factor
         if norm_factor is None:
             norm_factor = self.data.max() - self.data.min()
         else:
             min, max = (0.0, 1.0)
+
+        if div_by_zero in ['ignore', 'warn']:
+            if (norm_factor==0.0) and div_by_zero=='warn':
+                self.warning("Ignoring divide by zero in normalization.")
+            norm_factor = 1.0 if (norm_factor==0.0) else norm_factor
+
         norm_data = (((self.data - self.data.min())/norm_factor) * abs((max-min))) + min
         return SheetView(norm_data, self.bounds, cyclic_range=self.cyclic_range,
                          metadata=self.metadata, roi_bounds=self.roi_bounds,
