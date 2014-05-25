@@ -200,6 +200,31 @@ class chain(ViewOperation):
 
 
 
+class operator(ViewOperation):
+    """
+    Applies any arbitrary operator on the data (currently only
+    supports SheetViews) and returns the result.
+    """
+
+    operator = param.Callable(np.add, doc="""
+        The binary operator to apply between the data attributes of
+        the supplied Views. By default, performs elementwise addition
+        across the SheetView arrays.""")
+
+    label = param.String(default='Operation', doc="""
+        The label for the result after having applied the operator.""")
+
+    def _process(self, overlay):
+
+        if not isinstance(overlay, Overlay):
+            raise Exception("Operation requires an Overlay as input")
+
+        new_data = self.p.operator(*[el.data for el in overlay.data])
+        return [SheetView(new_data, bounds=overlay.bounds,
+                          label = self.p.label,
+                          roi_bounds=overlay.roi_bounds)]
+
+
 class RGBA(ViewOperation):
     """
     Accepts an overlay containing either 3 or 4 layers. The first
