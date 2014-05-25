@@ -16,7 +16,7 @@ from param import ParamOverrides
 
 from .views import Overlay
 from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
-from .dataviews import DataLayer, DataOverlay, DataStack, Stack, Table, TableStack, Curve
+from .dataviews import View, Stack, DataLayer, DataOverlay, DataStack, Table, TableStack, Curve
 from .sheetviews import GridLayout, CoordinateGrid
 
 from .options import options, GrayNearest, StyleOpts, Cycle
@@ -102,15 +102,34 @@ class ViewOperation(param.ParameterizedFunction):
     def __call__(self, view, **params):
         self.p = ParamOverrides(self, params)
 
-        if not isinstance(view, Stack):
+        if isinstance(view, View):
             views = self._process(view)
             if len(views) > 1:
                 return GridLayout(views)
             else:
                 return views[0]
-        else:
+
+        elif isinstance(view, CoordinateGrid):
+            grids = []
+            for pos, cell in view.items():
+                val = self(cell, **params)
+                stacks = val.values() if isinstance(val, GridLayout) else [val]
+                # Initialize the list of data or coordinate grids
+                if grids == []:
+                    grids = [(DataGrid if isinstance(stack.type, DataLayer)
+                              else CoordinateGrid)(view.bounds, view.shape, label=view.label)
+                             for stack in stacks]
+                # Populate the grids
+                for ind, stack in enumerate(stacks):
+                    grids[ind][pos] = stack
+
+            if len(grids) == 1: return grids[0]
+            else:               return GridLayout(grids)
+
+
+        elif isinstance(view, Stack):
             mapped_items = [(k, self._process(el)) for k, el in view.items()]
-            signature = self._get_signature(el[1] for el in mapped_items)
+            signature = self._get_signature(v for k,v in mapped_items)
 
             stack_types = [stack_mapping[tp] for tp in signature]
             stacks = [stack_tp(dimensions=view.dimensions,
@@ -120,10 +139,8 @@ class ViewOperation(param.ParameterizedFunction):
                 for ind, v in enumerate(views):
                     stacks[ind][k] = v
 
-            if len(stacks) == 1:
-                return stacks[0]
-            else:
-                return GridLayout(stacks)
+            if len(stacks) == 1:  return stacks[0]
+            else:                 return GridLayout(stacks)
 
 
 
