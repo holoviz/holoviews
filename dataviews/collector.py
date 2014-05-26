@@ -1,5 +1,5 @@
 """
-ViewGroup, Collector and related classes offer optional functionality
+AttributeTree, Collector and related classes offer optional functionality
 for holding and collecting DataView objects.
 """
 import time, uuid
@@ -15,27 +15,27 @@ from .ipython.widgets import RunProgress
 Time = Dimension("time", type=param.Dynamic.time_fn.time_type)
 
 
-class ViewGroup(object):
+class AttrTree(object):
     """
-    A ViewGroup offers convenient, multi-level attribute access for
-    collections of Views or Stacks. ViewGroups may also be merged
-    together using the update method. Here is an example of adding a
-    View to a ViewGroup and accessing it:
+    An AttrTree offers convenient, multi-level attribute access for
+    collections of objects. AttrTree objects may also be combined
+    together using the update method or merge classmethod. Here is an
+    example of adding a View to an AttrTree and accessing it:
 
-    >>> group = ViewGroup()
-    >>> group.example.path = View('data1', name='view1')
-    >>> group.example.path
+    >>> index = AttrTree()
+    >>> index.example.path = View('data1', name='view1')
+    >>> index.example.path
     View('data1', label='', metadata={}, name='view1', title='{label}')
     """
 
     @classmethod
-    def merge(cls, viewgroups):
+    def merge(cls, path_indices):
         """
-        Merge a collection of ViewGroups.
+        Merge a collection of AttrTree objects.
         """
-        first = viewgroups[0]
-        for group in viewgroups:
-            first.update(group)
+        first = path_indices[0]
+        for index in path_indices:
+            first.update(index)
         return first
 
     def __init__(self, label=None, parent=None):
@@ -46,7 +46,7 @@ class ViewGroup(object):
         self.__dict__['path_items'] = OrderedDict()
 
         self.__dict__['_fixed'] = False
-        fixed_error = 'ViewGroup attribute access disabled with fixed=True'
+        fixed_error = 'AttrTree attribute access disabled with fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
 
     @property
@@ -61,7 +61,7 @@ class ViewGroup(object):
 
     def grid(self, ordering='alphanumeric'):
         """
-        Turn the ViewGroup into a GridLayout with the available View
+        Turn the AttrTree into a GridLayout with the available View
         objects ordering specified by a list of labels or by the
         specified ordering mode ('alphanumeric' or 'insertion').
         """
@@ -74,13 +74,14 @@ class ViewGroup(object):
 
         children = [self.__dict__[l] for l in child_ordering]
         dataview_types = (View, Stack, GridLayout, CoordinateGrid)
-        return GridLayout(list(child for child in children if isinstance(child, dataview_types)))
+        return GridLayout(list(child for child in children
+                               if isinstance(child, dataview_types)))
 
 
     def update(self, other):
         """
-        Updated the contents of the current ViewGroup with the
-        contents of a second ViewGroup.
+        Updated the contents of the current AttrTree with the
+        contents of a second AttrTree.
         """
         fixed_status = (self.fixed, other.fixed)
         (self.fixed, other.fixed) = (False, False)
@@ -101,8 +102,8 @@ class ViewGroup(object):
         """
         path = tuple(path)
         if len(path) > 1:
-            viewgroup = self.__getattr__(path[0])
-            viewgroup.set_path(path[1:], val)
+            pathindex = self.__getattr__(path[0])
+            pathindex.set_path(path[1:], val)
         else:
             self.__setattr__(path[0], val)
 
@@ -134,7 +135,7 @@ class ViewGroup(object):
         if label != 'fixed' and not label.startswith('_') and self.fixed and shallow:
             raise AttributeError(self._fixed_error)
 
-        super(ViewGroup, self).__setattr__(label, val)
+        super(AttrTree, self).__setattr__(label, val)
 
         if not (label.startswith('_') or label =='fixed' or label in self.children):
             self.children.append(label)
@@ -143,11 +144,11 @@ class ViewGroup(object):
 
     def __getattr__(self, label):
         """
-        Access a label from the ViewGroup or generate a new ViewGroup
+        Access a label from the AttrTree or generate a new AttrTree
         with the chosen attribute path.
         """
         try:
-            return super(ViewGroup, self).__getattr__(label)
+            return super(AttrTree, self).__getattr__(label)
         except AttributeError: pass
 
         if label.startswith('_'):   raise AttributeError(str(label))
@@ -157,13 +158,13 @@ class ViewGroup(object):
             return self.__dict__[label]
 
         self.children.append(label)
-        child_group = ViewGroup(label=label, parent=self)
-        self.__dict__[label] = child_group
-        return child_group
+        child_index = AttrTree(label=label, parent=self)
+        self.__dict__[label] = child_index
+        return child_index
 
 
     def __repr__(self):
-        return "<ViewGroup of %d items>" % len(self.children)
+        return "<AttrTree of %d items>" % len(self.children)
 
 
     def __contains__(self, name):
@@ -208,7 +209,7 @@ class Reference(object):
 class ViewRef(Reference):
     """
     A ViewRef object is a Reference to a dataview object in a
-    Viewgroup that may not exist when initialized. This makes it
+    Pathindex that may not exist when initialized. This makes it
     possible to schedule tasks for processing data not yet present.
 
     ViewRefs compose with the * operator to specify Overlays and also
@@ -216,7 +217,7 @@ class ViewRef(Reference):
 
     >>> ref = ViewRef().example.path1 * ViewRef().example.path2
 
-    >>> g = ViewGroup()
+    >>> g = AttrTree()
     >>> g.example.path1 = SheetView(np.random.rand(5,5))
     >>> g.example.path2 = SheetView(np.random.rand(5,5))
     >>> overlay = ref.resolve(g)
@@ -241,12 +242,12 @@ class ViewRef(Reference):
         return (View, Stack, CoordinateGrid)
 
 
-    def _resolve_ref(self, ref, viewgroup):
+    def _resolve_ref(self, ref, pathindex):
         """
         Get the View referred to by a single reference tuple if the
         data exists, otherwise raise AttributeError.
         """
-        obj = viewgroup
+        obj = pathindex
         for label in ref:
             if label in obj:
                 obj= obj[label]
@@ -256,14 +257,14 @@ class ViewRef(Reference):
         return obj
 
 
-    def resolve(self, viewgroup):
+    def resolve(self, pathindex):
         """
         Resolve the current ViewRef object into the appropriate View
         object (if available).
         """
         overlaid_view = None
         for ref in self.specification:
-            view = self._resolve_ref(ref, viewgroup)
+            view = self._resolve_ref(ref, pathindex)
             # Access specified slices for the view
             slc = self.slices.get(ref, None)
             view = view if slc is None else view[slc]
@@ -315,13 +316,17 @@ class ViewRef(Reference):
         return "ViewRef(%r)" %  self.specification
 
 
+    def __len__(self):
+        return len(self.specification)
+
+
 
 class Aggregator(object):
     """
     An Aggregator takes an object and corresponding hook and when
-    called with a ViewGroup, updates it with the output of the hook
-    (given the object). The output of the hook should be a View or a
-    ViewGroup.
+    called with an AttrTree, updates it with the output of the hook
+    (given the object). The output of the hook should be a View or an
+    AttrTree.
 
     The input object may be a picklable object (e.g. a
     ParameterizedFunction) or a Reference to the target object.  The
@@ -329,7 +334,7 @@ class Aggregator(object):
     the resolved object.
 
     When mode is 'merge' the return value of the hook needs to be a
-    ViewGroup to be merged with the viewgroup when called.
+    AttrTree to be merged with the pathindex when called.
     """
 
     def __init__(self, obj, hook, mode, *args, **kwargs):
@@ -341,45 +346,45 @@ class Aggregator(object):
         self.path = None
 
 
-    def _get_result(self, viewgroup, time, times):
+    def _get_result(self, pathindex, time, times):
         """
-        Method returning a View or ViewGroup to be merged into the
-        viewgroup (via the specified hook) in the call.
+        Method returning a View or AttrTree to be merged into the
+        pathindex (via the specified hook) in the call.
         """
         resolvable = hasattr(self.obj, 'resolve')
         obj = self.obj.resolve() if resolvable else self.obj
         return self.hook(obj, *self.args, **self.kwargs)
 
 
-    def __call__(self, viewgroup, time=None, times=None):
+    def __call__(self, pathindex, time=None, times=None):
         """
-        Update and return the supplied ViewGroup with the output of
+        Update and return the supplied AttrTree with the output of
         the hook at the given time out of the given list of times.
         """
         if self.path is None:
             raise Exception("Aggregation path not set.")
 
-        val = self._get_result(viewgroup, time, times)
-        if val is None:  return viewgroup
+        val = self._get_result(pathindex, time, times)
+        if val is None:  return pathindex
 
         if self.mode == 'merge':
-            if isinstance(val, ViewGroup):
-                viewgroup.update(val)
-                return viewgroup
+            if isinstance(val, AttrTree):
+                pathindex.update(val)
+                return pathindex
             else:
-                raise Exception("Return value is not a ViewGroup and mode is 'merge'.")
+                raise Exception("Return value is not a AttrTree and mode is 'merge'.")
 
-        if self.path not in viewgroup:
+        if self.path not in pathindex:
             if not isinstance(val, NdMapping):
                 if val.title == '{label}':
                     val.title = ' '.join(self.path[::-1]) + val.title
                 val = val.stack_type([((time,), val)], dimensions=[Time])
         else:
-            current_val = viewgroup.path_items[self.path]
+            current_val = pathindex.path_items[self.path]
             val = self._merge_views(current_val, val, time)
 
-        viewgroup.set_path(self.path,  val)
-        return viewgroup
+        pathindex.set_path(self.path,  val)
+        return pathindex
 
 
     def _merge_views(self, current_val, val, time):
@@ -399,7 +404,7 @@ class Aggregator(object):
 
 class Analysis(Aggregator):
     """
-    An Analysis is a type of Aggregator that updates a viewgroup with
+    An Analysis is a type of Aggregator that updates a pathindex with
     the results of a ViewOperation. Analysis takes a ViewRef object as
     input which is resolved to generate input for the ViewOperation.
     """
@@ -415,14 +420,14 @@ class Analysis(Aggregator):
         self.path = None
 
 
-    def _get_result(self, viewgroup, time, times):
+    def _get_result(self, pathindex, time, times):
         if self.stackwise and time==times[-1]:
-            view = self.reference.resolve(viewgroup)
+            view = self.reference.resolve(pathindex)
             return self.analysis(view, *self.args, **self.kwargs)
         elif self.stackwise:
             return None
         else:
-            view = self.reference.resolve(viewgroup)
+            view = self.reference.resolve(pathindex)
             return self.analysis(view, *self.args, **self.kwargs)
 
     def __str__(self):
@@ -431,9 +436,9 @@ class Analysis(Aggregator):
 
 
 
-class Collector(ViewGroup):
+class Collector(AttrTree):
     """
-    A Collector specifies a template for how to populate a ViewGroup
+    A Collector specifies a template for how to populate a AttrTree
     with data over time. Two methods are used to schedule data
     collection: 'collect' and 'analyse'.
 
@@ -441,7 +446,7 @@ class Collector(ViewGroup):
     views from it (as configured by setting an appropriate hook set
     with the for_type classmethod).
 
-    The analysis method takes a reference to data on the viewgroup (a
+    The analysis method takes a reference to data on the pathindex (a
     ViewRef) and passes the resolved output to the given analysisfn
     ViewOperation.
 
@@ -453,7 +458,7 @@ class Collector(ViewGroup):
 
     # Start collection...
     >>> data = c(times=[1,2,3,4,5])
-    >>> isinstance(data, ViewGroup)
+    >>> isinstance(data, AttrTree)
     True
     >>> isinstance(data.target.path, Stack)
     True
@@ -489,7 +494,7 @@ class Collector(ViewGroup):
         object, a referencer (a Reference subclass) may be specified
         to wrap the object as required.
 
-        If mode is 'merge', merge the ViewGroup output by the hook,
+        If mode is 'merge', merge the AttrTree output by the hook,
         otherwise if 'set', add the output to the path specified by
         the ViewRef.
         """
@@ -579,7 +584,7 @@ class Collector(ViewGroup):
         return Analysis(reference, analysisfn, stackwise=stackwise, *args, **kwargs)
 
 
-    def __call__(self, viewgroup=ViewGroup(), times=[]):
+    def __call__(self, pathindex=AttrTree(), times=[]):
 
         current_time = self.time_fn()
         if times != sorted(times):
@@ -598,7 +603,7 @@ class Collector(ViewGroup):
                          if self.update_progress else self.interval_hook)
 
         self._schedule_tasks()
-        (self.fixed, viewgroup.fixed) = (False, False)
+        (self.fixed, pathindex.fixed) = (False, False)
 
         for i, t in enumerate(np.diff(times)):
             if self.update_progress:
@@ -606,18 +611,18 @@ class Collector(ViewGroup):
 
             interval_hook(float(t))
 
-            # An empty viewgroup buffer stops analysis repeatedly
+            # An empty pathindex buffer stops analysis repeatedly
             # computing results over the entire accumulated stack
-            viewgroup_buffer = ViewGroup()
+            pathindex_buffer = AttrTree()
             for task in self._scheduled_tasks:
                 if isinstance(task, Analysis) and task.stackwise:
-                    task(viewgroup, self.time_fn(), times)
+                    task(pathindex, self.time_fn(), times)
                 else:
-                    task(viewgroup_buffer, self.time_fn(), times)
-                    viewgroup.update(viewgroup_buffer)
+                    task(pathindex_buffer, self.time_fn(), times)
+                    pathindex.update(pathindex_buffer)
 
-        (self.fixed, viewgroup.fixed) = (True, True)
-        return viewgroup
+        (self.fixed, pathindex.fixed) = (True, True)
+        return pathindex
 
 
     def _schedule_tasks(self):
