@@ -70,8 +70,73 @@ class Dimension(param.Parameterized):
                                          val=val, unit=unit)
 
 
+class Dimensional(object):
+    """
+    Abstract baseclass implementing common methods for objects with associated
+    dimensions. Assumes a list dimension objects or strings is available on
+    the object.
+    """
 
-class NdIndexableMapping(param.Parameterized):
+    _abstract = True
+
+    _deep_indexable = False
+
+    def __init__(self):
+        self._dimensions = [d if isinstance(d, Dimension) else Dimension(d)
+                            for d in self.dimensions]
+
+    @property
+    def deep_dimensions(self):
+        if self._deep_indexable:
+            return self.dimension_labels +\
+                self.values()[0].deep_dimensions
+        else:
+            return self.dimension_labels
+
+
+    @property
+    def dim_dict(self):
+        return OrderedDict([(d.name, d) for d in self._dimensions])
+
+
+    @property
+    def dimension_labels(self):
+        return [d.name for d in self._dimensions]
+
+
+    @property
+    def _types(self):
+        return [d.type for d in self._dimensions]
+
+
+    @property
+    def ndims(self):
+        return len(self.dimensions)
+
+
+    def dim_index(self, dimension_label):
+        """
+        Returns the tuple index of the requested dimension.
+        """
+        return self.dimension_labels.index(dimension_label)
+
+
+    def _sort_dims(self, dimensions):
+        own_dims, deep_dims = [], []
+        for d in dimensions:
+            if d in self.dimension_labels:
+                own_dims.append(d)
+            elif d in self.deep_dimensions:
+                deep_dims.append(d)
+            else:
+                raise ValueError('%s dimension not in %s' %
+                                 (d, type(self).__name__))
+
+        return own_dims, deep_dims
+
+
+
+class NdIndexableMapping(param.Parameterized, Dimensional):
     """
     An NdIndexableMapping is a type of mapping (like a dictionary or array)
     that uses fixed-length multidimensional keys. The effect is like an
@@ -98,10 +163,10 @@ class NdIndexableMapping(param.Parameterized):
 
     dimensions = param.List(default=[Dimension("Default")], constant=True)
 
-    data_type = param.Parameter(default=None, constant=True)
-
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional labels to be associated with the Dataview.""")
+
+    data_type = None
 
     _deep_indexable = True
 
@@ -109,11 +174,8 @@ class NdIndexableMapping(param.Parameterized):
         self._data = OrderedDict()
 
         kwargs, metadata = self.write_metadata(kwargs)
-
-        super(NdIndexableMapping, self).__init__(metadata=metadata, **kwargs)
-
-        self._dimensions = [d if isinstance(d, Dimension) else Dimension(d)
-                            for d in self.dimensions]
+        param.Parameterized.__init__(self, metadata=metadata, **kwargs)
+        Dimensional.__init__(self)
 
         self._next_ind = 0
         self._check_key_type = True
@@ -122,26 +184,6 @@ class NdIndexableMapping(param.Parameterized):
             self._add_item(initial_items[0], initial_items[1])
         elif initial_items is not None:
             self.update(OrderedDict(initial_items))
-
-
-    @property
-    def dim_dict(self):
-        return OrderedDict([(d.name, d) for d in self._dimensions])
-
-
-    @property
-    def dimension_labels(self):
-        return [d.name for d in self._dimensions]
-
-
-    @property
-    def _types(self):
-        return [d.type for d in self._dimensions]
-
-
-    @property
-    def ndims(self):
-        return len(self.dimensions)
 
 
     def write_metadata(self, kwargs):
@@ -292,7 +334,7 @@ class NdIndexableMapping(param.Parameterized):
         If a key type is set in the dim_info dictionary, this method applies the
         type to the supplied key.
         """
-        typed_key = () 
+        typed_key = ()
         for dim, key in zip(self._dimensions, keys):
             key_type = dim.type
             if key_type is None:
@@ -377,19 +419,33 @@ class NdIndexableMapping(param.Parameterized):
         return list(self.keys())[-1] if len(self) else None
 
 
-    def dim_index(self, dimension_label):
-        """
-        Returns the tuple index of the requested dimension.
-        """
-        return self.dimension_labels.index(dimension_label)
-
-
     def dimension_keys(self):
         """
         Returns the list of keys together with the dimension labels.
         """
         return [tuple(zip(self.dimension_labels, [k] if self.ndims == 1 else k))
                 for k in self.keys()]
+
+
+    def pprint_dimkey(self, key):
+        """
+        Takes a key of the right length as input and returns a formatted string
+        of the dimension and value pairs.
+        """
+        key = key if isinstance(key, (tuple, list)) else (key,)
+        return ', '.join(self._dimensions[i].pprint_value(v)
+                         for i, v in enumerate(key))
+
+
+    def drop_dimension(self, dim, val):
+        """
+        Drop dimension from the NdMapping using the supplied
+        dimension name and value.
+        """
+        slices = [slice(None) for i in range(self.ndims)]
+        slices[self.dim_index(dim)] = val
+        dim_labels = [d for d in self.dimension_labels if d != dim]
+        return self[tuple(slices)].reindex(dim_labels)
 
 
     def keys(self):
@@ -554,7 +610,8 @@ class NdMapping(NdIndexableMapping):
             conds.append(cond(key[i]))
         return all(conds)
 
-        
+
+
 __all__ = ["NdIndexableMapping",
            "NdMapping",
            "AttrDict",
