@@ -48,6 +48,12 @@ class Dimension(param.Parameterized):
         return self.__class__(**settings)
 
 
+    @property
+    def pprint_label(self):
+        unit = '' if self.unit is None else self.unit
+        return ' '.join([self.name, unit])
+
+
     def pprint_value(self, value, rounding=2):
         """
         Pretty prints the dimension name and value with the format_string
