@@ -534,10 +534,6 @@ class Collector(AttrTree):
 
         fixed_error = 'Collector specification disabled after first call.'
         self.__dict__['_fixed_error'] = fixed_error
-
-        update_progress = (isinstance(self.interval_hook, type)
-                           and issubclass(self.interval_hook, RunProgress))
-        self.__dict__['update_progress'] = update_progress
         self.__dict__['progress_label'] = 'Completion'
 
 
@@ -598,15 +594,18 @@ class Collector(AttrTree):
         else:
             completion = 100 * (times - times.min()) / (times.max() - times.min())
 
+        update_progress = (isinstance(self.interval_hook, type)
+                           and issubclass(self.interval_hook, RunProgress))
+
         # If an instance of RunProgress, instantiate the progress bar
         interval_hook = (self.interval_hook(label=self.progress_label)
-                         if self.update_progress else self.interval_hook)
+                         if update_progress else self.interval_hook)
 
         self._schedule_tasks()
         (self.fixed, pathindex.fixed) = (False, False)
 
         for i, t in enumerate(np.diff(times)):
-            if self.update_progress:
+            if update_progress:
                 interval_hook.percent_range = (completion[i], completion[i+1])
 
             interval_hook(float(t))
