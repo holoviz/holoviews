@@ -3,15 +3,16 @@ Views objects used to hold data and provide indexing into different coordinate
 systems.
 """
 import math
+import numpy as np
 from collections import OrderedDict, defaultdict
 
 import param
 
-from .ndmapping import NdMapping, Dimension, AttrDict
+from .ndmapping import NdMapping, Dimensional, Dimension, AttrDict
 from .options import options
 
 
-class View(param.Parameterized):
+class View(param.Parameterized, Dimensional):
     """
     A view is a data structure for holding data, which may be plotted
     using matplotlib. Views have an associated title, style name and
@@ -19,9 +20,14 @@ class View(param.Parameterized):
     GridLayout using the addition operator.
     """
 
-    label = param.String(constant=True, doc="""
-      A short label used to indicate what kind of data is contained
-      within the view object.""")
+    dimensions = param.List(default=[], doc="""List of dimensions the View
+      can be indexed by.""")
+
+    label = param.Parameter(default=Dimension('Default'), constant=True, doc="""
+      A string label or Dimension object used to indicate what kind of data
+      is contained within the view object.""")
+
+    legend_label = param.String(default="", doc="Legend labels")
 
     title = param.String(default='{label}', doc="""
        The title formatting string allows the title to be composed from
@@ -35,12 +41,40 @@ class View(param.Parameterized):
     def __init__(self, data, **kwargs):
         self.data = data
         self._style = kwargs.pop('style', None)
-        super(View, self).__init__(**kwargs)
+        param.Parameterized.__init__(self, **kwargs)
+        Dimensional.__init__(self)
+        if not isinstance(self.label, Dimension):
+            self._label_dim = Dimension(self.label)
+        else:
+            self._label_dim = self.label
+
+
+    def sample(self, samples, dimension):
+        raise NotImplementedError
+
+
+    def collapse(self, dimensions, collapse_fns):
+        raise NotImplementedError
+
+
+    def clone(self, data, type=None, **kwargs):
+        """
+        Returns a clone with matching parameter values and metadata, containing
+        the specified items (empty by default).
+        """
+        settings = dict(self.get_param_values(), **kwargs)
+        return self.__class__(data, **settings)
+
+
+    @property
+    def deep_dimensions(self):
+        return self.dimension_labels
 
 
     @property
     def stack_type(self):
         return Stack
+
 
     @property
     def style(self):
@@ -54,11 +88,12 @@ class View(param.Parameterized):
 
         class_name = self.__class__.__name__
         if self.label:
-            style_str = '_'.join([self.label, class_name])
+            style_str = '_'.join([self._label_dim.name, class_name])
             matches = self.options.fuzzy_match_keys(style_str)
             return matches[0] if matches else class_name
         else:
             return class_name
+
 
     @style.setter
     def style(self, val):
@@ -245,6 +280,8 @@ class Overlay(View):
     over the contained layers.
     """
 
+    dimensions = param.List(default=['Overlay'], constant=True, doc="""List
+      of dimensions the View can be indexed by.""")
 
     label = param.String(doc="""
       A short label used to indicate what kind of data is contained
@@ -270,7 +307,7 @@ class Overlay(View):
 
     @property
     def style(self):
-        return [el.style for el in self]
+        return [el.style for el in self.data]
 
 
     @style.setter
@@ -375,6 +412,11 @@ class Stack(NdMapping):
 
 
     @property
+    def deep_dimensions(self):
+        return self.dimension_labels + self.last.deep_dimensions
+
+
+    @property
     def empty_element(self):
         return self._type(None)
 
@@ -394,8 +436,10 @@ class Stack(NdMapping):
         Resolves the title string on the View being added to the
         Stack, adding the Stacks title suffix.
         """
-        if self.ndims == 1 and self.dim_dict.get('Default', False):
+        if self.ndims == 1 and self.dim_dict.get('Default'):
             title_suffix = ''
+        else:
+            title_suffix = self.title_suffix
         dimension_labels = [dim.pprint_value(k) for dim, k in
                             zip(self._dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
@@ -405,10 +449,114 @@ class Stack(NdMapping):
         return item.title + title_suffix
 
 
-    def split(self):
+    def _split_dim_keys(self, dimensions):
         """
-        Given a SheetStack of SheetOverlays of N layers, split out the
-        layers into N separate SheetStacks.
+        Split the NdMappings keys into two groups given a list of
+        dimensions to split out.
+        """
+
+        # Find dimension indices
+        first_dims = [d for d in self._dimensions if d.name not in dimensions]
+        first_inds = [self.dim_index(d.name) for d in first_dims]
+        second_dims = [d for d in self._dimensions if d.name in dimensions]
+        second_inds = [self.dim_index(d.name) for d in second_dims]
+
+        # Split the keys
+        keys = list(self._data.keys())
+        first_keys, second_keys = zip(*[(tuple(np.array(k)[first_inds]),
+                                        tuple(np.array(k)[second_inds])) for k in keys])
+        return first_dims, first_keys, second_dims, second_keys
+
+
+    def sort_key(self, unordered):
+        """
+        Given an unordered list of (dimension, value) pairs returns
+        the sorted key.
+        """
+        dim_orderfn = lambda k: self.dim_index(k[0].name)
+        return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
+
+
+    def split_dimensions(self, dimensions):
+        """
+        Split the dimensions in the NdMapping across two NdMappings.
+        """
+        inner_dims, deep_dims = self._sort_dims(dimensions)
+        if len(deep_dims):
+            raise Exception('NdMapping does not support splitting of deep dimensions.')
+        first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
+        self._check_key_type = False # Speed optimization
+
+        split_data = NdMapping(dimensions=first_dims)
+        for fk in first_keys:  # The first groups keys
+            split_data[fk] = self.clone(dimensions=second_dims)
+            for sk in second_keys:  # The second groups keys
+                # Generate a candidate expanded key
+                unordered_dimkeys = zip(first_dims, fk) + zip(second_dims, sk)
+                sorted_key = self.sort_key(unordered_dimkeys)
+                if sorted_key in self._data.keys():  # If the expanded key actually exists...
+                    split_data[fk][sk] = self[sorted_key]
+
+        self._check_key_type = True # Re-enable checks
+
+        return split_data
+
+
+    def overlay_dimensions(self, dimensions):
+        """
+        Splits the Stack along a specified number of dimensions and overlays
+        all items with keys differing just along those.
+        """
+        split_stack = self.split_dimensions(dimensions)
+        new_stack = self.clone(dimensions=split_stack.dimensions)
+        for outer, stack in split_stack.items():
+            key, overlay = stack.items()[0]
+            overlay.legend_label = stack.pprint_dimkey(key)
+            for inner, v in stack.items():
+                v.legend_label = stack.pprint_dimkey(inner)
+                overlay = overlay * v
+            new_stack[outer] = overlay
+        return new_stack
+
+
+    def map(self, map_fn, **kwargs):
+        """
+        Map a function across the stack, using the bounds of first
+        mapped item.
+        """
+        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
+        if isinstance(mapped_items[0][1], tuple):
+            split = [[(k, v) for v in val] for (k, val) in mapped_items]
+            item_groups = [list(el) for el in zip(*split)]
+        else:
+            item_groups = [mapped_items]
+        clones = tuple(self.clone(els, **kwargs)
+                       for (i, els) in enumerate(item_groups))
+        return clones if len(clones) > 1 else clones[0]
+
+
+    def sample(self, dimension, group_by):
+        """
+        Base class implements signature for sampling View dimensions
+        and optionally overlaying the resulting reduced dimensionality
+        Views by specifying a list group_by dimensions.
+        """
+        raise NotImplementedError
+
+
+    def collapse(self, dimensions, collapse_fns):
+        """
+        Base class implements signature for collapsing dimensions,
+        subclasses with Views of fixed dimensionality can then
+        appropriately implement collapsing the correct view types.
+        """
+        raise NotImplementedError
+
+
+    def split_overlays(self):
+        """
+        Given a Stack of Overlays of N layers, split out the layers
+        into N separate Stacks.
         """
         if self.type is not self.overlay_type:
             return self.clone(self.items())
@@ -507,6 +655,8 @@ class Layout(param.Parameterized):
 
     layout_order = ['main', 'right', 'top']
 
+    _deep_indexable = True
+
     def __init__(self, views, **params):
 
         self.main_layer = 0 # The index of the main layer if .main is an overlay
@@ -542,6 +692,10 @@ class Layout(param.Parameterized):
         else:
             raise KeyError("Key {0} not found in Layout.".format(key))
 
+
+    @property
+    def deep_dimensions(self):
+        return ['Layout'] + self.main.deep_dimensions
 
     @property
     def style(self):
@@ -605,7 +759,6 @@ class GridLayout(NdMapping):
         if all(isinstance(el, (View, NdMapping, Layout)) for el in initial_items):
             initial_items = self._grid_to_items([initial_items])
         super(GridLayout, self).__init__(initial_items=initial_items, **kwargs)
-
 
 
     @property

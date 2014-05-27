@@ -5,7 +5,7 @@ import param
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Histogram, DataStack, find_minmax
+from ..dataviews import Table, Curve, ScatterPoints, Histogram, DataStack, find_minmax
 from ..ndmapping import NdMapping, Dimension
 from ..options import options, channels
 from ..views import View, Overlay, Annotation, GridLayout
@@ -20,6 +20,8 @@ class SheetLayer(View):
     interpolated or correspond to control nodes of a smooth vector
     representation such as Bezier splines.
     """
+
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
 
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
@@ -65,6 +67,28 @@ class SheetLayer(View):
                             metadata=self.metadata,
                             roi_bounds=roi_bounds)
 
+
+    def dimension_values(self, dim_index):
+        """
+        Return the coordinates of the dimension corresponding to the
+        supplied index.
+        """
+        l, b, r, t = self.lbrt
+        dim_min, dim_max = [(l, r), (b, t)][dim_index]
+        dim_len = self.data.shape[dim_index]
+        half_unit = (dim_max - dim_min)/dim_len/2.
+        coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
+        return [self.closest_cell_center(*coord_fn(v))[dim_index]
+                for v in np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)]
+
+
+    @property
+    def xlabel(self):
+        return self.dimensions[0].pprint_label
+
+    @property
+    def ylabel(self):
+        return self.dimensions[1].pprint_label
 
     @property
     def xlim(self):
@@ -189,14 +213,10 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
     representation.
     """
 
-    cyclic_range = param.Number(default=None, bounds=(0, None), allow_None=True, doc="""
-        For a cyclic quantity, the range over which the values repeat. For
-        instance, the orientation of a mirror-symmetric pattern in a plane is
-        pi-periodic, with orientation x the same as orientation x+pi (and
-        x+2pi, etc.) A cyclic_range of None declares that the data are not
-        cyclic. This parameter is metadata, declaring properties of the data
-        that can be useful for automatic plotting and/or normalization, and is
-        not used within this class itself.""")
+    dimensions = param.List(default=['X', 'Y'], constant=True, doc="""
+        The label of the x- and y-dimension of the SheetView in form
+        of a string or dimension object.""")
+
 
     _deep_indexable = True
 
@@ -233,8 +253,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
-                         bounds, cyclic_range=self.cyclic_range,
-                         label=self.label,  style=self.style, metadata=self.metadata)
+                         bounds, label=self.label,  style=self.style,
+                         metadata=self.metadata)
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
@@ -250,9 +270,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             norm_factor = 1.0 if (norm_factor==0.0) else norm_factor
 
         norm_data = (((self.data - self.data.min())/norm_factor) * abs((max-min))) + min
-        return SheetView(norm_data, self.bounds, cyclic_range=self.cyclic_range,
-                         metadata=self.metadata, roi_bounds=self.roi_bounds,
-                         label=self.label, style=self.style)
+        return SheetView(norm_data, self.bounds, metadata=self.metadata,
+                         roi_bounds=self.roi_bounds, style=self.style, label=self.label)
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
@@ -289,6 +308,84 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         hist_view.style = opts_name
         options[opts_name] = options.plotting(self)(**dict(rescale_individually=individually))
         return (self << hist_view) if adjoin else hist_view
+
+
+    def sample(self, dimension_samples, add_dimension={}):
+        """
+        Subclass method to sample the SheetView along one or both of
+        it's dimensions, returning a reduced dimensionality type.
+        """
+        if len(dimension_samples) == self.ndims:
+            coords = [c for didx, c in sorted([(self.dim_index(k), v)
+                                               for k, v in dimension_samples.items()])]
+            data = self.data[self.sheet2matrixidx(*coords)]
+            if add_dimension:
+                dim, val = add_dimension.items()[0]
+                title = "Coord: %s " % str(tuple(coords)) + self.title
+                return ScatterPoints(zip([val], [data]), dimensions=[dim],
+                                     label=self.label, title=title)
+            else:
+                return Table({tuple(coords): data}, label=self.label, title=self.title)
+        elif not len(dimension_samples):
+            return self
+        else:
+            dimension, sample_coord = dimension_samples.items()[0]
+            if isinstance(sample_coord, slice):
+                raise ValueError('SheetView sampling requires coordinates not slices,'
+                                 'use regular slicing syntax.')
+            other_dimension = [d for d in self._dimensions if d.name != dimension]
+            # Indices inverted for indexing
+            other_ind = self.dim_index(dimension)
+            sample_ind = self.dim_index(other_dimension[0].name)
+
+            # Generate sample slice
+            sample = [slice(None) for i in range(self.ndims)]
+            coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
+            sample[sample_ind] = self.sheet2matrixidx(*coord_fn(sample_coord))[sample_ind]
+
+            # Sample data
+            x_vals = self.dimension_values(other_ind)
+            data = zip(x_vals, self.data[sample])
+            return Curve(data, dimensions=other_dimension, label=self.label, title=self.title)
+
+
+    def collapse(self, dimension_collapsefns):
+        """
+        Subclass method to collapse SheetView dimensionality into
+        other View types including Curves and SamplePoints.
+        """
+        if len(dimension_collapsefns) == self.ndims:
+            collapsed_view = self
+            for dim, collapse_fn in dimension_collapsefns:
+                collapsed_view = collapsed_view.collapse({dim: collapse_fn})
+            return collapsed_view
+        elif not len(dimension_collapsefns):
+            return self
+        else:
+            dimension, collapse_fn = dimension_collapsefns.items()[0]
+            other_dimension = [d for d in self._dimensions if d.name != dimension]
+            other_ind = self.dim_index(other_dimension[0].name)
+            x_vals = self.dimension_values(other_ind)
+            data = zip(x_vals, collapse_fn(self.data, axis=self.dim_index(dimension)))
+            return Curve(data, dimensions=other_dimension, label=self.label, title=self.title)
+
+
+    @property
+    def cyclic_range(self):
+        """
+        For a cyclic quantity, the range over which the values
+        repeat. For instance, the orientation of a mirror-symmetric
+        pattern in a plane is pi-periodic, with orientation x the same
+        as orientation x+pi (and x+2pi, etc.) A cyclic_range of None
+        declares that the data are not cyclic. This parameter is
+        metadata, declaring properties of the data that can be useful
+        for automatic plotting and/or normalization, and is not used
+        within this class itself.
+        """
+        if self._label_dim.cyclic:
+            return self._label_dim.range[1]
+        else:
+            return None
 
 
     @property
@@ -433,20 +530,24 @@ class SheetStack(DataStack):
 
     overlay_type = SheetOverlay
 
-    def drop_dimension(self, dim, val):
-        """
-        Drop dimension from the NdMapping using the supplied
-        dimension name and value.
-        """
-        slices = [slice(None) for i in range(self.ndims)]
-        slices[self.dim_index(dim)] = val
-        dim_labels = [d for d in self.dimension_labels if d != dim]
-        return self[tuple(slices)].reindex(dim_labels)
 
-
-    def sample(self, **kwargs):
-        from .operation import sample_curve
-        return sample_curve(self, **kwargs)
+    def sample(self, view_samples, x_dimension=None):
+        if x_dimension:
+            stack = self.split_dimensions([x_dimension])
+            new_dimensions = [d for d in self._dimensions if d.name != x_dimension]
+        else:
+            stack = self
+            new_dimensions = self._dimensions
+        new_stack = DataStack(dimensions=new_dimensions)
+        for k, v in stack.items():
+            if x_dimension is None:
+                key = k if isinstance(k, tuple) else (k,)
+                new_stack[k] = v.sample(view_samples, dict(zip(stack.dimensions, key)))
+            else:
+                sampled = v.sample(view_samples)
+                new_stack[k] = Curve(sampled, label=v.last._label_dim,
+                                     dimensions=sampled.last._dimensions)
+        return new_stack
 
 
     def grid_sample(self, rows, cols, lbrt=None, **kwargs):
@@ -679,22 +780,6 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[self, obj])
-
-
-    def map(self, map_fn, **kwargs):
-        """
-        Map a function across the stack, using the bounds of first
-        mapped item.
-        """
-        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
-        if isinstance(mapped_items[0][1], tuple):
-            split = [[(k, v) for v in val] for (k, val) in mapped_items]
-            item_groups = [list(el) for el in zip(*split)]
-        else:
-            item_groups = [mapped_items]
-        clones = tuple(self.clone(els, **kwargs)
-                       for (i, els) in enumerate(item_groups))
-        return clones if len(clones) > 1 else clones[0]
 
 
     @property

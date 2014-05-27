@@ -163,7 +163,7 @@ class Plot(param.Parameterized):
         title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
-        return title_format.format(label=view.label, type=view.__class__.__name__)
+        return title_format.format(label=view._label_dim.pprint_label, type=view.__class__.__name__)
 
 
     def _update_title(self, n):
@@ -660,7 +660,7 @@ class SheetPlot(OverlayPlot):
 
     def __call__(self, axis=None):
         ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
-        stacks = self._stack.split()
+        stacks = self._stack.split_overlays()
 
         sorted_stacks = sorted(stacks, key=lambda x: x.style)
         style_groups = dict((k, enumerate(list(v))) for k,v
@@ -1154,7 +1154,7 @@ class DataPlot(Plot):
 
         ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel)
 
-        stacks = self._stack.split()
+        stacks = self._stack.split_overlays()
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(stacks, lambda s: s.style))
 
@@ -1216,8 +1216,8 @@ class CurvePlot(Plot):
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
-    style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
-                                     'visible'], constant=True, doc="""
+    style_opts = param.List(default=['alpha', 'color', 'visible'],
+                            constant=True, doc="""
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 

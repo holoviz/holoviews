@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import param
 
+from .ndmapping import Dimension
 from .views import View, Overlay, Annotation, Stack
 
 def find_minmax(lims, olims):
@@ -23,15 +24,107 @@ class DataLayer(View):
     curves, points, bars or surfaces.
     """
 
-    xlabel = param.String(default='', doc="X-axis label")
+    dimensions = param.List(default=[Dimension('X')])
 
-    ylabel = param.String(default='', doc="Y-axis label")
+    def __init__(self, data, **kwargs):
+        settings = {}
+        if isinstance(data, DataLayer):
+            settings = dict(data.get_param_values())
+            data = data.data
+        elif isinstance(data, Stack) or (isinstance(data, list) and data
+                                         and isinstance(data[0], DataLayer)):
+            data, settings = self._process_stack(data)
+        elif data and not isinstance(data, np.ndarray):
+            data = np.array(list(data))
 
-    legend_label = param.String(default="", doc="Legend labels")
+        self._xlim = None
+        self._ylim = None
+        settings.update(kwargs)
+        super(DataLayer, self).__init__(data, **settings)
+
+
+    def _process_stack(self, stack):
+        """
+        Base class to process a DataStack to be collapsed into a DataLayer.
+        Should return the data and parameters of reduced View.
+        """
+        if isinstance(stack, DataStack):
+            list = stack.values()
+        data = []
+        for v in list:
+            data.append(v.data)
+        return np.concatenate(data), dict(v.get_param_values())
+
+
+    @property
+    def cyclic_range(self):
+        if self._dimensions[0].cyclic:
+            return self._dimensions[0].range[1]
+        else:
+            return None
+
+
+    def sample(self, dimension_samples):
+        """
+        Allows sampling of DataLayer objects using the default
+        syntax of providing a map of dimensions and sample pairs.
+        """
+        dims, samples = zip(dimension_samples.items())
+        if len(dims) > self.ndims:
+            raise ValueError('%d sample dimensions provided, %s is %d-dimensional.'
+                             % (len(dims), type(self).__name__, self.ndims))
+        elif dimension_samples.keys()[0] in self.dimension_labels:
+            return self[samples[0]]
+        else:
+            raise ValueError('Dimension %s could not be found.' % dimension_samples.keys()[0])
+
+
+    def collapse(self, dimension_collapsefns, add_dimension={}):
+        """
+
+        """
+
+        dims, collapsefns = zip(dimension_collapsefns.items())
+        if len(dims) > self.ndims:
+            raise ValueError('%d collapse dimensions provided, %s is %d-dimensional.'
+                             % (len(dims), type(self).__name__, self.ndims))
+        return Table({self.label: collapsefns[0](self.data[:, 0])},
+                     **dict(self.get_param_values()))
+
+
+
+    def __getitem__(self, slc):
+        """
+        Implements slicing or indexing of the data by the data x-value.
+        """
+        if slc is ():
+            return self
+        if isinstance(slc, slice):
+            start, stop = slc.start, slc.stop
+            xvals = self.data[:, 0]
+            start_idx = np.abs((xvals - start)).argmin()
+            stop_idx = np.abs((xvals - stop)).argmin()
+            return self.__class__(self.data[start_idx:stop_idx, :],
+                                  **dict(self.get_param_values()))
+        else:
+            slc = np.where(self.data[:, 0] == slc)
+            sample = self.data[slc, :]
+            return ScatterPoints(sample, **dict(self.get_param_values()))
+
 
     @property
     def stack_type(self):
         return DataStack
+
+
+    @property
+    def xlabel(self):
+        return self._dimensions[0].pprint_label
+
+
+    @property
+    def ylabel(self):
+        return self._label_dim.pprint_label
 
 
     def __mul__(self, other):
@@ -53,41 +146,74 @@ class DataLayer(View):
         return DataOverlay(overlays, metadata=self.metadata)
 
 
-
-class Curve(DataLayer):
-    """
-    Curve can contain a list of curves with associated metadata and
-    cyclic_range parameter to indicate with what periodicity the curve wraps.
-    """
-
-    cyclic_range = param.Number(default=None, allow_None=True)
-
-
-    def __init__(self, data, **kwargs):
-        data = data if isinstance(data, np.ndarray) else np.array(list(data))
-        super(Curve, self).__init__(data, **kwargs)
-
-
     @property
     def xlim(self):
-        x_vals = self.data[:, 0]
-        return (min(x_vals), self.cyclic_range if self.cyclic_range else float(max(x_vals)))
+        if self._xlim:
+            return self._xlim
+        elif isinstance(self, Overlay):
+            return None
+        elif self.cyclic_range is not None:
+            return (0, self.cyclic_range)
+        else:
+            x_vals = self.data[:, 0]
+            return (float(min(x_vals)), float(max(x_vals)))
+
+
+    @xlim.setter
+    def xlim(self, limits):
+        xmin, xmax = limits
+        xlim = self.xlim
+        if self.cyclic_range and not isinstance(self, Overlay):
+            self.warning('Cannot override the limits of a cyclic dimension')
+        elif xlim is None or (xmin <= xlim[0] and xmax >= xlim[1]):
+            self._xlim = (xmin, xmax)
+        elif not isinstance(self, Overlay):
+            self.warning('Applied x-limits need to be inclusive '
+                         'of all data.')
 
 
     @property
     def ylim(self):
+        if self._ylim:
+            return self._ylim
+        elif isinstance(self, Overlay):
+            return None
         y_vals = self.data[:, 1]
-        y_min = min(y_vals)
-        y_max = max(y_vals)
-        return (float(y_min), float(y_max))
+        return (float(min(y_vals)), float(max(y_vals)))
+
+
+    @ylim.setter
+    def ylim(self, limits):
+        ymin, ymax = limits
+        ylim = self.ylim
+        if ylim is None or (ymin <= ylim[0] and ymax >= ylim[1]):
+            self._ylim = (ymin, ymax)
+        elif not isinstance(self, Overlay):
+            self.warning('Applied y-limits need to be inclusive '
+                         'of all data.')
 
 
     @property
     def lbrt(self):
-        l, r = self.xlim
-        b, t = self.ylim
+        l, r = (None, None) if self.xlim is None else self.xlim
+        b, t = (None, None) if self.ylim is None else self.ylim
         return float(l), float(b), float(r), float(t)
 
+
+
+class ScatterPoints(DataLayer):
+    """
+    ScatterPoints is a simple 1D View, which gets displayed as a number of
+    disconnected points.
+    """
+
+
+
+class Curve(DataLayer):
+    """
+    Curve is a simple 1D View of disconnected points and therefore isn't
+    necessarily ordered.
+    """
 
     def stack(self):
         stack = DataStack(None, dimensions=[self.xlabel],
@@ -107,10 +233,6 @@ class Histogram(DataLayer):
     Histogram contains a number of bins, which are defined by the upper
     and lower bounds of their edges and the computed bin values.
     """
-
-    cyclic_range = param.Number(default=None, allow_None=True, doc="""
-       Cyclic-range should be set when the bins are sampling a cyclic
-       quantity.""")
 
     def __init__(self, values, edges, **kwargs):
         self.values, self.edges = self._process_data(values, edges)
@@ -163,23 +285,28 @@ class DataOverlay(DataLayer, Overlay):
     """
 
     def __init__(self, overlays, **kwargs):
-        super(DataOverlay, self).__init__([], **kwargs)
+        Overlay.__init__(self, [], **kwargs)
+        self._xlim = None
+        self._ylim = None
         self.set(overlays)
 
 
-    def add(self, layer):
+    def __getitem__(self, ind):
+        return Overlay.__getitem__(self, ind)
 
+
+    def add(self, layer):
         if isinstance(layer, Annotation): pass
         elif not len(self):
             self.xlim = layer.xlim
             self.ylim = layer.ylim
-            self.xlabel = layer.xlabel
-            self.ylabel = layer.ylabel
+            self.dimensions = layer.dimensions
+            self.label = layer._label_dim.name
         else:
-            self.xlim = find_minmax(self.xlim, layer.xlim)
-            self.ylim = find_minmax(self.ylim, layer.ylim)
-            if layer.xlabel != self.xlabel or layer.ylabel != self.ylabel:
-                raise Exception("DataLayers must share common x- and y-labels.")
+            self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
+            self.ylim = layer.ylim if self.xlim is None else find_minmax(self.ylim, layer.ylim)
+            if layer._label_dim.name != self.label:
+                raise Exception("DataLayers must share common dimensions.")
         self.data.append(layer)
 
 
