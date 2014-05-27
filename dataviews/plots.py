@@ -16,7 +16,7 @@ import param
 
 from .views import NdMapping, Stack, View
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
-    Table, TableStack
+    Table, TableStack, ScatterPoints
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import GridLayout, Layout, Overlay, View, Annotation
@@ -1188,6 +1188,119 @@ class DataPlot(Plot):
             if zorder == 0:
                 lbrt = list(self._stack.values())[n].lbrt if self.rescale else self._stack.lbrt
             plot.update_frame(n, lbrt)
+
+
+class ScatterPlot(Plot):
+    """
+    ScatterPlot can plot ScatterPoints and DataStacks of ScatterPoints,
+    which can be displayed as a single frame or animation. Axes,
+    titles and legends are automatically generated from the metadata
+    and dim_info.
+
+    If the dimension is set to cyclic in the dim_info it will
+    rotate the points curve so that minimum y values are at the minimum
+    x value to make the plots easier to interpret.
+    """
+
+    center = param.Boolean(default=True)
+
+    num_ticks = param.Integer(default=5)
+
+    rescale_individually = param.Boolean(default=False)
+
+    show_frame = param.Boolean(default=False, doc="""
+       Disabled by default for clarity.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+      Whether to show legend for the plot.""")
+
+    style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
+                                     'visible'], constant=True, doc="""
+       The style options for CurvePlot match those of matplotlib's
+       LineCollection object.""")
+
+    _stack_type = DataStack
+
+    def __init__(self, points, zorder=0, **kwargs):
+        self._stack = self._check_stack(points, ScatterPoints)
+        self.ax = None
+
+        super(ScatterPlot, self).__init__(zorder, **kwargs)
+
+
+    def _format_x_tick_label(self, x):
+        return "%g" % round(x, 2)
+
+
+
+    def _scatter_values(self, coord, curve):
+        """Return the x, y, and x ticks values for the specified curve from the curve_dict"""
+        x, y = coord
+        x_values = list(curve.keys())
+        y_values = [curve[k, x, y] for k in x_values]
+        self.x_values = x_values
+        return x_values, y_values, x_values
+
+
+    def _reduce_ticks(self, x_values):
+        values = [x_values[0]]
+        rangex = float(x_values[-1]) - x_values[0]
+        for i in range(1, self.num_ticks+1):
+            values.append(values[-1]+rangex/(self.num_ticks))
+        return values, [self._format_x_tick_label(x) for x in values]
+
+
+
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+        scatterview = self._stack.last
+        self.cyclic_index = cyclic_index
+
+        # Create xticks and reorder data if cyclic
+        xvals = scatterview.data[:, 0]
+        xticks = self._reduce_ticks(xvals)
+
+        if lbrt is None:
+            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
+
+        self.ax = self._axis(axis, self._format_title(-1), scatterview.xlabel,
+                             scatterview.ylabel, xticks=xticks, lbrt=lbrt)
+
+        # Create line segments and apply style
+        paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
+                                zorder=self.zorder, label=scatterview.legend_label,
+                                **View.options.style(scatterview)[cyclic_index])
+
+        self.handles['paths'] = paths
+
+        # If legend enabled update handles and labels
+        handles, labels = self.ax.get_legend_handles_labels()
+        if len(handles) and self.show_legend:
+            fontP = FontProperties()
+            fontP.set_size('small')
+            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg.get_frame().set_alpha(0.5)
+
+        if axis is None: plt.close(self.handles['fig'])
+        return self.ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n, lbrt=None):
+        n = n  if n < len(self) else len(self) - 1
+        scatterview = list(self._stack.values())[n]
+        if lbrt is None:
+            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
+
+        self.handles['paths'].remove()
+
+        paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
+                                zorder=self.zorder, label=scatterview.legend_label,
+                                **View.options.style(scatterview)[self.cyclic_index])
+
+        self.handles['paths'] = paths
+
+        self._axis(self.ax, lbrt=lbrt)
+        self._update_title(n)
+        plt.draw()
 
 
 class CurvePlot(Plot):
