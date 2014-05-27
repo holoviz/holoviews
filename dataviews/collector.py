@@ -471,16 +471,17 @@ class Collector(AttrTree):
     View('example string'...)
     """
 
-    interval_hook = param.Callable(RunProgress, doc="""
-       A callable that advances by the specified time before the next
-       batch of collection tasks is executed. If set to a subclass of
-       RunProgress, the class will be instantiated and precent_range
-       updated to allow a progress bar to be displayed.""")
+    # A callable that advances by the specified time before the next
+    # batch of collection tasks is executed. If set to a subclass of
+    # RunProgress, the class will be instantiated and precent_range
+    # updated to allow a progress bar to be displayed
+    interval_hook = RunProgress
 
-    time_fn = param.Callable(default=param.Dynamic.time_fn, doc="""
-        A callable that returns the time where the time may be the
-        simulation time or wall-clock time. The time values are
-        recorded by the Stack keys.""")
+
+    # A callable that returns the time where the time may be the
+    # simulation time or wall-clock time. The time values are
+    # recorded by the Stack keys
+    time_fn = param.Dynamic.time_fn
 
     type_hooks = {}
 
