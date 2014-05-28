@@ -430,7 +430,7 @@ class NdIndexableMapping(param.Parameterized):
         Implements the iterable interface, returning values unlike a standard
         dictionary.
         """
-        if self._next_ind < len(self):
+        if self._next_ind < len(self.keys()):
             val = list(self.values())[self._next_ind]
             self._next_ind += 1
             return val
