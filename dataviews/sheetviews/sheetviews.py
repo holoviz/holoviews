@@ -348,13 +348,13 @@ class Points(SheetLayer):
 
     The input data is an Nx2 Numpy array where each point in the numpy
     array corresponds to an X,Y coordinate in sheet coordinates,
-    within the declared bounding region.
+    within the declared bounding region. Otherwise, the input can be a
+    list that can be cast to a suitable numpy array.
     """
-
 
     def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
-        data = np.array([[], []]).T if data is None else data
+        data = np.array([[], []]).T if data is None else np.array(data)
         super(Points, self).__init__(data, bounds, **kwargs)
 
 
