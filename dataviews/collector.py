@@ -29,13 +29,13 @@ class AttrTree(object):
     """
 
     @classmethod
-    def merge(cls, path_indices):
+    def merge(cls, trees):
         """
         Merge a collection of AttrTree objects.
         """
-        first = path_indices[0]
-        for index in path_indices:
-            first.update(index)
+        first = trees[0]
+        for tree in trees:
+            first.update(tree)
         return first
 
     def __init__(self, label=None, parent=None):
@@ -105,8 +105,8 @@ class AttrTree(object):
             raise Exception("All paths elements must be capitalized.")
 
         if len(path) > 1:
-            pathindex = self.__getattr__(path[0])
-            pathindex.set_path(path[1:], val)
+            attrtree = self.__getattr__(path[0])
+            attrtree.set_path(path[1:], val)
         else:
             self.__setattr__(path[0], val)
 
@@ -163,9 +163,9 @@ class AttrTree(object):
 
         if label[0].isupper():
             self.children.append(label)
-            child_index = AttrTree(label=label, parent=self)
-            self.__dict__[label] = child_index
-            return child_index
+            child_tree = AttrTree(label=label, parent=self)
+            self.__dict__[label] = child_tree
+            return child_tree
         else:
             raise AttributeError("Paths elements must be capitalized.")
 
@@ -215,8 +215,8 @@ class Reference(object):
 
 class ViewRef(Reference):
     """
-    A ViewRef object is a Reference to a dataview object in a
-    Pathindex that may not exist when initialized. This makes it
+    A ViewRef object is a Reference to a dataview object in an
+    Attrtree that may not exist when initialized. This makes it
     possible to schedule tasks for processing data not yet present.
 
     ViewRefs compose with the * operator to specify Overlays and also
@@ -249,12 +249,12 @@ class ViewRef(Reference):
         return (View, Stack, CoordinateGrid)
 
 
-    def _resolve_ref(self, ref, pathindex):
+    def _resolve_ref(self, ref, attrtree):
         """
         Get the View referred to by a single reference tuple if the
         data exists, otherwise raise AttributeError.
         """
-        obj = pathindex
+        obj = attrtree
         for label in ref:
             if label in obj:
                 obj= obj[label]
@@ -264,14 +264,14 @@ class ViewRef(Reference):
         return obj
 
 
-    def resolve(self, pathindex):
+    def resolve(self, attrtree):
         """
         Resolve the current ViewRef object into the appropriate View
         object (if available).
         """
         overlaid_view = None
         for ref in self.specification:
-            view = self._resolve_ref(ref, pathindex)
+            view = self._resolve_ref(ref, attrtree)
             # Access specified slices for the view
             slc = self.slices.get(ref, None)
             view = view if slc is None else view[slc]
@@ -340,8 +340,8 @@ class Aggregator(object):
     supplied *args and **kwargs are passed to the hook together with
     the resolved object.
 
-    When mode is 'merge' the return value of the hook needs to be a
-    AttrTree to be merged with the pathindex when called.
+    When mode is 'merge' the return value of the hook needs to be an
+    AttrTree to be merged with the attrtree when called.
     """
 
     def __init__(self, obj, hook, mode, *args, **kwargs):
@@ -353,17 +353,17 @@ class Aggregator(object):
         self.path = None
 
 
-    def _get_result(self, pathindex, time, times):
+    def _get_result(self, attrtree, time, times):
         """
         Method returning a View or AttrTree to be merged into the
-        pathindex (via the specified hook) in the call.
+        attrtree (via the specified hook) in the call.
         """
         resolvable = hasattr(self.obj, 'resolve')
         obj = self.obj.resolve() if resolvable else self.obj
         return self.hook(obj, *self.args, **self.kwargs)
 
 
-    def __call__(self, pathindex, time=None, times=None):
+    def __call__(self, attrtree, time=None, times=None):
         """
         Update and return the supplied AttrTree with the output of
         the hook at the given time out of the given list of times.
@@ -371,27 +371,27 @@ class Aggregator(object):
         if self.path is None:
             raise Exception("Aggregation path not set.")
 
-        val = self._get_result(pathindex, time, times)
-        if val is None:  return pathindex
+        val = self._get_result(attrtree, time, times)
+        if val is None:  return attrtree
 
         if self.mode == 'merge':
             if isinstance(val, AttrTree):
-                pathindex.update(val)
-                return pathindex
+                attrtree.update(val)
+                return attrtree
             else:
                 raise Exception("Return value is not a AttrTree and mode is 'merge'.")
 
-        if self.path not in pathindex:
+        if self.path not in attrtree:
             if not isinstance(val, NdMapping):
                 if val.title == '{label}':
                     val.title = ' '.join(self.path[::-1]) + val.title
                 val = val.stack_type([((time,), val)], dimensions=[Time])
         else:
-            current_val = pathindex.path_items[self.path]
+            current_val = attrtree.path_items[self.path]
             val = self._merge_views(current_val, val, time)
 
-        pathindex.set_path(self.path,  val)
-        return pathindex
+        attrtree.set_path(self.path,  val)
+        return attrtree
 
 
     def _merge_views(self, current_val, val, time):
@@ -411,7 +411,7 @@ class Aggregator(object):
 
 class Analysis(Aggregator):
     """
-    An Analysis is a type of Aggregator that updates a pathindex with
+    An Analysis is a type of Aggregator that updates an Attrtree with
     the results of a ViewOperation. Analysis takes a ViewRef object as
     input which is resolved to generate input for the ViewOperation.
     """
@@ -427,14 +427,14 @@ class Analysis(Aggregator):
         self.path = None
 
 
-    def _get_result(self, pathindex, time, times):
+    def _get_result(self, attrtree, time, times):
         if self.stackwise and time==times[-1]:
-            view = self.reference.resolve(pathindex)
+            view = self.reference.resolve(attrtree)
             return self.analysis(view, *self.args, **self.kwargs)
         elif self.stackwise:
             return None
         else:
-            view = self.reference.resolve(pathindex)
+            view = self.reference.resolve(attrtree)
             return self.analysis(view, *self.args, **self.kwargs)
 
     def __str__(self):
@@ -453,7 +453,7 @@ class Collector(AttrTree):
     views from it (as configured by setting an appropriate hook set
     with the for_type classmethod).
 
-    The analysis method takes a reference to data on the pathindex (a
+    The analysis method takes a reference to data on the attrtree (a
     ViewRef) and passes the resolved output to the given analysisfn
     ViewOperation.
 
@@ -588,7 +588,7 @@ class Collector(AttrTree):
         return Analysis(reference, analysisfn, stackwise=stackwise, *args, **kwargs)
 
 
-    def __call__(self, pathindex=AttrTree(), times=[]):
+    def __call__(self, attrtree=AttrTree(), times=[]):
 
         current_time = self.time_fn()
         if times != sorted(times):
@@ -610,7 +610,7 @@ class Collector(AttrTree):
                          if update_progress else self.interval_hook)
 
         self._schedule_tasks()
-        (self.fixed, pathindex.fixed) = (False, False)
+        (self.fixed, attrtree.fixed) = (False, False)
 
         for i, t in enumerate(np.diff(times)):
             if update_progress:
@@ -618,18 +618,18 @@ class Collector(AttrTree):
 
             interval_hook(float(t))
 
-            # An empty pathindex buffer stops analysis repeatedly
+            # An empty attrtree buffer stops analysis repeatedly
             # computing results over the entire accumulated stack
-            pathindex_buffer = AttrTree()
+            attrtree_buffer = AttrTree()
             for task in self._scheduled_tasks:
                 if isinstance(task, Analysis) and task.stackwise:
-                    task(pathindex, self.time_fn(), times)
+                    task(attrtree, self.time_fn(), times)
                 else:
-                    task(pathindex_buffer, self.time_fn(), times)
-                    pathindex.update(pathindex_buffer)
+                    task(attrtree_buffer, self.time_fn(), times)
+                    attrtree.update(attrtree_buffer)
 
-        (self.fixed, pathindex.fixed) = (True, True)
-        return pathindex
+        (self.fixed, attrtree.fixed) = (True, True)
+        return attrtree
 
 
     def _schedule_tasks(self):
