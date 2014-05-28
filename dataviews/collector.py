@@ -447,7 +447,7 @@ class Collector(AttrTree):
     """
     A Collector specifies a template for how to populate a AttrTree
     with data over time. Two methods are used to schedule data
-    collection: 'collect' and 'analyse'.
+    collection: 'collect' and 'analyze'.
 
     The collect method takes an object (or reference) and collects
     views from it (as configured by setting an appropriate hook set
@@ -580,7 +580,7 @@ class Collector(AttrTree):
         return task
 
 
-    def analyse(self, reference, analysisfn,  stackwise=False, *args, **kwargs):
+    def analyze(self, reference, analysisfn,  stackwise=False, *args, **kwargs):
         """
         Given a ViewRef and the ViewOperation analysisfn, process the
         data resolved by the reference with analysisfn at each step.
