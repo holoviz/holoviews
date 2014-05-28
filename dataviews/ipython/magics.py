@@ -202,8 +202,8 @@ class ChannelMagic(Magics):
         """
         Labels on Overlays are used to index channel definitions.
         """
-        if isinstance(obj, GridLayout):
-            for subview in obj.values():
+        if isinstance(obj, (Layout, GridLayout)):
+            for subview in obj:
                 cls._set_overlay_labels(subview, label)
         elif isinstance(obj, Stack) and issubclass(obj.type, Overlay):
             for overlay in obj:
@@ -362,8 +362,8 @@ class OptsMagic(Magics):
         name for all matches. A match occurs when the basename of the
         view.style is found in the supplied dictionary.
         """
-        if isinstance(obj, GridLayout):
-            for subview in obj.values():
+        if isinstance(obj, (Layout, GridLayout)):
+            for subview in obj:
                 cls._set_style_names(subview, custom_name_map)
         elif isinstance(obj.style, list):
             obj.style = [custom_name_map.get(cls._basename(s), s) for s in obj.style]
