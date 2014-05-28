@@ -22,9 +22,9 @@ class AttrTree(object):
     together using the update method or merge classmethod. Here is an
     example of adding a View to an AttrTree and accessing it:
 
-    >>> index = AttrTree()
-    >>> index.example.path = View('data1', name='view1')
-    >>> index.example.path
+    >>> t = AttrTree()
+    >>> t.Example.Path = View('data1', name='view1')
+    >>> t.Example.Path
     View('data1', label='', metadata={}, name='view1', title='{label}')
     """
 
@@ -101,6 +101,9 @@ class AttrTree(object):
         Set the given value at the supplied path.
         """
         path = tuple(path)
+        if not all(p[0].isupper() for p in path):
+            raise Exception("All paths elements must be capitalized.")
+
         if len(path) > 1:
             pathindex = self.__getattr__(path[0])
             pathindex.set_path(path[1:], val)
@@ -132,12 +135,13 @@ class AttrTree(object):
     def __setattr__(self, label, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        if label != 'fixed' and not label.startswith('_') and self.fixed and shallow:
+        if label[0].isupper() and self.fixed and shallow:
             raise AttributeError(self._fixed_error)
 
         super(AttrTree, self).__setattr__(label, val)
 
-        if not (label.startswith('_') or label =='fixed' or label in self.children):
+        if label in self.children: pass
+        elif label[0].isupper():
             self.children.append(label)
             self._propagate((label,), val)
 
@@ -157,10 +161,13 @@ class AttrTree(object):
         if label in self.children:
             return self.__dict__[label]
 
-        self.children.append(label)
-        child_index = AttrTree(label=label, parent=self)
-        self.__dict__[label] = child_index
-        return child_index
+        if label[0].isupper():
+            self.children.append(label)
+            child_index = AttrTree(label=label, parent=self)
+            self.__dict__[label] = child_index
+            return child_index
+        else:
+            raise AttributeError("Paths elements must be capitalized.")
 
 
     def __repr__(self):
@@ -215,11 +222,11 @@ class ViewRef(Reference):
     ViewRefs compose with the * operator to specify Overlays and also
     support slicing of the referenced view objects:
 
-    >>> ref = ViewRef().example.path1 * ViewRef().example.path2
+    >>> ref = ViewRef().Example.Path1 * ViewRef().Example.Path2
 
     >>> g = AttrTree()
-    >>> g.example.path1 = SheetView(np.random.rand(5,5))
-    >>> g.example.path2 = SheetView(np.random.rand(5,5))
+    >>> g.Example.Path1 = SheetView(np.random.rand(5,5))
+    >>> g.Example.Path2 = SheetView(np.random.rand(5,5))
     >>> overlay = ref.resolve(g)
     >>> len(overlay)
     2
@@ -293,7 +300,7 @@ class ViewRef(Reference):
         try:
             return super(ViewRef, self).__getattr__(label)
         except AttributeError as e:
-            if label.startswith('_') or len(self.specification) > 1:
+            if not label[0].isupper() or len(self.specification) > 1:
                 raise e
         if len(self.specification) == 0:
             self.specification = [(label,)]
@@ -454,20 +461,20 @@ class Collector(AttrTree):
     >>> Collector.interval_hook = param.Dynamic.time_fn.advance
 
     >>> c = Collector()
-    >>> c.target.path = c.collect('example string')
+    >>> c.Target.Path = c.collect('example string')
 
     # Start collection...
     >>> data = c(times=[1,2,3,4,5])
     >>> isinstance(data, AttrTree)
     True
-    >>> isinstance(data.target.path, Stack)
+    >>> isinstance(data.Target.Path, Stack)
     True
 
-    >>> times = data.target.path.keys()
+    >>> times = data.Target.Path.keys()
     >>> print("Collected the data for %d time values" % len(times))
     Collected the data for 5 time values
 
-    >>> data.target.path.last                 #doctest: +ELLIPSIS
+    >>> data.Target.Path.last                 #doctest: +ELLIPSIS
     View('example string'...)
     """
 
