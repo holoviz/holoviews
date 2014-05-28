@@ -1756,17 +1756,17 @@ class SideHistogramPlot(HistogramPlot):
 
 
 Plot.defaults.update({SheetView: SheetViewPlot,
-                 Points: PointPlot,
-                 Contours: ContourPlot,
-                 SheetOverlay: SheetPlot,
-                 CoordinateGrid: CoordinateGridPlot,
-                 Curve: CurvePlot,
-                 DataOverlay: DataPlot,
-                 DataGrid: DataGridPlot,
-                 Table: TablePlot,
-                 Histogram: HistogramPlot,
-                 Layout: GridLayoutPlot,
-                 Annotation: AnnotationPlot})
+                      Points: PointPlot,
+                      Contours: ContourPlot,
+                      SheetOverlay: SheetPlot,
+                      CoordinateGrid: CoordinateGridPlot,
+                      Curve: CurvePlot,
+                      DataOverlay: DataPlot,
+                      DataGrid: DataGridPlot,
+                      Table: TablePlot,
+                      Histogram: HistogramPlot,
+                      Layout: GridLayoutPlot,
+                      Annotation: AnnotationPlot})
 
 
 Plot.sideplots.update({Histogram: SideHistogramPlot,
