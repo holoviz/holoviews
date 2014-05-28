@@ -1755,7 +1755,7 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-Plot.defaults = {SheetView: SheetViewPlot,
+Plot.defaults.update({SheetView: SheetViewPlot,
                  Points: PointPlot,
                  Contours: ContourPlot,
                  SheetOverlay: SheetPlot,
@@ -1766,12 +1766,12 @@ Plot.defaults = {SheetView: SheetViewPlot,
                  Table: TablePlot,
                  Histogram: HistogramPlot,
                  Layout: GridLayoutPlot,
-                 Annotation: AnnotationPlot}
+                 Annotation: AnnotationPlot})
 
 
-Plot.sideplots = {Histogram: SideHistogramPlot,
-                  Table: TablePlot,
-                  CoordinateGrid: CoordinateGridPlot}
+Plot.sideplots.update({Histogram: SideHistogramPlot,
+                       Table: TablePlot,
+                       CoordinateGrid: CoordinateGridPlot})
 
 __all__ = list(set([_k for _k,_v in locals().items()
                     if isinstance(_v, type) and issubclass(_v, Plot)]))
