@@ -69,6 +69,14 @@ class Plot(param.Parameterized):
 
     _stack_type = Stack
 
+    # A mapping from View types to their corresponding plot types
+    defaults = {}
+
+    # A mapping from View types to their corresponding side plot types
+    sideplots = {}
+
+
+
     def __init__(self, zorder=0, **kwargs):
         super(Plot, self).__init__(**kwargs)
         self.zorder = zorder
@@ -600,7 +608,7 @@ class SheetPlot(OverlayPlot):
 
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = next(style_groups[stack.style])
-            plotype = viewmap[stack.type]
+            plotype = Plot.defaults[stack.type]
             plot = plotype(stack, zorder=zorder, **View.options.plotting(stack).opts)
 
             plot(ax, cyclic_index=cyclic_index)
@@ -733,9 +741,9 @@ class LayoutPlot(Plot):
             plotopts.update(override_opts)
             vtype = view.type if isinstance(view, Stack) else view.__class__
             if pos == 'main':
-                subplot = viewmap[vtype](view, **plotopts)
+                subplot = Plot.defaults[vtype](view, **plotopts)
             else:
-                subplot = sideviewmap[vtype](view, **plotopts)
+                subplot = Plot.sideplots[vtype](view, **plotopts)
 
             # 'Main' views that should be displayed with square aspect
             if pos == 'main' and issubclass(vtype, (DataOverlay, DataLayer)):
@@ -1098,7 +1106,7 @@ class DataPlot(Plot):
                 self.rescale = plotopts.get('rescale_individually', False)
                 lbrt = self._stack.last.lbrt if self.rescale else self._stack.lbrt
 
-            plotype = viewmap[stack.type]
+            plotype = Plot.defaults[stack.type]
             plot = plotype(stack, size=self.size,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
@@ -1337,7 +1345,7 @@ class DataGridPlot(Plot):
             if view is not None:
                 subax = plt.subplot(self._gridspec[c, r])
                 vtype = view.type if isinstance(view, DataStack) else view.__class__
-                subplot = viewmap[vtype](view, show_legend=self.show_legend,
+                subplot = Plot.defaults[vtype](view, show_legend=self.show_legend,
                                          show_xaxis=self.show_xaxis,
                                          show_yaxis=self.show_yaxis,
                                          show_title=self.show_title)
@@ -1747,26 +1755,23 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-
-sideviewmap = {Histogram: SideHistogramPlot,
-               Table: TablePlot,
-               CoordinateGrid: CoordinateGridPlot}
-
-
-viewmap = {SheetView: SheetViewPlot,
-           Points: PointPlot,
-           Contours: ContourPlot,
-           SheetOverlay: SheetPlot,
-           CoordinateGrid: CoordinateGridPlot,
-           Curve: CurvePlot,
-           DataOverlay: DataPlot,
-           DataGrid: DataGridPlot,
-           Table: TablePlot,
-           Histogram: HistogramPlot,
-           Layout: GridLayoutPlot,
-           Annotation: AnnotationPlot
-}
+Plot.defaults = {SheetView: SheetViewPlot,
+                 Points: PointPlot,
+                 Contours: ContourPlot,
+                 SheetOverlay: SheetPlot,
+                 CoordinateGrid: CoordinateGridPlot,
+                 Curve: CurvePlot,
+                 DataOverlay: DataPlot,
+                 DataGrid: DataGridPlot,
+                 Table: TablePlot,
+                 Histogram: HistogramPlot,
+                 Layout: GridLayoutPlot,
+                 Annotation: AnnotationPlot}
 
 
-__all__ = ['viewmap'] + list(set([_k for _k,_v in locals().items()
-                                  if isinstance(_v, type) and issubclass(_v, Plot)]))
+Plot.sideplots = {Histogram: SideHistogramPlot,
+                  Table: TablePlot,
+                  CoordinateGrid: CoordinateGridPlot}
+
+__all__ = list(set([_k for _k,_v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Plot)]))

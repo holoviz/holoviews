@@ -15,7 +15,6 @@ import sys, traceback, base64
 from ..dataviews import Stack, View
 from ..views import Annotation, Layout
 from ..sheetviews import GridLayout, CoordinateGrid
-from ..plots import viewmap
 from ..plots import Plot, GridLayoutPlot
 
 
@@ -131,7 +130,7 @@ def stack_display(stack, size=256):
     magic_info = process_view_magics(stack)
     if magic_info: return magic_info
     opts = dict(View.options.plotting(stack).opts, size=get_plot_size())
-    stackplot = viewmap[stack.type](stack, **opts)
+    stackplot = Plot.defaults[stack.type](stack, **opts)
     if len(stackplot) == 0:
         return repr(stack)
     elif len(stackplot) == 1:
@@ -166,7 +165,7 @@ def projection_display(grid, size=256):
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
     opts = dict(View.options.plotting(list(grid.values())[-1]).opts, size=grid_size)
-    gridplot = viewmap[grid.__class__](grid, **opts)
+    gridplot = Plot.defaults[grid.__class__](grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
@@ -180,7 +179,7 @@ def view_display(view, size=256):
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
     opts = dict(View.options.plotting(view).opts, size=get_plot_size())
-    fig = viewmap[view.__class__](view, **opts)()
+    fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 
 render_anim = HTML_video

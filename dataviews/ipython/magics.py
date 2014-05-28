@@ -11,7 +11,7 @@ except:
 
 
 from ..options import PlotOpts, StyleOpts, ChannelOpts
-from ..plots import viewmap
+from ..plots import Plot
 from ..views import Overlay, Layout,  GridLayout
 from ..dataviews import Stack, View
 from ..sheetviews import SheetOverlay
@@ -301,9 +301,9 @@ class OptsMagic(Magics):
 
     def __init__(self, *args, **kwargs):
         super(OptsMagic, self).__init__(*args, **kwargs)
-        styles_list = [el.style_opts for el in viewmap.values()]
+        styles_list = [el.style_opts for el in Plot.defaults.values()]
         params_lists = [[k for (k,v) in el.params().items()
-                         if not v.constant] for el in viewmap.values()]
+                         if not v.constant] for el in Plot.defaults.values()]
 
         # List of all parameters and styles for tab completion
         OptsMagic.all_styles = sorted(set([s for styles in styles_list for s in styles]))
@@ -422,7 +422,7 @@ class OptsMagic(Magics):
         errmsg = ''
         for key, (plot_kws, style_kws) in custom_options.items():
             for name, viewtype in styles.items():
-                plottype = viewmap[viewtype]
+                plottype = Plot.defaults[viewtype]
                 if cls._basename(name) != key: continue
                 # Plot options checks
                 params = [k for (k,v) in plottype.params().items() if not v.constant]
