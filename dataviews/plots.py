@@ -844,11 +844,11 @@ class GridLayoutPlot(Plot):
 
 
     def __init__(self, grid, **kwargs):
+        grid = GridLayout([grid]) if isinstance(grid, Layout) else grid
         if not isinstance(grid, GridLayout):
             raise Exception("GridLayoutPlot only accepts GridLayouts.")
-
-        self.grid = grid
         # LayoutPlots indexed by their row and column indices
+        self.grid = grid
         self.subplots = {}
         self.rows, self.cols = grid.shape
         self.coords = [(r, c) for r in range(self.rows)

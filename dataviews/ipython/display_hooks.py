@@ -141,12 +141,12 @@ def stack_display(stack, size=256):
 
 @display_hook
 def layout_display(grid, size=256):
-    grid = GridLayout([grid]) if isinstance(grid, Layout) else grid
-    if not isinstance(grid, (GridLayout)): return None
+    if not isinstance(grid, (GridLayout, Layout)): return None
+    shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
-    grid_size = (grid.shape[1]*get_plot_size()[1],
-                 grid.shape[0]*get_plot_size()[0])
+    grid_size = (shape[1]*get_plot_size()[1],
+                 shape[0]*get_plot_size()[0])
 
     opts = dict(size=grid_size)
     gridplot = GridLayoutPlot(grid, **opts)
