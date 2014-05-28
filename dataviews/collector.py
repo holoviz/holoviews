@@ -224,10 +224,10 @@ class ViewRef(Reference):
 
     >>> ref = ViewRef().Example.Path1 * ViewRef().Example.Path2
 
-    >>> g = AttrTree()
-    >>> g.Example.Path1 = SheetView(np.random.rand(5,5))
-    >>> g.Example.Path2 = SheetView(np.random.rand(5,5))
-    >>> overlay = ref.resolve(g)
+    >>> tree = AttrTree()
+    >>> tree.Example.Path1 = SheetView(np.random.rand(5,5))
+    >>> tree.Example.Path2 = SheetView(np.random.rand(5,5))
+    >>> overlay = ref.resolve(tree)
     >>> len(overlay)
     2
 
