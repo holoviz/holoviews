@@ -167,7 +167,7 @@ class AttrTree(object):
             self.__dict__[label] = child_tree
             return child_tree
         else:
-            raise AttributeError("Paths elements must be capitalized.")
+            raise AttributeError("%s: Custom paths elements must be capitalized." % label)
 
 
     def __repr__(self):
@@ -241,6 +241,9 @@ class ViewRef(Reference):
         'a.b.c'. The overlay operator is applied between each n-tuple.
         """
         self.specification = specification
+        if not all(p[0].isupper() for path in specification for p in path):
+            raise Exception("All path components must be capitalized.")
+
         self.slices = dict.fromkeys(specification) if slices is None else slices
 
 
@@ -300,8 +303,12 @@ class ViewRef(Reference):
         try:
             return super(ViewRef, self).__getattr__(label)
         except AttributeError as e:
-            if not label[0].isupper() or len(self.specification) > 1:
-                raise e
+
+            if not label[0].isupper():
+                raise AttributeError("Reference path element %r must capitalized" % label)
+            elif len(self.specification) > 1:
+                raise AttributeError("Cannot use attribute specification for overlays.")
+
         if len(self.specification) == 0:
             self.specification = [(label,)]
         elif len(self.specification) == 1:
