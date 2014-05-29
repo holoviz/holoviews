@@ -544,7 +544,6 @@ class Collector(AttrTree):
 
     def __init__(self, **kwargs):
         super(Collector,self).__init__(**kwargs)
-        self.__dict__['refs'] = []
         self._scheduled_tasks = []
 
         fixed_error = 'Collector specification disabled after first call.'
@@ -559,9 +558,7 @@ class Collector(AttrTree):
         attribute access). Used to define View references for analysis
         or for setting a path for an Aggregator on the Collector.
         """
-        new_ref = ViewRef()
-        self.refs.append(new_ref)
-        return new_ref
+        return ViewRef()
 
 
     def collect(self, obj, *args, **kwargs):
