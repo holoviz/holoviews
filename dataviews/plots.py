@@ -16,11 +16,10 @@ import param
 
 from .views import NdMapping, Stack, View
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
-    Table, TableStack, ScatterPoints
+    Table, TableStack, Scatter
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import GridLayout, Layout, Overlay, View, Annotation
-from .operation import RGBA, HCS, AlphaOverlay
 
 
 class PlotSaver(param.ParameterizedFunction):
@@ -136,7 +135,6 @@ class Plot(param.Parameterized):
     sideplots = {}
 
 
-
     def __init__(self, zorder=0, **kwargs):
         super(Plot, self).__init__(**kwargs)
         self.zorder = zorder
@@ -163,7 +161,8 @@ class Plot(param.Parameterized):
         title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
-        return title_format.format(label=view._label_dim.pprint_label, type=view.__class__.__name__)
+        return title_format.format(label=view.label, value=str(view.value),
+                                   type=view.__class__.__name__)
 
 
     def _update_title(self, n):
@@ -1192,7 +1191,7 @@ class DataPlot(Plot):
 
 class ScatterPlot(Plot):
     """
-    ScatterPlot can plot ScatterPoints and DataStacks of ScatterPoints,
+    ScatterPlot can plot Scatter and DataStacks of Scatter,
     which can be displayed as a single frame or animation. Axes,
     titles and legends are automatically generated from the metadata
     and dim_info.
@@ -1222,7 +1221,7 @@ class ScatterPlot(Plot):
     _stack_type = DataStack
 
     def __init__(self, points, zorder=0, **kwargs):
-        self._stack = self._check_stack(points, ScatterPoints)
+        self._stack = self._check_stack(points, Scatter)
         self.ax = None
 
         super(ScatterPlot, self).__init__(zorder, **kwargs)
@@ -1551,7 +1550,7 @@ class TablePlot(Plot):
     respectively.
     """
 
-    border = param.Number(default = 0.05, bounds=(0.0, 0.5), doc="""
+    border = param.Number(default=0.05, bounds=(0.0, 0.5), doc="""
         The fraction of the plot that should be empty around the
         edges.""")
 
@@ -1564,12 +1563,12 @@ class TablePlot(Plot):
          table cell. Any strings longer than this length will be
          truncated.""")
 
-    max_font_size = param.Integer(default = 20, doc="""
+    max_font_size = param.Integer(default=20, doc="""
        The largest allowable font size for the text in each table
        cell.""")
 
-    font_types = param.Dict(default = {'heading':FontProperties(weight='bold',
-                                                                family='monospace')},
+    font_types = param.Dict(default={'heading': FontProperties(weight='bold',
+                                                               family='monospace')},
        doc="""The font style used for heading labels used for emphasis.""")
 
 
