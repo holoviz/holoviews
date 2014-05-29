@@ -746,7 +746,7 @@ class Collector(AttrTree):
         padding = len(str(num_items))
         num_fmt = '%%0%dd.' % padding
 
-        lines = ["Collector with %d tasks scheduled:\n" % num_items]
+        lines = ["%d tasks scheduled:\n" % num_items]
         dotted_line = indent + num_fmt +"  %s"
         merge_line = indent + num_fmt + "  [...] "
         value_line = indent*3 + ' '*padding + " %s %s"
