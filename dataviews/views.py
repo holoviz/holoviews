@@ -483,8 +483,9 @@ class Stack(NdMapping):
 
         # Split the keys
         keys = list(self._data.keys())
-        first_keys, second_keys = zip(*[(tuple(np.array(k)[first_inds]),
-                                        tuple(np.array(k)[second_inds])) for k in keys])
+        first_keys, second_keys = zip(*[(tuple(k[fi] for fi in first_inds),
+                                        tuple(k[si] for si in second_inds))
+                                        for k in keys])
         return first_dims, first_keys, second_dims, second_keys
 
 
