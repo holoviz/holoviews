@@ -101,6 +101,9 @@ class Plot(param.Parameterized):
     show_grid = param.Boolean(default=False, doc="""
       Whether to show a Cartesian grid on the plot.""")
 
+    show_legend = param.Boolean(default=True, doc="""
+      Whether to show legend for the plot.""")
+
     show_title = param.Boolean(default=True, doc="""
       Whether to display the plot title.""")
 
@@ -1131,9 +1134,6 @@ class DataPlot(Plot):
     A generic plot that visualizes DataStacks containing DataOverlay or
     DataLayer objects.
     """
-
-    show_legend = param.Boolean(default=True, doc="""
-      Whether to show legend for the plot.""")
 
     _stack_type = DataStack
 
