@@ -5,7 +5,6 @@ SheetStacks and compose the data together in ways that can be viewed
 conveniently, often by creating or manipulating color channels.
 """
 
-from collections import OrderedDict
 import colorsys
 import numpy as np
 import matplotlib
@@ -16,7 +15,7 @@ from param import ParamOverrides
 
 from .views import Overlay
 from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
-from .dataviews import View, Stack, DataLayer, DataOverlay, DataStack, Table, TableStack, Curve
+from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack
 from .sheetviews import GridLayout, CoordinateGrid
 
 from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle
@@ -24,11 +23,9 @@ from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
-
-
-stack_mapping = {SheetLayer:SheetStack,
-                 DataLayer:DataStack,
-                 Table:TableStack}
+stack_mapping = {SheetLayer: SheetStack,
+                 DataLayer: DataStack,
+                 Table: TableStack}
 
 
 
@@ -67,9 +64,9 @@ class ViewOperation(param.ParameterizedFunction):
         condition or to extract the appropriate views from an Overlay.
         """
         if isinstance(view, Overlay):
-            matches = [v for v in view.data if v._label_dim.name.endswith(pattern)]
+            matches = [v for v in view.data if v.label.endswith(pattern)]
         elif isinstance(view, SheetView):
-            matches = [view] if view._label_dim.name.endswith(pattern) else []
+            matches = [view] if view.label.endswith(pattern) else []
 
         return [match for match in matches if isinstance(match, view_type)]
 
@@ -220,8 +217,7 @@ class operator(ViewOperation):
             raise Exception("Operation requires an Overlay as input")
 
         new_data = self.p.operator(*[el.data for el in overlay.data])
-        return [SheetView(new_data, bounds=overlay.bounds,
-                          label = self.p.label,
+        return [SheetView(new_data, bounds=overlay.bounds, label=self.p.label,
                           roi_bounds=overlay.roi_bounds)]
 
 
@@ -253,9 +249,8 @@ class RGBA(ViewOperation):
             arrays.append(el.data)
 
 
-        return [SheetView(np.dstack(arrays), overlay.bounds,
-                          label=self.p.label,
-                          roi_bounds=overlay.roi_bounds)]
+        return [SheetView(np.dstack(arrays), overlay.bounds, label=self.p.label,
+                          roi_bounds=overlay.roi_bounds, value=overlay[0].value)]
 
 
 class AlphaOverlay(ViewOperation):
@@ -271,9 +266,8 @@ class AlphaOverlay(ViewOperation):
 
     def _process(self, overlay):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
-        return [SheetView(RGBA(R*G*B*overlay[1]).data,
-                          overlay.bounds,
-                          label=self.overlay[0].label+' '+self.p.label)]
+        return [SheetView(RGBA(R*G*B*overlay[1]).data, overlay.bounds,
+                          label=self.p.label, value=overlay[0].value)]
 
 
 
@@ -318,7 +312,7 @@ class HCS(ViewOperation):
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
         return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds,
-                          label=hue.label +' '+ self.p.label)]
+                          label=self.p.label, value=overlay[0].value)]
 
 
 
@@ -351,9 +345,8 @@ class Colorize(ViewOperation):
                        bounds=overlay.bounds)
          hcs = HCS(overlay[1] * C * overlay[0].N)
 
-         return [SheetView(hcs.data, hcs.bounds,
-                           roi_bounds=hcs.roi_bounds,
-                           label= overlay[0].label + ' ' + self.p.label)]
+         return [SheetView(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
+                           label=self.p.label, value=overlay[0].value)]
 
 
 
@@ -382,12 +375,7 @@ class cmap2rgb(ViewOperation):
             raise Exception("No color map supplied and no cmap in the active style.")
 
         cmap = matplotlib.cm.get_cmap(style_cmap if self.p.cmap is None else self.p.cmap)
-        return [SheetView(cmap(sheetview.data),
-                         bounds=sheetview.bounds,
-                         cyclic_range=sheetview.cyclic_range,
-                         style=sheetview.style,
-                         metadata=sheetview.metadata,
-                         label = sheetview.label +' ' + self.p.label)]
+        return [sheetview.clone(cmap(sheetview.data), label=self.p.label)]
 
 
 
@@ -402,11 +390,10 @@ class split(ViewOperation):
       following the character selected from output_names.""")
 
     def _process(self, sheetview):
-        if sheetview.mode not in ['rgb','rgba']:
+        if sheetview.mode not in ['rgb', 'rgba']:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
-        return [SheetView(sheetview.data[:,:,i],
-                          bounds=sheetview.bounds,
-                          label='RGBA'[i] + ' ' + self.p.label)
+        return [sheetview.clone(sheetview.data[:, :, i],
+                                label='RGBA'[i] + ' ' + self.p.label)
                 for i in range(sheetview.depth)]
 
 
@@ -431,9 +418,8 @@ class contours(ViewOperation):
     def _process(self, sheetview):
 
         figure_handle = plt.figure()
-        (l,b,r,t) = sheetview.bounds.lbrt()
-        contour_set = plt.contour(sheetview.data,
-                                  extent=(l,r,t,b),
+        (l, b, r, t) = sheetview.bounds.lbrt()
+        contour_set = plt.contour(sheetview.data, extent=(l, r, t, b),
                                   levels=self.p.levels)
 
         contours = []
@@ -441,8 +427,8 @@ class contours(ViewOperation):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
             contours.append(Contours(lines, sheetview.bounds,
-                            metadata={'level': level},
-                            label=sheetview.label + ' ' + self.p.label))
+                                     metadata={'level': level},
+                                     label=sheetview.label + ' ' + self.p.label))
 
         plt.close(figure_handle)
 
