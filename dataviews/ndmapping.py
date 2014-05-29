@@ -50,8 +50,8 @@ class Dimension(param.Parameterized):
 
     @property
     def pprint_label(self):
-        unit = '' if self.unit is None else self.unit
-        return ' '.join([self.name, unit])
+        unit = '' if self.unit is None else ' (%s)' % self.unit
+        return self.name + unit
 
 
     def pprint_value(self, value, rounding=2):
@@ -62,12 +62,15 @@ class Dimension(param.Parameterized):
 
         unit = '' if self.unit is None else ' ' + self.unit
         try: # Try formatting numeric types as floats with rounding
-            val=round(float(value), rounding)
+            val = round(float(value), rounding)
         except:
             val = value
 
         return self.format_string.format(name=self.name.capitalize(),
                                          val=val, unit=unit)
+
+    def __str__(self):
+        return self.pprint_label
 
 
 class Dimensional(object):
