@@ -596,7 +596,6 @@ class Stack(NdMapping):
 
 
     def __mul__(self, other):
-        if isinstance(other, self.__class__):
         """
         The mul (*) operator implements overlaying of different Views.
         This method tries to intelligently overlay Stacks with differing
@@ -606,6 +605,7 @@ class Stack(NdMapping):
         making sure that items with completely different dimensions aren't
         overlaid.
         """
+        if isinstance(other, self.__class__):
             self_set = set(self.dimension_labels)
             other_set = set(other.dimension_labels)
 
@@ -782,17 +782,17 @@ class Layout(param.Parameterized):
 
 
 class GridLayout(NdMapping):
-
-    dimensions = param.List(default=[Dimension('Row', type=int),
-                                     Dimension('Column', type=int)], constant=True)
-
-    def __init__(self, initial_items=[], **kwargs):
     """
     A GridLayout is an NdMapping, which can contain any View or Stack type.
     It is used to group different View or Stack elements into a grid for
     display. Just like all other NdMappings it can be sliced and indexed
     allowing selection of subregions of the grid.
     """
+
+    dimensions = param.List(default=[Dimension('Row', type=int),
+                                     Dimension('Column', type=int)], constant=True)
+
+    def __init__(self, initial_items=[], **kwargs):
         self._max_cols = 4
         if all(isinstance(el, (View, NdMapping, Layout)) for el in initial_items):
             initial_items = self._grid_to_items([initial_items])
