@@ -460,13 +460,13 @@ class Analysis(Aggregator):
     input which is resolved to generate input for the ViewOperation.
     """
 
-    def __init__(self, reference, analysis, stackwise=False, *args, **kwargs):
+    def __init__(self, reference, analysis, *args, **kwargs):
         self.reference = reference
         self.analysis = analysis
 
         self.args = list(args)
         self.kwargs = kwargs
-        self.stackwise = stackwise
+        self.stackwise = self.kwargs.pop('stackwise', False)
         self.mode = 'set'
         self.path = None
 
@@ -609,12 +609,12 @@ class Collector(AttrTree):
         return Aggregator(self, obj, *args, **kwargs)
 
 
-    def analyze(self, reference, analysisfn,  stackwise=False, *args, **kwargs):
+    def analyze(self, reference, analysisfn,  *args, **kwargs):
         """
         Given a ViewRef and the ViewOperation analysisfn, process the
         data resolved by the reference with analysisfn at each step.
         """
-        return Analysis(reference, analysisfn, stackwise=stackwise, *args, **kwargs)
+        return Analysis(reference, analysisfn, *args, **kwargs)
 
 
     def __call__(self, attrtree=AttrTree(), times=[]):
