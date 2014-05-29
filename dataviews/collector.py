@@ -468,8 +468,9 @@ class Collect(object):
 
         if self.path not in attrtree:
             if not isinstance(val, NdMapping):
-                if val.title == '{label}':
-                    val.title = ' '.join(self.path[::-1]) + val.title
+                if val.title == '{label}' and val.label == '':
+                    val.label = ' '.join(self.path[::-1])
+                    val.value = self.path[0]
                 val = val.stack_type([((time,), val)], dimensions=[Time])
         else:
             current_val = attrtree.path_items[self.path]
