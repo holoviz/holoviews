@@ -351,10 +351,34 @@ class Aggregator(object):
     AttrTree to be merged with the attrtree when called.
     """
 
-    def __init__(self, obj, hook, mode, *args, **kwargs):
-        self.obj = obj
-        self.hook = hook
-        self.mode=mode
+    @classmethod
+    def select_hook(cls, obj, hooks):
+        """
+        Select the most appropriate hook by the most specific type.
+        """
+        matches = []
+        obj_class = obj if isinstance(obj, type) else type(obj)
+
+        if obj_class == param.parameterized.ParameterizedMetaclass:
+            obj_class = obj
+
+        for tp in hooks.keys():
+            if issubclass(obj_class, tp):
+                matches.append(tp)
+
+        if len(matches) == 0:
+            raise Exception("No hook found for object of type %s"
+                            % obj.__class__.__name__)
+
+        for obj_cls in obj_class.mro():
+            if obj_cls in matches:
+                return hooks[obj_cls]
+
+        raise Exception("Match not in object classes mro()")
+
+
+    def __init__(self, collector, obj, *args, **kwargs):
+
         self.args=list(args)
         self.kwargs=kwargs
         self.path = None
@@ -376,6 +400,19 @@ class Aggregator(object):
         the hook at the given time out of the given list of times.
         """
         if self.path is None:
+        resolveable = None
+        if hasattr(obj, 'resolve'):
+            resolveable = obj
+            obj = obj.resolved_type
+
+        self.hook, self.mode, resolver = self.select_hook(obj, collector.type_hooks)
+        if resolveable is None:
+            resolveable = obj if resolver is None else resolver(obj)
+
+        if self.mode == 'merge':
+            collector.path_items[uuid.uuid4().hex] = self
+        self.obj = resolveable
+
             raise Exception("Aggregation path not set.")
 
         val = self._get_result(attrtree, time, times)
@@ -569,19 +606,7 @@ class Collector(AttrTree):
         specified when the hook was defined, the object will
         automatically be wrapped into a reference.
         """
-        resolveable = None
-        if hasattr(obj, 'resolve'):
-            resolveable = obj
-            obj = obj.resolved_type
-
-        hook, mode, resolver = self.select_hook(obj)
-        if resolveable is None:
-            resolveable = obj if resolver is None else resolver(obj)
-
-        task = Aggregator(resolveable, hook, mode, *args, **kwargs)
-        if mode == 'merge':
-            self.path_items[uuid.uuid4().hex] = task
-        return task
+        return Aggregator(self, obj, *args, **kwargs)
 
 
     def analyze(self, reference, analysisfn,  stackwise=False, *args, **kwargs):
