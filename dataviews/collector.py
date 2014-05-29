@@ -464,6 +464,23 @@ class Aggregator(object):
             current_val.update(val)
         return current_val
 
+    def __repr__(self):
+        args = ', '.join(str(el) for el in self.args) if self.args else ''
+        kwargs = ', '.join('%s=%r' % (k,v) for (k,v) in self.kwargs.items()) if self.kwargs else ''
+        name = self.obj.name if hasattr(self.obj, 'name') else repr(self.obj)
+        return 'Aggregator(%s%s%s)' %  (name,
+                                        (', %s' % args) if args else '',
+                                        (', %s' % kwargs) if kwargs else '')
+
+    def __str__(self):
+        if hasattr(self.obj, 'name'):
+            obj_name = self.obj.name
+        else:
+            obj_name = self.obj
+
+        args = [str(el) for el in self.args]+['%s=%r' % (k,v) for (k,v) in self.kwargs.items()]
+        arguments = '' if len(args)==0 else ' [%s]' % ','.join(args)
+        return "%s%s" % (obj_name, arguments)
 
 
 class Analysis(Aggregator):
@@ -494,8 +511,17 @@ class Analysis(Aggregator):
             view = self.reference.resolve(attrtree)
             return self.analysis(view, *self.args, **self.kwargs)
 
+    def __repr__(self):
+        args = ', '.join(str(el) for el in self.args) if self.args else ''
+        kwargs = ', '.join('%s=%r' % (k,v) for (k,v) in self.kwargs.items()) if self.kwargs else ''
+        return "Analysis(%r, %s%s%s)" % (self.reference, self.analysis.name,
+                                         (', %s' % args) if args else '',
+                                         (', %s' % kwargs) if kwargs else '')
+
+
     def __str__(self):
-        return "Analysis(%r)" % self.analysis
+        return "%s(%s)" % (self.analysis.name, self.reference)
+
 
 
 
@@ -680,7 +706,27 @@ class Collector(AttrTree):
 
 
     def __repr__(self):
-        return str(self)
+        spec_strs = []
+        for path, val in self.path_items.items():
+            key = repr('.'.join(path)) if isinstance(path, tuple) else 'None'
+            spec_strs.append('\n(%s, %r)' % (key, val))
+        return 'Collector([%s])' % ', '.join(spec_strs)
 
     def __str__(self):
-        return "Collector with %d tasks scheduled" % len(self._scheduled_tasks)
+        indent = '  '
+        num_items = len(self.path_items)
+        padding = len(str(num_items))
+        num_fmt = '%%0%dd.' % padding
+
+        lines = ["Collector with %d tasks scheduled:\n" % num_items]
+        dotted_line = indent + num_fmt +"  %s"
+        merge_line = indent + num_fmt + "  [...] "
+        value_line = indent*3 + ' '*padding + " %s %s"
+        for i, (path, val) in enumerate(self.path_items.items()):
+            if isinstance(path, tuple):
+                lines.append(dotted_line % (i+1, '.'.join(p for p in path)))
+                lines.append(value_line % (' ', val))
+            else:
+                lines.append(merge_line % (i+1))
+                lines.append(value_line % ('', val))
+        return '\n'.join(lines)
