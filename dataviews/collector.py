@@ -377,11 +377,21 @@ class Aggregator(object):
         raise Exception("Match not in object classes mro()")
 
 
-    def __init__(self, collector, obj, *args, **kwargs):
+    def __init__(self, obj, *args, **kwargs):
 
         self.args=list(args)
         self.kwargs=kwargs
         self.path = None
+        resolveable = None
+        if hasattr(obj, 'resolve'):
+            resolveable = obj
+            obj = obj.resolved_type
+
+        self.hook, self.mode, resolver = self.select_hook(obj, Collector.type_hooks)
+        if resolveable is None:
+            resolveable = obj if resolver is None else resolver(obj)
+        self.obj = resolveable
+
 
 
     def _get_result(self, attrtree, time, times):
@@ -400,19 +410,6 @@ class Aggregator(object):
         the hook at the given time out of the given list of times.
         """
         if self.path is None:
-        resolveable = None
-        if hasattr(obj, 'resolve'):
-            resolveable = obj
-            obj = obj.resolved_type
-
-        self.hook, self.mode, resolver = self.select_hook(obj, collector.type_hooks)
-        if resolveable is None:
-            resolveable = obj if resolver is None else resolver(obj)
-
-        if self.mode == 'merge':
-            collector.path_items[uuid.uuid4().hex] = self
-        self.obj = resolveable
-
             raise Exception("Aggregation path not set.")
 
         val = self._get_result(attrtree, time, times)
@@ -606,7 +603,11 @@ class Collector(AttrTree):
         specified when the hook was defined, the object will
         automatically be wrapped into a reference.
         """
-        return Aggregator(self, obj, *args, **kwargs)
+        task = Aggregator(obj, *args, **kwargs)
+        if task.mode == 'merge':
+            self.path_items[uuid.uuid4().hex] = task
+        return task
+
 
 
     def analyze(self, reference, analysisfn,  *args, **kwargs):
