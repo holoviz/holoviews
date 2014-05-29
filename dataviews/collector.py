@@ -647,7 +647,7 @@ class Collector(AttrTree):
         self._scheduled_tasks = []
         for path, task in self.path_items.items():
 
-            if not isinstance(task, (Aggregator, Analysis)):
+            if not isinstance(task, Aggregator):
                 self._scheduled_tasks = []
                 raise Exception("Only Aggregators or Analysis objects allowed, not %s" % task)
 
