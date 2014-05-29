@@ -669,7 +669,7 @@ class Stack(NdMapping):
 
 
 
-class Layout(param.Parameterized):
+class Layout(param.Parameterized, Dimensional):
     """
     A Layout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a
@@ -684,6 +684,8 @@ class Layout(param.Parameterized):
     |           |  |
     |___________|__|
     """
+
+    dimensions = param.List(default=[Dimension('Layout')], constant=True)
 
     layout_order = ['main', 'right', 'top']
 
@@ -715,6 +717,8 @@ class Layout(param.Parameterized):
 
 
     def __getitem__(self, key):
+        if key is ():
+            return self
         if isinstance(key, int) and key <= len(self):
             if key == 0:  return self.main
             if key == 1:  return self.right
