@@ -9,7 +9,8 @@ from .views import View, Overlay, Annotation, Stack
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns
-    (np.min(a1, b1), np.max(a2, b2)).
+    (np.min(a1, b1), np.max(a2, b2)). Used to calculate
+    min and max values of a number of items.
     """
 
     limzip = zip(list(lims), list(olims), [np.min, np.max])
@@ -19,12 +20,17 @@ def find_minmax(lims, olims):
 
 class DataLayer(View):
     """
-    General purpose DataLayer for holding data to be plotted along some
-    axes. Subclasses can implement specialized containers for data such as
-    curves, points, bars or surfaces.
+    DataLayer is a 2D View type used to hold data indexed
+    by an x-dimension and y-dimension. The data held within
+    the DataLayer is a numpy array of shape (n, 2).
+
+    DataLayer objects are sliceable along the X dimension
+    allowing easy selection of subsets of the data.
     """
 
     dimensions = param.List(default=[Dimension('X')])
+
+    value = param.ClassSelector(class_=(str, Dimension), default='Y')
 
     def __init__(self, data, **kwargs):
         settings = {}
@@ -34,7 +40,7 @@ class DataLayer(View):
         elif isinstance(data, Stack) or (isinstance(data, list) and data
                                          and isinstance(data[0], DataLayer)):
             data, settings = self._process_stack(data)
-        elif data and not isinstance(data, np.ndarray):
+        elif len(data) and not isinstance(data, np.ndarray):
             data = np.array(list(data))
 
         self._xlim = None
@@ -48,20 +54,10 @@ class DataLayer(View):
         Base class to process a DataStack to be collapsed into a DataLayer.
         Should return the data and parameters of reduced View.
         """
-        if isinstance(stack, DataStack):
-            list = stack.values()
         data = []
-        for v in list:
+        for v in stack:
             data.append(v.data)
         return np.concatenate(data), dict(v.get_param_values())
-
-
-    @property
-    def cyclic_range(self):
-        if self._dimensions[0].cyclic:
-            return self._dimensions[0].range[1]
-        else:
-            return None
 
 
     def sample(self, dimension_samples):
@@ -79,23 +75,29 @@ class DataLayer(View):
             raise ValueError('Dimension %s could not be found.' % dimension_samples.keys()[0])
 
 
-    def collapse(self, dimension_collapsefns, add_dimension={}):
+    def reduce(self, dimreduce_map, add_dimension={}):
         """
-
+        Allows collapsing of DataLayer objects using the supplied map of
+        dimensions and reduce functions.
         """
-
-        dims, collapsefns = zip(dimension_collapsefns.items())
+        dims, collapsefns = dimreduce_map.items()[0]
         if len(dims) > self.ndims:
             raise ValueError('%d collapse dimensions provided, %s is %d-dimensional.'
                              % (len(dims), type(self).__name__, self.ndims))
-        return Table({self.label: collapsefns[0](self.data[:, 0])},
-                     **dict(self.get_param_values()))
-
+        data = collapsefns(self.data[:, 1])
+        if add_dimension:
+            dim, val = add_dimension.items()[0]
+            return Scatter(zip([val], [data]),
+                                 **dict(self.get_param_values(), dimensions=[dim]))
+        else:
+            return Table({str(self.value): data}, **dict(self.get_param_values()))
 
 
     def __getitem__(self, slc):
         """
         Implements slicing or indexing of the data by the data x-value.
+        If a single element is indexed reduces the DataLayer to a single
+        Scatter object.
         """
         if slc is ():
             return self
@@ -109,22 +111,7 @@ class DataLayer(View):
         else:
             slc = np.where(self.data[:, 0] == slc)
             sample = self.data[slc, :]
-            return ScatterPoints(sample, **dict(self.get_param_values()))
-
-
-    @property
-    def stack_type(self):
-        return DataStack
-
-
-    @property
-    def xlabel(self):
-        return self._dimensions[0].pprint_label
-
-
-    @property
-    def ylabel(self):
-        return self._label_dim.pprint_label
+            return Scatter(sample, **dict(self.get_param_values()))
 
 
     def __mul__(self, other):
@@ -144,6 +131,38 @@ class DataLayer(View):
             raise TypeError('Can only create an overlay of DataViews.')
 
         return DataOverlay(overlays, metadata=self.metadata)
+
+
+    @property
+    def stack_type(self):
+        return DataStack
+
+
+    @property
+    def cyclic_range(self):
+        if self._dimensions[0].cyclic:
+            return self._dimensions[0].range[1]
+        else:
+            return None
+
+
+    @property
+    def dense(self):
+        """
+        Allows checking whether the DataLayer is densely sampled.
+        Currently only checks for linear sampling.
+        """
+        return False if len(set(np.diff(self.data[:, 0]))) > 1 else True
+
+
+    @property
+    def xlabel(self):
+        return self._dimensions[0].pprint_label
+
+
+    @property
+    def ylabel(self):
+        return str(self.value)
 
 
     @property
@@ -200,20 +219,32 @@ class DataLayer(View):
         return float(l), float(b), float(r), float(t)
 
 
+    @property
+    def sorted(self):
+        return not np.any(np.where(np.diff(self.data[:, 0]) < 0, True, False))
 
-class ScatterPoints(DataLayer):
+
+
+class Scatter(DataLayer):
     """
-    ScatterPoints is a simple 1D View, which gets displayed as a number of
+    Scatter is a simple 1D View, which gets displayed as a number of
     disconnected points.
     """
 
+    def sort(self):
+        self.data = np.sort(self.data, axis=0)
 
 
 class Curve(DataLayer):
     """
-    Curve is a simple 1D View of disconnected points and therefore isn't
-    necessarily ordered.
+    Curve is a simple 1D View of points and therefore assumes the data is
+    ordered.
     """
+
+    def __init__(self, data, **kwargs):
+        super(Curve, self).__init__(data, **kwargs)
+        if not self.sorted:
+            raise ValueError('Curve data has to be sorted along x-dimension.')
 
     def stack(self):
         stack = DataStack(None, dimensions=[self.xlabel],
@@ -227,6 +258,28 @@ class Curve(DataLayer):
         return stack
 
 
+class Bars(DataLayer):
+    """
+    A bar is a simple 1D View of bars, which assumes that the data is sorted by
+    x-value and there are no gaps in the bars.
+    """
+
+    def __init__(self, data, width=None, **kwargs):
+        super(Bars, self).__init__(data, **kwargs)
+        self._width = width
+        if not self.sorted:
+            raise ValueError('Bar data has to be sorted by x-value.')
+        elif not self.dense:
+            raise ValueError('Bar data has to be densely sampled along the x-axis.')
+
+    @property
+    def width(self):
+        if self._width == None:
+            return set(np.diff(self.data[:, 1]))[0]
+        else:
+            return self._width
+
+
 
 class Histogram(DataLayer):
     """
@@ -234,9 +287,15 @@ class Histogram(DataLayer):
     and lower bounds of their edges and the computed bin values.
     """
 
-    def __init__(self, values, edges, **kwargs):
-        self.values, self.edges = self._process_data(values, edges)
-        super(Histogram, self).__init__((self.values, self.edges), **kwargs)
+    title = param.String(default='{label} {type}')
+
+    value = param.ClassSelector(class_=(str, Dimension), default='Frequency')
+
+    def __init__(self, values, edges=None, **kwargs):
+        self.values, self.edges, settings = self._process_data(values, edges)
+        settings.update(kwargs)
+        super(Histogram, self).__init__([], **settings)
+        self.data = (self.values, self.edges)
 
 
     def _process_data(self, values, edges):
@@ -244,8 +303,18 @@ class Histogram(DataLayer):
         Ensure that edges are specified as left and right edges of the
         histogram bins rather than bin centers.
         """
-        values = np.array(values)
-        edges = np.array(edges, dtype=np.float)
+        settings = {}
+        if isinstance(values, DataLayer):
+            values = values.data[:, 0]
+            edges = values.data[:, 1]
+            settings = dict(values.get_param_values())
+        elif isinstance(values, np.ndarray) and len(values.shape) == 2:
+            values = values[:, 0]
+            edges = values[:, 1]
+        else:
+            values = np.array(values)
+            edges = np.array(edges, dtype=np.float)
+
         if len(edges) == len(values):
             widths = list(set(np.diff(edges)))
             if len(widths) == 1:
@@ -254,12 +323,24 @@ class Histogram(DataLayer):
                 raise Exception('Centered bins have to be of equal width.')
             edges -= width/2.
             edges = np.concatenate([edges, [edges[-1]+width]])
-        return values, edges
+        return values, edges, settings
+
+
+    def __getitem__(self, slc):
+        raise NotImplementedError('Slicing and indexing of histograms currently not implemented.')
+
+
+    def sample(self, dimension_samples, new_dimvalue=None):
+        raise NotImplementedError('Cannot sample a Histogram.')
+
+
+    def reduce(self, dimreduce_map, new_dimvalue=None):
+        raise NotImplementedError('Reduction of Histogram not implemented.')
 
 
     @property
-    def ndims(self):
-        return len(self.edges)-1
+    def dense(self):
+        return len(set(np.diff(self.edges))) == 1
 
 
     @property
@@ -301,17 +382,19 @@ class DataOverlay(DataLayer, Overlay):
             self.xlim = layer.xlim
             self.ylim = layer.ylim
             self.dimensions = layer.dimensions
-            self.label = layer._label_dim.name
+            self.value = layer.value
+            self.label = layer.label
         else:
             self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
             self.ylim = layer.ylim if self.xlim is None else find_minmax(self.ylim, layer.ylim)
-            if layer._label_dim.name != self.label:
+            if layer.dimension_labels != self.dimension_labels:
                 raise Exception("DataLayers must share common dimensions.")
         self.data.append(layer)
 
 
+    @property
     def cyclic_range(self):
-        return self[0].cyclic_range
+        return self[0].cyclic_range if len(self) else None
 
 
 
@@ -325,6 +408,28 @@ class DataStack(Stack):
     data_type = (DataLayer, Annotation)
 
     overlay_type = DataOverlay
+
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        histstack = DataStack(dimensions=self.dimensions,
+                              title_suffix=self.title_suffix,
+                              metadata=self.metadata)
+
+        stack_range = None if individually else self.range
+        bin_range = stack_range if bin_range is None else bin_range
+        for k, v in self.items():
+            histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
+                                  individually=individually,
+                                  style_prefix='Custom[<' + self.name + '>]_',
+                                  adjoin=False,
+                                  **kwargs)
+
+        if adjoin and issubclass(self.type, Overlay):
+            layout = (self << histstack)
+            layout.main_layer = kwargs['index']
+            return layout
+
+        return (self << histstack) if adjoin else histstack
+
 
     @property
     def xlabel(self):
@@ -379,18 +484,45 @@ class Table(View):
         if type(self.data) == dict: headings = sorted(headings)
         self.heading_map = OrderedDict([(el, str(el)) for el in headings])
 
+
+    def sample(self, sample, new_dimvalue=None):
+        if new_dimvalue:
+            dim, value = new_dimvalue
+            return Scatter(zip([value], [self.data[sample]]), dimensions=[dim],
+                                 label=sample, value=sample)
+        else:
+            return self.clone({sample: self.sample})
+
+
+    def reduce(self, reduce_map, new_dimvalue=None, match_fn=None):
+        reduced_dim, reduce_fn = reduce_map
+        match_fn = lambda x: x if match_fn is None else match_fn
+        reduce_data = [v for k, v in self.data.items() if match_fn(k)]
+        reduced_data = reduce_fn(reduce_data)
+        if new_dimvalue is not None:
+            dim, value = new_dimvalue
+            return Scatter(zip(value, reduced_data), dimensions=[dim],
+                                 label=self.label, value=reduced_dim)
+        else:
+            return Table({reduced_dim: reduce_fn(self.data.values())})
+
+
     @property
     def rows(self):
         return len(self.heading_map)
+
 
     @property
     def cols(self):
         return 2
 
+
     def __getitem__(self, heading):
         """
         Get the value associated with the given heading (key).
         """
+        if heading is ():
+            return self
         if heading not in self.heading_map:
             raise IndexError("%r not in available headings." % heading)
         return self.data[heading]
@@ -439,6 +571,68 @@ class TableStack(Stack):
 
     _type_map = None
 
+    def sample(self, samples, x_dimension=None):
+        """
+        Samples the Table elements in the Stack by the provided samples.
+        If multiple samples are provided the samples are laid out side
+        by side in a GridLayout. By providing an x_dimension the individual
+        samples are joined up into a Curve.
+        """
+        if x_dimension:
+            nested_stack = self.split_dimensions([x_dimension])
+            new_dimensions = [d for d in self._dimensions if d.name != x_dimension]
+            stack_type = DataStack
+        else:
+            nested_stack = self
+            new_dimensions = self._dimensions
+            stack_type = TableStack
+
+        sampled_stacks = []
+        for sample in samples:
+            sample_stack = stack_type(dimensions=new_dimensions)
+            for outer_key, stack in nested_stack.items():
+                sample_data = []
+                for x_key, view in stack.items():
+                    sample_data.append(view.sample(sample, (x_dimension, x_key)))
+                sample_stack[outer_key] = Curve(sample_data)
+            sampled_stacks.append(sample_stack if len(sample_stack) > 1 else sample_stack.values()[0])
+        if len(sampled_stacks) == 1:
+            return sampled_stacks[0]
+        else:
+            grid = sampled_stacks[0]
+            for stack in sampled_stacks[1:]:
+                grid += stack
+            return grid
+
+
+    def reduce(self, reduce_tuple, x_dimension=None, match_fn=None):
+        """
+        Reduces the Tables in the Stack using the provided the function
+        provided in the reduce_tuple (reduced_label, reduce_fn).
+
+        If an x_dimension is provided the reduced values are joined up
+        to a Curve. By default reduces all values in a Table but using
+        a match_fn a subset of elements in the Tables can be selected.
+        """
+        if x_dimension:
+            nested_stack = self.split_dimensions([x_dimension])
+            new_dimensions = [d for d in self._dimensions if d.name != x_dimension]
+            stack_type = DataStack
+        else:
+            nested_stack = self
+            new_dimensions = self._dimensions
+            stack_type = TableStack
+
+        reduced_stack = stack_type(dimensions=new_dimensions)
+        for outer_key, stack in nested_stack.items():
+            reduced_data = []
+            for inner_key, view in stack.items():
+                new_dim = (x_dimension, inner_key)
+                reduced_data.append(view.reduce(reduce_tuple, new_dim, match_fn))
+            reduced_stack[outer_key] = Curve(reduced_data)
+        return reduced_stack
+
+
     def heading_values(self):
         return self.last.heading_values() if len(self) else []
 
@@ -463,11 +657,6 @@ class TableStack(Stack):
                 self._type_map[k] = None
 
         super(TableStack, self)._item_check(dim_vals, data)
-
-
-    def sample(self, **kwargs):
-        from .operation import sample_curve
-        return sample_curve(self, **kwargs)
 
 
 
