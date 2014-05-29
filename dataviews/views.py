@@ -47,11 +47,24 @@ class View(param.Parameterized, Dimensional):
         if self.label == '': self.label = str(self.value)
 
 
-    def sample(self, samples, dimension):
+    def sample(self, dimsample_map, new_dimvalue=None):
+        """
+        Base class signature to demonstrate API for sampling Views.
+        To sample a View a dimsample_map dictionary should be provided,
+        where the key is the dimension to sample and the value the
+        corresponding value. Optionally, a new_dimvalue tuple of a new
+        dimension and value to add to the sampled View can be given
+        retaining the dimensionality of the data.
+        """
         raise NotImplementedError
 
 
-    def collapse(self, dimensions, collapse_fns):
+    def reduce(self, dimreduce_map, new_dimvalue=None):
+        """
+        Base class signature to demonstrate API for reducing Views,
+        using some reduce function, e.g. np.mean. Otherwise the signature
+        is the same as .sample.
+        """
         raise NotImplementedError
 
 
@@ -110,6 +123,7 @@ class View(param.Parameterized, Dimensional):
             obj_dict['style_objects'][match] = self.options[match]
         return obj_dict
 
+
     def __setstate__(self, d):
         """
         When unpickled, restore the saved style and plotting options
@@ -125,7 +139,6 @@ class View(param.Parameterized, Dimensional):
         self.__dict__.update(d)
 
 
-
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[self, obj])
@@ -138,6 +151,7 @@ class View(param.Parameterized, Dimensional):
             return Layout(other.data+[self])
         else:
             raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+
 
     def __repr__(self):
         params = ', '.join('%s=%r' % (k,v) for (k,v) in self.get_param_values())
@@ -367,9 +381,16 @@ class Overlay(View):
 
 class Stack(NdMapping):
     """
-    A Stack is a stack of Views over some dimensions. The
+    A Stack is a stack of Views over a number of specified dimensions. The
     dimension may be a spatial dimension (i.e., a ZStack), time
-    (specifying a frame sequence) or any other dimensions.
+    (specifying a frame sequence) or any other combination of Dimensions.
+    Stack also adds handling of styles, appending the Dimension keys and
+    values to titles and a number of methods to manipulate the Dimensions.
+
+    Stack objects can be sliced, sampled, reduced, overlaid and split along
+    its and its containing Views dimensions. Subclasses should implement
+    the appropriate slicing, sampling and reduction methods for their View
+    type.
     """
 
     title_suffix = param.String(default='\n {dims}', doc="""
@@ -478,7 +499,9 @@ class Stack(NdMapping):
 
     def split_dimensions(self, dimensions):
         """
-        Split the dimensions in the NdMapping across two NdMappings.
+        Split the dimensions in the NdMapping across two NdMappings,
+        where the inner mapping is of the same type as the original
+        Stack.
         """
         inner_dims, deep_dims = self._sort_dims(dimensions)
         if len(deep_dims):
@@ -504,7 +527,7 @@ class Stack(NdMapping):
     def overlay_dimensions(self, dimensions):
         """
         Splits the Stack along a specified number of dimensions and overlays
-        all items with keys differing just along those.
+        items in the split out Stacks.
         """
         split_stack = self.split_dimensions(dimensions)
         new_stack = self.clone(dimensions=split_stack.dimensions)
@@ -534,7 +557,7 @@ class Stack(NdMapping):
         return clones if len(clones) > 1 else clones[0]
 
 
-    def sample(self, dimension, group_by):
+    def sample(self, dimsample_map, new_axis=None):
         """
         Base class implements signature for sampling View dimensions
         and optionally overlaying the resulting reduced dimensionality
@@ -543,11 +566,11 @@ class Stack(NdMapping):
         raise NotImplementedError
 
 
-    def collapse(self, dimensions, collapse_fns):
+    def reduce(self, dimreduce_map, new_axis=None):
         """
-        Base class implements signature for collapsing dimensions,
+        Base class implements signature for reducing dimensions,
         subclasses with Views of fixed dimensionality can then
-        appropriately implement collapsing the correct view types.
+        appropriately implement reducing the correct view types.
         """
         raise NotImplementedError
 
@@ -573,6 +596,15 @@ class Stack(NdMapping):
 
     def __mul__(self, other):
         if isinstance(other, self.__class__):
+        """
+        The mul (*) operator implements overlaying of different Views.
+        This method tries to intelligently overlay Stacks with differing
+        keys. If the Stack is mulled with a simple View each element in
+        the Stack is overlaid with the View. If the element the Stack is
+        mulled with is another Stack it will try to match up the dimensions,
+        making sure that items with completely different dimensions aren't
+        overlaid.
+        """
             self_set = set(self.dimension_labels)
             other_set = set(other.dimension_labels)
 
@@ -754,6 +786,12 @@ class GridLayout(NdMapping):
                                      Dimension('Column', type=int)], constant=True)
 
     def __init__(self, initial_items=[], **kwargs):
+    """
+    A GridLayout is an NdMapping, which can contain any View or Stack type.
+    It is used to group different View or Stack elements into a grid for
+    display. Just like all other NdMappings it can be sliced and indexed
+    allowing selection of subregions of the grid.
+    """
         self._max_cols = 4
         if all(isinstance(el, (View, NdMapping, Layout)) for el in initial_items):
             initial_items = self._grid_to_items([initial_items])
