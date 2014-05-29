@@ -326,12 +326,28 @@ class ViewRef(Reference):
         return ViewRef(self.specification + other.specification, slices=slices)
 
 
-    def __repr__(self):
-        return "ViewRef(%r)" %  self.specification
+    def _pprint_index(self, ind):
+        if isinstance(ind, slice):
+            parts = [str(el) for el in [ind.start, ind.stop, ind.step]]
+            parts = parts[:2] if parts[2]=='None' else parts
+            return '[%s]' % ':'.join(el if el!='None' else '' for el in parts)
+        elif ind is None:
+            return ''
+        else:
+            return '[%r]' % ind
 
+    def __repr__(self):
+        return str(self)
+
+    def __str__(self):
+        paths = ['.'.join(s for s in spec) for spec in self.specification]
+        indices = [self.slices.get(spec, None) for spec in self.specification]
+        indexed_paths = [p + self._pprint_index(s) for (p,s) in zip(paths, indices)]
+        return ' * '.join('ViewRef().%s' % el for el in indexed_paths)
 
     def __len__(self):
         return len(self.specification)
+
 
 
 
