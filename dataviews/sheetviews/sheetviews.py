@@ -674,15 +674,33 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
        The title formatting string allows the title to be composed
        from the label and type.""")
 
-    def __init__(self, bounds, shape, initial_items=None, **kwargs):
+    def __init__(self, bounds, shape, xdensity=None, ydensity=None, initial_items=None, **kwargs):
         (l, b, r, t) = bounds.lbrt()
-        (dim1, dim2) = shape
-        xdensity = dim1 / (r-l) if (r-l) else 1
-        ydensity = dim2 / (t-b) if (t-b) else 1
+        if not (xdensity and ydensity):
+            (dim1, dim2) = shape
+            xdensity = dim1 / (r-l) if (r-l) else 1
+            ydensity = dim2 / (t-b) if (t-b) else 1
         self._style = None
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         super(CoordinateGrid, self).__init__(initial_items, **kwargs)
+
+
+    def __getitem__(self, key):
+        ret = super(CoordinateGrid, self).__getitem__(key)
+        if not isinstance(ret, CoordinateGrid):
+            return ret
+
+        # Adjust bounds to new slice
+        map_key, _ = self._split_index(key)
+        x, y = [ret.dim_range(d) for d in ret.dimension_labels]
+        l, b, r, t = ret.lbrt
+        half_unit_x = ((l-r) / ret.xdensity) / 2
+        half_unit_y = ((t-b) / ret.ydensity) / 2
+
+        new_bbox = BoundingBox(points=[(x[0]+half_unit_x, y[0]-half_unit_y),
+                                       (x[1]-half_unit_x, y[1]+half_unit_y)])
+        return self.clone(ret.items(), bounds=new_bbox)
 
 
     def _add_item(self, coords, data, sort=True):
@@ -733,11 +751,12 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         Returns an empty duplicate of itself with all parameter values and
         metadata copied across.
         """
-        settings = dict(self.get_param_values(), **kwargs)
-        settings.pop('metadata', None)
-        return CoordinateGrid(bounds=self.bounds, shape=self.shape,
-                              initial_items=items,
-                              metadata=self.metadata, **settings)
+        settings = dict(self.get_param_values(), metadata=self.metadata, **kwargs)
+        bounds = settings.pop('bounds') if 'bounds' in settings else self.bounds
+        xdensity = settings.pop('xdensity') if 'xdensity' in settings else self.xdensity
+        ydensity = settings.pop('ydensity') if 'ydensity' in settings else self.ydensity
+        return CoordinateGrid(bounds, None, initial_items=items, xdensity=xdensity,
+                              ydensity=ydensity, **settings)
 
 
     def __mul__(self, other):
@@ -748,7 +767,6 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
             zipped = zip(self.keys(), self.values(), other.values())
             overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
             return self.clone(overlayed_items)
-
         elif isinstance(other, SheetStack) and len(other) == 1:
             sheetview = other.last
         elif isinstance(other, SheetStack) and len(other) != 1:
@@ -762,15 +780,15 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
     @property
     def last(self):
-
         """
         The last of a ProjectionGrid is another ProjectionGrid
         constituted of the last of the individual elements. To access
         the elements by their X,Y position, either index the position
         directly or use the items() method.
         """
+
         last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
-                     for (k, v) in self.items()]
+                      for (k, v) in self.items()]
         return self.clone(last_items)
 
 
