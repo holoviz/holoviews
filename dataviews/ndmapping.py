@@ -404,8 +404,8 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
 
 
     def dim_range(self, dim):
-        dim_values = [k[self.dim_index(dim)] for k in self._data.keys()]
-        return np.min(dim_values), np.max(dim_values)
+        dimkeys = sorted([k[self.dim_index(dim)] for k in self._data.keys()])
+        return (dimkeys[0], dimkeys[-1])
 
 
     @property
