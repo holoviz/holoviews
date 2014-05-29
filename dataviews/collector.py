@@ -2,13 +2,13 @@
 AttributeTree, Collector and related classes offer optional functionality
 for holding and collecting DataView objects.
 """
-import time, uuid
+import uuid
 import numpy as np
 from collections import OrderedDict
 
 import param
-from .sheetviews import SheetView, SheetStack, CoordinateGrid, BoundingBox
-from .views import GridLayout,Stack, View, NdMapping, Dimension
+from .sheetviews import SheetView, CoordinateGrid
+from .views import GridLayout, Stack, View, NdMapping, Dimension
 
 from .ipython.widgets import RunProgress
 
