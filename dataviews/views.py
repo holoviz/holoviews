@@ -3,7 +3,6 @@ Views objects used to hold data and provide indexing into different coordinate
 systems.
 """
 import math
-import numpy as np
 from collections import OrderedDict, defaultdict
 
 import param
@@ -23,18 +22,21 @@ class View(param.Parameterized, Dimensional):
     dimensions = param.List(default=[], doc="""List of dimensions the View
       can be indexed by.""")
 
-    label = param.Parameter(default=Dimension('Default'), constant=True, doc="""
+    label = param.String(default='', doc="""
       A string label or Dimension object used to indicate what kind of data
       is contained within the view object.""")
 
     legend_label = param.String(default="", doc="Legend labels")
 
-    title = param.String(default='{label}', doc="""
-       The title formatting string allows the title to be composed from
-       the view label and view type but can also be set to a simple string.""")
-
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional information to be associated with the Layer.""")
+
+    title = param.String(default='{label}', doc="""
+       The title formatting string allows the title to be composed from
+       the view {label}, {value} quantity and view {type} but can also be set
+       to a simple string.""")
+
+    value = param.ClassSelector(class_=(str, Dimension), default=Dimension('Y'))
 
     options = options
 
@@ -42,11 +44,7 @@ class View(param.Parameterized, Dimensional):
         self.data = data
         self._style = kwargs.pop('style', None)
         param.Parameterized.__init__(self, **kwargs)
-        Dimensional.__init__(self)
-        if not isinstance(self.label, Dimension):
-            self._label_dim = Dimension(self.label)
-        else:
-            self._label_dim = self.label
+        if self.label == '': self.label = str(self.value)
 
 
     def sample(self, samples, dimension):
@@ -88,7 +86,7 @@ class View(param.Parameterized, Dimensional):
 
         class_name = self.__class__.__name__
         if self.label:
-            style_str = '_'.join([self._label_dim.name, class_name])
+            style_str = '_'.join([self.label, class_name])
             matches = self.options.fuzzy_match_keys(style_str)
             return matches[0] if matches else class_name
         else:
@@ -125,6 +123,7 @@ class View(param.Parameterized, Dimensional):
             for style in match:
                 self.options[name] = style
         self.__dict__.update(d)
+
 
 
     def __add__(self, obj):
