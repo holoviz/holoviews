@@ -148,7 +148,7 @@ class View(param.Parameterized, Dimensional):
         if isinstance(other, (View, Overlay, NdMapping)):
             return Layout([self, other])
         elif isinstance(other, Layout):
-            return Layout(other.data+[self])
+            return Layout(other.data.values()+[self])
         else:
             raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
 
