@@ -479,6 +479,25 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         except:
             return default
 
+    @property
+    def info(self):
+        """
+        Prints information about the NdMapping, including the number and type
+        of objects contained within it and information about its dimensions.
+        """
+        info_str = self.__class__.__name__ +\
+                   " containing %d items of type %s\n" % (len(self.keys()),
+                                                          type(self.values()[0]).__name__)
+        info_str += ('-' * (len(info_str)-1)) + "\n\n"
+        info_str += 'Dimensions: \n'
+        for d in self._dimensions:
+            dmin, dmax = self.dim_range(d.name)
+            info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
+        deep_dimensions = [d for d in self.deep_dimensions if d not in self.dimension_labels]
+        if len(deep_dimensions):
+            info_str += '\nDeep Dimensions: ' + ', '.join(deep_dimensions)
+        print(info_str)
+
 
     def pop(self, *args):
         if len(args) > 0 and not isinstance(args[0], tuple):
