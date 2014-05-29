@@ -351,9 +351,9 @@ class ViewRef(Reference):
 
 
 
-class Aggregator(object):
+class Collect(object):
     """
-    An Aggregator takes an object and corresponding hook and when
+    An Collect takes an object and corresponding hook and when
     called with an AttrTree, updates it with the output of the hook
     (given the object). The output of the hook should be a View or an
     AttrTree.
@@ -468,7 +468,7 @@ class Aggregator(object):
         args = ', '.join(str(el) for el in self.args) if self.args else ''
         kwargs = ', '.join('%s=%r' % (k,v) for (k,v) in self.kwargs.items()) if self.kwargs else ''
         name = self.obj.name if hasattr(self.obj, 'name') else repr(self.obj)
-        return 'Aggregator(%s%s%s)' %  (name,
+        return 'Collect(%s%s%s)' %  (name,
                                         (', %s' % args) if args else '',
                                         (', %s' % kwargs) if kwargs else '')
 
@@ -483,10 +483,10 @@ class Aggregator(object):
         return "%s%s" % (obj_name, arguments)
 
 
-class Analysis(Aggregator):
+class Analyze(Collect):
     """
-    An Analysis is a type of Aggregator that updates an Attrtree with
-    the results of a ViewOperation. Analysis takes a ViewRef object as
+    An Analyze is a type of Collect that updates an Attrtree with
+    the results of a ViewOperation. Analyze takes a ViewRef object as
     input which is resolved to generate input for the ViewOperation.
     """
 
@@ -514,7 +514,7 @@ class Analysis(Aggregator):
     def __repr__(self):
         args = ', '.join(str(el) for el in self.args) if self.args else ''
         kwargs = ', '.join('%s=%r' % (k,v) for (k,v) in self.kwargs.items()) if self.kwargs else ''
-        return "Analysis(%r, %s%s%s)" % (self.reference, self.analysis.name,
+        return "Analyze(%r, %s%s%s)" % (self.reference, self.analysis.name,
                                          (', %s' % args) if args else '',
                                          (', %s' % kwargs) if kwargs else '')
 
@@ -614,7 +614,7 @@ class Collector(AttrTree):
         """
         A convenient property to easily generate ViewRef object (via
         attribute access). Used to define View references for analysis
-        or for setting a path for an Aggregator on the Collector.
+        or for setting a path for an Collect on the Collector.
         """
         return ViewRef()
 
@@ -627,7 +627,7 @@ class Collector(AttrTree):
         specified when the hook was defined, the object will
         automatically be wrapped into a reference.
         """
-        task = Aggregator(obj, *args, **kwargs)
+        task = Collect(obj, *args, **kwargs)
         if task.mode == 'merge':
             self.path_items[uuid.uuid4().hex] = task
         return task
@@ -639,7 +639,7 @@ class Collector(AttrTree):
         Given a ViewRef and the ViewOperation analysisfn, process the
         data resolved by the reference with analysisfn at each step.
         """
-        return Analysis(reference, analysisfn, *args, **kwargs)
+        return Analyze(reference, analysisfn, *args, **kwargs)
 
 
     def __call__(self, attrtree=AttrTree(), times=[]):
@@ -676,7 +676,7 @@ class Collector(AttrTree):
             # computing results over the entire accumulated stack
             attrtree_buffer = AttrTree()
             for task in self._scheduled_tasks:
-                if isinstance(task, Analysis) and task.stackwise:
+                if isinstance(task, Analyze) and task.stackwise:
                     task(attrtree, self.time_fn(), times)
                 else:
                     task(attrtree_buffer, self.time_fn(), times)
@@ -688,15 +688,15 @@ class Collector(AttrTree):
 
     def _schedule_tasks(self):
         """
-        Inspect the path_items to find all the Aggregators that have
+        Inspect the path_items to find all the Collects that have
         been specified and add them to the scheduled tasks list.
         """
         self._scheduled_tasks = []
         for path, task in self.path_items.items():
 
-            if not isinstance(task, Aggregator):
+            if not isinstance(task, Collect):
                 self._scheduled_tasks = []
-                raise Exception("Only Aggregators or Analysis objects allowed, not %s" % task)
+                raise Exception("Only Collects or Analyze objects allowed, not %s" % task)
 
             if isinstance(path, tuple) and task.mode == 'merge':
                 self._scheduled_tasks = []
