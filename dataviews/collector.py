@@ -566,34 +566,16 @@ class Collector(AttrTree):
         cls.type_hooks[tp] = (hookfn, mode, referencer)
 
 
-    @classmethod
-    def select_hook(cls, obj):
-        """
-        Select the most appropriate hook by the most specific type.
-        """
-        matches = []
-        obj_class = obj if isinstance(obj, type) else type(obj)
-
-        if obj_class == param.parameterized.ParameterizedMetaclass:
-            obj_class = obj
-
-        for tp in cls.type_hooks.keys():
-            if issubclass(obj_class, tp):
-                matches.append(tp)
-
-        if len(matches) == 0:
-            raise Exception("No hook found for object of type %s"
-                            % obj.__class__.__name__)
-
-        for obj_cls in obj_class.mro():
-            if obj_cls in matches:
-                return cls.type_hooks[obj_cls]
-
-        raise Exception("Match not in object classes mro()")
-
-
-    def __init__(self, **kwargs):
+    def __init__(self, specs=[], **kwargs):
         super(Collector,self).__init__(**kwargs)
+
+        for (path_spec, obj) in specs:
+            if path_spec is None:
+                self.__dict__['path_items'][uuid.uuid4().hex] = obj
+            else:
+                path = path_spec.rsplit('.')
+                self.set_path(path, obj)
+
         self._scheduled_tasks = []
 
         fixed_error = 'Collector specification disabled after first call.'
