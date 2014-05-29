@@ -222,7 +222,7 @@ class ViewRef(Reference):
     ViewRefs compose with the * operator to specify Overlays and also
     support slicing of the referenced view objects:
 
-    >>> ref = ViewRef().Example.Path1 * ViewRef().Example.Path2
+    >>> ref = ViewRef('Example.Path1 * Example.Path2')
 
     >>> tree = AttrTree()
     >>> tree.Example.Path1 = SheetView(np.random.rand(5,5))
@@ -233,18 +233,53 @@ class ViewRef(Reference):
 
     Note that the operands of * must be distinct ViewRef objects.
     """
-    def __init__(self, specification=[], slices=None):
+    def __init__(self, spec=''):
         """
-        The specification list contains n-tuples where the tuple
-        elements are strings specifying one level of multi-level
-        attribute access. For instance, ('a', 'b', 'c') indicates
-        'a.b.c'. The overlay operator is applied between each n-tuple.
+        The specification is a string that follows attribute access on
+        an AttrTree. The '*' operator is supported, as well as slicing
+        syntax - an example specification is 'A.B.C[2:4] *D.E'
         """
-        self.specification = specification
-        if not all(p[0].isupper() for path in specification for p in path):
+        self.specification, self.slices = self._parse_spec(spec)
+        if not all(p[0].isupper() for path in self.specification for p in path):
             raise Exception("All path components must be capitalized.")
 
-        self.slices = dict.fromkeys(specification) if slices is None else slices
+    @property
+    def spec(self):
+        paths = ['.'.join(s for s in spec) for spec in self.specification]
+        indices = [self.slices.get(spec, None) for spec in self.specification]
+        indexed_paths = [p + self._pprint_index(s) for (p,s) in zip(paths, indices)]
+        return ' * '.join(indexed_paths)
+
+
+    def _parse_spec(self, spec):
+
+        class Index(object):
+            def __getitem__(self, val):
+                return val
+
+        specs, slices = [], {}
+        if spec.strip() == '':
+            return specs, slices
+        components = [el.strip() for el in spec.split('*')]
+        for component in components:
+            if component.count('[') !=  component.count(']'):
+                raise Exception("Mismatched parentheses in %r" % component)
+            elif component.count('[') in [0,1]:
+                path_spec = tuple(component.split('.'))
+                specs.append(path_spec)
+            else:
+                raise Exception("Invalid syntax %r" % component)
+
+            if component.count('[') == 1:
+                opening = component.find('[')
+                closing = component.find(']')
+                path_spec = tuple(component[:opening].split('.'))
+                if opening > closing:
+                    raise Exception("Invalid syntax %r" % component)
+                slices[path_spec] = eval('Index()[%s]' % component[opening+1:closing])
+            else:
+                slices[path_spec] = None
+        return specs, slices
 
 
     @property
@@ -322,8 +357,7 @@ class ViewRef(Reference):
         """
         if id(self) == id(other):
             raise Exception("Please ensure that each operand are distinct ViewRef objects.")
-        slices = dict(self.slices, **other.slices)
-        return ViewRef(self.specification + other.specification, slices=slices)
+        return ViewRef(self.spec + ' * ' + other.spec)
 
 
     def _pprint_index(self, ind):
@@ -337,13 +371,7 @@ class ViewRef(Reference):
             return '[%r]' % ind
 
     def __repr__(self):
-        return str(self)
-
-    def __str__(self):
-        paths = ['.'.join(s for s in spec) for spec in self.specification]
-        indices = [self.slices.get(spec, None) for spec in self.specification]
-        indexed_paths = [p + self._pprint_index(s) for (p,s) in zip(paths, indices)]
-        return ' * '.join('ViewRef().%s' % el for el in indexed_paths)
+        return 'ViewRef(%r)' % self.spec
 
     def __len__(self):
         return len(self.specification)

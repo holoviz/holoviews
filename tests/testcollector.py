@@ -117,7 +117,7 @@ class ViewRefTest(ViewTestCase):
         self.tree = tree
 
     def test_resolve_constructor(self):
-        ref = ViewRef([('Example', 'Path1'), ('Example', 'Path2')])
+        ref = ViewRef('Example.Path1 * Example.Path2')
         overlay = ref.resolve(self.tree)
         self.assertEqual(len(overlay), 2)
 
@@ -127,7 +127,7 @@ class ViewRefTest(ViewTestCase):
         self.assertEqual(len(overlay), 2)
 
     def test_viewref_pickle(self):
-        ref = ViewRef([('Example', 'Path1'), ('Example', 'Path2')])
+        ref = ViewRef('Example.Path1 * Example.Path2')
         dumped = pickle.dumps(ref)
         ref2 = pickle.loads(dumped)
         self.assertEqual(ref.specification, [('Example', 'Path1'), ('Example', 'Path2')])
