@@ -76,17 +76,19 @@ class Dimension(param.Parameterized):
 class Dimensional(object):
     """
     Abstract baseclass implementing common methods for objects with associated
-    dimensions. Assumes a list dimension objects or strings is available on
-    the object.
+    dimensions. Assumes a list of dimension objects or strings is available on
+    the object via the .dimensions attribute.
     """
 
     _abstract = True
 
     _deep_indexable = False
 
-    def __init__(self):
-        self._dimensions = [d if isinstance(d, Dimension) else Dimension(d)
-                            for d in self.dimensions]
+
+    @property
+    def _dimensions(self):
+        return [d if isinstance(d, Dimension) else Dimension(d)
+                for d in self.dimensions]
 
     @property
     def deep_dimensions(self):
