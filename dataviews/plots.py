@@ -1027,6 +1027,10 @@ class CoordinateGridPlot(OverlayPlot):
         Determines whether to situate the projection in the full bounds or
         apply the ROI.""")
 
+    num_ticks = param.Number(default=5)
+
+    show_frame = param.Boolean(default=False)
+
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
                                      'visible', 'filterrad', 'origin'],
                             constant=True, doc="""
@@ -1047,10 +1051,10 @@ class CoordinateGridPlot(OverlayPlot):
         grid_shape = [[v for (k, v) in col[1]]
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
+        xticks, yticks = self._compute_ticks(width, height)
 
-        ax = self._axis(axis, self._format_title(-1) ,lbrt=(0, 0, width, height))
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+        ax = self._axis(axis, self._format_title(-1), xticks=xticks,
+                        yticks=yticks, lbrt=(0, 0, width, height))
 
         self.handles['projs'] = []
         x, y = b_w, b_h
@@ -1119,6 +1123,16 @@ class CoordinateGridPlot(OverlayPlot):
         height += height/10
 
         return width, height, border_width, border_height
+
+
+    def _compute_ticks(self, width, height):
+        l, b, r, t = self.grid.lbrt
+
+        xpositions = np.linspace(0, width, self.num_ticks)
+        xlabels = np.linspace(l, r, self.num_ticks)
+        ypositions = np.linspace(0, height, self.num_ticks)
+        ylabels = np.linspace(b, t, self.num_ticks)
+        return (xpositions, xlabels), (ypositions, ylabels)
 
 
     def __len__(self):
@@ -1602,6 +1616,7 @@ class TablePlot(Plot):
 
 
     def __call__(self, axis=None):
+
         tableview = self._stack.last
 
         ax = self._axis(axis, self._format_title(-1))
