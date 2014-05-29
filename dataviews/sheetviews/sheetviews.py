@@ -774,7 +774,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         else:
             sheetview = other
 
-        overlayed_items = [(k, el * other) for k, el in self.items()]
+        overlayed_items = [(k, el * sheetview) for k, el in self.items()]
         return self.clone(overlayed_items)
 
 
