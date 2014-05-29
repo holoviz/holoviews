@@ -1849,6 +1849,10 @@ class SideHistogramPlot(HistogramPlot):
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
 
+    show_xlabel = param.Boolean(default=False, doc="""
+        Whether to show the x-label of the plot. Disabled by default
+        because plots are often too cramped to fit the title correctly.""")
+
     def _process_hist(self, hist, lbrt):
         """
         Subclassed to offset histogram by defined amount.
@@ -1858,6 +1862,13 @@ class SideHistogramPlot(HistogramPlot):
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims
+
+
+    def _process_axsettings(self, hist, lims, ticks):
+        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
+        if not self.show_xlabel:
+            axsettings['ylabel' if self.orientation == 'vertical' else 'xlabel'] = ''
+        return axsettings
 
 
     def _update_artists(self, n, edges, hvals, widths, lims):
