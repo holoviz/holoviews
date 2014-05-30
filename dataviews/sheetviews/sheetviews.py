@@ -252,7 +252,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         norm_data = (((self.data - self.data.min())/norm_factor) * abs((max-min))) + min
         return SheetView(norm_data, self.bounds, cyclic_range=self.cyclic_range,
                          metadata=self.metadata, roi_bounds=self.roi_bounds,
-                         style=self.style)
+                         label=self.label, style=self.style)
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
