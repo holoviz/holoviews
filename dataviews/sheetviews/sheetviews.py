@@ -547,26 +547,31 @@ class SheetStack(DataStack):
     overlay_type = SheetOverlay
 
 
-    def sample(self, view_samples, x_dimension=None):
-        if x_dimension:
-            stack = self.split_dimensions([x_dimension])
-            new_dimensions = [d for d in self._dimensions if d.name != x_dimension]
-        else:
-            stack = self
-            new_dimensions = self._dimensions
-        new_stack = DataStack(dimensions=new_dimensions)
-        for k, v in stack.items():
-            if x_dimension is None:
-                key = k if isinstance(k, tuple) else (k,)
-                new_stack[k] = v.sample(view_samples, dict(zip(stack.dimensions, key)))
-            else:
-                sampled = v.sample(view_samples)
-                new_stack[k] = Curve(sampled, dimensions=sampled.last._dimensions,
-                                     label=v.last.label, value=self.last.value)
-        return new_stack
+    def sample(self, coords=[], **samples):
+        """
+        Sample each SheetView in the Stack by passing either a list
+        of coords or the dimension name and the corresponding sample
+        values as kwargs.
+        """
+        if len(samples) == 1: stack_type = DataStack
+        else: stack_type = TableStack
+        return stack_type([(k, v.sample(coords=coords, **samples)) for k, v in
+                           self.items()], **dict(self.get_param_values()))
 
 
-    def grid_sample(self, rows, cols, lbrt=None, **kwargs):
+    def reduce(self, label_prefix='', **reduce_map):
+        """
+        Reduce each SheetView in the Stack using a function supplied via
+        the kwargs, where the keyword has to match a particular dimension
+        in the View.
+        """
+        if len(reduce_map) == 1: stack_type = DataStack
+        else: stack_type = TableStack
+        return stack_type([(k, v.reduce(label_prefix=label_prefix, **reduce_map))
+                           for k, v in self.items()], **dict(self.get_param_values()))
+
+
+    def grid_sample(self, rows, cols, collate='', lbrt=None):
         """
         Creates a CoordinateGrid of curves according sampled according to
         the supplied rows and cols. A sub-region to be sampled can be specified
