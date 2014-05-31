@@ -60,9 +60,11 @@ class NdIndexableMappingTest(ViewTestCase):
 
     def test_idxmapping_dim_dict(self):
         idxmap = NdIndexableMapping(dimensions=[self.dim1, self.dim2])
-        dim_labels, dim_objs = list(zip(*list(idxmap.dim_dict.items())))
+        dim_labels = tuple(idxmap.dim_dict.keys())
+        dim_objs = tuple(idxmap.dim_dict.values())
         self.assertEqual(dim_labels, tuple(self.dimension_labels))
-        self.assertEqual(dim_objs, (self.dim1, self.dim2))
+        self.assertEqual(dim_objs[0], self.dim1)
+        self.assertEqual(dim_objs[1], self.dim2)
 
     def test_idxmapping_ndims(self):
         dims = [self.dim1, self.dim2, 'strdim']
@@ -112,18 +114,13 @@ class NdIndexableMappingTest(ViewTestCase):
 
         self.assertEqual(reduced_ndmap.dimension_labels, reduced_dims)
 
-    def test_idxmapping_adddimension(self):
+    def test_idxmapping_add_dimension(self):
         ndmap = NdIndexableMapping(self.init_items_1D_list, dimensions=[self.dim1])
         ndmap2d = ndmap.add_dimension(self.dim2, 0, 0.5)
 
         self.assertEqual(list(ndmap2d.keys()), [(0.5, 1), (0.5, 5)])
-        self.assertEqual(ndmap2d.dimensions, [self.dim2, self.dim1])
-
-    def test_idxmapping_clone(self):
-        ndmap = NdIndexableMapping(self.init_items_1D_list, dimensions=[self.dim1])
-        cloned_ndmap = ndmap.clone(data_type=str)
-
-        self.assertEqual(cloned_ndmap.data_type, str)
+        self.assertEqual(ndmap2d.dimensions[0], self.dim2)
+        self.assertEqual(ndmap2d.dimensions[1], self.dim1)
 
     def test_idxmapping_apply_key_type(self):
         data = dict([(0.5, 'a'), (1.5, 'b')])
