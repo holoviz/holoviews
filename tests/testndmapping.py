@@ -71,16 +71,6 @@ class NdIndexableMappingTest(ViewTestCase):
         idxmap = NdIndexableMapping(dimensions=dims)
         self.assertEqual(idxmap.ndims, len(dims))
 
-    def test_idxmapping_data_type_check(self):
-        NdIndexableMapping(self.init_item_odict, data_type=str,
-                           dimensions=[self.dim1, self.dim2])
-        try:
-            NdIndexableMapping(self.init_item_odict, data_type=float,
-                               dimensions=[self.dim1, self.dim2])
-            raise AssertionError('Data type check failed.')
-        except TypeError:
-            pass
-
     def test_idxmapping_key_len_check(self):
         try:
             NdIndexableMapping(initial_items=self.init_item_odict)
