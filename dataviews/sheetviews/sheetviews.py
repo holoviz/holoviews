@@ -217,7 +217,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
     representation.
     """
 
-    dimensions = param.List(default=['X', 'Y'], constant=True, doc="""
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
+                            constant=True, doc="""
         The label of the x- and y-dimension of the SheetView in form
         of a string or dimension object.""")
 

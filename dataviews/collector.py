@@ -12,7 +12,7 @@ from .views import GridLayout, Stack, View, NdMapping, Dimension
 
 from .ipython.widgets import RunProgress
 
-Time = Dimension("time", type=param.Dynamic.time_fn.time_type)
+Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
 
 class AttrTree(object):
