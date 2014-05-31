@@ -445,26 +445,20 @@ class Table(View):
         self.heading_map = OrderedDict([(el, str(el)) for el in headings])
 
 
-    def sample(self, sample, new_dimvalue=None):
-        if new_dimvalue:
-            dim, value = new_dimvalue
-            return Scatter(zip([value], [self.data[sample]]), dimensions=[dim],
-                                 label=sample, value=sample)
+    def sample(self, samples=None):
+        if callable(samples):
+            sampled_data = dict([item for item in self.data.items() if samples(item)])
         else:
-            return self.clone({sample: self.sample})
+            sampled_data = dict([(k, v) for k, v in self.data.items() if k in samples])
+        return self.clone(sampled_data)
 
 
-    def reduce(self, reduce_map, new_dimvalue=None, match_fn=None):
-        reduced_dim, reduce_fn = reduce_map
-        match_fn = lambda x: x if match_fn is None else match_fn
-        reduce_data = [v for k, v in self.data.items() if match_fn(k)]
-        reduced_data = reduce_fn(reduce_data)
-        if new_dimvalue is not None:
-            dim, value = new_dimvalue
-            return Scatter(zip(value, reduced_data), dimensions=[dim],
-                                 label=self.label, value=reduced_dim)
-        else:
-            return Table({reduced_dim: reduce_fn(self.data.values())})
+    def reduce(self, **reduce_map):
+        reduced_data = {}
+        for reduce_label, reduce_fn in reduce_map.items():
+            data = reduce_fn(self.data.values())
+            reduced_data[reduce_label] = data
+        return self.clone(reduced_data)
 
 
     @property
@@ -531,41 +525,18 @@ class TableStack(Stack):
 
     _type_map = None
 
-    def sample(self, samples, x_dimension=None):
+    def sample(self, samples):
         """
         Samples the Table elements in the Stack by the provided samples.
         If multiple samples are provided the samples are laid out side
         by side in a GridLayout. By providing an x_dimension the individual
         samples are joined up into a Curve.
         """
-        if x_dimension:
-            nested_stack = self.split_dimensions([x_dimension])
-            new_dimensions = [d for d in self._dimensions if d.name != x_dimension]
-            stack_type = DataStack
-        else:
-            nested_stack = self
-            new_dimensions = self._dimensions
-            stack_type = TableStack
-
-        sampled_stacks = []
-        for sample in samples:
-            sample_stack = stack_type(dimensions=new_dimensions)
-            for outer_key, stack in nested_stack.items():
-                sample_data = []
-                for x_key, view in stack.items():
-                    sample_data.append(view.sample(sample, (x_dimension, x_key)))
-                sample_stack[outer_key] = Curve(sample_data)
-            sampled_stacks.append(sample_stack if len(sample_stack) > 1 else sample_stack.values()[0])
-        if len(sampled_stacks) == 1:
-            return sampled_stacks[0]
-        else:
-            grid = sampled_stacks[0]
-            for stack in sampled_stacks[1:]:
-                grid += stack
-            return grid
+        return self.clone([(k, view.sample(samples)) for k, view in self.items()])
 
 
-    def reduce(self, reduce_tuple, x_dimension=None, match_fn=None):
+
+    def reduce(self, **reduce_map):
         """
         Reduces the Tables in the Stack using the provided the function
         provided in the reduce_tuple (reduced_label, reduce_fn).
@@ -574,23 +545,54 @@ class TableStack(Stack):
         to a Curve. By default reduces all values in a Table but using
         a match_fn a subset of elements in the Tables can be selected.
         """
-        if x_dimension:
-            nested_stack = self.split_dimensions([x_dimension])
-            new_dimensions = [d for d in self._dimensions if d.name != x_dimension]
-            stack_type = DataStack
-        else:
-            nested_stack = self
-            new_dimensions = self._dimensions
-            stack_type = TableStack
+        return self.clone([(k, view.reduce(reduce_map)) for k, view in self.items()])
 
-        reduced_stack = stack_type(dimensions=new_dimensions)
-        for outer_key, stack in nested_stack.items():
-            reduced_data = []
-            for inner_key, view in stack.items():
-                new_dim = (x_dimension, inner_key)
-                reduced_data.append(view.reduce(reduce_tuple, new_dim, match_fn))
-            reduced_stack[outer_key] = Curve(reduced_data)
-        return reduced_stack
+
+    def collate(self, collate_dim):
+        """
+        Collate splits out the specified dimension and joins the samples
+        in each of the split out Stacks into Curves. If there are multiple
+        entries in the Table it will lay them out into a Grid.
+        """
+        nested_stack = self.split_dimensions([collate_dim])
+        new_dimensions = [d for d in self.dimensions if d.name != collate_dim]
+        collate_dim = self.dim_dict[collate_dim]
+
+        # Generate a DataStack for every entry in the table
+        stack_fn = lambda: DataStack(**dict(self.get_param_values(), dimensions=new_dimensions))
+        entry_dims = OrderedDict([(str(k), k) for k in self.last.data.keys()])
+        stacks = OrderedDict([(entry, stack_fn()) for entry in entry_dims])
+        for new_key, collate_stack in nested_stack.items():
+            curve_data = OrderedDict([(k, []) for k in entry_dims.keys()])
+            # Get the x- and y-values for each entry in the Table
+            xvalues = [k for k in collate_stack.keys()]
+            for x, table in collate_stack.items():
+                for label, value in table.data.items():
+                    curve_data[str(label)].append(value)
+
+            # Get data from table
+            table_dimensions = table.dimensions
+            table_title = ' ' + table.title
+            table_label = table.label
+
+            # Generate curves with correct dimensions
+            for label, yvalues in curve_data.items():
+                settings = dict(dimensions=[collate_dim])
+                if len(table_dimensions):
+                    if not isinstance(label, tuple): label = (label,)
+                    title = ', '.join([d.pprint_value(label[idx]) for idx, d in
+                                      enumerate(table_dimensions)]) + table_title
+                    settings.update(value=table.value, label=table_label, title=title)
+                else:
+                    settings.update(value=entry_dims[label], label=table_label)
+                stacks[label][new_key] = Curve(zip(xvalues, yvalues), **settings)
+
+        # If there are multiple table entries, generate grid
+        stack_data = stacks.values()
+        stack_grid = stack_data[0]
+        for stack in stack_data[1:]:
+            stack_grid += stack
+        return stack_grid
 
 
     def heading_values(self):
@@ -604,17 +606,18 @@ class TableStack(Stack):
     def _item_check(self, dim_vals, data):
 
         if self._type_map is None:
-            self._type_map = dict((k,type(v)) for (k,v) in data.data.items())
+            self._type_map = dict((str(k), type(v)) for (k,v) in data.data.items())
 
-        if set(self._type_map.keys()) != set(data.data.keys()):
+        if set(self._type_map.keys()) != set([str(k) for k in data.data.keys()]):
             raise AssertionError("All TableViews in a TableStack must have"
                                  " a common set of headings.")
 
         for k, v in data.data.items():
-            if k not in self._type_map:
-                self._type_map[k] = None
-            elif type(v) != self._type_map[k]:
-                self._type_map[k] = None
+            key = str(k) # Cast dimension to string
+            if key not in self._type_map:
+                self._type_map[key] = None
+            elif type(v) != self._type_map[key]:
+                self._type_map[key] = None
 
         super(TableStack, self)._item_check(dim_vals, data)
 
