@@ -62,37 +62,34 @@ class DataLayer(View):
         return np.concatenate(data), dict(v.get_param_values())
 
 
-    def sample(self, dimension_samples):
+    def sample(self, **samples):
         """
         Allows sampling of DataLayer objects using the default
         syntax of providing a map of dimensions and sample pairs.
         """
-        dims, samples = zip(dimension_samples.items())
-        if len(dims) > self.ndims:
-            raise ValueError('%d sample dimensions provided, %s is %d-dimensional.'
-                             % (len(dims), type(self).__name__, self.ndims))
-        elif dimension_samples.keys()[0] in self.dimension_labels:
-            return self[samples[0]]
-        else:
-            raise ValueError('Dimension %s could not be found.' % dimension_samples.keys()[0])
+        sample_data = {}
+        for sample_dim, samples in samples.items():
+            if not isinstance(samples, list): samples = [samples]
+            for sample in samples:
+                if sample_dim in self.dimension_labels:
+                    sample_data[sample] = self[sample]
+                else:
+                    self.warning('Sample dimension %s invalid on %s'
+                                 % (sample_dim, type(self).__name__))
+        return Table(sample_data, **dict(self.get_param_values()))
 
 
-    def reduce(self, dimreduce_map, add_dimension={}):
+    def reduce(self, label_prefix='', **reduce_map):
         """
         Allows collapsing of DataLayer objects using the supplied map of
         dimensions and reduce functions.
         """
-        dims, collapsefns = dimreduce_map.items()[0]
-        if len(dims) > self.ndims:
-            raise ValueError('%d collapse dimensions provided, %s is %d-dimensional.'
-                             % (len(dims), type(self).__name__, self.ndims))
-        data = collapsefns(self.data[:, 1])
-        if add_dimension:
-            dim, val = add_dimension.items()[0]
-            return Scatter(zip([val], [data]),
-                                 **dict(self.get_param_values(), dimensions=[dim]))
-        else:
-            return Table({str(self.value): data}, **dict(self.get_param_values()))
+        reduced_data = {}
+        value = self.value(' '.join([label_prefix, self.value.name]))
+        for dimension, reduce_fn in reduce_map.items():
+            data = reduce_fn(self.data[:, 1])
+            reduced_data[value] = data
+        return Table(reduced_data, label=self.label, title=self.title)
 
 
     def __getitem__(self, slc):
