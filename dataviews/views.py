@@ -52,23 +52,22 @@ class View(param.Parameterized, Dimensional):
 
 
 
-    def sample(self, dimsample_map, new_dimvalue=None):
+    def sample(self, **samples):
         """
         Base class signature to demonstrate API for sampling Views.
-        To sample a View a dimsample_map dictionary should be provided,
-        where the key is the dimension to sample and the value the
-        corresponding value. Optionally, a new_dimvalue tuple of a new
-        dimension and value to add to the sampled View can be given
-        retaining the dimensionality of the data.
+        To sample a View kwargs, where the keyword matches a Dimension
+        in the View and the value matches a corresponding entry in the
+        data.
         """
         raise NotImplementedError
 
 
-    def reduce(self, dimreduce_map, new_dimvalue=None):
+    def reduce(self, label_prefix='', **reduce_map):
         """
         Base class signature to demonstrate API for reducing Views,
-        using some reduce function, e.g. np.mean. Otherwise the signature
-        is the same as .sample.
+        using some reduce function, e.g. np.mean. Signature is the
+        same as sample, however a label_prefix may be provided to
+        describe the reduction operation.
         """
         raise NotImplementedError
 
@@ -552,8 +551,7 @@ class Stack(NdMapping):
 
     def map(self, map_fn, **kwargs):
         """
-        Map a function across the stack, using the bounds of first
-        mapped item.
+        Map a function across the stack.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
         if isinstance(mapped_items[0][1], tuple):
@@ -575,7 +573,7 @@ class Stack(NdMapping):
         raise NotImplementedError
 
 
-    def reduce(self, dimreduce_map, new_axis=None):
+    def reduce(self, **reduce_map):
         """
         Base class implements signature for reducing dimensions,
         subclasses with Views of fixed dimensionality can then
