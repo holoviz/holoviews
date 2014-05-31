@@ -139,24 +139,15 @@ class DataLayer(View):
 
     @property
     def cyclic_range(self):
-        if self._dimensions[0].cyclic:
-            return self._dimensions[0].range[1]
+        if self.dimensions[0].cyclic:
+            return self.dimensions[0].range[1]
         else:
             return None
 
 
     @property
-    def dense(self):
-        """
-        Allows checking whether the DataLayer is densely sampled.
-        Currently only checks for linear sampling.
-        """
-        return False if len(set(np.diff(self.data[:, 0]))) > 1 else True
-
-
-    @property
     def xlabel(self):
-        return self._dimensions[0].pprint_label
+        return self.dimensions[0].pprint_label
 
 
     @property
@@ -213,9 +204,10 @@ class DataLayer(View):
 
     @property
     def lbrt(self):
-        l, r = (None, None) if self.xlim is None else self.xlim
-        b, t = (None, None) if self.ylim is None else self.ylim
-        return float(l), float(b), float(r), float(t)
+        if self.xlim is None: return None, None, None, None
+        l, r = self.xlim
+        b, t = self.ylim
+        return l, b, r, t
 
 
     @property
@@ -229,9 +221,6 @@ class Scatter(DataLayer):
     Scatter is a simple 1D View, which gets displayed as a number of
     disconnected points.
     """
-
-    def sort(self):
-        self.data = np.sort(self.data, axis=0)
 
 
 class Curve(DataLayer):
@@ -268,8 +257,6 @@ class Bars(DataLayer):
         self._width = width
         if not self.sorted:
             raise ValueError('Bar data has to be sorted by x-value.')
-        elif not self.dense:
-            raise ValueError('Bar data has to be densely sampled along the x-axis.')
 
     @property
     def width(self):
@@ -329,17 +316,12 @@ class Histogram(DataLayer):
         raise NotImplementedError('Slicing and indexing of histograms currently not implemented.')
 
 
-    def sample(self, dimension_samples, new_dimvalue=None):
+    def sample(self, **samples):
         raise NotImplementedError('Cannot sample a Histogram.')
 
 
-    def reduce(self, dimreduce_map, new_dimvalue=None):
+    def reduce(self, **dimreduce_map):
         raise NotImplementedError('Reduction of Histogram not implemented.')
-
-
-    @property
-    def dense(self):
-        return len(set(np.diff(self.edges))) == 1
 
 
     @property
@@ -407,27 +389,6 @@ class DataStack(Stack):
     data_type = (DataLayer, Annotation)
 
     overlay_type = DataOverlay
-
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histstack = DataStack(dimensions=self.dimensions,
-                              title_suffix=self.title_suffix,
-                              metadata=self.metadata)
-
-        stack_range = None if individually else self.range
-        bin_range = stack_range if bin_range is None else bin_range
-        for k, v in self.items():
-            histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
-                                  individually=individually,
-                                  style_prefix='Custom[<' + self.name + '>]_',
-                                  adjoin=False,
-                                  **kwargs)
-
-        if adjoin and issubclass(self.type, Overlay):
-            layout = (self << histstack)
-            layout.main_layer = kwargs['index']
-            return layout
-
-        return (self << histstack) if adjoin else histstack
 
 
     @property
