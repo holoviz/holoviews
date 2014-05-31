@@ -318,7 +318,7 @@ class ContourPlot(Plot):
     def __init__(self, contours, zorder=0, **kwargs):
         self._stack = self._check_stack(contours, Contours)
         super(ContourPlot, self).__init__(zorder, **kwargs)
-
+        self.aspect = 'equal'
 
     def __call__(self, axis=None, cyclic_index=0):
         lines = self._stack.last
