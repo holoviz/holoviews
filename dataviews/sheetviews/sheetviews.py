@@ -5,7 +5,7 @@ import param
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Table, Curve, Scatter, Histogram, DataStack, find_minmax
+from ..dataviews import Table, Curve, Histogram, DataStack, TableStack, find_minmax
 from ..ndmapping import NdMapping, Dimension
 from ..options import options, channels
 from ..views import View, Overlay, Annotation, GridLayout
@@ -69,11 +69,11 @@ class SheetLayer(View):
                             roi_bounds=roi_bounds)
 
 
-    def dimension_values(self, dim_index):
+    def dimension_values(self, dimension):
         """
-        Return the coordinates of the dimension corresponding to the
-        supplied index.
+        The set of samples available along a particular dimension.
         """
+        dim_index = self.dim_index(dimension)
         l, b, r, t = self.lbrt
         dim_min, dim_max = [(l, r), (b, t)][dim_index]
         dim_len = self.data.shape[dim_index]
@@ -258,7 +258,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
-                         bounds, label=self.label,  style=self.style,
+                         bounds, label=self.label, style=self.style,
                          metadata=self.metadata)
 
 
@@ -270,13 +270,15 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             min, max = (0.0, 1.0)
 
         if div_by_zero in ['ignore', 'warn']:
-            if (norm_factor==0.0) and div_by_zero=='warn':
+            if (norm_factor == 0.0) and div_by_zero == 'warn':
                 self.warning("Ignoring divide by zero in normalization.")
-            norm_factor = 1.0 if (norm_factor==0.0) else norm_factor
+            norm_factor = 1.0 if (norm_factor == 0.0) else norm_factor
 
-        norm_data = (((self.data - self.data.min())/norm_factor) * abs((max-min))) + min
+        norm_data = (((self.data - self.data.min()) / norm_factor) * abs(
+            (max - min))) + min
         return SheetView(norm_data, self.bounds, metadata=self.metadata,
-                         roi_bounds=self.roi_bounds, style=self.style, label=self.label,
+                         roi_bounds=self.roi_bounds, style=self.style,
+                         label=self.label,
                          value=self.value)
 
 
@@ -291,7 +293,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         The 'individually' argument specifies whether the histogram
         will be rescaled for each for SheetViews in a SheetStack
         """
-        range = find_minmax(self.range, (0, -float('inf'))) if bin_range is None else bin_range
+        range = find_minmax(self.range, (0, -float('inf')))\
+            if bin_range is None else bin_range
 
         # Avoids range issues including zero bin range and empty bins
         if range == (0, 0):
@@ -300,18 +303,21 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             hist, edges = np.histogram(self.data.flatten(), normed=True,
                                        range=range, bins=num_bins)
         except:
-            edges = np.linspace(range[0], range[1], num_bins+1)
+            edges = np.linspace(range[0], range[1], num_bins + 1)
             hist = np.zeros(num_bins)
         hist[np.isnan(hist)] = 0
 
-        hist_view = Histogram(hist, edges, dimensions=[self.value], label=self.label,
+        hist_view = Histogram(hist, edges, dimensions=[self.value],
+                              label=self.label,
                               value='Frequency', metadata=self.metadata)
 
         # Set plot and style options
-        style_prefix = kwargs.get('style_prefix', 'Custom[<' + self.name + '>]_')
+        style_prefix = kwargs.get('style_prefix',
+                                  'Custom[<' + self.name + '>]_')
         opts_name = style_prefix + hist_view.label.replace(' ', '_')
         hist_view.style = opts_name
-        options[opts_name] = options.plotting(self)(**dict(rescale_individually=individually))
+        options[opts_name] = options.plotting(self)(
+            **dict(rescale_individually=individually))
         return (self << hist_view) if adjoin else hist_view
 
 
