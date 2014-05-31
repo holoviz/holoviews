@@ -17,6 +17,7 @@ from ..dataviews import Stack, View
 from ..sheetviews import SheetOverlay
 
 
+import dataviews.operation # Needed to register channel operations
 channel_ops = ChannelOpts.operations
 
 #========#
