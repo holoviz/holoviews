@@ -13,7 +13,7 @@ from dataviews import TableStack, Table
 from dataviews import SheetOverlay, SheetStack, SheetView, Points, Contours
 from dataviews import CoordinateGrid, DataGrid
 
-
+from dataviews import Dimension
 from dataviews.options import StyleOpts, PlotOpts, ChannelOpts
 
 from IPython.display import HTML, SVG
@@ -52,17 +52,8 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(StyleOpts, self.compare_opts)
         self.addTypeEqualityFunc(PlotOpts, self.compare_opts)
         self.addTypeEqualityFunc(ChannelOpts, self.compare_channelopts)
-
-
-    def compare_opts(self, opt1, opt2, msg):
-        self.assertEqual(opt1.items, opt2.items)
-
-
-    def compare_channelopts(self, opt1, opt2, msg):
-        self.assertEqual(opt1.mode, opt2.mode)
-        self.assertEqual(opt1.pattern, opt2.pattern)
-        self.assertEqual(opt1.patter, opt2.pattern)
-
+        # Dimension objects
+        self.addTypeEqualityFunc(Dimension, self.compare_dims)
 
 
     #================#
@@ -240,6 +231,37 @@ class ViewTestCase(unittest.TestCase):
 
     def compare_datagrids(self, view1, view2, msg):
         self.compare_grids(view1, view2, 'DataGrid')
+
+    #=========#
+    # Options #
+    #=========#
+
+    def compare_opts(self, opt1, opt2, msg):
+        self.assertEqual(opt1.items, opt2.items)
+
+
+    def compare_channelopts(self, opt1, opt2, msg):
+        self.assertEqual(opt1.mode, opt2.mode)
+        self.assertEqual(opt1.pattern, opt2.pattern)
+        self.assertEqual(opt1.patter, opt2.pattern)
+
+    #============#
+    # Dimensions #
+    #============#
+
+    def compare_dims(self, dim1, dim2, msg):
+        if dim1.name != dim2.name:
+            raise self.failureException("Dimension names are mismatched.")
+        if dim1.cyclic != dim1.cyclic:
+            raise self.failureException("Dimension cyclic declarations mismatched.")
+        if dim1.range != dim1.range:
+            raise self.failureException("Dimension ranges mismatched.")
+        if dim1.type != dim1.type:
+            raise self.failureException("Dimension type declarations mismatched.")
+        if dim1.unit != dim1.unit:
+            raise self.failureException("Dimension unit declarations mismatched.")
+        if dim1.format_string != dim1.format_string:
+            raise self.failureException("Dimension format string declarations mismatched.")
 
 
 class IPTestCase(ViewTestCase):
