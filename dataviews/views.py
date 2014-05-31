@@ -20,31 +20,36 @@ class View(param.Parameterized, Dimensional):
     """
 
     dimensions = param.List(default=[], doc="""List of dimensions the View
-      can be indexed by.""")
+        can be indexed by.""")
 
-    label = param.String(default='', doc="""
-      A string label or Dimension object used to indicate what kind of data
-      is contained within the view object.""")
-
-    legend_label = param.String(default="", doc="Legend labels")
+    label = param.String(default='', constant=True, doc="""
+        A string label or Dimension object used to indicate what kind of data
+        is contained within the view object.""")
 
     metadata = param.Dict(default=AttrDict(), doc="""
         Additional information to be associated with the Layer.""")
 
     title = param.String(default='{label}', doc="""
-       The title formatting string allows the title to be composed from
-       the view {label}, {value} quantity and view {type} but can also be set
-       to a simple string.""")
+        The title formatting string allows the title to be composed from
+        the view {label}, {value} quantity and view {type} but can also be set
+        to a simple string.""")
 
-    value = param.ClassSelector(class_=(str, Dimension), default=Dimension('Y'))
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('Y'), doc="""
+        The value is a string or Dimension object, describing the quantity
+        being held in the View.""")
 
     options = options
 
     def __init__(self, data, **kwargs):
         self.data = data
         self._style = kwargs.pop('style', None)
-        param.Parameterized.__init__(self, **kwargs)
-        if self.label == '': self.label = str(self.value)
+        if 'dimensions' in kwargs:
+            kwargs['dimensions'] = [Dimension(d) for d in kwargs.pop('dimensions')]
+        if 'value' in kwargs: kwargs['value'] = Dimension(kwargs['value'])
+        if not 'label' in kwargs: kwargs['label'] = str(self.value)
+        super(View, self).__init__(**kwargs)
+
 
 
     def sample(self, dimsample_map, new_dimvalue=None):
@@ -293,7 +298,7 @@ class Overlay(View):
     over the contained layers.
     """
 
-    dimensions = param.List(default=['Overlay'], constant=True, doc="""List
+    dimensions = param.List(default=[Dimension('Overlay')], constant=True, doc="""List
       of dimensions the View can be indexed by.""")
 
     label = param.String(doc="""
@@ -461,7 +466,7 @@ class Stack(NdMapping):
         else:
             title_suffix = self.title_suffix
         dimension_labels = [dim.pprint_value(k) for dim, k in
-                            zip(self._dimensions, key)]
+                            zip(self.dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         dims = '\n '.join(g for g in groups if g)
@@ -476,9 +481,9 @@ class Stack(NdMapping):
         """
 
         # Find dimension indices
-        first_dims = [d for d in self._dimensions if d.name not in dimensions]
+        first_dims = [d for d in self.dimensions if d.name not in dimensions]
         first_inds = [self.dim_index(d.name) for d in first_dims]
-        second_dims = [d for d in self._dimensions if d.name in dimensions]
+        second_dims = [d for d in self.dimensions if d.name in dimensions]
         second_inds = [self.dim_index(d.name) for d in second_dims]
 
         # Split the keys
@@ -504,7 +509,10 @@ class Stack(NdMapping):
         where the inner mapping is of the same type as the original
         Stack.
         """
-        inner_dims, deep_dims = self._sort_dims(dimensions)
+        inner_dims, deep_dims = self._split_dims(dimensions)
+        if self.ndims == 1:
+            self.warning('Cannot split Stack with only one dimension.')
+            return self
         if len(deep_dims):
             raise Exception('NdMapping does not support splitting of deep dimensions.')
         first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)

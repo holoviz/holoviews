@@ -30,6 +30,8 @@ class DataLayer(View):
 
     dimensions = param.List(default=[Dimension('X')])
 
+    legend_label = param.String(default="", doc="Legend labels")
+
     value = param.ClassSelector(class_=(str, Dimension), default='Y')
 
     def __init__(self, data, **kwargs):
