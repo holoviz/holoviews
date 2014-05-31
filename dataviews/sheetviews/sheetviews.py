@@ -581,17 +581,16 @@ class SheetStack(DataStack):
         dim1, dim2 = self.last.shape
         if lbrt is None:
             l, t = self.last.matrixidx2sheet(0, 0)
-            r, b = self.last.matrixidx2sheet(dim1-1, dim2-1)
+            r, b = self.last.matrixidx2sheet(dim1 - 1, dim2 - 1)
         else:
             l, b, r, t = lbrt
         x, y = np.meshgrid(np.linspace(l, r, cols),
                            np.linspace(b, t, rows))
-        coords = list(zip(x.flat, y.flat))
+        coords = zip(x.flat, y.flat)
         shape = (rows, cols)
         bounds = BoundingBox(points=[(l, b), (r, t)])
 
-        grid = self.sample(coords, **kwargs)
-
+        grid = self.sample(coords=coords).collate(collate)
         return DataGrid(bounds, shape, initial_items=list(zip(coords, grid.values())))
 
 
