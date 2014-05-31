@@ -1515,7 +1515,8 @@ class DataGridPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) for v in self.grid ]+[1])
+        return max([len(v) if isinstance(v, Stack) else 1
+                    for v in self.grid]+[1])
 
 
 
