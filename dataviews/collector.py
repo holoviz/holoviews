@@ -23,9 +23,9 @@ class AttrTree(object):
     example of adding a View to an AttrTree and accessing it:
 
     >>> t = AttrTree()
-    >>> t.Example.Path = View('data1', name='view1')
-    >>> t.Example.Path
-    View('data1', label='', metadata={}, name='view1', title='{label}')
+    >>> t.Example.Path = View('data1')
+    >>> t.Example.Path                             #doctest: +ELLIPSIS
+    View('data1', ...)
     """
 
     @classmethod
