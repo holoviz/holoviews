@@ -1,4 +1,5 @@
 import numpy as np
+from collections import OrderedDict
 
 import param
 
@@ -321,7 +322,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         return (self << hist_view) if adjoin else hist_view
 
 
-    def sample(self, dimension_samples, new_xaxis=None):
+    def sample(self, coords=[], **samples):
         """
         Sample the SheetView along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -330,60 +331,62 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
         """
-        if len(dimension_samples) == self.ndims:
-            coords = [c for didx, c in sorted([(self.dim_index(k), v)
-                                               for k, v in dimension_samples.items()])]
-            data = self.data[self.sheet2matrixidx(*coords)]
-            if new_xaxis:
-                dim, val = new_xaxis
-                title = "Coord: %s " % str(tuple(coords)) + self.title
-                return Scatter(zip([val], [data]), dimensions=[dim],
-                                     label=self.label, title=title, value=self.value)
-            else:
-                return Table({tuple(coords): data}, label=self.label, title=self.title)
-        elif not len(dimension_samples):
-            return self
+        if len(samples) == self.ndims or len(coords):
+            if not len(coords):
+                coords = zip(*[c if isinstance(c, list) else [c] for didx, c in
+                               sorted([(self.dim_index(k), v) for k, v in
+                                       samples.items()])])
+            table_data = OrderedDict()
+            for c in coords:
+                table_data[c] = self.data[self.sheet2matrixidx(*c)]
+            return Table(table_data, dimensions=self.dimensions,
+                         label=self.label,
+                         value=self.value)
         else:
-            dimension, sample_coord = dimension_samples.items()[0]
+            dimension, sample_coord = samples.items()[0]
             if isinstance(sample_coord, slice):
-                raise ValueError('SheetView sampling requires coordinates not slices,'
-                                 'use regular slicing syntax.')
-            other_dimension = [d for d in self._dimensions if d.name != dimension]
+                raise ValueError(
+                    'SheetView sampling requires coordinates not slices,'
+                    'use regular slicing syntax.')
+            other_dimension = [d for d in self.dimensions if
+                               d.name != dimension]
             # Indices inverted for indexing
-            other_ind = self.dim_index(dimension)
             sample_ind = self.dim_index(other_dimension[0].name)
 
             # Generate sample slice
             sample = [slice(None) for i in range(self.ndims)]
             coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
-            sample[sample_ind] = self.sheet2matrixidx(*coord_fn(sample_coord))[sample_ind]
+            sample[sample_ind] = self.sheet2matrixidx(*coord_fn(sample_coord))[
+                sample_ind]
 
             # Sample data
-            x_vals = self.dimension_values(other_ind)
+            x_vals = self.dimension_values(dimension)
             data = zip(x_vals, self.data[sample])
-            return Curve(data, dimensions=other_dimension, label=self.label,
-                         title=self.title, value=self.value)
+            return Curve(data, **dict(self.get_param_values(),
+                                      dimensions=other_dimension))
 
 
-    def reduce(self, dimreduce_map):
+    def reduce(self, label_prefix='', **dimreduce_map):
         """
-        Reduces a SheetView to a lower dimensional View type using the provided
-        dimreduce_map, which maps reduce function to a dimension.
+        Reduces the SheetView using functions provided via the
+        kwargs, where the keyword is the dimension to be reduced.
+        Optionally a label_prefix can be provided to prepend to
+        the result View label.
         """
+        label = ' '.join([label_prefix, self.label])
         if len(dimreduce_map) == self.ndims:
             reduced_view = self
-            for dim, reduce_fn in dimreduce_map:
-                reduced_view = reduced_view.collapse({dim: reduce_fn})
+            for dim, reduce_fn in dimreduce_map.items():
+                reduced_view = reduced_view.reduce(label_prefix=label_prefix,
+                                                   **{dim: reduce_fn})
+                label_prefix = ''
             return reduced_view
-        elif not len(dimreduce_map):
-            return self
         else:
             dimension, reduce_fn = dimreduce_map.items()[0]
-            other_dimension = [d for d in self._dimensions if d.name != dimension]
-            other_ind = self.dim_index(other_dimension[0].name)
-            x_vals = self.dimension_values(other_ind)
+            other_dimension = [d for d in self.dimensions if d.name != dimension]
+            x_vals = self.dimension_values(dimension)
             data = zip(x_vals, reduce_fn(self.data, axis=self.dim_index(dimension)))
-            return Curve(data, dimensions=other_dimension, label=self.label,
+            return Curve(data, dimensions=other_dimension, label=label,
                          title=self.title, value=self.value)
 
 
