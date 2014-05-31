@@ -711,6 +711,10 @@ class Layout(param.Parameterized, Dimensional):
                 self.data = views
         elif isinstance(views, list):
             self.data = dict(zip(self.layout_order, views))
+
+        if 'dimensions' in params:
+            params['dimensions'] = [Dimension(d) for d in params.pop('dimensions')]
+
         super(Layout, self).__init__(**params)
 
 
