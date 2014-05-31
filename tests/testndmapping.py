@@ -1,11 +1,11 @@
 import unittest
 
-from . import utils # pyflakes:ignore (set sys.path)
+from utils import ViewTestCase
 from dataviews.ndmapping import Dimension, NdIndexableMapping
 from collections import OrderedDict
 
 
-class DimensionTest(unittest.TestCase):
+class DimensionTest(ViewTestCase):
 
     def test_dimension_init(self):
         Dimension('Test dimension')
@@ -28,7 +28,7 @@ class DimensionTest(unittest.TestCase):
         self.assertEqual(dim.pprint_value(4.2344, rounding=3),  'Test dimension = 4.234 Twilight zones')
 
 
-class NdIndexableMappingTest(unittest.TestCase):
+class NdIndexableMappingTest(ViewTestCase):
 
     def setUp(self):
         self.init_items_1D_list = [(1, 'a'), (5, 'b')]
