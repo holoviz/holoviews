@@ -16,11 +16,10 @@ import param
 
 from .views import NdMapping, Stack, View
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
-    Table, TableStack
+    Table, TableStack, Scatter
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import GridLayout, Layout, Overlay, View, Annotation
-from .operation import RGBA, HCS, AlphaOverlay
 
 
 class PlotSaver(param.ParameterizedFunction):
@@ -102,6 +101,9 @@ class Plot(param.Parameterized):
     show_grid = param.Boolean(default=False, doc="""
       Whether to show a Cartesian grid on the plot.""")
 
+    show_legend = param.Boolean(default=True, doc="""
+      Whether to show legend for the plot.""")
+
     show_title = param.Boolean(default=True, doc="""
       Whether to display the plot title.""")
 
@@ -136,7 +138,6 @@ class Plot(param.Parameterized):
     sideplots = {}
 
 
-
     def __init__(self, zorder=0, **kwargs):
         super(Plot, self).__init__(**kwargs)
         self.zorder = zorder
@@ -163,7 +164,8 @@ class Plot(param.Parameterized):
         title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
-        return title_format.format(label=view.label, type=view.__class__.__name__)
+        return title_format.format(label=view.label, value=str(view.value),
+                                   type=view.__class__.__name__)
 
 
     def _update_title(self, n):
@@ -348,7 +350,8 @@ class AnnotationPlot(Plot):
     Annotations may only be used as part of Overlays.
     """
 
-    style_opts = param.List(default=['alpha', 'color', 'linewidth',
+    style_opts = param.List(default=['alpha', 'color', 'edgecolors',
+                                     'facecolors', 'linewidth',
                                      'linestyle', 'rotation', 'family',
                                      'weight', 'fontsize', 'visible'],
                             constant=True, doc="""
@@ -481,7 +484,8 @@ class AnnotationPlot(Plot):
 
 class PointPlot(Plot):
 
-    style_opts = param.List(default=['alpha', 'color', 'marker', 's', 'visible'],
+    style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
+                                     'linewidth', 'marker', 's', 'visible'],
                             constant=True, doc="""
      The style options for PointPlot match those of matplotlib's
      scatter plot command.""")
@@ -660,7 +664,7 @@ class SheetPlot(OverlayPlot):
 
     def __call__(self, axis=None):
         ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
-        stacks = self._stack.split()
+        stacks = self._stack.split_overlays()
 
         sorted_stacks = sorted(stacks, key=lambda x: x.style)
         style_groups = dict((k, enumerate(list(v))) for k,v
@@ -1025,6 +1029,10 @@ class CoordinateGridPlot(OverlayPlot):
         Determines whether to situate the projection in the full bounds or
         apply the ROI.""")
 
+    num_ticks = param.Number(default=5)
+
+    show_frame = param.Boolean(default=False)
+
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
                                      'visible', 'filterrad', 'origin'],
                             constant=True, doc="""
@@ -1045,10 +1053,10 @@ class CoordinateGridPlot(OverlayPlot):
         grid_shape = [[v for (k, v) in col[1]]
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
+        xticks, yticks = self._compute_ticks(width, height)
 
-        ax = self._axis(axis, self._format_title(-1) ,lbrt=(0, 0, width, height))
-        ax.get_xaxis().set_visible(False)
-        ax.get_yaxis().set_visible(False)
+        ax = self._axis(axis, self._format_title(-1), xticks=xticks,
+                        yticks=yticks, lbrt=(0, 0, width, height))
 
         self.handles['projs'] = []
         x, y = b_w, b_h
@@ -1119,6 +1127,16 @@ class CoordinateGridPlot(OverlayPlot):
         return width, height, border_width, border_height
 
 
+    def _compute_ticks(self, width, height):
+        l, b, r, t = self.grid.lbrt
+
+        xpositions = np.linspace(0, width, self.num_ticks)
+        xlabels = np.linspace(l, r, self.num_ticks)
+        ypositions = np.linspace(0, height, self.num_ticks)
+        ylabels = np.linspace(b, t, self.num_ticks)
+        return (xpositions, xlabels), (ypositions, ylabels)
+
+
     def __len__(self):
         return max([len(v) for v in self.grid if isinstance(v, NdMapping)]+[1])
 
@@ -1132,9 +1150,6 @@ class DataPlot(Plot):
     A generic plot that visualizes DataStacks containing DataOverlay or
     DataLayer objects.
     """
-
-    show_legend = param.Boolean(default=True, doc="""
-      Whether to show legend for the plot.""")
 
     _stack_type = DataStack
 
@@ -1154,7 +1169,7 @@ class DataPlot(Plot):
 
         ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel)
 
-        stacks = self._stack.split()
+        stacks = self._stack.split_overlays()
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(stacks, lambda s: s.style))
 
@@ -1190,6 +1205,7 @@ class DataPlot(Plot):
             plot.update_frame(n, lbrt)
 
 
+
 class CurvePlot(Plot):
     """
     CurvePlot can plot Curve and DataStacks of Curve,
@@ -1216,8 +1232,8 @@ class CurvePlot(Plot):
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
-    style_opts = param.List(default=['alpha', 'color', 'linestyle', 'linewidth',
-                                     'visible'], constant=True, doc="""
+    style_opts = param.List(default=['alpha', 'color', 'visible'],
+                            constant=True, doc="""
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
@@ -1244,15 +1260,6 @@ class CurvePlot(Plot):
     def _rotate(self, seq, n=1):
         n = n % len(seq) # n=hop interval
         return seq[n:] + seq[:n]
-
-
-    def _curve_values(self, coord, curve):
-        """Return the x, y, and x ticks values for the specified curve from the curve_dict"""
-        x, y = coord
-        x_values = list(curve.keys())
-        y_values = [curve[k, x, y] for k in x_values]
-        self.x_values = x_values
-        return x_values, y_values, x_values
 
 
     def _reduce_ticks(self, x_values):
@@ -1355,6 +1362,87 @@ class CurvePlot(Plot):
         plt.draw()
 
 
+
+class ScatterPlot(CurvePlot):
+    """
+    ScatterPlot can plot Scatter and DataStacks of Scatter,
+    which can be displayed as a single frame or animation. Axes,
+    titles and legends are automatically generated from the metadata
+    and dim_info.
+
+    If the dimension is set to cyclic in the dim_info it will
+    rotate the points curve so that minimum y values are at the minimum
+    x value to make the plots easier to interpret.
+    """
+
+    style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
+                                     'linewidth', 'marker', 's', 'visible'],
+                            constant=True, doc="""
+       The style options for ScatterPlot match those of matplotlib's
+       PolyCollection object.""")
+
+    _stack_type = DataStack
+
+    def __init__(self, points, zorder=0, **kwargs):
+        self._stack = self._check_stack(points, Scatter)
+        self.ax = None
+
+        super(ScatterPlot, self).__init__(zorder, **kwargs)
+
+
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+        scatterview = self._stack.last
+        self.cyclic_index = cyclic_index
+
+        # Create xticks and reorder data if cyclic
+        xvals = scatterview.data[:, 0]
+        xticks = self._reduce_ticks(xvals)
+
+        if lbrt is None:
+            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
+
+        self.ax = self._axis(axis, self._format_title(-1), scatterview.xlabel,
+                             scatterview.ylabel, xticks=xticks, lbrt=lbrt)
+
+        # Create line segments and apply style
+        paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
+                                zorder=self.zorder, label=scatterview.legend_label,
+                                **View.options.style(scatterview)[cyclic_index])
+
+        self.handles['paths'] = paths
+
+        # If legend enabled update handles and labels
+        handles, labels = self.ax.get_legend_handles_labels()
+        if len(handles) and self.show_legend:
+            fontP = FontProperties()
+            fontP.set_size('small')
+            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg.get_frame().set_alpha(0.5)
+
+        if axis is None: plt.close(self.handles['fig'])
+        return self.ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n, lbrt=None):
+        n = n  if n < len(self) else len(self) - 1
+        scatterview = list(self._stack.values())[n]
+        if lbrt is None:
+            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
+
+        self.handles['paths'].remove()
+
+        paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
+                                zorder=self.zorder, label=scatterview.legend_label,
+                                **View.options.style(scatterview)[self.cyclic_index])
+
+        self.handles['paths'] = paths
+
+        self._axis(self.ax, lbrt=lbrt)
+        self._update_title(n)
+        plt.draw()
+
+
+
 class DataGridPlot(Plot):
     """
     Plot a group of views in a grid layout based on a DataGrid view
@@ -1427,7 +1515,8 @@ class DataGridPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) for v in self.grid ]+[1])
+        return max([len(v) if isinstance(v, Stack) else 1
+                    for v in self.grid]+[1])
 
 
 
@@ -1438,7 +1527,7 @@ class TablePlot(Plot):
     respectively.
     """
 
-    border = param.Number(default = 0.05, bounds=(0.0, 0.5), doc="""
+    border = param.Number(default=0.05, bounds=(0.0, 0.5), doc="""
         The fraction of the plot that should be empty around the
         edges.""")
 
@@ -1451,12 +1540,12 @@ class TablePlot(Plot):
          table cell. Any strings longer than this length will be
          truncated.""")
 
-    max_font_size = param.Integer(default = 20, doc="""
+    max_font_size = param.Integer(default=20, doc="""
        The largest allowable font size for the text in each table
        cell.""")
 
-    font_types = param.Dict(default = {'heading':FontProperties(weight='bold',
-                                                                family='monospace')},
+    font_types = param.Dict(default={'heading': FontProperties(weight='bold',
+                                                               family='monospace')},
        doc="""The font style used for heading labels used for emphasis.""")
 
 
@@ -1490,6 +1579,7 @@ class TablePlot(Plot):
 
 
     def __call__(self, axis=None):
+
         tableview = self._stack.last
 
         ax = self._axis(axis, self._format_title(-1))
@@ -1722,6 +1812,10 @@ class SideHistogramPlot(HistogramPlot):
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
 
+    show_xlabel = param.Boolean(default=False, doc="""
+        Whether to show the x-label of the plot. Disabled by default
+        because plots are often too cramped to fit the title correctly.""")
+
     def _process_hist(self, hist, lbrt):
         """
         Subclassed to offset histogram by defined amount.
@@ -1731,6 +1825,13 @@ class SideHistogramPlot(HistogramPlot):
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims
+
+
+    def _process_axsettings(self, hist, lims, ticks):
+        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
+        if not self.show_xlabel:
+            axsettings['ylabel' if self.orientation == 'vertical' else 'xlabel'] = ''
+        return axsettings
 
 
     def _update_artists(self, n, edges, hvals, widths, lims):
@@ -1821,6 +1922,7 @@ Plot.defaults.update({SheetView: SheetViewPlot,
                       SheetOverlay: SheetPlot,
                       CoordinateGrid: CoordinateGridPlot,
                       Curve: CurvePlot,
+                      Scatter: ScatterPlot,
                       DataOverlay: DataPlot,
                       DataGrid: DataGridPlot,
                       Table: TablePlot,

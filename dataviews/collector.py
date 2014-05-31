@@ -2,17 +2,17 @@
 AttributeTree, Collector and related classes offer optional functionality
 for holding and collecting DataView objects.
 """
-import time, uuid
+import uuid
 import numpy as np
 from collections import OrderedDict
 
 import param
-from .sheetviews import SheetView, SheetStack, CoordinateGrid, BoundingBox
-from .views import GridLayout,Stack, View, NdMapping, Dimension
+from .sheetviews import SheetView, CoordinateGrid
+from .views import GridLayout, Stack, View, NdMapping, Dimension
 
 from .ipython.widgets import RunProgress
 
-Time = Dimension("time", type=param.Dynamic.time_fn.time_type)
+Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
 
 class AttrTree(object):
@@ -468,8 +468,9 @@ class Collect(object):
 
         if self.path not in attrtree:
             if not isinstance(val, NdMapping):
-                if val.title == '{label}':
-                    val.title = ' '.join(self.path[::-1]) + val.title
+                if val.title == '{label}' and val.label == '':
+                    val.label = ' '.join(self.path[::-1])
+                    val.value = self.path[0]
                 val = val.stack_type([((time,), val)], dimensions=[Time])
         else:
             current_val = attrtree.path_items[self.path]

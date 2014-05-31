@@ -1,11 +1,12 @@
 import numpy as np
+from collections import OrderedDict
 
 import param
 
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Histogram, DataStack, find_minmax
+from ..dataviews import Table, Curve, Histogram, DataStack, TableStack, find_minmax
 from ..ndmapping import NdMapping, Dimension
 from ..options import options, channels
 from ..views import View, Overlay, Annotation, GridLayout
@@ -21,6 +22,8 @@ class SheetLayer(View):
     representation such as Bezier splines.
     """
 
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
+
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
@@ -34,6 +37,7 @@ class SheetLayer(View):
     @property
     def stack_type(self):
         return SheetStack
+
 
     def __init__(self, data, bounds, **kwargs):
         super(SheetLayer, self).__init__(data, bounds=bounds, **kwargs)
@@ -64,6 +68,30 @@ class SheetLayer(View):
         return SheetOverlay(combined_layers, self.bounds,
                             metadata=self.metadata,
                             roi_bounds=roi_bounds)
+
+
+    def dimension_values(self, dimension):
+        """
+        The set of samples available along a particular dimension.
+        """
+        dim_index = self.dim_index(dimension)
+        l, b, r, t = self.lbrt
+        dim_min, dim_max = [(l, r), (b, t)][dim_index]
+        dim_len = self.data.shape[dim_index]
+        half_unit = (dim_max - dim_min)/dim_len/2.
+        coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
+        return [self.closest_cell_center(*coord_fn(v))[dim_index]
+                for v in np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)]
+
+
+    @property
+    def xlabel(self):
+        return str(self.dimensions[0])
+
+
+    @property
+    def ylabel(self):
+        return str(self.dimensions[1])
 
 
     @property
@@ -158,6 +186,7 @@ class SheetOverlay(SheetLayer, Overlay):
         obj_dict['channel_definitions'] = channels
         return obj_dict
 
+
     def __setstate__(self, d):
         """
         When unpickled, restore the saved channel definitions.
@@ -189,14 +218,11 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
     representation.
     """
 
-    cyclic_range = param.Number(default=None, bounds=(0, None), allow_None=True, doc="""
-        For a cyclic quantity, the range over which the values repeat. For
-        instance, the orientation of a mirror-symmetric pattern in a plane is
-        pi-periodic, with orientation x the same as orientation x+pi (and
-        x+2pi, etc.) A cyclic_range of None declares that the data are not
-        cyclic. This parameter is metadata, declaring properties of the data
-        that can be useful for automatic plotting and/or normalization, and is
-        not used within this class itself.""")
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
+                            constant=True, doc="""
+        The label of the x- and y-dimension of the SheetView in form
+        of a string or dimension object.""")
+
 
     _deep_indexable = True
 
@@ -233,8 +259,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
-                         bounds, cyclic_range=self.cyclic_range,
-                         label=self.label,  style=self.style, metadata=self.metadata)
+                         bounds, label=self.label, style=self.style,
+                         metadata=self.metadata)
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
@@ -245,14 +271,16 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             min, max = (0.0, 1.0)
 
         if div_by_zero in ['ignore', 'warn']:
-            if (norm_factor==0.0) and div_by_zero=='warn':
+            if (norm_factor == 0.0) and div_by_zero == 'warn':
                 self.warning("Ignoring divide by zero in normalization.")
-            norm_factor = 1.0 if (norm_factor==0.0) else norm_factor
+            norm_factor = 1.0 if (norm_factor == 0.0) else norm_factor
 
-        norm_data = (((self.data - self.data.min())/norm_factor) * abs((max-min))) + min
-        return SheetView(norm_data, self.bounds, cyclic_range=self.cyclic_range,
-                         metadata=self.metadata, roi_bounds=self.roi_bounds,
-                         label=self.label, style=self.style)
+        norm_data = (((self.data - self.data.min()) / norm_factor) * abs(
+            (max - min))) + min
+        return SheetView(norm_data, self.bounds, metadata=self.metadata,
+                         roi_bounds=self.roi_bounds, style=self.style,
+                         label=self.label,
+                         value=self.value)
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
@@ -266,7 +294,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         The 'individually' argument specifies whether the histogram
         will be rescaled for each for SheetViews in a SheetStack
         """
-        range = find_minmax(self.range, (0, -float('inf'))) if bin_range is None else bin_range
+        range = find_minmax(self.range, (0, -float('inf')))\
+            if bin_range is None else bin_range
 
         # Avoids range issues including zero bin range and empty bins
         if range == (0, 0):
@@ -275,20 +304,105 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             hist, edges = np.histogram(self.data.flatten(), normed=True,
                                        range=range, bins=num_bins)
         except:
-            edges = np.linspace(range[0], range[1], num_bins+1)
+            edges = np.linspace(range[0], range[1], num_bins + 1)
             hist = np.zeros(num_bins)
         hist[np.isnan(hist)] = 0
 
-        hist_view = Histogram(hist, edges, cyclic_range=self.cyclic_range,
-                              label=self.label + " Histogram",
-                              metadata=self.metadata)
+        hist_view = Histogram(hist, edges, dimensions=[self.value],
+                              label=self.label,
+                              value='Frequency', metadata=self.metadata)
 
         # Set plot and style options
-        style_prefix = kwargs.get('style_prefix','Custom[<' + self.name + '>]_')
+        style_prefix = kwargs.get('style_prefix',
+                                  'Custom[<' + self.name + '>]_')
         opts_name = style_prefix + hist_view.label.replace(' ', '_')
         hist_view.style = opts_name
-        options[opts_name] = options.plotting(self)(**dict(rescale_individually=individually))
+        options[opts_name] = options.plotting(self)(
+            **dict(rescale_individually=individually))
         return (self << hist_view) if adjoin else hist_view
+
+
+    def sample(self, coords=[], **samples):
+        """
+        Sample the SheetView along one or both of its dimensions,
+        returning a reduced dimensionality type, which is either
+        a Table, Curve or Scatter. If two dimension samples
+        and a new_xaxis is provided the sample will be the value
+        of the sampled unit indexed by the value in the new_xaxis
+        tuple.
+        """
+        if len(samples) == self.ndims or len(coords):
+            if not len(coords):
+                coords = zip(*[c if isinstance(c, list) else [c] for didx, c in
+                               sorted([(self.dim_index(k), v) for k, v in
+                                       samples.items()])])
+            table_data = OrderedDict()
+            for c in coords:
+                table_data[c] = self.data[self.sheet2matrixidx(*c)]
+            return Table(table_data, dimensions=self.dimensions,
+                         label=self.label,
+                         value=self.value)
+        else:
+            dimension, sample_coord = samples.items()[0]
+            if isinstance(sample_coord, slice):
+                raise ValueError(
+                    'SheetView sampling requires coordinates not slices,'
+                    'use regular slicing syntax.')
+            other_dimension = [d for d in self.dimensions if
+                               d.name != dimension]
+            # Indices inverted for indexing
+            sample_ind = self.dim_index(other_dimension[0].name)
+
+            # Generate sample slice
+            sample = [slice(None) for i in range(self.ndims)]
+            coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
+            sample[sample_ind] = self.sheet2matrixidx(*coord_fn(sample_coord))[
+                sample_ind]
+
+            # Sample data
+            x_vals = self.dimension_values(dimension)
+            data = zip(x_vals, self.data[sample])
+            return Curve(data, **dict(self.get_param_values(),
+                                      dimensions=other_dimension))
+
+
+    def reduce(self, label_prefix='', **dimreduce_map):
+        """
+        Reduces the SheetView using functions provided via the
+        kwargs, where the keyword is the dimension to be reduced.
+        Optionally a label_prefix can be provided to prepend to
+        the result View label.
+        """
+        label = ' '.join([label_prefix, self.label])
+        if len(dimreduce_map) == self.ndims:
+            reduced_view = self
+            for dim, reduce_fn in dimreduce_map.items():
+                reduced_view = reduced_view.reduce(label_prefix=label_prefix,
+                                                   **{dim: reduce_fn})
+                label_prefix = ''
+            return reduced_view
+        else:
+            dimension, reduce_fn = dimreduce_map.items()[0]
+            other_dimension = [d for d in self.dimensions if d.name != dimension]
+            x_vals = self.dimension_values(dimension)
+            data = zip(x_vals, reduce_fn(self.data, axis=self.dim_index(dimension)))
+            return Curve(data, dimensions=other_dimension, label=label,
+                         title=self.title, value=self.value)
+
+
+    @property
+    def cyclic_range(self):
+        """
+        For a cyclic quantity, the range over which the values
+        repeat. For instance, the orientation of a mirror-symmetric
+        pattern in a plane is pi-periodic, with orientation x the same
+        as orientation x+pi (and x+2pi, etc.). The property determines
+        the cyclic_range from the value dimensions range parameter.
+        """
+        if isinstance(self.value, Dimension) and self.value.cyclic:
+            return self.value.range[1]
+        else:
+            return None
 
 
     @property
@@ -336,8 +450,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         else:
             data = np.dstack([Slice(roi_bounds, self).submatrix(
                 self.data[:, :, i]) for i in range(self.depth)])
-        return SheetView(data, roi_bounds, cyclic_range=self.cyclic_range,
-                         style=self.style, metadata=self.metadata)
+        return SheetView(data, roi_bounds, style=self.style,
+                         metadata=self.metadata, value=self.value)
 
 
 
@@ -372,8 +486,7 @@ class Points(SheetLayer):
         roi_data = self.data[[n for n in range(N)
                               if self.data[n, :] in self.roi_bounds]]
         roi_bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return Points(roi_data, roi_bounds, style=self.style,
-                           metadata=self.metadata)
+        return Points(roi_data, roi_bounds, style=self.style, metadata=self.metadata)
 
 
     def __iter__(self):
@@ -414,8 +527,8 @@ class Contours(SheetLayer):
         # outside the bounds need to be snapped to the bounding box
         # edges.
         bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return Contours(self.data, bounds, style=self.style,
-                          metadata=self.metadata)
+        return Contours(self.data, bounds, style=self.style, label=self.label,
+                        metadata=self.metadata)
 
 
 
@@ -433,23 +546,32 @@ class SheetStack(DataStack):
 
     overlay_type = SheetOverlay
 
-    def drop_dimension(self, dim, val):
+
+    def sample(self, coords=[], **samples):
         """
-        Drop dimension from the NdMapping using the supplied
-        dimension name and value.
+        Sample each SheetView in the Stack by passing either a list
+        of coords or the dimension name and the corresponding sample
+        values as kwargs.
         """
-        slices = [slice(None) for i in range(self.ndims)]
-        slices[self.dim_index(dim)] = val
-        dim_labels = [d for d in self.dimension_labels if d != dim]
-        return self[tuple(slices)].reindex(dim_labels)
+        if len(samples) == 1: stack_type = DataStack
+        else: stack_type = TableStack
+        return stack_type([(k, v.sample(coords=coords, **samples)) for k, v in
+                           self.items()], **dict(self.get_param_values()))
 
 
-    def sample(self, **kwargs):
-        from .operation import sample_curve
-        return sample_curve(self, **kwargs)
+    def reduce(self, label_prefix='', **reduce_map):
+        """
+        Reduce each SheetView in the Stack using a function supplied via
+        the kwargs, where the keyword has to match a particular dimension
+        in the View.
+        """
+        if len(reduce_map) == 1: stack_type = DataStack
+        else: stack_type = TableStack
+        return stack_type([(k, v.reduce(label_prefix=label_prefix, **reduce_map))
+                           for k, v in self.items()], **dict(self.get_param_values()))
 
 
-    def grid_sample(self, rows, cols, lbrt=None, **kwargs):
+    def grid_sample(self, rows, cols, collate='', lbrt=None):
         """
         Creates a CoordinateGrid of curves according sampled according to
         the supplied rows and cols. A sub-region to be sampled can be specified
@@ -459,17 +581,16 @@ class SheetStack(DataStack):
         dim1, dim2 = self.last.shape
         if lbrt is None:
             l, t = self.last.matrixidx2sheet(0, 0)
-            r, b = self.last.matrixidx2sheet(dim1-1, dim2-1)
+            r, b = self.last.matrixidx2sheet(dim1 - 1, dim2 - 1)
         else:
             l, b, r, t = lbrt
         x, y = np.meshgrid(np.linspace(l, r, cols),
                            np.linspace(b, t, rows))
-        coords = list(zip(x.flat, y.flat))
+        coords = zip(x.flat, y.flat)
         shape = (rows, cols)
         bounds = BoundingBox(points=[(l, b), (r, t)])
 
-        grid = self.sample(coords, **kwargs)
-
+        grid = self.sample(coords=coords).collate(collate)
         return DataGrid(bounds, shape, initial_items=list(zip(coords, grid.values())))
 
 
@@ -567,15 +688,33 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
        The title formatting string allows the title to be composed
        from the label and type.""")
 
-    def __init__(self, bounds, shape, initial_items=None, **kwargs):
+    def __init__(self, bounds, shape, xdensity=None, ydensity=None, initial_items=None, **kwargs):
         (l, b, r, t) = bounds.lbrt()
-        (dim1, dim2) = shape
-        xdensity = dim1 / (r-l) if (r-l) else 1
-        ydensity = dim2 / (t-b) if (t-b) else 1
+        if not (xdensity and ydensity):
+            (dim1, dim2) = shape
+            xdensity = dim1 / (r-l) if (r-l) else 1
+            ydensity = dim2 / (t-b) if (t-b) else 1
         self._style = None
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         super(CoordinateGrid, self).__init__(initial_items, **kwargs)
+
+
+    def __getitem__(self, key):
+        ret = super(CoordinateGrid, self).__getitem__(key)
+        if not isinstance(ret, CoordinateGrid):
+            return ret
+
+        # Adjust bounds to new slice
+        map_key, _ = self._split_index(key)
+        x, y = [ret.dim_range(d) for d in ret.dimension_labels]
+        l, b, r, t = ret.lbrt
+        half_unit_x = ((l-r) / ret.xdensity) / 2
+        half_unit_y = ((t-b) / ret.ydensity) / 2
+
+        new_bbox = BoundingBox(points=[(x[0]+half_unit_x, y[0]-half_unit_y),
+                                       (x[1]-half_unit_x, y[1]+half_unit_y)])
+        return self.clone(ret.items(), bounds=new_bbox)
 
 
     def _add_item(self, coords, data, sort=True):
@@ -626,11 +765,12 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         Returns an empty duplicate of itself with all parameter values and
         metadata copied across.
         """
-        settings = dict(self.get_param_values(), **kwargs)
-        settings.pop('metadata', None)
-        return CoordinateGrid(bounds=self.bounds, shape=self.shape,
-                              initial_items=items,
-                              metadata=self.metadata, **settings)
+        settings = dict(self.get_param_values(), metadata=self.metadata, **kwargs)
+        bounds = settings.pop('bounds') if 'bounds' in settings else self.bounds
+        xdensity = settings.pop('xdensity') if 'xdensity' in settings else self.xdensity
+        ydensity = settings.pop('ydensity') if 'ydensity' in settings else self.ydensity
+        return CoordinateGrid(bounds, None, initial_items=items, xdensity=xdensity,
+                              ydensity=ydensity, **settings)
 
 
     def __mul__(self, other):
@@ -641,7 +781,6 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
             zipped = zip(self.keys(), self.values(), other.values())
             overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
             return self.clone(overlayed_items)
-
         elif isinstance(other, SheetStack) and len(other) == 1:
             sheetview = other.last
         elif isinstance(other, SheetStack) and len(other) != 1:
@@ -649,7 +788,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         else:
             sheetview = other
 
-        overlayed_items = [(k, el * other) for k, el in self.items()]
+        overlayed_items = [(k, el * sheetview) for k, el in self.items()]
         return self.clone(overlayed_items)
 
 
@@ -663,7 +802,7 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         """
 
         last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
-                     for (k, v) in self.items()]
+                      for (k, v) in self.items()]
         return self.clone(last_items)
 
 
@@ -679,22 +818,6 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[self, obj])
-
-
-    def map(self, map_fn, **kwargs):
-        """
-        Map a function across the stack, using the bounds of first
-        mapped item.
-        """
-        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
-        if isinstance(mapped_items[0][1], tuple):
-            split = [[(k, v) for v in val] for (k, val) in mapped_items]
-            item_groups = [list(el) for el in zip(*split)]
-        else:
-            item_groups = [mapped_items]
-        clones = tuple(self.clone(els, **kwargs)
-                       for (i, els) in enumerate(item_groups))
-        return clones if len(clones) > 1 else clones[0]
 
 
     @property

@@ -5,7 +5,6 @@ SheetStacks and compose the data together in ways that can be viewed
 conveniently, often by creating or manipulating color channels.
 """
 
-from collections import OrderedDict
 import colorsys
 import numpy as np
 import matplotlib
@@ -16,7 +15,7 @@ from param import ParamOverrides
 
 from .views import Overlay
 from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
-from .dataviews import View, Stack, DataLayer, DataOverlay, DataStack, Table, TableStack, Curve
+from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack
 from .sheetviews import GridLayout, CoordinateGrid
 
 from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle
@@ -24,11 +23,9 @@ from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
-
-
-stack_mapping = {SheetLayer:SheetStack,
-                 DataLayer:DataStack,
-                 Table:TableStack}
+stack_mapping = {SheetLayer: SheetStack,
+                 DataLayer: DataStack,
+                 Table: TableStack}
 
 
 
@@ -220,8 +217,7 @@ class operator(ViewOperation):
             raise Exception("Operation requires an Overlay as input")
 
         new_data = self.p.operator(*[el.data for el in overlay.data])
-        return [SheetView(new_data, bounds=overlay.bounds,
-                          label = self.p.label,
+        return [SheetView(new_data, bounds=overlay.bounds, label=self.p.label,
                           roi_bounds=overlay.roi_bounds)]
 
 
@@ -253,9 +249,8 @@ class RGBA(ViewOperation):
             arrays.append(el.data)
 
 
-        return [SheetView(np.dstack(arrays), overlay.bounds,
-                          label=self.p.label,
-                          roi_bounds=overlay.roi_bounds)]
+        return [SheetView(np.dstack(arrays), overlay.bounds, label=self.p.label,
+                          roi_bounds=overlay.roi_bounds, value=overlay[0].value)]
 
 
 class AlphaOverlay(ViewOperation):
@@ -271,9 +266,8 @@ class AlphaOverlay(ViewOperation):
 
     def _process(self, overlay):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
-        return [SheetView(RGBA(R*G*B*overlay[1]).data,
-                          overlay.bounds,
-                          label=self.overlay[0].label+' '+self.p.label)]
+        return [SheetView(RGBA(R*G*B*overlay[1]).data, overlay.bounds,
+                          label=self.p.label, value=overlay[0].value)]
 
 
 
@@ -318,7 +312,7 @@ class HCS(ViewOperation):
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
         return [SheetView(rgb, hue.bounds, roi_bounds=overlay.roi_bounds,
-                          label=hue.label +' '+ self.p.label)]
+                          label=self.p.label, value=overlay[0].value)]
 
 
 
@@ -351,9 +345,8 @@ class Colorize(ViewOperation):
                        bounds=overlay.bounds)
          hcs = HCS(overlay[1] * C * overlay[0].N)
 
-         return [SheetView(hcs.data, hcs.bounds,
-                           roi_bounds=hcs.roi_bounds,
-                           label= overlay[0].label + ' ' + self.p.label)]
+         return [SheetView(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
+                           label=self.p.label, value=overlay[0].value)]
 
 
 
@@ -382,12 +375,7 @@ class cmap2rgb(ViewOperation):
             raise Exception("No color map supplied and no cmap in the active style.")
 
         cmap = matplotlib.cm.get_cmap(style_cmap if self.p.cmap is None else self.p.cmap)
-        return [SheetView(cmap(sheetview.data),
-                         bounds=sheetview.bounds,
-                         cyclic_range=sheetview.cyclic_range,
-                         style=sheetview.style,
-                         metadata=sheetview.metadata,
-                         label = sheetview.label +' ' + self.p.label)]
+        return [sheetview.clone(cmap(sheetview.data), label=self.p.label)]
 
 
 
@@ -402,11 +390,10 @@ class split(ViewOperation):
       following the character selected from output_names.""")
 
     def _process(self, sheetview):
-        if sheetview.mode not in ['rgb','rgba']:
+        if sheetview.mode not in ['rgb', 'rgba']:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
-        return [SheetView(sheetview.data[:,:,i],
-                          bounds=sheetview.bounds,
-                          label='RGBA'[i] + ' ' + self.p.label)
+        return [sheetview.clone(sheetview.data[:, :, i],
+                                label='RGBA'[i] + ' ' + self.p.label)
                 for i in range(sheetview.depth)]
 
 
@@ -431,9 +418,8 @@ class contours(ViewOperation):
     def _process(self, sheetview):
 
         figure_handle = plt.figure()
-        (l,b,r,t) = sheetview.bounds.lbrt()
-        contour_set = plt.contour(sheetview.data,
-                                  extent=(l,r,t,b),
+        (l, b, r, t) = sheetview.bounds.lbrt()
+        contour_set = plt.contour(sheetview.data, extent=(l, r, t, b),
                                   levels=self.p.levels)
 
         contours = []
@@ -441,8 +427,8 @@ class contours(ViewOperation):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
             contours.append(Contours(lines, sheetview.bounds,
-                            metadata={'level': level},
-                            label=sheetview.label + ' ' + self.p.label))
+                                     metadata={'level': level},
+                                     label=sheetview.label + ' ' + self.p.label))
 
         plt.close(figure_handle)
 
@@ -450,213 +436,6 @@ class contours(ViewOperation):
             return [(sheetview * contours[0])]
         else:
             return [sheetview * SheetOverlay(contours, sheetview.bounds)]
-
-
-class sample_table(ViewOperation):
-    """
-    Given a SheetStack or TableStack sample the data at the sample values
-    and return the corresponding TableStack.
-    """
-
-    samples = param.List(doc="The list of table headings or sheet coordinate tuples to sample.")
-
-    label = param.String(default='Samples', doc="""
-      The suffix used to label the resulting sample table where the
-      suffix is added to the label of the input Tables or SheetViews.""")
-
-    def _process(self, view):
-        if not isinstance(view, (SheetLayer, Table)):
-            raise Exception('sample_sheet can only sample SheetLayers.')
-
-        if isinstance(view, Table):
-            data = OrderedDict((k, v) for k, v in view.data.items() if k in self.p.samples)
-            return [Table(data, label=view.label + ' ' + self.p.label, metadata=view.metadata)]
-
-        sheetviews = self.get_views(view, '')
-        if len(sheetviews) != 1:
-            raise Exception('Can only sample, Overlays containing a single SheetView')
-        sv = sheetviews[0]
-        sample_inds = [(s, tuple(sv.sheet2matrixidx(*s))) for s in self.p.samples]
-        data = OrderedDict((sample, sv.data[idx]) for sample, idx in sample_inds)
-        return [Table(data, label=sv.label + ' ' + self.p.label, metadata=sv.metadata)]
-
-
-
-class sample_curve(StackOperation):
-    """
-    Sample a stack into a set of Curves or Curve Overlays, where each curve
-    corresponds to a given sample. Different dimensions can be chosen for the
-    x-axis and by specifying group_by dimensions it is possible to group the
-    curves into Overlays.
-    """
-
-    x_axis = param.String(default=None, allow_None=True, doc="""
-        The dimension by label to be plotted along the x-axis.""")
-
-    group_by = param.List(default=[], doc="""
-        The list of dimensions (by label) to be displayed together in a
-        Curve overlay.""")
-
-    samples = param.List(default=[], doc="""
-        The list of table headings or sheet coordinate tuples to sample into
-        curves.""")
-
-    label = param.String(default='SampleCurve', doc="""
-      The label the for the resulting Curves.""")
-
-
-    def _process(self, stack):
-        self.stack_type = type(stack)
-
-        sampled_stack = sample_table(stack, samples=self.p.samples)
-        self._check_table_stack(sampled_stack)
-
-        x_dim = sampled_stack.dim_dict[self.p.x_axis]
-        specified_dims = [self.p.x_axis] + self.p.group_by
-        specified_dims_set = set(specified_dims)
-
-        if len(specified_dims) != len(specified_dims_set):
-            raise Exception('X axis cannot be included in grouped dimensions.')
-
-        # Dimensions of the output stack
-        stack_dims = [d for d in sampled_stack._dimensions if d.name not in specified_dims_set]
-
-       # Get x_axis and non-x_axis dimension values
-        split_data = self.split_axis(sampled_stack, self.p.x_axis)
-
-        # Everything except x_axis
-        output_dims = [d for d in sampled_stack.dimension_labels if d != self.p.x_axis]
-        # Overlays as indexed with the x_axis removed
-        overlay_inds = [i for i, name in enumerate(output_dims) if name in self.p.group_by]
-
-        cyclic_range = x_dim.range[1] if x_dim.cyclic else None
-
-        return self._generate_curves(sampled_stack, stack_dims, split_data, overlay_inds, cyclic_range)
-
-
-    def _check_table_stack(self, stack):
-        """
-        Make sure the table contains homogenous, numeric values.
-        """
-
-        sample_types = [int, float] + np.sctypes['float'] + np.sctypes['int']
-        if not all(h in stack._type_map.keys() for h in self.p.samples):
-            raise Exception("Invalid list of heading samples.")
-
-        for sample in self.p.samples:
-            if stack._type_map[sample] is None:
-                raise Exception("Cannot sample inhomogenous type %r" % sample)
-            if stack._type_map[sample] not in sample_types:
-                raise Exception("Cannot sample from type %r" % stack._type_map[sample].__name__)
-
-        if self.p.x_axis is None:
-            raise Exception('x_axis %r not found in stack' % self.p.x_axis)
-
-
-    def _split_keys_by_axis(self, stack, keys, x_axis):
-        """
-        Select an axis by name, returning the keys along the chosen
-        axis and the corresponding shortened tuple keys.
-        """
-        x_ndim = stack.dim_index(x_axis)
-        xvals = [k[x_ndim] for k in keys]
-        dim_vals = [k[:x_ndim] + k[x_ndim+1:] for k in keys]
-        return list(OrderedDict.fromkeys(xvals)), list(OrderedDict.fromkeys(dim_vals))
-
-
-    def split_axis(self, stack, x_axis):
-        """
-        Returns all stored views such that the specified x_axis
-        is eliminated from the full set of stack keys (i.e. each tuple
-        key has one element removed corresponding to eliminated dimension).
-
-        As the set of reduced keys is a subset of the original data, each
-        reduced key must store multiple x_axis values.
-
-        The return value is an OrderedDict with reduced tuples keys and
-        OrderedDict x_axis values (views).
-        """
-
-        stack._check_key_type = False # Speed optimization
-
-        x_ndim = stack.dim_index(x_axis)
-        keys = list(stack._data.keys())
-        x_vals, dim_values = self._split_keys_by_axis(stack, keys, x_axis)
-
-        split_data = OrderedDict()
-
-        for k in dim_values:  # The shortened keys
-            split_data[k] = OrderedDict()
-            for x in x_vals:  # For a given x_axis value...
-                              # Generate a candidate expanded key
-                expanded_key = k[:x_ndim] + (x,) + k[x_ndim:]
-                if expanded_key in keys:  # If the expanded key actually exists...
-                    split_data[k][x] = stack[expanded_key]
-
-        stack._check_key_type = True # Re-enable checks
-        return split_data
-
-
-    def _curve_labels(self, x_axis, sample, ylabel):
-        """
-        Given the x_axis, sample name and ylabel, returns the formatted curve
-        label xlabel and ylabel for a curve. Allows changing the curve labels
-        in subclasses of stack.
-        """
-        if self.stack_type == SheetStack:
-            title_prefix = "Coord: %s " % str(sample)
-            curve_label = " ".join([x_axis.capitalize(), ylabel])
-            return title_prefix, curve_label.title(), x_axis.title(), ylabel.title()
-        elif self.stack_type == TableStack:
-            return ylabel+' ', str(sample).title(), x_axis.title(), str(sample).title()
-
-
-    def _generate_curves(self, stack, stack_dims, split_data, overlay_inds, cyclic_range):
-
-        dataviews = []
-        for sample in self.p.samples:
-            dataview = DataStack(dimensions=stack_dims, metadata=stack.metadata) if stack_dims else None
-            for key, x_axis_data in split_data.items():
-                # Key contains all dimensions (including overlaid dimensions) except for x_axis
-                sampled_curve_data = [(x, view[sample]) for x, view in x_axis_data.items()]
-
-                # Compute overlay dimensions
-                overlay_items = [(name, key[ind]) for name, ind in
-                                 zip(self.p.group_by, overlay_inds)]
-                # Generate labels
-                legend_label = ', '.join(stack.dim_dict[name].pprint_value(val)
-                                         for name, val in overlay_items)
-                ylabel = list(x_axis_data.values())[0].label
-                title_prefix, label, xlabel, ylabel = self._curve_labels(self.p.x_axis,
-                                                                         str(sample),
-                                                                         ylabel)
-
-                # Generate the curve view
-                curve = Curve(sampled_curve_data, cyclic_range=cyclic_range,
-                              metadata=stack.metadata, label=label,
-                              legend_label=legend_label, xlabel=xlabel,
-                              ylabel=ylabel)
-
-                # Return contains no stacks
-                if not stack_dims:
-                    dataview = curve if dataview is None else dataview * curve
-                    continue
-
-                dataview.title = title_prefix + dataview.title
-
-                # Drop overlay dimensions
-                stack_key = tuple([kval for ind, kval in enumerate(key)
-                                   if ind not in overlay_inds])
-
-                # Create new overlay if necessary, otherwise add to overlay
-                if stack_key not in dataview._data.keys():
-                    dataview[stack_key] = DataOverlay([curve])
-                else:
-                    dataview[stack_key] *= curve
-            # Completed stack stored for return
-            dataviews.append(dataview)
-        return dataviews
-
 
 
 ChannelOpts.operations['RGBA'] = RGBA
