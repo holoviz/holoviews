@@ -1,4 +1,3 @@
-import unittest
 from collections import namedtuple
 
 from .utils import ViewTestCase

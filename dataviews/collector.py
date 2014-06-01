@@ -337,7 +337,7 @@ class ViewRef(Reference):
         """
         try:
             return super(ViewRef, self).__getattr__(label)
-        except AttributeError as e:
+        except AttributeError:
 
             if not label[0].isupper():
                 raise AttributeError("Reference path element %r must capitalized" % label)

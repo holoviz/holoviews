@@ -17,7 +17,7 @@ from ..dataviews import Stack, View
 from ..sheetviews import SheetOverlay
 
 
-import dataviews.operation # Needed to register channel operations
+import dataviews.operation # pyflakes:ignore (Registers ChannelOpts)
 channel_ops = ChannelOpts.operations
 
 #========#

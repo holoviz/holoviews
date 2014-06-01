@@ -14,12 +14,11 @@ import matplotlib.gridspec as gridspec
 
 import param
 
-from .views import NdMapping, Stack, View
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
     Table, TableStack, Scatter
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
-from .views import GridLayout, Layout, Overlay, View, Annotation
+from .views import NdMapping, Stack, GridLayout, Layout, Overlay, View, Annotation
 
 
 class PlotSaver(param.ParameterizedFunction):

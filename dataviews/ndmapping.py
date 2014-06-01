@@ -2,7 +2,6 @@
 NdIndexableMapping and NdMapping objects.
 """
 import param
-import numpy as np
 from collections import OrderedDict
 
 
