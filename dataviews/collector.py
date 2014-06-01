@@ -487,7 +487,7 @@ class Collect(object):
         """
         if isinstance(val, View):
             current_val[time] = val
-        elif (isinstance(current_val, Stack) and 'time' not in current_val.dimension_labels):
+        elif (isinstance(current_val, Stack) and 'Time' not in current_val.dimension_labels):
             raise Exception("Time dimension is missing.")
         else:
             current_val.update(val)

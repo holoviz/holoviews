@@ -176,7 +176,7 @@ class Annotation(View):
     All annotations have an optional interval argument that indicates
     which stack elements they apply to. For instance, this allows
     annotations for a specific time interval when overlaid over a
-    SheetStack or DataStack with a 'time' dimension. The interval
+    SheetStack or DataStack with a 'Time' dimension. The interval
     argument is a dictionary of dimension keys and tuples containing
     (start, end) values. A value of None, indicates an unspecified
     constraint.
