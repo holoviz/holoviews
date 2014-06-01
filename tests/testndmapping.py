@@ -1,6 +1,6 @@
 import unittest
 
-from utils import ViewTestCase
+from .utils import ViewTestCase
 from dataviews.ndmapping import Dimension, NdIndexableMapping
 from collections import OrderedDict
 
