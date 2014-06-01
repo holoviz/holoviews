@@ -55,8 +55,7 @@ class SheetLayer(View):
 
         if isinstance(other, Annotation):
             return SheetOverlay(combined_layers, self.bounds,
-                                roi_bounds=self.roi_bounds,
-                                metadata=self.metadata)
+                                roi_bounds=self.roi_bounds)
 
         if self.bounds is None:
             self.bounds = other.bounds
@@ -65,9 +64,7 @@ class SheetLayer(View):
 
         roi_bounds = self.roi_bounds if self.roi_bounds else other.roi_bounds
         roi_bounds = self.bounds if roi_bounds is None else roi_bounds
-        return SheetOverlay(combined_layers, self.bounds,
-                            metadata=self.metadata,
-                            roi_bounds=roi_bounds)
+        return SheetOverlay(combined_layers, self.bounds, roi_bounds=roi_bounds)
 
 
     def dimension_values(self, dimension):
@@ -128,8 +125,7 @@ class SheetOverlay(SheetLayer, Overlay):
         Apply the roi_bounds to all elements in the SheetOverlay
         """
         return SheetOverlay([el.get_roi(self.roi_bounds) for el in self.data],
-                            bounds=self.roi_bounds if self.roi_bounds else self.bounds,
-                            metadata=self.metadata)
+                            bounds=self.roi_bounds if self.roi_bounds else self.bounds)
 
 
     @property
@@ -259,8 +255,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
-                         bounds, label=self.label, style=self.style,
-                         metadata=self.metadata)
+                         bounds, label=self.label, style=self.style)
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
@@ -277,10 +272,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
 
         norm_data = (((self.data - self.data.min()) / norm_factor) * abs(
             (max - min))) + min
-        return SheetView(norm_data, self.bounds, metadata=self.metadata,
-                         roi_bounds=self.roi_bounds, style=self.style,
-                         label=self.label,
-                         value=self.value)
+        return SheetView(norm_data, self.bounds, roi_bounds=self.roi_bounds,
+                         style=self.style, label=self.label, value=self.value)
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
@@ -309,8 +302,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         hist[np.isnan(hist)] = 0
 
         hist_view = Histogram(hist, edges, dimensions=[self.value],
-                              label=self.label,
-                              value='Frequency', metadata=self.metadata)
+                              label=self.label, value='Frequency')
 
         # Set plot and style options
         style_prefix = kwargs.get('style_prefix',
@@ -450,8 +442,7 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         else:
             data = np.dstack([Slice(roi_bounds, self).submatrix(
                 self.data[:, :, i]) for i in range(self.depth)])
-        return SheetView(data, roi_bounds, style=self.style,
-                         metadata=self.metadata, value=self.value)
+        return SheetView(data, roi_bounds, style=self.style, value=self.value)
 
 
 
@@ -473,7 +464,7 @@ class Points(SheetLayer):
 
 
     def resize(self, bounds):
-        return Points(self.points, bounds, style=self.style, metadata=self.metadata)
+        return Points(self.points, bounds, style=self.style)
 
 
     def __len__(self):
@@ -486,7 +477,7 @@ class Points(SheetLayer):
         roi_data = self.data[[n for n in range(N)
                               if self.data[n, :] in self.roi_bounds]]
         roi_bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return Points(roi_data, roi_bounds, style=self.style, metadata=self.metadata)
+        return Points(roi_data, roi_bounds, style=self.style)
 
 
     def __iter__(self):
@@ -527,8 +518,7 @@ class Contours(SheetLayer):
         # outside the bounds need to be snapped to the bounding box
         # edges.
         bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return Contours(self.data, bounds, style=self.style, label=self.label,
-                        metadata=self.metadata)
+        return Contours(self.data, bounds, style=self.style, label=self.label)
 
 
 
@@ -619,9 +609,7 @@ class SheetStack(DataStack):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histstack = DataStack(dimensions=self.dimensions,
-                              title_suffix=self.title_suffix,
-                              metadata=self.metadata)
+        histstack = DataStack(dimensions=self.dimensions, title_suffix=self.title_suffix)
 
         stack_range = None if individually else self.range
         bin_range = stack_range if bin_range is None else bin_range
@@ -762,10 +750,10 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
 
     def clone(self, items=None, **kwargs):
         """
-        Returns an empty duplicate of itself with all parameter values and
-        metadata copied across.
+        Returns an empty duplicate of itself with all parameter values
+        copied across.
         """
-        settings = dict(self.get_param_values(), metadata=self.metadata, **kwargs)
+        settings = dict(self.get_param_values(), **kwargs)
         bounds = settings.pop('bounds') if 'bounds' in settings else self.bounds
         xdensity = settings.pop('xdensity') if 'xdensity' in settings else self.xdensity
         ydensity = settings.pop('ydensity') if 'ydensity' in settings else self.ydensity

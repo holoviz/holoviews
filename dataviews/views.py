@@ -14,9 +14,9 @@ from .options import options
 class View(param.Parameterized, Dimensional):
     """
     A view is a data structure for holding data, which may be plotted
-    using matplotlib. Views have an associated title, style name and
-    metadata information.  All Views may be composed together into a
-    GridLayout using the addition operator.
+    using matplotlib. Views have an associated title and style
+    name. All Views may be composed together into a GridLayout using
+    the addition operator.
     """
 
     dimensions = param.List(default=[], doc="""List of dimensions the View
@@ -25,9 +25,6 @@ class View(param.Parameterized, Dimensional):
     label = param.String(default='', constant=True, doc="""
         A string label or Dimension object used to indicate what kind of data
         is contained within the view object.""")
-
-    metadata = param.Dict(default=AttrDict(), doc="""
-        Additional information to be associated with the Layer.""")
 
     title = param.String(default='{label}', doc="""
         The title formatting string allows the title to be composed from
@@ -76,8 +73,8 @@ class View(param.Parameterized, Dimensional):
 
     def clone(self, data, type=None, **kwargs):
         """
-        Returns a clone with matching parameter values and metadata, containing
-        the specified items (empty by default).
+        Returns a clone with matching parameter values containing the
+        specified items (empty by default).
         """
         settings = dict(self.get_param_values(), **kwargs)
         return self.__class__(data, **settings)
@@ -871,35 +868,6 @@ class GridLayout(NdMapping):
         cols = self.max_cols if cols is None else cols
         reshaped_grid = self._reshape_grid(new_grid, cols)
         self._data = OrderedDict(self._grid_to_items(reshaped_grid))
-
-
-    def __call__(self, cols=None):
-        """
-        Recompute the grid layout of the views based on precedence and
-        row_precendence value metadata. Formats the grid to a maximum
-        of cols columns if specified.
-        """
-        # Plots are sorted first by precedence, then grouped by row_precedence
-        values = sorted(self.values(),
-                        key=lambda x: x.metadata.get('precedence', 0.5))
-        precedences = sorted(
-            set(v.metadata.get('row_precedence', 0.5) for v in values))
-
-        coords=[]
-        # Can use collections.Counter in Python >= 2.7
-        column_counter = dict((i, 0) for i, _ in enumerate(precedences))
-        for view in values:
-            # Find the row number based on the row_precedences
-            row = precedences.index(view.metadata.get('row_precedence', 0.5))
-            # Look up the current column position of the row
-            col = column_counter[row]
-            # The next view on this row will have to be in the next column
-            column_counter[row] += 1
-            coords.append((row, col, view))
-
-        grid = self._reshape_grid(self._grid(coords), cols)
-        self._data = OrderedDict(self._grid_to_items(grid))
-        return self
 
 
     def _grid(self, coords):

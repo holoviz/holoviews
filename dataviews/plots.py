@@ -1207,14 +1207,13 @@ class DataPlot(Plot):
 
 class CurvePlot(Plot):
     """
-    CurvePlot can plot Curve and DataStacks of Curve,
-    which can be displayed as a single frame or animation. Axes,
-    titles and legends are automatically generated from the metadata
-    and dim_info.
+    CurvePlot can plot Curve and DataStacks of Curve, which can be
+    displayed as a single frame or animation. Axes, titles and legends
+    are automatically generated from dim_info.
 
-    If the dimension is set to cyclic in the dim_info it will
-    rotate the curve so that minimum y values are at the minimum
-    x value to make the plots easier to interpret.
+    If the dimension is set to cyclic in the dim_info it will rotate
+    the curve so that minimum y values are at the minimum x value to
+    make the plots easier to interpret.
     """
 
     center = param.Boolean(default=True)
@@ -1364,10 +1363,9 @@ class CurvePlot(Plot):
 
 class ScatterPlot(CurvePlot):
     """
-    ScatterPlot can plot Scatter and DataStacks of Scatter,
-    which can be displayed as a single frame or animation. Axes,
-    titles and legends are automatically generated from the metadata
-    and dim_info.
+    ScatterPlot can plot Scatter and DataStacks of Scatter, which can
+    be displayed as a single frame or animation. Axes, titles and
+    legends are automatically generated from dim_info.
 
     If the dimension is set to cyclic in the dim_info it will
     rotate the points curve so that minimum y values are at the minimum

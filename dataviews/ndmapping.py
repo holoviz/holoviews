@@ -166,9 +166,6 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
 
     dimensions = param.List(default=[Dimension("Default")], constant=True)
 
-    metadata = param.Dict(default=AttrDict(), doc="""
-        Additional labels to be associated with the Dataview.""")
-
     data_type = None
 
     _deep_indexable = True
@@ -176,11 +173,10 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
     def __init__(self, initial_items=None, **kwargs):
         self._data = OrderedDict()
 
-        kwargs, metadata = self.write_metadata(kwargs)
         if 'dimensions' in kwargs:
             kwargs['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
                                     for d in kwargs.pop('dimensions')]
-        super(NdIndexableMapping, self).__init__(metadata=metadata, **kwargs)
+        super(NdIndexableMapping, self).__init__(**kwargs)
 
         self._next_ind = 0
         self._check_key_type = True
@@ -189,21 +185,6 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
             self._add_item(initial_items[0], initial_items[1])
         elif initial_items is not None:
             self.update(OrderedDict(initial_items))
-
-
-    def write_metadata(self, kwargs):
-        """
-        Acts as a param override, placing any kwargs, which are not parameters
-        into the metadata dictionary.
-        """
-        items = list(kwargs.items())
-        if 'metadata' in kwargs:
-            items = list(kwargs.pop('metadata').items()) + items
-        metadata = AttrDict(self.metadata, **dict([(k, v) for k, v in items
-                                                   if k not in self.params()]))
-        for key in metadata:
-            kwargs.pop(key, None)
-        return kwargs, metadata
 
 
     def _item_check(self, dim_vals, data):
@@ -314,8 +295,8 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
 
     def clone(self, items=None, **kwargs):
         """
-        Returns a clone with matching parameter values and metadata, containing
-        the specified items (empty by default).
+        Returns a clone with matching parameter values containing the
+        specified items (empty by default).
         """
         settings = dict(self.get_param_values(), **kwargs)
         return self.__class__(initial_items=items, **settings)

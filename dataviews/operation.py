@@ -129,8 +129,7 @@ class ViewOperation(param.ParameterizedFunction):
             signature = self._get_signature(v for k,v in mapped_items)
 
             stack_types = [stack_mapping[tp] for tp in signature]
-            stacks = [stack_tp(dimensions=view.dimensions,
-                               metadata=view.metadata) for stack_tp in stack_types]
+            stacks = [stack_tp(dimensions=view.dimensions) for stack_tp in stack_types]
 
             for k, views in mapped_items:
                 for ind, v in enumerate(views):
@@ -427,7 +426,6 @@ class contours(ViewOperation):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
             contours.append(Contours(lines, sheetview.bounds,
-                                     metadata={'level': level},
                                      label=sheetview.label + ' ' + self.p.label))
 
         plt.close(figure_handle)

@@ -129,7 +129,7 @@ class DataLayer(View):
         else:
             raise TypeError('Can only create an overlay of DataViews.')
 
-        return DataOverlay(overlays, metadata=self.metadata)
+        return DataOverlay(overlays)
 
 
     @property
@@ -235,8 +235,7 @@ class Curve(DataLayer):
             raise ValueError('Curve data has to be sorted along x-dimension.')
 
     def stack(self):
-        stack = DataStack(None, dimensions=[self.xlabel],
-                          title=self.title+' {dims}', **self.metadata)
+        stack = DataStack(None, dimensions=[self.xlabel], title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
             if x in stack:
