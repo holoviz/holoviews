@@ -45,8 +45,10 @@ class View(param.Parameterized, Dimensional):
         self.data = data
         self._style = kwargs.pop('style', None)
         if 'dimensions' in kwargs:
-            kwargs['dimensions'] = [Dimension(d) for d in kwargs.pop('dimensions')]
-        if 'value' in kwargs: kwargs['value'] = Dimension(kwargs['value'])
+            kwargs['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
+                                    for d in kwargs.pop('dimensions')]
+        if 'value' in kwargs and not isinstance(kwargs['value'], Dimension):
+            kwargs['value'] = Dimension(kwargs['value'])
         if not 'label' in kwargs: kwargs['label'] = str(self.value)
         super(View, self).__init__(**kwargs)
 
@@ -713,7 +715,8 @@ class Layout(param.Parameterized, Dimensional):
             self.data = dict(zip(self.layout_order, views))
 
         if 'dimensions' in params:
-            params['dimensions'] = [Dimension(d) for d in params.pop('dimensions')]
+            params['dimensions'] = [d if isinstance(d, Dimension) else Dimension(d)
+                                    for d in params.pop('dimensions')]
 
         super(Layout, self).__init__(**params)
 

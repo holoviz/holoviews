@@ -179,7 +179,8 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
 
         kwargs, metadata = self.write_metadata(kwargs)
         if 'dimensions' in kwargs:
-            kwargs['dimensions'] = [Dimension(d) for d in kwargs.pop('dimensions')]
+            kwargs['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
+                                    for d in kwargs.pop('dimensions')]
         super(NdIndexableMapping, self).__init__(metadata=metadata, **kwargs)
 
         self._next_ind = 0
