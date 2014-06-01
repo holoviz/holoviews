@@ -590,7 +590,7 @@ class SheetStack(DataStack):
         mapped item.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
-        return self.clone(mapped_items, bounds=mapped_items[0][1].bounds, **kwargs)
+        return self.clone(mapped_items, **kwargs)
 
 
     @property
