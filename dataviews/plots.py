@@ -1072,7 +1072,7 @@ class CoordinateGridPlot(OverlayPlot):
                 w, h = self._get_dims(view)
                 if view.type == SheetOverlay:
                     data = view.last[-1].data if self.situate else view.last[-1].roi.data
-                    opts = View.options.style(view).opts
+                    opts = View.options.style(view.last[-1]).opts
                 else:
                     data = view.last.data if self.situate else view.last.roi.data
                     opts = View.options.style(view).opts
