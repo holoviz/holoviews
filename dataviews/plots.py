@@ -250,12 +250,20 @@ class Plot(param.Parameterized):
         return axis
 
 
+    def warning(self, msg):
+        logger = param.parameterized.get_logger()
+        lvl = logger.getEffectiveLevel()
+        logger.setLevel(param.parameterized.WARNING)
+        super(Plot, self).warning(msg)
+        logger.setLevel(lvl)
+
+
     def __getitem__(self, frame):
         """
         Get the matplotlib figure at the given frame number.
         """
         if frame > len(self):
-            self.warn("Showing last frame available: %d" % len(self))
+            self.warning("Showing last frame available: %d" % len(self))
         if self.handles['fig'] is None: self.handles['fig'] = self()
         self.update_frame(frame)
         return self.handles['fig']
