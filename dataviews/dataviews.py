@@ -433,7 +433,9 @@ class Table(View):
 
         # Assume OrderedDict if not a vanilla Python dict
         headings = self.data.keys()
-        if type(self.data) == dict: headings = sorted(headings)
+        if type(self.data) == dict:
+            headings = sorted(headings)
+            self.data = OrderedDict([(h, self.data[h]) for h in headings])
         self.heading_map = OrderedDict([(el, str(el)) for el in headings])
 
 
@@ -442,8 +444,7 @@ class Table(View):
             sampled_data = OrderedDict([item for item in self.data.items()
                                         if samples(item)])
         else:
-            sampled_data = OrderedDict([(k, v) for k, v in self.data.items()
-                                        if k in samples])
+            sampled_data = OrderedDict([(s, self.data[s]) for s in samples])
         return self.clone(sampled_data)
 
 
