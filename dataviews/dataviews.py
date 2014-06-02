@@ -42,7 +42,7 @@ class DataLayer(View):
         elif isinstance(data, Stack) or (isinstance(data, list) and data
                                          and isinstance(data[0], DataLayer)):
             data, settings = self._process_stack(data)
-        elif len(data) and not isinstance(data, np.ndarray):
+        elif len(list(data)) and not isinstance(data, np.ndarray):
             data = np.array(list(data))
 
         self._xlim = None
@@ -210,11 +210,6 @@ class DataLayer(View):
         return l, b, r, t
 
 
-    @property
-    def sorted(self):
-        return not np.any(np.where(np.diff(self.data[:, 0]) < 0, True, False))
-
-
 
 class Scatter(DataLayer):
     """
@@ -231,8 +226,6 @@ class Curve(DataLayer):
 
     def __init__(self, data, **kwargs):
         super(Curve, self).__init__(data, **kwargs)
-        if not self.sorted:
-            raise ValueError('Curve data has to be sorted along x-dimension.')
 
     def stack(self):
         stack = DataStack(None, dimensions=[self.xlabel], title=self.title+' {dims}')
@@ -254,8 +247,6 @@ class Bars(DataLayer):
     def __init__(self, data, width=None, **kwargs):
         super(Bars, self).__init__(data, **kwargs)
         self._width = width
-        if not self.sorted:
-            raise ValueError('Bar data has to be sorted by x-value.')
 
     @property
     def width(self):
