@@ -19,7 +19,7 @@ class ProgressBar(param.Parameterized):
     and the IPython interactive prompt.
     """
 
-    label = param.String(default='Progress', doc="""
+    label = param.String(default='Progress', allow_None=True, doc="""
         The label of the current progress bar.""")
 
     width = param.Integer(default=70, doc="""
@@ -50,10 +50,10 @@ class ProgressBar(param.Parameterized):
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)
         blank_count = self.width - char_count
-        sys.stdout.write('\r' + "%s:\n[%s%s] %0.1f%%" % (self.label,
-                                                         self.fill_char * char_count,
-                                                         ' '*len(self.fill_char)*blank_count,
-                                                         percentage))
+        sys.stdout.write('\r' + "%s[%s%s] %0.1f%%" % (self.label+':\n' if self.label else '',
+                                                      self.fill_char * char_count,
+                                                      ' '*len(self.fill_char)*blank_count,
+                                                      percentage))
         sys.stdout.flush()
         time.sleep(0.0001)
 
