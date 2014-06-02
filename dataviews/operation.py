@@ -440,8 +440,11 @@ ChannelOpts.operations['RGBA'] = RGBA
 ChannelOpts.operations['HCS'] = HCS
 ChannelOpts.operations['AlphaOverlay'] = AlphaOverlay
 
-options.R_Channel = GrayNearest
-options.G_Channel = GrayNearest
-options.B_Channel = GrayNearest
-options.A_Channel = GrayNearest
+options.R_Channel_SheetView = GrayNearest
+options.G_Channel_SheetView = GrayNearest
+options.B_Channel_SheetView = GrayNearest
+options.A_Channel_SheetView = GrayNearest
 options.Level_Contours = StyleOpts(color=Cycle(['b', 'g', 'r']))
+
+options.RGB_SheetView = StyleOpts(interpolation='nearest')
+options.RGBA_SheetView = StyleOpts(interpolation='nearest')
