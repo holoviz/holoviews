@@ -23,6 +23,8 @@ from .magics import ViewMagic, ChannelMagic, OptsMagic
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
 
+import param
+
 #==================#
 # Helper functions #
 #==================#
@@ -108,7 +110,12 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            return fn(view, **kwargs)
+            logger = param.parameterized.get_logger()
+            lvl = logger.getEffectiveLevel()
+            logger.setLevel(param.parameterized.ERROR)
+            retval = fn(view, **kwargs)
+            logger.setLevel(lvl)
+            return retval
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
