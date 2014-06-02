@@ -7,7 +7,7 @@ from collections import OrderedDict, defaultdict
 
 import param
 
-from .ndmapping import NdMapping, Dimensional, Dimension, AttrDict
+from .ndmapping import NdMapping, Dimensional, Dimension
 from .options import options
 
 
