@@ -582,7 +582,7 @@ class TableStack(Stack):
                 stacks[str(label)][new_key] = Curve(zip(xvalues, yvalues), **settings)
 
         # If there are multiple table entries, generate grid
-        stack_data = stacks.values()
+        stack_data = list(stacks.values())
         stack_grid = stack_data[0]
         for stack in stack_data[1:]:
             stack_grid += stack
