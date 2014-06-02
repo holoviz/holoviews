@@ -521,7 +521,7 @@ class Stack(NdMapping):
             split_data[fk] = self.clone(dimensions=second_dims)
             for sk in second_keys:  # The second groups keys
                 # Generate a candidate expanded key
-                unordered_dimkeys = zip(first_dims, fk) + zip(second_dims, sk)
+                unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
                 sorted_key = self.sort_key(unordered_dimkeys)
                 if sorted_key in self._data.keys():  # If the expanded key actually exists...
                     split_data[fk][sk] = self[sorted_key]
