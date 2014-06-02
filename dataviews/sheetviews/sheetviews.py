@@ -220,6 +220,10 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
         of a string or dimension object.""")
 
 
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('Z'), doc="""
+        The dimension description of the data held in the data array.""")
+
     _deep_indexable = True
 
     def __init__(self, data, bounds=None, **kwargs):
