@@ -1929,7 +1929,6 @@ Plot.defaults.update({SheetView: SheetViewPlot,
 
 
 Plot.sideplots.update({Histogram: SideHistogramPlot,
-                       Table: TablePlot,
                        CoordinateGrid: CoordinateGridPlot})
 
 __all__ = list(set([_k for _k,_v in locals().items()
