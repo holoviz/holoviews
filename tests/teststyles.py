@@ -88,13 +88,13 @@ class TestOptions(ViewTestCase):
         self.custom = StyleOpts(key5='custom_key5', key6='custom_key6')
 
     def test_style_options_init(self):
-        options = Options('style', StyleOpts)
+        Options('style', StyleOpts)
 
     def test_plot_options_init(self):
-        options = Options('plotting', PlotOpts)
+        Options('plotting', PlotOpts)
 
     def test_channel_options_init(self):
-        options = Options('channels', ChannelOpts)
+        Options('channels', ChannelOpts)
 
 
     def test_channel_options_init_invalid(self):
