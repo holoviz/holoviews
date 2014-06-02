@@ -110,12 +110,7 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            logger = param.parameterized.get_logger()
-            lvl = logger.getEffectiveLevel()
-            logger.setLevel(param.parameterized.ERROR)
-            retval = fn(view, **kwargs)
-            logger.setLevel(lvl)
-            return retval
+            return fn(view, **kwargs)
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
