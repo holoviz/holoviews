@@ -58,8 +58,8 @@ class NdIndexableMappingTest(ViewTestCase):
 
     def test_idxmapping_dim_dict(self):
         idxmap = NdIndexableMapping(dimensions=[self.dim1, self.dim2])
-        dim_labels = idxmap.dim_dict.keys()
-        dim_objs = idxmap.dim_dict.values()
+        dim_labels = list(idxmap.dim_dict.keys())
+        dim_objs = list(idxmap.dim_dict.values())
         self.assertEqual(dim_labels, self.dimension_labels)
         self.assertEqual(dim_objs, [self.dim1, self.dim2])
 
