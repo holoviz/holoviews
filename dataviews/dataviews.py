@@ -570,6 +570,7 @@ class TableStack(Stack):
                     curve_data[str(label)].append(value)
 
             # Get data from table
+            table = collate_stack.last
             table_dimensions = table.dimensions
             table_title = ' ' + table.title
             table_label = table.label
@@ -577,6 +578,7 @@ class TableStack(Stack):
             # Generate curves with correct dimensions
             for label, yvalues in curve_data.items():
                 settings = dict(dimensions=[collate_dim])
+                label = entry_dims[label]
                 if len(table_dimensions):
                     if not isinstance(label, tuple): label = (label,)
                     title = ', '.join([d.pprint_value(label[idx]) for idx, d in
@@ -584,7 +586,7 @@ class TableStack(Stack):
                     settings.update(value=table.value, label=table_label, title=title)
                 else:
                     settings.update(value=entry_dims[label], label=table_label)
-                stacks[label][new_key] = Curve(zip(xvalues, yvalues), **settings)
+                stacks[str(label)][new_key] = Curve(zip(xvalues, yvalues), **settings)
 
         # If there are multiple table entries, generate grid
         stack_data = stacks.values()
