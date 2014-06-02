@@ -8,6 +8,7 @@ add_paths(paths)
 # General information about the project.
 project = u'DataViews'
 copyright = u'2014, IOAM: Jean-Luc Stevens and Philipp Rudiger'
+ioam_module = 'dataviews'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -25,12 +26,12 @@ exclude_patterns = ['_build', 'test_data', 'reference_data', 'nbpublisher',
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-html_title = 'DataViews'
+html_title = project
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static','Reference_Manual']
+html_static_path = ['_static', 'builder/_shared_static']
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'DataViewsdoc'
@@ -51,7 +52,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'dataviews', u'DataViews Documentation',
+    ('index', ioam_module, u'DataViews Documentation',
      [u'IOAM: Jean-Luc Stevens and Philipp Rudiger'], 1)
 ]
 
@@ -65,8 +66,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'DataViews', u'DataViews Documentation',
-   u'IOAM: Jean-Luc Stevens and Philipp Rudiger', 'DataViews', 'One line description of project.',
+  ('index', project, u'DataViews Documentation',
+   u'IOAM: Jean-Luc Stevens and Philipp Rudiger', project, 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -79,6 +80,12 @@ intersphinx_mapping = {'http://docs.python.org/': None,
 from builder.paramdoc import param_formatter
 from nbpublisher import nbbuild
 
+
 def setup(app):
-	app.connect('autodoc-process-docstring', param_formatter)
-	nbbuild.setup(app)
+    app.connect('autodoc-process-docstring', param_formatter)
+    try:
+        import runipy
+        nbbuild.setup(app)
+    except:
+        print('RunIPy could not be imported, pages including the '
+              'Notebook directive will not build correctly')
