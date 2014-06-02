@@ -42,8 +42,10 @@ class DataLayer(View):
         elif isinstance(data, Stack) or (isinstance(data, list) and data
                                          and isinstance(data[0], DataLayer)):
             data, settings = self._process_stack(data)
-        elif len(list(data)) and not isinstance(data, np.ndarray):
-            data = np.array(list(data))
+
+        data = list(data)
+        if len(data) and not isinstance(data, np.ndarray):
+            data = np.array(data)
 
         self._xlim = None
         self._ylim = None
