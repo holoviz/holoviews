@@ -8,17 +8,13 @@ notifications:
   email:
     on_failure: change # [always|never|change] default: always
 
-# no dependencies
-install: true
-
 install:
-  - sudo apt-get install python-matplotlib
-  - pip install jinja2 tornado pyzmq
+  - pip install jinja2 tornado pyzmq matplotlib
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython; fi
 
 before-script:
-  - "echo 'backend : agg' > matplotlibrc"
+  - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
 
 script:
   - nosetests --with-doctest
