@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
 
-from . import utils # pyflakes:ignore (set sys.path)
 from dataviews.sheetviews import BoundingBox
 from dataviews import SheetView
 

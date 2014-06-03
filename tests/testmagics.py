@@ -1,4 +1,4 @@
-from .utils import IPTestCase
+from dataviews.testing import IPTestCase
 
 from dataviews import ipython
 from dataviews import SheetOverlay

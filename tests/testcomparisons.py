@@ -3,11 +3,10 @@ Test cases for ViewTestCase which implements view comparison.
 """
 import numpy as np
 
-from .utils import ViewTestCase
 from dataviews import SheetView, SheetStack
-from dataviews.sheetviews import BoundingBox
 from dataviews.ndmapping import Dimension
-
+from dataviews.sheetviews import BoundingBox
+from dataviews.testing import ViewTestCase
 
 
 class SheetViewTestCase(ViewTestCase):

@@ -1,20 +1,15 @@
-import sys, os
 import unittest
 
 from nose.plugins.skip import SkipTest
 from numpy.testing import assert_array_almost_equal
 
-cwd = os.path.abspath(os.path.split(__file__)[0])
-sys.path.insert(0, os.path.join(cwd, '..'))
-
-from dataviews.views import Layout, GridLayout
-from dataviews import DataOverlay,  DataStack,  Annotation, Curve, Histogram
-from dataviews import TableStack, Table
-from dataviews import SheetOverlay, SheetStack, SheetView, Points, Contours
-from dataviews import CoordinateGrid, DataGrid
-
-from dataviews import Dimension
-from dataviews.options import StyleOpts, PlotOpts, ChannelOpts
+from . import Dimension
+from . import DataOverlay,  DataStack,  Annotation, Curve, Histogram
+from . import TableStack, Table
+from . import SheetOverlay, SheetStack, SheetView, Points, Contours
+from . import CoordinateGrid, DataGrid
+from .views import Layout, GridLayout
+from .options import StyleOpts, PlotOpts, ChannelOpts
 
 from IPython.display import HTML, SVG
 

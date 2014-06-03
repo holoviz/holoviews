@@ -1,4 +1,4 @@
-from .utils import ViewTestCase
+from dataviews.testing import ViewTestCase
 from dataviews.ndmapping import Dimension, NdIndexableMapping
 from collections import OrderedDict
 

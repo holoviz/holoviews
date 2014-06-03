@@ -1,9 +1,8 @@
 from collections import namedtuple
 
-from .utils import ViewTestCase
-
 from dataviews.options import OptionsGroup, Options
 from dataviews.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
+from dataviews.testing import ViewTestCase
 from dataviews.views import View
 
 

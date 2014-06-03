@@ -2,7 +2,7 @@ import pickle
 import numpy as np
 from dataviews import SheetView
 from dataviews.collector import AttrTree, ViewRef
-from .utils import ViewTestCase
+from dataviews.testing import ViewTestCase
 
 from collections import OrderedDict
 
