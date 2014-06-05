@@ -547,6 +547,17 @@ class NdMapping(NdIndexableMapping):
             return self.clone(items)
 
 
+    def select(self, **kwargs):
+        """
+        Allows selecting slices or indices into the NdMapping using
+        keyword arguments matching the names of the dimensions.
+        """
+        selection = [slice(None) for i in range(self.ndims)]
+        for dim, val in kwargs.items():
+            selection[self.dim_index(dim)] = val
+        return self.__getitem__(selection)
+
+
     def _transform_indices(self, indices):
         """
         Identity function here but subclasses can implement transforms of the
