@@ -4,8 +4,8 @@
 PROJECT = 'DataViews'
 MODULE = 'dataviews'
 
-include ./builder/Makefile
+include ./builder/Makefile 
 export
 
 %:
-	@MAKE -f ./builder/Makefile
+	$(MAKE) -f ./builder/Makefile $(CFLAGS)
