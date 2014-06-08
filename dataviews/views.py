@@ -536,16 +536,25 @@ class Stack(NdMapping):
         Splits the Stack along a specified number of dimensions and overlays
         items in the split out Stacks.
         """
-        split_stack = self.split_dimensions(dimensions)
-        new_stack = self.clone(dimensions=split_stack.dimensions)
+        if self.ndims == 1:
+            split_stack = dict(default=self)
+            new_stack = dict()
+        else:
+            split_stack = self.split_dimensions(dimensions)
+            new_stack = self.clone(dimensions=split_stack.dimensions)
+
         for outer, stack in split_stack.items():
             key, overlay = stack.items()[0]
             overlay.legend_label = stack.pprint_dimkey(key)
-            for inner, v in stack.items():
+            for inner, v in list(stack.items())[1:]:
                 v.legend_label = stack.pprint_dimkey(inner)
                 overlay = overlay * v
             new_stack[outer] = overlay
-        return new_stack
+
+        if self.ndims == 1:
+            return list(new_stack.values())[0]
+        else:
+            return new_stack
 
 
     def map(self, map_fn, **kwargs):
