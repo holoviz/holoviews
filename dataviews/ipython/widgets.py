@@ -286,7 +286,7 @@ class ViewSelector(param.Parameterized):
         """
 
         # Do nothing if dimension values are unchanged
-        if all(v==self.dim_val[k] for k, v in kwargs.items()):
+        if all(v == self.dim_val[k] for k, v in kwargs.items()):
             return
 
         # Place changed dimensions first
@@ -312,7 +312,7 @@ class ViewSelector(param.Parameterized):
                 widget.max = max(vals)
             checked[dim_idx] = val
             self.dim_val[dim] = val
-            widget.value = val
+            widget.value = round(val, 5) if isnumeric(val) else val
 
         # Update frame
         checked = tuple(checked)
