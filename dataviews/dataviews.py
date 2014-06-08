@@ -581,7 +581,8 @@ class TableStack(Stack):
                                       enumerate(table_dimensions)]) + table_title
                     settings.update(value=table.value, label=table_label, title=title)
                 else:
-                    settings.update(value=entry_dims[label], label=table_label)
+                    settings.update(value=entry_dims[label], label=table_label,
+                                    title='{label} - {value}')
                 stacks[str(label)][new_key] = Curve(zip(xvalues, yvalues), **settings)
 
         # If there are multiple table entries, generate grid
