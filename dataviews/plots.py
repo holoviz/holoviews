@@ -1046,6 +1046,7 @@ class CoordinateGridPlot(OverlayPlot):
 
 
     def __init__(self, grid, **kwargs):
+        self.layout = kwargs.pop('layout', None)
         if not isinstance(grid, CoordinateGrid):
             raise Exception("CoordinateGridPlot only accepts ProjectionGrids.")
         self.grid = copy.deepcopy(grid)
