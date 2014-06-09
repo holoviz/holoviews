@@ -128,6 +128,12 @@ class Plot(param.Parameterized):
     element of a grid). The modes 'auto' and 'equal' correspond to the
     axis modes of the same name in matplotlib.""" )
 
+    orientation = param.ObjectSelector(default='horizontal',
+                                       objects=['horizontal', 'vertical'], doc="""
+    The orientation of the plot. Note that this parameter may not
+    always be respected by all plots but should be respected by
+    adjoined plots when appropriate.""")
+
     _stack_type = Stack
 
     # A mapping from View types to their corresponding plot types
@@ -1650,9 +1656,6 @@ class HistogramPlot(Plot):
     rescale_individually = param.Boolean(default=True, doc="""
         Whether to use redraw the axes per stack or per view.""")
 
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'])
-
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")
 
@@ -1800,9 +1803,6 @@ class HistogramPlot(Plot):
 
 class SideHistogramPlot(HistogramPlot):
 
-    layout = param.Parameter(doc="""
-        The layout object to which this SideHistogramPlot belongs.""")
-
     offset = param.Number(default=0.2, doc="""
         Histogram value offset for a colorbar.""")
 
@@ -1812,6 +1812,10 @@ class SideHistogramPlot(HistogramPlot):
     show_xlabel = param.Boolean(default=False, doc="""
         Whether to show the x-label of the plot. Disabled by default
         because plots are often too cramped to fit the title correctly.""")
+
+    def __init__(self, *args, **kwargs):
+        self.layout = kwargs.pop('layout', None)
+        super(SideHistogramPlot, self).__init__(*args, **kwargs)
 
     def _process_hist(self, hist, lbrt):
         """
