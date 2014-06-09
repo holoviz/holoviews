@@ -487,24 +487,7 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
 
 
     def __iter__(self):
-        return self
-
-    def next(self): # For Python 2 and 3 compatibility
-        return self.__next__()
-
-    def __next__(self):
-        """
-        Implements the iterable interface, returning values unlike a standard
-        dictionary.
-        """
-        if self._next_ind < len(self.keys()):
-            val = list(self.values())[self._next_ind]
-            self._next_ind += 1
-            return val
-        else:
-            self._next_ind = 0
-            raise StopIteration
-
+        return iter(self.values())
 
     def __contains__(self, key):
         if self.ndims == 1:
