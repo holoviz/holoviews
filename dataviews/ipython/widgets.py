@@ -14,10 +14,11 @@ except:
 from IPython.display import display
 from IPython.core.pylabtools import print_figure
 try:
-    from IPython.html.widgets import interactive
     from IPython.html import widgets
+    from IPython.html.widgets import FloatSliderWidget
 except:
-    raise SkipTest("IPython widgets require IPython >= 2.0")
+    widgets = None
+    FloatSliderWidget = object
 ipython2 = (IPython.version_info[0] == 2)
 
 import param
@@ -120,7 +121,7 @@ class RunProgress(ProgressBar):
 
 
 
-class FixedValueSliderWidget(widgets.FloatSliderWidget):
+class FixedValueSliderWidget(FloatSliderWidget):
     """
     Subclass of FloatSliderWidget that jumps discretely
     between a set of supplied values.
@@ -178,6 +179,9 @@ class ViewSelector(param.Parameterized):
 
     def __init__(self, view, **params):
         super(ViewSelector, self).__init__(**params)
+
+        if widgets is None:
+            raise ImportError('ViewSelector requires IPython >= 2.0.')
 
         self._process_view(view)
         self._initialize_widgets()
@@ -260,7 +264,7 @@ class ViewSelector(param.Parameterized):
         self.image_widget.set_css(self.css)
 
         # Initialize interactive widgets
-        interactive_widget = interactive(self.update_widgets, **self.pwidgets)
+        interactive_widget = widgets.interactive(self.update_widgets, **self.pwidgets)
         interactive_widget.set_css(self.css)
 
         # Display widgets
