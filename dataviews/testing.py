@@ -12,6 +12,7 @@ from .views import Layout, GridLayout
 from .options import StyleOpts, PlotOpts, ChannelOpts
 
 from IPython.display import HTML, SVG
+import numpy as np
 
 class ViewTestCase(unittest.TestCase):
     """
@@ -50,10 +51,18 @@ class ViewTestCase(unittest.TestCase):
         # Dimension objects
         self.addTypeEqualityFunc(Dimension, self.compare_dims)
 
+        # Float comparisons
+        self.addTypeEqualityFunc(float, self.compare_floats)
+        self.addTypeEqualityFunc(np.float, self.compare_floats)
+        self.addTypeEqualityFunc(np.float32, self.compare_floats)
+        self.addTypeEqualityFunc(np.float64, self.compare_floats)
 
     #================#
     # Helper methods #
     #================#
+
+    def compare_floats(self, arr1, arr2, msg='Float'):
+        self.compare_arrays(arr1, arr2, msg)
 
     def compare_arrays(self, arr1, arr2, name):
         try:
@@ -111,7 +120,7 @@ class ViewTestCase(unittest.TestCase):
             if el1[0] != el2[0]:
                 raise self.failureException("Mismatched annotation types.")
             if el1[0] in ['vline', 'hline']:
-                self.compare_arrays(el1[1], el2[1], 'V/H line position')
+                self.compare_floats(el1[1], el2[1], 'V/H line position')
                 if (el1[2], el2[2]) == (None,None):
                     continue
                 elif None in (el1[2], el2[2]):
@@ -125,11 +134,11 @@ class ViewTestCase(unittest.TestCase):
                     if None in [i1s, i2s]:
                         self.assertEqual(i1s, i2s)
                     else:
-                        self.compare_arrays(i1s, i2s, 'Interval start')
+                        self.compare_floats(i1s, i2s, 'Interval start')
                     if None in [i1e, i2e]:
                         self.assertEqual(i1e, i2e)
                     else:
-                        self.compare_arrays(i1e, i2e, 'Interval end')
+                        self.compare_floats(i1e, i2e, 'Interval end')
             else:
                 raise NotImplementedError
 
