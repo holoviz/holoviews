@@ -111,7 +111,7 @@ class ViewTestCase(unittest.TestCase):
             if el1[0] != el2[0]:
                 raise self.failureException("Mismatched annotation types.")
             if el1[0] in ['vline', 'hline']:
-                self.compare_arrays(el1[1], el2[1])
+                self.compare_arrays(el1[1], el2[1], 'V/H line position')
                 if (el1[2], el2[2]) == (None,None):
                     continue
                 elif None in (el1[2], el2[2]):
@@ -125,11 +125,11 @@ class ViewTestCase(unittest.TestCase):
                     if None in [i1s, i2s]:
                         self.assertEqual(i1s, i2s)
                     else:
-                        self.compare_arrays(i1s, i2s)
+                        self.compare_arrays(i1s, i2s, 'Interval start')
                     if None in [i1e, i2e]:
                         self.assertEqual(i1e, i2e)
                     else:
-                        self.compare_arrays(i1e, i2e)
+                        self.compare_arrays(i1e, i2e, 'Interval end')
             else:
                 raise NotImplementedError
 
