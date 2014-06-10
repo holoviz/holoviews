@@ -31,40 +31,45 @@ class AnnotationTest(unittest.TestCase):
         self.constructor = dict(boxes=[BoundingBox(), ((-0.25,-0.25),(0.25, 0.25))],
                                 vlines = [-0.1, 0.2], hlines = [0.2, -0.1],
                                 arrows = [((0.2,0.2),{'text':'arrow','points':20})])
-        self.data =  set([
-                    ('line', ((0.5, -0.5), (0.5, 0.5), (-0.5, 0.5),
-                              (-0.5, -0.5), (0.5, -0.5)), None),
-                    ('line', ((0.25, -0.25), (0.25, 0.25), (-0.25, 0.25),
-                              (-0.25, -0.25), (0.25, -0.25)), None),
-                    ('vline', -0.1, None), ('vline', 0.2, None),
-                    ('hline', 0.2, None), ('hline', -0.1, None),
-                    ('<', 'arrow', (0.2, 0.2), 20, '->', None)])
+        self.data =  [
+            ('line', ((0.5, -0.5), (0.5, 0.5), (-0.5, 0.5),
+                      (-0.5, -0.5), (0.5, -0.5)), None),
+            ('line', ((0.25, -0.25), (0.25, 0.25), (-0.25, 0.25),
+                      (-0.25, -0.25), (0.25, -0.25)), None),
+            ('vline', -0.1, None), ('vline', 0.2, None),
+            ('hline', 0.2, None), ('hline', -0.1, None),
+            ('<', 'arrow', (0.2, 0.2), 20, '->', None)]
 
     def test_annotation_init(self):
         annotation = Annotation(**self.constructor)
-        self.assertEqual(set(annotation.data), self.data)
+        self.assertEqual(annotation.data, self.data)
 
 
     def test_annotation_add_box(self):
         annotation = Annotation(**self.constructor)
         annotation.box(BoundingBox(radius=0.75))
-        data = self.data | set([('line', ((0.75, -0.75), (0.75, 0.75),
-                                          (-0.75, 0.75), (-0.75, -0.75),
-                                          (0.75, -0.75)), None)])
-        self.assertEqual(set(annotation.data), data)
+        data = self.data[:]
+        data.append(('line', ((0.75, -0.75), (0.75, 0.75),
+                              (-0.75, 0.75), (-0.75, -0.75),
+                              (0.75, -0.75)), None))
+        self.assertEqual(annotation.data, data)
 
     def test_annotation_add_vline(self):
         annotation = Annotation(**self.constructor)
         annotation.vline(0.99)
-        self.assertEqual(set(annotation.data),
-                         self.data | set([('vline', 0.99, None)]))
+        data = self.data[:]
+        data.append(('vline', 0.99, None))
+        self.assertEqual(annotation.data, data)
 
 
     def test_annotation_add_hline_interval(self):
         annotation = Annotation(**self.constructor)
         annotation.hline(-0.8, {'Time':(10,20)})
-        self.assertEqual(set(annotation.data),
-                         self.data | set([('hline', -0.8, (('Time', (10, 20)),))]))
+        data = self.data[:]
+        data.append(('hline', -0.8, {'Time':(10, 20)}))
+        self.assertEqual(annotation.data, data)
+
+
 
 
 

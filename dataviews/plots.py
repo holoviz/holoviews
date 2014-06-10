@@ -389,7 +389,7 @@ class AnnotationPlot(Plot):
                 interval = spec[-1]
                 if interval is None or dim_labels == ['Default']:
                     continue
-                mismatches = set(dict(interval).keys()) - set(dim_labels)
+                mismatches = set(interval.keys()) - set(dim_labels)
                 mismatch_set = mismatch_set | mismatches
 
         if mismatch_set:
@@ -408,7 +408,7 @@ class AnnotationPlot(Plot):
 
         key = key if isinstance(key, tuple) else (key,)
         key_dict = dict(zip(dim_labels, key))
-        for key, (start, end) in dict(interval).items():
+        for key, (start, end) in interval.items():
             if (start is not None) and key_dict.get(key, -float('inf')) <= start:
                 return False
             if (end is not None) and key_dict.get(key, float('inf')) > end:

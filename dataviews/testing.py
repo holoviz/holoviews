@@ -103,8 +103,36 @@ class ViewTestCase(unittest.TestCase):
             self.assertEqual(el1, el2)
 
     def compare_annotations(self, view1, view2, msg):
-        if set(view1.data) != set(view2.data):
-            raise self.failureException("Annotations contain different sets of annotations.")
+        """
+        Note: Currently only process vline and hline correctly
+        """
+
+        for el1, el2 in zip(view1.data, view2.data):
+            if el1[0] != el2[0]:
+                raise self.failureException("Mismatched annotation types.")
+            if el1[0] in ['vline', 'hline']:
+                self.compare_arrays(el1[1], el2[1])
+                if (el1[2], el2[2]) == (None,None):
+                    continue
+                elif None in (el1[2], el2[2]):
+                    raise self.failureException("Mismatched interval annotation types.")
+                elif set(el1[2].keys()) != set(el2[2].keys()):
+                    raise self.failureException("Mismatched interval annotation keys.")
+
+                for key in el1[2].keys():
+                    (i1s, i1e) = el1[2][key]
+                    (i2s, i2e) = el2[2][key]
+                    if None in [i1s, i2s]:
+                        self.assertEqual(i1s, i2s)
+                    else:
+                        self.compare_arrays(i1s, i2s)
+                    if None in [i1e, i2e]:
+                        self.assertEqual(i1e, i2e)
+                    else:
+                        self.compare_arrays(i1e, i2e)
+            else:
+                raise NotImplementedError
+
 
     #============#
     # DataLayers #
