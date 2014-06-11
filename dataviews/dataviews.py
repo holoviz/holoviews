@@ -560,10 +560,10 @@ class TableStack(Stack):
         for new_key, collate_stack in nested_stack.items():
             curve_data = OrderedDict([(k, []) for k in entry_dims.keys()])
             # Get the x- and y-values for each entry in the Table
-            xvalues = [k for k in collate_stack.keys()]
+            xvalues = [float(k) for k in collate_stack.keys()]
             for x, table in collate_stack.items():
                 for label, value in table.data.items():
-                    curve_data[str(label)].append(value)
+                    curve_data[str(label)].append(float(value))
 
             # Get data from table
             table = collate_stack.last
@@ -581,7 +581,7 @@ class TableStack(Stack):
                                       enumerate(table_dimensions)]) + table_title
                     settings.update(value=table.value, label=table_label, title=title)
                 else:
-                    settings.update(value=entry_dims[label], label=table_label,
+                    settings.update(value=label, label=table_label,
                                     title='{label} - {value}')
                 stacks[str(label)][new_key] = Curve(zip(xvalues, yvalues), **settings)
 
