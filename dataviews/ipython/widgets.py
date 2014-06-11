@@ -31,6 +31,7 @@ import param
 from .. import GridLayout, NdMapping, Stack
 from ..options import options
 from ..views import Layout, Overlay, View
+from ..sheetviews import CoordinateGrid
 from ..plots import GridLayoutPlot, Plot
 from .magics import ViewMagic
 
@@ -217,39 +218,33 @@ class ViewSelector(param.Parameterized):
         Determine the dimensions and keys to be turned into widgets and
         initialize the plots.
         """
-        if isinstance(view, (GridLayout, Layout)):
-            view = GridLayout([view]) if isinstance(view, Layout) else view
-            shape = view.shape
-            grid_size = (shape[1]*get_plot_size()[1],
-                         shape[0]*get_plot_size()[0])
-            self.plot = GridLayoutPlot(view, **dict(size=grid_size))
+        if not isinstance(view, GridLayout):
+            view = GridLayout([view])
 
-            keys_list = []
-            for v in view:
-                if isinstance(v, Layout): v = v.main
-                if isinstance(v, Overlay): v = v[0]
-                if isinstance(v, View):
-                    v = v.stack_type([((0,), v)], dimensions=['Frame'])
-                keys_list.append(list(v._data.keys()))
+        shape = view.shape
+        grid_size = (shape[1]*get_plot_size()[1],
+                     shape[0]*get_plot_size()[0])
+        self.plot = GridLayoutPlot(view, **dict(size=grid_size))
 
-            # Check if all elements in the Grid have common dimensions
-            if all(x == keys_list[0] for x in keys_list):
-                self._keys = keys_list[0]
-                element = view[0, 0]
-                if isinstance(element, Layout):
-                    self.dimensions = element.main.dimensions
-                else:
-                    self.dimensions = element.dimensions
-            else:
-                self._keys = [(k,) for k in range(len(view))]
-                self.dimensions = ['Frame']
-        elif isinstance(view, (View, Stack)):
-            if isinstance(view, View):
-                view = view.stack_type([((0,), view)], dimensions=['Frame'])
-            opts = dict(options.plotting(view).opts, size=get_plot_size())
-            self.plot = Plot.defaults[view.type](view, **opts)
-            self._keys = view._data.keys()
-            self.dimensions = view.dimensions
+        keys_list = []
+        dimensions = []
+        for i, v in enumerate(view):
+            if isinstance(v, CoordinateGrid): v = v.values()[0]
+            if isinstance(v, Layout): v = v.main
+            if isinstance(v, Overlay): v = v[0]
+            if isinstance(v, View):
+                v = v.stack_type([((0,), v)], dimensions=['Frame'])
+
+            keys_list.append(list(v._data.keys()))
+            if i == 0: dimensions = v.dimensions
+
+        # Check if all elements in the Grid have common dimensions
+        if all(x == keys_list[0] for x in keys_list):
+            self._keys = keys_list[0]
+            self.dimensions = dimensions
+        else:
+            self._keys = [(k,) for k in range(len(view))]
+            self.dimensions = ['Frame']
 
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, 0) for k in self._keys],

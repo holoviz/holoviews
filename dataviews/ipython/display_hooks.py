@@ -173,6 +173,8 @@ def layout_display(grid, size=256):
 @display_hook
 def projection_display(grid, size=256):
     if not isinstance(grid, CoordinateGrid): return None
+    if ViewMagic.VIDEO_FORMAT == 'slider':
+        return ViewSelector(grid)()
     size_factor = 0.17
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
