@@ -19,15 +19,20 @@ try:
 except:
     widgets = None
     FloatSliderWidget = object
+
+try:
+    import mpld3
+except:
+    mpld3 = None
 ipython2 = (IPython.version_info[0] == 2)
 
 import param
 
 from .. import GridLayout, NdMapping, Stack
 from ..options import options
-from ..views import Layout
+from ..views import Layout, Overlay, View
 from ..plots import GridLayoutPlot, Plot
-from .display_hooks import get_plot_size
+from .magics import ViewMagic
 
 
 class ProgressBar(param.Parameterized):
@@ -161,6 +166,12 @@ def isnumeric(val):
         return False
 
 
+def get_plot_size():
+    factor = ViewMagic.PERCENTAGE_SIZE / 100.0
+    return (Plot.size[0] * factor,
+            Plot.size[1] * factor)
+
+
 class ViewSelector(param.Parameterized):
     """
     Interactive widget to select and view View objects contained
@@ -188,8 +199,17 @@ class ViewSelector(param.Parameterized):
         self.refresh = True
 
         if self.cached:
-            self.frames = OrderedDict((k, print_figure(self.plot[idx]))
+            self.frames = OrderedDict((k, self._plot_figure(idx))
                                       for idx, k in enumerate(self._keys))
+
+    def _plot_figure(self, idx):
+        if ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3:
+            fig = self.plot[idx]
+            from mpld3 import plugins
+            plugins.connect(fig, plugins.MousePosition(fontsize=14))
+            return mpld3.fig_to_html(fig)
+        else:
+            return print_figure(self.plot[idx], ViewMagic.FIGURE_FORMAT)
 
 
     def _process_view(self, view):
@@ -207,6 +227,9 @@ class ViewSelector(param.Parameterized):
             keys_list = []
             for v in view:
                 if isinstance(v, Layout): v = v.main
+                if isinstance(v, Overlay): v = v[0]
+                if isinstance(v, View):
+                    v = v.stack_type([((0,), v)], dimensions=['Frame'])
                 keys_list.append(list(v._data.keys()))
 
             # Check if all elements in the Grid have common dimensions
@@ -220,7 +243,9 @@ class ViewSelector(param.Parameterized):
             else:
                 self._keys = [(k,) for k in range(len(view))]
                 self.dimensions = ['Frame']
-        elif isinstance(view, Stack):
+        elif isinstance(view, (View, Stack)):
+            if isinstance(view, View):
+                view = view.stack_type([((0,), view)], dimensions=['Frame'])
             opts = dict(options.plotting(view).opts, size=get_plot_size())
             self.plot = Plot.defaults[view.type](view, **opts)
             self._keys = view._data.keys()
@@ -256,11 +281,15 @@ class ViewSelector(param.Parameterized):
 
     def __call__(self):
         # Initalize image widget
-        self.image_widget = widgets.ImageWidget()
+        if (ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3) or ViewMagic.FIGURE_FORMAT == 'svg':
+            self.image_widget = widgets.HTMLWidget()
+        else:
+            self.image_widget = widgets.ImageWidget()
+
         if self.cached:
             self.image_widget.value = list(self.frames.values())[0]
         else:
-            self.image_widget.value = print_figure(self.plot[self._keys[0]])
+            self.image_widget.value = self._plot_figure(0)
         self.image_widget.set_css(self.css)
 
         # Initialize interactive widgets
@@ -270,6 +299,7 @@ class ViewSelector(param.Parameterized):
         # Display widgets
         display(interactive_widget)
         display(self.image_widget)
+        return '' # Suppresses outputting View repr when called through hook
 
 
     def _get_dim_vals(self, indices, idx):
@@ -323,5 +353,4 @@ class ViewSelector(param.Parameterized):
         if self.cached:
             self.image_widget.value = self.frames[checked]
         else:
-            figure = print_figure(self.plot[self._keys.index(checked)])
-            self.image_widget.value = figure
+            self.image_widget.value = self._plot_figure(self._keys.index(checked))

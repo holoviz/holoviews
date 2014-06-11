@@ -11,6 +11,10 @@ from tempfile import NamedTemporaryFile
 from functools import wraps
 import sys, traceback, base64
 
+try:
+    import mpld3
+except:
+    mpld3 = None
 
 from ..dataviews import Stack, View
 from ..views import Annotation, Layout
@@ -20,6 +24,7 @@ from ..plots import Plot, GridLayoutPlot
 
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
+from .widgets import ViewSelector
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
 
@@ -82,13 +87,16 @@ def figure_display(fig, size=None, message=None):
         inches = size / float(fig.dpi)
         fig.set_size_inches(inches, inches)
 
-    mime_type = 'svg+xml' if ViewMagic.FIGURE_FORMAT.lower()=='svg' else 'png'
-    prefix = 'data:image/%s;base64,' % mime_type
-    b64 = prefix + base64.b64encode(print_figure(fig, ViewMagic.FIGURE_FORMAT)).decode("utf-8")
-    if size is not None:
-        html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
+    if ViewMagic.FIGURE_FORMAT.lower() == 'mpld3' and mpld3:
+        html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        html = "<center><img src='%s' /><center/>" % b64
+        mime_type = 'svg+xml' if ViewMagic.FIGURE_FORMAT.lower()=='svg' else 'png'
+        prefix = 'data:image/%s;base64,' % mime_type
+        b64 = prefix + base64.b64encode(print_figure(fig, ViewMagic.FIGURE_FORMAT)).decode("utf-8")
+        if size is not None:
+            html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
+        else:
+            html = "<center><img src='%s' /><center/>" % b64
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
@@ -129,6 +137,8 @@ def animation_display(anim):
 @display_hook
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
+    if ViewMagic.VIDEO_FORMAT == 'slider':
+        return ViewSelector(stack)()
     magic_info = process_view_magics(stack)
     if magic_info: return magic_info
     opts = dict(View.options.plotting(stack).opts, size=get_plot_size())
@@ -144,6 +154,8 @@ def stack_display(stack, size=256):
 @display_hook
 def layout_display(grid, size=256):
     if not isinstance(grid, (GridLayout, Layout)): return None
+    if ViewMagic.VIDEO_FORMAT == 'slider':
+        return ViewSelector(grid)()
     shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info

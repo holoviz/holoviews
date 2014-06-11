@@ -68,7 +68,8 @@ class ViewMagic(Magics):
     Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
     """
 
-    anim_formats = ['webm','h264','gif']
+    anim_formats = ['webm','h264','gif','slider']
+    fig_formats = ['svg', 'png', 'mpld3']
 
     PERCENTAGE_SIZE = 100
     FPS = 20
@@ -78,12 +79,12 @@ class ViewMagic(Magics):
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.usage_info = "Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]"
+        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|slider] [<percent size>]"
         self.usage_info += " (Arguments may be in any order)"
 
     @classmethod
     def option_completer(cls, k,v):
-        return cls.anim_formats + ['png', 'svg']
+        return cls.anim_formats + cls.fig_formats
 
     def _set_animation_options(self, anim_spec):
         """
@@ -123,13 +124,21 @@ class ViewMagic(Magics):
 
 
     def _parse_settings(self, opts):
-        fig_fmt = [('svg' in opts), ('png' in opts)]
+        fig_fmt = [f in opts for f in self.fig_formats]
         if all(fig_fmt):
             success = False
-            print("Please select either png or svg for static output")
+            print("Please select either png, svg or mpld3 for static output")
         elif True in fig_fmt:
-            figure_format = ['svg', 'png'][fig_fmt.index(True)]
-            ViewMagic.FIGURE_FORMAT= figure_format
+            figure_format = self.fig_formats[fig_fmt.index(True)]
+            if figure_format == 'mpld3':
+                try:
+                    import mpld3
+                except:
+                    print("mpld3 could not be imported, falling back to "
+                          "previous display backend.")
+                    figure_format = ViewMagic.FIGURE_FORMAT
+                print("Warning: mpld3 backend is still in development.")
+            ViewMagic.FIGURE_FORMAT = figure_format
             opts.remove(figure_format)
         elif len(opts) == 0: success = True
 
