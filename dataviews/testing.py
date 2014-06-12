@@ -111,34 +111,48 @@ class ViewTestCase(unittest.TestCase):
         for el1, el2 in zip(view1, view1):
             self.assertEqual(el1, el2)
 
+
+    def compare_intervals(self, interval1, interval2):
+        if (interval1, interval2) == (None,None):
+            return
+        elif None in (interval1, interval2):
+            raise self.failureException("Mismatched interval annotation types.")
+        elif set(interval1.keys()) != set(interval2.keys()):
+            raise self.failureException("Mismatched interval annotation keys.")
+
+        for key in interval1.keys():
+            (i1s, i1e) = interval1[key]
+            (i2s, i2e) = interval2[key]
+            if None in [i1s, i2s]:
+                self.assertEqual(i1s, i2s)
+            else:
+                self.compare_floats(i1s, i2s, 'Interval start')
+            if None in [i1e, i2e]:
+                self.assertEqual(i1e, i2e)
+            else:
+                self.compare_floats(i1e, i2e, 'Interval end')
+
+
     def compare_annotations(self, view1, view2, msg):
         """
         Note: Currently only process vline and hline correctly
         """
-
         for el1, el2 in zip(view1.data, view2.data):
             if el1[0] != el2[0]:
                 raise self.failureException("Mismatched annotation types.")
             if el1[0] in ['vline', 'hline']:
                 self.compare_floats(el1[1], el2[1], 'V/H line position')
-                if (el1[2], el2[2]) == (None,None):
-                    continue
-                elif None in (el1[2], el2[2]):
-                    raise self.failureException("Mismatched interval annotation types.")
-                elif set(el1[2].keys()) != set(el2[2].keys()):
-                    raise self.failureException("Mismatched interval annotation keys.")
+                self.compare_intervals(el1[1], el2[1])
+            elif el1[0] in ['<', '^', '>', 'v']:
+                (text1, xy1, points1, arrowstyle1, interval1) = el1[1:]
+                (text2, xy2, points2, arrowstyle2, interval2) = el2[1:]
 
-                for key in el1[2].keys():
-                    (i1s, i1e) = el1[2][key]
-                    (i2s, i2e) = el2[2][key]
-                    if None in [i1s, i2s]:
-                        self.assertEqual(i1s, i2s)
-                    else:
-                        self.compare_floats(i1s, i2s, 'Interval start')
-                    if None in [i1e, i2e]:
-                        self.assertEqual(i1e, i2e)
-                    else:
-                        self.compare_floats(i1e, i2e, 'Interval end')
+                self.assertEqual(text1, text2, 'Mismatched text in annotation.')
+                self.compare_floats(xy1[0], xy2[0], 'Mismatched annotation x position.')
+                self.compare_floats(xy1[1], xy2[1], 'Mismatched annotation y position.')
+                self.compare_floats(points1, points2,'Mismatched text in annotation.')
+                self.assertEqual(arrowstyle1, arrowstyle2, 'Mismatched annotation arrow styles.')
+                self.compare_intervals(interval1, interval2)
             else:
                 raise NotImplementedError
 
