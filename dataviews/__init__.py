@@ -6,7 +6,8 @@ sys.path.insert(0, os.path.join(cwd, '..', 'param'))
 
 import param
 
-__version__ = param.Version(release=(0,7), fpath=__file__, reponame='dataviews')
+__version__ = param.Version(release=(0,7), fpath=__file__,
+                            commit="$Format:%h$", reponame='dataviews')
 
 from .views import * # pyflakes:ignore (API import)
 from .dataviews import * # pyflakes:ignore (API import)
