@@ -550,7 +550,11 @@ class TableStack(Stack):
         entries in the Table it will lay them out into a Grid.
         """
         nested_stack = self.split_dimensions([collate_dim])
-        new_dimensions = [d for d in self.dimensions if d.name != collate_dim]
+        if self.ndims == 1:
+            nested_stack = {1: nested_stack}
+            new_dimensions = ['Temp']
+        else:
+            new_dimensions = [d for d in self.dimensions if d.name != collate_dim]
         collate_dim = self.dim_dict[collate_dim]
 
         # Generate a DataStack for every entry in the table
@@ -587,6 +591,7 @@ class TableStack(Stack):
 
         # If there are multiple table entries, generate grid
         stack_data = list(stacks.values())
+        if self.ndims == 1: stack_data = [stack.last for stack in stack_data]
         stack_grid = stack_data[0]
         for stack in stack_data[1:]:
             stack_grid += stack
