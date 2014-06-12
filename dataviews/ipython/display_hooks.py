@@ -95,6 +95,7 @@ def figure_display(fig, size=None, message=None):
         fig.set_size_inches(inches, inches)
 
     if ViewMagic.FIGURE_FORMAT.lower() == 'mpld3' and mpld3:
+        mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
         mime_type = 'svg+xml' if ViewMagic.FIGURE_FORMAT.lower()=='svg' else 'png'
