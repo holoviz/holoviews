@@ -28,8 +28,7 @@ ipython2 = (IPython.version_info[0] == 2)
 
 import param
 
-from .. import GridLayout, NdMapping, Stack
-from ..options import options
+from .. import GridLayout, NdMapping
 from ..views import Layout, Overlay, View
 from ..sheetviews import CoordinateGrid
 from ..plots import GridLayoutPlot, Plot

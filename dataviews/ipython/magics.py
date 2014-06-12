@@ -132,7 +132,7 @@ class ViewMagic(Magics):
             figure_format = self.fig_formats[fig_fmt.index(True)]
             if figure_format == 'mpld3':
                 try:
-                    import mpld3
+                    import mpld3 # pyflakes:ignore (Testing optional import)
                 except:
                     print("mpld3 could not be imported, falling back to "
                           "previous display backend.")
