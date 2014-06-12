@@ -46,7 +46,7 @@ class View(param.Parameterized, Dimensional):
                                     for d in kwargs.pop('dimensions')]
         if 'value' in kwargs and not isinstance(kwargs['value'], Dimension):
             kwargs['value'] = Dimension(kwargs['value'])
-        if not 'label' in kwargs: kwargs['label'] = str(self.value)
+        if not 'label' in kwargs: kwargs['label'] = str(kwargs.get('value', ''))
         super(View, self).__init__(**kwargs)
 
 
