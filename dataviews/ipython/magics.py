@@ -39,7 +39,8 @@ ANIMATION_OPTS = {
             ['-pix_fmt', 'yuv420p'],
             VIDEO_TAG),
     'gif':('imagemagick', 'gif', {'fps':10}, [],
-           GIF_TAG)
+           GIF_TAG),
+    'scrubber':('html', None, {'fps':5}, None, None)
 }
 
 
@@ -68,7 +69,7 @@ class ViewMagic(Magics):
     Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
     """
 
-    anim_formats = ['webm','h264','gif','slider']
+    anim_formats = ['webm','h264','gif','slider','scrubber']
     fig_formats = ['svg', 'png', 'mpld3']
 
     PERCENTAGE_SIZE = 100
@@ -79,7 +80,7 @@ class ViewMagic(Magics):
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|slider] [<percent size>]"
+        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|slider|scrubber] [<percent size>]"
         self.usage_info += " (Arguments may be in any order)"
 
     @classmethod
@@ -106,8 +107,8 @@ class ViewMagic(Magics):
 
         global ANIMATION_OPTS
         ViewMagic.VIDEO_FORMAT, ViewMagic.FPS = format_choice, fps
-        if format_choice == 'gif':
-            ANIMATION_OPTS['gif'][2]['fps'] = fps
+        if format_choice in ['gif', 'scrubber']:
+            ANIMATION_OPTS[format_choice][2]['fps'] = fps
         return True
 
 

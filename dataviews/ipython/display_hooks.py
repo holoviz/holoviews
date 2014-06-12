@@ -16,6 +16,11 @@ try:
 except:
     mpld3 = None
 
+try:
+    from JSAnimation import IPython_display as jsdisplay
+except:
+    jsdisplay = None
+
 from ..dataviews import Stack, View
 from ..views import Annotation, Layout
 from ..sheetviews import GridLayout, CoordinateGrid
@@ -42,6 +47,10 @@ def get_plot_size():
 def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+
+    if writer == 'html':
+        anim_kwargs.pop('extra_args')
+        return jsdisplay.anim_to_html(anim, **anim_kwargs)
 
     if not hasattr(anim, '_encoded_video'):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
