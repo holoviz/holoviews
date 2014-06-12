@@ -24,7 +24,9 @@ try:
     import mpld3
 except:
     mpld3 = None
-ipython2 = (IPython.version_info[0] == 2)
+
+# IPython 0.13 does not have version_info
+ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
