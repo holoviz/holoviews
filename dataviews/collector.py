@@ -7,7 +7,8 @@ import numpy as np
 from collections import OrderedDict
 
 import param
-from .sheetviews import SheetView, CoordinateGrid
+from .sheetviews import CoordinateGrid
+from .sheetviews import SheetView  # pyflakes:ignore (Needed for doctests)
 from .views import GridLayout, Stack, View, NdMapping, Dimension
 
 from .ipython.widgets import RunProgress

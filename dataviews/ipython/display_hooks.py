@@ -28,8 +28,6 @@ from .widgets import ViewSelector
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
 
-import param
-
 #==================#
 # Helper functions #
 #==================#
