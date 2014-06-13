@@ -17,6 +17,10 @@ DataViews requires `Param <http://ioam.github.com/param/>`_,
 `Matplotlib <http://http://matplotlib.org/>`_ and is designed to work
 with `IPython Notebook <http://ipython.org/notebook/>`_.
 
+Please see the `DataViews website <http://ioam.github.com/dataviews/>`_ for
+official releases, installation instructions, documentation, and examples.
+
+
 Contributors
 ____________
 
