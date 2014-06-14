@@ -99,9 +99,10 @@ class AttrTree(object):
 
     def set_path(self, path, val):
         """
-        Set the given value at the supplied path.
+        Set the given value at the supplied path where path is either
+        a tuple of strings or a string in A.B.C format.
         """
-        path = tuple(path)
+        path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
         if not all(p[0].isupper() for p in path):
             raise Exception("All paths elements must be capitalized.")
 
