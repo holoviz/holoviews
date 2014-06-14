@@ -172,7 +172,26 @@ class AttrTree(object):
 
 
     def __repr__(self):
-        return "<AttrTree of %d items>" % len(self.children)
+        """
+        A useful summary of the contents of the AttrTree node that
+        works for any node in the tree. Note that this is not a repr
+        that can be evaluated.
+        """
+        path, node = [], self
+        while node.parent is not None:
+            path = [node.label] + path
+            node = node.parent
+
+        filtered = OrderedDict([(k,v) for (k,v) in node.path_items.items()
+                                if k[:len(path)]==tuple(path)])
+        path_strs = ['.'.join(p) for p in filtered]
+        max_chars = max(len(el) for el in path_strs)
+
+        lines = ["AttrTree with %d leaf nodes of type:\n" % len(filtered)]
+        for (path_str, val) in zip(path_strs, filtered.values()):
+            val_type = type(val).__name__
+            lines.append("   %s : %s" % (path_str.ljust(max_chars), val_type))
+        return "\n".join(lines)
 
 
     def __contains__(self, name):
