@@ -538,7 +538,7 @@ class NdMapping(NdIndexableMapping):
         selection = [slice(None) for i in range(self.ndims)]
         for dim, val in kwargs.items():
             selection[self.dim_index(dim)] = val
-        return self.__getitem__(selection)
+        return self.__getitem__(tuple(selection))
 
 
     def _transform_indices(self, indices):
