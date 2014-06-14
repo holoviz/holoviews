@@ -184,6 +184,9 @@ class AttrTree(object):
 
         filtered = OrderedDict([(k,v) for (k,v) in node.path_items.items()
                                 if k[:len(path)]==tuple(path)])
+        if len(filtered) == 0:
+            return "Dangling AttrTree node with no leaf items."
+
         path_strs = ['.'.join(p) for p in filtered]
         max_chars = max(len(el) for el in path_strs)
 
@@ -776,3 +779,4 @@ class Collector(AttrTree):
                 lines.append(merge_line % (i+1))
                 lines.append(value_line % ('', val))
         return '\n'.join(lines)
+
