@@ -549,11 +549,11 @@ class TableStack(Stack):
         in each of the split out Stacks into Curves. If there are multiple
         entries in the Table it will lay them out into a Grid.
         """
-        nested_stack = self.split_dimensions([collate_dim])
         if self.ndims == 1:
-            nested_stack = {1: nested_stack}
+            nested_stack = {1: self}
             new_dimensions = ['Temp']
         else:
+            nested_stack = self.split_dimensions([collate_dim])
             new_dimensions = [d for d in self.dimensions if d.name != collate_dim]
         collate_dim = self.dim_dict[collate_dim]
 
