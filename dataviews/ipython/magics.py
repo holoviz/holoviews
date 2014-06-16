@@ -40,7 +40,7 @@ ANIMATION_OPTS = {
             VIDEO_TAG),
     'gif':('imagemagick', 'gif', {'fps':10}, [],
            GIF_TAG),
-    'scrubber':('html', None, {'fps':5}, None, None)
+    'scrubber':('html', None, {'fps':5, 'default_mode':'once'}, None, None)
 }
 
 
