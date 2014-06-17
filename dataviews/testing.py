@@ -142,7 +142,7 @@ class ViewTestCase(unittest.TestCase):
                 raise self.failureException("Mismatched annotation types.")
             if el1[0] in ['vline', 'hline']:
                 self.compare_floats(el1[1], el2[1], 'V/H line position')
-                self.compare_intervals(el1[1], el2[1])
+                self.compare_intervals(el1[2], el2[2])
             elif el1[0] in ['<', '^', '>', 'v']:
                 (text1, xy1, points1, arrowstyle1, interval1) = el1[1:]
                 (text2, xy2, points2, arrowstyle2, interval2) = el2[1:]
