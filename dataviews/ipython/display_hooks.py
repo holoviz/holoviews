@@ -22,8 +22,8 @@ except:
     jsdisplay = None
 
 from ..dataviews import Stack, View
-from ..views import Annotation, Layout
-from ..sheetviews import GridLayout, CoordinateGrid
+from ..views import Annotation, Layout, GridLayout
+from ..sheetviews import CoordinateGrid
 from ..plots import Plot, GridLayoutPlot
 
 

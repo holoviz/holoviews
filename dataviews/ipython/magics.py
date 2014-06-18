@@ -12,7 +12,7 @@ except:
 
 from ..options import PlotOpts, StyleOpts, ChannelOpts
 from ..plots import Plot
-from ..views import Overlay, Layout,  GridLayout
+from ..views import Overlay, Layout, GridLayout
 from ..dataviews import Stack, View
 from ..sheetviews import SheetOverlay
 
