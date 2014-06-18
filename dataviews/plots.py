@@ -507,8 +507,10 @@ class PointPlot(Plot):
         title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
-        scatterplot = ax.scatter(points.data[:, 0], points.data[:, 1],
-                                 zorder=self.zorder,
+        xs = points.data[:, 0] if len(points.data) else []
+        ys = points.data[:, 1] if len(points.data) else []
+
+        scatterplot = ax.scatter(xs, ys, zorder=self.zorder,
                                  **View.options.style(points)[cyclic_index])
         ax.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
