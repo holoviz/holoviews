@@ -1551,9 +1551,9 @@ class GridPlot(Plot):
         xticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
         yticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
         grid_axis.set_xticks(xticks)
-        grid_axis.set_xticklabels(sorted(set(dim1_keys)))
+        grid_axis.set_xticklabels([round(k, 3) for k in sorted(set(dim1_keys))])
         grid_axis.set_yticks(yticks)
-        grid_axis.set_yticklabels(sorted(set(dim2_keys)))
+        grid_axis.set_yticklabels([round(k, 3) for k in sorted(set(dim2_keys))])
 
         self.handles['grid_axis'] = grid_axis
 
