@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 import param
 
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
-    Table, TableStack, Scatter
+    Table, TableStack, Scatter, Grid
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import NdMapping, Stack, GridLayout, Layout, Overlay, View, Annotation
@@ -1449,27 +1449,30 @@ class ScatterPlot(CurvePlot):
 
 
 
-class DataGridPlot(Plot):
+class GridPlot(Plot):
     """
     Plot a group of views in a grid layout based on a DataGrid view
     object.
     """
 
+    grid_axis = param.Boolean(default=True, doc="""
+        Whether to show a global axis for the entire grid.""")
+
     joint_axes = param.Boolean(default=True, doc="""
-     Share axes between all elements in the DataGrid.""")
+        Share axes between all elements in the Grid.""")
 
     show_legend = param.Boolean(default=False, doc="""
-      Legends add to much clutter in a grid and are disabled by default.""")
+        Legends add to much clutter in a grid and are disabled by default.""")
 
     show_title = param.Boolean(default=False)
 
     style_opts = param.List(default=[], constant=True, doc="""
-     DataGridPlot renders groups of DataLayers which individually have
-     style options but DataGridPlot itself does not.""")
+        GridPlot renders groups of DataLayers which individually have
+        style options but GridPlot itself does not.""")
 
     def __init__(self, grid, **kwargs):
-        if not isinstance(grid, DataGrid):
-            raise Exception("DataGridPlot only accepts DataGrids.")
+        if not isinstance(grid, Grid):
+            raise Exception("GridPlot only accepts DataGrids.")
 
         self.grid = grid
         self.subplots = []
@@ -1477,7 +1480,7 @@ class DataGridPlot(Plot):
         self.rows, self.cols = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         extra_opts = View.options.plotting(self.grid).opts
-        super(DataGridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
+        super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                            show_frame=False,
                                            **dict(kwargs, **extra_opts))
 
@@ -1503,21 +1506,63 @@ class DataGridPlot(Plot):
                                          show_xaxis=self.show_xaxis,
                                          show_yaxis=self.show_yaxis,
                                          show_title=self.show_title)
-            self.subplots.append(subplot)
-            subplot(subax, lbrt=lbrt)
+                self.subplots.append(subplot)
+                subplot(subax, lbrt=lbrt)
             if c != self.cols-1:
                 c += 1
             else:
                 c = 0
                 r -= 1
 
+        if self.grid_axis: self._grid_axis()
+
         if not axis: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
+
+
+    def _format_title(self, n):
+        view = self.grid.values()[0]
+        if isinstance(view, Stack):
+            key = view.keys()[n]
+            key = key if isinstance(key, tuple) else (key,)
+            title_format = view.get_title(key, self.grid)
+            view = view.last
+        else:
+            title_format = self.grid.title
+        return title_format.format(label=view.label, value=str(view.value),
+                                   type=self.grid.__class__.__name__)
+
+
+    def _grid_axis(self):
+        fig = self.handles['fig']
+        grid_axis = fig.add_subplot(111)
+        grid_axis.patch.set_visible(False)
+
+        # Set labels and titles
+        grid_axis.set_xlabel(str(self.grid.dimensions[0]))
+        grid_axis.set_ylabel(str(self.grid.dimensions[1]))
+        grid_axis.set_title(self._format_title(0))
+
+        # Compute and set x- and y-ticks
+        keys = self.grid.keys()
+        dim1_keys, dim2_keys = zip(*keys)
+        plot_width = 1.0 / self.rows
+        plot_height = 1.0 / self.cols
+        xticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
+        yticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
+        grid_axis.set_xticks(xticks)
+        grid_axis.set_xticklabels(sorted(set(dim1_keys)))
+        grid_axis.set_yticks(yticks)
+        grid_axis.set_yticklabels(sorted(set(dim2_keys)))
+
+        self.handles['grid_axis'] = grid_axis
 
 
     def update_frame(self, n):
         for subplot in self.subplots:
             subplot.update_frame(n)
+        if self.grid_axis:
+            self.handles['grid_axis'].set_title(self._format_title(n))
 
 
     def __len__(self):
@@ -1928,7 +1973,8 @@ Plot.defaults.update({SheetView: SheetViewPlot,
                       Curve: CurvePlot,
                       Scatter: ScatterPlot,
                       DataOverlay: DataPlot,
-                      DataGrid: DataGridPlot,
+                      DataGrid: GridPlot,
+                      Grid: GridPlot,
                       Table: TablePlot,
                       Histogram: HistogramPlot,
                       Layout: GridLayoutPlot,

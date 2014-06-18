@@ -6,10 +6,11 @@ import param
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Table, Curve, Histogram, DataStack, TableStack, find_minmax
+from ..dataviews import Table, Curve, Histogram, DataStack, TableStack, \
+    Grid, find_minmax
 from ..ndmapping import NdMapping, Dimension
 from ..options import options, channels
-from ..views import View, Overlay, Annotation, GridLayout
+from ..views import View, Overlay, Annotation
 
 
 class SheetLayer(View):
@@ -663,22 +664,12 @@ class SheetStack(DataStack):
 
 
 
-class CoordinateGrid(NdMapping, SheetCoordinateSystem):
+class CoordinateGrid(Grid, SheetCoordinateSystem):
     """
     CoordinateGrid indexes other NdMapping objects, containing projections
     onto coordinate systems. The X and Y dimensions are mapped onto the bounds
     object, allowing for bounds checking and grid-snapping.
     """
-
-    dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")])
-
-    label = param.String(constant=True, doc="""
-      A short label used to indicate what kind of data is contained
-      within the CoordinateGrid.""")
-
-    title = param.String(default='{label}', doc="""
-       The title formatting string allows the title to be composed
-       from the label and type.""")
 
     def __init__(self, bounds, shape, xdensity=None, ydensity=None, initial_items=None, **kwargs):
         (l, b, r, t) = bounds.lbrt()
@@ -713,8 +704,6 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         """
         Subclassed to provide bounds checking.
         """
-        if not self.bounds.contains(*coords):
-            self.warning('Specified coordinate %s is outside grid bounds %s' % (coords, self.lbrt))
         self._item_check(coords, data)
         coords = self._transform_indices(coords)
         super(CoordinateGrid, self)._add_item(coords, data, sort=sort)
@@ -747,8 +736,10 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         Adds bounds checking to the default update behavior.
         """
         if hasattr(other, 'bounds') and (self.bounds.lbrt() != other.bounds.lbrt()):
-            raise Exception('Cannot combine %ss with different'
-                            ' bounds.' % self.__class__)
+            l1, b1, r1, t1 = self.bounds.lbrt()
+            l2, b2, r2, t2 = other.bounds.lbrt()
+            self.bounds = BoundingBox(points=((min(l1, l2), min(b1, b2)),
+                                              (max(r1, r2), max(t1, t2))))
         super(CoordinateGrid, self).update(other)
 
 
@@ -761,92 +752,8 @@ class CoordinateGrid(NdMapping, SheetCoordinateSystem):
         bounds = settings.pop('bounds') if 'bounds' in settings else self.bounds
         xdensity = settings.pop('xdensity') if 'xdensity' in settings else self.xdensity
         ydensity = settings.pop('ydensity') if 'ydensity' in settings else self.ydensity
-        return CoordinateGrid(bounds, None, initial_items=items, xdensity=xdensity,
+        return self.__class__(bounds, None, initial_items=items, xdensity=xdensity,
                               ydensity=ydensity, **settings)
-
-
-    def __mul__(self, other):
-
-        if isinstance(other, CoordinateGrid):
-            if set(self.keys()) != set(other.keys()):
-                raise KeyError("Can only overlay two CoordinateGrids if their keys match")
-            zipped = zip(self.keys(), self.values(), other.values())
-            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
-            return self.clone(overlayed_items)
-        elif isinstance(other, SheetStack) and len(other) == 1:
-            sheetview = other.last
-        elif isinstance(other, SheetStack) and len(other) != 1:
-            raise Exception("Can only overlay with SheetStack of length 1")
-        else:
-            sheetview = other
-
-        overlayed_items = [(k, el * sheetview) for k, el in self.items()]
-        return self.clone(overlayed_items)
-
-
-    @property
-    def last(self):
-        """
-        The last of a ProjectionGrid is another ProjectionGrid
-        constituted of the last of the individual elements. To access
-        the elements by their X,Y position, either index the position
-        directly or use the items() method.
-        """
-
-        last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
-                      for (k, v) in self.items()]
-        return self.clone(last_items)
-
-
-    def __len__(self):
-        """
-        The maximum depth of all the elements. Matches the semantics
-        of __len__ used by SheetStack. For the total number of
-        elements, count the full set of keys.
-        """
-        return max([len(v) for v in self.values()] + [0])
-
-
-    def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
-
-
-    @property
-    def xlim(self):
-        xlim = list(self.values())[-1].xlim
-        for data in self.values():
-            xlim = find_minmax(xlim, data.xlim)
-        return xlim
-
-
-    @property
-    def ylim(self):
-        ylim = list(self.values())[-1].ylim
-        for data in self.values():
-            ylim = find_minmax(ylim, data.ylim)
-        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
-        return ylim
-
-
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this view. If a style name is not set and but a label is
-        assigned, then the closest existing style name is returned.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        matches = options.fuzzy_match_keys(class_name)
-        return matches[0] if matches else class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
 
 
 
