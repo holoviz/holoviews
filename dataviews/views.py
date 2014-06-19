@@ -546,6 +546,25 @@ class Stack(NdMapping):
             return new_stack
 
 
+    def grid(self, dimensions):
+        """
+        Grid takes a list of one or two dimensions, and lays out the containing
+        Views along these axes in a Grid.
+        """
+        if len(dimensions) > 2:
+            raise ValueError('At most two dimensions can be laid out in a grid.')
+
+        if self.ndims == 1 and dimensions == self.dimension_labels:
+            split_stack = self
+        elif all(d in self.dimension_labels for d in dimensions):
+            split_dims = [d for d in self.dimension_labels if d not in dimensions]
+            split_stack = self.split_dimensions(split_dims)
+        else:
+            raise ValueError('Stack does not have supplied dimensions.')
+
+        return Grid(split_stack, dimensions=split_stack.dimensions)
+
+
     def map(self, map_fn, **kwargs):
         """
         Map a function across the stack.
