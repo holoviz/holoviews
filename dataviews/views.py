@@ -1006,7 +1006,7 @@ class Grid(NdMapping):
             return keys
         dim1_keys = sorted(set(k[0] for k in keys))
         dim2_keys = sorted(set(k[1] for k in keys))
-        return [(d1, d2) for d2 in dim2_keys for d1 in dim1_keys]
+        return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
 
 
     @property
