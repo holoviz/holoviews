@@ -559,6 +559,7 @@ class Stack(NdMapping):
         elif all(d in self.dimension_labels for d in dimensions):
             split_dims = [d for d in self.dimension_labels if d not in dimensions]
             split_stack = self.split_dimensions(split_dims)
+            split_stack = split_stack.reindex(dimensions)
         else:
             raise ValueError('Stack does not have supplied dimensions.')
 
