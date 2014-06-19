@@ -326,7 +326,7 @@ class ContourPlot(Plot):
         super(ContourPlot, self).__init__(zorder, **kwargs)
         self.aspect = 'equal'
 
-    def __call__(self, axis=None, cyclic_index=0):
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         lines = self._stack.last
         title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
@@ -503,7 +503,7 @@ class PointPlot(Plot):
         super(PointPlot, self).__init__(zorder, **kwargs)
 
 
-    def __call__(self, axis=None, cyclic_index=0):
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         points = self._stack.last
         title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
@@ -547,7 +547,7 @@ class SheetViewPlot(Plot):
         super(SheetViewPlot, self).__init__(zorder, **kwargs)
 
 
-    def __call__(self, axis=None, cyclic_index=0):
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         sheetview = self._stack.last
         (l, b, r, t) = self._stack.bounds.lbrt()
         title = None if self.zorder > 0 else self._format_title(-1)
@@ -670,7 +670,7 @@ class SheetPlot(OverlayPlot):
         super(SheetPlot, self).__init__(**kwargs)
 
 
-    def __call__(self, axis=None):
+    def __call__(self, axis=None, lbrt=None):
         ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
         stacks = self._stack.split_overlays()
 
