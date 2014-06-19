@@ -15,7 +15,7 @@ from param import ParamOverrides
 
 from .views import Overlay, GridLayout
 from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
-from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack, Grid
+from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack
 from .sheetviews import CoordinateGrid
 
 from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle

@@ -22,8 +22,7 @@ except:
     jsdisplay = None
 
 from ..dataviews import Stack, View
-from ..views import Annotation, Layout, GridLayout
-from ..sheetviews import CoordinateGrid
+from ..views import Annotation, Layout, GridLayout, Grid
 from ..plots import Plot, GridLayoutPlot
 
 
@@ -179,8 +178,8 @@ def layout_display(grid, size=256):
     return render(gridplot)
 
 @display_hook
-def projection_display(grid, size=256):
-    if not isinstance(grid, CoordinateGrid): return None
+def grid_display(grid, size=256):
+    if not isinstance(grid, Grid): return None
     if ViewMagic.VIDEO_FORMAT == 'slider':
         return ViewSelector(grid)()
     size_factor = 0.17
@@ -190,8 +189,8 @@ def projection_display(grid, size=256):
     if magic_info: return magic_info
     opts = dict(View.options.plotting(list(grid.values())[-1]).opts, size=grid_size)
     gridplot = Plot.defaults[grid.__class__](grid, **opts)
-    if len(gridplot)==1:
-        fig =  gridplot()
+    if len(gridplot) == 1:
+        fig = gridplot()
         return figure_display(fig)
 
     return render(gridplot)
@@ -215,4 +214,4 @@ def set_display_hooks(ip):
     html_formatter.for_type(Stack, stack_display)
     html_formatter.for_type(Layout, layout_display)
     html_formatter.for_type(GridLayout, layout_display)
-    html_formatter.for_type(CoordinateGrid, projection_display)
+    html_formatter.for_type(Grid, grid_display)

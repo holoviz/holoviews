@@ -5,6 +5,8 @@ systems.
 import math
 from collections import OrderedDict, defaultdict
 
+import numpy as np
+
 import param
 
 from .ndmapping import NdMapping, Dimensional, Dimension
@@ -915,6 +917,151 @@ class GridLayout(NdMapping):
                 item = (k, v)
             last_items.append(item)
         return self.clone(last_items)
+
+
+def find_minmax(lims, olims):
+    """
+    Takes (a1, a2) and (b1, b2) as input and returns
+    (np.min(a1, b1), np.max(a2, b2)). Used to calculate
+    min and max values of a number of items.
+    """
+
+    limzip = zip(list(lims), list(olims), [np.min, np.max])
+    return tuple([float(fn([l, ol])) for l, ol, fn in limzip])
+
+
+
+class Grid(NdMapping):
+    """
+    Grids are distinct from GridLayouts as they ensure all contained elements
+    to be of the same type. Unlike GridLayouts, which have integer keys,
+    Grids usually have floating point keys, which correspond to a grid
+    sampling in some two-dimensional space. This two-dimensional space may
+    have to arbitrary dimensions, e.g. for 2D parameter spaces. CoordinateGrid
+    is implemented specifically sampling in 2D spatial coordinates.
+    """
+
+    dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")])
+
+    label = param.String(constant=True, doc="""
+      A short label used to indicate what kind of data is contained
+      within the CoordinateGrid.""")
+
+    title = param.String(default='{label}', doc="""
+       The title formatting string allows the title to be composed
+       from the label and type.""")
+
+    def __init__(self, initial_items=None, **params):
+        super(Grid, self).__init__(initial_items, **params)
+        if self.ndims > 2:
+            raise Exception('Grids can have no more than two dimensions.')
+        self._style = None
+
+
+    def __mul__(self, other):
+        if isinstance(other, Grid):
+            if set(self.keys()) != set(other.keys()):
+                raise KeyError("Can only overlay two ParameterGrids if their keys match")
+            zipped = zip(self.keys(), self.values(), other.values())
+            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
+            return self.clone(overlayed_items)
+        elif isinstance(other, Stack) and len(other) == 1:
+            view = other.last
+        elif isinstance(other, Stack) and len(other) != 1:
+            raise Exception("Can only overlay with Stack of length 1")
+        else:
+            view = other
+
+        overlayed_items = [(k, el * view) for k, el in self.items()]
+        return self.clone(overlayed_items)
+
+
+    def keys(self):
+        """
+        Returns a complete set of keys on a Grid, even when Grid isn't fully
+        populated. This makes it easier to identify missing elements in the
+        Grid.
+        """
+        keys = super(Grid, self).keys()
+        if self.ndims == 1:
+            return keys
+        dim1_keys = sorted(set(k[0] for k in keys))
+        dim2_keys = sorted(set(k[1] for k in keys))
+        return [(d1, d2) for d2 in dim2_keys for d1 in dim1_keys]
+
+
+    @property
+    def last(self):
+        """
+        The last of a Grid is another Grid
+        constituted of the last of the individual elements. To access
+        the elements by their X,Y position, either index the position
+        directly or use the items() method.
+        """
+
+        last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
+                      for (k, v) in self.items()]
+        return self.clone(last_items)
+
+
+    def __len__(self):
+        """
+        The maximum depth of all the elements. Matches the semantics
+        of __len__ used by Stacks. For the total number of
+        elements, count the full set of keys.
+        """
+        return max([len(v) for v in self.values()] + [0])
+
+
+    def __add__(self, obj):
+        if not isinstance(obj, GridLayout):
+            return GridLayout(initial_items=[self, obj])
+
+
+    @property
+    def shape(self):
+        keys = super(Grid, self).keys()
+        if self.ndims == 1:
+            return (1, len(keys))
+        return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
+
+
+    @property
+    def xlim(self):
+        xlim = list(self.values())[-1].xlim
+        for data in self.values():
+            xlim = find_minmax(xlim, data.xlim)
+        return xlim
+
+
+    @property
+    def ylim(self):
+        ylim = list(self.values())[-1].ylim
+        for data in self.values():
+            ylim = find_minmax(ylim, data.ylim)
+        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
+        return ylim
+
+
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view. If a style name is not set and but a label is
+        assigned, then the closest existing style name is returned.
+        """
+        if self._style:
+            return self._style
+
+        class_name = self.__class__.__name__
+        matches = options.fuzzy_match_keys(class_name)
+        return matches[0] if matches else class_name
+
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
 
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v,type) and

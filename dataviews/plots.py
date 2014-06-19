@@ -15,10 +15,11 @@ import matplotlib.gridspec as gridspec
 import param
 
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
-    Table, TableStack, Scatter, Grid
+    Table, TableStack, Scatter
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
-from .views import NdMapping, Stack, GridLayout, Layout, Overlay, View, Annotation
+from .views import NdMapping, Stack, GridLayout, Layout, Overlay, View,\
+    Annotation, Grid
 
 
 class PlotSaver(param.ParameterizedFunction):
@@ -1476,13 +1477,16 @@ class GridPlot(Plot):
 
         self.grid = grid
         self.subplots = []
-        x, y = list(zip(*list(grid.keys())))
-        self.rows, self.cols = (len(set(x)), len(set(y)))
+        if grid.ndims == 1:
+            self.rows, self.cols = (1, len(grid.keys()))
+        else:
+            x, y = list(zip(*list(grid.keys())))
+            self.rows, self.cols = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         extra_opts = View.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
-                                           show_frame=False,
-                                           **dict(kwargs, **extra_opts))
+                                       show_frame=False,
+                                       **dict(kwargs, **extra_opts))
 
 
     def __call__(self, axis=None):
@@ -1500,7 +1504,7 @@ class GridPlot(Plot):
         for coord in self.grid.keys():
             view = self.grid.get(coord, None)
             if view is not None:
-                subax = plt.subplot(self._gridspec[c, r])
+                subax = plt.subplot(self._gridspec[r, c])
                 vtype = view.type if isinstance(view, DataStack) else view.__class__
                 subplot = Plot.defaults[vtype](view, show_legend=self.show_legend,
                                          show_xaxis=self.show_xaxis,
@@ -1540,16 +1544,21 @@ class GridPlot(Plot):
 
         # Set labels and titles
         grid_axis.set_xlabel(str(self.grid.dimensions[0]))
-        grid_axis.set_ylabel(str(self.grid.dimensions[1]))
         grid_axis.set_title(self._format_title(0))
 
         # Compute and set x- and y-ticks
         keys = self.grid.keys()
-        dim1_keys, dim2_keys = zip(*keys)
-        plot_width = 1.0 / self.rows
-        plot_height = 1.0 / self.cols
-        xticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
-        yticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
+        if self.grid.ndims == 1:
+            dim1_keys = keys
+            dim2_keys = [0]
+            grid_axis.get_yaxis().set_visible(False)
+        else:
+            dim1_keys, dim2_keys = zip(*keys)
+            grid_axis.set_ylabel(str(self.grid.dimensions[1]))
+        plot_width = 1.0 / self.cols
+        xticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
+        plot_height = 1.0 / self.rows
+        yticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
         grid_axis.set_xticks(xticks)
         grid_axis.set_xticklabels([round(k, 3) for k in sorted(set(dim1_keys))])
         grid_axis.set_yticks(yticks)

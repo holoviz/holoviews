@@ -6,11 +6,10 @@ import param
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Table, Curve, Histogram, DataStack, TableStack, \
-    Grid, find_minmax
+from ..dataviews import Table, Curve, Histogram, DataStack, TableStack
 from ..ndmapping import NdMapping, Dimension
 from ..options import options, channels
-from ..views import View, Overlay, Annotation
+from ..views import View, Overlay, Annotation, Grid, find_minmax
 
 
 class SheetLayer(View):
@@ -677,7 +676,6 @@ class CoordinateGrid(Grid, SheetCoordinateSystem):
             (dim1, dim2) = shape
             xdensity = dim1 / (r-l) if (r-l) else 1
             ydensity = dim2 / (t-b) if (t-b) else 1
-        self._style = None
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         super(CoordinateGrid, self).__init__(initial_items, **kwargs)
