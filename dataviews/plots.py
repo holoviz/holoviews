@@ -1481,7 +1481,7 @@ class GridPlot(Plot):
             self.rows, self.cols = (1, len(grid.keys()))
         else:
             x, y = list(zip(*list(grid.keys())))
-            self.rows, self.cols = (len(set(x)), len(set(y)))
+            self.cols, self.rows = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         extra_opts = View.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
@@ -1512,11 +1512,11 @@ class GridPlot(Plot):
                                          show_title=self.show_title)
                 self.subplots.append(subplot)
                 subplot(subax, lbrt=lbrt)
-            if c != self.cols-1:
-                c += 1
-            else:
-                c = 0
+            if r != 0:
                 r -= 1
+            else:
+                r = self.rows-1
+                c += 1
 
         if self.grid_axis: self._grid_axis()
 
