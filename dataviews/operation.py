@@ -46,15 +46,17 @@ class ViewOperation(param.ParameterizedFunction):
         The label to identify the output of the ViewOperation. By
         default this will match the name of the ViewOperation itself.""")
 
-    def _process(self, view):
+    def _process(self, view, key=None):
         """
         Process a single input view and output a list of views. When
         multiple views are returned as a list, they will be returned
         to the user as a GridLayout. If a Stack is passed into a
         ViewOperation, the individual layers are processed
-        sequentially.
+        sequentially and the dimension keys are passed along with
+        the View.
         """
         raise NotImplementedError
+
 
     def get_views(self, view, pattern, view_type=SheetView):
         """
@@ -125,7 +127,7 @@ class ViewOperation(param.ParameterizedFunction):
 
 
         elif isinstance(view, Stack):
-            mapped_items = [(k, self._process(el)) for k, el in view.items()]
+            mapped_items = [(k, self._process(el, key=view.key_items(k))) for k, el in view.items()]
             signature = self._get_signature(v for k,v in mapped_items)
 
             stack_types = [stack_mapping[tp] for tp in signature]
@@ -191,7 +193,7 @@ class chain(ViewOperation):
 
     chain = param.Callable(doc="""A chain of existing ViewOperations.""")
 
-    def _process(self, view):
+    def _process(self, view, key=None):
         return self.p.chain(view)
 
 
@@ -210,7 +212,7 @@ class operator(ViewOperation):
     label = param.String(default='Operation', doc="""
         The label for the result after having applied the operator.""")
 
-    def _process(self, overlay):
+    def _process(self, overlay, key=None):
 
         if not isinstance(overlay, Overlay):
             raise Exception("Operation requires an Overlay as input")
@@ -230,7 +232,7 @@ class RGBA(ViewOperation):
     label = param.String(default='RGBA', doc="""
         The label to use for the resulting RGBA SheetView.""")
 
-    def _process(self, overlay):
+    def _process(self, overlay, key=None):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
         if not all(isinstance(el, SheetView) for el in overlay.data):
@@ -263,7 +265,7 @@ class AlphaOverlay(ViewOperation):
         The label suffix to use for the alpha overlay result where the
         suffix is added to the label of the first layer.""")
 
-    def _process(self, overlay):
+    def _process(self, overlay, key=None):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
         return [SheetView(RGBA(R*G*B*overlay[1]).data, overlay.bounds,
                           label=self.p.label, value=overlay[0].value)]
@@ -292,7 +294,7 @@ class HCS(ViewOperation):
         The label suffix to use for the resulting HCS plot where the
         suffix is added to the label of the Hue channel.""")
 
-    def _process(self, overlay):
+    def _process(self, overlay, key=None):
         hue = overlay[0]
         confidence = overlay[1]
 
@@ -330,7 +332,7 @@ class Colorize(ViewOperation):
         The label suffix to use for the resulting colorized plot where
         the suffix is added to the label of the first layer.""")
 
-    def _process(self, overlay):
+    def _process(self, overlay, key=None):
 
          if len(overlay) != 2 and overlay[0].mode != 'cmap':
              raise Exception("Can only colorize grayscale overlayed with colour map.")
@@ -365,7 +367,7 @@ class cmap2rgb(ViewOperation):
         the suffix is added to the label of the SheetView to be
         colored.""")
 
-    def _process(self, sheetview):
+    def _process(self, sheetview, key=None):
         if sheetview.depth != 1:
             raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
 
@@ -388,7 +390,7 @@ class split(ViewOperation):
       The label suffix used to label the components of the split
       following the character selected from output_names.""")
 
-    def _process(self, sheetview):
+    def _process(self, sheetview, key=None):
         if sheetview.mode not in ['rgb', 'rgba']:
             raise Exception("Can only split SheetViews with a depth of 3 or 4")
         return [sheetview.clone(sheetview.data[:, :, i],
@@ -414,7 +416,7 @@ class contours(ViewOperation):
       The label suffix used to label the resulting contour curves
       where the suffix is added to the label of the  input SheetView""")
 
-    def _process(self, sheetview):
+    def _process(self, sheetview, key=None):
 
         figure_handle = plt.figure()
         (l, b, r, t) = sheetview.bounds.lbrt()

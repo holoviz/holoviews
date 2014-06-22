@@ -389,6 +389,14 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         return (dimkeys[0], dimkeys[-1])
 
 
+    def key_items(self, key):
+        """
+        Returns a dictionary of dimension and key values.
+        """
+        if not isinstance(key, (tuple, list)): key = (key,)
+        return dict(zip(self.dimension_labels, key))
+
+
     @property
     def last(self):
         """"
