@@ -577,7 +577,6 @@ class SheetStack(DataStack):
             l, t = self.last.matrixidx2sheet(0, 0)
             r, b = self.last.matrixidx2sheet(dim1 - 1, dim2 - 1)
             bounds = self.last.bounds
-            shape = self.last.shape
         else:
             xdensity, ydensity = self.last.xdensity, self.last.ydensity
             l, b, r, t = self.last.bounds.lbrt()
@@ -587,16 +586,14 @@ class SheetStack(DataStack):
             r, t = self.last.closest_cell_center(lbrt[2], lbrt[3])
             bounds = BoundingBox(points=[(l-half_x_unit, b-half_y_unit),
                                          (r+half_x_unit, t+half_y_unit)])
-            y0, x0 = self.last.sheet2matrixidx(l, b)
-            y1, x1 = self.last.sheet2matrixidx(r, t)
-            shape = self.last.data[x0:x1, y1:y0].shape
         x, y = np.meshgrid(np.linspace(l, r, cols),
                            np.linspace(b, t, rows))
         coords = zip(x.flat, y.flat)
 
         grid = self.sample(coords=coords).collate(collate)
         grid_data = list(zip(coords, grid.values()))
-        return DataGrid(bounds, shape, initial_items=grid_data)
+        return DataGrid(bounds, None, xdensity=self.last.xdensity,
+                        ydensity=self.last.ydensity, initial_items=grid_data)
 
 
     def map(self, map_fn, **kwargs):
@@ -700,9 +697,9 @@ class CoordinateGrid(Grid, SheetCoordinateSystem):
         # Adjust bounds to new slice
         map_key, _ = self._split_index(key)
         x, y = [ret.dim_range(d) for d in ret.dimension_labels]
-        l, b, r, t = ret.lbrt
-        half_unit_x = ((l-r) / ret.xdensity) / 2
-        half_unit_y = ((t-b) / ret.ydensity) / 2
+        l, b, r, t = self.lbrt
+        half_unit_x = ((l-r) / float(ret.xdensity)) / 2.
+        half_unit_y = ((t-b) / float(ret.ydensity)) / 2.
 
         new_bbox = BoundingBox(points=[(x[0]+half_unit_x, y[0]-half_unit_y),
                                        (x[1]-half_unit_x, y[1]+half_unit_y)])
@@ -725,19 +722,24 @@ class CoordinateGrid(Grid, SheetCoordinateSystem):
 
     def _transform_index(self, dim, index):
         if isinstance(index, slice):
-            [start, stop] = [self._transform_value(el, dim)
-                             for el in (index.start, index.stop)]
-            return slice(start, stop)
+            return index
         else:
-            return self._transform_value(index, dim)
+            return self._transform_value(index, dim, upper=None)
 
 
-    def _transform_value(self, val, dim):
+    def _transform_value(self, val, dim, upper=False):
         """
         Subclassed to discretize grid spacing.
         """
         if val is None: return None
-        return self.closest_cell_center(*((0, val) if dim else (val, 0)))[dim]
+        l, b, r, t = self.bounds.lbrt()
+        half_unit = (float((r-l))/self.xdensity/2., float((t-b))/self.ydensity/2.)
+        transformed = self.closest_cell_center(*((0, val) if dim else (val, 0)))[dim]
+        if upper == True:
+            transformed += half_unit[dim] * 1.01
+        elif upper == False:
+            transformed -= half_unit[dim] * 1.01
+        return transformed
 
 
     def update(self, other):
