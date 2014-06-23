@@ -576,16 +576,27 @@ class SheetStack(DataStack):
         if lbrt is None:
             l, t = self.last.matrixidx2sheet(0, 0)
             r, b = self.last.matrixidx2sheet(dim1 - 1, dim2 - 1)
+            bounds = self.last.bounds
+            shape = self.last.shape
         else:
-            l, b, r, t = lbrt
+            xdensity, ydensity = self.last.xdensity, self.last.ydensity
+            l, b, r, t = self.last.bounds.lbrt()
+            half_x_unit = ((r-l) / xdensity) / 2.
+            half_y_unit = ((t-b) / ydensity) / 2.
+            l, b = self.last.closest_cell_center(lbrt[0], lbrt[1])
+            r, t = self.last.closest_cell_center(lbrt[2], lbrt[3])
+            bounds = BoundingBox(points=[(l-half_x_unit, b-half_y_unit),
+                                         (r+half_x_unit, t+half_y_unit)])
+            y0, x0 = self.last.sheet2matrixidx(l, b)
+            y1, x1 = self.last.sheet2matrixidx(r, t)
+            shape = self.last.data[x0:x1, y1:y0].shape
         x, y = np.meshgrid(np.linspace(l, r, cols),
                            np.linspace(b, t, rows))
         coords = zip(x.flat, y.flat)
-        shape = (rows, cols)
-        bounds = BoundingBox(points=[(l, b), (r, t)])
 
         grid = self.sample(coords=coords).collate(collate)
-        return DataGrid(bounds, shape, initial_items=list(zip(coords, grid.values())))
+        grid_data = list(zip(coords, grid.values()))
+        return DataGrid(bounds, shape, initial_items=grid_data)
 
 
     def map(self, map_fn, **kwargs):
