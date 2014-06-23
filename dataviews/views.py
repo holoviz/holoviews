@@ -826,6 +826,7 @@ class GridLayout(NdMapping):
 
     def __init__(self, initial_items=[], **kwargs):
         self._max_cols = 4
+        self._style = None
         if all(isinstance(el, (View, NdMapping, Layout)) for el in initial_items):
             initial_items = self._grid_to_items([initial_items])
         super(GridLayout, self).__init__(initial_items=initial_items, **kwargs)
@@ -937,6 +938,26 @@ class GridLayout(NdMapping):
                 item = (k, v)
             last_items.append(item)
         return self.clone(last_items)
+
+
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view.
+        """
+        if self._style:
+            return self._style
+
+        class_name = self.__class__.__name__
+        matches = options.fuzzy_match_keys(class_name)
+        return matches[0] if matches else class_name
+
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
 
 
 def find_minmax(lims, olims):
