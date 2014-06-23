@@ -1501,7 +1501,7 @@ class GridPlot(Plot):
 
         self.subplots = []
         self.subaxes = []
-        r, c = (self.rows-1, 0)
+        r, c = (0, 0)
         for coord in self.grid.keys():
             view = self.grid.get(coord, None)
             if view is not None:
@@ -1514,10 +1514,10 @@ class GridPlot(Plot):
                 self.subplots.append(subplot)
                 self.subaxes.append(subax)
                 subplot(subax, **subplot_kwargs)
-            if r != 0:
-                r -= 1
+            if r != self.rows-1:
+                r += 1
             else:
-                r = self.rows-1
+                r = 0
                 c += 1
 
         self._grid_axis()
@@ -1584,15 +1584,15 @@ class GridPlot(Plot):
         ax_w = (w-(w/10)) / self.cols
         ax_h = (h-(h/10)) / self.rows
 
-        r, c = (1, 0)
+        r, c = (0, 0)
         for ax in self.subaxes:
             xpos = l + (c*ax_w) + (c * b_w)
-            ypos = b+h - (r*ax_h) - (max(r-1, 0) * b_h)
+            ypos = b + (r*ax_h) + (r * b_h)
             ax.set_position([xpos, ypos, ax_w, ax_h])
-            if r != self.rows:
+            if r != self.rows-1:
                 r += 1
             else:
-                r = 1
+                r = 0
                 c += 1
 
 
