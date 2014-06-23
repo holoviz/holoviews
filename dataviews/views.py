@@ -1044,6 +1044,15 @@ class Grid(NdMapping):
                       for (k, v) in self.items()]
         return self.clone(last_items)
 
+    @property
+    def type(self):
+        """
+        The type of elements stored in the Grid.
+        """
+        if self._type is None:
+            self._type = None if len(self) == 0 else self.values()[0].__class__
+        return self._type
+
 
     def __len__(self):
         """
@@ -1058,10 +1067,27 @@ class Grid(NdMapping):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[self, obj])
 
+    @property
+    def common_keys(self):
+        """
+        Returns a list of common keys. If all elements in the Grid share
+        keys it will return the full set common of keys, otherwise returns
+        None.
+        """
+        keys_list = []
+        for v in self.values():
+            if isinstance(v, Layout):
+                v = v.main
+            if isinstance(v, Stack):
+                keys_list.append(list(v._data.keys()))
+        if all(x == keys_list[0] for x in keys_list):
+            return keys_list[0]
+        else:
+            return None
 
     @property
     def shape(self):
-        keys = super(Grid, self).keys()
+        keys = self.keys()
         if self.ndims == 1:
             return (1, len(keys))
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
@@ -1088,8 +1114,7 @@ class Grid(NdMapping):
     def style(self):
         """
         The name of the style that may be used to control display of
-        this view. If a style name is not set and but a label is
-        assigned, then the closest existing style name is returned.
+        this view.
         """
         if self._style:
             return self._style
