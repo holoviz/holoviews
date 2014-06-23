@@ -169,7 +169,7 @@ def layout_display(grid, size=256):
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(size=grid_size)
+    opts = dict(View.options.plotting(grid).opts, size=grid_size)
     gridplot = GridLayoutPlot(grid, **opts)
     if len(gridplot)==1:
         fig =  gridplot()
@@ -182,13 +182,15 @@ def grid_display(grid, size=256):
     if not isinstance(grid, Grid): return None
     if ViewMagic.VIDEO_FORMAT == 'slider':
         return ViewSelector(grid)()
-    size_factor = 0.17
+    if grid.shape[0] == grid.shape[1]:
+        size_factor = 0.17
+    else:
+        size_factor = 0.4
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
-    opts = dict(View.options.plotting(list(grid.values())[-1]).opts, size=grid_size)
-    gridplot = Plot.defaults[grid.__class__](grid, **opts)
+    gridplot = Plot.defaults[grid.__class__](grid, size=grid_size)
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)

@@ -12,7 +12,7 @@ except:
 
 from ..options import PlotOpts, StyleOpts, ChannelOpts
 from ..plots import Plot
-from ..views import Overlay, Layout, GridLayout
+from ..views import Overlay, Layout, GridLayout, Grid
 from ..dataviews import Stack, View
 from ..sheetviews import SheetOverlay
 
@@ -213,7 +213,7 @@ class ChannelMagic(Magics):
         """
         Labels on Overlays are used to index channel definitions.
         """
-        if isinstance(obj, (Layout, GridLayout)):
+        if isinstance(obj, (Layout, Grid, GridLayout)):
             for subview in obj:
                 cls._set_overlay_labels(subview, label)
         elif isinstance(obj, Stack) and issubclass(obj.type, Overlay):
@@ -336,10 +336,13 @@ class OptsMagic(Magics):
         values as keys for the the associated view type.
         """
         group = {}
-        if isinstance(obj, (Overlay, Layout, GridLayout)):
+        if isinstance(obj, (Overlay, Layout, Grid, GridLayout)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
-        elif isinstance(obj, Stack) and not issubclass(obj.type, Overlay):
+            if isinstance(obj, (Layout, Overlay)):
+                return group
+
+        if isinstance(obj, Stack) and not issubclass(obj.type, Overlay):
             key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
@@ -373,10 +376,13 @@ class OptsMagic(Magics):
         name for all matches. A match occurs when the basename of the
         view.style is found in the supplied dictionary.
         """
-        if isinstance(obj, (Layout, GridLayout)):
+        if isinstance(obj, (Layout, Grid, GridLayout)):
             for subview in obj:
                 cls._set_style_names(subview, custom_name_map)
-        elif isinstance(obj.style, list):
+            if isinstance(obj, Layout):
+                return
+
+        if isinstance(obj.style, list) and not isinstance(obj, Layout):
             obj.style = [custom_name_map.get(cls._basename(s), s) for s in obj.style]
         else:
             style = cls._basename(obj.style)

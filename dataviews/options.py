@@ -366,6 +366,8 @@ options.Points = StyleOpts(color='r', marker='x')
 # Default Plotopts
 options.CoordinateGrid = PlotOpts()
 options.DataGrid = PlotOpts()
+options.Grid = PlotOpts()
+options.GridLayout = PlotOpts()
 
 # Defining the most common style options for dataviews
 GrayNearest = StyleOpts(cmap='gray', interpolation='nearest')
