@@ -1456,9 +1456,6 @@ class GridPlot(Plot):
     object.
     """
 
-    grid_axis = param.Boolean(default=True, doc="""
-        Whether to show a global axis for the entire grid.""")
-
     joint_axes = param.Boolean(default=True, doc="""
         Share axes between all elements in the Grid.""")
 
@@ -1495,30 +1492,36 @@ class GridPlot(Plot):
         ax.get_yaxis().set_visible(False)
 
         # Get the lbrt of the grid elements (not the whole grid)
-        l, r = self.grid.xlim
-        b, t = self.grid.ylim
-        lbrt = (l, b, r, t) if self.joint_axes else None
+        if not isinstance(self.grid, (TableStack, Table)):
+            l, r = self.grid.xlim
+            b, t = self.grid.ylim
+            subplot_kwargs = dict(lbrt=(l, b, r, t) if self.joint_axes else None)
+        else:
+            subplot_kwargs = dict()
 
         self.subplots = []
+        self.subaxes = []
         r, c = (self.rows-1, 0)
         for coord in self.grid.keys():
             view = self.grid.get(coord, None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r, c])
-                vtype = view.type if isinstance(view, DataStack) else view.__class__
-                subplot = Plot.defaults[vtype](view, show_legend=self.show_legend,
-                                         show_xaxis=self.show_xaxis,
-                                         show_yaxis=self.show_yaxis,
-                                         show_title=self.show_title)
+                vtype = view.type if isinstance(view, Stack) else view.__class__
+                opts = View.options.plotting(view).opts
+                opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
+                            show_yaxis=self.show_yaxis, show_title=self.show_title)
+                subplot = Plot.defaults[vtype](view, **opts)
                 self.subplots.append(subplot)
-                subplot(subax, lbrt=lbrt)
+                self.subaxes.append(subax)
+                subplot(subax, **subplot_kwargs)
             if r != 0:
                 r -= 1
             else:
                 r = self.rows-1
                 c += 1
 
-        if self.grid_axis: self._grid_axis()
+        self._grid_axis()
+        self._adjust_subplots()
 
         if not axis: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
@@ -1555,6 +1558,7 @@ class GridPlot(Plot):
         else:
             dim1_keys, dim2_keys = zip(*keys)
             grid_axis.set_ylabel(str(self.grid.dimensions[1]))
+            grid_axis.set_aspect(float(self.rows)/self.cols)
         plot_width = 1.0 / self.cols
         xticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
         plot_height = 1.0 / self.rows
@@ -1565,13 +1569,37 @@ class GridPlot(Plot):
         grid_axis.set_yticklabels([round(k, 3) for k in sorted(set(dim2_keys))])
 
         self.handles['grid_axis'] = grid_axis
+        plt.draw()
+
+
+    def _adjust_subplots(self):
+        bbox = self.handles['grid_axis'].get_position()
+        l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
+
+        b_w = (w/10) / (self.cols - 1)
+        if self.rows == 1:
+            b_h = 0
+        else:
+            b_h = (h/10) / (self.rows - 1)
+        ax_w = (w-(w/10)) / self.cols
+        ax_h = (h-(h/10)) / self.rows
+
+        r, c = (1, 0)
+        for ax in self.subaxes:
+            xpos = l + (c*ax_w) + (c * b_w)
+            ypos = b+h - (r*ax_h) - (max(r-1, 0) * b_h)
+            ax.set_position([xpos, ypos, ax_w, ax_h])
+            if r != self.rows:
+                r += 1
+            else:
+                r = 1
+                c += 1
 
 
     def update_frame(self, n):
         for subplot in self.subplots:
             subplot.update_frame(n)
-        if self.grid_axis:
-            self.handles['grid_axis'].set_title(self._format_title(n))
+        self.handles['grid_axis'].set_title(self._format_title(n))
 
 
     def __len__(self):
