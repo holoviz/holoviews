@@ -572,16 +572,14 @@ class SheetStack(DataStack):
         using the lbrt argument, which expresses the subsampling in sheet
         coordinates. The usual sampling semantics apply.
         """
-        dim1, dim2 = self.last.shape
+        xdensity, ydensity = self.last.xdensity, self.last.ydensity
+        l, b, r, t = self.last.bounds.lbrt()
+        half_x_unit = ((r-l) / xdensity) / 2.
+        half_y_unit = ((t-b) / ydensity) / 2.
         if lbrt is None:
-            l, t = self.last.matrixidx2sheet(0, 0)
-            r, b = self.last.matrixidx2sheet(dim1 - 1, dim2 - 1)
             bounds = self.last.bounds
+            l, b, r, t = (l+half_x_unit, b+half_y_unit, r-half_x_unit, t-half_y_unit)
         else:
-            xdensity, ydensity = self.last.xdensity, self.last.ydensity
-            l, b, r, t = self.last.bounds.lbrt()
-            half_x_unit = ((r-l) / xdensity) / 2.
-            half_y_unit = ((t-b) / ydensity) / 2.
             l, b = self.last.closest_cell_center(lbrt[0], lbrt[1])
             r, t = self.last.closest_cell_center(lbrt[2], lbrt[3])
             bounds = BoundingBox(points=[(l-half_x_unit, b-half_y_unit),
@@ -690,12 +688,14 @@ class CoordinateGrid(Grid, SheetCoordinateSystem):
 
 
     def __getitem__(self, key):
-        ret = super(CoordinateGrid, self).__getitem__(key)
+        map_key, _ = self._split_index(key)
+        transformed_key = self._transform_indices(map_key)
+
+        ret = super(CoordinateGrid, self).__getitem__(transformed_key)
         if not isinstance(ret, CoordinateGrid):
             return ret
 
         # Adjust bounds to new slice
-        map_key, _ = self._split_index(key)
         x, y = [ret.dim_range(d) for d in ret.dimension_labels]
         l, b, r, t = self.lbrt
         half_unit_x = ((l-r) / float(ret.xdensity)) / 2.
@@ -724,21 +724,15 @@ class CoordinateGrid(Grid, SheetCoordinateSystem):
         if isinstance(index, slice):
             return index
         else:
-            return self._transform_value(index, dim, upper=None)
+            return self._transform_value(index, dim)
 
 
-    def _transform_value(self, val, dim, upper=False):
+    def _transform_value(self, val, dim):
         """
         Subclassed to discretize grid spacing.
         """
         if val is None: return None
-        l, b, r, t = self.bounds.lbrt()
-        half_unit = (float((r-l))/self.xdensity/2., float((t-b))/self.ydensity/2.)
         transformed = self.closest_cell_center(*((0, val) if dim else (val, 0)))[dim]
-        if upper == True:
-            transformed += half_unit[dim] * 1.01
-        elif upper == False:
-            transformed -= half_unit[dim] * 1.01
         return transformed
 
 
