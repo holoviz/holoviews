@@ -1140,9 +1140,9 @@ class CoordinateGridPlot(OverlayPlot):
         l, b, r, t = self.grid.lbrt
 
         xpositions = np.linspace(0, width, self.num_ticks)
-        xlabels = np.linspace(l, r, self.num_ticks)
+        xlabels = np.linspace(l, r, self.num_ticks).round(3)
         ypositions = np.linspace(0, height, self.num_ticks)
-        ylabels = np.linspace(b, t, self.num_ticks)
+        ylabels = np.linspace(b, t, self.num_ticks).round(3)
         return (xpositions, xlabels), (ypositions, ylabels)
 
 
