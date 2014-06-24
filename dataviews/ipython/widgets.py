@@ -350,3 +350,21 @@ class ViewSelector(param.Parameterized):
             self.image_widget.value = self.frames[checked]
         else:
             self.image_widget.value = self._plot_figure(self._keys.index(checked))
+
+
+def progress(iterator, enum=False):
+    """
+    A helper utility to display a progress bar when iterating over a
+    collection of a fixed length.
+
+    If enum=True, then equivalent to enumerate with a progress bar.
+    """
+    progress = ProgressBar()
+    gen = enumerate(iterator)
+    while True:
+        i, val = next(gen)
+        progress((i+1.0)/len(iterator) * 100)
+        if enum:
+            yield i, val
+        else:
+            yield val
