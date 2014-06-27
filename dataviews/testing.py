@@ -8,7 +8,7 @@ from . import DataOverlay,  DataStack,  Annotation, Curve, Histogram
 from . import TableStack, Table
 from . import SheetOverlay, SheetStack, SheetView, Points, Contours
 from . import CoordinateGrid, DataGrid
-from .views import Layout, GridLayout
+from .views import Layout, GridLayout, Grid
 from .options import StyleOpts, PlotOpts, ChannelOpts
 
 from IPython.display import HTML, SVG
@@ -27,6 +27,8 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(GridLayout,   self.compare_gridlayout)
         self.addTypeEqualityFunc(Layout,       self.compare_layouts)
         self.addTypeEqualityFunc(Annotation,   self.compare_annotations)
+        self.addTypeEqualityFunc(Grid,         self.compare_grids)
+
         # DataLayers
         self.addTypeEqualityFunc(DataOverlay,  self.compare_dataoverlays)
         self.addTypeEqualityFunc(DataStack,    self.compare_datastack)
