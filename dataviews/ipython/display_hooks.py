@@ -24,7 +24,7 @@ except:
 from ..dataviews import Stack, View
 from ..views import Annotation, Layout, GridLayout, Grid
 from ..plots import Plot, GridLayoutPlot
-
+from ..sheetviews import SheetLayer, SheetStack
 
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
@@ -182,12 +182,16 @@ def grid_display(grid, size=256):
     if not isinstance(grid, Grid): return None
     if ViewMagic.VIDEO_FORMAT == 'slider':
         return ViewSelector(grid)()
+
     if grid.shape[0] == grid.shape[1]:
         size_factor = 0.17
+    elif issubclass(grid.type, (SheetLayer, SheetStack)):
+        size_factor = 0.8
     else:
         size_factor = 0.4
     grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
                  size_factor*grid.shape[0]*get_plot_size()[0])
+
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
     gridplot = Plot.defaults[grid.__class__](grid, size=grid_size)
