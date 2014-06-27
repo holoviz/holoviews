@@ -1017,14 +1017,14 @@ class Grid(NdMapping):
         return self.clone(overlayed_items)
 
 
-    def keys(self):
+    def keys(self, full_grid=False):
         """
         Returns a complete set of keys on a Grid, even when Grid isn't fully
         populated. This makes it easier to identify missing elements in the
         Grid.
         """
         keys = super(Grid, self).keys()
-        if self.ndims == 1:
+        if self.ndims == 1 or not full_grid:
             return keys
         dim1_keys = sorted(set(k[0] for k in keys))
         dim2_keys = sorted(set(k[1] for k in keys))
