@@ -1502,7 +1502,7 @@ class GridPlot(Plot):
         self.subplots = []
         self.subaxes = []
         r, c = (0, 0)
-        for coord in self.grid.keys():
+        for coord in self.grid.keys(full_grid=True):
             view = self.grid.get(coord, None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r, c])
@@ -1514,6 +1514,8 @@ class GridPlot(Plot):
                 self.subplots.append(subplot)
                 self.subaxes.append(subax)
                 subplot(subax, **subplot_kwargs)
+            else:
+                self.subaxes.append(None)
             if r != self.rows-1:
                 r += 1
             else:
@@ -1576,24 +1578,29 @@ class GridPlot(Plot):
         bbox = self.handles['grid_axis'].get_position()
         l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
 
-        b_w = (w/10) / (self.cols - 1)
+        if self.cols == 1:
+            b_w = 0
+        else:
+            b_w = (w/10) / (self.cols - 1)
+
         if self.rows == 1:
             b_h = 0
         else:
             b_h = (h/10) / (self.rows - 1)
-        ax_w = (w-(w/10)) / self.cols
-        ax_h = (h-(h/10)) / self.rows
+        ax_w = (w - ((w/10) if self.cols > 1 else 0)) / self.cols
+        ax_h = (h - ((h/10) if self.rows > 1 else 0)) / self.rows
 
         r, c = (0, 0)
         for ax in self.subaxes:
             xpos = l + (c*ax_w) + (c * b_w)
             ypos = b + (r*ax_h) + (r * b_h)
-            ax.set_position([xpos, ypos, ax_w, ax_h])
             if r != self.rows-1:
                 r += 1
             else:
                 r = 0
                 c += 1
+            if not ax is None:
+                ax.set_position([xpos, ypos, ax_w, ax_h])
 
 
     def update_frame(self, n):
