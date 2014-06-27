@@ -1,7 +1,7 @@
 import unittest
 
 from dataviews.sheetviews import BoundingBox
-from dataviews.views import View, Annotation, Layout, Overlay, GridLayout
+from dataviews.views import View, Annotation, Layout, Overlay, GridLayout, Grid
 
 
 class ViewTest(unittest.TestCase):
@@ -179,6 +179,14 @@ class GridLayoutTest(CompositeTest):
         grid = GridLayout([self.view1, self.view2, self.view3, self.view2])
         self.assertEqual(grid.shape, (1,4))
 
+
+class GridTest(CompositeTest):
+
+    def test_grid_init(self):
+        vals = [self.view1, self.view2, self.view3, self.view2]
+        keys = [(0,0), (0,1), (1,0), (1,1)]
+        grid = Grid(zip(keys, vals))
+        self.assertEqual(grid.shape, (2,2))
 
 
 
