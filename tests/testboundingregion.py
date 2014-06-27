@@ -6,8 +6,6 @@ import unittest
 
 from dataviews.sheetviews import BoundingBox, BoundingCircle, BoundingEllipse, AARectangle
 
-# Currently duplicating tests in topographica
-
 class TestAARectangle(unittest.TestCase):
     def setUp(self):
         self.left    = -0.1
