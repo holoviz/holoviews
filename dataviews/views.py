@@ -997,6 +997,7 @@ class Grid(NdMapping):
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
         self._style = None
+        self._type = None
 
 
     def __mul__(self, other):
@@ -1060,7 +1061,7 @@ class Grid(NdMapping):
         of __len__ used by Stacks. For the total number of
         elements, count the full set of keys.
         """
-        return max([len(v) for v in self.values()] + [0])
+        return max([(len(v) if hasattr(v, '__len__') else 1) for v in self.values()] + [0])
 
 
     def __add__(self, obj):
