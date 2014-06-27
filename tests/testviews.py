@@ -179,8 +179,6 @@ class GridLayoutTest(CompositeTest):
         grid = GridLayout([self.view1, self.view2, self.view3, self.view2])
         self.assertEqual(grid.shape, (1,4))
 
-    def test_gridlayout_cols(self):
-        GridLayout([self.view1, self.view2,self.view3, self.view2])
 
 
 
