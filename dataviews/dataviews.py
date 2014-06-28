@@ -1,5 +1,5 @@
 import numpy as np
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import param
 
@@ -498,6 +498,22 @@ class Table(View):
         if col == 0:  return 'heading'
         else:         return 'data'
 
+    def dframe(self):
+        """
+        Generates a Pandas dframe from the Table.
+        """
+        from pandas import DataFrame
+        df_dict = defaultdict(list)
+        for key, val in self.data.items():
+            if self.dimensions:
+                for val, dim in zip(key, self.dimension_labels):
+                    df_dict[dim.replace(' ','_')].append(val)
+                value_label = str(self.value).replace(' ','_')
+                df_dict[value_label].append(val)
+            else:
+                df_dict[key.replace(' ','_')].append(val)
+        return DataFrame(dict(df_dict))
+
 
 
 class TableStack(Stack):
@@ -509,6 +525,22 @@ class TableStack(Stack):
     _type = Table
 
     _type_map = None
+
+
+    def dframe(self):
+        """
+        Gets a dframe for each Table in the Stack, appends the dimensions
+        of the Stack as series and concatenates the dframes.
+        """
+        import pandas
+        dframes = []
+        for key, table in self.items():
+            table_frame = table.dframe()
+            for val, dim in zip(key, self.dimension_labels)[::-1]:
+                table_frame.insert(0, dim.replace(' ', '_'), val)
+            dframes.append(table_frame)
+        return pandas.concat(dframes)
+
 
     def sample(self, samples):
         """

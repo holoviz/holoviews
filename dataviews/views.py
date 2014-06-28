@@ -1130,6 +1130,22 @@ class Grid(NdMapping):
         self._style = val
 
 
+    def dframe(self):
+        """
+        Gets a Pandas dframe from each of the items in the Grid, appends the
+        Grid coordinates and concatenates all the dframes.
+        """
+        import pandas
+        dframes = []
+        for coords, stack in self.items():
+            stack_frame = stack.dframe()
+            for coord, dim in zip(coords, self.dimension_labels)[::-1]:
+                if dim in stack_frame: dim = 'Grid_' + dim
+                stack_frame.insert(0, dim.replace(' ','_'), coord)
+            dframes.append(stack_frame)
+        return pandas.concat(dframes)
+
+
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v,type) and
                     (issubclass(_v, NdMapping) or issubclass(_v, View))]))
