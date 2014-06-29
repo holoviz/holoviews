@@ -33,7 +33,7 @@ setup_args.update(dict(
     version="0.7",
     description='Composable, declarative data structures for building complex visualizations in Python.',
     long_description=open('README.rst').read(),
-    author= "IOAM",
+    author= "Jean-Luc Stevens and Philipp Rudiger",
     author_email= "developers@topographica.org",
     maintainer= "IOAM",
     maintainer_email= "developers@topographica.org",
