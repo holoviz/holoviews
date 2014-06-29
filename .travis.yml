@@ -9,6 +9,7 @@ notifications:
     on_failure: change # [always|never|change] default: always
 
 install:
+  - pip install git+git://github.com/ioam/param.git
   - pip install jinja2 tornado pyzmq matplotlib
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 3* ]]; then pip install ipython; fi
