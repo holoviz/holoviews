@@ -40,7 +40,9 @@ setup_args.update(dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://ioam.github.com/dataviews/',
-    packages = ["dataviews"],
+    packages = ["dataviews",
+                "dataviews.sheetviews",
+                "dataviews.ipython"],
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 4 - Beta",
