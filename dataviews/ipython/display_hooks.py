@@ -183,14 +183,14 @@ def grid_display(grid, size=256):
     if ViewMagic.VIDEO_FORMAT == 'slider':
         return ViewSelector(grid)()
 
-    if grid.shape[0] == grid.shape[1]:
-        size_factor = 0.17
-    elif issubclass(grid.type, (SheetLayer, SheetStack)):
-        size_factor = 0.8
-    else:
-        size_factor = 0.4
-    grid_size = (size_factor*grid.shape[1]*get_plot_size()[1],
-                 size_factor*grid.shape[0]*get_plot_size()[0])
+    max_dim = max(grid.shape)
+    # Reduce plot size as Grid gets larger
+    shape_factor = 1. / max_dim
+    # Expand small grids to a sensible viewing size
+    expand_factor = 1 + (max_dim - 1) * 0.1
+    scale_factor = expand_factor * shape_factor
+    grid_size = (scale_factor * grid.shape[0] * get_plot_size()[0],
+                 scale_factor * grid.shape[1] * get_plot_size()[1])
 
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
