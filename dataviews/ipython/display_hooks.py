@@ -24,7 +24,6 @@ except:
 from ..dataviews import Stack, View
 from ..views import Annotation, Layout, GridLayout, Grid
 from ..plots import Plot, GridLayoutPlot
-from ..sheetviews import SheetLayer, SheetStack
 
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
