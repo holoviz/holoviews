@@ -257,7 +257,7 @@ class ViewTestCase(unittest.TestCase):
     # Grids #
     #=======#
 
-    def compare_grids(self, view1, view2, name ):
+    def _compare_grids(self, view1, view2, name):
 
         if len(view1.keys()) != len(view2.keys()):
             raise self.failureException("%ss have different numbers of items." % name)
@@ -272,13 +272,17 @@ class ViewTestCase(unittest.TestCase):
             self.assertEqual(el1, el2)
 
 
+    def compare_grids(self, view1, view2, msg):
+        self._compare_grids(view1, view2, 'Grid')
+
+
     def compare_coordgrids(self, view1, view2, msg):
         self.bounds_check(view1, view2)
-        self.compare_grids(view1, view2, 'CoordinateGrid')
+        self._compare_grids(view1, view2, 'CoordinateGrid')
 
 
     def compare_datagrids(self, view1, view2, msg):
-        self.compare_grids(view1, view2, 'DataGrid')
+        self._compare_grids(view1, view2, 'DataGrid')
 
     #=========#
     # Options #
