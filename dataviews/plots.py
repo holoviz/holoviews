@@ -1492,7 +1492,7 @@ class GridPlot(Plot):
         ax.get_yaxis().set_visible(False)
 
         # Get the lbrt of the grid elements (not the whole grid)
-        if not isinstance(self.grid, (TableStack, Table)):
+        if not issubclass(self.grid.type, (TableStack, Table)):
             l, r = self.grid.xlim
             b, t = self.grid.ylim
             subplot_kwargs = dict(lbrt=(l, b, r, t) if self.joint_axes else None)
