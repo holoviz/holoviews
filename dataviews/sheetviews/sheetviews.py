@@ -565,7 +565,7 @@ class SheetStack(DataStack):
                            for k, v in self.items()], **dict(self.get_param_values()))
 
 
-    def grid_sample(self, rows, cols, collate='', lbrt=None):
+    def grid_sample(self, rows, cols, collate=None, lbrt=None):
         """
         Creates a CoordinateGrid of curves according sampled according to
         the supplied rows and cols. A sub-region to be sampled can be specified
@@ -588,7 +588,9 @@ class SheetStack(DataStack):
                            np.linspace(b, t, rows))
         coords = zip(x.flat, y.flat)
 
-        grid = self.sample(coords=coords).collate(collate)
+        grid = self.sample(coords=coords)
+        if collate:
+            grid = grid.collate(collate)
         grid_data = list(zip(coords, grid.values()))
         return DataGrid(bounds, None, xdensity=self.last.xdensity,
                         ydensity=self.last.ydensity, initial_items=grid_data)
