@@ -506,8 +506,8 @@ class Table(View):
         df_dict = defaultdict(list)
         for key, val in self.data.items():
             if self.dimensions:
-                for val, dim in zip(key, self.dimension_labels):
-                    df_dict[dim.replace(' ','_')].append(val)
+                for key_val, dim in zip(key, self.dimension_labels):
+                    df_dict[dim.replace(' ','_')].append(key_val)
                 value_label = str(self.value).replace(' ','_')
                 df_dict[value_label].append(val)
             else:
@@ -537,6 +537,9 @@ class TableStack(Stack):
         for key, table in self.items():
             table_frame = table.dframe()
             for val, dim in zip(key, self.dimension_labels)[::-1]:
+                dim = dim.replace(' ', '_')
+                if dim in table_frame:
+                    dim += '_Duplicate'
                 table_frame.insert(0, dim.replace(' ', '_'), val)
             dframes.append(table_frame)
         return pandas.concat(dframes)
