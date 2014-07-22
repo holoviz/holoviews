@@ -115,8 +115,8 @@ class ViewOperation(param.ParameterizedFunction):
                 stacks = val.values() if isinstance(val, GridLayout) else [val]
                 # Initialize the list of data or coordinate grids
                 if grids == []:
-                    grids = [(DataGrid if isinstance(stack.type, DataLayer)
-                              else CoordinateGrid)(view.bounds, view.shape, label=view.label)
+                    grids = [(DataGrid if not isinstance(stack.type, (SheetLayer))
+                              else CoordinateGrid)(view.bounds, None, view.xdensity, view.ydensity, label=view.label)
                              for stack in stacks]
                 # Populate the grids
                 for ind, stack in enumerate(stacks):
