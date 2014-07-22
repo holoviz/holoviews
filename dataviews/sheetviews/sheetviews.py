@@ -586,11 +586,14 @@ class SheetStack(DataStack):
                                          (r+half_x_unit, t+half_y_unit)])
         x, y = np.meshgrid(np.linspace(l, r, cols),
                            np.linspace(b, t, rows))
-        coords = zip(x.flat, y.flat)
+        coords = list(set([self.last.closest_cell_center(*c) for c in zip(x.flat, y.flat)]))
 
         grid = self.sample(coords=coords)
-        if collate:
-            grid = grid.collate(collate)
+        if not collate:
+            return grid
+
+        coords = grid.last.data.keys()
+        grid = grid.collate(collate)
         grid_data = list(zip(coords, grid.values()))
         return DataGrid(bounds, None, xdensity=self.last.xdensity,
                         ydensity=self.last.ydensity, initial_items=grid_data)
