@@ -448,6 +448,10 @@ class Collect(object):
     def __init__(self, obj, *args, **kwargs):
 
         self.args=list(args)
+        if 'times' in kwargs:
+            self.times = kwargs.pop('times')
+        else:
+            self.times = []
         self.kwargs=kwargs
         self.path = None
         resolveable = None
@@ -479,6 +483,9 @@ class Collect(object):
         """
         if self.path is None:
             raise Exception("Aggregation path not set.")
+
+        if self.times and time not in self.times:
+            return attrtree
 
         val = self._get_result(attrtree, time, times)
         if val is None:  return attrtree
@@ -545,6 +552,10 @@ class Analyze(Collect):
         self.analysis = analysis
 
         self.args = list(args)
+        if 'times' in kwargs:
+            self.times = kwargs.pop('times')
+        else:
+            self.times = []
         self.kwargs = kwargs
         self.stackwise = self.kwargs.pop('stackwise', False)
         self.mode = 'set'
@@ -699,6 +710,7 @@ class Collector(AttrTree):
             raise Exception("Please supply the list of times in ascending order")
         if times[0] < current_time:
             raise Exception("The first time value is prior to the current time.")
+        self.verify_times(times)
 
         times = np.array([current_time] + times)
         if len(set(times)) == 1:
@@ -734,6 +746,24 @@ class Collector(AttrTree):
 
         (self.fixed, attrtree.fixed) = (True, True)
         return attrtree
+
+
+    def verify_times(self, times, strict=False):
+        """
+        Checks that tasks scheduled to be run at certain times will
+        actually be executed. The strict flag determines whether to
+        simply warn or raise an Exception.
+        """
+        for path, task in self.path_items.items():
+            if task.times:
+                unsatisfied = set(task.times) - set(times)
+                if unsatisfied:
+                    msg = "Task %r has been requested for times %s, " \
+                          "not scheduled for collection." % (task, list(unsatisfied))
+
+                if unsatisfied:
+                    if strict: raise Exception(msg)
+                    else:      param.main.warning(msg)
 
 
     def _schedule_tasks(self):
