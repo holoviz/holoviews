@@ -563,14 +563,18 @@ class Analyze(Collect):
 
 
     def _get_result(self, attrtree, time, times):
-        if self.stackwise and time==times[-1]:
-            view = self.reference.resolve(attrtree)
-            return self.analysis(view, *self.args, **self.kwargs)
-        elif self.stackwise:
+        if self.stackwise and time != times[-1]:
             return None
         else:
-            view = self.reference.resolve(attrtree)
+            try:
+                view = self.reference.resolve(attrtree)
+            except:
+                info = (self.reference, time, self)
+                param.main.warning('Reference %r could not be resolved at time '
+                                   '%s, skipping analysis %r.' % info)
+                return None
             return self.analysis(view, *self.args, **self.kwargs)
+
 
     def __repr__(self):
         args = ', '.join(str(el) for el in self.args) if self.args else ''
