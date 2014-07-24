@@ -147,7 +147,7 @@ class AttrTree(object):
     def __setattr__(self, label, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        ignored = label in ['capitalized', 'fixed']
+        ignored = label.startswith('_') or label in ['capitalized', 'fixed']
         if not ignored and self.capitalized and not label[0].isupper():
             raise AttributeError("%s: Custom paths elements must be capitalized." % label)
         if label[0].isupper() and self.fixed and shallow:
@@ -156,7 +156,7 @@ class AttrTree(object):
         super(AttrTree, self).__setattr__(label, val)
 
         if label in self.children: pass
-        elif label[0].isupper():
+        elif label[0].isupper() or (not self.capitalized and not ignored):
             self.children.append(label)
             self._propagate((label,), val)
 
