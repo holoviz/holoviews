@@ -239,7 +239,7 @@ class Plot(param.Parameterized):
         if self.aspect == 'square' and lbrt:
             xrange = lbrt[2] - lbrt[0]
             yrange = lbrt[3] - lbrt[1]
-            axis.set_aspect(xrange/yrange)
+            axis.set_aspect(float(xrange)/yrange)
         elif self.aspect not in [None, 'square']:
             axis.set_aspect(self.aspect)
 
