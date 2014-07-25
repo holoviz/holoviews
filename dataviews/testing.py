@@ -4,7 +4,7 @@ from nose.plugins.skip import SkipTest
 from numpy.testing import assert_array_almost_equal
 
 from . import Dimension
-from . import DataOverlay,  DataStack,  Annotation, Curve, Histogram
+from . import DataOverlay,  DataStack,  Annotation, Curve, Histogram, Matrix, HeatMap
 from . import TableStack, Table
 from . import SheetOverlay, SheetStack, SheetView, Points, Contours
 from . import CoordinateGrid, DataGrid
@@ -34,6 +34,8 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(DataStack,    self.compare_datastack)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
+        self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
+        self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
         self.addTypeEqualityFunc(TableStack,   self.compare_tablestack)
         self.addTypeEqualityFunc(Table,        self.compare_tables)
@@ -188,6 +190,15 @@ class ViewTestCase(unittest.TestCase):
 
         self.compare_arrays(view1.edges, view2.edges, "Histogram edges")
         self.compare_arrays(view1.values, view2.values, "Histogram values")
+
+
+    def compare_matrix(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Matrix')
+
+
+    def compare_heatmap(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'HeatMap')
+
 
     #========#
     # Tables #
