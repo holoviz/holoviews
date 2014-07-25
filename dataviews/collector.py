@@ -52,6 +52,9 @@ class AttrTree(object):
         fixed_error = 'AttrTree attribute access disabled with fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
 
+    def __iter__(self):
+        return iter(self.path_items.values())
+
     @property
     def fixed(self):
         "If fixed, no new paths can be created via attribute access"
