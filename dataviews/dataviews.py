@@ -373,7 +373,7 @@ class Matrix(View):
 
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
-        The label of the x- and y-dimension of the SheetView in form
+        The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
 
     value = param.ClassSelector(class_=(str, Dimension),
@@ -404,14 +404,14 @@ class Matrix(View):
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         """
-        Returns a Histogram of the SheetView data, binned into
+        Returns a Histogram of the Matrix data, binned into
         num_bins over the bin_range (if specified).
 
         If adjoin is True, the histogram will be returned adjoined to
-        the SheetView as a side-plot.
+        the Matrix as a side-plot.
 
         The 'individually' argument specifies whether the histogram
-        will be rescaled for each for SheetViews in a SheetStack
+        will be rescaled for each Matrix in a Stack.
         """
         range = find_minmax(self.range, (0, -float('inf')))\
             if bin_range is None else bin_range
@@ -454,7 +454,7 @@ class Matrix(View):
 
     def sample(self, coords=[], **samples):
         """
-        Sample the SheetView along one or both of its dimensions,
+        Sample the Matrixalong one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a Table, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
@@ -476,7 +476,7 @@ class Matrix(View):
             dimension, sample_coord = samples.items()[0]
             if isinstance(sample_coord, slice):
                 raise ValueError(
-                    'SheetView sampling requires coordinates not slices,'
+                    'Matrix sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
             other_dimension = [d for d in self.dimensions if
                                d.name != dimension]
@@ -497,7 +497,7 @@ class Matrix(View):
 
     def reduce(self, label_prefix='', **dimreduce_map):
         """
-        Reduces the SheetView using functions provided via the
+        Reduces the Matrix using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
         the result View label.
