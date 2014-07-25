@@ -3,7 +3,8 @@ from collections import OrderedDict, defaultdict
 
 import param
 
-from .ndmapping import Dimension
+from .ndmapping import Dimension, NdMapping
+from .options import options
 from .views import View, Overlay, Annotation, Stack, find_minmax
 
 
@@ -361,6 +362,284 @@ class DataOverlay(DataLayer, Overlay):
 
 
 
+class Matrix(View):
+    """
+    Matrix is a basic 2D atomic View type.
+
+    Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
+    3D arrays, each depth layer is interpreted as a channel of the 2D
+    representation.
+    """
+
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
+                            constant=True, doc="""
+        The label of the x- and y-dimension of the SheetView in form
+        of a string or dimension object.""")
+
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('Z'), doc="""
+        The dimension description of the data held in the data array.""")
+
+    def __init__(self, data, lbrt, **kwargs):
+        self.lbrt = lbrt
+        super(Matrix, self).__init__(data, **kwargs)
+
+
+    def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
+        norm_factor = self.cyclic_range if norm_factor is None else norm_factor
+        if norm_factor is None:
+            norm_factor = self.data.max() - self.data.min()
+        else:
+            min, max = (0.0, 1.0)
+
+        if div_by_zero in ['ignore', 'warn']:
+            if (norm_factor == 0.0) and div_by_zero == 'warn':
+                self.warning("Ignoring divide by zero in normalization.")
+            norm_factor = 1.0 if (norm_factor == 0.0) else norm_factor
+
+        norm_data = (((self.data - self.data.min()) / norm_factor) * abs(
+            (max - min))) + min
+        return self.clone(norm_data)
+
+
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        """
+        Returns a Histogram of the SheetView data, binned into
+        num_bins over the bin_range (if specified).
+
+        If adjoin is True, the histogram will be returned adjoined to
+        the SheetView as a side-plot.
+
+        The 'individually' argument specifies whether the histogram
+        will be rescaled for each for SheetViews in a SheetStack
+        """
+        range = find_minmax(self.range, (0, -float('inf')))\
+            if bin_range is None else bin_range
+
+        # Avoids range issues including zero bin range and empty bins
+        if range == (0, 0):
+            range = (0.0, 0.1)
+        try:
+            data = self.data.flatten()
+            data = data[np.invert(np.isnan(data))]
+            hist, edges = np.histogram(data, normed=True,
+                                       range=range, bins=num_bins)
+        except:
+            edges = np.linspace(range[0], range[1], num_bins + 1)
+            hist = np.zeros(num_bins)
+        hist[np.isnan(hist)] = 0
+
+        hist_view = Histogram(hist, edges, dimensions=[self.value],
+                              label=self.label, value='Frequency')
+
+        # Set plot and style options
+        style_prefix = kwargs.get('style_prefix',
+                                  'Custom[<' + self.name + '>]_')
+        opts_name = style_prefix + hist_view.label.replace(' ', '_')
+        hist_view.style = opts_name
+        options[opts_name] = options.plotting(self)(
+            **dict(rescale_individually=individually))
+        return (self << hist_view) if adjoin else hist_view
+
+
+    def _coord2matrix(self, coord):
+        xd, yd = self.data.shape
+        l, b, r, t = self.lbrt
+        xvals = np.linspace(l, r, xd)
+        yvals = np.linspace(b, t, yd)
+        xidx = np.argmin(np.abs(xvals-coord[0]))
+        yidx = np.argmin(np.abs(yvals-coord[1]))
+        return (xidx, yidx)
+
+
+    def sample(self, coords=[], **samples):
+        """
+        Sample the SheetView along one or both of its dimensions,
+        returning a reduced dimensionality type, which is either
+        a Table, Curve or Scatter. If two dimension samples
+        and a new_xaxis is provided the sample will be the value
+        of the sampled unit indexed by the value in the new_xaxis
+        tuple.
+        """
+        if len(samples) == self.ndims or len(coords):
+            if not len(coords):
+                coords = zip(*[c if isinstance(c, list) else [c] for didx, c in
+                               sorted([(self.dim_index(k), v) for k, v in
+                                       samples.items()])])
+            table_data = OrderedDict()
+            for c in coords:
+                table_data[c] = self.data[self._coord2matrix(*c)]
+            return Table(table_data, dimensions=self.dimensions,
+                         label=self.label,
+                         value=self.value)
+        else:
+            dimension, sample_coord = samples.items()[0]
+            if isinstance(sample_coord, slice):
+                raise ValueError(
+                    'SheetView sampling requires coordinates not slices,'
+                    'use regular slicing syntax.')
+            other_dimension = [d for d in self.dimensions if
+                               d.name != dimension]
+            # Indices inverted for indexing
+            sample_ind = self.dim_index(other_dimension[0].name)
+
+            # Generate sample slice
+            sample = [slice(None) for i in range(self.ndims)]
+            coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
+            sample[sample_ind] = self._coord2matrix(*coord_fn(sample_coord))[sample_ind]
+
+            # Sample data
+            x_vals = self.dimension_values(dimension)
+            data = zip(x_vals, self.data[sample])
+            return Curve(data, **dict(self.get_param_values(),
+                                      dimensions=other_dimension))
+
+
+    def reduce(self, label_prefix='', **dimreduce_map):
+        """
+        Reduces the SheetView using functions provided via the
+        kwargs, where the keyword is the dimension to be reduced.
+        Optionally a label_prefix can be provided to prepend to
+        the result View label.
+        """
+        label = ' '.join([label_prefix, self.label])
+        if len(dimreduce_map) == self.ndims:
+            reduced_view = self
+            for dim, reduce_fn in dimreduce_map.items():
+                reduced_view = reduced_view.reduce(label_prefix=label_prefix,
+                                                   **{dim: reduce_fn})
+                label_prefix = ''
+            return reduced_view
+        else:
+            dimension, reduce_fn = dimreduce_map.items()[0]
+            other_dimension = [d for d in self.dimensions if d.name != dimension]
+            x_vals = self.dimension_values(dimension)
+            data = zip(x_vals, reduce_fn(self.data, axis=self.dim_index(dimension)))
+            return Curve(data, dimensions=other_dimension, label=label,
+                         title=self.title, value=self.value)
+
+
+    @property
+    def cyclic_range(self):
+        """
+        For a cyclic quantity, the range over which the values
+        repeat. For instance, the orientation of a mirror-symmetric
+        pattern in a plane is pi-periodic, with orientation x the same
+        as orientation x+pi (and x+2pi, etc.). The property determines
+        the cyclic_range from the value dimensions range parameter.
+        """
+        if isinstance(self.value, Dimension) and self.value.cyclic:
+            return self.value.range[1]
+        else:
+            return None
+
+
+    @property
+    def range(self):
+        if self.cyclic_range:
+            return (0, self.cyclic_range)
+        else:
+            return (self.data.min(), self.data.max())
+
+
+    @property
+    def depth(self):
+        return 1 if len(self.data.shape) == 2 else self.data.shape[2]
+
+
+    @property
+    def mode(self):
+        """
+        Mode specifying the color space for visualizing the array data
+        and is a function of the depth. For a depth of one, a colormap
+        is used as determined by the style. If the depth is 3 or 4,
+        the mode is 'rgb' or 'rgba' respectively.
+        """
+        if   self.depth == 1:  return 'cmap'
+        elif self.depth == 3:  return 'rgb'
+        elif self.depth == 4:  return 'rgba'
+        else:
+            raise Exception("Mode cannot be determined from the depth")
+
+
+    @property
+    def N(self):
+        return self.normalize()
+
+
+
+class HeatMap(Matrix, DataLayer):
+    """
+    HeatMap is an atomic View element used to visualize two dimensional
+    parameter spaces. It supports sparse or non-linear spaces, dynamically
+    upsampling them to a dense representation, which can be visualized.
+
+    A HeatMap can be initialized with any dict or NdMapping type with
+    two-dimensional keys. Once instantiated the dense representation is
+    available via the .data property.
+    """
+
+    _deep_indexable = True
+
+    def __init__(self, data, **kwargs):
+        dimensions = kwargs['dimensions'] if 'dimensions' in kwargs else self.dimensions
+        if isinstance(data, NdMapping):
+            self._data = data
+            if 'dimensions' not in kwargs:
+                kwargs['dimensions'] = data.dimensions
+        elif isinstance(data, (dict, OrderedDict)):
+            self._data = NdMapping(data, dimensions=dimensions)
+        elif data is None:
+            self._data = NdMapping(dimensions=dimensions)
+        else:
+            raise TypeError('HeatMap only accepts dict or NdMapping types.')
+
+        self._style = None
+        self._xlim = None
+        self._ylim = None
+        param.Parameterized.__init__(self, **kwargs)
+
+
+    def __getitem__(self, coords):
+        """
+        Slice the underlying NdMapping.
+        """
+        return self.clone(self._data.select(**dict(zip(self._data.dimension_labels, coords))))
+
+
+    def dense_keys(self):
+        keys = self._data.keys()
+        dim1_keys = sorted(set(k[0] for k in keys))
+        dim2_keys = sorted(set(k[1] for k in keys))
+        return dim1_keys, dim2_keys
+
+
+    @property
+    def data(self):
+        dim1_keys, dim2_keys = self.dense_keys()
+        grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
+                     for i2, d2 in enumerate(dim2_keys)]
+
+        array = np.zeros((len(dim2_keys), len(dim1_keys)))
+        for (i1, d1), (i2, d2) in grid_keys:
+            array[len(dim2_keys)-i2-1, i1] = self._data.get((d1, d2), np.NaN)
+
+        return array
+
+
+    @property
+    def range(self):
+        vals = self._data.values()
+        return (min(vals), max(vals))
+
+
+    @property
+    def lbrt(self):
+        dim1_keys, dim2_keys = self.dense_keys()
+        return min(dim1_keys), min(dim2_keys), max(dim1_keys), max(dim2_keys)
+
+
+
 class DataStack(Stack):
     """
     A DataStack can hold any number of DataLayers indexed by a list of
@@ -368,9 +647,18 @@ class DataStack(Stack):
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (DataLayer, Annotation)
+    data_type = (DataLayer, Annotation, Matrix)
 
     overlay_type = DataOverlay
+
+    @property
+    def range(self):
+        if not hasattr(self.last, 'range'):
+            raise Exception('View type %s does not implement range.' % type(self.last))
+        range = self.last.range
+        for view in self._data.values():
+            range = find_minmax(range, view.range)
+        return range
 
 
     @property

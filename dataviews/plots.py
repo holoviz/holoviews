@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import os, copy
-from itertools import groupby
+from itertools import groupby, product
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -15,7 +15,7 @@ import matplotlib.gridspec as gridspec
 import param
 
 from .dataviews import DataStack, DataOverlay, DataLayer, Curve, Histogram,\
-    Table, TableStack, Scatter
+    Table, TableStack, Scatter, Matrix, HeatMap
 from .sheetviews import SheetView, SheetOverlay, Contours, \
                        SheetStack, Points, CoordinateGrid, DataGrid
 from .views import NdMapping, Stack, GridLayout, Layout, Overlay, View,\
@@ -528,57 +528,111 @@ class PointPlot(Plot):
 
 
 
-class SheetViewPlot(Plot):
+class MatrixPlot(Plot):
 
     normalize_individually = param.Boolean(default=False)
+
+    show_values = param.Boolean(default=True, doc="""
+        Whether to annotate the values when displaying a HeatMap.""")
 
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
                                      'visible', 'filterrad', 'origin'],
                             constant=True, doc="""
-        The style options for SheetViewPlot are a subset of those used
+        The style options for MatrixPlot are a subset of those used
         by matplotlib's imshow command. If supplied, the clim option
-        will be ignored as it is computed from the input SheetView.""")
+        will be ignored as it is computed from the input View.""")
 
 
-    _stack_type = SheetStack
+    _stack_type = DataStack
 
-    def __init__(self, sheetview, zorder=0, **kwargs):
-        self._stack = self._check_stack(sheetview, SheetView)
-        super(SheetViewPlot, self).__init__(zorder, **kwargs)
+    def __init__(self, view, zorder=0, **kwargs):
+        self._stack = self._check_stack(view, (Matrix, DataLayer))
+        super(MatrixPlot, self).__init__(zorder, **kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        sheetview = self._stack.last
-        (l, b, r, t) = self._stack.bounds.lbrt()
+        view = self._stack.last
+        xdim, ydim = view.dimensions
+        (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
+            else self._stack.last.lbrt
         title = None if self.zorder > 0 else self._format_title(-1)
-        ax = self._axis(axis, title, 'x', 'y', (l, b, r, t))
+        xticks, yticks = self._compute_ticks(view)
+        ax = self._axis(axis, title, str(xdim), str(ydim), (l, b, r, t),
+                        xticks=xticks, yticks=yticks)
 
-        opts = View.options.style(sheetview)[cyclic_index]
-        if sheetview.depth != 1:
+        opts = View.options.style(view)[cyclic_index]
+        data = view.data
+        if view.depth != 1:
             opts.pop('cmap', None)
+        elif isinstance(view, HeatMap):
+            data = view.data
+            data = np.ma.array(data, mask=np.isnan(data))
+            cmap_name = opts.pop('cmap', None)
+            cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
+            cmap.set_bad('w', 1.)
+            opts['cmap'] = cmap
 
-        im = ax.imshow(sheetview.data, extent=[l, r, b, t],
-                       zorder=self.zorder, **opts)
-        clims = sheetview.range if self.normalize_individually else self._stack.range
+        im = ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
+        clims = view.range if self.normalize_individually else self._stack.range
         im.set_clim(clims)
         self.handles['im'] = im
 
+        if isinstance(view, HeatMap):
+            ax.set_aspect(float(r - l)/(t-b))
+            self._annotate_values(ax, view)
+
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
+
+
+    def _compute_ticks(self, view):
+        if isinstance(view, HeatMap):
+            dim1_keys, dim2_keys = view.dense_keys()
+            num_x, num_y = len(dim1_keys), len(dim2_keys)
+            xstep, ystep = 1.0/num_x, 1.0/num_y
+            xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
+            ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
+            return (xpos, dim1_keys), (ypos, dim2_keys)
+        else:
+            return None, None
+
+
+    def _annotate_values(self, ax, view):
+        dim1_keys, dim2_keys = view.dense_keys()
+        num_x, num_y = len(dim1_keys), len(dim2_keys)
+        xstep, ystep = 1.0/num_x, 1.0/num_y
+        xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
+        ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
+        coords = product(dim1_keys, dim2_keys)
+        plot_coords = product(xpos, ypos)
+        for plot_coord, coord in zip(plot_coords, coords):
+            ax.annotate(round(view._data.get(coord, np.NaN), 3), xy=plot_coord,
+                        xycoords='axes fraction', horizontalalignment='center',
+                        verticalalignment='center')
 
 
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
         im = self.handles.get('im', None)
 
-        sheetview = list(self._stack.values())[n]
-        im.set_data(sheetview.data)
+        view = list(self._stack.values())[n]
+        im.set_data(view.data)
 
         if self.normalize_individually:
-            im.set_clim(sheetview.range)
+            im.set_clim(view.range)
         self._update_title(n)
 
         plt.draw()
+
+
+
+class SheetViewPlot(MatrixPlot):
+
+    _stack_type = SheetStack
+
+    def __init__(self, sheetview, zorder=0, **kwargs):
+        self._stack = self._check_stack(sheetview, SheetView)
+        Plot.__init__(self, zorder, **kwargs)
 
 
 
@@ -2010,6 +2064,8 @@ class SideHistogramPlot(HistogramPlot):
 
 
 Plot.defaults.update({SheetView: SheetViewPlot,
+                      Matrix: MatrixPlot,
+                      HeatMap: MatrixPlot,
                       Points: PointPlot,
                       Contours: ContourPlot,
                       SheetOverlay: SheetPlot,

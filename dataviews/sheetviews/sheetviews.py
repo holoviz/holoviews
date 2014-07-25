@@ -1,14 +1,13 @@
 import numpy as np
-from collections import OrderedDict
 
 import param
 
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Table, Curve, Histogram, DataStack, TableStack
+from ..dataviews import Matrix, DataStack, TableStack
 from ..ndmapping import NdMapping, Dimension
-from ..options import options, channels
+from ..options import channels
 from ..views import View, Overlay, Annotation, Grid, find_minmax
 
 
@@ -40,7 +39,7 @@ class SheetLayer(View):
 
 
     def __init__(self, data, bounds, **kwargs):
-        super(SheetLayer, self).__init__(data, bounds=bounds, **kwargs)
+        View.__init__(self, data, bounds=bounds, **kwargs)
 
 
     def __mul__(self, other):
@@ -203,7 +202,7 @@ class SheetOverlay(SheetLayer, Overlay):
 
 
 
-class SheetView(SheetLayer, SheetCoordinateSystem):
+class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
     """
     SheetView is the atomic unit as which 2D data is stored, along with its
     bounds object. Allows slicing operations of the data in sheet coordinates or
@@ -229,13 +228,14 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
     def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
         data = np.array([[0]]) if data is None else data
-        (l, b, r, t) = bounds.lbrt()
+        self.lbrt = bounds.lbrt()
+        l, b, r, t = bounds.lbrt()
         (dim1, dim2) = data.shape[0], data.shape[1]
         xdensity = dim1/(r-l)
         ydensity = dim2/(t-b)
 
-        SheetLayer.__init__(self, data, bounds, **kwargs)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
+        SheetLayer.__init__(self, data, bounds, **kwargs)
 
 
     def __getitem__(self, coords):
@@ -262,176 +262,8 @@ class SheetView(SheetLayer, SheetCoordinateSystem):
                          bounds, label=self.label, style=self.style)
 
 
-    def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
-        norm_factor = self.cyclic_range if norm_factor is None else norm_factor
-        if norm_factor is None:
-            norm_factor = self.data.max() - self.data.min()
-        else:
-            min, max = (0.0, 1.0)
-
-        if div_by_zero in ['ignore', 'warn']:
-            if (norm_factor == 0.0) and div_by_zero == 'warn':
-                self.warning("Ignoring divide by zero in normalization.")
-            norm_factor = 1.0 if (norm_factor == 0.0) else norm_factor
-
-        norm_data = (((self.data - self.data.min()) / norm_factor) * abs(
-            (max - min))) + min
-        return SheetView(norm_data, self.bounds, roi_bounds=self.roi_bounds,
-                         style=self.style, label=self.label, value=self.value)
-
-
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        """
-        Returns a Histogram of the SheetView data, binned into
-        num_bins over the bin_range (if specified).
-
-        If adjoin is True, the histogram will be returned adjoined to
-        the SheetView as a side-plot.
-
-        The 'individually' argument specifies whether the histogram
-        will be rescaled for each for SheetViews in a SheetStack
-        """
-        range = find_minmax(self.range, (0, -float('inf')))\
-            if bin_range is None else bin_range
-
-        # Avoids range issues including zero bin range and empty bins
-        if range == (0, 0):
-            range = (0.0, 0.1)
-        try:
-            hist, edges = np.histogram(self.data.flatten(), normed=True,
-                                       range=range, bins=num_bins)
-        except:
-            edges = np.linspace(range[0], range[1], num_bins + 1)
-            hist = np.zeros(num_bins)
-        hist[np.isnan(hist)] = 0
-
-        hist_view = Histogram(hist, edges, dimensions=[self.value],
-                              label=self.label, value='Frequency')
-
-        # Set plot and style options
-        style_prefix = kwargs.get('style_prefix',
-                                  'Custom[<' + self.name + '>]_')
-        opts_name = style_prefix + hist_view.label.replace(' ', '_')
-        hist_view.style = opts_name
-        options[opts_name] = options.plotting(self)(
-            **dict(rescale_individually=individually))
-        return (self << hist_view) if adjoin else hist_view
-
-
-    def sample(self, coords=[], **samples):
-        """
-        Sample the SheetView along one or both of its dimensions,
-        returning a reduced dimensionality type, which is either
-        a Table, Curve or Scatter. If two dimension samples
-        and a new_xaxis is provided the sample will be the value
-        of the sampled unit indexed by the value in the new_xaxis
-        tuple.
-        """
-        if len(samples) == self.ndims or len(coords):
-            if not len(coords):
-                coords = zip(*[c if isinstance(c, list) else [c] for didx, c in
-                               sorted([(self.dim_index(k), v) for k, v in
-                                       samples.items()])])
-            table_data = OrderedDict()
-            for c in coords:
-                table_data[c] = self.data[self.sheet2matrixidx(*c)]
-            return Table(table_data, dimensions=self.dimensions,
-                         label=self.label,
-                         value=self.value)
-        else:
-            dimension, sample_coord = samples.items()[0]
-            if isinstance(sample_coord, slice):
-                raise ValueError(
-                    'SheetView sampling requires coordinates not slices,'
-                    'use regular slicing syntax.')
-            other_dimension = [d for d in self.dimensions if
-                               d.name != dimension]
-            # Indices inverted for indexing
-            sample_ind = self.dim_index(other_dimension[0].name)
-
-            # Generate sample slice
-            sample = [slice(None) for i in range(self.ndims)]
-            coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
-            sample[sample_ind] = self.sheet2matrixidx(*coord_fn(sample_coord))[
-                sample_ind]
-
-            # Sample data
-            x_vals = self.dimension_values(dimension)
-            data = zip(x_vals, self.data[sample])
-            return Curve(data, **dict(self.get_param_values(),
-                                      dimensions=other_dimension))
-
-
-    def reduce(self, label_prefix='', **dimreduce_map):
-        """
-        Reduces the SheetView using functions provided via the
-        kwargs, where the keyword is the dimension to be reduced.
-        Optionally a label_prefix can be provided to prepend to
-        the result View label.
-        """
-        label = ' '.join([label_prefix, self.label])
-        if len(dimreduce_map) == self.ndims:
-            reduced_view = self
-            for dim, reduce_fn in dimreduce_map.items():
-                reduced_view = reduced_view.reduce(label_prefix=label_prefix,
-                                                   **{dim: reduce_fn})
-                label_prefix = ''
-            return reduced_view
-        else:
-            dimension, reduce_fn = dimreduce_map.items()[0]
-            other_dimension = [d for d in self.dimensions if d.name != dimension]
-            x_vals = self.dimension_values(dimension)
-            data = zip(x_vals, reduce_fn(self.data, axis=self.dim_index(dimension)))
-            return Curve(data, dimensions=other_dimension, label=label,
-                         title=self.title, value=self.value)
-
-
-    @property
-    def cyclic_range(self):
-        """
-        For a cyclic quantity, the range over which the values
-        repeat. For instance, the orientation of a mirror-symmetric
-        pattern in a plane is pi-periodic, with orientation x the same
-        as orientation x+pi (and x+2pi, etc.). The property determines
-        the cyclic_range from the value dimensions range parameter.
-        """
-        if isinstance(self.value, Dimension) and self.value.cyclic:
-            return self.value.range[1]
-        else:
-            return None
-
-
-    @property
-    def range(self):
-        if self.cyclic_range:
-            return (0, self.cyclic_range)
-        else:
-            return (self.data.min(), self.data.max())
-
-
-    @property
-    def depth(self):
-        return 1 if len(self.data.shape) == 2 else self.data.shape[2]
-
-
-    @property
-    def mode(self):
-        """
-        Mode specifying the color space for visualizing the array data
-        and is a function of the depth. For a depth of one, a colormap
-        is used as determined by the style. If the depth is 3 or 4,
-        the mode is 'rgb' or 'rgba' respectively.
-        """
-        if   self.depth == 1:  return 'cmap'
-        elif self.depth == 3:  return 'rgb'
-        elif self.depth == 4:  return 'rgba'
-        else:
-            raise Exception("Mode cannot be determined from the depth")
-
-
-    @property
-    def N(self):
-        return self.normalize()
+    def _coord2matrix(self, coord):
+        return self.sheet2matrixidx(*coord)
 
 
     @property
@@ -642,13 +474,6 @@ class SheetStack(DataStack):
 
         return (self << histstack) if adjoin else histstack
 
-
-    @property
-    def range(self):
-        range = self.last.range
-        for view in self._data.values():
-            range = find_minmax(range, view.range)
-        return range
 
 
     def _item_check(self, dim_vals, data):
