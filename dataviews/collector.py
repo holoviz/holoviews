@@ -47,7 +47,6 @@ class AttrTree(object):
         self.__dict__['path_items'] = OrderedDict()
 
         self.__dict__['_fixed'] = False
-        self.__dict__['_capitalized'] = True
 
         fixed_error = 'AttrTree attribute access disabled with fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
@@ -63,15 +62,6 @@ class AttrTree(object):
     @fixed.setter
     def fixed(self, val):
         self.__dict__['_fixed'] = val
-
-    @property
-    def capitalized(self):
-        "If capitalized, each path element must start with a capital"
-        return self.__dict__['_capitalized']
-
-    @capitalized.setter
-    def capitalized(self, val):
-        self.__dict__['_capitalized'] = bool(val)
 
     def grid(self, ordering='alphanumeric'):
         """
@@ -116,7 +106,7 @@ class AttrTree(object):
         a tuple of strings or a string in A.B.C format.
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
-        if self.capitalized and not all(p[0].isupper() for p in path):
+        if not all(p[0].isupper() for p in path):
             raise Exception("All paths elements must be capitalized.")
 
         if len(path) > 1:
@@ -150,16 +140,13 @@ class AttrTree(object):
     def __setattr__(self, label, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        ignored = label.startswith('_') or label in ['capitalized', 'fixed']
-        if not ignored and self.capitalized and not label[0].isupper():
-            raise AttributeError("%s: Custom paths elements must be capitalized." % label)
         if label[0].isupper() and self.fixed and shallow:
             raise AttributeError(self._fixed_error)
 
         super(AttrTree, self).__setattr__(label, val)
 
         if label in self.children: pass
-        elif label[0].isupper() or (not self.capitalized and not ignored):
+        elif label[0].isupper():
             self.children.append(label)
             self._propagate((label,), val)
 
@@ -184,7 +171,7 @@ class AttrTree(object):
             child_tree = AttrTree(label=label, parent=self)
             self.__dict__[label] = child_tree
             return child_tree
-        elif self.capitalized:
+        else:
             raise AttributeError("%s: Custom paths elements must be capitalized." % label)
 
 
