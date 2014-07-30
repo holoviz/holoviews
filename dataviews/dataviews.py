@@ -468,7 +468,7 @@ class Matrix(View):
                                        samples.items()])])
             table_data = OrderedDict()
             for c in coords:
-                table_data[c] = self.data[self._coord2matrix(*c)]
+                table_data[c] = self.data[self._coord2matrix(c)]
             return Table(table_data, dimensions=self.dimensions,
                          label=self.label,
                          value=self.value)
@@ -486,7 +486,7 @@ class Matrix(View):
             # Generate sample slice
             sample = [slice(None) for i in range(self.ndims)]
             coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
-            sample[sample_ind] = self._coord2matrix(*coord_fn(sample_coord))[sample_ind]
+            sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[sample_ind]
 
             # Sample data
             x_vals = self.dimension_values(dimension)
