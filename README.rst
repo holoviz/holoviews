@@ -1,4 +1,4 @@
-|BuildStatus|_
+|BuildStatus|_ |DataViewsDocs|_
 
 DataViews
 =========
@@ -30,3 +30,6 @@ ____________
 
 .. |BuildStatus| image:: https://travis-ci.org/ioam/dataviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/dataviews
+
+.. |DataViewsDocs| image:: http://doozy.inf.ed.ac.uk:8010/png?builder=dataviews_docs
+.. _DataViewsDocs: http://doozy.inf.ed.ac.uk:8010/waterfall
