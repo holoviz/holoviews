@@ -815,24 +815,6 @@ class TableStack(Stack):
     _type_map = None
 
 
-    def dframe(self):
-        """
-        Gets a dframe for each Table in the Stack, appends the dimensions
-        of the Stack as series and concatenates the dframes.
-        """
-        import pandas
-        dframes = []
-        for key, table in self.items():
-            table_frame = table.dframe()
-            for val, dim in zip(key, self.dimension_labels)[::-1]:
-                dim = dim.replace(' ', '_')
-                if dim in table_frame:
-                    dim += '_Duplicate'
-                table_frame.insert(0, dim.replace(' ', '_'), val)
-            dframes.append(table_frame)
-        return pandas.concat(dframes)
-
-
     def sample(self, samples):
         """
         Samples the Table elements in the Stack by the provided samples.

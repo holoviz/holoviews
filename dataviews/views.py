@@ -116,6 +116,10 @@ class View(param.Parameterized, Dimensional):
         self._style = val
 
 
+    def dframe(self):
+        raise NotImplementedError
+
+
     def __getstate__(self):
         """
         When pickling, make sure to save the relevant style and
@@ -656,6 +660,24 @@ class Stack(NdMapping):
         else:
             raise Exception("Can only overlay with {data} or {stack}.".format(
                 data=self.data_type, stack=self.__class__.__name__))
+
+
+    def dframe(self):
+        """
+        Gets a dframe for each View in the Stack, appends the dimensions
+        of the Stack as series and concatenates the dframes.
+        """
+        import pandas
+        dframes = []
+        for key, view in self.items():
+            view_frame = view.dframe()
+            for val, dim in zip(key, self.dimension_labels)[::-1]:
+                dim = dim.replace(' ', '_')
+                if dim in view_frame:
+                    dim += '_Duplicate'
+                view_frame.insert(0, dim.replace(' ', '_'), val)
+            dframes.append(view_frame)
+        return pandas.concat(dframes)
 
 
     def __add__(self, obj):
