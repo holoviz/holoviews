@@ -134,7 +134,10 @@ class AttrTree(object):
         """
         Access a child element by label.
         """
-        return self.__dict__[label]
+        if label in self.children:
+            return self.__dict__[label]
+        else:
+            raise KeyError(label)
 
 
     def get(self, label, default=None):
@@ -143,6 +146,24 @@ class AttrTree(object):
 
     def keys(self):
         return self.children[:]
+
+
+    def pop(self, label, default=None):
+        if label in self.children:
+            item = self[label]
+            self.__delitem__(label)
+            return item
+        else:
+            return default
+
+
+    def __delitem__(self, label):
+        if label in self.children:
+            del self.__dict__[label]
+            del self.children[self.children.index(label)]
+            self.path_items = OrderedDict([(k, v) for k, v in self.path_items.items() if k[0] != label])
+        else:
+            raise KeyError(label)
 
 
     def __setattr__(self, label, val):
