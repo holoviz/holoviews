@@ -137,6 +137,14 @@ class AttrTree(object):
         return self.__dict__[label]
 
 
+    def get(self, label, default=None):
+        return self.__dict__.get(label, default)
+
+
+    def keys(self):
+        return self.children[:]
+
+
     def __setattr__(self, label, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
