@@ -57,7 +57,7 @@ class DFrameView(View):
         if key is ():
             return self
         else:
-            if len(key) == self.ndim:
+            if len(key) == self.ndims:
                 return self.select(**dict(zip(self.dimension_labels, key)))
             else:
                 raise KeyError(key)
@@ -67,7 +67,7 @@ class DFrameView(View):
         df = self.data
         for dim, k in select.items():
             if isinstance(k, slice):
-                df = df[(k.start < df[dim]) | (df[dim] < k.stop)]
+                df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
             else:
                 df = df[df[dim] == k]
         return self.clone(df)
