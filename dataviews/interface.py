@@ -8,6 +8,7 @@ convert it to standard DataViews View types.
 """
 
 from collections import defaultdict, OrderedDict
+from itertools import groupby
 
 import numpy as np
 import pandas
@@ -19,7 +20,7 @@ from . import Dimension
 from .dataviews import HeatMap, DataStack, Table, TableStack
 from .plots import Plot
 from .options import options, PlotOpts
-from .views import View, Stack
+from .views import View, Overlay, Stack, Annotation
 
 
 class DFrameView(View):
@@ -206,10 +207,37 @@ class DFrameView(View):
         return self._export_dataview(value_dim, indices, reduce_fn, dims, stack_dims, self._create_heatmap, DataStack)
 
 
+    def __mul__(self, other):
+        if isinstance(other, DFrameStack):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items=items)
+        elif isinstance(self, DFrameOverlay):
+            if isinstance(other, DFrameOverlay):
+                overlays = self.data + other.data
+            else:
+                overlays = self.data + [other]
+        elif isinstance(other, DFrameOverlay):
+            overlays = [self] + other.data
+        elif isinstance(other, DFrameView):
+            overlays = [self, other]
+        else:
+            raise TypeError('Can only create an overlay of DFViews.')
+
+        return DFrameOverlay(overlays)
+
+
+class DFrameOverlay(Overlay):
+    """
+    Compatibility class
+    """
+
+
 
 class DFrameStack(Stack):
 
-    data_type = DFrameView
+    data_type = (DFrameView, DFrameOverlay, Annotation)
+
+    overlay_type = DFrameOverlay
 
     def dfview(self):
         dframe = self.dframe()
@@ -224,8 +252,59 @@ class classproperty(object):
         return self.f(owner)
 
 
-
 class DFramePlot(Plot):
+    """
+    A high-level plot, which will plot any DataView or DataStack type
+    including DataOverlays.
+
+    A generic plot that visualizes DataStacks containing DataOverlay or
+    DataLayer objects.
+    """
+
+    _stack_type = DFrameStack
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     DataPlot renders overlay layers which individually have style
+     options but DataPlot itself does not.""")
+
+
+    def __init__(self, overlays, **kwargs):
+        self._stack = self._check_stack(overlays, DFrameOverlay)
+        self.plots = []
+        super(DFramePlot, self).__init__(**kwargs)
+
+
+    def __call__(self, axis=None, lbrt=None, **kwargs):
+
+        ax = self._axis(axis, None)
+
+        stacks = self._stack.split_overlays()
+
+        for zorder, stack in enumerate(stacks):
+            plotopts = View.options.plotting(stack).opts
+
+            plotype = Plot.defaults[stack.type]
+            plot = plotype(stack, size=self.size,
+                           show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
+                           show_legend=self.show_legend, show_title=self.show_title,
+                           show_grid=self.show_grid, zorder=zorder,
+                           **dict(plotopts, **kwargs))
+            plot.aspect = self.aspect
+
+            plot(ax)
+            self.plots.append(plot)
+
+        if axis is None: plt.close(self.handles['fig'])
+        return ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n, lbrt=None):
+        n = n if n < len(self) else len(self) - 1
+        for zorder, plot in enumerate(self.plots):
+            plot.update_frame(n)
+
+
+class DFrameViewPlot(Plot):
     """
     DFramePlot provides a wrapper around Pandas dataframe plots.
     It takes a single DFrameView or DFrameStack as input and plots it using
@@ -269,7 +348,7 @@ class DFramePlot(Plot):
 
     def __init__(self, dfview, zorder=0, **kwargs):
         self._stack = self._check_stack(dfview, DFrameView)
-        super(DFramePlot, self).__init__(zorder, **kwargs)
+        super(DFrameViewPlot, self).__init__(zorder, **kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -320,13 +399,14 @@ class DFramePlot(Plot):
         n = n if n < len(self) else len(self) - 1
         dfview = list(self._stack.values())[n]
         if not self.plot_type in ['hist', 'scatter_matrix']:
-            self.ax.cla()
+            if self.zorder == 0: self.ax.cla()
             self.handles['title'] = self.ax.set_title('')
             self._update_title(n)
         self._update_plot(dfview)
         plt.draw()
 
 
-Plot.defaults.update({DFrameView: DFramePlot})
+Plot.defaults.update({DFrameView: DFrameViewPlot})
+Plot.defaults.update({DFrameOverlay: DFramePlot})
 
-options.DFView = PlotOpts()
+options.DFrameView = PlotOpts()
