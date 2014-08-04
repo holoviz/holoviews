@@ -315,12 +315,13 @@ class DFrameViewPlot(Plot):
     """
 
     plot_type = param.ObjectSelector(default='boxplot', objects=['plot', 'boxplot',
-                                                                 'hist', 'scatter_matrix'],
+                                                                 'hist', 'scatter_matrix',
+                                                                 'autocorrelation_plot'],
                                      doc="""Selects which Pandas plot type to use.""")
 
     plot_options = {'plot':            ['kind', 'stacked', 'xerr',
                                         'yerr', 'share_x', 'share_y',
-                                        'table', 'style',
+                                        'table', 'style', 'x', 'y',
                                         'secondary_y', 'legend',
                                         'logx', 'logy', 'position',
                                         'colormap', 'mark_right'],
@@ -370,7 +371,8 @@ class DFrameViewPlot(Plot):
             if k not in self.plot_options[self.plot_type]:
                 self.warning('Plot option %s does not apply to %s plot type.' % (k, self.plot_type))
                 self.style.pop(k)
-        self.style['figsize'] = self.size
+        if self.plot_type not in ['autocorrelation_plot']:
+            self.style['figsize'] = self.size
         
         # Legacy fix for Pandas, can be removed for Pandas >0.14
         if self.plot_type == 'boxplot':
@@ -385,9 +387,10 @@ class DFrameViewPlot(Plot):
 
 
     def _update_plot(self, dfview):
-        import pandas
         if self.plot_type == 'scatter_matrix':
             pandas.scatter_matrix(dfview.data, ax=self.ax, **self.style)
+        elif self.plot_type == 'autocorrelation_plot':
+            pandas.tools.plotting.autocorrelation_plot(dfview.data, ax=self.ax, **self.style)
         else:
             getattr(dfview.data, self.plot_type)(ax=self.ax, **self.style)
 
