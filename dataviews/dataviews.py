@@ -220,6 +220,13 @@ class Curve(DataLayer):
     def __init__(self, data, **kwargs):
         super(Curve, self).__init__(data, **kwargs)
 
+
+    def dframe(self):
+        import pandas as pd
+        df = pd.DataFrame(self.data, columns=[self.dimension_labels[0], self.value.name])
+        return df
+
+
     def stack(self):
         stack = DataStack(None, dimensions=[self.xlabel], title=self.title+' {dims}')
         for idx in range(len(self.data)):
