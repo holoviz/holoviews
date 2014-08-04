@@ -508,16 +508,21 @@ class Stack(NdMapping):
             raise Exception('NdMapping does not support splitting of deep dimensions.')
         first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
         self._check_key_type = False # Speed optimization
+        own_keys = self._data.keys()
 
         split_data = NdMapping(dimensions=first_dims)
+        split_data._check_key_type = False # Speed optimization
         for fk in first_keys:  # The first groups keys
             split_data[fk] = self.clone(dimensions=second_dims)
+            split_data[fk]._check_key_type = False # Speed optimization
             for sk in second_keys:  # The second groups keys
                 # Generate a candidate expanded key
                 unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
                 sorted_key = self.sort_key(unordered_dimkeys)
-                if sorted_key in self._data.keys():  # If the expanded key actually exists...
+                if sorted_key in own_keys:  # If the expanded key actually exists...
                     split_data[fk][sk] = self[sorted_key]
+            split_data[fk]._check_key_type = True # Speed optimization
+        split_data._check_key_type = True # Speed optimization
 
         self._check_key_type = True # Re-enable checks
 
