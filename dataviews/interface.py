@@ -8,19 +8,23 @@ convert it to standard DataViews View types.
 """
 
 from collections import defaultdict, OrderedDict
-from itertools import groupby
 
-import numpy as np
-import pandas
+try:
+    import pandas as pd
+except:
+    pd = None
+
 from matplotlib import pyplot as plt
 
 import param
 
 from . import Dimension
 from .dataviews import HeatMap, DataStack, Table, TableStack
+from .ndmapping import NdMapping
 from .plots import Plot
 from .options import options, PlotOpts
 from .views import View, Overlay, Stack, Annotation
+
 
 
 class DFrameView(View):
@@ -49,7 +53,9 @@ class DFrameView(View):
     value = param.ClassSelector(class_=(str, Dimension), precedence=-1)
 
     def __init__(self, data, **params):
-        if not isinstance(data, pandas.DataFrame):
+        if pd is None:
+            raise Exception("Pandas is required for the Pandas interface.")
+        if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame View type requires Pandas dataframe as data.')
         super(DFrameView, self).__init__(data, **params)
 
@@ -388,9 +394,9 @@ class DFrameViewPlot(Plot):
 
     def _update_plot(self, dfview):
         if self.plot_type == 'scatter_matrix':
-            pandas.scatter_matrix(dfview.data, ax=self.ax, **self.style)
+            pd.scatter_matrix(dfview.data, ax=self.ax, **self.style)
         elif self.plot_type == 'autocorrelation_plot':
-            pandas.tools.plotting.autocorrelation_plot(dfview.data, ax=self.ax, **self.style)
+            pd.tools.plotting.autocorrelation_plot(dfview.data, ax=self.ax, **self.style)
         else:
             getattr(dfview.data, self.plot_type)(ax=self.ax, **self.style)
 
