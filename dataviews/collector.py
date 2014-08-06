@@ -589,8 +589,8 @@ class Analyze(Collect):
         else:
             self.times = []
         self.kwargs = kwargs
-        self.stackwise = self.kwargs.pop('stackwise', False)
-        self.mode = 'set'
+        self.stackwise = kwargs.pop('stackwise', False)
+        self.mode = kwargs.pop('mode', 'set')
         self.path = None
 
 
@@ -736,7 +736,10 @@ class Collector(AttrTree):
         Given a ViewRef and the ViewOperation analysisfn, process the
         data resolved by the reference with analysisfn at each step.
         """
-        return Analyze(reference, analysisfn, *args, **kwargs)
+        task = Analyze(reference, analysisfn, *args, **kwargs)
+        if task.mode == 'merge':
+            self.path_items[uuid.uuid4().hex] = task
+        return task
 
 
     def __call__(self, attrtree=AttrTree(), times=[]):
