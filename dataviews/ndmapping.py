@@ -556,7 +556,7 @@ class NdMapping(NdIndexableMapping):
         if all(not isinstance(el, slice) for el in map_slice):
             return self._dataslice(self._data[map_slice], data_slice)
         else:
-            items = self._data.iteritems()
+            items = self._data.items()
             for cidx, condition in enumerate(conditions):
                 items = [(k, v) for k, v in items if condition(k[cidx])]
             items = [(k, self._dataslice(v, data_slice)) for k, v in items]
