@@ -390,7 +390,7 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         """
         Returns the set of values for a particular dimensions.
         """
-        return set([k[self.dim_index(dim)] for k in self._data.keys()])
+        return list(set([k[self.dim_index(dim)] for k in self._data.keys()]))
 
 
     def dim_range(self, dim):
