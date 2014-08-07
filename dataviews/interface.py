@@ -1,7 +1,7 @@
 """
-The interface subpackage provides View and Plot types to wrap
-external objects with. Currently only a Pandas compatibility wrapper
-is provided, which allows integrating Pandas DataFrames within the
+The interface subpackage provides View and Plot types to wrap external
+objects with. Currently only a Pandas compatibility wrapper is
+provided, which allows integrating Pandas DataFrames within the
 DataViews compositioning and animation framework. Additionally, it
 provides methods to apply operations to the underlying data and
 convert it to standard DataViews View types.
@@ -29,8 +29,8 @@ from .views import View, Overlay, Stack, Annotation
 
 class DFrameView(View):
     """
-    DFrameView provides a convenient compatibility wrapper around Pandas
-    DataFrames.  It provides several core functions:
+    DFrameView provides a convenient compatibility wrapper around
+    Pandas DataFrames.  It provides several core functions:
 
         * Allows integrating several Pandas plot types with the
           DataViews plotting system (includes plot, boxplot, histogram
@@ -47,7 +47,7 @@ class DFrameView(View):
                  supplied args or kwargs along.
 
               2) The select and __getitem__ method which allow for
-                 selecting and slicing the data using NdMapping.          
+                 selecting and slicing the data using NdMapping.
     """
 
     value = param.ClassSelector(class_=(str, Dimension), precedence=-1)
@@ -61,16 +61,25 @@ class DFrameView(View):
 
 
     def __getitem__(self, key):
+        """
+        Allows slicing and selecting along the DFrameView dimensions.
+        """
         if key is ():
             return self
         else:
             if len(key) == self.ndims:
                 return self.select(**dict(zip(self.dimension_labels, key)))
             else:
-                raise KeyError(key)
+                raise Exception('Selection contains %d dimensions, DFrameView '
+                                'only has %d dimensions.' % (self.ndims, len(key)))
 
 
     def select(self, **select):
+        """
+        Allows slice and select individual values along the DFrameView
+        dimensions. Supply the dimensions and values or slices as
+        keyword arguments.
+        """
         df = self.data
         for dim, k in select.items():
             if isinstance(k, slice):
@@ -108,16 +117,22 @@ class DFrameView(View):
 
 
     def _create_table(self, temp_dict, value_dim, dims):
-        params = dict(value=value_dim, dimensions=[self.dim_dict.get(d, d) for d in dims]) if dims else {}
-        return Table(temp_dict, label=self.label, **params)
+        dimensions = [self.dim_dict.get(d, d) for d in dims]) if dims else {}
+        label = self.label + (' - ' if self.label else '') + value_dim
+        return Table(temp_dict, value=value_dim, dimensions=dimensions,
+                     label=label, **params)
 
 
     def _create_heatmap(self, temp_dict, value_dim, dims):
-        return HeatMap(temp_dict, label=self.label, dimensions=[self.dim_dict.get(d, d) for d in dims],
+        label = self.label + (' - ' if self.label else '') + value_dim
+        dimensions = [self.dim_dict.get(d, d) for d in dims]
+        return HeatMap(temp_dict, label=label, dimensions=dimensions,
                        value=self.dim_dict[value_dim])
 
 
-    def _export_dataview(self, value_dim='', indices=[], reduce_fn=None, view_dims=[], stack_dims=[], view_method=None, stack_type=None):
+    def _export_dataview(self, value_dim='', indices=[], reduce_fn=None,
+                         view_dims=[], stack_dims=[], view_method=None,
+                         stack_type=None):
         """
         The core conversion method from the Pandas DataFrame to a View
         or Stack type. The value_dim specifies the column in the
@@ -165,7 +180,7 @@ class DFrameView(View):
                         key = value_dim
                     temp_dict[key].append(row[val_idx])
                 temp_dict = {k:reduce_fn(v) for k, v in temp_dict.items()}
-            # Select values using by indices
+            # Select values by indices
             else:
                 temp_dict = OrderedDict()
                 # If the selected dimensions values are not unique add Index
@@ -199,7 +214,9 @@ class DFrameView(View):
         be inserted into the Table and TableStack respectively.  If
         not stack_dims are specified a single Table will be returned.
         """
-        return self._export_dataview(value_dim, indices, reduce_fn, dims, stack_dims, self._create_table, TableStack)
+        return self._export_dataview(value_dim, indices, reduce_fn,
+                                     dims, stack_dims, self._create_table,
+                                     TableStack)
 
 
     def heatmap(self, value_dim, dims, index=None, reduce_fn=None, stack_dims=[]):
@@ -213,7 +230,8 @@ class DFrameView(View):
         indices = [index] if index else []
         if 1 > len(dims) > 2:
             raise Exception("HeatMap supports either one or two dimensions")
-        return self._export_dataview(value_dim, indices, reduce_fn, dims, stack_dims, self._create_heatmap, DataStack)
+        return self._export_dataview(value_dim, indices, reduce_fn, dims,
+                                     stack_dims, self._create_heatmap, DataStack)
 
 
     def __mul__(self, other):
@@ -263,11 +281,11 @@ class classproperty(object):
 
 class DFramePlot(Plot):
     """
-    A high-level plot, which will plot any DataView or DataStack type
+    A high-level plot, which will plot any DFrameView or DFrameStack type
     including DataOverlays.
 
-    A generic plot that visualizes DataStacks containing DataOverlay or
-    DataLayer objects.
+    A generic plot that visualizes DFrameStacks containing DFrameOverlay or
+    DFrameView objects.
     """
 
     _stack_type = DFrameStack
