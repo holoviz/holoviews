@@ -338,7 +338,7 @@ class DFrameViewPlot(Plot):
                                         'xlabelsize', 'xrot',
                                         'ylabelsize', 'yrot',
                                         'sharex', 'sharey', 'hist',
-                                        'layout'],
+                                        'layout', 'bins'],
                     'boxplot':         ['column', 'by', 'fontsize',
                                         'layout', 'grid', 'rot'],
                     'scatter_matrix':  ['alpha', 'grid', 'diagonal',
