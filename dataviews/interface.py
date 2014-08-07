@@ -73,7 +73,7 @@ class DFrameView(View):
         if key is ():
             return self
         else:
-            if len(key) == self.ndims:
+            if len(key) <= self.ndims:
                 return self.select(**dict(zip(self.dimension_labels, key)))
             else:
                 raise Exception('Selection contains %d dimensions, DFrameView '
