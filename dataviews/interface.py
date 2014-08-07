@@ -142,7 +142,7 @@ class DFrameView(View):
 
 
     def _create_table(self, temp_dict, value_dim, dims):
-        dimensions = [self.dim_dict.get(d, d) for d in dims]) if dims else {}
+        dimensions = [self.dim_dict.get(d, d) for d in dims] if dims else {}
         label = self.label + (' - ' if self.label else '') + value_dim
         return Table(temp_dict, value=value_dim, dimensions=dimensions,
                      label=label, **params)
