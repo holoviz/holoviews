@@ -109,17 +109,36 @@ class DFrameView(View):
         """
         return self.data.copy()
 
+    def _split_dimensions(self, dimensions, ndmapping_type):
+        invalid_dims = list(set(dimensions) - set(self.dimension_labels))
+        if invalid_dims:
+            raise Exception('Following dimensions could not be found %s.'
+                            % invalid_dims)
+
+        dimensions = [self.dim_dict[d] for d in dimensions]
+        ndmapping = ndmapping_type(None, dimensions=dimensions)
+        view_dims = set(self.dimension_labels) - set(dimensions)
+        view_dims = [self.dim_dict[d] for d in view_dims]
+        for k, v in self.data.groupby(dimensions):
+            ndmapping[k] = self.clone(v.drop(dimensions, axis=1),
+                                      dimensions=view_dims)
+        return ndmapping
+
+
+    def grid(self, dimensions=[]):
+        """
+        Splits the supplied the dimensions out into a Grid.
+        """
+        if len(dimensions) > 2:
+            raise Exception('Grids hold a maximum of two dimensions.')
+        return self._split_dimensions(dimensions, Grid)
+
 
     def stack(self, dimensions=[]):
         """
         Splits the supplied dimensions out into a DFrameStack.
         """
-        stack = DFrameStack(None, dimensions=dimensions)
-        view_dims = set(self.dimension_labels) - set(dimensions)
-        for k, v in self.data.groupby(dimensions):
-            stack[k] = self.clone(v.drop(dimensions, axis=1),
-                                  dimensions=[self.dim_dict[d] for d in view_dims])
-        return stack
+        return self._split_dimensions(DFrameStack)
 
 
     def _create_table(self, temp_dict, value_dim, dims):
