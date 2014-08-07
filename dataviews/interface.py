@@ -372,6 +372,10 @@ class DFrameViewPlot(Plot):
 
     @classproperty
     def style_opts(cls):
+        """
+        Concatenates the Pandas plot_options to make all the options
+        available via the StyleOpts interface.
+        """
         opt_set = set()
         for opts in cls.plot_options.values():
             opt_set |= set(opts)
