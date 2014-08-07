@@ -52,12 +52,18 @@ class DFrameView(View):
 
     value = param.ClassSelector(class_=(str, Dimension), precedence=-1)
 
-    def __init__(self, data, **params):
+    def __init__(self, data, dimensions=None, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame View type requires Pandas dataframe as data.')
-        super(DFrameView, self).__init__(data, **params)
+        if dimensions:
+            data.columns = dimensions
+        else:
+            dimensions = list(data.columns)
+
+        super(DFrameView, self).__init__(data, dimensions=dimensions,
+                                         **params)
 
 
     def __getitem__(self, key):
