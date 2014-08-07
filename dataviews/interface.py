@@ -110,14 +110,14 @@ class DFrameView(View):
         return self.data.copy()
 
 
-    def dfstack(self, dimensions=[]):
+    def stack(self, dimensions=[]):
         """
         Splits the supplied dimensions out into a DFrameStack.
         """
         stack = DFrameStack(None, dimensions=dimensions)
         view_dims = set(self.dimension_labels) - set(dimensions)
         for k, v in self.data.groupby(dimensions):
-            stack[k] = self.clone(v.filter(view_dims),
+            stack[k] = self.clone(v.drop(dimensions, axis=1),
                                   dimensions=[self.dim_dict[d] for d in view_dims])
         return stack
 
