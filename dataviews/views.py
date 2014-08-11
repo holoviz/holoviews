@@ -676,11 +676,14 @@ class Stack(NdMapping):
         dframes = []
         for key, view in self.items():
             view_frame = view.dframe()
-            for val, dim in zip(key, self.dimension_labels)[::-1]:
+            for val, dim in reversed(zip(key, self.dimension_labels)):
                 dim = dim.replace(' ', '_')
-                if dim in view_frame:
-                    dim += '_Duplicate'
-                view_frame.insert(0, dim.replace(' ', '_'), val)
+                dimn = 1
+                while dim in view_frame:
+                    dim = dim+'_%d' % dimn
+                    if dim in view_frame:
+                        dimn += 1
+                view_frame.insert(0, dim, val)
             dframes.append(view_frame)
         return pandas.concat(dframes)
 
