@@ -280,7 +280,8 @@ class DFrameView(View):
 
 class DFrameOverlay(Overlay):
     """
-    Compatibility class
+    DFrameOverlay provides a compatibility layer to overlay Pandas
+    Views.
     """
 
 
