@@ -20,10 +20,9 @@ import param
 
 from . import Dimension
 from .dataviews import HeatMap, DataStack, Table, TableStack
-from .ndmapping import NdMapping
 from .plots import Plot
 from .options import options, PlotOpts
-from .views import View, Overlay, Stack, Annotation
+from .views import View, Overlay, Stack, Annotation, Grid
 
 
 
@@ -50,7 +49,8 @@ class DFrameView(View):
                  selecting and slicing the data using NdMapping.
     """
 
-    value = param.ClassSelector(class_=(str, Dimension), precedence=-1)
+    value = param.ClassSelector(class_=(str, Dimension), precedence=-1,
+                                doc="DFrameView has no value dimension.")
 
     def __init__(self, data, dimensions=None, **params):
         if pd is None:
@@ -145,7 +145,7 @@ class DFrameView(View):
         dimensions = [self.dim_dict.get(d, d) for d in dims] if dims else {}
         label = self.label + (' - ' if self.label else '') + value_dim
         return Table(temp_dict, value=value_dim, dimensions=dimensions,
-                     label=label, **params)
+                     label=label)
 
 
     def _create_heatmap(self, temp_dict, value_dim, dims):
@@ -281,12 +281,17 @@ class DFrameView(View):
 class DFrameOverlay(Overlay):
     """
     DFrameOverlay provides a compatibility layer to overlay Pandas
-    Views.
+    Views. Required to allow isinstance checks to work.
     """
+
+    pass
 
 
 
 class DFrameStack(Stack):
+    """
+    DFrameStack allows stacking DFrames along a number of dimensions.
+    """
 
     data_type = (DFrameView, DFrameOverlay, Annotation)
 
@@ -296,13 +301,6 @@ class DFrameStack(Stack):
         dframe = self.dframe()
         return self.last.clone(dframe, dimensions=self.dimensions+list(dframe.columns))
     
-
-
-class classproperty(object):
-    def __init__(self, f):
-        self.f = f
-    def __get__(self, obj, owner):
-        return self.f(owner)
 
 
 class DFramePlot(Plot):
@@ -357,6 +355,7 @@ class DFramePlot(Plot):
             plot.update_frame(n)
 
 
+
 class DFrameViewPlot(Plot):
     """
     DFramePlot provides a wrapper around Pandas dataframe plots.
@@ -372,23 +371,34 @@ class DFrameViewPlot(Plot):
                                                                  'autocorrelation_plot'],
                                      doc="""Selects which Pandas plot type to use.""")
 
-    plot_options = {'plot':            ['kind', 'stacked', 'xerr',
-                                        'yerr', 'share_x', 'share_y',
-                                        'table', 'style', 'x', 'y',
-                                        'secondary_y', 'legend',
-                                        'logx', 'logy', 'position',
-                                        'colormap', 'mark_right'],
-                    'hist':            ['column', 'by', 'grid',
-                                        'xlabelsize', 'xrot',
-                                        'ylabelsize', 'yrot',
-                                        'sharex', 'sharey', 'hist',
-                                        'layout', 'bins'],
-                    'boxplot':         ['column', 'by', 'fontsize',
-                                        'layout', 'grid', 'rot'],
-                    'scatter_matrix':  ['alpha', 'grid', 'diagonal',
-                                        'marker', 'range_padding',
-                                        'hist_kwds', 'density_kwds'],
-                    'autocorrelation': ['kwds']}
+    dframe_options = {'plot': ['kind', 'stacked', 'xerr',
+                               'yerr', 'share_x', 'share_y',
+                               'table', 'style', 'x', 'y',
+                               'secondary_y', 'legend',
+                               'logx', 'logy', 'position',
+                               'colormap', 'mark_right'],
+                      'hist': ['column', 'by', 'grid',
+                               'xlabelsize', 'xrot',
+                               'ylabelsize', 'yrot',
+                               'sharex', 'sharey', 'hist',
+                               'layout', 'bins'],
+                      'boxplot': ['column', 'by', 'fontsize',
+                                  'layout', 'grid', 'rot'],
+                      'scatter_matrix': ['alpha', 'grid', 'diagonal',
+                                         'marker', 'range_padding',
+                                         'hist_kwds', 'density_kwds'],
+                      'autocorrelation': ['kwds']}
+
+
+    class classproperty(object):
+        """
+        Adds a getter property to a class.
+        """
+        def __init__(self, f):
+            self.f = f
+        def __get__(self, obj, owner):
+            return self.f(owner)
+
 
     @classproperty
     def style_opts(cls):
@@ -397,7 +407,7 @@ class DFrameViewPlot(Plot):
         available via the StyleOpts interface.
         """
         opt_set = set()
-        for opts in cls.plot_options.values():
+        for opts in cls.dframe_options.values():
             opt_set |= set(opts)
         return list(opt_set)
 
@@ -425,7 +435,7 @@ class DFrameViewPlot(Plot):
         self.style = View.options.style(dfview)[cyclic_index]
         styles = self.style.keys()
         for k in styles:
-            if k not in self.plot_options[self.plot_type]:
+            if k not in self.dframe_options[self.plot_type]:
                 self.warning('Plot option %s does not apply to %s plot type.' % (k, self.plot_type))
                 self.style.pop(k)
         if self.plot_type not in ['autocorrelation_plot']:
