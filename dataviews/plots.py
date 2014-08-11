@@ -557,8 +557,8 @@ class MatrixPlot(Plot):
             else self._stack.last.lbrt
         title = None if self.zorder > 0 else self._format_title(-1)
         xticks, yticks = self._compute_ticks(view)
-        ax = self._axis(axis, title, str(xdim), str(ydim), (l, b, r, t),
-                        xticks=xticks, yticks=yticks)
+        self.ax = self._axis(axis, title, str(xdim), str(ydim), (l, b, r, t),
+                             xticks=xticks, yticks=yticks)
 
         opts = View.options.style(view)[cyclic_index]
         data = view.data
@@ -572,17 +572,18 @@ class MatrixPlot(Plot):
             cmap.set_bad('w', 1.)
             opts['cmap'] = cmap
 
-        im = ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
+        im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         clims = view.range if self.normalize_individually else self._stack.range
         im.set_clim(clims)
         self.handles['im'] = im
 
         if isinstance(view, HeatMap):
-            ax.set_aspect(float(r - l)/(t-b))
-            self._annotate_values(ax, view)
+            self.ax.set_aspect(float(r - l)/(t-b))
+            self.handles['annotations'] = {}
+            self._annotate_values(view)
 
         if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        return self.ax if axis else self.handles['fig']
 
 
     def _compute_ticks(self, view):
@@ -597,7 +598,7 @@ class MatrixPlot(Plot):
             return None, None
 
 
-    def _annotate_values(self, ax, view):
+    def _annotate_values(self, view):
         dim1_keys, dim2_keys = view.dense_keys()
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xstep, ystep = 1.0/num_x, 1.0/num_y
@@ -606,9 +607,16 @@ class MatrixPlot(Plot):
         coords = product(dim1_keys, dim2_keys)
         plot_coords = product(xpos, ypos)
         for plot_coord, coord in zip(plot_coords, coords):
-            ax.annotate(round(view._data.get(coord, np.NaN), 3), xy=plot_coord,
-                        xycoords='axes fraction', horizontalalignment='center',
-                        verticalalignment='center')
+            text = round(view._data.get(coord, np.NaN), 3)
+            if plot_coord not in self.handles['annotations']:
+                annotation = self.ax.annotate(text, xy=plot_coord,
+                                              xycoords='axes fraction',
+                                              horizontalalignment='center',
+                                              verticalalignment='center')
+                self.handles['annotations'][plot_coord] = annotation
+            else:
+                self.handles['annotations'][plot_coord].set_text(text)
+
 
 
     def update_frame(self, n):
@@ -617,6 +625,9 @@ class MatrixPlot(Plot):
 
         view = list(self._stack.values())[n]
         im.set_data(view.data)
+
+        if isinstance(view, HeatMap):
+           self._annotate_values(view)
 
         if self.normalize_individually:
             im.set_clim(view.range)
