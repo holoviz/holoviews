@@ -806,6 +806,7 @@ class Table(View):
                 value_label = str(self.value).replace(' ','_')
                 df_dict[value_label].append(val)
             else:
+                key = key.name if isinstance(key, Dimension) else key
                 df_dict[key.replace(' ','_')].append(val)
         return DataFrame(dict(df_dict))
 
