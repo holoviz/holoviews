@@ -638,13 +638,6 @@ class NdMapping(NdIndexableMapping):
         return lambda x: True
 
 
-    def _conjunction(self, key, conditions):
-        conds = []
-        for i, cond in enumerate(conditions):
-            conds.append(cond(key[i]))
-        return all(conds)
-
-
 
 __all__ = ["NdIndexableMapping",
            "NdMapping",
