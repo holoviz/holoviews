@@ -223,8 +223,7 @@ class Curve(DataLayer):
 
     def dframe(self):
         import pandas as pd
-        df = pd.DataFrame(self.data, columns=[self.dimension_labels[0], self.value.name])
-        return df
+        return pd.DataFrame(self.data, columns=[self.dimension_labels[0], self.value.name])
 
 
     def stack(self):
@@ -792,6 +791,7 @@ class Table(View):
         """
         if col == 0:  return 'heading'
         else:         return 'data'
+
 
     def dframe(self):
         """
