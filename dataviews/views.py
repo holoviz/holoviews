@@ -116,6 +116,10 @@ class View(param.Parameterized, Dimensional):
         self._style = val
 
 
+    def dframe(self):
+        raise NotImplementedError
+
+
     def __getstate__(self):
         """
         When pickling, make sure to save the relevant style and
@@ -504,16 +508,21 @@ class Stack(NdMapping):
             raise Exception('NdMapping does not support splitting of deep dimensions.')
         first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
         self._check_key_type = False # Speed optimization
+        own_keys = self._data.keys()
 
         split_data = NdMapping(dimensions=first_dims)
+        split_data._check_key_type = False # Speed optimization
         for fk in first_keys:  # The first groups keys
             split_data[fk] = self.clone(dimensions=second_dims)
+            split_data[fk]._check_key_type = False # Speed optimization
             for sk in second_keys:  # The second groups keys
                 # Generate a candidate expanded key
                 unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
                 sorted_key = self.sort_key(unordered_dimkeys)
-                if sorted_key in self._data.keys():  # If the expanded key actually exists...
+                if sorted_key in own_keys:  # If the expanded key actually exists...
                     split_data[fk][sk] = self[sorted_key]
+            split_data[fk]._check_key_type = True # Speed optimization
+        split_data._check_key_type = True # Speed optimization
 
         self._check_key_type = True # Re-enable checks
 
@@ -656,6 +665,27 @@ class Stack(NdMapping):
         else:
             raise Exception("Can only overlay with {data} or {stack}.".format(
                 data=self.data_type, stack=self.__class__.__name__))
+
+
+    def dframe(self):
+        """
+        Gets a dframe for each View in the Stack, appends the dimensions
+        of the Stack as series and concatenates the dframes.
+        """
+        import pandas
+        dframes = []
+        for key, view in self.items():
+            view_frame = view.dframe()
+            for val, dim in reversed(zip(key, self.dimension_labels)):
+                dim = dim.replace(' ', '_')
+                dimn = 1
+                while dim in view_frame:
+                    dim = dim+'_%d' % dimn
+                    if dim in view_frame:
+                        dimn += 1
+                view_frame.insert(0, dim, val)
+            dframes.append(view_frame)
+        return pandas.concat(dframes)
 
 
     def __add__(self, obj):

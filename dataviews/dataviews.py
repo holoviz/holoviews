@@ -220,6 +220,12 @@ class Curve(DataLayer):
     def __init__(self, data, **kwargs):
         super(Curve, self).__init__(data, **kwargs)
 
+
+    def dframe(self):
+        import pandas as pd
+        return pd.DataFrame(self.data, columns=[self.dimension_labels[0], self.value.name])
+
+
     def stack(self):
         stack = DataStack(None, dimensions=[self.xlabel], title=self.title+' {dims}')
         for idx in range(len(self.data)):
@@ -786,6 +792,7 @@ class Table(View):
         if col == 0:  return 'heading'
         else:         return 'data'
 
+
     def dframe(self):
         """
         Generates a Pandas dframe from the Table.
@@ -799,6 +806,7 @@ class Table(View):
                 value_label = str(self.value).replace(' ','_')
                 df_dict[value_label].append(val)
             else:
+                key = key.name if isinstance(key, Dimension) else key
                 df_dict[key.replace(' ','_')].append(val)
         return DataFrame(dict(df_dict))
 
@@ -813,24 +821,6 @@ class TableStack(Stack):
     _type = Table
 
     _type_map = None
-
-
-    def dframe(self):
-        """
-        Gets a dframe for each Table in the Stack, appends the dimensions
-        of the Stack as series and concatenates the dframes.
-        """
-        import pandas
-        dframes = []
-        for key, table in self.items():
-            table_frame = table.dframe()
-            for val, dim in zip(key, self.dimension_labels)[::-1]:
-                dim = dim.replace(' ', '_')
-                if dim in table_frame:
-                    dim += '_Duplicate'
-                table_frame.insert(0, dim.replace(' ', '_'), val)
-            dframes.append(table_frame)
-        return pandas.concat(dframes)
 
 
     def sample(self, samples):

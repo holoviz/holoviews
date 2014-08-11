@@ -104,7 +104,9 @@ class Dimensional(object):
 
     @property
     def dimension_labels(self):
-        return [d.name for d in self.dimensions]
+        if not hasattr(self, '_dimension_labels'):
+            self._dimension_labels = [d.name for d in self.dimensions]
+        return self._dimension_labels
 
 
     @property
@@ -384,6 +386,13 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         return repr(self)
 
 
+    def dim_values(self, dim):
+        """
+        Returns a sorted list of values for a particular dimensions.
+        """
+        return sorted(set([k[self.dim_index(dim)] for k in self._data.keys()]))
+
+
     def dim_range(self, dim):
         dimkeys = sorted([k[self.dim_index(dim)] for k in self._data.keys()])
         return (dimkeys[0], dimkeys[-1])
@@ -547,8 +556,10 @@ class NdMapping(NdIndexableMapping):
         if all(not isinstance(el, slice) for el in map_slice):
             return self._dataslice(self._data[map_slice], data_slice)
         else:
-            items = [(k, self._dataslice(v, data_slice)) for k, v
-                     in self._data.items() if self._conjunction(k, conditions)]
+            items = self._data.items()
+            for cidx, condition in enumerate(conditions):
+                items = [(k, v) for k, v in items if condition(k[cidx])]
+            items = [(k, self._dataslice(v, data_slice)) for k, v in items]
             if self.ndims == 1:
                 items = [(k[0], v) for (k, v) in items]
             return self.clone(items)
@@ -625,13 +636,6 @@ class NdMapping(NdIndexableMapping):
 
     def _all_condition(self):
         return lambda x: True
-
-
-    def _conjunction(self, key, conditions):
-        conds = []
-        for i, cond in enumerate(conditions):
-            conds.append(cond(key[i]))
-        return all(conds)
 
 
 
