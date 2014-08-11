@@ -351,19 +351,6 @@ channels = OptionsGroup([Options('definitions', ChannelOpts)])
 options =  OptionsGroup([Options('plotting', PlotOpts),
                          Options('style', StyleOpts)])
 
-# Default Styles
-options.Style = StyleOpts()
-options.Contours = StyleOpts(color=Cycle(['k', 'w']))
-options.SheetView = StyleOpts(cmap='gray', interpolation='nearest')
-options.Matrix = StyleOpts(cmap='jet', interpolation='nearest')
-options.HeatMap = StyleOpts(cmap='jet', interpolation='nearest')
-options.Curve = StyleOpts(color=Cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k']), linewidth=2)
-options.Scatter = StyleOpts(color=Cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k']), linewidth=2)
-options.Annotation = StyleOpts()
-options.Histogram = StyleOpts(ec='k', fc='w')
-options.Table = StyleOpts()
-options.Points = StyleOpts(color='r', marker='x')
-
 
 # Default Plotopts
 options.CoordinateGrid = PlotOpts()
@@ -371,5 +358,3 @@ options.DataGrid = PlotOpts()
 options.Grid = PlotOpts()
 options.GridLayout = PlotOpts()
 
-# Defining the most common style options for dataviews
-GrayNearest = StyleOpts(cmap='gray', interpolation='nearest')

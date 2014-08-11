@@ -18,7 +18,8 @@ from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, S
 from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack
 from .sheetviews import CoordinateGrid
 
-from .options import options, GrayNearest, StyleOpts, ChannelOpts, Cycle
+from .options import options, StyleOpts, ChannelOpts, Cycle
+from .styles import GrayNearest
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)

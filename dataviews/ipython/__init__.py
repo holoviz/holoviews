@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 
+from ..styles import set_style
+
 from . import magics
 from .magics import ViewMagic, load_magics
 from .display_hooks import animate, set_display_hooks
@@ -61,6 +63,7 @@ def load_ipython_extension(ip, verbose=True):
         load_magics(ip)
         set_display_hooks(ip)
         update_matplotlib_rc()
+        set_style(None)
 
 def unload_ipython_extension(ip):
     global _loaded
