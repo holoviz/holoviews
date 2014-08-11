@@ -26,17 +26,14 @@ from .views import View, Overlay, Stack, Annotation, Grid
 
 
 
-class DFrameView(View):
+class DataFrameView(View):
     """
-    DFrameView provides a convenient compatibility wrapper around
-    Pandas DataFrames.  It provides several core functions:
+    DataFrameView provides a convenient compatibility wrapper around
+    Pandas DataFrames. It provides several core functions:
 
         * Allows integrating several Pandas plot types with the
           DataViews plotting system (includes plot, boxplot, histogram
           and scatter_matrix).
-
-        * Allows conversion of the Pandas DataFrames to different View
-          types, including Tables and HeatMaps.
 
         * Provides several convenient wrapper methods to apply
           DataFrame methods and slice data. This includes:
@@ -50,7 +47,7 @@ class DFrameView(View):
     """
 
     value = param.ClassSelector(class_=(str, Dimension), precedence=-1,
-                                doc="DFrameView has no value dimension.")
+                                doc="DataFrameView has no value dimension.")
 
     def __init__(self, data, dimensions=None, **params):
         if pd is None:
@@ -60,15 +57,14 @@ class DFrameView(View):
         if dimensions is None:
             dimensions = list(data.columns)
 
-        super(DFrameView, self).__init__(data, dimensions=dimensions,
-                                         **params)
+        super(DataFrameView, self).__init__(data, dimensions=dimensions, **params)
 
         self.data.columns = self.dimension_labels
 
 
     def __getitem__(self, key):
         """
-        Allows slicing and selecting along the DFrameView dimensions.
+        Allows slicing and selecting along the DataFrameView dimensions.
         """
         if key is ():
             return self
@@ -76,13 +72,13 @@ class DFrameView(View):
             if len(key) <= self.ndims:
                 return self.select(**dict(zip(self.dimension_labels, key)))
             else:
-                raise Exception('Selection contains %d dimensions, DFrameView '
+                raise Exception('Selection contains %d dimensions, DataFrameView '
                                 'only has %d dimensions.' % (self.ndims, len(key)))
 
 
     def select(self, **select):
         """
-        Allows slice and select individual values along the DFrameView
+        Allows slice and select individual values along the DataFrameView
         dimensions. Supply the dimensions and values or slices as
         keyword arguments.
         """
@@ -108,6 +104,7 @@ class DFrameView(View):
         Returns a copy of the internal dframe.
         """
         return self.data.copy()
+
 
     def _split_dimensions(self, dimensions, ndmapping_type):
         invalid_dims = list(set(dimensions) - set(self.dimension_labels))
@@ -138,8 +135,34 @@ class DFrameView(View):
         """
         Splits the supplied dimensions out into a DFrameStack.
         """
-        return self._split_dimensions(DFrameStack)
+        return self._split_dimensions(dimensions, DFrameStack)
 
+    def __mul__(self, other):
+        if isinstance(other, DFrameStack):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items=items)
+        elif isinstance(self, DFrameOverlay):
+            if isinstance(other, DFrameOverlay):
+                overlays = self.data + other.data
+            else:
+                overlays = self.data + [other]
+        elif isinstance(other, DFrameOverlay):
+            overlays = [self] + other.data
+        elif isinstance(other, DataFrameView):
+            overlays = [self, other]
+        else:
+            raise TypeError('Can only create an overlay of DFViews.')
+
+        return DFrameOverlay(overlays)
+
+
+
+class DFrame(DataFrameView):
+    """
+    DFrame is a DataFrameView type, which additionally provides
+    methods to convert Pandas DataFrames to different View types,
+    currently including Tables and HeatMaps.
+    """
 
     def _create_table(self, temp_dict, value_dim, dims):
         dimensions = [self.dim_dict.get(d, d) for d in dims] if dims else {}
@@ -172,7 +195,7 @@ class DFrameView(View):
         selected_dims = [value_dim]+view_dims+stack_dims
         for dim in selected_dims:
             if dim not in self.dimension_labels:
-                raise Exception("DFrameView has no Dimension %s." % dim)
+                raise Exception("DataFrameView has no Dimension %s." % dim)
 
         # Filtering out unselected dimensions
         filter_dims = list(set(self.dimension_labels) - set(selected_dims))        
@@ -259,24 +282,6 @@ class DFrameView(View):
                                      stack_dims, self._create_heatmap, DataStack)
 
 
-    def __mul__(self, other):
-        if isinstance(other, DFrameStack):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
-        elif isinstance(self, DFrameOverlay):
-            if isinstance(other, DFrameOverlay):
-                overlays = self.data + other.data
-            else:
-                overlays = self.data + [other]
-        elif isinstance(other, DFrameOverlay):
-            overlays = [self] + other.data
-        elif isinstance(other, DFrameView):
-            overlays = [self, other]
-        else:
-            raise TypeError('Can only create an overlay of DFViews.')
-
-        return DFrameOverlay(overlays)
-
 
 class DFrameOverlay(Overlay):
     """
@@ -293,7 +298,7 @@ class DFrameStack(Stack):
     DFrameStack allows stacking DFrames along a number of dimensions.
     """
 
-    data_type = (DFrameView, DFrameOverlay, Annotation)
+    data_type = (DataFrameView, DFrameOverlay, Annotation)
 
     overlay_type = DFrameOverlay
 
@@ -305,11 +310,11 @@ class DFrameStack(Stack):
 
 class DFramePlot(Plot):
     """
-    A high-level plot, which will plot any DFrameView or DFrameStack type
+    A high-level plot, which will plot any DataFrameView or DFrameStack type
     including DataOverlays.
 
     A generic plot that visualizes DFrameStacks containing DFrameOverlay or
-    DFrameView objects.
+    DataFrameView objects.
     """
 
     _stack_type = DFrameStack
@@ -359,7 +364,7 @@ class DFramePlot(Plot):
 class DFrameViewPlot(Plot):
     """
     DFramePlot provides a wrapper around Pandas dataframe plots.
-    It takes a single DFrameView or DFrameStack as input and plots it using
+    It takes a single DataFrameView or DFrameStack as input and plots it using
     the plotting command selected via the plot_type.
 
     The plot_options specifies the valid options to be supplied
@@ -415,7 +420,7 @@ class DFrameViewPlot(Plot):
 
 
     def __init__(self, dfview, zorder=0, **kwargs):
-        self._stack = self._check_stack(dfview, DFrameView)
+        self._stack = self._check_stack(dfview, DataFrameView)
         super(DFrameViewPlot, self).__init__(zorder, **kwargs)
 
 
@@ -476,7 +481,8 @@ class DFrameViewPlot(Plot):
         plt.draw()
 
 
-Plot.defaults.update({DFrameView: DFrameViewPlot})
-Plot.defaults.update({DFrameOverlay: DFramePlot})
+Plot.defaults.update({DataFrameView: DFrameViewPlot,
+                      DFrame: DFrameViewPlot,
+                      DFrameOverlay: DFramePlot})
 
 options.DFrameView = PlotOpts()
