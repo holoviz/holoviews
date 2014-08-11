@@ -10,7 +10,7 @@ from .options import options, Cycle, StyleOpts
 
 # Default Styles
 options.Style = StyleOpts()
-options.Contours = StyleOpts()
+options.Contours = StyleOpts(color='k')
 options.SheetView = StyleOpts(cmap='gray', interpolation='nearest')
 options.Matrix = StyleOpts(cmap='jet', interpolation='nearest')
 options.HeatMap = StyleOpts(cmap='jet', interpolation='nearest')
