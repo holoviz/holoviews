@@ -18,11 +18,11 @@ from matplotlib import pyplot as plt
 
 import param
 
-from . import Dimension
-from .dataviews import HeatMap, DataStack, Table, TableStack
-from .plots import Plot
-from .options import options, PlotOpts
-from .views import View, Overlay, Stack, Annotation, Grid
+from .. import Dimension
+from ..dataviews import HeatMap, DataStack, Table, TableStack
+from ..plots import Plot
+from ..options import options, PlotOpts
+from ..views import View, Overlay, Stack, Annotation, Grid
 
 
 
