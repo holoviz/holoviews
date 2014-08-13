@@ -9,12 +9,12 @@ except:
     from nose.plugins.skip import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-
-from ..options import PlotOpts, StyleOpts, ChannelOpts
-from ..plots import Plot
-from ..views import Overlay, Layout, GridLayout, Grid
 from ..dataviews import Stack, View
+from ..options import PlotOpts, StyleOpts, ChannelOpts
+from ..plotting import Plot
 from ..sheetviews import SheetOverlay
+from ..views import Overlay, Layout, GridLayout, Grid
+
 
 
 import dataviews.operation # pyflakes:ignore (Registers ChannelOpts)

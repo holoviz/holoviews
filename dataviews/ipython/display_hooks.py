@@ -22,8 +22,8 @@ except:
     jsdisplay = None
 
 from ..dataviews import Stack, View
+from ..plotting import GridLayoutPlot, Plot
 from ..views import Annotation, Layout, GridLayout, Grid
-from ..plots import Plot, GridLayoutPlot
 
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic

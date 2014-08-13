@@ -33,7 +33,7 @@ import param
 from .. import GridLayout, NdMapping
 from ..views import Layout, Overlay, View
 from ..sheetviews import CoordinateGrid
-from ..plots import GridLayoutPlot, Plot
+from ..plotting import Plot, GridLayoutPlot
 from .magics import ViewMagic
 
 
