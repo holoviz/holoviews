@@ -99,6 +99,11 @@ class RunProgress(ProgressBar):
     seconds takes about twice as long as advancing by 5 seconds.
     """
 
+    enabled = param.Boolean(default=True, doc="""
+       Class parameter to disable the progress bar display. Disabling
+       the progress bar can be useful e.g. when running
+       non-interactive jobs where standard output is logged to file.""")
+
     interval = param.Number(default=100, doc="""
         The run interval used to break up updates to the progress bar.""")
 
@@ -120,11 +125,13 @@ class RunProgress(ProgressBar):
         while (value - completed) >= self.interval:
             self.run_hook(self.interval)
             completed += self.interval
-            super(RunProgress, self).__call__(100 * (completed / float(value)))
+            if self.enabled:
+                super(RunProgress, self).__call__(100 * (completed / float(value)))
         remaining = value - completed
         if remaining != 0:
             self.run_hook(remaining)
-            super(RunProgress, self).__call__(100)
+            if self.enabled:
+                super(RunProgress, self).__call__(100)
 
 
 
