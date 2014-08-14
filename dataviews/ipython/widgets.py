@@ -43,6 +43,11 @@ class ProgressBar(param.Parameterized):
     and the IPython interactive prompt.
     """
 
+    display = param.Boolean(default=True, doc="""
+       Class parameter to disable the progress bar display. Disabling
+       the progress bar can be useful e.g. when running
+       non-interactive jobs where standard output is logged to file.""")
+
     label = param.String(default='Progress', allow_None=True, doc="""
         The label of the current progress bar.""")
 
@@ -66,6 +71,7 @@ class ProgressBar(param.Parameterized):
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
+        if not self.display: return
         span = (self.percent_range[1]-self.percent_range[0])
         percentage = self.percent_range[0] + ((percentage/100.0) * span)
         if clear_output and not ipython2: clear_output()
@@ -99,11 +105,6 @@ class RunProgress(ProgressBar):
     seconds takes about twice as long as advancing by 5 seconds.
     """
 
-    enabled = param.Boolean(default=True, doc="""
-       Class parameter to disable the progress bar display. Disabling
-       the progress bar can be useful e.g. when running
-       non-interactive jobs where standard output is logged to file.""")
-
     interval = param.Number(default=100, doc="""
         The run interval used to break up updates to the progress bar.""")
 
@@ -125,13 +126,11 @@ class RunProgress(ProgressBar):
         while (value - completed) >= self.interval:
             self.run_hook(self.interval)
             completed += self.interval
-            if self.enabled:
-                super(RunProgress, self).__call__(100 * (completed / float(value)))
+            super(RunProgress, self).__call__(100 * (completed / float(value)))
         remaining = value - completed
         if remaining != 0:
             self.run_hook(remaining)
-            if self.enabled:
-                super(RunProgress, self).__call__(100)
+            super(RunProgress, self).__call__(100)
 
 
 
