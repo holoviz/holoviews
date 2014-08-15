@@ -44,11 +44,16 @@ class ProgressBar(param.Parameterized):
     """
 
     display = param.ObjectSelector(default='stdout',
-                                   objects=['stdout', 'disabled'],
-                                   doc="""
+                                   objects=['stdout', 'disabled', 'broadcast'],
+                               doc="""
        Parameter to control display of the progress bar. By default,
        progress is shown on stdout but this may be disabled e.g. for
-       jobs that log standard output to file.""")
+       jobs that log standard output to file.
+
+       If the output mode is set to 'broadcast', a socket is opened on
+       a stated port to broadcast the completion percentage. The
+       RemoteProgress class may then be used to view the progress from
+       a different process.""")
 
     label = param.String(default='Progress', allow_None=True, doc="""
         The label of the current progress bar.""")
@@ -68,6 +73,8 @@ class ProgressBar(param.Parameterized):
         completion in percent to be broken down into smaller sub-tasks
         that individually complete to 100 percent.""")
 
+    cache = {}
+
     def __init__(self, **kwargs):
         super(ProgressBar,self).__init__(**kwargs)
 
@@ -80,6 +87,13 @@ class ProgressBar(param.Parameterized):
         elif self.display == 'stdout':
             self._stdout_display(percentage)
             return
+
+        if 'socket' not in self.cache:
+            self.cache['socket'] = self._get_socket()
+
+        if self.cache['socket'] is not None:
+            self.cache['socket'].send('%s|%s' % (percentage, self.label))
+
 
     def _stdout_display(self, percentage):
         if clear_output and not ipython2: clear_output()
@@ -95,6 +109,51 @@ class ProgressBar(param.Parameterized):
         sys.stdout.flush()
         time.sleep(0.0001)
 
+    def _get_socket(self, min_port=8080, max_port=8100, max_tries=20):
+        import zmq
+        context = zmq.Context()
+        sock = context.socket(zmq.PUB)
+        try:
+            port = sock.bind_to_random_port('tcp://*',
+                                            min_port=min_port, max_port=max_port,
+                                            max_tries=max_tries)
+            self.message("Progress broadcast bound to port %d" % port)
+            return sock
+        except:
+            self.message("No suitable port found for progress broadcast.")
+            return None
+
+
+class RemoteProgress(ProgressBar):
+    """
+    Connect to a progress bar in a separate process with output_mode
+    set to 'broadcast' in order to display the results (to stdout).
+    """
+
+    hostname=param.String(default='localhost', doc="""
+      Hostname where progress is being broadcast.""")
+
+    port = param.Integer(default=8080,
+                         doc="""Target port on hostname.""")
+
+    def __init__(self, port, **kwargs):
+        super(RemoteProgress, self).__init__(port=port, **kwargs)
+
+    def __call__(self):
+        import zmq
+        context = zmq.Context()
+        sock = context.socket(zmq.SUB)
+        sock.setsockopt(zmq.SUBSCRIBE, '')
+        sock.connect('tcp://' + self.hostname +':'+str(self.port))
+        # Get progress via socket
+        while True:
+            message= sock.recv()
+            try:
+                [percent_str, label] = message.split('|')
+                self.label = label
+                super(RemoteProgress, self).__call__(float(percent_str))
+            except:
+                self.message("Could not process socket message: %r" % message)
 
 
 class RunProgress(ProgressBar):
