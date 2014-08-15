@@ -43,10 +43,12 @@ class ProgressBar(param.Parameterized):
     and the IPython interactive prompt.
     """
 
-    display = param.Boolean(default=True, doc="""
-       Class parameter to disable the progress bar display. Disabling
-       the progress bar can be useful e.g. when running
-       non-interactive jobs where standard output is logged to file.""")
+    display = param.ObjectSelector(default='stdout',
+                                   objects=['stdout', 'disabled'],
+                                   doc="""
+       Parameter to control display of the progress bar. By default,
+       progress is shown on stdout but this may be disabled e.g. for
+       jobs that log standard output to file.""")
 
     label = param.String(default='Progress', allow_None=True, doc="""
         The label of the current progress bar.""")
@@ -71,9 +73,15 @@ class ProgressBar(param.Parameterized):
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
-        if not self.display: return
         span = (self.percent_range[1]-self.percent_range[0])
         percentage = self.percent_range[0] + ((percentage/100.0) * span)
+
+        if self.display == 'disabled': return
+        elif self.display == 'stdout':
+            self._stdout_display(percentage)
+            return
+
+    def _stdout_display(self, percentage):
         if clear_output and not ipython2: clear_output()
         if clear_output and ipython2: clear_output(wait=True)
         percent_per_char = 100.0 / self.width
