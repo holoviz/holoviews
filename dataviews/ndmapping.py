@@ -196,10 +196,14 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         further element restrictions.
         """
         if self.data_type is not None and not isinstance(data, self.data_type):
+            if isinstance(self.data_type, tuple):
+                data_type = tuple(dt.__name__ for dt in self.data_type)
+            else:
+                data_type = self.data_type.__name__
             raise TypeError('{slf} does not accept {data} type, data elements have '
                             'to be a {restr}.'.format(slf=type(self).__name__,
                                                       data=type(data).__name__,
-                                                      restr=self.data_type.__name__))
+                                                      restr=data_type))
         elif not len(dim_vals) == self.ndims:
             raise KeyError('Key has to match number of dimensions.')
 
