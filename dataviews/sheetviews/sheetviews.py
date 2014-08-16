@@ -259,7 +259,8 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
-                         bounds, label=self.label, style=self.style)
+                         bounds, label=self.label, style=self.style,
+                         value=self.value)
 
 
     def _coord2matrix(self, coord):
