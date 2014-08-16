@@ -1459,7 +1459,7 @@ class ScatterPlot(CurvePlot):
         self._stack = self._check_stack(points, Scatter)
         self.ax = None
 
-        super(ScatterPlot, self).__init__(zorder, **kwargs)
+        Plot.__init__(self, zorder, **kwargs)
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
