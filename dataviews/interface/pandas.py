@@ -240,12 +240,14 @@ class DFrame(DataFrameView):
                 view_groups = stack_group.groupby(view_dims) if view_dims else [((), stack_group)]
                 for k, view_group in view_groups:
                     for ind in indices:
-                        key = tuple(k)
-                        if not len(indices) == 1:
-                            key = (ind,) + key
-                        key = key if len(key) > 1 else key[0]
+                        if view_dims:
+                            key = tuple(k)
+                            if not len(indices) == 1:
+                                key = (ind,) + key
+                            key = key if len(key) > 1 else key[0]
+                        else:
+                            key = '_'.join([ind, value_dim])
                         temp_dict[key] = view_group.loc[ind, value_dim]
-
             stack[stack_key] = view_method(temp_dict, value_dim, view_dimensions)
         if stack_dims:
             return stack
