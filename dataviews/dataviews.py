@@ -117,7 +117,7 @@ class DataLayer(View):
                 overlays = self.data + [other]
         elif isinstance(other, DataOverlay):
             overlays = [self] + other.data
-        elif isinstance(other, DataLayer):
+        elif isinstance(other, (DataLayer, Annotation)):
             overlays = [self, other]
         else:
             raise TypeError('Can only create an overlay of DataViews.')
