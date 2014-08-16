@@ -249,6 +249,22 @@ class Annotation(View):
         self.data.append(('line', coords, interval))
 
 
+    def spline(self, coords, codes, interval=None):
+        """
+        Draw a spline using the given handle coordinates and handle
+        codes. Follows matplotlib spline definitions as used in
+        matplotlib.path.Path with the following codes:
+
+        Path.STOP     : 0
+        Path.MOVETO   : 1
+        Path.LINETO   : 2
+        Path.CURVE3   : 3
+        Path.CURVE4   : 4
+        Path.CLOSEPLOY: 79
+        """
+        self.data.append(('spline', coords, codes, interval))
+
+
     def box(self, box, interval=None):
         """
         Draw a box with corners specified in the positions specified

@@ -9,6 +9,8 @@ from matplotlib import animation
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.font_manager import FontProperties
+from matplotlib.path import Path
+import matplotlib.patches as patches
 from matplotlib.table import Table as mpl_Table
 import matplotlib.gridspec as gridspec
 
@@ -359,7 +361,8 @@ class AnnotationPlot(Plot):
     style_opts = param.List(default=['alpha', 'color', 'edgecolors',
                                      'facecolors', 'linewidth',
                                      'linestyle', 'rotation', 'family',
-                                     'weight', 'fontsize', 'visible'],
+                                     'weight', 'fontsize', 'visible',
+                                     'edgecolor'],
                             constant=True, doc="""
      Box annotations, hlines and vlines and lines all accept
      matplotlib line style options. Arrow annotations also accept
@@ -377,7 +380,8 @@ class AnnotationPlot(Plot):
         line_opts = line_only + ['color']
         self.opt_filter = {'hline':line_opts, 'vline':line_opts, 'line':line_opts,
                            '<':arrow_opts, '^':arrow_opts,
-                           '>':arrow_opts, 'v':arrow_opts}
+                           '>':arrow_opts, 'v':arrow_opts,
+                           'spline':line_opts+['edgecolor']}
 
 
     def _warn_invalid_intervals(self, stack):
@@ -445,6 +449,13 @@ class AnnotationPlot(Plot):
                 axis.add_collection(line)
                 handles.append(line)
                 continue
+            elif mode == 'spline':
+                verts, codes = info
+                patch = patches.PathPatch(Path(verts, codes),
+                                          facecolor='none', **opts)
+                axis.add_patch(patch)
+                continue
+
 
             text, xy, points, arrowstyle = info
             arrowprops = dict(arrowstyle=arrowstyle, color=color)
@@ -485,7 +496,6 @@ class AnnotationPlot(Plot):
 
         self.handles['annotations'] = self._draw_annotations(annotation, axis, key)
         plt.draw()
-
 
 
 class PointPlot(Plot):
