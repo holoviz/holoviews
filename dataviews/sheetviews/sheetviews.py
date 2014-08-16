@@ -602,9 +602,6 @@ class DataGrid(CoordinateGrid):
     def __add__(self, obj):
         raise NotImplementedError
 
-    def __mul__(self, other):
-        raise NotImplementedError
-
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v,type) and
                     (issubclass(_v, NdMapping) or issubclass(_v, View))]))
