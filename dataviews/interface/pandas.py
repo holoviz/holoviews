@@ -54,9 +54,15 @@ class DataFrameView(View):
         if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame View type requires Pandas dataframe as data.')
         if dimensions is None:
-            dimensions = list(data.columns)
+            dims = list(data.columns)
+        else:
+            dims = ['' for i in range(len(data.columns))]
+            for dim in dimensions:
+                dim_name = dim.name if isinstance(dim, Dimension) else dim
+                if dim_name in data.columns:
+                    dims[list(data.columns).index(dim_name)] = dim
 
-        super(DataFrameView, self).__init__(data, dimensions=dimensions, **params)
+        super(DataFrameView, self).__init__(data, dimensions=dims, **params)
 
         self.data.columns = self.dimension_labels
 
@@ -88,7 +94,7 @@ class DataFrameView(View):
             else:
                 df = df[df[dim] == k]
         return self.clone(df)
-        
+
 
     def apply(self, name, *args, **kwargs):
         """
@@ -111,8 +117,7 @@ class DataFrameView(View):
             raise Exception('Following dimensions could not be found %s.'
                             % invalid_dims)
 
-        dimensions = [self.dim_dict[d] for d in dimensions]
-        ndmapping = ndmapping_type(None, dimensions=dimensions)
+        ndmapping = ndmapping_type(None, dimensions=[self.dim_dict[d] for d in dimensions])
         view_dims = set(self.dimension_labels) - set(dimensions)
         view_dims = [self.dim_dict[d] for d in view_dims]
         for k, v in self.data.groupby(dimensions):
@@ -305,7 +310,7 @@ class DFrameStack(Stack):
 
     def dfview(self):
         dframe = self.dframe()
-        return self.last.clone(dframe, dimensions=self.dimensions+list(dframe.columns))
+        return self.last.clone(dframe, dimensions=list(dframe.columns))
 
 
 
