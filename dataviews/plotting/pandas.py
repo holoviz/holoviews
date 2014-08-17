@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 
 from matplotlib import pyplot as plt
-import pandas as pd
 
 import param
 
 from .. import View
-from ..interface.pandas import DFrame, DFrameStack, DFrameOverlay, DataFrameView
+from ..interface.pandas import DFrame, DFrameStack, DFrameOverlay, DataFrameView, pd
 from .viewplots import Plot
 
 
