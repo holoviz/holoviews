@@ -2,6 +2,7 @@ import os
 
 import param
 
+from . import pandas # pyflakes:ignore (API import)
 from .dataplots import * # pyflakes:ignore (API import)
 from .sheetplots import * # pyflakes:ignore (API import)
 from .viewplots import * # pyflakes:ignore (API import)
@@ -75,4 +76,4 @@ def public(obj):
 
 
 _public = ["PlotSaver"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
-__all__ = _public + ["pandas"]
+__all__ = _public
