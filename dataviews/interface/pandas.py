@@ -7,6 +7,8 @@ provides methods to apply operations to the underlying data and
 convert it to standard DataViews View types.
 """
 
+from __future__ import absolute_import
+
 from collections import defaultdict, OrderedDict
 
 try:
