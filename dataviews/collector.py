@@ -116,6 +116,25 @@ class AttrTree(object):
             self.__setattr__(path[0], val)
 
 
+    def filter(self, path_filters):
+        """
+        Filters the loaded AttrTree using the supplied path_filters.
+        """
+        if not path_filters: return self
+
+        # Convert string path filters
+        path_filters = [tuple(pf.split('.')) if not isinstance(pf, tuple)
+                        else pf for pf in path_filters]
+
+        # Search for substring matches between paths and path filters
+        new_attrtree = AttrTree()
+        for path, item in self.path_items.items():
+            if any([all([subpath in path for subpath in pf]) for pf in path_filters]):
+                new_attrtree.set_path(path, item)
+
+        return new_attrtree
+
+
     def _propagate(self, path, val):
         """
         Propagate the value to the root node.
