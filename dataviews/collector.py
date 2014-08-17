@@ -39,12 +39,12 @@ class AttrTree(object):
             first.update(tree)
         return first
 
-    def __init__(self, label=None, parent=None):
+    def __init__(self, label=None, parent=None, path_items=None):
         self.__dict__['parent'] = parent
         self.__dict__['label'] = label
         self.__dict__['children'] = []
         # Path items will only be populated at root node
-        self.__dict__['path_items'] = OrderedDict()
+        self.__dict__['path_items'] = path_items if path_items else OrderedDict()
 
         self.__dict__['_fixed'] = False
 
