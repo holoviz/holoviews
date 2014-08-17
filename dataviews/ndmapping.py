@@ -402,6 +402,32 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         return (dimkeys[0], dimkeys[-1])
 
 
+    @property
+    def dim_ranges(self):
+        """
+        Get the ranges of all dimensions.
+        """
+        return [(d, self.dim_range(d)) for d in self.dimension_labels]
+
+
+    @property
+    def constant_dims(self):
+        """
+        Return all constant dimensions.
+        """
+        return [d for d, drange in self.dim_ranges
+                if drange[0] == drange[1]]
+
+
+    @property
+    def varying_dims(self):
+        """
+        Return all varying dimensions.
+        """
+        return [d for d, drange in self.dim_ranges
+                if drange[0] != drange[1]]
+
+
     def key_items(self, key):
         """
         Returns a dictionary of dimension and key values.
