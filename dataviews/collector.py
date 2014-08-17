@@ -11,7 +11,7 @@ from .sheetviews import CoordinateGrid
 from .sheetviews import SheetView  # pyflakes:ignore (Needed for doctests)
 from .views import GridLayout, Stack, View, NdMapping, Dimension
 
-from .ipython.widgets import RunProgress
+from .ipython.widgets import RunProgress, ProgressBar
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
@@ -639,6 +639,84 @@ class Analyze(Collect):
         return "%s(%s)" % (self.analysis.name, self.reference)
 
 
+
+class Collator(NdMapping):
+    """
+    Collator is an NdMapping holding AttrTree objects and
+    provides methods to filter and merge them via the call
+    method. Collation inserts the Collator dimensions on
+    each Stack type contained within the AttrTree objects.
+    """
+
+    _deep_indexable = False
+
+    def __call__(self, path_filters=[], merge=True):
+        """
+        Filter each AttrTree in the Collator with the supplied
+        path_filters. If merge is set to True all AttrTrees are
+        merged, otherwise an NdMapping containing all the
+        AttrTrees is returned.
+        """
+        constant_dims = self.constant_dims
+        ndmapping = NdMapping(dimensions=self.dimensions)
+
+        progressbar = ProgressBar(label='Collation')
+        num_elements = len(self)
+        for idx, (key, data) in enumerate(self.items()):
+           attrtree = self._process_data(data).filter(path_filters)
+
+           if merge:
+              dim_keys = zip(self.dimension_labels, key)
+              varying_keys = [(d, k) for d, k in dim_keys
+                              if d not in constant_dims]
+              constant_keys = [(d, k) for d, k in dim_keys
+                               if d in constant_dims]
+              attrtree = self._add_dimensions(attrtree, varying_keys,
+                                              dict(constant_keys))
+           ndmapping[key] = attrtree
+           progressbar(float(idx+1)/num_elements*100)
+
+        if merge:
+            trees = ndmapping.values()
+            accumulator = AttrTree(path_items=trees[0].path_items)
+            for tree in trees:
+                accumulator.update(tree)
+            return accumulator
+        return ndmapping
+
+
+    def _add_dimensions(self, item, dims, constant_keys):
+        """
+        Recursively descend through an AttrTree and NdMapping objects
+        in order to add the supplied dimension values to all contained
+        Stack objects.
+        """
+        if isinstance(item, AttrTree):
+            item.fixed = False
+
+        new_item = item.clone({}) if isinstance(item, NdMapping) else item
+        for k in item.keys():
+            v = item[k]
+            if isinstance(v, Stack):
+                for dim, val in dims[::-1]:
+                    if dim.capitalize() not in v.dimension_labels:
+                        v = v.add_dimension(dim, 0, val)
+                if constant_keys: v.constant_keys = constant_keys
+                new_item[k] = v
+            else:
+                new_item[k] = self._add_dimensions(v, dims, constant_keys)
+        if isinstance(new_item, AttrTree):
+            new_item.fixed = True
+
+        return new_item
+
+
+    def _process_data(self, data):
+        """"
+        Subclassable to apply some processing to the data elements
+        before filtering and merging them.
+        """
+        return data
 
 
 
