@@ -5,6 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 from matplotlib.collections import LineCollection
+from matplotlib.path import Path
+import matplotlib.patches as patches
 
 import param
 
@@ -810,11 +812,13 @@ class AnnotationPlot(Plot):
     style_opts = param.List(default=['alpha', 'color', 'edgecolors',
                                      'facecolors', 'linewidth',
                                      'linestyle', 'rotation', 'family',
-                                     'weight', 'fontsize', 'visible'],
+                                     'weight', 'fontsize', 'visible',
+                                     'edgecolor'],
                             constant=True, doc="""
      Box annotations, hlines and vlines and lines all accept
      matplotlib line style options. Arrow annotations also accept
      additional text options.""")
+
 
     def __init__(self, annotation, zorder=0, **kwargs):
         self._annotation = annotation
@@ -826,9 +830,11 @@ class AnnotationPlot(Plot):
         line_only = ['linewidth', 'linestyle']
         arrow_opts = [opt for opt in self.style_opts if opt not in line_only]
         line_opts = line_only + ['color']
-        self.opt_filter = {'hline':line_opts, 'vline':line_opts, 'line':line_opts,
-                           '<':arrow_opts, '^':arrow_opts,
-                           '>':arrow_opts, 'v':arrow_opts}
+        self.opt_filter = {'hline': line_opts, 'vline': line_opts,
+                           'line': line_opts,
+                           '<': arrow_opts, '^': arrow_opts,
+                           '>': arrow_opts, 'v': arrow_opts,
+                           'spline': line_opts + ['edgecolor']}
 
 
     def _warn_invalid_intervals(self, stack):
@@ -896,6 +902,13 @@ class AnnotationPlot(Plot):
                 axis.add_collection(line)
                 handles.append(line)
                 continue
+            elif mode == 'spline':
+                verts, codes = info
+                patch = patches.PathPatch(Path(verts, codes),
+                                          facecolor='none', **opts)
+                axis.add_patch(patch)
+                continue
+
 
             text, xy, points, arrowstyle = info
             arrowprops = dict(arrowstyle=arrowstyle, color=color)
@@ -903,12 +916,9 @@ class AnnotationPlot(Plot):
                 xytext = (0, points if mode=='v' else -points)
             elif mode in ['>', '<']:
                 xytext = (points if mode=='<' else -points, 0)
-            arrow = axis.annotate(text, xy=xy,
-                                  textcoords='offset points',
-                                  xytext=xytext,
-                                  ha="center", va="center",
-                                  arrowprops=arrowprops,
-                                  **opts)
+            arrow = axis.annotate(text, xy=xy, textcoords='offset points',
+                                  xytext=xytext, ha="center", va="center",
+                                  arrowprops=arrowprops, **opts)
             handles.append(arrow)
         return handles
 
