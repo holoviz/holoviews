@@ -17,6 +17,8 @@ To obtain DataViews, run::
 
 |BuildStatus|_
 
+Check out the tutorials for detailed examples of capabilities and usage.
+
 Installation
 ____________
 
