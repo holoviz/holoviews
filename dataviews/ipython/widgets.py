@@ -345,7 +345,7 @@ class ViewSelector(param.Parameterized):
             else:
                 widget_type = widgets.DropdownWidget
                 all_vals = dict((str(v), v) for v in all_vals)
-            self.pwidgets[dim] = widget_type(values=all_vals)
+            self.pwidgets[dim] = widget_type(values=sorted(set(all_vals)))
 
 
     def __call__(self):
@@ -409,10 +409,6 @@ class ViewSelector(param.Parameterized):
                     val = vals[np.argmin(np.abs(np.array(vals) - val))]
                 else:
                     val = str(vals[0])
-            if isnumeric(val):
-                if len(vals) == 0: widget.step = 0
-                widget.min = min(vals)
-                widget.max = max(vals)
             checked[dim_idx] = val
             self.dim_val[dim] = val
             widget.value = round(val, 5) if isnumeric(val) else val
