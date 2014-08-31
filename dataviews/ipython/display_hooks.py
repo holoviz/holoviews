@@ -143,10 +143,10 @@ def animation_display(anim):
 @display_hook
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
-    if ViewMagic.VIDEO_FORMAT == 'slider':
-        return ViewSelector(stack)()
     magic_info = process_view_magics(stack)
     if magic_info: return magic_info
+    if ViewMagic.VIDEO_FORMAT == 'slider':
+        return ViewSelector(stack)()
     opts = dict(View.options.plotting(stack).opts, size=get_plot_size())
     stackplot = Plot.defaults[stack.type](stack, **opts)
     if len(stackplot) == 0:
