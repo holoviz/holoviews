@@ -630,7 +630,7 @@ class HistogramPlot(Plot):
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.num_ticks)
-            labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}'
+            labels = ["%.0f" % np.rad2deg(x) + '$^\circ$'
                       for x in xvals]
         else:
             edge_inds = list(range(len(edges)))
