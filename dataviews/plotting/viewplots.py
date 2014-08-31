@@ -339,7 +339,7 @@ class GridPlot(Plot):
 
 
     def _grid_axis(self):
-        fig = self.handles['fig']
+        fig = self.handles['fig'] if self.handles['fig'] else plt.gcf()
         grid_axis = fig.add_subplot(111)
         grid_axis.patch.set_visible(False)
 
