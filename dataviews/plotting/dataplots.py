@@ -750,7 +750,13 @@ class SideHistogramPlot(HistogramPlot):
         individually = View.options.plotting(main).opts.get('normalize_individually', False)
 
         if isinstance(main, Stack):
-            main_range = list(main.values())[n].range if individually else main.range
+            if issubclass(main.type, Overlay):
+                if individually:
+                    main_range = list(main.split_stack()[0].values())[n].range
+                else:
+                    main_range = main.last[self.layout.main_layer].range
+            else:
+                main_range = list(main.values())[n].range if individually else main.range
         elif isinstance(main, View):
             main_range = main.range
 
