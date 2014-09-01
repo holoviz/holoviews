@@ -15,13 +15,30 @@ class Cycle(object):
     """
     A simple container class to allow specification of cyclic style
     patterns. A typical use would be to cycle styles on a plot with
-    multiple curves.
+    multiple curves. Takes either a list of elements or an rckey
+    string used to look up the elements in the matplotlib rcParams.g
     """
-    def __init__(self, elements):
-        self.elements = elements
+
+    def __init__(self, elements=[], rckey='axes.color_cycle'):
+        self.rckey = rckey
+        if len(elements):
+            self._elements = elements
+        else:
+            self._elements = None
+
+
+    @property
+    def elements(self):
+        if self._elements is None:
+            from matplotlib import rcParams
+            return rcParams[self.rckey]
+        else:
+            return self._elements
+
 
     def __len__(self):
         return len(self.elements)
+
 
     def __repr__(self):
         return "Cycle(%s)" % self.elements

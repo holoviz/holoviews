@@ -15,8 +15,8 @@ options.SheetView = StyleOpts(cmap='gray', interpolation='nearest')
 options.Matrix = StyleOpts(cmap='jet', interpolation='nearest')
 options.HeatMap = StyleOpts(cmap='jet', interpolation='nearest')
 # Color cycles can be removed once default style set and test data updated
-options.Curve = StyleOpts(color=Cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k']), linewidth=2)
-options.Scatter = StyleOpts(color=Cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k']), linewidth=2)
+options.Curve = StyleOpts(color=Cycle(), linewidth=2)
+options.Scatter = StyleOpts(color=Cycle(), linewidth=2)
 options.Annotation = StyleOpts()
 options.Histogram = StyleOpts(ec='k', fc='w')
 options.Table = StyleOpts()
@@ -197,10 +197,5 @@ def set_style(key):
     else:
         new_style = styles[key]
         styles['backup'] = dict([(k, plt.rcParams[k]) for k in new_style.keys()])
-        if 'axes.color_cycle' in new_style:
-            colors = new_style['axes.color_cycle']
-            options.Contours = options.style.Contours(color=Cycle(colors))
-            options.Curve = options.style.Curve(color=Cycle(colors))
-            options.Scatter = options.style.Scatter(color=Cycle(colors))
 
         plt.rcParams.update(new_style)
