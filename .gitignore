@@ -10,6 +10,7 @@
 *.o
 *.out
 *.lock
+/doc/Tutorials/*.rst
 /doc/_build
 /doc/Reference_Manual/*
 !/doc/Reference_Manual/index.rst
