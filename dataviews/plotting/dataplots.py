@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import copy
 from itertools import product, groupby
 
@@ -630,8 +631,7 @@ class HistogramPlot(Plot):
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.num_ticks)
-            labels = ["%.0f" % np.rad2deg(x) + '$^\circ$'
-                      for x in xvals]
+            labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         else:
             edge_inds = list(range(len(edges)))
             step = len(edges)/float(self.num_ticks-1)
