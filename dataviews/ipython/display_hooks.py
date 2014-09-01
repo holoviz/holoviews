@@ -96,9 +96,14 @@ def figure_display(fig, size=None, message=None):
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        mime_type = 'svg+xml' if ViewMagic.FIGURE_FORMAT.lower()=='svg' else 'png'
+        figdata = print_figure(fig, ViewMagic.FIGURE_FORMAT)
+        if ViewMagic.FIGURE_FORMAT.lower()=='svg':
+            mime_type = 'svg+xml'
+            figdata = figdata.encode("utf-8")
+        else:
+            mime_type = 'png'
         prefix = 'data:image/%s;base64,' % mime_type
-        b64 = prefix + base64.b64encode(print_figure(fig, ViewMagic.FIGURE_FORMAT)).decode("utf-8")
+        b64 = prefix + base64.b64encode(figdata).decode("utf-8")
         if size is not None:
             html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
         else:
