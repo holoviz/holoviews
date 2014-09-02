@@ -24,11 +24,7 @@ class PointPlot(Plot):
      scatter plot command.""")
 
     _stack_type = SheetStack
-
-    def __init__(self, contours, zorder=0, **kwargs):
-        self._stack = self._check_stack(contours, Points)
-        super(PointPlot, self).__init__(zorder, **kwargs)
-
+    _view_type = Points
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         points = self._stack.last
@@ -64,11 +60,12 @@ class ContourPlot(Plot):
         LineCollection class.""")
 
     _stack_type = SheetStack
+    _view_type = Contours
 
-    def __init__(self, contours, zorder=0, **kwargs):
-        self._stack = self._check_stack(contours, Contours)
-        super(ContourPlot, self).__init__(zorder, **kwargs)
+    def __init__(self, *args, **kwargs):
         self.aspect = 'equal'
+        super(ContourPlot, self).__init__(*args, **kwargs)
+
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         lines = self._stack.last
@@ -94,10 +91,8 @@ class ContourPlot(Plot):
 class SheetViewPlot(MatrixPlot):
 
     _stack_type = SheetStack
+    _view_type = SheetView
 
-    def __init__(self, sheetview, zorder=0, **kwargs):
-        self._stack = self._check_stack(sheetview, SheetView)
-        Plot.__init__(self, zorder, **kwargs)
 
 
 class SheetPlot(OverlayPlot):
@@ -112,12 +107,12 @@ class SheetPlot(OverlayPlot):
      options but SheetPlot itself does not.""")
 
     _stack_type = SheetStack
+    _view_type = SheetOverlay
 
-    def __init__(self, overlays, **kwargs):
-        stack = self._check_stack(overlays, SheetOverlay)
-        self._stack = self._collapse_channels(stack)
-        self.plots = []
-        super(SheetPlot, self).__init__(**kwargs)
+
+    def _check_stack(self, view):
+        stack = super(SheetPlot, self)._check_stack(view)
+        return self._collapse_channels(stack)
 
 
     def __call__(self, axis=None, lbrt=None):
@@ -180,7 +175,7 @@ class CoordinateGridPlot(OverlayPlot):
         self.grid = copy.deepcopy(grid)
         for k, stack in self.grid.items():
             self.grid[k] = self._collapse_channels(self.grid[k])
-        super(CoordinateGridPlot, self).__init__(**kwargs)
+        Plot.__init__(self, **kwargs)
 
 
     def __call__(self, axis=None):

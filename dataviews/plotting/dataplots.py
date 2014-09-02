@@ -12,7 +12,9 @@ import param
 
 from .. import DataStack, Matrix, DataLayer, HeatMap, View, DataOverlay, \
     Annotation, Curve, Scatter, TableStack, Table, Histogram, Stack, Overlay
-from .viewplots import Plot
+from .viewplots import Plot, OverlayPlot
+
+
 
 class MatrixPlot(Plot):
 
@@ -30,11 +32,7 @@ class MatrixPlot(Plot):
 
 
     _stack_type = DataStack
-
-    def __init__(self, view, zorder=0, **kwargs):
-        self._stack = self._check_stack(view, (Matrix, DataLayer))
-        super(MatrixPlot, self).__init__(zorder, **kwargs)
-
+    _view_type = (Matrix, DataLayer)
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         view = self._stack.last
@@ -123,7 +121,7 @@ class MatrixPlot(Plot):
 
 
 
-class DataPlot(Plot):
+class DataPlot(OverlayPlot):
     """
     A high-level plot, which will plot any DataView or DataStack type
     including DataOverlays.
@@ -133,6 +131,7 @@ class DataPlot(Plot):
     """
 
     _stack_type = DataStack
+    _view_type = DataOverlay
 
     style_opts = param.List(default=[], constant=True, doc="""
      DataPlot renders overlay layers which individually have style
@@ -140,10 +139,8 @@ class DataPlot(Plot):
 
 
     def __init__(self, overlays, **kwargs):
-        self._stack = self._check_stack(overlays, DataOverlay)
-        self.plots = []
         self.rescale = False
-        super(DataPlot, self).__init__(**kwargs)
+        super(DataPlot, self).__init__(overlays, **kwargs)
 
 
     def __call__(self, axis=None, lbrt=None, **kwargs):
@@ -218,13 +215,11 @@ class CurvePlot(Plot):
        LineCollection object.""")
 
     _stack_type = DataStack
+    _view_type = Curve
 
-    def __init__(self, curves, zorder=0, **kwargs):
-        self._stack = self._check_stack(curves, Curve)
+    def __init__(self, curves, **kwargs):
+        super(CurvePlot, self).__init__(curves, **kwargs)
         self.cyclic_range = self._stack.last.cyclic_range
-        self.ax = None
-
-        super(CurvePlot, self).__init__(zorder, **kwargs)
 
 
     def _format_x_tick_label(self, x):
@@ -361,13 +356,7 @@ class ScatterPlot(CurvePlot):
        PolyCollection object.""")
 
     _stack_type = DataStack
-
-    def __init__(self, points, zorder=0, **kwargs):
-        self._stack = self._check_stack(points, Scatter)
-        self.ax = None
-
-        Plot.__init__(self, zorder, **kwargs)
-
+    _view_type = Scatter
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         scatterview = self._stack.last
@@ -457,11 +446,7 @@ class TablePlot(Plot):
 
 
     _stack_type = TableStack
-
-    def __init__(self, tables, zorder=0, **kwargs):
-        self._stack = self._check_stack(tables, Table)
-        super(TablePlot, self).__init__(zorder, **kwargs)
-
+    _view_type = Table
 
     def pprint_value(self, value):
         """
@@ -559,15 +544,14 @@ class HistogramPlot(Plot):
        Disabled by default for clarity.""")
 
     _stack_type = DataStack
+    _view_type = Histogram
 
-    def __init__(self, curves, zorder=0, **kwargs):
+    def __init__(self, histograms, **kwargs):
         self.center = False
         self.cyclic = False
         self.cyclic_index = 0
-        self.ax = None
 
-        self._stack = self._check_stack(curves, Histogram)
-        super(HistogramPlot, self).__init__(zorder, **kwargs)
+        super(HistogramPlot, self).__init__(histograms, **kwargs)
 
         if self.orientation == 'vertical':
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
@@ -798,7 +782,6 @@ class SideHistogramPlot(HistogramPlot):
             bar.set_clip_on(False)
 
 
-
     def _update_separator(self, lims, offset):
         """
         Compute colorbar offset and update separator line
@@ -819,6 +802,7 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_xdata(offset)
             else:
                 offset_line.set_ydata(offset)
+
 
 Plot.defaults.update({Matrix: MatrixPlot,
                       HeatMap: MatrixPlot,

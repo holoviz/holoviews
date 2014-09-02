@@ -70,6 +70,7 @@ class Plot(param.Parameterized):
     adjoined plots when appropriate.""")
 
     _stack_type = Stack
+    _view_type = View
 
     # A mapping from View types to their corresponding plot types
     defaults = {}
@@ -77,12 +78,15 @@ class Plot(param.Parameterized):
     # A mapping from View types to their corresponding side plot types
     sideplots = {}
 
-
-    def __init__(self, zorder=0, **kwargs):
+    def __init__(self, view=None, zorder=0, **kwargs):
+        if view is not None:
+            self._stack = self._check_stack(view)
         super(Plot, self).__init__(**kwargs)
         self.zorder = zorder
+        self.ax = None
         # List of handles to matplotlib objects for animation update
-        self.handles = {'fig':None}
+        self.handles = {'fig': None}
+
 
     def _check_stack(self, view, element_type=View):
         """
@@ -94,7 +98,7 @@ class Plot(param.Parameterized):
         else:
             stack = view
 
-        if not issubclass(stack.type, element_type):
+        if not issubclass(stack.type, self._view_type):
             raise TypeError("Requires View, Animation or Stack of type %s" % element_type)
         return stack
 
@@ -242,6 +246,7 @@ class Plot(param.Parameterized):
         Return a matplotlib figure.
         """
         raise NotImplementedError
+
 
 
 class GridPlot(Plot):
@@ -744,6 +749,11 @@ class OverlayPlot(Plot):
 
     _abstract = True
 
+    def __init__(self, overlay, **kwargs):
+        self.plots = []
+        super(OverlayPlot, self).__init__(overlay, **kwargs)
+
+
     def _collapse(self, overlay, pattern, fn, style_key):
         """
         Given an overlay object collapse the channels according to
@@ -821,12 +831,12 @@ class AnnotationPlot(Plot):
      matplotlib line style options. Arrow annotations also accept
      additional text options.""")
 
+    _view_type = Annotation
 
-    def __init__(self, annotation, zorder=0, **kwargs):
+    def __init__(self, annotation, **kwargs):
         self._annotation = annotation
-        self._stack = self._check_stack(annotation, Annotation)
+        super(AnnotationPlot, self).__init__(annotation, **kwargs)
         self._warn_invalid_intervals(self._stack)
-        super(AnnotationPlot, self).__init__(zorder, **kwargs)
         self.handles['annotations'] = []
 
         line_only = ['linewidth', 'linestyle']

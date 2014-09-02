@@ -20,17 +20,11 @@ class DFramePlot(Plot):
     """
 
     _stack_type = DFrameStack
+    _view_type = DFrameOverlay
 
     style_opts = param.List(default=[], constant=True, doc="""
      DataPlot renders overlay layers which individually have style
      options but DataPlot itself does not.""")
-
-
-    def __init__(self, overlays, **kwargs):
-        self._stack = self._check_stack(overlays, DFrameOverlay)
-        self.plots = []
-        super(DFramePlot, self).__init__(**kwargs)
-
 
     def __call__(self, axis=None, lbrt=None, **kwargs):
 
