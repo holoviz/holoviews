@@ -113,11 +113,7 @@ class DFrameViewPlot(Plot):
         return list(opt_set)
 
     _stack_type = DFrameStack
-
-
-    def __init__(self, dfview, zorder=0, **kwargs):
-        self._stack = self._check_stack(dfview, DataFrameView)
-        super(DFrameViewPlot, self).__init__(zorder, **kwargs)
+    _view_type = DataFrameView
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
