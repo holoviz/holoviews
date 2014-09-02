@@ -2,6 +2,7 @@ import os
 
 import param
 
+from . import seaborn # pyflakes:ignore (API import)
 from . import pandas # pyflakes:ignore (API import)
 from .dataplots import * # pyflakes:ignore (API import)
 from .sheetplots import * # pyflakes:ignore (API import)
