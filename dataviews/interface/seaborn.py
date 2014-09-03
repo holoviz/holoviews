@@ -134,6 +134,8 @@ class Regression(Scatter):
     more.
     """
 
+    pass
+
 
 class DFrame(PandasDFrame):
     """
