@@ -14,7 +14,7 @@ from ..ndmapping import Dimension
 from ..views import Overlay
 from ..dataviews import DataLayer, Scatter, DataStack
 from ..options import options, StyleOpts, Cycle
-from .pandas import DFrame
+from .pandas import DFrame as PandasDFrame
 
 
 class TimeSeries(DataLayer):
@@ -135,7 +135,7 @@ class Regression(Scatter):
     """
 
 
-class SNSFrame(DFrame):
+class DFrame(PandasDFrame):
     """
     The SNSFrame is largely the same as a DFrame but can only be
     visualized via seaborn plotting functions. Since most seaborn
@@ -144,12 +144,17 @@ class SNSFrame(DFrame):
     in a multi-dimensional Pandas dframe.
     """
 
-    x = param.String(doc="""Dimension to visualize along the x-axis.""")
+    plot_type = param.ObjectSelector(default=None, objects=['interact', 'regplot',
+                                                            'lmplot', 'corrplot',
+                                                            'plot', 'boxplot',
+                                                            'hist', 'scatter_matrix',
+                                                            'autocorrelation_plot',
+                                                            None],
+                                     doc="""Selects which Pandas or Seaborn plot
+                                            type to use, when visualizing the plot.""")
 
     x2 = param.String(doc="""Dimension to visualize along a second
                              dependent axis.""")
-
-    y = param.String(doc="""Dimension to visualize along the y-axis.""")
 
 
 options.TimeSeries = StyleOpts(color=Cycle())

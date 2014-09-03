@@ -10,17 +10,18 @@ except:
 import param
 
 from ..dataviews import DataStack
-from ..interface.seaborn import Regression, TimeSeries, SNSFrame,\
-    Bivariate, Distribution
+from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
+from ..interface.seaborn import DFrame as SNSFrame
 from ..views import View
 from .viewplots import Plot
 from .pandas import DFrameViewPlot
 
 
-class SeabornPlot(Plot):
+class FullRedrawPlot(Plot):
     """
-    Seaborn Plot provides an abstract baseclass, defining how
-    Seaborn based plots are updated.
+    FullRedrawPlot provides an abstract baseclass, defining an
+    update_frame method, which completely wipes the axis and
+    redraws the plot.
     """
 
     rescale_individually = param.Boolean(default=False, doc="""
@@ -40,8 +41,7 @@ class SeabornPlot(Plot):
         plt.draw()
 
 
-
-class RegressionPlot(SeabornPlot):
+class RegressionPlot(FullRedrawPlot):
     """
     RegressionPlot visualizes Regression Views using the seaborn
     regplot interface, allowing the user to perform and plot
@@ -87,7 +87,7 @@ class RegressionPlot(SeabornPlot):
 
 
 
-class BivariatePlot(SeabornPlot):
+class BivariatePlot(FullRedrawPlot):
     """
     Bivariate plot visualizes two-dimensional kernel density
     estimates using the Seaborn kdeplot function. Additionally,
@@ -156,7 +156,7 @@ class BivariatePlot(SeabornPlot):
 
 
 
-class TimeSeriesPlot(SeabornPlot):
+class TimeSeriesPlot(FullRedrawPlot):
     """
     TimeSeries visualizes sets of curves using the Seaborn
     tsplot function. This provides functionality to plot
@@ -215,7 +215,7 @@ class TimeSeriesPlot(SeabornPlot):
 
 
 
-class DistributionPlot(SeabornPlot):
+class DistributionPlot(FullRedrawPlot):
     """
     DistributionPlot visualizes Distribution Views using the
     Seaborn distplot function. This allows visualizing a 1D
@@ -271,53 +271,65 @@ class SNSFramePlot(DFrameViewPlot):
     parameters, which can be set on the SNSFrame.
     """
 
-    plot_type = param.ObjectSelector(default='corrplot',
+    _view_type = SNSFrame
+
+    plot_type = param.ObjectSelector(default='scatter_matrix',
                                      objects=['interact', 'regplot',
-                                              'lmplot', 'corrplot'],
+                                              'lmplot', 'corrplot',
+                                              'plot', 'boxplot',
+                                              'hist', 'scatter_matrix',
+                                              'autocorrelation_plot'],
                                      doc="""
         Selects which Seaborn plot type to use, when visualizing the
         SNSFrame. The options that can be passed to the plot_type are
         defined in dframe_options.""")
 
-    dframe_options = {'regplot':  RegressionPlot.style_opts,
-                      'lmplot':   ['hue', 'col', 'row', 'palette',
-                                   'sharex', 'dropna', 'legend'],
-                      'corrplot': ['annot', 'sig_stars', 'sig_tail',
-                                   'sig_corr', 'cmap', 'cmap_range',
-                                   'cbar'],
-                      'interact': ['filled', 'cmap', 'colorbar',
-                                   'levels', 'logistic', 'contour_kws'
-                                   'scatter_kws']
-                      }
+    dframe_options = dict(DFrameViewPlot.dframe_options,
+                          **{'regplot':  RegressionPlot.style_opts,
+                             'lmplot':   ['hue', 'col', 'row', 'palette',
+                                          'sharex', 'dropna', 'legend'],
+                             'corrplot': ['annot', 'sig_stars', 'sig_tail',
+                                          'sig_corr', 'cmap', 'cmap_range',
+                                          'cbar'],
+                             'interact': ['filled', 'cmap', 'colorbar',
+                                          'levels', 'logistic', 'contour_kws',
+                                          'scatter_kws']
+                          })
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         dfview = self._stack.last
-        composed = axis is not None
-        multi_dim = len(dfview.dimensions) > 1
 
-        if composed and multi_dim and self.plot_type == 'lmplot':
-            raise Exception("Multiple %s plots cannot be composed."
-                            % self.plot_type)
+        self._validate(dfview, axis)
 
         title = None if self.zorder > 0 else self._format_title(-1)
         self.ax = self._axis(axis, title)
 
         # Process styles
-        self.style = View.options.style(dfview)[cyclic_index]
-        styles = self.style.keys()
-        for k in styles:
-            if k not in self.dframe_options[self.plot_type]:
-                self.warning('Plot option %s does not apply '
-                             'to %s plot type.' % (k, self.plot_type))
-                self.style.pop(k)
+        self.style = self._process_style(View.options.style(dfview)[cyclic_index])
 
-        # Legacy fix for Pandas, can be removed for Pandas >0.14
         self._update_plot(dfview)
 
         if not axis:
             fig = self.handles.get('fig', plt.gcf())
             plt.close(fig)
         return self.ax if axis else self.handles.get('fig', plt.gcf())
+
+
+    def _process_style(self, styles):
+        styles = super(SNSFramePlot, self)._process_style(styles)
+        if self.plot_type not in DFrameViewPlot.params()['plot_type'].objects:
+            styles.pop('figsize', None)
+        return styles
+
+
+    def _validate(self, dfview, axis):
+        super(SNSFramePlot, self)._validate(dfview, axis)
+
+        composed = axis is not None
+        multi_dim = len(dfview.dimensions) > 1
+        if composed and multi_dim and self.plot_type == 'lmplot':
+            raise Exception("Multiple %s plots cannot be composed."
+                            % self.plot_type)
 
 
     def _update_plot(self, dfview):
@@ -332,6 +344,8 @@ class SNSFramePlot(DFrameViewPlot):
         elif self.plot_type == 'lmplot':
             sns.lmplot(x=dfview.x, y=dfview.y, data=dfview.data,
                        ax=self.ax, **self.style)
+        else:
+            super(SNSFramePlot, self)._update_plot(dfview)
 
 
 Plot.defaults.update({TimeSeries: TimeSeriesPlot,
