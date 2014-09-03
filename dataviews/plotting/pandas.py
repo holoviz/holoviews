@@ -91,27 +91,7 @@ class DFrameViewPlot(Plot):
                                          'hist_kwds', 'density_kwds'],
                       'autocorrelation': ['kwds']}
 
-
-    class classproperty(object):
-        """
-        Adds a getter property to a class.
-        """
-        def __init__(self, f):
-            self.f = f
-        def __get__(self, obj, owner):
-            return self.f(owner)
-
-
-    @classproperty
-    def style_opts(cls):
-        """
-        Concatenates the Pandas plot_options to make all the options
-        available via the StyleOpts interface.
-        """
-        opt_set = set()
-        for opts in cls.dframe_options.values():
-            opt_set |= set(opts)
-        return list(opt_set)
+    style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
     _stack_type = DFrameStack
     _view_type = DataFrameView

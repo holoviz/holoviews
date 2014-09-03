@@ -296,6 +296,8 @@ class SNSFramePlot(DFrameViewPlot):
                                           'scatter_kws']
                           })
 
+    style_opts = list({opt for opts in dframe_options.values() for opt in opts})
+
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         dfview = self._stack.last
 
