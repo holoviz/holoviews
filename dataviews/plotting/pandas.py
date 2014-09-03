@@ -134,10 +134,10 @@ class DFrameViewPlot(Plot):
 
         self._update_plot(dfview)
 
+        fig = self.handles.get('fig', plt.gcf())
         if not axis:
-            fig = self.handles.get('fig', plt.gcf())
             plt.close(fig)
-        return self.ax if axis else self.handles.get('fig', plt.gcf())
+        return self.ax if axis else fig
 
 
     def _process_style(self, styles):
