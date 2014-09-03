@@ -45,6 +45,17 @@ class DataFrameView(View):
                  selecting and slicing the data using NdMapping.
     """
 
+    plot_type = param.ObjectSelector(default=None, objects=['plot', 'boxplot',
+                                                            'hist', 'scatter_matrix',
+                                                            'autocorrelation_plot',
+                                                            None],
+                                     doc="""Selects which Pandas plot type to use,
+                                            when visualizing the View.""")
+
+    x = param.String(doc="""Dimension to visualize along the x-axis.""")
+
+    y = param.String(doc="""Dimension to visualize along the y-axis.""")
+
     value = param.ClassSelector(class_=(str, Dimension), precedence=-1,
                                 doc="DataFrameView has no value dimension.")
 

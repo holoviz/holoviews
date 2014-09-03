@@ -67,9 +67,10 @@ class DFrameViewPlot(Plot):
     to the selected plot_type via options.style_opts.
     """
 
-    plot_type = param.ObjectSelector(default='boxplot', objects=['plot', 'boxplot',
-                                                                 'hist', 'scatter_matrix',
-                                                                 'autocorrelation_plot'],
+    plot_type = param.ObjectSelector(default='scatter_matrix',
+                                     objects=['plot', 'boxplot',
+                                              'hist', 'scatter_matrix',
+                                              'autocorrelation_plot'],
                                      doc="""Selects which Pandas plot type to use.""")
 
     dframe_options = {'plot': ['kind', 'stacked', 'xerr',
@@ -90,34 +91,51 @@ class DFrameViewPlot(Plot):
                                          'hist_kwds', 'density_kwds'],
                       'autocorrelation': ['kwds']}
 
-
-    class classproperty(object):
-        """
-        Adds a getter property to a class.
-        """
-        def __init__(self, f):
-            self.f = f
-        def __get__(self, obj, owner):
-            return self.f(owner)
-
-
-    @classproperty
-    def style_opts(cls):
-        """
-        Concatenates the Pandas plot_options to make all the options
-        available via the StyleOpts interface.
-        """
-        opt_set = set()
-        for opts in cls.dframe_options.values():
-            opt_set |= set(opts)
-        return list(opt_set)
+    style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
     _stack_type = DFrameStack
     _view_type = DataFrameView
 
 
+    def __init__(self, view, **params):
+        super(DFrameViewPlot, self).__init__(view, **params)
+        if self._stack.last.plot_type and 'plot_type' not in params:
+            self.plot_type = self._stack.last.plot_type
+
+
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         dfview = self._stack.last
+
+        self._validate(dfview, axis)
+
+        title = None if self.zorder > 0 else self._format_title(-1)
+        self.ax = self._axis(axis, title)
+        self.style = self._process_style(View.options.style(dfview)[cyclic_index])
+
+        self._update_plot(dfview)
+
+        fig = self.handles.get('fig', plt.gcf())
+        if not axis:
+            plt.close(fig)
+        return self.ax if axis else fig
+
+
+    def _process_style(self, styles):
+        style_keys = styles.keys()
+        for k in style_keys:
+            if k not in self.dframe_options[self.plot_type]:
+                self.warning('Plot option %s does not apply to %s plot type.' % (k, self.plot_type))
+                styles.pop(k)
+        if self.plot_type not in ['autocorrelation_plot']:
+            styles['figsize'] = self.size
+
+        # Legacy fix for Pandas, can be removed for Pandas >0.14
+        if self.plot_type == 'boxplot':
+            styles['return_type'] = 'axes'
+        return styles
+
+
+    def _validate(self, dfview, axis):
         composed = axis is not None
 
         if composed and self.plot_type == 'scatter_matrix':
@@ -125,36 +143,15 @@ class DFrameViewPlot(Plot):
         elif composed and len(dfview.dimensions) > 1 and self.plot_type in ['hist']:
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
-        title = None if self.zorder > 0 else self._format_title(-1)
-        self.ax = self._axis(axis, title)
-
-        # Process styles
-        self.style = View.options.style(dfview)[cyclic_index]
-        styles = self.style.keys()
-        for k in styles:
-            if k not in self.dframe_options[self.plot_type]:
-                self.warning('Plot option %s does not apply to %s plot type.' % (k, self.plot_type))
-                self.style.pop(k)
-        if self.plot_type not in ['autocorrelation_plot']:
-            self.style['figsize'] = self.size
-
-        # Legacy fix for Pandas, can be removed for Pandas >0.14
-        if self.plot_type == 'boxplot':
-            self.style['return_type'] = 'axes'
-
-        self._update_plot(dfview)
-
-        if not axis:
-            fig = self.handles.get('fig', plt.gcf())
-            plt.close(fig)
-        return self.ax if axis else self.handles.get('fig', plt.gcf())
-
 
     def _update_plot(self, dfview):
         if self.plot_type == 'scatter_matrix':
             pd.scatter_matrix(dfview.data, ax=self.ax, **self.style)
         elif self.plot_type == 'autocorrelation_plot':
             pd.tools.plotting.autocorrelation_plot(dfview.data, ax=self.ax, **self.style)
+        elif self.plot_type == 'plot':
+            opts = dict({'x': dfview.x, 'y': dfview.y}, **self.style)
+            dfview.data.plot(ax=self.ax, **opts)
         else:
             getattr(dfview.data, self.plot_type)(ax=self.ax, **self.style)
 
