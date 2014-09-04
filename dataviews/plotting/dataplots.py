@@ -309,13 +309,7 @@ class CurvePlot(Plot):
 
         self.handles['line_segment'] = line_segment
 
-        # If legend enabled update handles and labels
-        handles, labels = self.ax.get_legend_handles_labels()
-        if len(handles) and self.show_legend:
-            fontP = FontProperties()
-            fontP.set_size('small')
-            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
-            leg.get_frame().set_alpha(0.5)
+        self._adjust_legend()
 
         if axis is None: plt.close(self.handles['fig'])
         return self.ax if axis else self.handles['fig']
@@ -378,14 +372,7 @@ class ScatterPlot(CurvePlot):
                                 **View.options.style(scatterview)[cyclic_index])
 
         self.handles['paths'] = paths
-
-        # If legend enabled update handles and labels
-        handles, labels = self.ax.get_legend_handles_labels()
-        if len(handles) and self.show_legend:
-            fontP = FontProperties()
-            fontP.set_size('small')
-            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
-            leg.get_frame().set_alpha(0.5)
+        self._adjust_legend()
 
         if axis is None: plt.close(self.handles['fig'])
         return self.ax if axis else self.handles['fig']

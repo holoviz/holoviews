@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 from matplotlib.collections import LineCollection
+from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path
 import matplotlib.patches as patches
 
@@ -101,6 +102,22 @@ class Plot(param.Parameterized):
         if not issubclass(stack.type, self._view_type):
             raise TypeError("Requires View, Animation or Stack of type %s" % element_type)
         return stack
+
+
+    def _adjust_legend(self):
+        # If legend enabled update handles and labels
+        if not self.ax or not self.ax.get_legend(): return
+        handles, labels = self.ax.get_legend_handles_labels()
+        if len(handles) and self.show_legend:
+            fontP = FontProperties()
+            fontP.set_size('medium')
+            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg.get_frame().set_alpha(1.0)
+        frame = self.ax.get_legend().get_frame()
+        frame.set_facecolor('1.0')
+        frame.set_edgecolor('0.0')
+        frame.set_linewidth('1.5')
+
 
 
     def _format_title(self, n):

@@ -152,7 +152,9 @@ class BivariatePlot(FullRedrawPlot):
                                                 **self.style).fig
         else:
             sns.kdeplot(kdeview.data, ax=self.ax,
+                        label=kdeview.legend_label,
                         zorder=self.zorder, **self.style)
+            self._adjust_legend()
 
 
 
@@ -211,7 +213,9 @@ class TimeSeriesPlot(FullRedrawPlot):
     def _update_plot(self, n):
         curveview = list(self._stack.values())[n]
         sns.tsplot(curveview.data, curveview.xdata, ax=self.ax,
+                   condition=curveview.legend_label,
                    zorder=self.zorder, **self.style)
+        self._adjust_legend()
 
 
 
@@ -258,7 +262,9 @@ class DistributionPlot(FullRedrawPlot):
 
     def _update_plot(self, n):
         distview = list(self._stack.values())[n]
-        sns.distplot(distview.data, ax=self.ax, **self.style)
+        sns.distplot(distview.data, ax=self.ax,
+                     label=distview.legend_label, **self.style)
+        self._adjust_legend()
 
 
 
