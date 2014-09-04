@@ -45,10 +45,11 @@ class DataFrameView(View):
                  selecting and slicing the data using NdMapping.
     """
 
-    plot_type = param.ObjectSelector(default=None, objects=['plot', 'boxplot',
-                                                            'hist', 'scatter_matrix',
-                                                            'autocorrelation_plot',
-                                                            None],
+    plot_type = param.ObjectSelector(default=None, 
+                                     objects=['plot', 'boxplot',
+                                              'hist', 'scatter_matrix',
+                                              'autocorrelation_plot',
+                                              None],
                                      doc="""Selects which Pandas plot type to use,
                                             when visualizing the View.""")
 
