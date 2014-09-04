@@ -6,11 +6,11 @@ import param
 
 from .. import View
 from ..interface.pandas import DFrame, DFrameStack, DFrameOverlay, DataFrameView, pd
-from .viewplots import Plot
+from .viewplots import Plot, OverlayPlot
 
 
 
-class DFramePlot(Plot):
+class DFramePlot(OverlayPlot):
     """
     A high-level plot, which will plot any DataFrameView or DFrameStack type
     including DataOverlays.
