@@ -148,7 +148,7 @@ class DataFrameView(DFrameLayer):
         return self.data.copy()
 
 
-    def _split_dimensions(self, dimensions, ndmapping_type):
+    def _split_dimensions(self, dimensions, ndmapping_type=NdMapping):
         invalid_dims = list(set(dimensions) - set(self.dimension_labels))
         if invalid_dims:
             raise Exception('Following dimensions could not be found %s.'
@@ -163,12 +163,35 @@ class DataFrameView(DFrameLayer):
         return ndmapping
 
 
-    def grid(self, dimensions=[]):
+    def overlay_dimensions(self, dimensions):
+        ndmapping = self._split_dimensions(dimensions)
+        views = ndmapping._data.items()
+        dimensions = ndmapping.dimensions
+        overlaid = views[0][1]
+        for keys, view in views:
+            label = ', '.join([d.pprint_value(k) for d, k in
+                               zip(dimensions, keys)])
+            if overlaid == view:
+                overlaid.legend_label = label
+                continue
+            view.legend_label = label
+            overlaid *= view
+        return overlaid
+
+
+    def grid(self, dimensions=[], layout=False, cols=4):
         """
         Splits the supplied the dimensions out into a Grid.
         """
         if len(dimensions) > 2:
             raise Exception('Grids hold a maximum of two dimensions.')
+        if layout:
+            ndmapping = self._split_dimensions(dimensions, NdMapping)
+            for keys, stack in ndmapping._data.items():
+                label = ', '.join([d.pprint_value(k) for d, k in
+                                   zip(ndmapping.dimensions, keys)])
+                stack.title = ' '.join([label, stack.title])
+            return GridLayout(ndmapping).cols(cols)
         return self._split_dimensions(dimensions, Grid)
 
 
