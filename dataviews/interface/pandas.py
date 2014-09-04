@@ -18,14 +18,39 @@ except:
 
 import param
 
-from .. import Dimension
+from .. import Dimension, NdMapping
 from ..dataviews import HeatMap, DataStack, Table, TableStack
 from ..options import options, PlotOpts
-from ..views import View, Overlay, Stack, Annotation, Grid
+from ..views import View, Overlay, Stack, Annotation, Grid, GridLayout
+
+
+class DFrameLayer(View):
+    """
+    Abstract class implements common methods for all Pandas dframe
+    based View types.
+    """
+
+    def __mul__(self, other):
+        if isinstance(other, DFrameStack):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items=items)
+        elif isinstance(self, DFrameOverlay):
+            if isinstance(other, DFrameOverlay):
+                overlays = self.data + other.data
+            else:
+                overlays = self.data + [other]
+        elif isinstance(other, DFrameOverlay):
+            overlays = [self] + other.data
+        elif isinstance(other, DataFrameView):
+            overlays = [self, other]
+        else:
+            raise TypeError('Can only create an overlay of DFrameLayers.')
+
+        return DFrameOverlay(overlays)
 
 
 
-class DataFrameView(View):
+class DataFrameView(DFrameLayer):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -152,24 +177,6 @@ class DataFrameView(View):
         Splits the supplied dimensions out into a DFrameStack.
         """
         return self._split_dimensions(dimensions, DFrameStack)
-
-    def __mul__(self, other):
-        if isinstance(other, DFrameStack):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
-        elif isinstance(self, DFrameOverlay):
-            if isinstance(other, DFrameOverlay):
-                overlays = self.data + other.data
-            else:
-                overlays = self.data + [other]
-        elif isinstance(other, DFrameOverlay):
-            overlays = [self] + other.data
-        elif isinstance(other, DataFrameView):
-            overlays = [self, other]
-        else:
-            raise TypeError('Can only create an overlay of DFViews.')
-
-        return DFrameOverlay(overlays)
 
 
 
@@ -301,7 +308,7 @@ class DFrame(DataFrameView):
 
 
 
-class DFrameOverlay(Overlay):
+class DFrameOverlay(Overlay, DFrameLayer):
     """
     DFrameOverlay provides a compatibility layer to overlay Pandas
     Views. Required to allow isinstance checks to work.
