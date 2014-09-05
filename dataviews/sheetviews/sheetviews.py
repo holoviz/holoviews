@@ -290,17 +290,32 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
 class Points(SheetLayer):
     """
     Allows sets of points to be positioned over a sheet coordinate
-    system.
+    system. Each points may optionally be associated with a chosen
+    numeric value.
 
     The input data is an Nx2 Numpy array where each point in the numpy
     array corresponds to an X,Y coordinate in sheet coordinates,
     within the declared bounding region. Otherwise, the input can be a
     list that can be cast to a suitable numpy array.
+
+    Each point may be associated with a floating point number by
+    supplying 'magnitudes' as a list of floats.  Note that the data
+    attribute will then be a Nx3 array and that to render magnitudes
+    correctly with the default style settings, they should lie in the
+    range [0,1].
     """
 
-    def __init__(self, data, bounds=None, **kwargs):
+    def __init__(self, data, bounds=None, magnitudes=None,  **kwargs):
         bounds = bounds if bounds else BoundingBox()
-        data = np.array([[], []]).T if data is None else np.array(data)
+
+        arr = np.array(data)
+        if magnitudes is not None:
+            vals = np.array([c for c in magnitudes])
+            if len(vals) != arr.shape[0]:
+                raise Exception("Number of colour values must match number of points.")
+            arr = np.hstack((arr, vals.reshape(len(vals),1)))
+
+        data = np.array([[], []]).T if data is None else arr
         super(Points, self).__init__(data, bounds, **kwargs)
 
 
@@ -317,7 +332,7 @@ class Points(SheetLayer):
         if self.roi_bounds is None: return self
         (N,_) = self.data.shape
         roi_data = self.data[[n for n in range(N)
-                              if self.data[n, :] in self.roi_bounds]]
+                              if self.data[n,...][:2] in self.roi_bounds]]
         roi_bounds = self.roi_bounds if self.roi_bounds else self.bounds
         return Points(roi_data, roi_bounds, style=self.style)
 
@@ -325,7 +340,7 @@ class Points(SheetLayer):
     def __iter__(self):
         i = 0
         while i < len(self):
-            yield tuple(self.data[i, :])
+            yield tuple(self.data[i, ...])
             i += 1
 
 

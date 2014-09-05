@@ -16,9 +16,14 @@ from .viewplots import OverlayPlot, Plot
 
 
 class PointPlot(Plot):
+    """
+    Note that the 'cmap', 'vmin' and 'vmax' style arguments control
+    how point magnitudes are rendered.
+    """
 
     style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
-                                     'linewidth', 'marker', 's', 'visible'],
+                                     'linewidth', 'marker', 's', 'visible',
+                                     'cmap', 'vmin', 'vmax'],
                             constant=True, doc="""
      The style options for PointPlot match those of matplotlib's
      scatter plot command.""")
@@ -33,9 +38,13 @@ class PointPlot(Plot):
 
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
+        cs = points.data[:, 2] if points.data.shape[1]==3 else None
 
+        kwargs = View.options.style(points)[cyclic_index]
         scatterplot = ax.scatter(xs, ys, zorder=self.zorder,
-                                 **View.options.style(points)[cyclic_index])
+                                 **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
+                                    if cs is not None else kwargs))
+
         ax.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
         if axis is None: plt.close(self.handles['fig'])
@@ -45,7 +54,9 @@ class PointPlot(Plot):
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
         points = list(self._stack.values())[n]
-        self.handles['scatter'].set_offsets(points.data)
+        self.handles['scatter'].set_offsets(points.data[:,0:2])
+        if points.data.shape[1]==3:
+            self.handles['scatter'].set_array(points.data[:,2])
         self._update_title(n)
         plt.draw()
 
