@@ -326,7 +326,8 @@ class Points(SheetLayer):
             arr = np.array(data)
 
         if arr.shape[1] <self.min_dims:
-            raise Exception("Points requires a minimum of two columns (X, Y)")
+            raise Exception("%s requires a minimum of %s columns."
+                            % (self.__class__.__name__, self.min_dims))
 
         data = self.null_value if data is None else arr
         super(Points, self).__init__(data, bounds, **kwargs)
@@ -354,6 +355,38 @@ class Points(SheetLayer):
         while i < len(self):
             yield tuple(self.data[i, ...])
             i += 1
+
+
+
+class VectorField(Points):
+    """
+    A VectorField contains is a collection of vectors where each
+    vector has an associated position in sheet coordinates.
+
+    The constructor of VectorField is the same as the constructor of
+    Points: the input data can be an NxM Numpy array where the first
+    two columns corresponds to the X,Y coordinates in sheet
+    coordinates, within the declared bounding region. As with Points,
+    the input can be a tuple of array objects or of objects that can
+    be cast to arrays (the tuple elements are joined column-wise).
+
+    The third column maps to the vector angle which must be specified
+    in radians.
+
+    The visualization of any additional columns is decided by the
+    plotting code. For instance, the fourth and fifth columns could
+    correspond to arrow length and colour map value. All that is
+    assumed is that these additional dimension are normalized between
+    0.0 and 1.0 for the default visualization to work well.
+
+    The only restriction is that the final data array is NxM where
+    M>3. In other words, the vector must have a dimensionality of 2 or
+    higher.
+    """
+
+    null_value = np.array([[], [], [], []]).T # For when data is None
+    min_dims = 3                              # Minimum number of columns
+
 
 
 
