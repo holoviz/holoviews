@@ -301,7 +301,7 @@ class Points(SheetLayer):
 
 
     def resize(self, bounds):
-        return Points(self.points, bounds, style=self.style)
+        return Points(self.data, bounds, style=self.style)
 
 
     def __len__(self):
