@@ -310,6 +310,7 @@ class Points(SheetLayer):
 
     @property
     def roi(self):
+        if self.roi_bounds is None: return self
         (N,_) = self.data.shape
         roi_data = self.data[[n for n in range(N)
                               if self.data[n, :] in self.roi_bounds]]
