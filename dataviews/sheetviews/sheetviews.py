@@ -310,11 +310,11 @@ class Points(SheetLayer):
         bounds = bounds if bounds else BoundingBox()
 
         arr = np.array(data)
-        if magnitudes is not None and data.shape[1]==3:
+        if magnitudes is not None and arr.shape[1]==3:
             raise Exception("Magnitudes already specified as Nx3 data array.")
-        else:
+        elif magnitudes is not None:
             vals = np.array([c for c in magnitudes])
-            if len(vals) != arr.shape[0]:
+            if len(vals) != len(arr):
                 raise Exception("Number of colour values must match number of points.")
             arr = np.hstack((arr, vals.reshape(len(vals),1)))
 
