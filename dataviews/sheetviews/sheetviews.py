@@ -296,7 +296,8 @@ class Points(SheetLayer):
     The input data is an Nx2 Numpy array where each point in the numpy
     array corresponds to an X,Y coordinate in sheet coordinates,
     within the declared bounding region. Otherwise, the input can be a
-    list that can be cast to a suitable numpy array.
+    list that can be cast to a suitable numpy array. This means that
+    magnitudes can be supplied directly as an Nx3 array.
 
     Each point may be associated with a floating point number by
     supplying 'magnitudes' as a list of floats.  Note that the data
@@ -309,7 +310,9 @@ class Points(SheetLayer):
         bounds = bounds if bounds else BoundingBox()
 
         arr = np.array(data)
-        if magnitudes is not None:
+        if magnitudes is not None and data.shape[1]==3:
+            raise Exception("Magnitudes already specified as Nx3 data array.")
+        else:
             vals = np.array([c for c in magnitudes])
             if len(vals) != arr.shape[0]:
                 raise Exception("Number of colour values must match number of points.")
