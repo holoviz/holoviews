@@ -9,7 +9,7 @@ from matplotlib.collections import LineCollection
 import param
 
 from .. import SheetStack, Points, View, SheetView, SheetOverlay, \
-    CoordinateGrid, NdMapping, Contours
+    CoordinateGrid, NdMapping, Contours, VectorField
 from .dataplots import MatrixPlot
 from .viewplots import OverlayPlot, Plot
 
@@ -57,6 +57,90 @@ class PointPlot(Plot):
         self.handles['scatter'].set_offsets(points.data[:,0:2])
         if points.data.shape[1]==3:
             self.handles['scatter'].set_array(points.data[:,2])
+        self._update_title(n)
+        plt.draw()
+
+
+class VectorFieldPlot(Plot):
+    """
+    Renders 2D, 3D or 4D vector field. The 3rd and 4th dimension may
+    be either the arrow colour or the relative arrow length. For 2D
+    vector fields, all arrows have a relative length of 1.0.
+
+    Note that the 'cmap', 'clim' style arguments control the colours
+    of the vectors for 3D vector fields.
+    """
+
+    style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
+                                     'linewidth', 'marker', 's', 'visible',
+                                     'cmap', 'clim', 'scale'],
+                            constant=True, doc="""
+     The style options for PointPlot match those of matplotlib's
+     scatter plot command.""")
+
+    extra_dimensions = param.List(default=['color', 'relative length'], doc="""
+       How to represent the components that come after the angle
+       component (in radians). Currently the components can be
+       represented using relative arrow length or as with colour (via
+       a colour map).
+
+       For instance, the default list may be swapped so that colour is
+       used before relative length for 3D and 4D VectorFields.""")
+
+    _stack_type = SheetStack
+    _view_type = VectorField
+
+
+    def _get_info(self, vfield):
+        xs = vfield.data[:, 0] if len(vfield.data) else []
+        ys = vfield.data[:, 1] if len(vfield.data) else []
+        radians = vfield.data[:, 2] if len(vfield.data) else []
+        norm1 = vfield.data[:, 3] if vfield.data.shape[1]>=4 else None
+        norm2 = vfield.data[:, 4] if vfield.data.shape[1]>=5 else None
+
+        extra_dims = dict(zip(self.extra_dimensions,
+                              [el for el in [norm1, norm2] if el is not None]))
+        magnitudes = extra_dims.get('relative length', [1.0] * len(xs))
+
+        return dict(extra_dims, xs=xs, ys=ys,
+                    angles=list((radians / np.pi) * 180),
+                    magnitudes=magnitudes)
+
+
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+        vfield = self._stack.last
+        title = None if self.zorder > 0 else self._format_title(-1)
+        ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
+
+        info = self._get_info(vfield)
+        colorized = 'color' in info
+
+        args = (info['xs'], info['ys'], info['magnitudes'],  [0.0] * len(vfield.data))
+        args = args + (info['color'],) if colorized else args
+        kwargs = View.options.style(vfield)[cyclic_index]
+
+        quiver = ax.quiver(*args, zorder=self.zorder,
+                            units='inches',
+                            scale_units='inches',
+                            angles= info['angles'] ,
+                            **({k:v for k,v in kwargs.items() if k!='color'}
+                               if colorized else kwargs))
+
+        ax.add_collection(quiver)
+        self.handles['quiver'] = quiver
+        if axis is None: plt.close(self.handles['fig'])
+        return ax if axis else self.handles['fig']
+
+
+    def update_frame(self, n):
+        n = n if n < len(self) else len(self) - 1
+        vfield = list(self._stack.values())[n]
+        self.handles['quiver'].set_offsets(vfield.data[:,0:2])
+
+        info = self._get_info(vfield)
+
+        if 'color' in info:
+            self.handles['quiver'].set_array(info['color'])
         self._update_title(n)
         plt.draw()
 
@@ -285,6 +369,7 @@ Plot.defaults.update({SheetView: SheetViewPlot,
                       Points: PointPlot,
                       Contours: ContourPlot,
                       SheetOverlay: SheetPlot,
-                      CoordinateGrid: CoordinateGridPlot})
+                      CoordinateGrid: CoordinateGridPlot,
+                      VectorField:VectorFieldPlot})
 
 Plot.sideplots.update({CoordinateGrid: CoordinateGridPlot})
