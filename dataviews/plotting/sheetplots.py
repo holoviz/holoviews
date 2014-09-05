@@ -38,7 +38,7 @@ class PointPlot(Plot):
 
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        cs = points.data[:, 2] if points.data.shape[1]==3 else None
+        cs = points.data[:, 2] if points.data.shape[1]>=3 else None
 
         kwargs = View.options.style(points)[cyclic_index]
         scatterplot = ax.scatter(xs, ys, zorder=self.zorder,

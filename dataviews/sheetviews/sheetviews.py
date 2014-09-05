@@ -293,34 +293,43 @@ class Points(SheetLayer):
     system. Each points may optionally be associated with a chosen
     numeric value.
 
-    The input data is an Nx2 Numpy array where each point in the numpy
-    array corresponds to an X,Y coordinate in sheet coordinates,
-    within the declared bounding region. Otherwise, the input can be a
-    list that can be cast to a suitable numpy array. This means that
-    magnitudes can be supplied directly as an Nx3 array.
+    The input data can be a Nx2 or Nx3 Numpy array where the first two
+    columns corresponds to the X,Y coordinates in sheet coordinates,
+    within the declared bounding region. For Nx3 arrays, the third
+    column corresponds to the magnitude values of the points. Any
+    additional columns will be ignored (use VectorFields instead).
 
-    Each point may be associated with a floating point number by
-    supplying 'magnitudes' as a list of floats.  Note that the data
-    attribute will then be a Nx3 array and that to render magnitudes
-    correctly with the default style settings, they should lie in the
-    range [0,1].
+    The input data may be also be passed as a tuple of elements that
+    may be numpy arrays or values that can be cast to arrays. When
+    such a tuple is supplied, the elements are joined column-wise into
+    a single array, allowing the magnitudes to be easily supplied
+    separately.
+
+    Note that if magnitudes are to be rendered correctly by default,
+    they should lie in the range [0,1].
     """
 
-    def __init__(self, data, bounds=None, magnitudes=None,  **kwargs):
+    null_value = np.array([[], []]).T # For when data is None
+    min_dims = 2                      # Minimum number of columns
+
+    def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
 
-        arr = np.array(data)
-        if magnitudes is not None and arr.shape[1]==3:
-            raise Exception("Magnitudes already specified as Nx3 data array.")
-        elif magnitudes is not None:
-            vals = np.array([c for c in magnitudes])
-            if len(vals) != len(arr):
-                raise Exception("Number of colour values must match number of points.")
-            arr = np.hstack((arr, vals.reshape(len(vals),1)))
+        if isinstance(data, tuple):
+            arrays = [np.array(d) for d in data]
+            if not all(len(arr)==len(arrays[0]) for arr in arrays):
+                raise Exception("All input arrays must have the same length.")
 
-        data = np.array([[], []]).T if data is None else arr
+            arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
+                                              else (len(arr), 1)) for arr in arrays))
+        else:
+            arr = np.array(data)
+
+        if arr.shape[1] <self.min_dims:
+            raise Exception("Points requires a minimum of two columns (X, Y)")
+
+        data = self.null_value if data is None else arr
         super(Points, self).__init__(data, bounds, **kwargs)
-
 
     def resize(self, bounds):
         return Points(self.data, bounds, style=self.style)
