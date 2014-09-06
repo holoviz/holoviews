@@ -64,11 +64,11 @@ class PointPlot(Plot):
 class VectorFieldPlot(Plot):
     """
     Renders 2D, 3D or 4D vector field. The 3rd and 4th dimension may
-    be either the arrow colour or the relative arrow length. For 2D
+    be either the arrow color or the relative arrow length. For 2D
     vector fields, all arrows have a relative length of 1.0.
 
-    Note that the 'cmap', 'clim' style arguments control the colours
-    of the vectors for 3D vector fields.
+    Note that the 'cmap', 'clim' style arguments control the colors of
+    the vectors for 3D vector fields.
     """
 
     style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
