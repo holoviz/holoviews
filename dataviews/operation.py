@@ -14,7 +14,7 @@ import param
 from param import ParamOverrides
 
 from .views import Overlay, GridLayout
-from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay
+from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay, VectorField
 from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack
 from .sheetviews import CoordinateGrid
 
@@ -437,6 +437,56 @@ class contours(ViewOperation):
             return [(sheetview * contours[0])]
         else:
             return [sheetview * SheetOverlay(contours, sheetview.bounds)]
+
+
+class vectorfield(ViewOperation):
+    """
+    Given a SheetView with a single channel, convert it to a
+    VectorField object at a given spatial sampling interval. The
+    values in the SheetView are assumed to correspond to the vector
+    angle in radians.
+
+    If supplied with an overlay, the second sheetview in the overlay
+    will be interpreted as the third vector dimension. The relative
+    lengths are computed relative to the mean of this SheetView.
+    """
+
+    rows = param.Integer(default=10, doc="""
+         Number of rows in the vector field.""")
+
+    cols = param.Integer(default=10, doc="""
+         Number of columns in the vector field.""")
+
+    label = param.String(default='Vectors', doc="""
+      The label suffix used to label the resulting vector field
+      where the suffix is added to the label of the  input SheetView""")
+
+
+    def _process(self, view, key=None):
+
+        if isinstance(view, SheetOverlay) and len(view) >= 2:
+            radians, lengths = view[0], view[1]
+        else:
+            radians, lengths = view, None
+
+        l, b, r, t = radians.bounds.lbrt()
+        X, Y = np.meshgrid(np.linspace(l, r, self.p.cols+2)[1:-1],
+                           np.linspace(b, t, self.p.rows+2)[1:-1])
+
+        vector_data = []
+        for x, y in zip(X.flat, Y.flat):
+
+            components = (x,y, radians[x,y])
+
+            if lengths is not None:
+                mean = lengths.data.mean()
+                relative_length = lengths[x,y] / mean
+                components += (relative_length,)
+
+            vector_data.append(components)
+
+        return [VectorField(vector_data,
+                            label=radians.label + ' ' + self.p.label)]
 
 
 ChannelOpts.operations['RGBA'] = RGBA
