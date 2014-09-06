@@ -315,6 +315,8 @@ class Points(SheetLayer):
     def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
 
+        self._range_column = 3
+
         if isinstance(data, tuple):
             arrays = [np.array(d) for d in data]
             if not all(len(arr)==len(arrays[0]) for arr in arrays):
@@ -335,6 +337,15 @@ class Points(SheetLayer):
     def resize(self, bounds):
         return Points(self.data, bounds, style=self.style)
 
+    @property
+    def range(self):
+        """
+        The range of magnitudes (if available) otherwise None.
+        """
+        col = self._range_column
+        if self.data.shape[1] < col: return None
+        return (self.data[:,col-1:col].min(),
+                self.data[:,col-1:col].max())
 
     def __len__(self):
         return self.data.shape[0]
