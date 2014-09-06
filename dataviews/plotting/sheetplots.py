@@ -21,6 +21,10 @@ class PointPlot(Plot):
     how point magnitudes are rendered.
     """
 
+    normalize_individually = param.Boolean(default=False, doc="""
+      Whether to normalize the colors used to represent magnitude for
+      each frame or across the stack (when color is applicable).""")
+
     style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
                                      'linewidth', 'marker', 's', 'visible',
                                      'cmap', 'vmin', 'vmax'],
@@ -47,6 +51,11 @@ class PointPlot(Plot):
 
         ax.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
+
+        if cs is not None:
+            clims = points.range if self.normalize_individually else self._stack.range
+            scatterplot.set_clim(clims)
+
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
 
@@ -54,9 +63,14 @@ class PointPlot(Plot):
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
         points = list(self._stack.values())[n]
-        self.handles['scatter'].set_offsets(points.data[:,0:2])
+
+        scatter = self.handles['scatter']
+        scatter.set_offsets(points.data[:,0:2])
         if points.data.shape[1]==3:
-            self.handles['scatter'].set_array(points.data[:,2])
+            scatter.set_array(points.data[:,2])
+
+        if self.normalize_individually:
+            scatter.set_clim(points.range)
         self._update_title(n)
         plt.draw()
 
