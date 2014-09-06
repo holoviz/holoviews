@@ -399,6 +399,15 @@ class VectorField(Points):
     min_dims = 3                              # Minimum number of columns
 
 
+    @property
+    def range_column(self):
+        return self._range_column
+
+
+    @range_column.setter
+    def range_column(self, val):
+        self._range_column = val
+
 
 
 class Contours(SheetLayer):
