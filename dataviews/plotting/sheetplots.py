@@ -18,7 +18,7 @@ from .viewplots import OverlayPlot, Plot
 class PointPlot(Plot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
-    how point magnitudes are rendered.
+    how point magnitudes are rendered to different colors.
     """
 
     normalize_individually = param.Boolean(default=False, doc="""
