@@ -78,19 +78,19 @@ class PointPlot(Plot):
 class VectorFieldPlot(Plot):
     """
     Renders 2D, 3D or 4D vector field. The 3rd and 4th dimension may
-    be either the arrow color or the relative arrow length. For 2D
+    be either the relative arrow length or the arrow color. For 2D
     vector fields, all arrows have a relative length of 1.0.
 
-    Note that the 'cmap', 'clim' style arguments control the colors of
-    the vectors for 3D vector fields.
+    Note that the 'cmap' style argument controls the colors of the
+    vectors for 3D vector fields.
     """
 
     style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
                                      'linewidth', 'marker', 's', 'visible',
-                                     'cmap', 'clim', 'scale'],
+                                     'cmap', 'scale'],
                             constant=True, doc="""
-     The style options for PointPlot match those of matplotlib's
-     scatter plot command.""")
+      The style options for PointPlot match those of matplotlib's
+      quiver plot command.""")
 
     extra_dimensions = param.List(default=['color', 'relative length'], doc="""
        How to represent the components that come after the angle
@@ -100,6 +100,10 @@ class VectorFieldPlot(Plot):
 
        For instance, the default list may be swapped so that colour is
        used before relative length for 3D and 4D VectorFields.""")
+
+    normalize_individually = param.Boolean(default=False, doc="""
+        Whether to normalize the colors used as an extra dimension
+        per frame or across the stack (when color is applicable).""")
 
     _stack_type = SheetStack
     _view_type = VectorField
@@ -133,12 +137,25 @@ class VectorFieldPlot(Plot):
         args = args + (info['color'],) if colorized else args
         kwargs = View.options.style(vfield)[cyclic_index]
 
+
         quiver = ax.quiver(*args, zorder=self.zorder,
                             units='inches',
                             scale_units='inches',
                             angles= info['angles'] ,
                             **({k:v for k,v in kwargs.items() if k!='color'}
                                if colorized else kwargs))
+
+        if colorized:
+            range_column = 4 + self.extra_dimensions.index('color')
+            if self.normalize_individually:
+                vfield.range_column = range_column
+                clims = vfield.range
+            else:
+                for el in self._stack:
+                    el.range_column = range_column
+                clims = self._stack.range
+            quiver.set_clim(clims)
+
 
         ax.add_collection(quiver)
         self.handles['quiver'] = quiver
@@ -154,12 +171,17 @@ class VectorFieldPlot(Plot):
         info = self._get_info(vfield)
 
         # Set magnitudes, angles and colors if supplied.
+        quiver = self.handles['quiver']
         if 'magnitudes' in info:
-            self.handles['quiver'].U = info['magnitudes']
+            quiver.U = info['magnitudes']
         if 'angles' in info:
-            self.handles['quiver'].angles = info['angles']
+            quiver.angles = info['angles']
         if 'color' in info:
-            self.handles['quiver'].set_array(info['color'])
+            quiver.set_array(info['color'])
+
+        if self.normalize_individually:
+            quiver.set_clim(vfield.range)
+
         self._update_title(n)
         plt.draw()
 
