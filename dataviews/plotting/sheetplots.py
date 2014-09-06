@@ -139,6 +139,11 @@ class VectorFieldPlot(Plot):
 
         info = self._get_info(vfield)
 
+        # Set magnitudes, angles and colors if supplied.
+        if 'magnitudes' in info:
+            self.handles['quiver'].U = info['magnitudes']
+        if 'angles' in info:
+            self.handles['quiver'].angles = info['angles']
         if 'color' in info:
             self.handles['quiver'].set_array(info['color'])
         self._update_title(n)
