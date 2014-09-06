@@ -92,7 +92,7 @@ class VectorFieldPlot(Plot):
       The style options for PointPlot match those of matplotlib's
       quiver plot command.""")
 
-    extra_dimensions = param.List(default=['color', 'relative length'], doc="""
+    extra_dimensions = param.List(default=['relative length', 'color'], doc="""
        How to represent the components that come after the angle
        component (in radians). Currently the components can be
        represented using relative arrow length or as with colour (via
