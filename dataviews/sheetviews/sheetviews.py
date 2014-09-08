@@ -30,6 +30,10 @@ class SheetLayer(View):
         The ROI can be specified to select only a sub-region of the bounds to
         be stored as data.""")
 
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('Z'), doc="""
+        The default dimension for SheetLayers is the Z-axis.""")
+
     _abstract = True
 
 
