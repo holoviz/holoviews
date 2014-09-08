@@ -104,7 +104,7 @@ class Dimensional(object):
 
     @property
     def dimension_labels(self):
-        if not hasattr(self, '_dimension_labels'):
+        if not getattr(self, '_dimension_labels', False):
             self._dimension_labels = [d.name for d in self.dimensions]
         return self._dimension_labels
 
