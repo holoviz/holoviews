@@ -447,8 +447,7 @@ class vectorfield(ViewOperation):
     angle in radians.
 
     If supplied with an overlay, the second sheetview in the overlay
-    will be interpreted as the third vector dimension. The relative
-    lengths are computed relative to the mean of this SheetView.
+    will be interpreted as the third vector dimension.
     """
 
     rows = param.Integer(default=10, doc="""
@@ -477,11 +476,8 @@ class vectorfield(ViewOperation):
         for x, y in zip(X.flat, Y.flat):
 
             components = (x,y, radians[x,y])
-
             if lengths is not None:
-                mean = lengths.data.mean()
-                relative_length = lengths[x,y] / mean
-                components += (relative_length,)
+                components += (lengths[x,y],)
 
             vector_data.append(components)
 
