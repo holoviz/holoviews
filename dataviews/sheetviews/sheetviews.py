@@ -401,6 +401,10 @@ class VectorField(Points):
     _min_dims = 3                              # Minimum number of columns
     _range_column = 4                          # Column used by range property
 
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('PolarVector', cyclic_range=2*np.pi))
+
+
 
 class Contours(SheetLayer):
     """
