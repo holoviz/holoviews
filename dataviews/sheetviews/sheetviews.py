@@ -309,16 +309,15 @@ class Points(SheetLayer):
     they should lie in the range [0,1].
     """
 
-    null_value = np.array([[], []]).T # For when data is None
-    min_dims = 2                      # Minimum number of columns
+    _null_value = np.array([[], []]).T # For when data is None
+    _min_dims = 2                      # Minimum number of columns
+    _range_column = 3                 # Column used by range property
 
     value = param.ClassSelector(class_=(str, Dimension),
                                 default=Dimension('Magnitude'))
 
     def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
-
-        self._range_column = 3
 
         if isinstance(data, tuple):
             arrays = [np.array(d) for d in data]
@@ -330,11 +329,11 @@ class Points(SheetLayer):
         else:
             arr = np.array(data)
 
-        if arr.shape[1] <self.min_dims:
+        if arr.shape[1] <self._min_dims:
             raise Exception("%s requires a minimum of %s columns."
-                            % (self.__class__.__name__, self.min_dims))
+                            % (self.__class__.__name__, self._min_dims))
 
-        data = self.null_value if data is None else arr
+        data = self._null_value if data is None else arr
         super(Points, self).__init__(data, bounds, **kwargs)
 
     def resize(self, bounds):
@@ -398,19 +397,9 @@ class VectorField(Points):
     higher.
     """
 
-    null_value = np.array([[], [], [], []]).T # For when data is None
-    min_dims = 3                              # Minimum number of columns
-
-
-    @property
-    def range_column(self):
-        return self._range_column
-
-
-    @range_column.setter
-    def range_column(self, val):
-        self._range_column = val
-
+    _null_value = np.array([[], [], [], []]).T # For when data is None
+    _min_dims = 3                              # Minimum number of columns
+    _range_column = 4                          # Column used by range property
 
 
 class Contours(SheetLayer):
