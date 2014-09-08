@@ -137,22 +137,24 @@ class VectorFieldPlot(Plot):
         dists, magnitudes  = [], []
         for vfield in stack:
             dists.append(self._get_min_dist(vfield))
-            magnitudes.append(max(vfield.data[:, 3]))
-        return min(dists), max(magnitudes)
+
+            if vfield.data.shape[1]>=4:
+                magnitudes.append(max(vfield.data[:, 3]))
+        return min(dists), max(magnitudes) if magnitudes else None
 
 
     def _get_info(self, vfield, input_scale):
         xs = vfield.data[:, 0] if len(vfield.data) else []
         ys = vfield.data[:, 1] if len(vfield.data) else []
         radians = vfield.data[:, 2] if len(vfield.data) else []
-        magnitudes = vfield.data[:, 3] if vfield.data.shape[1]>=4 else ([1.0] * len(xs))
+        magnitudes = vfield.data[:, 3] if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
         colors = magnitudes if self.color_dim == 'magnitude' else radians
 
         max_magnitude = self._max_magnitude if self._max_magnitude else max(magnitudes)
         min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
 
         if self.normalize_lengths:
-            magnitudes =  magnitudes/ max_magnitude
+            magnitudes =  magnitudes / max_magnitude
 
         return (xs, ys, list((radians / np.pi) * 180),
                 magnitudes, colors, input_scale / min_dist)
