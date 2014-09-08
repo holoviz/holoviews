@@ -290,23 +290,64 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
 class Points(SheetLayer):
     """
     Allows sets of points to be positioned over a sheet coordinate
-    system.
+    system. Each points may optionally be associated with a chosen
+    numeric value.
 
-    The input data is an Nx2 Numpy array where each point in the numpy
-    array corresponds to an X,Y coordinate in sheet coordinates,
-    within the declared bounding region. Otherwise, the input can be a
-    list that can be cast to a suitable numpy array.
+    The input data can be a Nx2 or Nx3 Numpy array where the first two
+    columns corresponds to the X,Y coordinates in sheet coordinates,
+    within the declared bounding region. For Nx3 arrays, the third
+    column corresponds to the magnitude values of the points. Any
+    additional columns will be ignored (use VectorFields instead).
+
+    The input data may be also be passed as a tuple of elements that
+    may be numpy arrays or values that can be cast to arrays. When
+    such a tuple is supplied, the elements are joined column-wise into
+    a single array, allowing the magnitudes to be easily supplied
+    separately.
+
+    Note that if magnitudes are to be rendered correctly by default,
+    they should lie in the range [0,1].
     """
+
+    _null_value = np.array([[], []]).T # For when data is None
+    _min_dims = 2                      # Minimum number of columns
+    _range_column = 3                 # Column used by range property
+
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('Magnitude'))
 
     def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
-        data = np.array([[], []]).T if data is None else np.array(data)
-        super(Points, self).__init__(data, bounds, **kwargs)
 
+        if isinstance(data, tuple):
+            arrays = [np.array(d) for d in data]
+            if not all(len(arr)==len(arrays[0]) for arr in arrays):
+                raise Exception("All input arrays must have the same length.")
+
+            arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
+                                              else (len(arr), 1)) for arr in arrays))
+        else:
+            arr = np.array(data)
+
+        if arr.shape[1] <self._min_dims:
+            raise Exception("%s requires a minimum of %s columns."
+                            % (self.__class__.__name__, self._min_dims))
+
+        data = self._null_value if data is None else arr
+        super(Points, self).__init__(data, bounds, **kwargs)
 
     def resize(self, bounds):
         return Points(self.data, bounds, style=self.style)
 
+    @property
+    def range(self):
+        """
+        The range of magnitudes (if available) otherwise None.
+        """
+        col = self._range_column
+        if self.data.shape[1] < col: return None
+        return (self.data[:,col-1:col].min(),
+                self.data[:,col-1:col].max())
 
     def __len__(self):
         return self.data.shape[0]
@@ -317,7 +358,7 @@ class Points(SheetLayer):
         if self.roi_bounds is None: return self
         (N,_) = self.data.shape
         roi_data = self.data[[n for n in range(N)
-                              if self.data[n, :] in self.roi_bounds]]
+                              if self.data[n,...][:2] in self.roi_bounds]]
         roi_bounds = self.roi_bounds if self.roi_bounds else self.bounds
         return Points(roi_data, roi_bounds, style=self.style)
 
@@ -325,8 +366,44 @@ class Points(SheetLayer):
     def __iter__(self):
         i = 0
         while i < len(self):
-            yield tuple(self.data[i, :])
+            yield tuple(self.data[i, ...])
             i += 1
+
+
+
+class VectorField(Points):
+    """
+    A VectorField contains is a collection of vectors where each
+    vector has an associated position in sheet coordinates.
+
+    The constructor of VectorField is the same as the constructor of
+    Points: the input data can be an NxM Numpy array where the first
+    two columns corresponds to the X,Y coordinates in sheet
+    coordinates, within the declared bounding region. As with Points,
+    the input can be a tuple of array objects or of objects that can
+    be cast to arrays (the tuple elements are joined column-wise).
+
+    The third column maps to the vector angle which must be specified
+    in radians.
+
+    The visualization of any additional columns is decided by the
+    plotting code. For instance, the fourth and fifth columns could
+    correspond to arrow length and colour map value. All that is
+    assumed is that these additional dimension are normalized between
+    0.0 and 1.0 for the default visualization to work well.
+
+    The only restriction is that the final data array is NxM where
+    M>3. In other words, the vector must have a dimensionality of 2 or
+    higher.
+    """
+
+    _null_value = np.array([[], [], [], []]).T # For when data is None
+    _min_dims = 3                              # Minimum number of columns
+    _range_column = 4                          # Column used by range property
+
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('PolarVector', cyclic=True,
+                                                  range=(0,2*np.pi)))
 
 
 

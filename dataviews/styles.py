@@ -21,6 +21,7 @@ options.Annotation = StyleOpts()
 options.Histogram = StyleOpts(ec='k', fc='w')
 options.Table = StyleOpts()
 options.Points = StyleOpts(color='r', marker='x')
+options.VectorField = StyleOpts(cmap='jet')
 
 # Defining the most common style options for dataviews
 GrayNearest = StyleOpts(cmap='gray', interpolation='nearest')
