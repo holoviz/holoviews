@@ -312,6 +312,9 @@ class Points(SheetLayer):
     null_value = np.array([[], []]).T # For when data is None
     min_dims = 2                      # Minimum number of columns
 
+    value = param.ClassSelector(class_=(str, Dimension),
+                                default=Dimension('Magnitude'))
+
     def __init__(self, data, bounds=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
 
