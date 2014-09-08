@@ -193,7 +193,7 @@ class VectorFieldPlot(Plot):
                               if colorized else kwargs))
 
         if self.color_dim == 'angle':
-            clims = (0, vfield.value.cyclic_range)
+            clims = vfield.value.range
             quiver.set_clim(clims)
         elif self.color_dim == 'magnitude':
             clims = vfield.range if self.normalize_individually else self._stack.range

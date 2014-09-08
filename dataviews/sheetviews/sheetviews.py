@@ -402,7 +402,8 @@ class VectorField(Points):
     _range_column = 4                          # Column used by range property
 
     value = param.ClassSelector(class_=(str, Dimension),
-                                default=Dimension('PolarVector', cyclic_range=2*np.pi))
+                                default=Dimension('PolarVector', cyclic=True,
+                                                  range=(0,2*np.pi)))
 
 
 
