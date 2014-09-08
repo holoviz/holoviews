@@ -79,15 +79,17 @@ class VectorFieldPlot(Plot):
     """
     Renders vector fields in sheet coordinates. The vectors are
     expressed in polar coordinates and may be displayed according to
-    angle alone (with some common, arbitrary arrow length) or may be true
-    polar vectors.
+    angle alone (with some common, arbitrary arrow length) or may be
+    true polar vectors.
 
     Optionally, the arrows may be colored but this dimension is
     redundant with either the specified angle or magnitudes. This
     choice is made by setting the color_dim parameter.
 
     Note that the 'cmap' style argument controls the color map used to
-    color the arrows.
+    color the arrows. The length of the arrows is controlled by the
+    'scale' style option where a value of 1.0 is such that the largest
+    arrow shown is no bigger than the smallest sampling distance.
     """
 
     style_opts = param.List(default=['alpha', 'color', 'edgecolors',
@@ -113,22 +115,57 @@ class VectorFieldPlot(Plot):
        they may be customized with the 'headlength' and
        'headaxislength' style options.""")
 
+    normalize_lengths = param.Boolean(default=True, doc="""
+       Whether to normalize vector magnitudes automatically. If False,
+       it will be assumed that the lengths have already been correctly
+       normalized.""")
 
     _stack_type = SheetStack
     _view_type = VectorField
 
+    def __init__(self, *args, **kwargs):
+        super(VectorFieldPlot, self).__init__(*args, **kwargs)
+        self._min_dist, self._max_magnitude = self._get_stack_info(self._stack)
 
-    def _get_info(self, vfield):
+
+    def _get_stack_info(self, stack):
+        """
+        Get the minimum sample distance and maximum magnitude
+        """
+        if self.normalize_individually:
+            return None, None
+        dists, magnitudes  = [], []
+        for vfield in stack:
+            dists.append(self._get_min_dist(vfield))
+            magnitudes.append(max(vfield.data[:, 3]))
+        return min(dists), max(magnitudes)
+
+
+    def _get_info(self, vfield, input_scale):
         xs = vfield.data[:, 0] if len(vfield.data) else []
         ys = vfield.data[:, 1] if len(vfield.data) else []
         radians = vfield.data[:, 2] if len(vfield.data) else []
         magnitudes = vfield.data[:, 3] if vfield.data.shape[1]>=4 else ([1.0] * len(xs))
         colors = magnitudes if self.color_dim == 'magnitude' else radians
 
-        return dict(xs=xs, ys=ys,
-                    angles=list((radians / np.pi) * 180),
-                    magnitudes=magnitudes,
-                    colors= colors)
+        max_magnitude = self._max_magnitude if self._max_magnitude else max(magnitudes)
+        min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
+
+        if self.normalize_lengths:
+            magnitudes =  magnitudes/ max_magnitude
+
+        return (xs, ys, list((radians / np.pi) * 180),
+                magnitudes, colors, input_scale / min_dist)
+
+
+    def _get_min_dist(self, vfield):
+        "Get the minimum sampling distance."
+        xys = np.array([complex(x,y) for x,y in zip(vfield.data[:,0],
+                                                    vfield.data[:,1])])
+        m, n = np.meshgrid(xys, xys)
+        distances = abs(m-n)
+        np.fill_diagonal(distances, np.inf)
+        return  distances.min()
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -136,22 +173,24 @@ class VectorFieldPlot(Plot):
         title = None if self.zorder > 0 else self._format_title(-1)
         ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
 
-        info = self._get_info(vfield)
         colorized = self.color_dim is not None
-
-        args = (info['xs'], info['ys'], info['magnitudes'],  [0.0] * len(vfield.data))
-        args = args + (info['colors'],) if colorized else args
         kwargs = View.options.style(vfield)[cyclic_index]
+        input_scale = kwargs.pop('scale', 1.0)
+        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
+
+        args = (xs, ys, lens,  [0.0] * len(vfield.data))
+        args = args + (colors,) if colorized else args
 
         if not self.arrow_heads:
             kwargs['headlength'] = kwargs['headaxislength'] = 0
 
+
         quiver = ax.quiver(*args, zorder=self.zorder,
-                            units='inches',
-                            scale_units='inches',
-                            angles= info['angles'] ,
-                            **({k:v for k,v in kwargs.items() if k!='color'}
-                               if colorized else kwargs))
+                           units='x', scale_units='x',
+                           scale = scale,
+                           angles = angles ,
+                           **({k:v for k,v in kwargs.items() if k!='color'}
+                              if colorized else kwargs))
 
         if self.color_dim == 'angle':
             clims = (0, vfield.value.cyclic_range)
@@ -162,6 +201,7 @@ class VectorFieldPlot(Plot):
 
         ax.add_collection(quiver)
         self.handles['quiver'] = quiver
+        self.handles['input_scale'] = input_scale
         if axis is None: plt.close(self.handles['fig'])
         return ax if axis else self.handles['fig']
 
@@ -170,17 +210,16 @@ class VectorFieldPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         vfield = list(self._stack.values())[n]
         self.handles['quiver'].set_offsets(vfield.data[:,0:2])
+        input_scale = self.handles['input_scale']
 
-        info = self._get_info(vfield)
+        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['quiver']
-        if 'magnitudes' in info:
-            quiver.U = info['magnitudes']
-        if 'angles' in info:
-            quiver.angles = info['angles']
-        if 'colors' in info:
-            quiver.set_array(info['colors'])
+        quiver.U = lens
+        quiver.angles = angles
+        if self.color_dim is not None:
+            quiver.set_array(colors)
 
         if self.normalize_individually and self.color_dim == 'magnitude':
             quiver.set_clim(vfield.range)
