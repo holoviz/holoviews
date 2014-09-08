@@ -13,6 +13,7 @@ from matplotlib import pyplot as plt
 import param
 from param import ParamOverrides
 
+from .ndmapping import Dimension
 from .views import Overlay, GridLayout
 from .sheetviews import SheetView, SheetStack, SheetLayer, DataGrid, Contours, SheetOverlay, VectorField
 from .dataviews import View, Stack, DataLayer, DataStack, Table, TableStack
@@ -444,7 +445,7 @@ class vectorfield(ViewOperation):
     Given a SheetView with a single channel, convert it to a
     VectorField object at a given spatial sampling interval. The
     values in the SheetView are assumed to correspond to the vector
-    angle in radians.
+    angle in radians and the value is assumed to be cyclic.
 
     If supplied with an overlay, the second sheetview in the overlay
     will be interpreted as the third vector dimension.
@@ -468,6 +469,9 @@ class vectorfield(ViewOperation):
         else:
             radians, lengths = view, None
 
+        if not radians.value.cyclic:
+            raise Exception("First input SheetView must be declared cyclic")
+
         l, b, r, t = radians.bounds.lbrt()
         X, Y = np.meshgrid(np.linspace(l, r, self.p.cols+2)[1:-1],
                            np.linspace(b, t, self.p.rows+2)[1:-1])
@@ -481,8 +485,10 @@ class vectorfield(ViewOperation):
 
             vector_data.append(components)
 
+        value_dimension = Dimension('VectorField', cyclic=True, range=radians.range)
         return [VectorField(vector_data,
-                            label=radians.label + ' ' + self.p.label)]
+                            label=radians.label + ' ' + self.p.label,
+                            value=value_dimension)]
 
 
 ChannelOpts.operations['RGBA'] = RGBA
