@@ -186,6 +186,7 @@ class VectorFieldPlot(Plot):
         if not self.arrow_heads:
             kwargs['headlength'] = kwargs['headaxislength'] = 0
 
+        if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
         quiver = ax.quiver(*args, zorder=self.zorder,
                            units='x', scale_units='x',
