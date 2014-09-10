@@ -374,7 +374,7 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
         Returns slice of data element if the item is deep indexable. Warns if
         attempting to slice an object that has not been declared deep indexable.
         """
-        if hasattr(data, '_deep_indexable'):
+        if getattr(data, '_deep_indexable', False):
             return data[indices]
         elif len(indices) > 0:
             self.warning('Cannot index into data element, extra data'
