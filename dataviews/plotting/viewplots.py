@@ -2,6 +2,7 @@ import copy
 
 import numpy as np
 
+import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 from matplotlib.collections import LineCollection
@@ -737,7 +738,10 @@ class GridLayoutPlot(Plot):
         for (r, c) in self.coords:
             layout_plot = self.subplots.get((r, c), None)
             subaxes = [plt.subplot(self.gs[ind]) for ind in self.grid_indices[(r, c)]]
-            layout_plot(subaxes)
+
+            rcopts = View.options.style(self.grid).opts
+            with matplotlib.rc_context(rcopts):
+                layout_plot(subaxes)
         plt.draw()
 
         # Adjusts the Layout subplot positions
