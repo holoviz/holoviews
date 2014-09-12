@@ -42,7 +42,10 @@ setup_args.update(dict(
     url='http://ioam.github.com/dataviews/',
     packages = ["dataviews",
                 "dataviews.sheetviews",
-                "dataviews.ipython"],
+                "dataviews.ipython",
+                "dataviews.styles",
+                "dataviews.plotting",
+                "dataviews.interface"],
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 4 - Beta",
