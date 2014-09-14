@@ -48,7 +48,7 @@ class AttrTree(object):
 
         self.__dict__['_fixed'] = False
 
-        fixed_error = 'AttrTree attribute access disabled with fixed=True'
+        fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
 
     def __iter__(self):
@@ -199,7 +199,7 @@ class AttrTree(object):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
         if label[0].isupper() and self.fixed and shallow:
-            raise AttributeError(self._fixed_error)
+            raise AttributeError(self._fixed_error % label)
 
         super(AttrTree, self).__setattr__(label, val)
 
@@ -219,7 +219,7 @@ class AttrTree(object):
         except AttributeError: pass
 
         if label.startswith('_'):   raise AttributeError(str(label))
-        elif self.fixed==True:      raise AttributeError(self._fixed_error)
+        elif self.fixed==True:      raise AttributeError(self._fixed_error % label)
 
         if label in self.children:
             return self.__dict__[label]
@@ -808,7 +808,7 @@ class Collector(AttrTree):
 
         self._scheduled_tasks = []
 
-        fixed_error = 'Collector specification disabled after first call.'
+        fixed_error = 'Cannot set %r as Collector specification disabled after first call.'
         self.__dict__['_fixed_error'] = fixed_error
         self.__dict__['progress_label'] = 'Completion'
 
