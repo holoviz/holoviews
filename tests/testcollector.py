@@ -10,6 +10,8 @@ from collections import OrderedDict
 class AttrTreeTest(ViewTestCase):
 
     def setUp(self):
+        self.fixed_error = ("No attribute 'Test' in this AttrTree,"
+                            " and none can be added because fixed=True")
         super(AttrTreeTest, self).setUp()
 
     def test_viewgroup_init(self):
@@ -26,7 +28,7 @@ class AttrTreeTest(ViewTestCase):
             tr.Test.Path
             raise AssertionError
         except AttributeError as e:
-            self.assertEqual(str(e), 'AttrTree attribute access disabled with fixed=True')
+            self.assertEqual(str(e), self.fixed_error)
 
     def test_viewgroup_setter(self):
         tr = AttrTree()
@@ -40,7 +42,7 @@ class AttrTreeTest(ViewTestCase):
             tr.Test.Path = 42
             raise AssertionError
         except AttributeError as e:
-            self.assertEqual(str(e), 'AttrTree attribute access disabled with fixed=True')
+            self.assertEqual(str(e), self.fixed_error)
 
     def test_viewgroup_shallow_fixed_setter(self):
         tr = AttrTree()
@@ -49,7 +51,7 @@ class AttrTreeTest(ViewTestCase):
             tr.Test = 42
             raise AssertionError
         except AttributeError as e:
-            self.assertEqual(str(e), 'AttrTree attribute access disabled with fixed=True')
+            self.assertEqual(str(e), self.fixed_error)
 
     def test_viewgroup_toggle_fixed(self):
         tr = AttrTree()
@@ -58,7 +60,7 @@ class AttrTreeTest(ViewTestCase):
             tr.Test = 42
             raise AssertionError
         except AttributeError as e:
-            self.assertEqual(str(e), 'AttrTree attribute access disabled with fixed=True')
+            self.assertEqual(str(e), self.fixed_error)
         tr.fixed = False
         tr.Test = 42
 
