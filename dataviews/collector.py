@@ -151,23 +151,22 @@ class AttrTree(object):
 
     def __getitem__(self, label):
         """
-        For a given non-root note, access a child element by label.
+        For a given non-root node, access a child element by label.
 
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
         """
+        keyerror_msg = ''
         split_label = (tuple(label.split('.'))
                        if isinstance(label, str) else label)
-        if self.parent is None:
-            if split_label in self.path_items:
-                return self.path_items[split_label]
-            elif label in self.children:
-                return self.__dict__[label]
-        elif label in self.children:
+        if label in self.children:
             return self.__dict__[label]
-        elif '.' in label:
-            raise KeyError(label + ": Dotted string format only applicable to root nodes")
-        raise KeyError(label)
+        elif self.parent is None and (split_label in self.path_items):
+            return self.path_items[split_label]
+        elif (self.parent is not None) and '.' in label:
+            keyerror_msg = "Dotted string format only applicable to root nodes"
+
+        raise KeyError(label + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
 
 
     def get(self, label, default=None):
