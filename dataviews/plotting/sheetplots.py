@@ -153,7 +153,7 @@ class VectorFieldPlot(Plot):
         max_magnitude = self._max_magnitude if self._max_magnitude else max(magnitudes)
         min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
 
-        if self.normalize_lengths:
+        if self.normalize_lengths and max_magnitude != 0:
             magnitudes =  magnitudes / max_magnitude
 
         return (xs, ys, list((radians / np.pi) * 180),
