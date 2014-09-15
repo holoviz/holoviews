@@ -764,7 +764,10 @@ class SideHistogramPlot(HistogramPlot):
         for bar in bars:
             bar_bin = bar.get_y() if vertical else bar.get_x()
             width = bar.get_height() if vertical else bar.get_width()
-            color_val = (bar_bin+width/2.-lower_bound)/cmap_range
+            try:
+                color_val = (bar_bin+width/2.-lower_bound)/cmap_range
+            except:
+                color_val = 0
             bar.set_facecolor(cmap(color_val))
             bar.set_clip_on(False)
 
