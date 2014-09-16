@@ -834,8 +834,8 @@ class Collector(AttrTree):
         task = Collect(obj, *args, **kwargs)
         if task.mode == 'merge':
             self.path_items[uuid.uuid4().hex] = task
+            return None
         return task
-
 
 
     def analyze(self, reference, analysisfn,  *args, **kwargs):
@@ -849,14 +849,13 @@ class Collector(AttrTree):
         return task
 
 
-    def __call__(self, attrtree=AttrTree(), times=[]):
+    def __call__(self, attrtree=AttrTree(), times=[], strict=False):
 
         current_time = self.time_fn()
         if times != sorted(times):
             raise Exception("Please supply the list of times in ascending order")
         if times[0] < current_time:
             raise Exception("The first time value is prior to the current time.")
-        self.verify_times(times)
 
         times = np.array([current_time] + times)
         if len(set(times)) == 1:
@@ -871,7 +870,7 @@ class Collector(AttrTree):
         interval_hook = (self.interval_hook(label=self.progress_label)
                          if update_progress else self.interval_hook)
 
-        self._schedule_tasks()
+        self._schedule_tasks(times, strict)
         (self.fixed, attrtree.fixed) = (False, False)
 
         for i, t in enumerate(np.diff(times)):
@@ -894,31 +893,33 @@ class Collector(AttrTree):
         return attrtree
 
 
-    def verify_times(self, times, strict=False):
+    def _verify_task_times(self, task, times, strict=False):
         """
-        Checks that tasks scheduled to be run at certain times will
-        actually be executed. The strict flag determines whether to
-        simply warn or raise an Exception.
+        Checks that a given task that is scheduled to be run at
+        certain times will actually be executed. The strict flag
+        determines whether to simply warn or raise an Exception.
         """
-        for path, task in self.path_items.items():
-            if task.times:
-                unsatisfied = set(task.times) - set(times)
-                if unsatisfied:
-                    msg = "Task %r has been requested for times %s, " \
-                          "not scheduled for collection." % (task, list(unsatisfied))
+        if task.times:
+            unsatisfied = set(task.times) - set(list(times))
+            if unsatisfied:
+                msg = "Task %r has been requested for times %s, " \
+                      "not scheduled for collection." % (task, list(unsatisfied))
 
-                if unsatisfied:
-                    if strict: raise Exception(msg)
-                    else:      param.main.warning(msg)
+            if unsatisfied:
+                if strict: raise Exception(msg)
+                else:      param.main.warning(msg)
 
-
-    def _schedule_tasks(self):
+    def _schedule_tasks(self, times, strict=False):
         """
         Inspect the path_items to find all the Collects that have
         been specified and add them to the scheduled tasks list.
         """
         self._scheduled_tasks = []
         for path, task in self.path_items.items():
+
+            if task is None:
+                raise Exception("Incorrect task definition for %r" % '.'.join(path))
+                continue
 
             if not isinstance(task, Collect):
                 self._scheduled_tasks = []
@@ -928,6 +929,8 @@ class Collector(AttrTree):
                 self._scheduled_tasks = []
                 raise Exception("Setting path for Task that is in 'merge' mode.")
             task.path = path
+
+            self._verify_task_times(task, times, strict)
             self._scheduled_tasks.append(task)
 
 
