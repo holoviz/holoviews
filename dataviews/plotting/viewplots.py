@@ -169,7 +169,7 @@ class Plot(param.Parameterized):
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
-                    xlabel = view.ylabel
+                    ylabel = view.ylabel
                 if lbrt is None and self.apply_databounds:
                     lbrt = view.lbrt if self.rescale_individually else self._stack.lbrt
 
