@@ -13,7 +13,9 @@ from .views import * # pyflakes:ignore (API import)
 from .dataviews import * # pyflakes:ignore (API import)
 from .sheetviews import * # pyflakes:ignore (API import)
 from .ndmapping import * # pyflakes:ignore (API import)
+from .styles import set_style
 
+set_style('default')
 
 def public(obj):
     if not isinstance(obj, type): return False
