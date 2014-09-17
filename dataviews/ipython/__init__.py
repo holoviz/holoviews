@@ -63,7 +63,7 @@ def load_ipython_extension(ip, verbose=True):
         load_magics(ip)
         set_display_hooks(ip)
         update_matplotlib_rc()
-        set_style(None)
+        set_style('default')
 
 def unload_ipython_extension(ip):
     global _loaded
