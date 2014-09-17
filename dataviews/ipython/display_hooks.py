@@ -87,7 +87,7 @@ def last_frame(plot):
     return figure_display(plot[len(plot)])
 
 
-def figure_display(fig, size=None, message=None):
+def figure_display(fig, size=None, message=None, max_width='100%'):
     if size is not None:
         inches = size / float(fig.dpi)
         fig.set_size_inches(inches, inches)
@@ -105,9 +105,10 @@ def figure_display(fig, size=None, message=None):
         prefix = 'data:image/%s;base64,' % mime_type
         b64 = prefix + base64.b64encode(figdata).decode("utf-8")
         if size is not None:
-            html = "<center><img height='%d' width='%d' src='%s'/><center/>" % (size, size, b64)
+            html = "<center><img height='%d' width='%d' style='max-width:%s' " \
+                   "src='%s'/><center/>" % (size, size, b64, max_width)
         else:
-            html = "<center><img src='%s' /><center/>" % b64
+            html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 

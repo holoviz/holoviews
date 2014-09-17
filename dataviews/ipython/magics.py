@@ -24,8 +24,8 @@ channel_ops = ChannelOpts.operations
 # Magics #
 #========#
 
-GIF_TAG = "<center><img src='data:image/gif;base64,{b64}'/><center/>"
-VIDEO_TAG = """<center><video controls>
+GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
+VIDEO_TAG = """<center><video controls style='max-width:100%'>
  <source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
  Your browser does not support the video tag.
 </video><center/>"""
