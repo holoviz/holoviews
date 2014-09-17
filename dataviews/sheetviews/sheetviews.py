@@ -44,6 +44,7 @@ class SheetLayer(View):
 
     def __init__(self, data, bounds, **kwargs):
         View.__init__(self, data, bounds=bounds, **kwargs)
+        self._lbrt = self.bounds.lbrt()
 
 
     def __mul__(self, other):
@@ -104,6 +105,19 @@ class SheetLayer(View):
     def ylim(self):
         _, b, _, t = self.bounds.lbrt()
         return (b, t)
+
+
+    @property
+    def lbrt(self):
+        if hasattr(self, '_lbrt'):
+            return self._lbrt
+        else:
+            return self.bounds.lbrt()
+
+
+    @lbrt.setter
+    def lbrt(self, lbrt):
+        self._lbrt = lbrt
 
 
 
