@@ -17,6 +17,8 @@ options.Contours = StyleOpts(color='k')
 options.SheetView = StyleOpts(cmap='gray', interpolation='nearest')
 options.Matrix = StyleOpts(cmap='jet', interpolation='nearest')
 options.HeatMap = StyleOpts(cmap='jet', interpolation='nearest')
+options.GridLayout = StyleOpts(**{'font.size': 10, 'axes.labelsize': 'small',
+                                  'axes.titlesize': 'small'})
 # Color cycles can be removed once default style set and test data updated
 options.Curve = StyleOpts(color=Cycle(), linewidth=2)
 options.Scatter = StyleOpts(color=Cycle(), linewidth=2)
