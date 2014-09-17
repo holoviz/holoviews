@@ -12,9 +12,9 @@ import matplotlib.patches as patches
 
 import param
 
-from dataviews import Grid, View, Stack, DataOverlay, DataLayer, NdMapping, \
+from dataviews import Grid, View, Stack, DataLayer, DataOverlay, NdMapping, \
     GridLayout, SheetOverlay, Overlay, Annotation, DataGrid
-from dataviews.views import Layout
+from ..views import Layout
 
 
 
@@ -28,48 +28,53 @@ class Plot(param.Parameterized):
     animation via the anim() method.
     """
 
-    size = param.NumericTuple(default=(5, 5), doc="""
-      The matplotlib figure size in inches.""")
+    apply_databounds = param.Boolean(default=True, doc="""
+        Whether to compute the plot bounds from the data itself.""")
 
-    show_frame = param.Boolean(default=True, doc="""
-      Whether or not to show a complete frame around the plot.""")
-
-    show_grid = param.Boolean(default=False, doc="""
-      Whether to show a Cartesian grid on the plot.""")
-
-    show_legend = param.Boolean(default=True, doc="""
-      Whether to show legend for the plot.""")
-
-    show_title = param.Boolean(default=True, doc="""
-      Whether to display the plot title.""")
-
-    show_xaxis = param.ObjectSelector(default='bottom',
-                                      objects=['top', 'bottom', None], doc="""
-      Whether and where to display the xaxis.""")
-
-    show_yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', None], doc="""
-      Whether and where to display the yaxis.""")
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     A list of matplotlib keyword arguments that may be supplied via a
-     style options object. Each subclass should override this
-     parameter to list every option that works correctly.""")
-
-    aspect = param.ObjectSelector(default=None,
-                                  objects=['auto', 'equal','square', None],
-                                  doc="""
-    The aspect ratio mode of the plot. By default, a plot may select
-    its own appropriate aspect ratio but sometimes it may be necessary
-    to force a square aspect ratio (e.g. to display the plot as an
-    element of a grid). The modes 'auto' and 'equal' correspond to the
-    axis modes of the same name in matplotlib.""" )
+    aspect = param.Parameter(default=None, doc="""
+        The aspect ratio mode of the plot. By default, a plot may
+        select its own appropriate aspect ratio but sometimes it may
+        be necessary to force a square aspect ratio (e.g. to display
+        the plot as an element of a grid). The modes 'auto' and
+        'equal' correspond to the axis modes of the same name in
+        matplotlib, a numeric value may also be passed.""")
 
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
-    The orientation of the plot. Note that this parameter may not
-    always be respected by all plots but should be respected by
-    adjoined plots when appropriate.""")
+        The orientation of the plot. Note that this parameter may not
+        always be respected by all plots but should be respected by
+        adjoined plots when appropriate.""")
+
+    rescale_individually = param.Boolean(default=True, doc="""
+        Whether to use redraw the axes per stack or per view.""")
+
+    show_frame = param.Boolean(default=True, doc="""
+        Whether or not to show a complete frame around the plot.""")
+
+    show_grid = param.Boolean(default=False, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
+    show_title = param.Boolean(default=True, doc="""
+        Whether to display the plot title.""")
+
+    show_xaxis = param.ObjectSelector(default='bottom',
+                                      objects=['top', 'bottom', None], doc="""
+        Whether and where to display the xaxis.""")
+
+    show_yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', None], doc="""
+        Whether and where to display the yaxis.""")
+
+    size = param.NumericTuple(default=(5, 5), doc="""
+        The matplotlib figure size in inches.""")
+
+    style_opts = param.List(default=[], constant=True, doc="""
+        A list of matplotlib keyword arguments that may be supplied via a
+        style options object. Each subclass should override this
+        parameter to list every option that works correctly.""")
 
     _stack_type = Stack
     _view_type = View
@@ -87,7 +92,7 @@ class Plot(param.Parameterized):
         self.zorder = zorder
         self.ax = None
         # List of handles to matplotlib objects for animation update
-        self.handles = {'fig': None}
+        self.handles = {}
 
 
     def _check_stack(self, view, element_type=View):
@@ -130,16 +135,11 @@ class Plot(param.Parameterized):
                                    type=view.__class__.__name__)
 
 
-    def _update_title(self, n):
-        if self.show_title and self.zorder == 0:
-            title = self._format_title(n)
-            if title is not None:
-                self.handles['title'].set_text(title)
-
-
-    def _axis(self, axis, title=None, xlabel=None, ylabel=None,
-              lbrt=None, xticks=None, yticks=None):
-        "Return an axis which may need to be initialized from a new figure."
+    def _init_axis(self, axis):
+        """
+        Return an axis which may need to be initialized from
+        a new figure.
+        """
         if axis is None:
             fig = plt.figure()
             self.handles['fig'] = fig
@@ -147,70 +147,97 @@ class Plot(param.Parameterized):
             axis = fig.add_subplot(111)
             axis.set_aspect('auto')
 
-        # First plot layer determines axis settings
-        if self.zorder != 0:
-            return axis
-
-        if self.show_grid:
-            axis.get_xaxis().grid(True)
-            axis.get_yaxis().grid(True)
-
-        if xlabel: axis.set_xlabel(xlabel)
-        if ylabel: axis.set_ylabel(ylabel)
-
-        disabled_spines = []
-        if self.show_xaxis is not None:
-            if self.show_xaxis == 'top':
-                axis.xaxis.set_ticks_position("top")
-                axis.xaxis.set_label_position("top")
-            elif self.show_xaxis == 'bottom':
-                axis.xaxis.set_ticks_position("bottom")
-        else:
-            axis.xaxis.set_visible(False)
-            disabled_spines.extend(['top', 'bottom'])
-
-        if self.show_yaxis is not None:
-            if self.show_yaxis == 'left':
-                axis.yaxis.set_ticks_position("left")
-            elif self.show_yaxis == 'right':
-                axis.yaxis.set_ticks_position("right")
-                axis.yaxis.set_label_position("right")
-        else:
-            axis.yaxis.set_visible(False)
-            disabled_spines.extend(['left', 'right'])
-
-        for pos in disabled_spines:
-            axis.spines[pos].set_visible(False)
-
-        if not self.show_frame:
-            axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
-            axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
-
-        if lbrt is not None:
-            (l, b, r, t) = lbrt
-            axis.set_xlim((l, r))
-            if b == t: t += 1. # Arbitrary y-extent if zero range
-            axis.set_ylim((b, t))
-
-        if self.aspect == 'square' and lbrt:
-            xrange = lbrt[2] - lbrt[0]
-            yrange = lbrt[3] - lbrt[1]
-            axis.set_aspect(float(xrange)/yrange)
-        elif self.aspect not in [None, 'square']:
-            axis.set_aspect(self.aspect)
-
-        if xticks:
-            axis.set_xticks(xticks[0])
-            axis.set_xticklabels(xticks[1])
-
-        if yticks:
-            axis.set_yticks(yticks[0])
-            axis.set_yticklabels(yticks[1])
-
-        if self.show_title and title is not None:
-            self.handles['title'] = axis.set_title(title)
-
         return axis
+
+
+    def _finalize_axis(self, n, title=None, lbrt=None, xticks=None, yticks=None,
+                       xlabel=None, ylabel=None):
+        """
+        Applies all the axis settings before the axis or figure is returned.
+        Only plots with zorder 0 get to apply their settings.
+
+        When the number of the frame is supplied as n, this method looks
+        up and computes the appropriate title, axis labels and axis bounds.
+        """
+
+        axis = self.ax
+
+        if self.zorder == 0 and axis is not None:
+            if n is not None:
+                view = list(self._stack.values())[n]
+                title = None if self.zorder > 0 else self._format_title(n)
+                if hasattr(view, 'xlabel') and xlabel is None:
+                    xlabel = view.xlabel
+                if hasattr(view, 'ylabel') and ylabel is None:
+                    xlabel = view.ylabel
+                if lbrt is None and self.apply_databounds:
+                    lbrt = view.lbrt if self.rescale_individually else self._stack.lbrt
+
+            if self.show_grid:
+                axis.get_xaxis().grid(True)
+                axis.get_yaxis().grid(True)
+
+            if xlabel: axis.set_xlabel(xlabel)
+            if ylabel: axis.set_ylabel(ylabel)
+
+            disabled_spines = []
+            if self.show_xaxis is not None:
+                if self.show_xaxis == 'top':
+                    axis.xaxis.set_ticks_position("top")
+                    axis.xaxis.set_label_position("top")
+                elif self.show_xaxis == 'bottom':
+                    axis.xaxis.set_ticks_position("bottom")
+            else:
+                axis.xaxis.set_visible(False)
+                disabled_spines.extend(['top', 'bottom'])
+
+            if self.show_yaxis is not None:
+                if self.show_yaxis == 'left':
+                    axis.yaxis.set_ticks_position("left")
+                elif self.show_yaxis == 'right':
+                    axis.yaxis.set_ticks_position("right")
+                    axis.yaxis.set_label_position("right")
+            else:
+                axis.yaxis.set_visible(False)
+                disabled_spines.extend(['left', 'right'])
+
+            for pos in disabled_spines:
+                axis.spines[pos].set_visible(False)
+
+            if not self.show_frame:
+                axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
+                axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
+
+            if lbrt and self.apply_databounds:
+                (l, b, r, t) = lbrt
+                if not np.NaN in (l, r): axis.set_xlim((l, r))
+                if b == t: t += 1. # Arbitrary y-extent if zero range
+                if not np.NaN in (b, t): axis.set_ylim((b, t))
+
+            if self.aspect == 'square':
+                axis.set_aspect((1./axis.get_data_ratio()))
+            elif self.aspect not in [None, 'square']:
+                axis.set_aspect(self.aspect)
+
+            if xticks:
+                axis.set_xticks(xticks[0])
+                axis.set_xticklabels(xticks[1])
+
+            if yticks:
+                axis.set_yticks(yticks[0])
+                axis.set_yticklabels(yticks[1])
+
+            if self.show_title and title is not None:
+                self.handles['title'] = axis.set_title(title)
+
+        self._adjust_legend()
+
+        if 'fig' in self.handles:
+            fig = self.handles['fig']
+            plt.close(fig)
+            return fig
+        else:
+            return axis
 
 
     def __getitem__(self, frame):
@@ -219,7 +246,7 @@ class Plot(param.Parameterized):
         """
         if frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
-        if self.handles['fig'] is None: self.handles['fig'] = self()
+        if self.handles.get('fig') is None: self.handles['fig'] = self()
         self.update_frame(frame)
         return self.handles['fig']
 
@@ -304,7 +331,7 @@ class GridPlot(Plot):
 
 
     def __call__(self, axis=None):
-        ax = self._axis(axis)
+        ax = self._init_axis(axis)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
@@ -731,7 +758,7 @@ class GridLayoutPlot(Plot):
 
 
     def __call__(self, axis=None):
-        ax = self._axis(axis, None, '', '', None)
+        ax = self._init_axis(axis)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
@@ -961,7 +988,7 @@ class AnnotationPlot(Plot):
         if axis is None:
             raise Exception("Annotations can only be plotted as part of overlays.")
 
-        self.handles['axis'] = axis
+        self.ax = axis
         handles = self._draw_annotations(self._stack.last, axis, list(self._stack.keys())[-1])
         self.handles['annotations'] = handles
         return axis
@@ -972,12 +999,11 @@ class AnnotationPlot(Plot):
         annotation = list(self._stack.values())[n]
         key = list(self._stack.keys())[n]
 
-        axis = self.handles['axis']
-        # Cear all existing annotations
+        # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()
 
-        self.handles['annotations'] = self._draw_annotations(annotation, axis, key)
+        self.handles['annotations'] = self._draw_annotations(annotation, self.ax, key)
         plt.draw()
 
 

@@ -28,7 +28,7 @@ class DFramePlot(OverlayPlot):
 
     def __call__(self, axis=None, lbrt=None, **kwargs):
 
-        ax = self._axis(axis, None)
+        ax = self._init_axis(axis)
 
         stacks = self._stack.split_overlays()
 
@@ -93,6 +93,8 @@ class DFrameViewPlot(Plot):
 
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
+    apply_databounds = False
+
     _stack_type = DFrameStack
     _view_type = DataFrameView
 
@@ -108,16 +110,14 @@ class DFrameViewPlot(Plot):
 
         self._validate(dfview, axis)
 
-        title = None if self.zorder > 0 else self._format_title(-1)
-        self.ax = self._axis(axis, title)
+        self.ax = self._init_axis(axis)
         self.style = self._process_style(View.options.style(dfview)[cyclic_index])
 
         self._update_plot(dfview)
+        if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
+            self.handles['fig'] = plt.gcf()
 
-        fig = self.handles.get('fig', plt.gcf())
-        if not axis:
-            plt.close(fig)
-        return self.ax if axis else fig
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
     def _process_style(self, styles):
@@ -164,9 +164,8 @@ class DFrameViewPlot(Plot):
         dfview = list(self._stack.values())[n]
         if not self.plot_type in ['hist', 'scatter_matrix']:
             if self.zorder == 0: self.ax.cla()
-            self.handles['title'] = self.ax.set_title('')
-            self._update_title(n)
         self._update_plot(dfview)
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 

@@ -37,30 +37,29 @@ class PointPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         points = self._stack.last
-        title = None if self.zorder > 0 else self._format_title(-1)
-        ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
+
+        self.ax = self._init_axis(axis)
 
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
         cs = points.data[:, 2] if points.data.shape[1]>=3 else None
 
         kwargs = View.options.style(points)[cyclic_index]
-        scatterplot = ax.scatter(xs, ys, zorder=self.zorder,
-                                 **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
-                                    if cs is not None else kwargs))
+        scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
+                                      **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
+                                      if cs is not None else kwargs))
 
-        ax.add_collection(scatterplot)
+        self.ax.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
 
         if cs is not None:
             clims = points.range if self.normalize_individually else self._stack.range
             scatterplot.set_clim(clims)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        return self._finalize_axis(-1)
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         n = n if n < len(self) else len(self) - 1
         points = list(self._stack.values())[n]
 
@@ -71,7 +70,8 @@ class PointPlot(Plot):
 
         if self.normalize_individually:
             scatter.set_clim(points.range)
-        self._update_title(n)
+
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 
@@ -172,8 +172,7 @@ class VectorFieldPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         vfield = self._stack.last
-        title = None if self.zorder > 0 else self._format_title(-1)
-        ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
+        self.ax = self._axis(axis)
 
         colorized = self.color_dim is not None
         kwargs = View.options.style(vfield)[cyclic_index]
@@ -188,12 +187,12 @@ class VectorFieldPlot(Plot):
 
         if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
-        quiver = ax.quiver(*args, zorder=self.zorder,
-                           units='x', scale_units='x',
-                           scale = scale,
-                           angles = angles ,
-                           **({k:v for k,v in kwargs.items() if k!='color'}
-                              if colorized else kwargs))
+        quiver = self.ax.quiver(*args, zorder=self.zorder,
+                                units='x', scale_units='x',
+                                scale = scale,
+                                angles = angles ,
+                                **({k:v for k,v in kwargs.items() if k!='color'}
+                                if colorized else kwargs))
 
         if self.color_dim == 'angle':
             clims = vfield.value.range
@@ -202,14 +201,15 @@ class VectorFieldPlot(Plot):
             clims = vfield.range if self.normalize_individually else self._stack.range
             quiver.set_clim(clims)
 
-        ax.add_collection(quiver)
+        self.ax.add_collection(quiver)
         self.handles['quiver'] = quiver
         self.handles['input_scale'] = input_scale
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
-    def update_frame(self, n):
+
+    def update_frame(self, n, lbrt=None):
         n = n if n < len(self) else len(self) - 1
         vfield = list(self._stack.values())[n]
         self.handles['quiver'].set_offsets(vfield.data[:,0:2])
@@ -227,7 +227,7 @@ class VectorFieldPlot(Plot):
         if self.normalize_individually and self.color_dim == 'magnitude':
             quiver.set_clim(vfield.range)
 
-        self._update_title(n)
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 
@@ -250,21 +250,21 @@ class ContourPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         lines = self._stack.last
-        title = None if self.zorder > 0 else self._format_title(-1)
-        ax = self._axis(axis, title, 'x', 'y', self._stack.bounds.lbrt())
+        self.ax = self._init_axis(axis)
+
         line_segments = LineCollection(lines.data, zorder=self.zorder,
                                        **View.options.style(lines)[cyclic_index])
         self.handles['line_segments'] = line_segments
-        ax.add_collection(line_segments)
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        self.ax.add_collection(line_segments)
+
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
         contours = list(self._stack.values())[n]
         self.handles['line_segments'].set_paths(contours.data)
-        self._update_title(n)
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 
@@ -297,7 +297,7 @@ class SheetPlot(OverlayPlot):
 
 
     def __call__(self, axis=None, lbrt=None):
-        ax = self._axis(axis, None, 'x','y', self._stack.bounds.lbrt())
+        self.ax = self._init_axis(axis)
         stacks = self._stack.split_overlays()
 
         sorted_stacks = sorted(stacks, key=lambda x: x.style)
@@ -309,14 +309,18 @@ class SheetPlot(OverlayPlot):
             plotype = Plot.defaults[stack.type]
             plot = plotype(stack, zorder=zorder, **View.options.plotting(stack).opts)
 
-            plot(ax, cyclic_index=cyclic_index)
+            plot(self.ax, cyclic_index=cyclic_index)
             self.plots.append(plot)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        if 'fig' in self.handles:
+            fig = self.handles['fig']
+            plt.close(fig)
+            return fig
+        else:
+            return axis
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
         for plot in self.plots:
             plot.update_frame(n)
@@ -365,8 +369,7 @@ class CoordinateGridPlot(OverlayPlot):
         width, height, b_w, b_h = self._compute_borders(grid_shape)
         xticks, yticks = self._compute_ticks(width, height)
 
-        ax = self._axis(axis, self._format_title(-1), xticks=xticks,
-                        yticks=yticks, lbrt=(0, 0, width, height))
+        self.ax = self._init_axis(axis)
 
         self.handles['projs'] = []
         x, y = b_w, b_h
@@ -380,13 +383,14 @@ class CoordinateGridPlot(OverlayPlot):
                     data = view.last.data if self.situate else view.last.roi.data
                     opts = View.options.style(view).opts
 
-                self.handles['projs'].append(ax.imshow(data, extent=(x,x+w, y, y+h), **opts))
+                plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
+                self.handles['projs'].append(plot)
                 y += h + b_h
             y = b_h
             x += w + b_w
 
-        if not axis: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        return self._finalize_axis(None, lbrt=(0, 0, width, height), xticks=xticks,
+                                   yticks=yticks)
 
 
     def update_frame(self, n):
@@ -398,7 +402,12 @@ class CoordinateGridPlot(OverlayPlot):
             else:
                 data = view.data if self.situate else view.roi.data
             plot.set_data(data)
-        self._update_title(n)
+
+        grid_shape = [[v for (k, v) in col[1]]
+                      for col in groupby(self.grid.items(), lambda item: item[0][0])]
+        width, height, b_w, b_h = self._compute_borders(grid_shape)
+
+        self._finalize_axis(n, lbrt=(0, 0, width, height))
         plt.draw()
 
 

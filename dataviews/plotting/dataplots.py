@@ -35,14 +35,13 @@ class MatrixPlot(Plot):
     _view_type = (Matrix, DataLayer)
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+
+        self.ax = self._init_axis(axis)
         view = self._stack.last
-        xdim, ydim = view.dimensions
+
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
             else self._stack.last.lbrt
-        title = None if self.zorder > 0 else self._format_title(-1)
         xticks, yticks = self._compute_ticks(view)
-        self.ax = self._axis(axis, title, str(xdim), str(ydim), (l, b, r, t),
-                             xticks=xticks, yticks=yticks)
 
         opts = View.options.style(view)[cyclic_index]
         data = view.data
@@ -66,8 +65,8 @@ class MatrixPlot(Plot):
             self.handles['annotations'] = {}
             self._annotate_values(view)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        return self._finalize_axis(-1, lbrt=(l, b, r, t),
+                                   xticks=xticks, yticks=yticks)
 
 
     def _compute_ticks(self, view):
@@ -115,7 +114,8 @@ class MatrixPlot(Plot):
 
         if self.normalize_individually:
             im.set_clim(view.range)
-        self._update_title(n)
+
+        self._finalize_axis(n)
 
         plt.draw()
 
@@ -134,9 +134,14 @@ class DataPlot(OverlayPlot):
     _view_type = DataOverlay
 
     style_opts = param.List(default=[], constant=True, doc="""
-     DataPlot renders overlay layers which individually have style
-     options but DataPlot itself does not.""")
+        DataPlot renders overlay layers which individually have style
+        options but DataPlot itself does not.""")
 
+    aspect = param.Parameter(default='square', doc="""
+        Sets plots within a Layout to square by default.""")
+
+    show_grid = param.Boolean(default=True, doc="""
+        Enable axis grid.""")
 
     def __init__(self, overlays, **kwargs):
         self.rescale = False
@@ -145,8 +150,7 @@ class DataPlot(OverlayPlot):
 
     def __call__(self, axis=None, lbrt=None, **kwargs):
 
-        ax = self._axis(axis, None, self._stack.xlabel, self._stack.ylabel)
-
+        self.ax = self._init_axis(axis)
         stacks = self._stack.split_overlays()
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(stacks, lambda s: s.style))
@@ -168,11 +172,10 @@ class DataPlot(OverlayPlot):
             plot.aspect = self.aspect
 
             lbrt = None if stack.type == Annotation else lbrt
-            plot(ax, cyclic_index=cyclic_index, lbrt=lbrt)
+            plot(self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
             self.plots.append(plot)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+        return self._finalize_axis(-1)
 
 
     def update_frame(self, n):
@@ -181,6 +184,7 @@ class DataPlot(OverlayPlot):
             if zorder == 0:
                 lbrt = list(self._stack.values())[n].lbrt if self.rescale else self._stack.lbrt
             plot.update_frame(n, lbrt)
+        self._finalize_axis(n)
 
 
 
@@ -204,15 +208,18 @@ class CurvePlot(Plot):
     rescale_individually = param.Boolean(default=False)
 
     show_frame = param.Boolean(default=False, doc="""
-       Disabled by default for clarity.""")
+        Disabled by default for clarity.""")
+
+    show_grid = param.Boolean(default=True, doc="""
+        Enable axis grid.""")
 
     show_legend = param.Boolean(default=True, doc="""
-      Whether to show legend for the plot.""")
+        Whether to show legend for the plot.""")
 
     style_opts = param.List(default=['alpha', 'color', 'visible'],
                             constant=True, doc="""
-       The style options for CurvePlot match those of matplotlib's
-       LineCollection object.""")
+        The style options for CurvePlot match those of matplotlib's
+        LineCollection object.""")
 
     _stack_type = DataStack
     _view_type = Curve
@@ -286,6 +293,8 @@ class CurvePlot(Plot):
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         curveview = self._stack.last
 
+        self.ax = self._init_axis(axis)
+
         # Create xticks and reorder data if cyclic
         xvals = curveview.data[:, 0]
         if self.cyclic_range is not None:
@@ -296,12 +305,6 @@ class CurvePlot(Plot):
         else:
             xticks = self._reduce_ticks(xvals)
 
-        if lbrt is None:
-            lbrt = curveview.lbrt if self.rescale_individually else self._stack.lbrt
-
-        self.ax = self._axis(axis, self._format_title(-1), curveview.xlabel,
-                             curveview.ylabel, xticks=xticks, lbrt=lbrt)
-
         # Create line segments and apply style
         line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
                                     zorder=self.zorder, label=curveview.legend_label,
@@ -309,25 +312,19 @@ class CurvePlot(Plot):
 
         self.handles['line_segment'] = line_segment
 
-        self._adjust_legend()
-
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        return self._finalize_axis(-1, xticks=xticks, lbrt=lbrt)
 
 
     def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
         curveview = list(self._stack.values())[n]
-        if lbrt is None:
-            lbrt = curveview.lbrt if self.rescale_individually else self._stack.lbrt
 
         if self.cyclic_range is not None:
             self._cyclic_curves(curveview)
         self.handles['line_segment'].set_xdata(curveview.data[:, 0])
         self.handles['line_segment'].set_ydata(curveview.data[:, 1])
 
-        self._axis(self.ax, lbrt=lbrt)
-        self._update_title(n)
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 
@@ -356,15 +353,7 @@ class ScatterPlot(CurvePlot):
         scatterview = self._stack.last
         self.cyclic_index = cyclic_index
 
-        # Create xticks and reorder data if cyclic
-        xvals = scatterview.data[:, 0]
-        xticks = self._reduce_ticks(xvals)
-
-        if lbrt is None:
-            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
-
-        self.ax = self._axis(axis, self._format_title(-1), scatterview.xlabel,
-                             scatterview.ylabel, xticks=xticks, lbrt=lbrt)
+        self.ax = self._init_axis(axis)
 
         # Create line segments and apply style
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
@@ -372,17 +361,17 @@ class ScatterPlot(CurvePlot):
                                 **View.options.style(scatterview)[cyclic_index])
 
         self.handles['paths'] = paths
-        self._adjust_legend()
 
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        # Create xticks and reorder data if cyclic
+        xvals = scatterview.data[:, 0]
+        xticks = self._reduce_ticks(xvals)
+
+        return self._finalize_axis(-1, xticks=xticks, lbrt=lbrt)
 
 
     def update_frame(self, n, lbrt=None):
         n = n  if n < len(self) else len(self) - 1
         scatterview = list(self._stack.values())[n]
-        if lbrt is None:
-            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
 
         self.handles['paths'].remove()
 
@@ -392,8 +381,7 @@ class ScatterPlot(CurvePlot):
 
         self.handles['paths'] = paths
 
-        self._axis(self.ax, lbrt=lbrt)
-        self._update_title(n)
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 
@@ -431,6 +419,8 @@ class TablePlot(Plot):
      TablePlot has specialized options which are controlled via plot
      options instead of matplotlib options.""")
 
+    # Disable computing plot bounds from data.
+    apply_databounds = False
 
     _stack_type = TableStack
     _view_type = Table
@@ -455,13 +445,12 @@ class TablePlot(Plot):
     def __call__(self, axis=None):
 
         tableview = self._stack.last
+        self.ax = self._init_axis(axis)
 
-        ax = self._axis(axis, self._format_title(-1))
-
-        ax.set_axis_off()
+        self.ax.set_axis_off()
         size_factor = (1.0 - 2*self.border)
-        table = mpl_Table(ax, bbox=[self.border, self.border,
-                         size_factor, size_factor])
+        table = mpl_Table(self.ax, bbox=[self.border, self.border,
+                                         size_factor, size_factor])
 
         width = size_factor / tableview.cols
         height = size_factor / tableview.rows
@@ -481,11 +470,11 @@ class TablePlot(Plot):
 
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
-        ax.add_table(table)
+        self.ax.add_table(table)
 
         self.handles['table'] = table
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
+
+        return self._finalize_axis(-1)
 
 
     def update_frame(self, n):
@@ -502,7 +491,7 @@ class TablePlot(Plot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-        self._update_title(n)
+        self._finalize_axis(n)
         plt.draw()
 
 
@@ -524,11 +513,11 @@ class HistogramPlot(Plot):
     num_ticks = param.Integer(default=5, doc="""
         If colorbar is enabled the number of labels will be overwritten.""")
 
-    rescale_individually = param.Boolean(default=True, doc="""
-        Whether to use redraw the axes per stack or per view.""")
-
     show_frame = param.Boolean(default=False, doc="""
-       Disabled by default for clarity.""")
+        Disabled by default for clarity.""")
+
+    show_grid = param.Boolean(default=True, doc="""
+        Enable axis grid.""")
 
     _stack_type = DataStack
     _view_type = Histogram
@@ -554,10 +543,7 @@ class HistogramPlot(Plot):
         edges, hvals, widths, lims = self._process_hist(hist, lbrt)
 
         # Process and apply axis settings
-        ticks = self._compute_ticks(edges, widths, lims)
-        ax_settings = self._process_axsettings(hist, lims, ticks)
-        if self.zorder == 0: ax_settings['title'] = self._format_title(-1)
-        self.ax = self._axis(axis, **ax_settings)
+        self.ax = self._init_axis(axis)
 
         if self.orientation == 'vertical':
             self.offset_linefn = self.ax.axvline
@@ -571,8 +557,10 @@ class HistogramPlot(Plot):
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(-1, bars, lims) # Indexing top
 
-        if not axis: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        ticks = self._compute_ticks(edges, widths, lims)
+        ax_settings = self._process_axsettings(hist, lims, ticks)
+
+        return self._finalize_axis(-1, **ax_settings)
 
 
     def _process_hist(self, hist, lbrt=None):
@@ -666,7 +654,7 @@ class HistogramPlot(Plot):
         ax_settings = self._process_axsettings(hist, lims, ticks)
         self._axis(self.ax, **ax_settings)
         self._update_artists(n, edges, hvals, widths, lims)
-        self._update_title(n)
+        self._finalize_axis(n, lbrt=lbrt)
 
 
 

@@ -24,8 +24,20 @@ class FullRedrawPlot(Plot):
     redraws the plot.
     """
 
+    apply_databounds = param.Boolean(default=False, doc="""
+        Enables computing the plot bounds from the data itself.
+        Disabled by default since data is often preprocessed,
+        before display, changing the bounds.""")
+
+    aspect = param.Parameter(default='square', doc="""
+        Aspect ratio defaults to square, 'equal' or numeric values
+        are also supported.""")
+
     rescale_individually = param.Boolean(default=False, doc="""
         Whether to use redraw the axes per stack or per view.""")
+
+    show_grid = param.Boolean(default=True, doc="""
+        Enables the axis grid.""")
 
     _abstract = True
 
@@ -35,9 +47,8 @@ class FullRedrawPlot(Plot):
         if lbrt is None:
             lbrt = view.lbrt if self.rescale_individually else self._stack.lbrt
         if self.zorder == 0 and self.ax: self.ax.cla()
-        self._axis(self.ax, self._format_title(n), view.xlabel,
-                   view.ylabel, lbrt=lbrt)
         self._update_plot(n)
+        self._finalize_axis(n, lbrt=lbrt)
         plt.draw()
 
 
@@ -64,19 +75,13 @@ class RegressionPlot(FullRedrawPlot):
     _view_type = Regression
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        scatterview = self._stack.last
         self.cyclic_index = cyclic_index
 
-        if lbrt is None:
-            lbrt = scatterview.lbrt if self.rescale_individually else self._stack.lbrt
-
-        self.ax = self._axis(axis, self._format_title(-1), scatterview.xlabel,
-                             scatterview.ylabel, lbrt=lbrt)
+        self.ax = self._init_axis(axis)
 
         self._update_plot(-1)
+        return self._finalize_axis(-1, lbrt=lbrt)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
 
     def _update_plot(self, n):
         n = n if n < len(self) else len(self) - 1
@@ -133,14 +138,11 @@ class BivariatePlot(FullRedrawPlot):
                  raise Exception("Joint plots can't be animated or "
                                  "laid out in a grid.")
         else:
-            self.ax = self._axis(axis, self._format_title(-1),
-                                 kdeview.xlabel, kdeview.ylabel,
-                                 lbrt=lbrt)
+            self.ax = self._init_axis(axis)
 
         self._update_plot(-1)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
     def _update_plot(self, n):
@@ -154,7 +156,6 @@ class BivariatePlot(FullRedrawPlot):
             sns.kdeplot(kdeview.data, ax=self.ax,
                         label=kdeview.legend_label,
                         zorder=self.zorder, **self.style)
-            self._adjust_legend()
 
 
 
@@ -195,19 +196,15 @@ class TimeSeriesPlot(FullRedrawPlot):
         self.cyclic_index = cyclic_index
         self.style = View.options.style(curveview)[self.cyclic_index]
 
-        # Create xticks and reorder data if cyclic
         if lbrt is None:
             lbrt = None if self.rescale_individually else\
                    self._stack.lbrt
 
-        self.ax = self._axis(axis, self._format_title(-1),
-                             curveview.xlabel, curveview.ylabel,
-                             lbrt=lbrt)
+        self.ax = self._init_axis(axis)
 
         self._update_plot(-1)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
     def _update_plot(self, n):
@@ -215,7 +212,6 @@ class TimeSeriesPlot(FullRedrawPlot):
         sns.tsplot(curveview.data, curveview.xdata, ax=self.ax,
                    condition=curveview.legend_label,
                    zorder=self.zorder, **self.style)
-        self._adjust_legend()
 
 
 
@@ -249,22 +245,17 @@ class DistributionPlot(FullRedrawPlot):
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         distview = self._stack.last
         self.style = View.options.style(distview)[cyclic_index]
-
-        # Create xticks and reorder data if cyclic
-        self.ax = self._axis(axis, self._format_title(-1),
-                             distview.xlabel, distview.ylabel)
+        self.ax = self._init_axis(axis)
 
         self._update_plot(-1)
 
-        if axis is None: plt.close(self.handles['fig'])
-        return self.ax if axis else self.handles['fig']
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
     def _update_plot(self, n):
         distview = list(self._stack.values())[n]
         sns.distplot(distview.data, ax=self.ax,
                      label=distview.legend_label, **self.style)
-        self._adjust_legend()
 
 
 
@@ -309,18 +300,16 @@ class SNSFramePlot(DFrameViewPlot):
 
         self._validate(dfview, axis)
 
-        title = None if self.zorder > 0 else self._format_title(-1)
-        self.ax = self._axis(axis, title)
+        self.ax = self._init_axis(axis)
 
         # Process styles
         self.style = self._process_style(View.options.style(dfview)[cyclic_index])
 
         self._update_plot(dfview)
+        if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
+            self.handles['fig'] = plt.gcf()
 
-        if not axis:
-            fig = self.handles.get('fig', plt.gcf())
-            plt.close(fig)
-        return self.ax if axis else self.handles.get('fig', plt.gcf())
+        return self._finalize_axis(-1, lbrt=lbrt)
 
 
     def _process_style(self, styles):
