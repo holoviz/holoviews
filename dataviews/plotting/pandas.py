@@ -67,6 +67,13 @@ class DFrameViewPlot(Plot):
     to the selected plot_type via options.style_opts.
     """
 
+    aspect = param.Parameter(default='square', doc="""
+        Aspect ratio defaults to square, 'equal' or numeric values
+        are also supported.""")
+
+    show_grid = param.Boolean(default=True, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
     plot_type = param.ObjectSelector(default='scatter_matrix',
                                      objects=['plot', 'boxplot',
                                               'hist', 'scatter_matrix',
