@@ -146,7 +146,20 @@ class AttrTree(object):
 
 
     def __setitem__(self, label, val):
-        self.__setattr__(label, val)
+        """
+        Set a value at a child node with given label. If at a root
+        node, multi-level path specifications is allowed (i.e. 'A.B.C'
+        format or tuple format) in which case the behaviour matches
+        that of set_path.
+        """
+        if isinstance(label, str) and '.' not in label:
+            self.__setattr__(label, val)
+        elif isinstance(label, str) and self.parent is None:
+            self.set_path(tuple(label.split('.')), val)
+        elif isinstance(label, tuple) and self.parent is None:
+            self.set_path(label, val)
+        else:
+            raise Exception("Multi-level item setting only allowed from root node.")
 
 
     def __getitem__(self, label):
