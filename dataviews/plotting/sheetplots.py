@@ -407,7 +407,7 @@ class CoordinateGridPlot(OverlayPlot):
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
-        self._finalize_axis(n, lbrt=(0, 0, width, height))
+        self._finalize_axis(None, lbrt=(0, 0, width, height))
         plt.draw()
 
 
