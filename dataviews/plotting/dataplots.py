@@ -558,7 +558,7 @@ class HistogramPlot(Plot):
         self.handles['bars'] = self._update_plot(-1, bars, lims) # Indexing top
 
         ticks = self._compute_ticks(edges, widths, lims)
-        ax_settings = self._process_axsettings(hist, lims, ticks)
+        ax_settings = self._process_axsettings(hist, lims, ticks, lbrt)
 
         return self._finalize_axis(-1, **ax_settings)
 
@@ -600,13 +600,13 @@ class HistogramPlot(Plot):
         return [xvals, labels]
 
 
-    def _process_axsettings(self, hist, lims, ticks):
+    def _process_axsettings(self, hist, lims, ticks, lbrt):
         """
         Get axis settings options including ticks, x- and y-labels
         and limits.
         """
         axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
-        x0, x1, y0, y1 = lims
+        x0, x1, y0, y1 = lims if lbrt is None else lbrt
         axis_settings['lbrt'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
         return axis_settings
@@ -651,10 +651,10 @@ class HistogramPlot(Plot):
         edges, hvals, widths, lims = self._process_hist(hist, lbrt)
 
         ticks = self._compute_ticks(edges, widths, lims)
-        ax_settings = self._process_axsettings(hist, lims, ticks)
-        self._axis(self.ax, **ax_settings)
+        ax_settings = self._process_axsettings(hist, lims, ticks, lbrt)
         self._update_artists(n, edges, hvals, widths, lims)
-        self._finalize_axis(n, lbrt=lbrt)
+        self._finalize_axis(n, **ax_settings)
+        plt.draw()
 
 
 
@@ -685,8 +685,8 @@ class SideHistogramPlot(HistogramPlot):
         return edges, hvals, widths, lims
 
 
-    def _process_axsettings(self, hist, lims, ticks):
-        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
+    def _process_axsettings(self, hist, lims, ticks, lbrt):
+        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks, lbrt)
         if not self.show_xlabel:
             axsettings['ylabel' if self.orientation == 'vertical' else 'xlabel'] = ''
         return axsettings
