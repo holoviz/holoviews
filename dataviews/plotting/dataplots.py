@@ -617,8 +617,6 @@ class HistogramPlot(Plot):
         Process bars is subclasses to manually adjust bars after
         being plotted.
         """
-        for bar in bars:
-            bar.set_clip_on(False)
         return bars
 
 
