@@ -558,7 +558,7 @@ class HistogramPlot(Plot):
         self.handles['bars'] = self._update_plot(-1, bars, lims) # Indexing top
 
         ticks = self._compute_ticks(edges, widths, lims)
-        ax_settings = self._process_axsettings(hist, lims, ticks, lbrt)
+        ax_settings = self._process_axsettings(hist, lims, ticks)
 
         return self._finalize_axis(-1, **ax_settings)
 
@@ -600,13 +600,13 @@ class HistogramPlot(Plot):
         return [xvals, labels]
 
 
-    def _process_axsettings(self, hist, lims, ticks, lbrt):
+    def _process_axsettings(self, hist, lims, ticks):
         """
         Get axis settings options including ticks, x- and y-labels
         and limits.
         """
         axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
-        x0, x1, y0, y1 = lims if lbrt is None else lbrt
+        x0, x1, y0, y1 = lims
         axis_settings['lbrt'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
         return axis_settings
@@ -614,8 +614,8 @@ class HistogramPlot(Plot):
 
     def _update_plot(self, n, bars, lims):
         """
-        Process bars is subclasses to manually adjust bars after
-        being plotted.
+        Process bars can be subclassed to manually adjust bars
+        after being plotted.
         """
         return bars
 
@@ -635,7 +635,6 @@ class HistogramPlot(Plot):
                 bar.set_x(edge)
                 bar.set_height(height)
                 bar.set_width(width)
-        plt.draw()
 
 
     def update_frame(self, n, lbrt=None):
@@ -649,7 +648,7 @@ class HistogramPlot(Plot):
         edges, hvals, widths, lims = self._process_hist(hist, lbrt)
 
         ticks = self._compute_ticks(edges, widths, lims)
-        ax_settings = self._process_axsettings(hist, lims, ticks, lbrt)
+        ax_settings = self._process_axsettings(hist, lims, ticks)
         self._update_artists(n, edges, hvals, widths, lims)
         self._finalize_axis(n, **ax_settings)
         plt.draw()
@@ -683,8 +682,8 @@ class SideHistogramPlot(HistogramPlot):
         return edges, hvals, widths, lims
 
 
-    def _process_axsettings(self, hist, lims, ticks, lbrt):
-        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks, lbrt)
+    def _process_axsettings(self, hist, lims, ticks):
+        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
         if not self.show_xlabel:
             axsettings['ylabel' if self.orientation == 'vertical' else 'xlabel'] = ''
         return axsettings
