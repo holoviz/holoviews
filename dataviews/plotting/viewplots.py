@@ -68,7 +68,7 @@ class Plot(param.Parameterized):
                                       objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
 
-    size = param.NumericTuple(default=(5, 5), doc="""
+    size = param.NumericTuple(default=(4, 4), doc="""
         The matplotlib figure size in inches.""")
 
     style_opts = param.List(default=[], constant=True, doc="""
