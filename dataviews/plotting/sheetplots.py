@@ -172,7 +172,7 @@ class VectorFieldPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         vfield = self._stack.last
-        self.ax = self._axis(axis)
+        self.ax = self._init_axis(axis)
 
         colorized = self.color_dim is not None
         kwargs = View.options.style(vfield)[cyclic_index]
