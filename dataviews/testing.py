@@ -6,7 +6,7 @@ from numpy.testing import assert_array_almost_equal
 from . import Dimension
 from . import DataOverlay,  DataStack,  Annotation, Curve, Histogram, Matrix, HeatMap
 from . import TableStack, Table
-from . import SheetOverlay, SheetStack, SheetView, Points, Contours
+from . import SheetOverlay, SheetStack, SheetView, Points, Contours, VectorField
 from . import CoordinateGrid, DataGrid
 from .views import Layout, GridLayout, Grid
 from .options import StyleOpts, PlotOpts, ChannelOpts
@@ -45,6 +45,7 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(SheetView,    self.compare_sheetviews)
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)
+        self.addTypeEqualityFunc(VectorField,       self.compare_vectorfield)
         # CoordinateGrid and DataGrid
         self.addTypeEqualityFunc(CoordinateGrid, self.compare_coordgrids)
         self.addTypeEqualityFunc(DataGrid,       self.compare_datagrids)
@@ -263,6 +264,16 @@ class ViewTestCase(unittest.TestCase):
             raise self.failureException("Points objects have different numbers of points.")
 
         self.compare_arrays(view1.data, view2.data, 'Points data')
+
+
+    def compare_vectorfield(self, view1, view2, msg):
+        self.bounds_check(view1, view2)
+
+        if len(view1) != len(view2):
+            raise self.failureException("VectorField objects have different numbers of vectors.")
+
+        self.compare_arrays(view1.data, view2.data, 'VectorField data')
+
 
     #=======#
     # Grids #
