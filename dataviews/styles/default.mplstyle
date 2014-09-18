@@ -4,16 +4,16 @@
 # See https://www.dataorigami.net/blogs/fivethirtyeight-mpl and
 # https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/ 
 
-lines.linewidth: 3
+lines.linewidth: 2.5
 lines.solid_capstyle: butt
 
 axes.color_cycle: 30a2da, fc4f30, e5ae38, 6d904f, 8b8b8b
 axes.facecolor: f0f0f0
-axes.labelsize: large
+axes.labelsize: medium
 axes.axisbelow: true
 axes.edgecolor: 000000
 axes.linewidth: 1.0
-axes.titlesize: large
+axes.titlesize: medium
 
 patch.edgecolor: f0f0f0
 patch.linewidth: 0.5
@@ -29,7 +29,7 @@ ytick.minor.size: 0
 
 legend.fancybox: True
 
-font.size:13
+font.size:12
 
 savefig.edgecolor: f0f0f0
 savefig.facecolor: ffffff
