@@ -654,6 +654,9 @@ class SideHistogramPlot(HistogramPlot):
     offset = param.Number(default=0.2, doc="""
         Histogram value offset for a colorbar.""")
 
+    show_grid = param.Boolean(default=True, doc="""
+        Whether to overlay a grid on the axis.""")
+
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
 
