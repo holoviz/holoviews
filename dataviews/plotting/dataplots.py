@@ -511,8 +511,8 @@ class HistogramPlot(Plot):
     show_frame = param.Boolean(default=False, doc="""
         Disabled by default for clarity.""")
 
-    show_grid = param.Boolean(default=True, doc="""
-        Enable axis grid.""")
+    show_grid = param.Boolean(default=False, doc="""
+        Whether to overlay a grid on the axis.""")
 
     _stack_type = DataStack
     _view_type = Histogram
