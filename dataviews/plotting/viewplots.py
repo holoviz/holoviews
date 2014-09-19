@@ -231,9 +231,9 @@ class Plot(param.Parameterized):
                 self.handles['title'] = axis.set_title(title)
 
         self._adjust_legend()
-        plt.draw()
 
         if 'fig' in self.handles:
+            plt.draw()
             fig = self.handles['fig']
             plt.close(fig)
             return fig
