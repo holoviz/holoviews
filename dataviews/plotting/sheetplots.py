@@ -265,7 +265,6 @@ class ContourPlot(Plot):
         contours = list(self._stack.values())[n]
         self.handles['line_segments'].set_paths(contours.data)
         self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
 
 
 
@@ -408,7 +407,6 @@ class CoordinateGridPlot(OverlayPlot):
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
         self._finalize_axis(None, lbrt=(0, 0, width, height))
-        plt.draw()
 
 
     def _format_title(self, n):

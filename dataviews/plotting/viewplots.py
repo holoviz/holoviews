@@ -231,6 +231,7 @@ class Plot(param.Parameterized):
                 self.handles['title'] = axis.set_title(title)
 
         self._adjust_legend()
+        plt.draw()
 
         if 'fig' in self.handles:
             fig = self.handles['fig']
@@ -1004,7 +1005,6 @@ class AnnotationPlot(Plot):
             element.remove()
 
         self.handles['annotations'] = self._draw_annotations(annotation, self.ax, key)
-        plt.draw()
 
 
 Plot.defaults.update({Grid: GridPlot,

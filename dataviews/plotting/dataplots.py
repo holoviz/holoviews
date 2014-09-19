@@ -117,8 +117,6 @@ class MatrixPlot(Plot):
 
         self._finalize_axis(n)
 
-        plt.draw()
-
 
 
 class DataPlot(OverlayPlot):
@@ -325,7 +323,6 @@ class CurvePlot(Plot):
         self.handles['line_segment'].set_ydata(curveview.data[:, 1])
 
         self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
 
 
 
@@ -382,7 +379,6 @@ class ScatterPlot(CurvePlot):
         self.handles['paths'] = paths
 
         self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
 
 
 
@@ -492,7 +488,6 @@ class TablePlot(Plot):
         table.auto_set_font_size(True)
 
         self._finalize_axis(n)
-        plt.draw()
 
 
 
@@ -651,7 +646,6 @@ class HistogramPlot(Plot):
         ax_settings = self._process_axsettings(hist, lims, ticks)
         self._update_artists(n, edges, hvals, widths, lims)
         self._finalize_axis(n, **ax_settings)
-        plt.draw()
 
 
 

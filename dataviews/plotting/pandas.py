@@ -173,7 +173,6 @@ class DFrameViewPlot(Plot):
             if self.zorder == 0: self.ax.cla()
         self._update_plot(dfview)
         self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
 
 
 Plot.defaults.update({DataFrameView: DFrameViewPlot,

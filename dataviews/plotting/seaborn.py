@@ -49,7 +49,6 @@ class FullRedrawPlot(Plot):
         if self.zorder == 0 and self.ax: self.ax.cla()
         self._update_plot(n)
         self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
 
 
 class RegressionPlot(FullRedrawPlot):
