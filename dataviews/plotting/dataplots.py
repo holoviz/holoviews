@@ -138,8 +138,8 @@ class DataPlot(OverlayPlot):
     aspect = param.Parameter(default='square', doc="""
         Sets plots within a Layout to square by default.""")
 
-    show_grid = param.Boolean(default=True, doc="""
-        Enable axis grid.""")
+    show_grid = param.Boolean(default=False, doc="""
+        Whether to overlay grid on axis.""")
 
     def __init__(self, overlays, **kwargs):
         self.rescale = False
@@ -173,7 +173,7 @@ class DataPlot(OverlayPlot):
             plot(self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
             self.plots.append(plot)
 
-        return self._finalize_axis(-1)
+        return self._finalize_axis(None)
 
 
     def update_frame(self, n):
@@ -182,7 +182,7 @@ class DataPlot(OverlayPlot):
             if zorder == 0:
                 lbrt = list(self._stack.values())[n].lbrt if self.rescale else self._stack.lbrt
             plot.update_frame(n, lbrt)
-        self._finalize_axis(n)
+        self._finalize_axis(None)
 
 
 
