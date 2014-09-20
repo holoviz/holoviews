@@ -17,16 +17,19 @@ directly and is not covered by the User Manual or Tutorials.
 DataViews package
 _________________
 
-`An overview of the DataViews package. <dataviews-module.html>`_
+`An overview of the DataViews package. <dataviews.html>`_
 
 DataViews modules
 -----------------
 
-`boundingregion`_
- Defines objects to define bounds of arbitrary dimensions.
+`collector`_
+ Defines classes to collect and collate data.
 `dataviews`_
  View classes associated with arbitrary dimensions such as Curves
  and Annotations.
+`interface`_
+ Defines interfaces to other visualization libraries including
+ Pandas and Seaborn.
 `ipython`_
  Defines the IPython notebook magics and display hooks.
 `ndmapping`_
@@ -37,14 +40,15 @@ DataViews modules
  transform existing Views and Stacks.
 `options`_
  Defines options which control plotting and style configuration.
-`plots`_
+`plotting`_
  Defines the plotting classes generating matplotlib figures.
-`sheetcoords`_
- Defines two-dimensional coordinate systems.
 `sheetviews`_
- View classes associated with 2D sheets and projections from a 2D sheet..
-`tests`_
- Defines unittests and TestComparison classes to compare different View objects.
+ View classes associated with 2D sheets and projections from a 2D sheet.
+`styles`_
+ Defines default styles for View objects and allows selecting different
+ mplstyles. 
+`testing`_
+ Defines TestComparison classes to compare different View objects.
 `views`_
  Defines the basic View classes forming the atomic display units.
 
@@ -53,14 +57,16 @@ DataViews modules
 .. _Tutorials: ../Tutorials/index.html
 .. _external dependencies: ../Downloads/dependencies.html
 .. _main reference manual page: hierarchy.html
-.. _boundingregion: dataviews.boundingregion-module.html
-.. _dataviews: dataviews.dataviews-module.html
-.. _ipython: dataviews.ipython-module.html
-.. _ndmapping: dataviews.ndmapping-module.html
-.. _sheetviews: dataviews.sheetviews-module.html
-.. _operation: dataviews.operation-module.html
-.. _options: dataviews.options-module.html
-.. _plots: dataviews.plots-module.html
-.. _sheetcoords: dataviews.sheetcoords-module.html
-.. _tests: dataviews.tests-module.html
-.. _views: dataviews.views-module.html
+
+.. _collector: dataviews.html#module-dataviews.collector
+.. _dataviews: dataviews.html#module-dataviews.dataviews
+.. _interface: dataviews.interface.html
+.. _ipython: dataviews.ipython.html
+.. _ndmapping: dataviews.html#module-dataviews.ndmapping
+.. _sheetviews: dataviews.sheetviews.html
+.. _operation: dataviews.html#module-dataviews.operation
+.. _options: dataviews.html#module-dataviews.options
+.. _plotting: dataviews.plotting.html
+.. _styles: dataviews.styles.html
+.. _testing: dataviews.html#module-dataviews.ndmapping
+.. _views: dataviews.html#module-dataviews.views
