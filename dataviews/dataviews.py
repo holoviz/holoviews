@@ -368,7 +368,7 @@ class DataOverlay(DataLayer, Overlay):
 
 
 
-class Matrix(View):
+class Matrix(DataLayer):
     """
     Matrix is a basic 2D atomic View type.
 
@@ -388,7 +388,14 @@ class Matrix(View):
 
     def __init__(self, data, lbrt, **kwargs):
         self.lbrt = lbrt
+        self.xlim = lbrt[0], lbrt[2]
+        self.ylim = lbrt[1], lbrt[4]
         super(Matrix, self).__init__(data, **kwargs)
+
+
+    def __getitem__(self, slc):
+        raise NotImplementedError('Slicing Matrix Views currently'
+                                  'not implemented.')
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
@@ -573,6 +580,11 @@ class Matrix(View):
         return self.normalize()
 
 
+    @property
+    def ylabel(self):
+        return self.dimensions[1].pprint_label
+
+
 
 class HeatMap(Matrix, DataLayer):
     """
@@ -640,9 +652,15 @@ class HeatMap(Matrix, DataLayer):
 
 
     @property
-    def lbrt(self):
-        dim1_keys, dim2_keys = self.dense_keys()
-        return min(dim1_keys), min(dim2_keys), max(dim1_keys), max(dim2_keys)
+    def xlim(self):
+        dim1_keys, _ = self.dense_keys()
+        return min(dim1_keys), max(dim1_keys)
+
+
+    @property
+    def ylim(self):
+        _, dim2_keys = self.dense_keys()
+        return min(dim2_keys), max(dim2_keys)
 
 
 
