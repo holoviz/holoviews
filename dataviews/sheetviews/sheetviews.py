@@ -243,14 +243,14 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
 
     _deep_indexable = True
 
-    def __init__(self, data, bounds=None, **kwargs):
+    def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
         data = np.array([[0]]) if data is None else data
         self.lbrt = bounds.lbrt()
         l, b, r, t = bounds.lbrt()
         (dim1, dim2) = data.shape[0], data.shape[1]
-        xdensity = dim1/(r-l)
-        ydensity = dim2/(t-b)
+        xdensity = xdensity if xdensity else dim1/(r-l)
+        ydensity = ydensity if ydensity else dim2/(t-b)
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         SheetLayer.__init__(self, data, bounds, **kwargs)
@@ -277,7 +277,8 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
         return SheetView(Slice(bounds, self).submatrix(self.data),
-                         bounds, label=self.label, style=self.style,
+                         bounds, xdensity=self.xdensity, ydensity=self.ydensity,
+                         label=self.label, style=self.style,
                          value=self.value)
 
 
