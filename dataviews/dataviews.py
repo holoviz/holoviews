@@ -387,10 +387,9 @@ class Matrix(DataLayer):
         The dimension description of the data held in the data array.""")
 
     def __init__(self, data, lbrt, **kwargs):
-        self.lbrt = lbrt
-        self.xlim = lbrt[0], lbrt[2]
-        self.ylim = lbrt[1], lbrt[4]
         super(Matrix, self).__init__(data, **kwargs)
+        self.xlim = lbrt[0], lbrt[2]
+        self.ylim = lbrt[1], lbrt[3]
 
 
     def __getitem__(self, slc):
