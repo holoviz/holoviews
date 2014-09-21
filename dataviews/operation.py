@@ -491,6 +491,38 @@ class vectorfield(ViewOperation):
                             value=value_dimension)]
 
 
+
+class threshold(ViewOperation):
+    """
+    Threshold a given SheetView at a given level into the specified
+    low and high values.  """
+
+    level = param.Number(default=0.5, doc="""
+       The value at which the threshold is applied. Values lower than
+       the threshold map to the 'low' value and values above map to
+       the 'high' value.""")
+
+    high = param.Number(default=1.0, doc="""
+      The value given to elements greater than (or equal to) the
+      threshold.""")
+
+    low = param.Number(default=0.0, doc="""
+      The value given to elements below the threshold.""")
+
+    label = param.String(default='Thresholded', doc="""
+       The label suffix used to label the resulting sheetview where
+       the suffix is added to the label of the input SheetView""")
+
+    def _process(self, view, key=None):
+        arr = view.data
+        high = np.ones(arr.shape) * self.p.high
+        low = np.ones(arr.shape) * self.p.low
+        thresholded = np.where(arr > self.p.level, high, low)
+
+        return [SheetView(thresholded,
+                          label=view.label + ' ' + self.p.label)]
+
+
 ChannelOpts.operations['RGBA'] = RGBA
 ChannelOpts.operations['HCS'] = HCS
 ChannelOpts.operations['AlphaOverlay'] = AlphaOverlay
