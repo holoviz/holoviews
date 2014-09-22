@@ -906,14 +906,24 @@ class Collector(AttrTree):
         return attrtree
 
 
-    def _verify_task_times(self, task, times, strict=False):
+    def verify_times(self, times, strict=False):
+        """
+        Given a set of times this method checks that all
+        scheduled measurements will actually be carried out.
+        """
+        for path, task in self.path_items.items():
+            if task.times:
+                self._verify_task_times(task.times, times, strict)
+
+
+    def _verify_task_times(self, task_times, times, strict=False):
         """
         Checks that a given task that is scheduled to be run at
         certain times will actually be executed. The strict flag
         determines whether to simply warn or raise an Exception.
         """
-        if task.times:
-            unsatisfied = set(task.times) - set(list(times))
+        if task_times:
+            unsatisfied = set(task_times) - set(list(times))
             if unsatisfied:
                 msg = "Task %r has been requested for times %s, " \
                       "not scheduled for collection." % (task, list(unsatisfied))
@@ -921,6 +931,7 @@ class Collector(AttrTree):
             if unsatisfied:
                 if strict: raise Exception(msg)
                 else:      param.main.warning(msg)
+
 
     def _schedule_tasks(self, times, strict=False):
         """
@@ -943,7 +954,7 @@ class Collector(AttrTree):
                 raise Exception("Setting path for Task that is in 'merge' mode.")
             task.path = path
 
-            self._verify_task_times(task, times, strict)
+            self._verify_task_times(task.times, times, strict)
             self._scheduled_tasks.append(task)
 
 
