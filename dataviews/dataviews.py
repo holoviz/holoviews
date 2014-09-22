@@ -164,7 +164,7 @@ class DataLayer(View):
     @xlim.setter
     def xlim(self, limits):
         xmin, xmax = limits
-        xlim = self.xlim
+        xlim = self._xlim
         if self.cyclic_range and not isinstance(self, Overlay):
             self.warning('Cannot override the limits of a cyclic dimension')
         elif xlim is None or (xmin <= xlim[0] and xmax >= xlim[1]):
@@ -187,7 +187,7 @@ class DataLayer(View):
     @ylim.setter
     def ylim(self, limits):
         ymin, ymax = limits
-        ylim = self.ylim
+        ylim = self._ylim
         if ylim is None or (ymin <= ylim[0] and ymax >= ylim[1]):
             self._ylim = (ymin, ymax)
         elif not isinstance(self, Overlay):
