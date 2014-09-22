@@ -25,11 +25,6 @@ from .styles import GrayNearest
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
-stack_mapping = {SheetLayer: SheetStack,
-                 DataLayer: DataStack,
-                 Table: TableStack}
-
-
 
 class ViewOperation(param.ParameterizedFunction):
     """
@@ -88,8 +83,7 @@ class ViewOperation(param.ParameterizedFunction):
             for v in views:
                 if type(v) in [CoordinateGrid, DataGrid]:
                     raise NotImplementedError("CoordinateGrid and DataGrid not yet supported.")
-                stack_type = [k for k in stack_mapping if issubclass(type(v), k)][0]
-                view_signature.append(stack_type)
+                view_signature.append(v.stack_type)
 
             if signature is None:
                 signature = view_signature
@@ -130,9 +124,7 @@ class ViewOperation(param.ParameterizedFunction):
 
         elif isinstance(view, Stack):
             mapped_items = [(k, self._process(el, key=view.key_items(k))) for k, el in view.items()]
-            signature = self._get_signature(v for k,v in mapped_items)
-
-            stack_types = [stack_mapping[tp] for tp in signature]
+            stack_types = self._get_signature(v for k,v in mapped_items)
             stacks = [stack_tp(dimensions=view.dimensions) for stack_tp in stack_types]
 
             for k, views in mapped_items:
