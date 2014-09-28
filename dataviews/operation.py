@@ -163,9 +163,9 @@ class StackOperation(param.ParameterizedFunction):
 
     def _process(self, view):
         """
-        Process a single input Stack and output a list of Stacks. When
-        multiple Stacks are returned as a list, they will be returned
-        to the user as a GridLayout.
+        Process a single input Stack and output a list of views or
+        stacks. When multiple values are returned they are returned to
+        the user as a GridLayout.
         """
         raise NotImplementedError
 

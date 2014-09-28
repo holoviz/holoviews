@@ -394,7 +394,7 @@ class Matrix(DataLayer):
 
     def __getitem__(self, slc):
         raise NotImplementedError('Slicing Matrix Views currently'
-                                  'not implemented.')
+                                  ' not implemented.')
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
