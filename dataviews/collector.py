@@ -338,15 +338,18 @@ class ViewRef(Reference):
         syntax - an example specification is 'A.B.C[2:4] *D.E'
         """
         self.specification, self.slices = self._parse_spec(spec)
+        if not len(self.slices): self.slices = [None]
         if not all(p[0].isupper() for path in self.specification for p in path):
             raise Exception("All path components must be capitalized.")
 
     @property
     def spec(self):
         paths = ['.'.join(s for s in spec) for spec in self.specification]
-        indices = [self.slices.get(spec, None) for spec in self.specification]
-        indexed_paths = [p + self._pprint_index(s) for (p,s) in zip(paths, indices)]
-        return ' * '.join(indexed_paths)
+        indexed_paths = [p + self._pprint_index(s) for (p,s) in zip(paths, self.slices)]
+        ref = ' * '.join(indexed_paths)
+        if len(self.slices) > len(self):
+            ref = '(' + ref + ')' + self._pprint_index(self.slices[-1])
+        return ref
 
 
     def _parse_spec(self, spec):
@@ -355,7 +358,7 @@ class ViewRef(Reference):
             def __getitem__(self, val):
                 return val
 
-        specs, slices = [], {}
+        specs, slices = [], []
         if spec.strip() == '':
             return specs, slices
         components = [el.strip() for el in spec.split('*')]
@@ -363,7 +366,12 @@ class ViewRef(Reference):
             if component.count('[') !=  component.count(']'):
                 raise Exception("Mismatched parentheses in %r" % component)
             elif component.count('[') in [0,1]:
-                path_spec = tuple(component.split('.'))
+                if component.count('['):
+                    pstart, pstop = component.index('['), component.index(']')
+                    subcomponent = component[:pstart] + component[pstop+1:]
+                else:
+                    subcomponent = component
+                path_spec = tuple(subcomponent.split('.'))
                 specs.append(path_spec)
             else:
                 raise Exception("Invalid syntax %r" % component)
@@ -371,12 +379,11 @@ class ViewRef(Reference):
             if component.count('[') == 1:
                 opening = component.find('[')
                 closing = component.find(']')
-                path_spec = tuple(component[:opening].split('.'))
                 if opening > closing:
                     raise Exception("Invalid syntax %r" % component)
-                slices[path_spec] = eval('Index()[%s]' % component[opening+1:closing])
+                slices.append(eval('Index()[%s]' % component[opening+1:closing]))
             else:
-                slices[path_spec] = None
+                slices.append(None)
         return specs, slices
 
 
@@ -406,25 +413,27 @@ class ViewRef(Reference):
         object (if available).
         """
         overlaid_view = None
-        for ref in self.specification:
+        for idx, ref in enumerate(self.specification):
             view = self._resolve_ref(ref, attrtree)
             # Access specified slices for the view
-            slc = self.slices.get(ref, None)
+            slc = self.slices[idx]
             view = view if slc is None else view[slc]
 
             if overlaid_view is None:
                 overlaid_view = view
             else:
                 overlaid_view = overlaid_view * view
-        return overlaid_view
+        return overlaid_view if self.specification else attrtree
 
 
     def __getitem__(self, index):
         """
         Slice the referenced DataView.
         """
-        for ref in self.specification:
-            self.slices[ref] = index
+        if len(self.slices) == 1:
+            self.slices[0] = index
+        else:
+            self.slices.append(index)
         return self
 
 
@@ -458,15 +467,19 @@ class ViewRef(Reference):
         return ViewRef(self.spec + ' * ' + other.spec)
 
 
-    def _pprint_index(self, ind):
-        if isinstance(ind, slice):
-            parts = [str(el) for el in [ind.start, ind.stop, ind.step]]
-            parts = parts[:2] if parts[2]=='None' else parts
-            return '[%s]' % ':'.join(el if el!='None' else '' for el in parts)
-        elif ind is None:
-            return ''
-        else:
-            return '[%r]' % ind
+    def _pprint_index(self, inds):
+        if inds is None: return ''
+        elif not isinstance(inds, tuple): inds = (inds,)
+        index_strings = []
+        for ind in inds:
+            if isinstance(ind, slice):
+                parts = [str(el) for el in [ind.start, ind.stop, ind.step]]
+                parts = parts[:2] if parts[2]=='None' else parts
+                index_strings.append('%s' % ':'.join(el if el!='None' else '' for el in parts))
+            else:
+                index_strings.append('%r' % ind)
+        return '[' + ', '.join(index_strings) + ']'
+
 
     def __repr__(self):
         return 'ViewRef(%r)' % self.spec
