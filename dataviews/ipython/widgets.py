@@ -148,11 +148,14 @@ class RemoteProgress(ProgressBar):
         sock.connect('tcp://' + self.hostname +':'+str(self.port))
         # Get progress via socket
         while True:
-            message= sock.recv()
             try:
+                message= sock.recv()
                 [percent_str, label] = message.split('|')
+                percent = float(percent_str)
                 self.label = label
-                super(RemoteProgress, self).__call__(float(percent_str))
+                super(RemoteProgress, self).__call__(percent)
+            except KeyboardInterrupt:
+                self.message("Exited at %.3f%% completion" % percent)
             except:
                 self.message("Could not process socket message: %r"
                              % message)
