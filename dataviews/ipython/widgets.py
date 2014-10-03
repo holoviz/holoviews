@@ -44,8 +44,7 @@ class ProgressBar(param.Parameterized):
     """
 
     display = param.ObjectSelector(default='stdout',
-                                   objects=['stdout', 'disabled', 'broadcast'],
-                               doc="""
+                  objects=['stdout', 'disabled', 'broadcast'], doc="""
        Parameter to control display of the progress bar. By default,
        progress is shown on stdout but this may be disabled e.g. for
        jobs that log standard output to file.
@@ -102,10 +101,11 @@ class ProgressBar(param.Parameterized):
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)
         blank_count = self.width - char_count
-        sys.stdout.write('\r' + "%s[%s%s] %0.1f%%" % (self.label+':\n' if self.label else '',
-                                                      self.fill_char * char_count,
-                                                      ' '*len(self.fill_char)*blank_count,
-                                                      percentage))
+        sys.stdout.write('\r' + "%s[%s%s] %0.1f%%"
+                         % (self.label+':\n' if self.label else '',
+                            self.fill_char * char_count,
+                            ' '*len(self.fill_char) * blank_count,
+                            percentage))
         sys.stdout.flush()
         time.sleep(0.0001)
 
@@ -115,7 +115,8 @@ class ProgressBar(param.Parameterized):
         sock = context.socket(zmq.PUB)
         try:
             port = sock.bind_to_random_port('tcp://*',
-                                            min_port=min_port, max_port=max_port,
+                                            min_port=min_port,
+                                            max_port=max_port,
                                             max_tries=max_tries)
             self.message("Progress broadcast bound to port %d" % port)
             return sock
@@ -153,7 +154,8 @@ class RemoteProgress(ProgressBar):
                 self.label = label
                 super(RemoteProgress, self).__call__(float(percent_str))
             except:
-                self.message("Could not process socket message: %r" % message)
+                self.message("Could not process socket message: %r"
+                             % message)
 
 
 class RunProgress(ProgressBar):
@@ -350,7 +352,8 @@ class ViewSelector(param.Parameterized):
 
     def __call__(self):
         # Initalize image widget
-        if (ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3) or ViewMagic.FIGURE_FORMAT == 'svg':
+        if ((ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3)
+            or ViewMagic.FIGURE_FORMAT == 'svg'):
             self.image_widget = widgets.HTMLWidget()
         else:
             self.image_widget = widgets.ImageWidget()
@@ -362,7 +365,8 @@ class ViewSelector(param.Parameterized):
         self.image_widget.set_css(self.css)
 
         # Initialize interactive widgets
-        interactive_widget = widgets.interactive(self.update_widgets, **self.pwidgets)
+        interactive_widget = widgets.interactive(self.update_widgets,
+                                                 **self.pwidgets)
         interactive_widget.set_css(self.css)
 
         # Display widgets
