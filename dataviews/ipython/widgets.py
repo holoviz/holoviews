@@ -147,6 +147,7 @@ class RemoteProgress(ProgressBar):
         sock.setsockopt(zmq.SUBSCRIBE, '')
         sock.connect('tcp://' + self.hostname +':'+str(self.port))
         # Get progress via socket
+        percent = None
         while True:
             try:
                 message= sock.recv()
@@ -155,7 +156,9 @@ class RemoteProgress(ProgressBar):
                 self.label = label
                 super(RemoteProgress, self).__call__(percent)
             except KeyboardInterrupt:
-                self.message("Exited at %.3f%% completion" % percent)
+                if percent is not None:
+                    self.message("Exited at %.3f%% completion" % percent)
+                break
             except:
                 self.message("Could not process socket message: %r"
                              % message)
