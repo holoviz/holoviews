@@ -344,11 +344,11 @@ class Points(SheetLayer):
         else:
             arr = np.array(data)
 
-        if arr.shape[1] <self._min_dims:
+        data = self._null_value if (data is None) or (len(arr) == 0) else arr
+        if data.shape[1] <self._min_dims:
             raise Exception("%s requires a minimum of %s columns."
                             % (self.__class__.__name__, self._min_dims))
 
-        data = self._null_value if data is None else arr
         super(Points, self).__init__(data, bounds, **kwargs)
 
     def resize(self, bounds):
