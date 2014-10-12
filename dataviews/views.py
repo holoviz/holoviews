@@ -531,7 +531,7 @@ class Stack(NdMapping):
         for fk in first_keys:  # The first groups keys
             split_data[fk] = self.clone(dimensions=second_dims)
             split_data[fk]._check_key_type = False # Speed optimization
-            for sk in second_keys:  # The second groups keys
+            for sk in set(second_keys):  # The second groups keys
                 # Generate a candidate expanded key
                 unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
                 sorted_key = self.sort_key(unordered_dimkeys)
