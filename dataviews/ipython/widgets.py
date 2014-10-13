@@ -3,7 +3,7 @@ import sys, math, time
 import numpy as np
 from collections import OrderedDict
 
-from nose.plugins.skip import SkipTest
+from unittest import SkipTest
 
 try:
     import IPython

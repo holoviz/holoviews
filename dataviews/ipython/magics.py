@@ -6,7 +6,7 @@ from IPython.core import page
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_cell_magic
 except:
-    from nose.plugins.skip import SkipTest
+    from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..dataviews import Stack, View
