@@ -24,7 +24,7 @@ class MatrixPlot(Plot):
         Whether to annotate the values when displaying a HeatMap.""")
 
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
-                                     'visible', 'filterrad', 'origin'],
+                                     'visible', 'filterrad', 'origin', 'clims'],
                             constant=True, doc="""
         The style options for MatrixPlot are a subset of those used
         by matplotlib's imshow command. If supplied, the clim option
@@ -45,6 +45,7 @@ class MatrixPlot(Plot):
 
         opts = View.options.style(view)[cyclic_index]
         data = view.data
+        clims = opts.pop('clims', None)
         if view.depth != 1:
             opts.pop('cmap', None)
         elif isinstance(view, HeatMap):
@@ -56,7 +57,8 @@ class MatrixPlot(Plot):
             opts['cmap'] = cmap
 
         im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
-        clims = view.range if self.normalize_individually else self._stack.range
+        if clims is None:
+            clims = view.range if self.normalize_individually else self._stack.range
         im.set_clim(clims)
         self.handles['im'] = im
 
@@ -730,6 +732,8 @@ class SideHistogramPlot(HistogramPlot):
             style = main.style
 
         cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
+        main_range = View.options.style(style).opts.get('clims', main_range) if self.offset else None
+
         if cmap is not None:
             self._colorize_bars(cmap, bars, main_range)
         return bars
