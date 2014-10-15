@@ -27,7 +27,8 @@ from ..views import Annotation, Layout, GridLayout, Grid
 
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
-from .widgets import ViewSelector
+from .widgets import ViewSelector, JSSelector
+
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
 
@@ -146,13 +147,22 @@ def render(plot):
 def animation_display(anim):
     return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.VIDEO_FORMAT])
 
+def widget_display(view):
+    mode = ViewMagic.VIDEO_FORMAT[1]
+    if mode == 'embedded':
+        return JSSelector(view)()
+    elif mode == 'cached':
+        return ViewSelector(view, cached=True)()
+    else:
+        return ViewSelector(view, cached=False)()
+
 @display_hook
 def stack_display(stack, size=256):
     if not isinstance(stack, Stack): return None
     magic_info = process_view_magics(stack)
     if magic_info: return magic_info
-    if ViewMagic.VIDEO_FORMAT == 'slider':
-        return ViewSelector(stack)()
+    if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+        return widget_display(stack)
     opts = dict(View.options.plotting(stack).opts, size=get_plot_size())
     stackplot = Plot.defaults[stack.type](stack, **opts)
     if len(stackplot) == 0:
@@ -166,8 +176,8 @@ def stack_display(stack, size=256):
 @display_hook
 def layout_display(grid, size=256):
     if not isinstance(grid, (GridLayout, Layout)): return None
-    if ViewMagic.VIDEO_FORMAT == 'slider':
-        return ViewSelector(grid)()
+    if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+        return widget_display(grid)
     shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
@@ -185,8 +195,8 @@ def layout_display(grid, size=256):
 @display_hook
 def grid_display(grid, size=256):
     if not isinstance(grid, Grid): return None
-    if ViewMagic.VIDEO_FORMAT == 'slider':
-        return ViewSelector(grid)()
+    if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+        return widget_display(grid)
 
     max_dim = max(grid.shape)
     # Reduce plot size as Grid gets larger

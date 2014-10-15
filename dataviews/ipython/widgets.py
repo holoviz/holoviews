@@ -1,4 +1,4 @@
-import sys, math, time
+import os, sys, math, time, uuid
 
 import numpy as np
 from collections import OrderedDict
@@ -19,6 +19,8 @@ try:
 except:
     widgets = None
     FloatSliderWidget = object
+
+import jinja2
 
 try:
     import mpld3
@@ -255,45 +257,15 @@ def get_plot_size():
             Plot.size[1] * factor)
 
 
-class ViewSelector(param.Parameterized):
+class NdWidget(param.Parameterized):
     """
-    Interactive widget to select and view View objects contained
-    in an NdMapping. ViewSelector creates Slider and Dropdown widgets
-    for each dimension contained within the supplied object and
-    an image widget for the plotted View. All widgets are dynamically
-    updated to match the current selection.
+    NdWidget is an abstract base class implementing a method to
+    find the dimensions and keys of any View, Grid or Stack type.
+    In the process it creates a mock_obj to hold the dimensions
+    and keys.
     """
 
-    cached = param.Boolean(default=True, doc="""
-        Whether to cache the View plots when initializing the object.""")
-
-    css = param.Dict(default={'margin-left': 'auto',
-                              'margin-right': 'auto'}, doc="""
-                              CSS to apply to the widgets.""")
-
-    def __init__(self, view, **params):
-        super(ViewSelector, self).__init__(**params)
-
-        if widgets is None:
-            raise ImportError('ViewSelector requires IPython >= 2.0.')
-
-        self._process_view(view)
-        self._initialize_widgets()
-        self.refresh = True
-
-        if self.cached:
-            self.frames = OrderedDict((k, self._plot_figure(idx))
-                                      for idx, k in enumerate(self._keys))
-
-    def _plot_figure(self, idx):
-        if ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3:
-            fig = self.plot[idx]
-            from mpld3 import plugins
-            plugins.connect(fig, plugins.MousePosition(fontsize=14))
-            return mpld3.fig_to_html(fig)
-        else:
-            return print_figure(self.plot[idx], ViewMagic.FIGURE_FORMAT)
-
+    _figure_display_mode = 'print_figure'
 
     def _process_view(self, view):
         """
@@ -331,6 +303,50 @@ class ViewSelector(param.Parameterized):
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, 0) for k in self._keys],
                                   dimensions=self.dimensions)
+
+    def _plot_figure(self, idx):
+        fig = self.plot[idx]
+        if ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3:
+            from mpld3 import plugins
+            plugins.connect(fig, plugins.MousePosition(fontsize=14))
+            return mpld3.fig_to_html(fig)
+        elif self._figure_display_mode == 'print_figure':
+            return print_figure(fig)
+        elif self._figure_display_mode == 'figure_display':
+            from .display_hooks import figure_display
+            return figure_display(fig)
+
+
+
+class ViewSelector(NdWidget):
+    """
+    Interactive widget to select and view View objects contained
+    in an NdMapping. ViewSelector creates Slider and Dropdown widgets
+    for each dimension contained within the supplied object and
+    an image widget for the plotted View. All widgets are dynamically
+    updated to match the current selection.
+    """
+
+    cached = param.Boolean(default=True, doc="""
+        Whether to cache the View plots when initializing the object.""")
+
+    css = param.Dict(default={'margin-left': 'auto',
+                              'margin-right': 'auto'}, doc="""
+                              CSS to apply to the widgets.""")
+
+    def __init__(self, view, **params):
+        super(ViewSelector, self).__init__(**params)
+
+        if widgets is None:
+            raise ImportError('ViewSelector requires IPython >= 2.0.')
+
+        self._process_view(view)
+        self._initialize_widgets()
+        self.refresh = True
+
+        if self.cached:
+            self.frames = OrderedDict((k, self._plot_figure(idx))
+                                      for idx, k in enumerate(self._keys))
 
 
     def _initialize_widgets(self):
@@ -429,6 +445,70 @@ class ViewSelector(param.Parameterized):
             self.image_widget.value = self.frames[checked]
         else:
             self.image_widget.value = self._plot_figure(self._keys.index(checked))
+
+
+
+class JSSelector(NdWidget):
+    """
+    Javascript based widget to select and view View objects contained
+    in an NdMapping. For each dimension in the NdMapping a slider or
+    dropdown selection widget is created and can be used to select
+    the html output associated with the selected View type. Supports
+    selection of any DataViews static output type including png, svg
+    and mpld3 output.
+    """
+
+    _figure_display_mode = 'figure_display'
+
+    def __init__(self, view, **params):
+        super(JSSelector, self).__init__(**params)
+        self.view = view
+        self._process_view(view)
+        self.frames = OrderedDict((k, self._plot_figure(idx))
+                                  for idx, k in enumerate(self._keys))
+
+
+    def __call__(self):
+        id = uuid.uuid4().hex
+
+        # Generate widget data
+        widgets = []
+        dimensions = []
+        init_dim_vals = []
+        for idx, dim in enumerate(self.mock_obj.dimensions):
+            dim_vals = self.mock_obj.dim_values(dim.name)
+            if isnumeric(dim_vals[0]):
+                dim_vals = [round(v, 10) for v in self.mock_obj.dim_values(dim.name)]
+                widget_type = 'slider'
+            else:
+                widget_type = 'dropdown'
+            init_dim_vals.append(dim_vals[0])
+            dim_str = str(dim).replace(' ', '_')
+            widgets.append(dict(dim=dim_str, dim_idx=idx, vals=repr(dim_vals),
+                                type=widget_type))
+            dimensions.append(dim_str)
+
+        # Generate key data
+        key_data = {}
+        for i, k in enumerate(self.mock_obj._data.keys()):
+            key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
+                   if isnumeric(v) else v for v in k]
+            key_data[str(tuple(key))] = i
+
+        # Set up jinja2 templating
+        path, _ = os.path.split(os.path.abspath(__file__))
+        templateLoader = jinja2.FileSystemLoader(searchpath=path)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template('jsslider.jinja')
+
+        return template.render(id=id, Nframes=len(self.mock_obj),
+                               Nwidget=self.mock_obj.ndims,
+                               frames=self.frames.values(),
+                               dimensions=dimensions,
+                               key_data=repr(key_data),
+                               widgets=widgets,
+                               init_dim_vals=init_dim_vals)
+
 
 
 def progress(iterator, enum=False, length=None):

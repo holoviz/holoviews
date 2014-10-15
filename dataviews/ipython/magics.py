@@ -69,7 +69,7 @@ class ViewMagic(Magics):
     Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
     """
 
-    anim_formats = ['webm','h264','gif','slider','scrubber']
+    anim_formats = ['webm','h264','gif','scrubber','widgets']
     fig_formats = ['svg', 'png', 'mpld3']
 
     PERCENTAGE_SIZE = 100
@@ -80,7 +80,7 @@ class ViewMagic(Magics):
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|slider|scrubber] [<percent size>]"
+        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|widgets[:embedded|cached|live]|scrubber] [<percent size>]"
         self.usage_info += " (Arguments may be in any order)"
 
     @classmethod
@@ -91,18 +91,26 @@ class ViewMagic(Magics):
         """
         Parse the animation format and fps from the specification string.
         """
-        format_choice, fps_str = ((anim_spec, None) if (':' not in anim_spec)
+        format_choice, opt_str = ((anim_spec, None) if (':' not in anim_spec)
                                   else anim_spec.rsplit(':'))
         if format_choice not in self.anim_formats:
             print("Valid animations types: %s" % ', '.join(self.anim_formats))
             return False
-        elif fps_str is None:
+        elif format_choice == 'widgets':
+            if opt_str not in ['embedded', 'cached', 'live', None]:
+                print("Valid widget modes are embedded, cached and live.")
+                return False
+            else:
+                ViewMagic.VIDEO_FORMAT = (format_choice, opt_str if opt_str else 'embedded')
+                return True
+        elif opt_str is None:
             ViewMagic.VIDEO_FORMAT = format_choice
             return True
+
         try:
-            fps = int(fps_str)
+            fps = int(opt_str)
         except:
-            print("Invalid frame rate: '%s'" %  fps_str)
+            print("Invalid frame rate: '%s'" %  opt_str)
             return False
 
         global ANIMATION_OPTS
@@ -168,9 +176,12 @@ class ViewMagic(Magics):
         success = self._parse_settings(opts)
 
         if cell is None and success:
-            info = (ViewMagic.VIDEO_FORMAT.upper(), ViewMagic.FIGURE_FORMAT.upper(),
-                    ViewMagic.PERCENTAGE_SIZE, ViewMagic.FPS)
-            print("Displaying %s animation and %s figures [%d%% size, %s FPS]" % info)
+            if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+                msg = "Display %s widget" % ViewMagic.VIDEO_FORMAT[1]
+            else:
+                msg = "Displaying %s animation [%s FPS]" % (ViewMagic.VIDEO_FORMAT.upper(), ViewMagic.FPS)
+            info = (msg, ViewMagic.FIGURE_FORMAT.upper(), ViewMagic.PERCENTAGE_SIZE)
+            print("%s and %s figures [%d%% size]" % info)
         elif cell and success:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             [ViewMagic.FIGURE_FORMAT,  ViewMagic.VIDEO_FORMAT,
