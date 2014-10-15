@@ -46,6 +46,7 @@ setup_args.update(dict(
                 "dataviews.styles",
                 "dataviews.plotting",
                 "dataviews.interface"],
+    package_data={'dataviews.styles': ['*.mplstyle']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 4 - Beta",
