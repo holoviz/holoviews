@@ -571,7 +571,7 @@ class Stack(NdMapping):
             return new_stack
 
 
-    def grid(self, dimensions):
+    def grid(self, dimensions, layout=False):
         """
         Grid takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a Grid.
@@ -588,7 +588,16 @@ class Stack(NdMapping):
         else:
             raise ValueError('Stack does not have supplied dimensions.')
 
-        return Grid(split_stack, dimensions=split_stack.dimensions)
+        if layout:
+            for keys, stack in split_stack._data.items():
+                label = ', '.join([d.pprint_value(k) for d, k in
+                                   zip(split_stack.dimensions, keys)])
+                for view in stack.values():
+                    if label not in view.title:
+                        view.title = ' '.join([view.title, label])
+            return GridLayout(split_stack)
+        else:
+            return Grid(split_stack, dimensions=split_stack.dimensions)
 
 
     def sample(self, dimsample_map, new_axis=None):
