@@ -3,6 +3,7 @@ Views objects used to hold data and provide indexing into different coordinate
 systems.
 """
 import math
+import itertools
 from collections import OrderedDict, defaultdict
 
 import numpy as np
@@ -1107,6 +1108,20 @@ class Grid(NdMapping):
     def __add__(self, obj):
         if not isinstance(obj, GridLayout):
             return GridLayout(initial_items=[self, obj])
+
+    @property
+    def all_keys(self):
+        """
+        Returns a list of all keys of the elements in the grid.
+        """
+        keys_list = []
+        for v in self.values():
+            if isinstance(v, Layout):
+                v = v.main
+            if isinstance(v, Stack):
+                keys_list.append(list(v._data.keys()))
+        return sorted(set(itertools.chain(*keys_list)))
+
 
     @property
     def common_keys(self):
