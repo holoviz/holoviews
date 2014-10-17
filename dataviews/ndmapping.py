@@ -595,6 +595,8 @@ class NdMapping(NdIndexableMapping):
             items = [(k, self._dataslice(v, data_slice)) for k, v in items]
             if self.ndims == 1:
                 items = [(k[0], v) for (k, v) in items]
+            if len(items) == 0:
+                raise KeyError('No items within specified slice.')
             return self.clone(items)
 
 
