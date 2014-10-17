@@ -686,12 +686,13 @@ class Collator(NdMapping):
 
     _deep_indexable = False
 
-    def __call__(self, path_filters=[], merge=True):
+    def __call__(self, path_filters=[], merge=True, ignore=[]):
         """
         Filter each AttrTree in the Collator with the supplied
         path_filters. If merge is set to True all AttrTrees are
         merged, otherwise an NdMapping containing all the
-        AttrTrees is returned.
+        AttrTrees is returned. Optionally a list of dimensions
+        to be ignored can be supplied.
         """
         constant_dims = self.constant_dims
         ndmapping = NdMapping(dimensions=self.dimensions)
@@ -708,7 +709,8 @@ class Collator(NdMapping):
               constant_keys = [(d, k) for d, k in dim_keys
                                if d in constant_dims]
               attrtree = self._add_dimensions(attrtree, varying_keys,
-                                              dict(constant_keys))
+                                              dict(constant_keys),
+                                              ignore)
            ndmapping[key] = attrtree
            progressbar(float(idx+1)/num_elements*100)
 
@@ -721,7 +723,7 @@ class Collator(NdMapping):
         return ndmapping
 
 
-    def _add_dimensions(self, item, dims, constant_keys):
+    def _add_dimensions(self, item, dims, constant_keys, ignore=[]):
         """
         Recursively descend through an AttrTree and NdMapping objects
         in order to add the supplied dimension values to all contained
@@ -735,12 +737,12 @@ class Collator(NdMapping):
             v = item[k]
             if isinstance(v, Stack):
                 for dim, val in dims[::-1]:
-                    if dim.capitalize() not in v.dimension_labels:
+                    if dim not in v.dimension_labels + ignore:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v
             else:
-                new_item[k] = self._add_dimensions(v, dims, constant_keys)
+                new_item[k] = self._add_dimensions(v, dims, constant_keys, ignore)
         if isinstance(new_item, AttrTree):
             new_item.fixed = True
 
