@@ -123,7 +123,7 @@ class Dimensional(object):
         """
         Returns the tuple index of the requested dimension.
         """
-        return self.dimension_labels.index(dimension_label)
+        return self.deep_dimensions.index(dimension_label)
 
 
     def _split_dims(self, dimensions):
