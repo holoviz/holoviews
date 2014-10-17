@@ -600,7 +600,10 @@ class NdMapping(NdIndexableMapping):
         Allows selecting slices or indices into the NdMapping using
         keyword arguments matching the names of the dimensions.
         """
-        selection = [slice(None) for i in range(self.ndims)]
+        deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
+                           and (kw not in self.dimension_labels)])
+        selection_depth = len(self.deep_dimensions) if deep_select else self.ndims
+        selection = [slice(None) for i in range(selection_depth)]
         for dim, val in kwargs.items():
             selection[self.dim_index(dim)] = val
         return self.__getitem__(tuple(selection))
