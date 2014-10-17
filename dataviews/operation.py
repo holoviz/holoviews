@@ -255,7 +255,7 @@ class alpha_overlay(ViewOperation):
     defined by the second layer of the overlay.
     """
 
-    label = param.String(default='alpha_overlay', doc="""
+    label = param.String(default='AlphaOverlay', doc="""
         The label suffix to use for the alpha overlay result where the
         suffix is added to the label of the first layer.""")
 
