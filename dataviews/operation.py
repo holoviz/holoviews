@@ -248,14 +248,14 @@ class RGBA(ViewOperation):
                           roi_bounds=overlay.roi_bounds, value=overlay[0].value)]
 
 
-class AlphaOverlay(ViewOperation):
+class alpha_overlay(ViewOperation):
     """
     Accepts an overlay of a SheetView defined with a cmap and converts
     it to an RGBA SheetView. The alpha channel of the result is
     defined by the second layer of the overlay.
     """
 
-    label = param.String(default='AlphaOverlay', doc="""
+    label = param.String(default='alpha_overlay', doc="""
         The label suffix to use for the alpha overlay result where the
         suffix is added to the label of the first layer.""")
 
@@ -567,7 +567,7 @@ class roi_table(ViewOperation):
 
 ChannelOpts.operations['RGBA'] = RGBA
 ChannelOpts.operations['HCS'] = HCS
-ChannelOpts.operations['AlphaOverlay'] = AlphaOverlay
+ChannelOpts.operations['alpha_overlay'] = alpha_overlay
 
 options.R_Channel_SheetView = GrayNearest
 options.G_Channel_SheetView = GrayNearest
