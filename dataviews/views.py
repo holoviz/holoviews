@@ -414,6 +414,7 @@ class Stack(NdMapping):
     data_type = View
     overlay_type = Overlay
 
+    _deep_indexable = True
     _type = None
     _style = None
 

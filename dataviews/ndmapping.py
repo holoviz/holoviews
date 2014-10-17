@@ -173,7 +173,7 @@ class NdIndexableMapping(param.Parameterized, Dimensional):
 
     data_type = None
 
-    _deep_indexable = True
+    _deep_indexable = False
 
     def __init__(self, initial_items=None, **kwargs):
         self._data = OrderedDict()
