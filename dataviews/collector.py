@@ -686,7 +686,7 @@ class Collator(NdMapping):
 
     _deep_indexable = False
 
-    def __call__(self, path_filters=[], merge=True, ignore=[]):
+    def __call__(self, path_filters=[], merge=True):
         """
         Filter each AttrTree in the Collator with the supplied
         path_filters. If merge is set to True all AttrTrees are
@@ -723,7 +723,7 @@ class Collator(NdMapping):
         return ndmapping
 
 
-    def _add_dimensions(self, item, dims, constant_keys, ignore=[]):
+    def _add_dimensions(self, item, dims, constant_keys):
         """
         Recursively descend through an AttrTree and NdMapping objects
         in order to add the supplied dimension values to all contained
@@ -737,12 +737,12 @@ class Collator(NdMapping):
             v = item[k]
             if isinstance(v, Stack):
                 for dim, val in dims[::-1]:
-                    if dim not in v.dimension_labels + ignore:
+                    if dim not in v.dimension_labels:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v
             else:
-                new_item[k] = self._add_dimensions(v, dims, constant_keys, ignore)
+                new_item[k] = self._add_dimensions(v, dims, constant_keys)
         if isinstance(new_item, AttrTree):
             new_item.fixed = True
 
