@@ -56,23 +56,17 @@ class PointPlot(Plot):
             clims = points.range if self.normalize_individually else self._stack.range
             scatterplot.set_clim(clims)
 
-        return self._finalize_axis(-1)
+        return self._finalize_axis(self._keys[-1])
 
 
-    def update_frame(self, n, lbrt=None):
-        n = n if n < len(self) else len(self) - 1
-        points = list(self._stack.values())[n]
-
+    def update_handles(self, view, key, lbrt=None):
         scatter = self.handles['scatter']
-        scatter.set_offsets(points.data[:,0:2])
-        if points.data.shape[1]==3:
-            scatter.set_array(points.data[:,2])
+        scatter.set_offsets(view.data[:,0:2])
+        if view.data.shape[1]==3:
+            scatter.set_array(view.data[:,2])
 
         if self.normalize_individually:
-            scatter.set_clim(points.range)
-
-        self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
+            scatter.set_clim(view.range)
 
 
 class VectorFieldPlot(Plot):
@@ -205,17 +199,15 @@ class VectorFieldPlot(Plot):
         self.handles['quiver'] = quiver
         self.handles['input_scale'] = input_scale
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
 
-    def update_frame(self, n, lbrt=None):
-        n = n if n < len(self) else len(self) - 1
-        vfield = list(self._stack.values())[n]
-        self.handles['quiver'].set_offsets(vfield.data[:,0:2])
+    def update_handles(self, view, key, lbrt=None):
+        self.handles['quiver'].set_offsets(view.data[:,0:2])
         input_scale = self.handles['input_scale']
 
-        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
+        xs, ys, angles, lens, colors, scale = self._get_info(view, input_scale)
 
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['quiver']
@@ -225,11 +217,7 @@ class VectorFieldPlot(Plot):
             quiver.set_array(colors)
 
         if self.normalize_individually and self.color_dim == 'magnitude':
-            quiver.set_clim(vfield.range)
-
-        self._finalize_axis(n, lbrt=lbrt)
-        plt.draw()
-
+            quiver.set_clim(view.range)
 
 
 class ContourPlot(Plot):
@@ -257,14 +245,12 @@ class ContourPlot(Plot):
         self.handles['line_segments'] = line_segments
         self.ax.add_collection(line_segments)
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
-    def update_frame(self, n, lbrt=None):
-        n = n  if n < len(self) else len(self) - 1
-        contours = list(self._stack.values())[n]
-        self.handles['line_segments'].set_paths(contours.data)
-        self._finalize_axis(n, lbrt=lbrt)
+    def update_handles(self, view, key, lbrt=None):
+        self.handles['line_segments'].set_paths(view.data)
+
 
 
 
@@ -306,7 +292,8 @@ class SheetPlot(OverlayPlot):
         for zorder, stack in enumerate(stacks):
             cyclic_index, _ = next(style_groups[stack.style])
             plotype = Plot.defaults[stack.type]
-            plot = plotype(stack, zorder=zorder, **View.options.plotting(stack).opts)
+            plot = plotype(stack, zorder=zorder, all_keys=self._keys,
+                           **View.options.plotting(stack).opts)
 
             plot(self.ax, cyclic_index=cyclic_index)
             self.plots.append(plot)
@@ -360,7 +347,7 @@ class CoordinateGridPlot(OverlayPlot):
         for k, stack in self.grid.items():
             self.grid[k] = self._collapse_channels(self.grid[k])
         Plot.__init__(self, **kwargs)
-
+        self._keys = grid.all_keys
 
     def __call__(self, axis=None):
         grid_shape = [[v for (k, v) in col[1]]
@@ -395,7 +382,7 @@ class CoordinateGridPlot(OverlayPlot):
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
         for i, plot in enumerate(self.handles['projs']):
-            key, view = list(self.grid.values())[i].items()[n]
+            view = self.grid.values()[i][self._keys[n]]
             if isinstance(view, SheetOverlay):
                 data = view[-1].data if self.situate else view[-1].roi.data
             else:

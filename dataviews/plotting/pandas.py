@@ -36,7 +36,7 @@ class DFramePlot(OverlayPlot):
             plotopts = View.options.plotting(stack).opts
 
             plotype = Plot.defaults[stack.type]
-            plot = plotype(stack, size=self.size,
+            plot = plotype(stack, size=self.size, all_keys=self._keys,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
                            show_grid=self.show_grid, zorder=zorder,
@@ -124,7 +124,7 @@ class DFrameViewPlot(Plot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
     def _process_style(self, styles):
@@ -151,28 +151,25 @@ class DFrameViewPlot(Plot):
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 
-    def _update_plot(self, dfview):
+    def _update_plot(self, view):
         if self.plot_type == 'scatter_matrix':
-            pd.scatter_matrix(dfview.data, ax=self.ax, **self.style)
+            pd.scatter_matrix(view.data, ax=self.ax, **self.style)
         elif self.plot_type == 'autocorrelation_plot':
-            pd.tools.plotting.autocorrelation_plot(dfview.data, ax=self.ax, **self.style)
+            pd.tools.plotting.autocorrelation_plot(view.data, ax=self.ax, **self.style)
         elif self.plot_type == 'plot':
-            opts = dict({'x': dfview.x, 'y': dfview.y}, **self.style)
-            dfview.data.plot(ax=self.ax, **opts)
+            opts = dict({'x': view.x, 'y': view.y}, **self.style)
+            view.data.plot(ax=self.ax, **opts)
         else:
-            getattr(dfview.data, self.plot_type)(ax=self.ax, **self.style)
+            getattr(view.data, self.plot_type)(ax=self.ax, **self.style)
 
 
-    def update_frame(self, n, lbrt=None):
+    def update_handles(self, view, key, lbrt=None):
         """
         Update the plot for an animation.
         """
-        n = n if n < len(self) else len(self) - 1
-        dfview = list(self._stack.values())[n]
         if not self.plot_type in ['hist', 'scatter_matrix']:
             if self.zorder == 0: self.ax.cla()
-        self._update_plot(dfview)
-        self._finalize_axis(n, lbrt=lbrt)
+        self._update_plot(view)
 
 
 Plot.defaults.update({DataFrameView: DFrameViewPlot,

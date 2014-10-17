@@ -41,14 +41,10 @@ class FullRedrawPlot(Plot):
 
     _abstract = True
 
-    def update_frame(self, n, lbrt=None):
-        n = n if n < len(self) else len(self) - 1
-        view = list(self._stack.values())[n]
-        if lbrt is None:
-            lbrt = view.lbrt if self.rescale_individually else self._stack.lbrt
+    def update_handles(self, view, key, lbrt=None):
         if self.zorder == 0 and self.ax: self.ax.cla()
-        self._update_plot(n)
-        self._finalize_axis(n, lbrt=lbrt)
+        self._update_plot(view)
+
 
 
 class RegressionPlot(FullRedrawPlot):
@@ -78,16 +74,14 @@ class RegressionPlot(FullRedrawPlot):
 
         self.ax = self._init_axis(axis)
 
-        self._update_plot(-1)
-        return self._finalize_axis(-1, lbrt=lbrt)
+        self._update_plot(self._stack.last)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
-    def _update_plot(self, n):
-        n = n if n < len(self) else len(self) - 1
-        scatterview = list(self._stack.values())[n]
-        sns.regplot(scatterview.data[:, 0], scatterview.data[:, 1],
-                    ax=self.ax, label=scatterview.legend_label,
-                    **View.options.style(scatterview)[self.cyclic_index])
+    def _update_plot(self, view):
+        sns.regplot(view.data[:, 0], view.data[:, 1],
+                    ax=self.ax, label=view.legend_label,
+                    **View.options.style(view)[self.cyclic_index])
 
 
 
@@ -139,21 +133,20 @@ class BivariatePlot(FullRedrawPlot):
         else:
             self.ax = self._init_axis(axis)
 
-        self._update_plot(-1)
+        self._update_plot(kdeview)
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
-    def _update_plot(self, n):
-        kdeview = list(self._stack.values())[n]
+    def _update_plot(self, view):
         if self.joint:
             self.style.pop('cmap')
-            self.handles['fig'] = sns.jointplot(kdeview.data[:,0],
-                                                kdeview.data[:,1],
+            self.handles['fig'] = sns.jointplot(view.data[:,0],
+                                                view.data[:,1],
                                                 **self.style).fig
         else:
-            sns.kdeplot(kdeview.data, ax=self.ax,
-                        label=kdeview.legend_label,
+            sns.kdeplot(view.data, ax=self.ax,
+                        label=view.legend_label,
                         zorder=self.zorder, **self.style)
 
 
@@ -201,15 +194,14 @@ class TimeSeriesPlot(FullRedrawPlot):
 
         self.ax = self._init_axis(axis)
 
-        self._update_plot(-1)
+        self._update_plot(curveview)
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
-    def _update_plot(self, n):
-        curveview = list(self._stack.values())[n]
-        sns.tsplot(curveview.data, curveview.xdata, ax=self.ax,
-                   condition=curveview.legend_label,
+    def _update_plot(self, view):
+        sns.tsplot(view.data, view.xdata, ax=self.ax,
+                   condition=view.legend_label,
                    zorder=self.zorder, **self.style)
 
 
@@ -246,15 +238,14 @@ class DistributionPlot(FullRedrawPlot):
         self.style = View.options.style(distview)[cyclic_index]
         self.ax = self._init_axis(axis)
 
-        self._update_plot(-1)
+        self._update_plot(distview)
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
-    def _update_plot(self, n):
-        distview = list(self._stack.values())[n]
-        sns.distplot(distview.data, ax=self.ax,
-                     label=distview.legend_label, **self.style)
+    def _update_plot(self, view):
+        sns.distplot(view.data, ax=self.ax,
+                     label=view.legend_label, **self.style)
 
 
 
@@ -308,7 +299,7 @@ class SNSFramePlot(DFrameViewPlot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(-1, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
     def _process_style(self, styles):
@@ -328,20 +319,20 @@ class SNSFramePlot(DFrameViewPlot):
                             % self.plot_type)
 
 
-    def _update_plot(self, dfview):
+    def _update_plot(self, view):
         if self.plot_type == 'regplot':
-            sns.regplot(x=dfview.x, y=dfview.y, data=dfview.data,
+            sns.regplot(x=view.x, y=view.y, data=view.data,
                         ax=self.ax, **self.style)
         elif self.plot_type == 'interact':
-            sns.interactplot(dfview.x, dfview.x2, dfview.y,
-                             data=dfview.data, ax=self.ax, **self.style)
+            sns.interactplot(view.x, view.x2, view.y,
+                             data=view.data, ax=self.ax, **self.style)
         elif self.plot_type == 'corrplot':
-            sns.corrplot(dfview.data, ax=self.ax, **self.style)
+            sns.corrplot(view.data, ax=self.ax, **self.style)
         elif self.plot_type == 'lmplot':
-            sns.lmplot(x=dfview.x, y=dfview.y, data=dfview.data,
+            sns.lmplot(x=view.x, y=view.y, data=view.data,
                        ax=self.ax, **self.style)
         else:
-            super(SNSFramePlot, self)._update_plot(dfview)
+            super(SNSFramePlot, self)._update_plot(view)
 
 
 Plot.defaults.update({TimeSeries: TimeSeriesPlot,

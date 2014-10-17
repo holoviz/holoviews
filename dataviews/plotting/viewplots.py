@@ -85,9 +85,10 @@ class Plot(param.Parameterized):
     # A mapping from View types to their corresponding side plot types
     sideplots = {}
 
-    def __init__(self, view=None, zorder=0, **kwargs):
+    def __init__(self, view=None, zorder=0, all_keys=None, **kwargs):
         if view is not None:
             self._stack = self._check_stack(view)
+            self._keys = all_keys if all_keys else self._stack.keys()
         super(Plot, self).__init__(**kwargs)
         self.zorder = zorder
         self.ax = None
@@ -126,8 +127,9 @@ class Plot(param.Parameterized):
 
 
 
-    def _format_title(self, n):
-        key, view = self._stack.items()[n]
+    def _format_title(self, key):
+        view = self._stack.get(key, None)
+        if view is None: return None
         title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
@@ -150,7 +152,7 @@ class Plot(param.Parameterized):
         return axis
 
 
-    def _finalize_axis(self, n, title=None, lbrt=None, xticks=None, yticks=None,
+    def _finalize_axis(self, key, title=None, lbrt=None, xticks=None, yticks=None,
                        xlabel=None, ylabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
@@ -163,9 +165,9 @@ class Plot(param.Parameterized):
         axis = self.ax
 
         if self.zorder == 0 and axis is not None:
-            if n is not None:
-                view = list(self._stack.values())[n]
-                title = None if self.zorder > 0 else self._format_title(n)
+            view = self._stack.get(key, None)
+            if key is not None and view is not None:
+                title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
@@ -267,7 +269,7 @@ class Plot(param.Parameterized):
         return anim
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, lbrt=None):
         """
         Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
@@ -276,7 +278,19 @@ class Plot(param.Parameterized):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        n = n  if n < len(self) else len(self) - 1
+        n = n if n < len(self) else len(self) - 1
+        key = self._keys[n]
+        view = self._stack.get(key, None)
+        self.ax.set_visible(view is not None)
+        if view is not None:
+            axis_kwargs = self.update_handles(view, key, lbrt)
+        self._finalize_axis(key, **dict(lbrt=lbrt, **(axis_kwargs if axis_kwargs else {})))
+
+
+    def update_handles(self, view, key, lbrt=None):
+        """
+        Update the elements of the plot.
+        """
         raise NotImplementedError
 
 
@@ -284,7 +298,7 @@ class Plot(param.Parameterized):
         """
         Returns the total number of available frames.
         """
-        return len(self._stack)
+        return len(self._keys)
 
 
     def __call__(self, ax=False, zorder=0):
@@ -329,6 +343,7 @@ class GridPlot(Plot):
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(kwargs, **extra_opts))
+        self._keys = self.grid.all_keys
 
 
     def __call__(self, axis=None):
@@ -357,7 +372,7 @@ class GridPlot(Plot):
                 opts = View.options.plotting(view).opts
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title)
-                subplot = Plot.defaults[vtype](view, **opts)
+                subplot = Plot.defaults[vtype](view, all_keys=self._keys, **opts)
                 self.subplots.append(subplot)
                 self.subaxes.append(subax)
                 subplot(subax, **subplot_kwargs)
@@ -995,11 +1010,7 @@ class AnnotationPlot(Plot):
         return axis
 
 
-    def update_frame(self, n, lbrt=None):
-        n = n  if n < len(self) else len(self) - 1
-        annotation = list(self._stack.values())[n]
-        key = list(self._stack.keys())[n]
-
+    def update_handles(self, annotation, key, lbrt=None):
         # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()

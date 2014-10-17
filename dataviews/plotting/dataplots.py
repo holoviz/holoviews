@@ -67,7 +67,7 @@ class MatrixPlot(Plot):
             self.handles['annotations'] = {}
             self._annotate_values(view)
 
-        return self._finalize_axis(-1, lbrt=(l, b, r, t),
+        return self._finalize_axis(self._keys[-1], lbrt=(l, b, r, t),
                                    xticks=xticks, yticks=yticks)
 
 
@@ -103,12 +103,8 @@ class MatrixPlot(Plot):
                 self.handles['annotations'][plot_coord].set_text(text)
 
 
-
-    def update_frame(self, n):
-        n = n  if n < len(self) else len(self) - 1
+    def update_handles(self, view, key, lbrt=None):
         im = self.handles.get('im', None)
-
-        view = list(self._stack.values())[n]
         im.set_data(view.data)
 
         if isinstance(view, HeatMap):
@@ -116,8 +112,6 @@ class MatrixPlot(Plot):
 
         if self.normalize_individually:
             im.set_clim(view.range)
-
-        self._finalize_axis(n)
 
 
 
@@ -164,7 +158,7 @@ class DataPlot(OverlayPlot):
                 lbrt = self._stack.last.lbrt if self.rescale else self._stack.lbrt
 
             plotype = Plot.defaults[stack.type]
-            plot = plotype(stack, size=self.size,
+            plot = plotype(stack, size=self.size, all_keys=self._keys,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
                            show_grid=self.show_grid, zorder=zorder,
@@ -179,10 +173,11 @@ class DataPlot(OverlayPlot):
 
 
     def update_frame(self, n):
-        n = n if n < len(self) else len(self) - 1
+        view = self._get_view(n)
+        if view is None: return
         for zorder, plot in enumerate(self.plots):
             if zorder == 0:
-                lbrt = list(self._stack.values())[n].lbrt if self.rescale else self._stack.lbrt
+                lbrt = view.lbrt if self.rescale else self._stack.lbrt
             plot.update_frame(n, lbrt)
         self._finalize_axis(None)
 
@@ -312,19 +307,14 @@ class CurvePlot(Plot):
 
         self.handles['line_segment'] = line_segment
 
-        return self._finalize_axis(-1, xticks=xticks, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], xticks=xticks, lbrt=lbrt)
 
 
-    def update_frame(self, n, lbrt=None):
-        n = n  if n < len(self) else len(self) - 1
-        curveview = list(self._stack.values())[n]
-
+    def update_handles(self, view, key, lbrt=None):
         if self.cyclic_range is not None:
-            self._cyclic_curves(curveview)
-        self.handles['line_segment'].set_xdata(curveview.data[:, 0])
-        self.handles['line_segment'].set_ydata(curveview.data[:, 1])
-
-        self._finalize_axis(n, lbrt=lbrt)
+            self._cyclic_curves(view)
+        self.handles['line_segment'].set_xdata(view.data[:, 0])
+        self.handles['line_segment'].set_ydata(view.data[:, 1])
 
 
 
@@ -365,22 +355,18 @@ class ScatterPlot(CurvePlot):
         xvals = scatterview.data[:, 0]
         xticks = self._reduce_ticks(xvals)
 
-        return self._finalize_axis(-1, xticks=xticks, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], xticks=xticks, lbrt=lbrt)
 
 
-    def update_frame(self, n, lbrt=None):
-        n = n  if n < len(self) else len(self) - 1
-        scatterview = list(self._stack.values())[n]
-
+    def update_handles(self, view, key, lbrt=None):
         self.handles['paths'].remove()
 
-        paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
-                                zorder=self.zorder, label=scatterview.legend_label,
-                                **View.options.style(scatterview)[self.cyclic_index])
+        paths = self.ax.scatter(view.data[:, 0], view.data[:, 1],
+                                zorder=self.zorder, label=view.legend_label,
+                                **View.options.style(view)[self.cyclic_index])
 
         self.handles['paths'] = paths
 
-        self._finalize_axis(n, lbrt=lbrt)
 
 
 
@@ -472,24 +458,19 @@ class TablePlot(Plot):
 
         self.handles['table'] = table
 
-        return self._finalize_axis(-1)
+        return self._finalize_axis(self._keys[-1])
 
 
-    def update_frame(self, n):
-        n = n if n < len(self) else len(self) - 1
-
-        tableview = list(self._stack.values())[n]
+    def update_handles(self, view, key, lbrt=None):
         table = self.handles['table']
 
         for coords, cell in table.get_celld().items():
-            value = tableview.cell_value(*coords)
+            value = view.cell_value(*coords)
             cell.set_text_props(text=self.pprint_value(value))
 
         # Resize fonts across table as necessary
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
-
-        self._finalize_axis(n)
 
 
 
@@ -557,7 +538,7 @@ class HistogramPlot(Plot):
         ticks = self._compute_ticks(edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
 
-        return self._finalize_axis(-1, **ax_settings)
+        return self._finalize_axis(self._keys[-1], **ax_settings)
 
 
     def _process_hist(self, hist, lbrt=None):
@@ -617,7 +598,7 @@ class HistogramPlot(Plot):
         return bars
 
 
-    def _update_artists(self, n, edges, hvals, widths, lims):
+    def _update_artists(self, key, edges, hvals, widths, lims):
         """
         Update all the artists in the histogram. Subclassable to
         allow updating of further artists.
@@ -634,20 +615,17 @@ class HistogramPlot(Plot):
                 bar.set_width(width)
 
 
-    def update_frame(self, n, lbrt=None):
+    def update_handles(self, view, key, lbrt=None):
         """
         Update the plot for an animation.
         """
-        n = n if n < len(self) else len(self) - 1
-        hist = list(self._stack.values())[n]
-
         # Process values, axes and style
-        edges, hvals, widths, lims = self._process_hist(hist, lbrt)
+        edges, hvals, widths, lims = self._process_hist(view, lbrt)
 
         ticks = self._compute_ticks(edges, widths, lims)
-        ax_settings = self._process_axsettings(hist, lims, ticks)
-        self._update_artists(n, edges, hvals, widths, lims)
-        self._finalize_axis(n, **ax_settings)
+        ax_settings = self._process_axsettings(view, lims, ticks)
+        self._update_artists(key, edges, hvals, widths, lims)
+        return ax_settings
 
 
 
@@ -693,7 +671,7 @@ class SideHistogramPlot(HistogramPlot):
         self._update_plot(n, self.handles['bars'], lims)
 
 
-    def _update_plot(self, n, bars, lims):
+    def _update_plot(self, key, bars, lims):
         """
         Process the bars and draw the offset line as necessary. If a
         color map is set in the style of the 'main' View object, color
@@ -707,11 +685,11 @@ class SideHistogramPlot(HistogramPlot):
         if isinstance(main, Stack):
             if issubclass(main.type, Overlay):
                 if individually:
-                    main_range = list(main.split_stack()[0].values())[n].range
+                    main_range = main.split_stack()[0][key].range
                 else:
                     main_range = main.last[self.layout.main_layer].range
             else:
-                main_range = list(main.values())[n].range if individually else main.range
+                main_range = main[key].range if individually else main.range
         elif isinstance(main, View):
             main_range = main.range
 
