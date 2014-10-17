@@ -90,11 +90,14 @@ class Dimensional(object):
 
     @property
     def deep_dimensions(self):
+        dimensions = self.dimension_labels
         if self._deep_indexable:
-            return self.dimension_labels +\
-                self.values()[0].deep_dimensions
-        else:
-            return self.dimension_labels
+            item = self.values()[0]
+            if isinstance(item, NdMapping):
+                dimensions += item.deep_dimensions
+            else:
+                dimensions += item.dimension_labels
+        return dimensions
 
 
     @property
