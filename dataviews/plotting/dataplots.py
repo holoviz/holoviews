@@ -65,7 +65,8 @@ class MatrixPlot(Plot):
         if isinstance(view, HeatMap):
             self.ax.set_aspect(float(r - l)/(t-b))
             self.handles['annotations'] = {}
-            self._annotate_values(view)
+            if self.show_values:
+                self._annotate_values(view)
 
         return self._finalize_axis(self._keys[-1], lbrt=(l, b, r, t),
                                    xticks=xticks, yticks=yticks)
@@ -101,13 +102,18 @@ class MatrixPlot(Plot):
                 self.handles['annotations'][plot_coord] = annotation
             else:
                 self.handles['annotations'][plot_coord].set_text(text)
+        old_coords = set(self.handles['annotations'].keys()) - set(product(xpos, ypos))
+        for plot_coord in old_coords:
+            annotation = self.handles['annotations'].pop(plot_coord)
+            annotation.remove()
+
 
 
     def update_handles(self, view, key, lbrt=None):
         im = self.handles.get('im', None)
         im.set_data(view.data)
 
-        if isinstance(view, HeatMap):
+        if isinstance(view, HeatMap) and self.show_values:
            self._annotate_values(view)
 
         if self.normalize_individually:
