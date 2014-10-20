@@ -282,9 +282,8 @@ class Plot(param.Parameterized):
         key = self._keys[n]
         view = self._stack.get(key, None)
         self.ax.set_visible(view is not None)
-        if view is not None:
-            axis_kwargs = self.update_handles(view, key, lbrt)
-        self._finalize_axis(key, **dict(lbrt=lbrt, **(axis_kwargs if axis_kwargs else {})))
+        axis_kwargs = self.update_handles(view, key, lbrt) if view is not None else {}
+        self._finalize_axis(key, **dict({'lbrt': lbrt}, **(axis_kwargs if axis_kwargs else {})))
 
 
     def update_handles(self, view, key, lbrt=None):
