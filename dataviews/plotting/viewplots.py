@@ -165,7 +165,7 @@ class Plot(param.Parameterized):
         axis = self.ax
 
         if self.zorder == 0 and axis is not None:
-            view = self._stack.get(key, None)
+            view = self._stack.get(key, None) if hasattr(self, '_stack') else None
             if key is not None and view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
