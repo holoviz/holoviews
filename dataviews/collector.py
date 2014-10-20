@@ -684,6 +684,10 @@ class Collator(NdMapping):
     each Stack type contained within the AttrTree objects.
     """
 
+    drop = param.List(default=[], doc="""
+        List of dimensions to drop when collating data, specified
+        as strings.""")
+
     _deep_indexable = False
 
     def __call__(self, path_filters=[], merge=True):
@@ -709,8 +713,7 @@ class Collator(NdMapping):
               constant_keys = [(d, k) for d, k in dim_keys
                                if d in constant_dims]
               attrtree = self._add_dimensions(attrtree, varying_keys,
-                                              dict(constant_keys),
-                                              ignore)
+                                              dict(constant_keys))
            ndmapping[key] = attrtree
            progressbar(float(idx+1)/num_elements*100)
 
@@ -736,8 +739,10 @@ class Collator(NdMapping):
         for k in item.keys():
             v = item[k]
             if isinstance(v, Stack):
-                for dim, val in dims[::-1]:
-                    if dim not in v.dimension_labels:
+                dim_vals = [(dim, val) for dim, val in dims[::-1]
+                            if dim not in self.drop]
+                for dim, val in dim_vals:
+                    if dim.capitalize() not in v.dimension_labels:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v
