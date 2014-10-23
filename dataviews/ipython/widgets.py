@@ -20,13 +20,6 @@ except:
     widgets = None
     FloatSliderWidget = object
 
-import jinja2
-
-try:
-    import mpld3
-except:
-    mpld3 = None
-
 # IPython 0.13 does not have version_info
 ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
@@ -306,9 +299,9 @@ class NdWidget(param.Parameterized):
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
-        if ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3:
-            from mpld3 import plugins
-            plugins.connect(fig, plugins.MousePosition(fontsize=14))
+        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+            import mpld3
+            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_html(fig)
         elif self._figure_display_mode == 'print_figure':
             return print_figure(fig)
@@ -374,8 +367,7 @@ class ViewSelector(NdWidget):
 
     def __call__(self):
         # Initalize image widget
-        if ((ViewMagic.FIGURE_FORMAT == 'mpld3' and mpld3)
-            or ViewMagic.FIGURE_FORMAT == 'svg'):
+        if ViewMagic.FIGURE_FORMAT in ['mpld3', 'svg']:
             self.image_widget = widgets.HTMLWidget()
         else:
             self.image_widget = widgets.ImageWidget()
@@ -496,6 +488,7 @@ class JSSelector(NdWidget):
             key_data[str(tuple(key))] = i
 
         # Set up jinja2 templating
+        import jinja2
         path, _ = os.path.split(os.path.abspath(__file__))
         templateLoader = jinja2.FileSystemLoader(searchpath=path)
         templateEnv = jinja2.Environment(loader=templateLoader)
