@@ -179,7 +179,9 @@ class DataPlot(OverlayPlot):
 
 
     def update_frame(self, n):
-        view = self._get_view(n)
+        n = n if n < len(self) else len(self) - 1
+        key = self._keys[n]
+        view = self._stack.get(key, None)
         if view is None: return
         for zorder, plot in enumerate(self.plots):
             if zorder == 0:
