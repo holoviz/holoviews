@@ -12,12 +12,12 @@ import param
 
 from ..ndmapping import Dimension
 from ..views import Overlay
-from ..dataviews import DataLayer, Scatter, DataStack
+from ..dataviews import Layer, Scatter, LayerMap
 from ..options import options, StyleOpts, Cycle
 from .pandas import DFrame as PandasDFrame
 
 
-class TimeSeries(DataLayer):
+class TimeSeries(Layer):
     """
     TimeSeries is a container for any set of curves, which the
     seaborn interface combines into a confidence interval, error
@@ -26,12 +26,12 @@ class TimeSeries(DataLayer):
     The curves should be supplied as an NxM dimensional array,
     x-values may also be supplied and must be of length N or M.
 
-    Alternatively a Stack or Overlay of Curve objects may be
+    Alternatively a HoloMap or Overlay of Curve objects may be
     supplied.
     """
 
     def __init__(self, data, xvals=None, **params):
-        if isinstance(data, DataStack):
+        if isinstance(data, LayerMap):
             self.xdata = data.values()[0].data[:,0]
             data = np.array([dv.data[:, 1] for dv in data.values()])
         elif isinstance(data, Overlay):
@@ -71,6 +71,7 @@ class TimeSeries(DataLayer):
             x_vals = self.xdata
             return (float(min(x_vals)), float(max(x_vals)))
 
+
     @property
     def ylim(self):
         return (np.min(self.data), np.max(self.data))
@@ -95,7 +96,7 @@ class Bivariate(Scatter):
 
 
 
-class Distribution(DataLayer):
+class Distribution(Layer):
     """
     Distribution Views provide a container for data to be
     visualized as a one-dimensional distribution. The data should

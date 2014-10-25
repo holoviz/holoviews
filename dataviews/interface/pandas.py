@@ -19,38 +19,12 @@ except:
 import param
 
 from .. import Dimension, NdMapping
-from ..dataviews import HeatMap, DataStack, Table, TableStack
+from ..dataviews import HeatMap, LayerMap, Layer, Items, TableStack
 from ..options import options, PlotOpts
-from ..views import View, Overlay, Stack, Annotation, Grid, GridLayout
+from ..views import Grid, GridLayout, View
 
 
-class DFrameLayer(View):
-    """
-    Abstract class implements common methods for all Pandas dframe
-    based View types.
-    """
-
-    def __mul__(self, other):
-        if isinstance(other, DFrameStack):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
-        elif isinstance(self, DFrameOverlay):
-            if isinstance(other, DFrameOverlay):
-                overlays = self.data + other.data
-            else:
-                overlays = self.data + [other]
-        elif isinstance(other, DFrameOverlay):
-            overlays = [self] + other.data
-        elif isinstance(other, DataFrameView):
-            overlays = [self, other]
-        else:
-            raise TypeError('Can only create an overlay of DFrameLayers.')
-
-        return DFrameOverlay(overlays)
-
-
-
-class DataFrameView(DFrameLayer):
+class DataFrameView(Layer):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -99,8 +73,9 @@ class DataFrameView(DFrameLayer):
                 if dim_name in data.columns:
                     dims[list(data.columns).index(dim_name)] = dim
 
-        super(DataFrameView, self).__init__(data, dimensions=dims, **params)
-
+        self._xlim = None
+        self._ylim = None
+        View.__init__(self, data, dimensions=dims, **params)
         self.data.columns = self.dimension_labels
 
 
@@ -197,9 +172,31 @@ class DataFrameView(DFrameLayer):
 
     def stack(self, dimensions=[]):
         """
-        Splits the supplied dimensions out into a DFrameStack.
+        Splits the supplied dimensions out into a LayerMap.
         """
-        return self._split_dimensions(dimensions, DFrameStack)
+        return self._split_dimensions(dimensions, LayerMap)
+
+
+    @property
+    def xlim(self):
+        if self._xlim:
+            return self._xlim
+        if self.x:
+            xdata = self.data[self.x]
+            return min(xdata), max(xdata)
+        else:
+            return None, None
+
+
+    @property
+    def ylim(self):
+        if self._ylim:
+            return self._ylim
+        elif self.y:
+            ydata = self.data[self.y]
+            return min(ydata), max(ydata)
+        else:
+            return None, None
 
 
 
@@ -213,7 +210,7 @@ class DFrame(DataFrameView):
     def _create_table(self, temp_dict, value_dim, dims):
         dimensions = [self.dim_dict.get(d, d) for d in dims] if dims else {}
         label = self.label + (' - ' if self.label else '') + value_dim
-        return Table(temp_dict, value=value_dim, dimensions=dimensions,
+        return Items(temp_dict, value=value_dim, dimensions=dimensions,
                      label=label)
 
 
@@ -229,7 +226,7 @@ class DFrame(DataFrameView):
                          stack_type=None):
         """
         The core conversion method from the Pandas DataFrame to a View
-        or Stack type. The value_dim specifies the column in the
+        or HoloMap type. The value_dim specifies the column in the
         DataFrame to select, additionally indices or a reduce_fn can
         be supplied to select or reduce multiple entries in the
         DataFrame. Further, the view_dims and stack_dims determine
@@ -247,7 +244,7 @@ class DFrame(DataFrameView):
         filter_dims = list(set(self.dimension_labels) - set(selected_dims))        
         df = self.data.filter(selected_dims) if filter_dims else self.dframe()
 
-        # Set up for View and Stack dimension splitting operations
+        # Set up for View and HoloMap dimension splitting operations
         view_dimensions = view_dims
         if stack_dims:
             stack_dfs = df.groupby(stack_dims)
@@ -307,8 +304,8 @@ class DFrame(DataFrameView):
         a value_dimension to be specified. Optionally a list indices
         or a reduce_fn can be specified to select or reduce multiple
         entries. Finally view_dims and stack_dims can be specified to
-        be inserted into the Table and TableStack respectively.  If
-        not stack_dims are specified a single Table will be returned.
+        be inserted into the Items and TableStack respectively.  If
+        not stack_dims are specified a single Items will be returned.
         """
         return self._export_dataview(value_dim, indices, reduce_fn,
                                      dims, stack_dims, self._create_table,

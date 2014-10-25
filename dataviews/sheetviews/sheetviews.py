@@ -5,119 +5,12 @@ import param
 from .boundingregion import BoundingBox, BoundingRegion
 from .sheetcoords import SheetCoordinateSystem, Slice
 
-from ..dataviews import Matrix, DataStack, TableStack
+from ..dataviews import Matrix, LayerMap, Layer
 from ..ndmapping import NdMapping, Dimension
 from ..options import channels
 from ..views import View, Overlay, Annotation, Grid, find_minmax
 
 
-class SheetLayer(View):
-    """
-    A SheetLayer is a data structure for holding one or more numpy
-    arrays embedded within a two-dimensional space. The array(s) may
-    correspond to a discretisation of an image (i.e. a rasterisation)
-    or vector elements such as points or lines. Lines may be linearly
-    interpolated or correspond to control nodes of a smooth vector
-    representation such as Bezier splines.
-    """
-
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
-
-    bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
-       The bounding region in sheet coordinates containing the data.""")
-
-    roi_bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
-        The ROI can be specified to select only a sub-region of the bounds to
-        be stored as data.""")
-
-    value = param.ClassSelector(class_=(str, Dimension),
-                                default=Dimension('Z'), doc="""
-        The default dimension for SheetLayers is the Z-axis.""")
-
-    _abstract = True
-
-
-    @property
-    def stack_type(self):
-        return SheetStack
-
-
-    def __init__(self, data, bounds, **kwargs):
-        View.__init__(self, data, bounds=bounds, **kwargs)
-        self._lbrt = self.bounds.lbrt()
-
-
-    def __mul__(self, other):
-
-        if isinstance(other, SheetStack):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
-
-        self_layers = self.data if isinstance(self, SheetOverlay) else [self]
-        other_layers = other.data if isinstance(other, SheetOverlay) else [other]
-        combined_layers = self_layers + other_layers
-
-        if isinstance(other, Annotation):
-            return SheetOverlay(combined_layers, self.bounds,
-                                roi_bounds=self.roi_bounds)
-
-        if self.bounds is None:
-            self.bounds = other.bounds
-        elif other.bounds is None:
-            other.bounds = self.bounds
-
-        roi_bounds = self.roi_bounds if self.roi_bounds else other.roi_bounds
-        roi_bounds = self.bounds if roi_bounds is None else roi_bounds
-        return SheetOverlay(combined_layers, self.bounds, roi_bounds=roi_bounds)
-
-
-    def dimension_values(self, dimension):
-        """
-        The set of samples available along a particular dimension.
-        """
-        dim_index = self.dim_index(dimension)
-        l, b, r, t = self.lbrt
-        dim_min, dim_max = [(l, r), (b, t)][dim_index]
-        dim_len = self.data.shape[dim_index]
-        half_unit = (dim_max - dim_min)/dim_len/2.
-        coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
-        return [self.closest_cell_center(*coord_fn(v))[dim_index]
-                for v in np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)]
-
-
-    @property
-    def xlabel(self):
-        return str(self.dimensions[0])
-
-
-    @property
-    def ylabel(self):
-        return str(self.dimensions[1])
-
-
-    @property
-    def xlim(self):
-        l, _, r, _ = self.bounds.lbrt()
-        return (l, r)
-
-
-    @property
-    def ylim(self):
-        _, b, _, t = self.bounds.lbrt()
-        return (b, t)
-
-
-    @property
-    def lbrt(self):
-        if hasattr(self, '_lbrt'):
-            return self._lbrt
-        else:
-            return self.bounds.lbrt()
-
-
-    @lbrt.setter
-    def lbrt(self, lbrt):
-        self._lbrt = lbrt
 
 
 
@@ -220,7 +113,7 @@ class SheetOverlay(SheetLayer, Overlay):
 
 
 
-class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
+class SheetView(SheetCoordinateSystem, Matrix):
     """
     SheetView is the atomic unit as which 2D data is stored, along with its
     bounds object. Allows slicing operations of the data in sheet coordinates or
@@ -231,11 +124,17 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
     representation.
     """
 
+    bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
+       The bounding region in sheet coordinates containing the data.""")
+
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
         The label of the x- and y-dimension of the SheetView in form
         of a string or dimension object.""")
 
+    roi_bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
+        The ROI can be specified to select only a sub-region of the bounds to
+        be stored as data.""")
 
     value = param.ClassSelector(class_=(str, Dimension),
                                 default=Dimension('Z'), doc="""
@@ -246,14 +145,14 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
     def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
         data = np.array([[0]]) if data is None else data
-        self.lbrt = bounds.lbrt()
         l, b, r, t = bounds.lbrt()
         (dim1, dim2) = data.shape[0], data.shape[1]
         xdensity = xdensity if xdensity else dim1/(r-l)
         ydensity = ydensity if ydensity else dim2/(t-b)
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
-        SheetLayer.__init__(self, data, bounds, **kwargs)
+        Layer.__init__(self, data, **kwargs)
+        self._lbrt = self.bounds.lbrt()
 
 
     def __getitem__(self, coords):
@@ -281,6 +180,29 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
                          label=self.label, style=self.style,
                          value=self.value)
 
+    @property
+    def xlim(self):
+        l, _, r, _ = self.bounds.lbrt()
+        return (l, r)
+
+
+    @property
+    def ylim(self):
+        _, b, _, t = self.bounds.lbrt()
+        return (b, t)
+
+
+    @property
+    def lbrt(self):
+        if hasattr(self, '_lbrt'):
+            return self._lbrt
+        else:
+            return self.bounds.lbrt()
+
+    @lbrt.setter
+    def lbrt(self, lbrt):
+        self._lbrt = lbrt
+
 
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
@@ -301,8 +223,22 @@ class SheetView(SheetCoordinateSystem, SheetLayer, Matrix):
         return SheetView(data, roi_bounds, style=self.style, value=self.value)
 
 
+    def dimension_values(self, dimension):
+        """
+        The set of samples available along a particular dimension.
+        """
+        dim_index = self.dim_index(dimension)
+        l, b, r, t = self.lbrt
+        dim_min, dim_max = [(l, r), (b, t)][dim_index]
+        dim_len = self.data.shape[dim_index]
+        half_unit = (dim_max - dim_min)/dim_len/2.
+        coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
+        return [self.closest_cell_center(*coord_fn(v))[dim_index]
+                for v in np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)]
 
-class Points(SheetLayer):
+
+
+class Points(Layer):
     """
     Allows sets of points to be positioned over a sheet coordinate
     system. Each points may optionally be associated with a chosen
@@ -324,6 +260,12 @@ class Points(SheetLayer):
     they should lie in the range [0,1].
     """
 
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
+                            constant=True, doc="""
+        The label of the x- and y-dimension of the SheetView in form
+        of a string or dimension object.""")
+
+
     _null_value = np.array([[], []]).T # For when data is None
     _min_dims = 2                      # Minimum number of columns
     _range_column = 3                 # Column used by range property
@@ -331,9 +273,7 @@ class Points(SheetLayer):
     value = param.ClassSelector(class_=(str, Dimension),
                                 default=Dimension('Magnitude'))
 
-    def __init__(self, data, bounds=None, **kwargs):
-        bounds = bounds if bounds else BoundingBox()
-
+    def __init__(self, data, **kwargs):
         if isinstance(data, tuple):
             arrays = [np.array(d) for d in data]
             if not all(len(arr)==len(arrays[0]) for arr in arrays):
@@ -349,10 +289,18 @@ class Points(SheetLayer):
             raise Exception("%s requires a minimum of %s columns."
                             % (self.__class__.__name__, self._min_dims))
 
-        super(Points, self).__init__(data, bounds, **kwargs)
+        super(Points, self).__init__(data, **kwargs)
 
-    def resize(self, bounds):
-        return Points(self.data, bounds, style=self.style)
+
+    def __getitem__(self, keys):
+        pass
+
+
+    @property
+    def ylim(self):
+        ydata = self.data[:, 1]
+        return min(ydata), max(ydata)
+
 
     @property
     def range(self):
@@ -364,18 +312,9 @@ class Points(SheetLayer):
         return (self.data[:,col-1:col].min(),
                 self.data[:,col-1:col].max())
 
+
     def __len__(self):
         return self.data.shape[0]
-
-
-    @property
-    def roi(self):
-        if self.roi_bounds is None: return self
-        (N,_) = self.data.shape
-        roi_data = self.data[[n for n in range(N)
-                              if self.data[n,...][:2] in self.roi_bounds]]
-        roi_bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return Points(roi_data, roi_bounds, style=self.style)
 
 
     def __iter__(self):
@@ -422,7 +361,7 @@ class VectorField(Points):
 
 
 
-class Contours(SheetLayer):
+class Contours(Layer):
     """
     Allows sets of contour lines to be defined over a
     SheetCoordinateSystem.
@@ -432,10 +371,14 @@ class Contours(SheetLayer):
     array corresponds to an X,Y coordinate.
     """
 
-    def __init__(self, data, bounds=None, **kwargs):
-        bounds = bounds if bounds else BoundingBox()
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
+                            constant=True, doc="""
+        The label of the x- and y-dimension of the SheetView in form
+        of a string or dimension object.""")
+
+    def __init__(self, data, **kwargs):
         data = [] if data is None else data
-        super(Contours, self).__init__(data, bounds, **kwargs)
+        super(Contours, self).__init__(data, **kwargs)
 
 
     def resize(self, bounds):
@@ -445,15 +388,19 @@ class Contours(SheetLayer):
     def __len__(self):
         return len(self.data)
 
+    @property
+    def xlim(self):
+        if self._xlim: return self._xlim
+        xmin = min(min(c[:, 0]) for c in self.data)
+        xmax = max(max(c[:, 0]) for c in self.data)
+        return xmin, xmax
 
     @property
-    def roi(self):
-        # Note: Data returned is not sliced to ROI because vertices
-        # outside the bounds need to be snapped to the bounding box
-        # edges.
-        bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return Contours(self.data, bounds, style=self.style, label=self.label)
-
+    def ylim(self):
+        if self._ylim: return self._ylim
+        ymin = min(min(c[:, 0]) for c in self.data)
+        ymax = max(max(c[:, 0]) for c in self.data)
+        return ymin, ymax
 
 
 class SheetStack(DataStack):

@@ -5,48 +5,55 @@ import param
 
 from .ndmapping import Dimension, NdMapping
 from .options import options
-from .views import View, Overlay, Annotation, Stack, find_minmax
+from .views import View, Overlay, Annotation, HoloMap, find_minmax
 
 
 
-class DataLayer(View):
+class Layer(View):
     """
-    DataLayer is a 2D View type used to hold data indexed
+    Layer is a 2D View type used to hold data indexed
     by an x-dimension and y-dimension. The data held within
-    the DataLayer is a numpy array of shape (n, 2).
-
-    DataLayer objects are sliceable along the X dimension
+    the Layer is a numpy array of shape (n, 2). 
+    Layer objects are sliceable along the X dimension
     allowing easy selection of subsets of the data.
+    However, subclasses can override the default storage type,
+    dimensions and slicing operations.
     """
 
-    dimensions = param.List(default=[Dimension('X')])
+    dimensions = param.List(default=[Dimension('X')], doc="""
+        Dimensions on Layers determine the number of indexable
+        dimensions.""")
 
     legend_label = param.String(default="", doc="Legend labels")
 
-    value = param.ClassSelector(class_=(str, Dimension), default='Y')
+    value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
 
     def __init__(self, data, **kwargs):
         settings = {}
-        if isinstance(data, DataLayer):
+        if isinstance(data, Layer):
             settings = dict(data.get_param_values())
             data = data.data
-        elif isinstance(data, Stack) or (isinstance(data, list) and data
-                                         and isinstance(data[0], DataLayer)):
+        elif isinstance(data, HoloMap) or (isinstance(data, list) and data
+                                         and isinstance(data[0], Layer)):
             data, settings = self._process_stack(data)
 
-        data = list(data)
         if len(data) and not isinstance(data, np.ndarray):
             data = np.array(data)
 
         self._xlim = None
         self._ylim = None
         settings.update(kwargs)
-        super(DataLayer, self).__init__(data, **settings)
+        super(Layer, self).__init__(data, **settings)
+
+
+    @property
+    def stack_type(self):
+        return LayerMap
 
 
     def _process_stack(self, stack):
         """
-        Base class to process a DataStack to be collapsed into a DataLayer.
+        Base class to process a LayerMap to be collapsed into a Layer.
         Should return the data and parameters of reduced View.
         """
         data = []
@@ -55,40 +62,46 @@ class DataLayer(View):
         return np.concatenate(data), dict(v.get_param_values())
 
 
-    def sample(self, **samples):
+    def __mul__(self, other):
+        if isinstance(other, LayerMap):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items=items)
+
+        self_layers = self.data if isinstance(self, Overlay) else [self]
+        other_layers = other.data if isinstance(other, Overlay) else [other]
+        combined_layers = self_layers + other_layers
+
+        return Overlay(combined_layers)
+
+
+    def sample(self, samples=[]):
         """
-        Allows sampling of DataLayer objects using the default
+        Allows sampling of Layer objects using the default
         syntax of providing a map of dimensions and sample pairs.
         """
-        sample_data = {}
-        for sample_dim, samples in samples.items():
-            if not isinstance(samples, list): samples = [samples]
-            for sample in samples:
-                if sample_dim in self.dimension_labels:
-                    sample_data[sample] = self[sample]
-                else:
-                    self.warning('Sample dimension %s invalid on %s'
-                                 % (sample_dim, type(self).__name__))
+        sample_data = OrderedDict()
+        for sample in samples:
+            sample_data[sample] = self[sample]
         return Table(sample_data, **dict(self.get_param_values()))
 
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Allows collapsing of DataLayer objects using the supplied map of
+        Allows collapsing of Layer objects using the supplied map of
         dimensions and reduce functions.
         """
-        reduced_data = {}
+        reduced_data = OrderedDict()
         value = self.value(' '.join([label_prefix, self.value.name]))
         for dimension, reduce_fn in reduce_map.items():
-            data = reduce_fn(self.data[:, 1])
-            reduced_data[value] = data
-        return Table(reduced_data, label=self.label, title=self.title)
+            reduced_data[value] = reduce_fn(self.data[:, 1])
+        return Items(reduced_data, label=self.label, title=self.title,
+                     value=self.value(value))
 
 
     def __getitem__(self, slc):
         """
         Implements slicing or indexing of the data by the data x-value.
-        If a single element is indexed reduces the DataLayer to a single
+        If a single element is indexed reduces the Layer to a single
         Scatter object.
         """
         if slc is ():
@@ -107,27 +120,17 @@ class DataLayer(View):
 
 
     def __mul__(self, other):
-        if isinstance(other, DataStack):
+        if isinstance(other, LayerMap):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
-        elif isinstance(self, DataOverlay):
-            if isinstance(other, DataOverlay):
-                overlays = self.data + other.data
-            else:
-                overlays = self.data + [other]
-        elif isinstance(other, DataOverlay):
+        elif isinstance(other, Overlay):
             overlays = [self] + other.data
-        elif isinstance(other, (DataLayer, Annotation)):
+        elif isinstance(other, (Layer, Annotation)):
             overlays = [self, other]
         else:
             raise TypeError('Can only create an overlay of DataViews.')
 
-        return DataOverlay(overlays)
-
-
-    @property
-    def stack_type(self):
-        return DataStack
+        return Overlay(overlays)
 
 
     @property
@@ -145,7 +148,10 @@ class DataLayer(View):
 
     @property
     def ylabel(self):
-        return str(self.value)
+        if len(self.dimensions) == 1:
+            return self.value.pprint_label
+        else:
+            return self.dimensions[1].pprint_label
 
 
     @property
@@ -175,13 +181,19 @@ class DataLayer(View):
 
 
     @property
+    def range(self):
+        y_vals = self.data[:, 1]
+        return (float(min(y_vals)), float(max(y_vals)))
+
+
+    @property
     def ylim(self):
         if self._ylim:
             return self._ylim
         elif isinstance(self, Overlay):
             return None
-        y_vals = self.data[:, 1]
-        return (float(min(y_vals)), float(max(y_vals)))
+        else:
+            return self.range
 
 
     @ylim.setter
@@ -203,31 +215,30 @@ class DataLayer(View):
         return l, b, r, t
 
 
-
-class Scatter(DataLayer):
-    """
-    Scatter is a simple 1D View, which gets displayed as a number of
-    disconnected points.
-    """
-
-
-class Curve(DataLayer):
-    """
-    Curve is a simple 1D View of points and therefore assumes the data is
-    ordered.
-    """
-
-    def __init__(self, data, **kwargs):
-        super(Curve, self).__init__(data, **kwargs)
-
-
     def dframe(self):
         import pandas as pd
         return pd.DataFrame(self.data, columns=[self.dimension_labels[0], self.value.name])
 
 
-    def stack(self):
-        stack = DataStack(None, dimensions=[self.xlabel], title=self.title+' {dims}')
+
+class Scatter(Layer):
+    """
+    Scatter is a simple 1D View, which gets displayed as a number of
+    disconnected points.
+    """
+    
+    pass
+
+
+
+class Curve(Layer):
+    """
+    Curve is a simple 1D View of points and therefore assumes the data is
+    ordered.
+    """
+
+    def animate(self):
+        stack = LayerMap(None, dimensions=[self.xlabel], title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
             if x in stack:
@@ -237,7 +248,7 @@ class Curve(DataLayer):
         return stack
 
 
-class Bars(DataLayer):
+class Bars(Layer):
     """
     A bar is a simple 1D View of bars, which assumes that the data is sorted by
     x-value and there are no gaps in the bars.
@@ -256,7 +267,7 @@ class Bars(DataLayer):
 
 
 
-class Histogram(DataLayer):
+class Histogram(Layer):
     """
     Histogram contains a number of bins, which are defined by the upper
     and lower bounds of their edges and the computed bin values.
@@ -264,7 +275,7 @@ class Histogram(DataLayer):
 
     title = param.String(default='{label} {type}')
 
-    value = param.ClassSelector(class_=(str, Dimension), default='Frequency')
+    value = param.ClassSelector(class_=Dimension, default=Dimension('Frequency'))
 
     def __init__(self, values, edges=None, **kwargs):
         self.values, self.edges, settings = self._process_data(values, edges)
@@ -279,7 +290,7 @@ class Histogram(DataLayer):
         histogram bins rather than bin centers.
         """
         settings = {}
-        if isinstance(values, DataLayer):
+        if isinstance(values, Layer):
             values = values.data[:, 0]
             edges = values.data[:, 1]
             settings = dict(values.get_param_values())
@@ -368,7 +379,7 @@ class DataOverlay(DataLayer, Overlay):
 
 
 
-class Matrix(DataLayer):
+class Matrix(Layer):
     """
     Matrix is a basic 2D atomic View type.
 
@@ -423,7 +434,7 @@ class Matrix(DataLayer):
         the Matrix as a side-plot.
 
         The 'individually' argument specifies whether the histogram
-        will be rescaled for each Matrix in a Stack.
+        will be rescaled for each Matrix in a HoloMap.
         """
         range = find_minmax(self.range, (0, -float('inf')))\
             if bin_range is None else bin_range
@@ -464,26 +475,28 @@ class Matrix(DataLayer):
         return (xidx, yidx)
 
 
-    def sample(self, coords=[], **samples):
+    def sample(self, samples=[], **sample_values):
         """
-        Sample the Matrixalong one or both of its dimensions,
+        Sample the Matrix along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
-        a Table, Curve or Scatter. If two dimension samples
+        a Items, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
         of the sampled unit indexed by the value in the new_xaxis
         tuple.
         """
-        if len(samples) == self.ndims or len(coords):
-            if not len(coords):
-                coords = zip(*[c if isinstance(c, list) else [c] for didx, c in
+        if isinstance(samples, tuple):
+            X, Y = samples
+            samples = zip(X, Y)
+        if len(sample_values) == self.ndims or len(samples):
+            if not len(samples):
+                samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
                                sorted([(self.dim_index(k), v) for k, v in
-                                       samples.items()])])
+                                       sample_values.items()])])
             table_data = OrderedDict()
-            for c in coords:
+            for c in samples:
                 table_data[c] = self.data[self._coord2matrix(c)]
             return Table(table_data, dimensions=self.dimensions,
-                         label=self.label,
-                         value=self.value)
+                             label=self.label, value=self.value)
         else:
             dimension, sample_coord = samples.items()[0]
             if isinstance(sample_coord, slice):
@@ -585,7 +598,7 @@ class Matrix(DataLayer):
 
 
 
-class HeatMap(Matrix, DataLayer):
+class HeatMap(Matrix):
     """
     HeatMap is an atomic View element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -749,22 +762,39 @@ class Table(View):
         return self.clone(sampled_data)
 
 
-    def reduce(self, **reduce_map):
-        reduced_data = {}
-        for reduce_label, reduce_fn in reduce_map.items():
-            data = reduce_fn(self.data.values())
-            reduced_data[reduce_label] = data
-        return self.clone(reduced_data)
 
+class Items(Layer):
+    """
+    A tabular view type to allow convenient visualization of either a
+    standard Python dictionary or an OrderedDict. If an OrderedDict is
+    used, the headings will be kept in the correct order. Tables store
+    heterogeneous data with different labels. Optionally a list of
+    dimensions corresponding to the labels can be supplied.
+    """
+
+    xlabel, ylabel = None, None
+    xlim, ylim = (None, None), (None, None)
+    lbrt = xlim + ylim
 
     @property
     def rows(self):
-        return len(self.heading_map)
+        return self.ndims
 
 
     @property
     def cols(self):
         return 2
+
+
+    def __init__(self, data, **kwargs):
+        # Assume OrderedDict if not a vanilla Python dict
+        headings = data.keys()
+        if type(data) == dict:
+            headings = sorted(headings)
+            data = OrderedDict([(h, data[h]) for h in headings])
+        if 'dimensions' not in kwargs:
+            kwargs['dimensions'] = headings
+        View.__init__(self, data=data, **kwargs)
 
 
     def __getitem__(self, heading):
@@ -773,32 +803,38 @@ class Table(View):
         """
         if heading is ():
             return self
-        if heading not in self.heading_map:
+        if heading not in self.dim_dict:
             raise IndexError("%r not in available headings." % heading)
         return self.data[heading]
+
+
+    def sample(self, samples=None):
+        if callable(samples):
+            sampled_data = OrderedDict([item for item in self.data.items()
+                                        if samples(item)])
+        else:
+            sampled_data = OrderedDict([(s, self.data[s]) for s in samples])
+        return self.clone(sampled_data)
+
+
+    def reduce(self, **reduce_map):
+        raise NotImplementedError('Tables are for heterogeneous data, which'
+                                  'cannot be reduced.')
 
 
     def cell_value(self, row, col):
         """
         Get the stored value for a given row and column indices.
         """
-        if col > 1:
-            raise Exception("Only two columns available in a Table.")
+        if col > 2:
+            raise Exception("Only two columns available in a Items.")
         elif row >= self.rows:
-            raise Exception("Maximum row index is %d" % len(self.headings)-1)
+            raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return list(self.heading_map.values())[row]
+            return list(self.dim_dict.values())[row]
         else:
-            heading = list(self.heading_map.keys())[row]
+            heading = list(self.dim_dict.keys())[row]
             return self.data[heading]
-
-
-    def heading_values(self):
-        return list(self.heading_map.keys())
-
-
-    def heading_names(self):
-        return list(self.heading_map.values())
 
 
     def cell_type(self, row, col):
@@ -812,7 +848,7 @@ class Table(View):
 
     def dframe(self):
         """
-        Generates a Pandas dframe from the Table.
+        Generates a Pandas dframe from the Items.
         """
         from pandas import DataFrame
         df_dict = defaultdict(list)
@@ -829,121 +865,88 @@ class Table(View):
 
 
 
-class TableStack(Stack):
-    """
-    A TableStack may hold any number of TableViews indexed by a list
-    of dimension values. It also allows the values of a particular
-    cell to be sampled by name across any valid dimension.
-    """
-    _type = Table
+class Table(Items, NdMapping):
 
-    _type_map = None
+    value = param.ClassSelector(class_=Dimension,
+                                default=Dimension('Value'), doc="""
+        The dimension description of the data held in the data array.""")
+
+    def __init__(self, data, **params):
+        super(Table, self).__init__(data, **params)
+        self._data = self.data
+
+    @property
+    def stack_type(self):
+        return TableStack
+
+    @property
+    def rows(self):
+        return len(self) + 1
+
+    @property
+    def cols(self):
+        return self.ndims + 1
 
 
-    def sample(self, samples):
+    def cell_value(self, row, col):
         """
-        Samples the Table elements in the Stack by the provided samples.
-        If multiple samples are provided the samples are laid out side
-        by side in a GridLayout. By providing an x_dimension the individual
-        samples are joined up into a Curve.
+        Get the stored value for a given row and column indices.
         """
-        return self.clone([(k, view.sample(samples)) for k, view in self.items()])
-
-
-
-    def reduce(self, **reduce_map):
-        """
-        Reduces the Tables in the Stack using the provided the function
-        provided in the reduce_tuple (reduced_label, reduce_fn).
-
-        If an x_dimension is provided the reduced values are joined up
-        to a Curve. By default reduces all values in a Table but using
-        a match_fn a subset of elements in the Tables can be selected.
-        """
-        return self.clone([(k, view.reduce(reduce_map)) for k, view in self.items()])
-
-
-    def collate(self, collate_dim):
-        """
-        Collate splits out the specified dimension and joins the samples
-        in each of the split out Stacks into Curves. If there are multiple
-        entries in the Table it will lay them out into a Grid.
-        """
-        if self.ndims == 1:
-            nested_stack = {1: self}
-            new_dimensions = ['Temp']
+        if col >= self.cols:
+            raise Exception("Maximum column index is %d" % self.cols-1)
+        elif row >= self.rows:
+            raise Exception("Maximum row index is %d" % self.rows-1)
+        elif row == 0:
+            if col == self.ndims:
+                return str(self.value)
+            return str(self.dimensions[col])
         else:
-            nested_stack = self.split_dimensions([collate_dim])
-            new_dimensions = [d for d in self.dimensions if d.name != collate_dim]
-        collate_dim = self.dim_dict[collate_dim]
-
-        # Generate a DataStack for every entry in the table
-        stack_fn = lambda: DataStack(**dict(self.get_param_values(), dimensions=new_dimensions))
-        entry_dims = OrderedDict([(str(k), k) for k in self.last.data.keys()])
-        stacks = OrderedDict([(entry, stack_fn()) for entry in entry_dims])
-        for new_key, collate_stack in nested_stack.items():
-            curve_data = OrderedDict([(k, []) for k in entry_dims.keys()])
-            # Get the x- and y-values for each entry in the Table
-            xvalues = [float(k) for k in collate_stack.keys()]
-            for x, table in collate_stack.items():
-                for label, value in table.data.items():
-                    curve_data[str(label)].append(float(value))
-
-            # Get data from table
-            table = collate_stack.last
-            table_dimensions = table.dimensions
-            table_title = ' ' + table.title
-            table_label = table.label
-
-            # Generate curves with correct dimensions
-            for label, yvalues in curve_data.items():
-                settings = dict(dimensions=[collate_dim])
-                label = entry_dims[label]
-                if len(table_dimensions):
-                    if not isinstance(label, tuple): label = (label,)
-                    title = ', '.join([d.pprint_value(label[idx]) for idx, d in
-                                      enumerate(table_dimensions)]) + table_title
-                    settings.update(value=table.value, label=table_label, title=title)
-                else:
-                    settings.update(value=label, label=table_label,
-                                    title='{label} - {value}')
-                stacks[str(label)][new_key] = Curve(zip(xvalues, yvalues), **settings)
-
-        # If there are multiple table entries, generate grid
-        stack_data = list(stacks.values())
-        if self.ndims == 1: stack_data = [stack.last for stack in stack_data]
-        stack_grid = stack_data[0]
-        for stack in stack_data[1:]:
-            stack_grid += stack
-        return stack_grid
+            if col == self.ndims:
+                return self.values()[row-1]
+            return self.keys()[row-1][col]
+            heading = list(self.dim_dict.keys())[row]
+            return self.data[heading]
 
 
-    def heading_values(self):
-        return self.last.heading_values() if len(self) else []
+    def cell_type(self, row, col):
+        """
+        Returns the cell type given a row and column index. The common
+        basic cell types are 'data' and 'heading'.
+        """
+        if col == self.ndims and row > 0:  return 'heading'
+        else:         return 'data'
 
 
-    def heading_names(self):
-        return self.last.heading_names() if len(self) else []
+    def sample(self, samples=[]):
+        """
+        Allows sampling of the Table with a list of samples.
+        """
+        sample_data = OrderedDict()
+        for sample in samples:
+            sample_data[sample] = self[sample]
+        return Table(sample_data, **dict(self.get_param_values()))
+
+
+    def reduce(self, label_prefix='', **reduce_map):
+        """
+        Allows collapsing the Table down to an Items View
+        with a single entry.
+        """
+        reduced_data = OrderedDict()
+        value = self.value(' '.join([label_prefix, self.value.name]))
+        for dimension, reduce_fn in reduce_map.items():
+            reduced_data[value] = reduce_fn(self.values())
+        return Items(reduced_data, title=self.title, value=self.value(value))
 
 
     def _item_check(self, dim_vals, data):
+        if not np.isscalar(data):
+            raise TypeError('Table only accepts scalar values.')
+        super(Table, self)._item_check(dim_vals, data)
 
-        if self._type_map is None:
-            self._type_map = dict((str(k), type(v)) for (k,v) in data.data.items())
 
-        if set(self._type_map.keys()) != set([str(k) for k in data.data.keys()]):
-            raise AssertionError("All TableViews in a TableStack must have"
-                                 " a common set of headings.")
-
-        for k, v in data.data.items():
-            key = str(k) # Cast dimension to string
-            if key not in self._type_map:
-                self._type_map[key] = None
-            elif type(v) != self._type_map[key]:
-                self._type_map[key] = None
-
-        super(TableStack, self)._item_check(dim_vals, data)
-
+    def dframe(self):
+        return NdMapping.dframe(self)
 
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v, type) and
