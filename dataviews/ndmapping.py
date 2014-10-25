@@ -87,6 +87,11 @@ class Dimensional(object):
 
     _deep_indexable = False
 
+    constant_dimensions = param.List(default=[], doc="""List of constant
+        dimensions.""")
+
+    constant_values = param.List(default=[], doc="""List of dimension
+        values.""")
 
     @property
     def deep_dimensions(self):
