@@ -9,10 +9,9 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..dataviews import Stack, View
+from ..dataviews import HoloMap, View
 from ..options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
-from ..sheetviews import SheetOverlay
 from ..views import Overlay, Layout, GridLayout, Grid
 
 
@@ -200,10 +199,10 @@ class ChannelMagic(Magics):
     def channels(self, line, cell=None):
         """
         The %%channels cell magic allows channel definitions to be
-        defined on the displayed SheetOverlay.
+        defined on the displayed Overlay.
 
         For instance, if you have three SheetViews (R,G and B)
-        together in a SheetOverlay with labels 'R_Channel',
+        together in a Overlay with labels 'R_Channel',
         'G_Channel', 'B_Channel' respectively, you can display this
         object as an RGB image using:
 
@@ -227,7 +226,7 @@ class ChannelMagic(Magics):
         if isinstance(obj, (Layout, Grid, GridLayout)):
             for subview in obj:
                 cls._set_overlay_labels(subview, label)
-        elif isinstance(obj, Stack) and issubclass(obj.type, Overlay):
+        elif isinstance(obj, HoloMap) and issubclass(obj.type, Overlay):
             for overlay in obj:
                 overlay.label = label
         elif isinstance(obj, Overlay):
@@ -238,7 +237,7 @@ class ChannelMagic(Magics):
     def _set_channels(cls, obj, custom_channels, prefix):
         cls._set_overlay_labels(obj, prefix)
         for name, (pattern, params) in custom_channels.items():
-            SheetOverlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
+            Overlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
                                                         **params)
 
 
@@ -353,12 +352,12 @@ class OptsMagic(Magics):
             if isinstance(obj, (Layout, Overlay)):
                 return group
 
-        if isinstance(obj, Stack) and not issubclass(obj.type, Overlay):
+        if isinstance(obj, HoloMap) and not issubclass(obj.type, Overlay):
             key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
                 group.update({val:obj.type})
-        elif isinstance(obj, Stack):
+        elif isinstance(obj, HoloMap):
             for subview in obj.last:
                 group.update(cls.collect(subview, attr))
         else:

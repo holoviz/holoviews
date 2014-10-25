@@ -4,9 +4,9 @@ from nose.plugins.skip import SkipTest
 from numpy.testing import assert_array_almost_equal
 
 from . import Dimension
-from . import DataOverlay,  DataStack,  Annotation, Curve, Histogram, Matrix, HeatMap
-from . import TableStack, Table
-from . import SheetOverlay, SheetStack, SheetView, Points, Contours, VectorField
+from . import LayerMap,  Annotation, Curve, Histogram, Matrix, HeatMap
+from . import TableStack, Items
+from . import SheetView, Points, Contours, VectorField
 from . import CoordinateGrid, DataGrid
 from .views import Layout, GridLayout, Grid
 from .options import StyleOpts, PlotOpts, ChannelOpts
@@ -31,17 +31,16 @@ class ViewTestCase(unittest.TestCase):
 
         # DataLayers
         self.addTypeEqualityFunc(DataOverlay,  self.compare_dataoverlays)
-        self.addTypeEqualityFunc(DataStack,    self.compare_datastack)
+        self.addTypeEqualityFunc(LayerMap,    self.compare_datastack)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
         self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
         self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
         self.addTypeEqualityFunc(TableStack,   self.compare_tablestack)
-        self.addTypeEqualityFunc(Table,        self.compare_tables)
+        self.addTypeEqualityFunc(Items,        self.compare_tables)
         # SheetLayers
         self.addTypeEqualityFunc(SheetOverlay, self.compare_sheetoverlays)
-        self.addTypeEqualityFunc(SheetStack,   self.compare_sheetstack)
         self.addTypeEqualityFunc(SheetView,    self.compare_sheetviews)
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)

@@ -19,7 +19,7 @@ except:
 import param
 
 from .. import Dimension, NdMapping
-from ..dataviews import HeatMap, LayerMap, Layer, Items, TableStack
+from ..dataviews import HeatMap, LayerMap, Layer, Items
 from ..options import options, PlotOpts
 from ..views import Grid, GridLayout, View
 
@@ -222,8 +222,7 @@ class DFrame(DataFrameView):
 
 
     def _export_dataview(self, value_dim='', indices=[], reduce_fn=None,
-                         view_dims=[], stack_dims=[], view_method=None,
-                         stack_type=None):
+                         view_dims=[], stack_dims=[], view_method=None):
         """
         The core conversion method from the Pandas DataFrame to a View
         or HoloMap type. The value_dim specifies the column in the
@@ -248,7 +247,7 @@ class DFrame(DataFrameView):
         view_dimensions = view_dims
         if stack_dims:
             stack_dfs = df.groupby(stack_dims)
-            stack = stack_type(None, dimensions=[self.dim_dict[d] for d in stack_dims])
+            stack = LayerMap(None, dimensions=[self.dim_dict[d] for d in stack_dims])
         else:
             stack_dfs = [(None, df)]
             stack = {}
@@ -308,8 +307,7 @@ class DFrame(DataFrameView):
         not stack_dims are specified a single Items will be returned.
         """
         return self._export_dataview(value_dim, indices, reduce_fn,
-                                     dims, stack_dims, self._create_table,
-                                     TableStack)
+                                     dims, stack_dims, self._create_table)
 
 
     def heatmap(self, value_dim, dims, index=None, reduce_fn=None, stack_dims=[]):
@@ -324,21 +322,7 @@ class DFrame(DataFrameView):
         if 1 > len(dims) > 2:
             raise Exception("HeatMap supports either one or two dimensions")
         return self._export_dataview(value_dim, indices, reduce_fn, dims,
-
-
-class DFrameStack(Stack):
-    """
-    DFrameStack allows stacking DFrames along a number of dimensions.
-    """
-
-    data_type = (DataFrameView, DFrameOverlay, Annotation)
-
-    overlay_type = DFrameOverlay
-
-    def dfview(self):
-        dframe = self.dframe()
-        return self.last.clone(dframe, dimensions=list(dframe.columns))
-
+                                     stack_dims, self._create_heatmap)
 
 
 options.DFrameView = PlotOpts()

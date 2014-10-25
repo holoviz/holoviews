@@ -1,4 +1,5 @@
 import copy
+from itertools import groupby
 
 import numpy as np
 
@@ -12,8 +13,8 @@ import matplotlib.patches as patches
 
 import param
 
-from dataviews import Grid, View, Stack, DataLayer, DataOverlay, NdMapping, \
-    GridLayout, SheetOverlay, Overlay, Annotation, DataGrid
+from dataviews import Grid, View, HoloMap, Layer, LayerMap, NdMapping, \
+    GridLayout, Overlay, Annotation, DataGrid
 from ..views import Layout
 
 
@@ -76,7 +77,6 @@ class Plot(param.Parameterized):
         style options object. Each subclass should override this
         parameter to list every option that works correctly.""")
 
-    _stack_type = Stack
     _view_type = View
 
     # A mapping from View types to their corresponding plot types
@@ -101,13 +101,13 @@ class Plot(param.Parameterized):
         Helper method that ensures a given view is always returned as
         an imagen.SheetStack object.
         """
-        if not isinstance(view, self._stack_type):
-            stack = self._stack_type(initial_items=(0, view))
+        if not isinstance(view, LayerMap):
+            stack = LayerMap(initial_items=(0, view))
         else:
             stack = view
 
         if not issubclass(stack.type, self._view_type):
-            raise TypeError("Requires View, Animation or Stack of type %s" % element_type)
+            raise TypeError("Requires View, Animation or HoloMap of type %s" % element_type)
         return stack
 
 
@@ -367,7 +367,7 @@ class GridPlot(Plot):
             view = self.grid.get(coord, None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r, c])
-                vtype = view.type if isinstance(view, Stack) else view.__class__
+                vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = View.options.plotting(view).opts
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title)
@@ -392,7 +392,7 @@ class GridPlot(Plot):
 
     def _format_title(self, n):
         view = self.grid.values()[0]
-        if isinstance(view, Stack):
+        if isinstance(view, HoloMap):
             key = view.keys()[n]
             key = key if isinstance(key, tuple) else (key,)
             title_format = view.get_title(key, self.grid)
@@ -473,7 +473,7 @@ class GridPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) if isinstance(v, Stack) else 1
+        return max([len(v) if isinstance(v, HoloMap) else 1
                     for v in self.grid]+[1])
 
 
@@ -592,7 +592,7 @@ class LayoutPlot(Plot):
 
             # Override the plotopts as required
             plotopts.update(override_opts)
-            vtype = view.type if isinstance(view, Stack) else view.__class__
+            vtype = view.type if isinstance(view, HoloMap) else view.__class__
             if pos == 'main':
                 subplot = Plot.defaults[vtype](view, **plotopts)
             else:

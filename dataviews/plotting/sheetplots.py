@@ -31,7 +31,6 @@ class PointPlot(Plot):
      The style options for PointPlot match those of matplotlib's
      scatter plot command.""")
 
-    _stack_type = SheetStack
     _view_type = Points
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -113,7 +112,6 @@ class VectorFieldPlot(Plot):
        it will be assumed that the lengths have already been correctly
        normalized.""")
 
-    _stack_type = SheetStack
     _view_type = VectorField
 
     def __init__(self, *args, **kwargs):
@@ -227,7 +225,6 @@ class ContourPlot(Plot):
         The style options for ContourPlot match those of matplotlib's
         LineCollection class.""")
 
-    _stack_type = SheetStack
     _view_type = Contours
 
     def __init__(self, *args, **kwargs):
@@ -252,10 +249,8 @@ class ContourPlot(Plot):
 
 
 
-
 class SheetViewPlot(MatrixPlot):
 
-    _stack_type = SheetStack
     _view_type = SheetView
 
 

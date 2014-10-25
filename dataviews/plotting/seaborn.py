@@ -9,7 +9,7 @@ except:
 
 import param
 
-from ..dataviews import DataStack
+from ..dataviews import LayerMap
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
 from ..views import View
@@ -66,7 +66,6 @@ class RegressionPlot(FullRedrawPlot):
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
-    _stack_type = DataStack
     _view_type = Regression
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -109,7 +108,6 @@ class BivariatePlot(FullRedrawPlot):
        The style options for BivariatePlot match those of seaborns
        kdeplot.""")
 
-    _stack_type = DataStack
     _view_type = Bivariate
 
     def __init__(self, kde, **kwargs):
@@ -175,7 +173,6 @@ class TimeSeriesPlot(FullRedrawPlot):
        The style options for TimeSeriesPlot match those of seaborns
        tsplot.""")
 
-    _stack_type = DataStack
     _view_type = TimeSeries
 
     def __init__(self, curves, **kwargs):
@@ -225,7 +222,6 @@ class DistributionPlot(FullRedrawPlot):
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
-    _stack_type = DataStack
     _view_type = Distribution
 
     def __init__(self, dist, **kwargs):

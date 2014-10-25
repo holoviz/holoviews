@@ -635,16 +635,14 @@ class HeatMap(Matrix):
 
 
 
-class DataStack(Stack):
+class LayerMap(HoloMap):
     """
-    A DataStack can hold any number of DataLayers indexed by a list of
+    A LayerMap can hold any number of DataLayers indexed by a list of
     dimension values. It also has a number of properties, which can find
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (DataLayer, Annotation, Matrix)
-
-    overlay_type = DataOverlay
+    data_type = (Layer, Overlay, Annotation)
 
     @property
     def range(self):
@@ -689,36 +687,87 @@ class DataStack(Stack):
         return float(l), float(b), float(r), float(t)
 
 
+    def sample(self, samples=[], **sample_values):
+        """
+        Sample each Layer in the HoloMap by passing either a list
+        of samples or request a single sample using dimension-value
+        pairs.
+        """
+        sampled_items = [(k, view.sample(samples, **sample_values))
+                         for k, view in self.items()]
+        return self.clone(sampled_items)
 
-class Table(View):
-    """
-    A tabular view type to allow convenient visualization of either a
-    standard Python dictionary or an OrderedDict. If an OrderedDict is
-    used, the headings will be kept in the correct order.
-    """
+
+    def reduce(self, label_prefix='', **reduce_map):
+        """
+        Reduce each SheetView in the HoloMap using a function supplied
+        via the kwargs, where the keyword has to match a particular
+        dimension in the View.
+        """
+        reduced_items = [(k, v.reduce(label_prefix=label_prefix, **reduce_map))
+                         for k, v in self.items()]
+        return self.clone(reduced_items)
+
+
+    def collate(self, collate_dim):
+        """
+        Collate splits out the specified dimension and joins the samples
+        in each of the split out Stacks into Curves. If there are multiple
+        entries in the Items it will lay them out into a Grid.
+        """
+        from .operation import TableCollate
+        return TableCollate(self, collation_dim=collate_dim)
+
+
+    def map(self, map_fn, **kwargs):
+        """
+        Map a function across the stack, using the bounds of first
+        mapped item.
+        """
+        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
+        return self.clone(mapped_items, **kwargs)
+
 
     @property
-    def stack_type(self):
-        return TableStack
-
-    def __init__(self, data, **kwargs):
-        super(Table, self).__init__(data=data, **kwargs)
-
-        # Assume OrderedDict if not a vanilla Python dict
-        headings = self.data.keys()
-        if type(self.data) == dict:
-            headings = sorted(headings)
-            self.data = OrderedDict([(h, self.data[h]) for h in headings])
-        self.heading_map = OrderedDict([(el, str(el)) for el in headings])
+    def empty_element(self):
+        return self._type(None, self.bounds)
 
 
-    def sample(self, samples=None):
-        if callable(samples):
-            sampled_data = OrderedDict([item for item in self.data.items()
-                                        if samples(item)])
-        else:
-            sampled_data = OrderedDict([(s, self.data[s]) for s in samples])
-        return self.clone(sampled_data)
+    @property
+    def N(self):
+        return self.normalize()
+
+
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        histstack = LayerMap(dimensions=self.dimensions, title_suffix=self.title_suffix)
+
+        stack_range = None if individually else self.range
+        bin_range = stack_range if bin_range is None else bin_range
+        for k, v in self.items():
+            histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
+                                  individually=individually,
+                                  style_prefix='Custom[<' + self.name + '>]_',
+                                  adjoin=False,
+                                  **kwargs)
+
+        if adjoin and issubclass(self.type, Overlay):
+            layout = (self << histstack)
+            layout.main_layer = kwargs['index']
+            return layout
+
+        return (self << histstack) if adjoin else histstack
+
+
+    def normalize_elements(self, **kwargs):
+        return self.map(lambda x, _: x.normalize(**kwargs))
+
+
+    def normalize(self, min=0.0, max=1.0):
+        data_max = np.max([el.data.max() for el in self.values()])
+        data_min = np.min([el.data.min() for el in self.values()])
+        norm_factor = data_max-data_min
+        return self.map(lambda x, _: x.normalize(min=min, max=max,
+                                                 norm_factor=norm_factor))
 
 
 
@@ -909,4 +958,4 @@ class Table(Items, NdMapping):
 
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v, type) and
-                    (issubclass(_v, Stack) or issubclass(_v, View))]))
+                    (issubclass(_v, HoloMap) or issubclass(_v, View))]))

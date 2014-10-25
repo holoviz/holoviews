@@ -1,6 +1,7 @@
+
 from __future__ import unicode_literals
 import copy
-from itertools import product, groupby
+from itertools import product
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -10,9 +11,9 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 
-from .. import DataStack, Matrix, DataLayer, HeatMap, View, DataOverlay, \
-    Annotation, Curve, Scatter, TableStack, Table, Histogram, Stack, Overlay
-from .viewplots import Plot, OverlayPlot
+from .. import LayerMap, Table, Matrix, Layer, HeatMap, View, \
+    Curve, Scatter, Items, Histogram, HoloMap, Overlay
+from .viewplots import Plot
 
 
 
@@ -30,9 +31,7 @@ class MatrixPlot(Plot):
         by matplotlib's imshow command. If supplied, the clim option
         will be ignored as it is computed from the input View.""")
 
-
-    _stack_type = DataStack
-    _view_type = (Matrix, DataLayer)
+    _view_type = (Matrix, Layer)
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 
@@ -154,7 +153,6 @@ class CurvePlot(Plot):
         The style options for CurvePlot match those of matplotlib's
         LineCollection object.""")
 
-    _stack_type = DataStack
     _view_type = Curve
 
     def __init__(self, curves, **kwargs):
@@ -273,7 +271,6 @@ class ScatterPlot(CurvePlot):
        The style options for ScatterPlot match those of matplotlib's
        PolyCollection object.""")
 
-    _stack_type = DataStack
     _view_type = Scatter
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -344,8 +341,7 @@ class TablePlot(Plot):
     # Disable computing plot bounds from data.
     apply_databounds = False
 
-    _stack_type = TableStack
-    _view_type = Table
+    _view_type = Items
 
     def pprint_value(self, value):
         """
@@ -383,7 +379,6 @@ class TablePlot(Plot):
             for col in range(tableview.cols):
                 value = tableview.cell_value(row, col)
                 cell_text = self.pprint_value(value)
-
 
                 cellfont = self.font_types.get(tableview.cell_type(row,col), None)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
@@ -435,7 +430,6 @@ class HistogramPlot(Plot):
     show_grid = param.Boolean(default=False, doc="""
         Whether to overlay a grid on the axis.""")
 
-    _stack_type = DataStack
     _view_type = Histogram
 
     def __init__(self, histograms, **kwargs):
@@ -620,7 +614,7 @@ class SideHistogramPlot(HistogramPlot):
         offset = self.offset * lims[3] * (1-self.offset)
         individually = View.options.plotting(main).opts.get('normalize_individually', False)
 
-        if isinstance(main, Stack):
+        if isinstance(main, HoloMap):
             if issubclass(main.type, Overlay):
                 if individually:
                     main_range = main.split_stack()[0][key].range
@@ -639,8 +633,8 @@ class SideHistogramPlot(HistogramPlot):
             self._update_separator(lims, offset)
 
 
-        # If .main is an Overlay or a Stack of Overlays get the correct style
-        if isinstance(main, Stack) and issubclass(main.type, Overlay):
+        # If .main is an Overlay or a HoloMap of Overlays get the correct style
+        if isinstance(main, HoloMap) and issubclass(main.type, Overlay):
             style =  main.last[self.layout.main_layer].style
         elif isinstance(main, Overlay):
             style = main[self.layout.main_layer].style
@@ -700,7 +694,7 @@ Plot.defaults.update({Matrix: MatrixPlot,
                       HeatMap: MatrixPlot,
                       Curve: CurvePlot,
                       Scatter: ScatterPlot,
-                      DataOverlay: DataPlot,
+                      Items: TablePlot,
                       Table: TablePlot,
                       Histogram: HistogramPlot})
 

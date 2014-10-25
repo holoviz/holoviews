@@ -34,7 +34,7 @@ class View(param.Parameterized, Dimensional):
         the view {label}, {value} quantity and view {type} but can also be set
         to a simple string.""")
 
-    value = param.ClassSelector(class_=(str, Dimension),
+    value = param.ClassSelector(class_=Dimension,
                                 default=Dimension('Y'), doc="""
         The value is a string or Dimension object, describing the quantity
         being held in the View.""")
@@ -49,6 +49,8 @@ class View(param.Parameterized, Dimensional):
                                     for d in kwargs.pop('dimensions')]
         if 'value' in kwargs and not isinstance(kwargs['value'], Dimension):
             kwargs['value'] = Dimension(kwargs['value'])
+        elif 'value' not in kwargs:
+            kwargs['value'] = self.value
         if not 'label' in kwargs: kwargs['label'] = str(kwargs.get('value', ''))
         super(View, self).__init__(**kwargs)
 
@@ -90,7 +92,7 @@ class View(param.Parameterized, Dimensional):
 
     @property
     def stack_type(self):
-        return Stack
+        return HoloMap
 
 
     @property
@@ -180,7 +182,7 @@ class Annotation(View):
     All annotations have an optional interval argument that indicates
     which stack elements they apply to. For instance, this allows
     annotations for a specific time interval when overlaid over a
-    SheetStack or DataStack with a 'Time' dimension. The interval
+    SheetStack or LayerMap with a 'Time' dimension. The interval
     argument is a dictionary of dimension keys and tuples containing
     (start, end) values. A value of None, indicates an unspecified
     constraint.
@@ -487,15 +489,15 @@ class Overlay(View):
 
 
 
-class Stack(NdMapping):
+class HoloMap(NdMapping):
     """
-    A Stack is a stack of Views over a number of specified dimensions. The
+    A HoloMap is a stack of Views over a number of specified dimensions. The
     dimension may be a spatial dimension (i.e., a ZStack), time
     (specifying a frame sequence) or any other combination of Dimensions.
-    Stack also adds handling of styles, appending the Dimension keys and
+    HoloMap also adds handling of styles, appending the Dimension keys and
     values to titles and a number of methods to manipulate the Dimensions.
 
-    Stack objects can be sliced, sampled, reduced, overlaid and split along
+    HoloMap objects can be sliced, sampled, reduced, overlaid and split along
     its and its containing Views dimensions. Subclasses should implement
     the appropriate slicing, sampling and reduction methods for their View
     type.
@@ -503,11 +505,10 @@ class Stack(NdMapping):
 
     title_suffix = param.String(default='\n {dims}', doc="""
        A string appended to the View titles when they are added to the
-       Stack. Default adds a new line with the formatted dimensions
-       of the Stack inserted using the {dims} formatting keyword.""")
+       HoloMap. Default adds a new line with the formatted dimensions
+       of the HoloMap inserted using the {dims} formatting keyword.""")
 
-    data_type = View
-    overlay_type = Overlay
+    data_type = (View, NdMapping)
 
     _deep_indexable = True
     _type = None
@@ -557,13 +558,13 @@ class Stack(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of View." %
                                  self.__class__.__name__)
-        super(Stack, self)._item_check(dim_vals, data)
+        super(HoloMap, self)._item_check(dim_vals, data)
 
 
     def get_title(self, key, item, group_size=2):
         """
         Resolves the title string on the View being added to the
-        Stack, adding the Stacks title suffix.
+        HoloMap, adding the Stacks title suffix.
         """
         if self.ndims == 1 and self.dim_dict.get('Default'):
             title_suffix = ''
@@ -611,11 +612,11 @@ class Stack(NdMapping):
         """
         Split the dimensions in the NdMapping across two NdMappings,
         where the inner mapping is of the same type as the original
-        Stack.
+        HoloMap.
         """
         inner_dims, deep_dims = self._split_dims(dimensions)
         if self.ndims == 1:
-            self.warning('Cannot split Stack with only one dimension.')
+            self.warning('Cannot split HoloMap with only one dimension.')
             return self
         if len(deep_dims):
             raise Exception('NdMapping does not support splitting of deep dimensions.')
@@ -644,7 +645,7 @@ class Stack(NdMapping):
 
     def overlay_dimensions(self, dimensions):
         """
-        Splits the Stack along a specified number of dimensions and overlays
+        Splits the HoloMap along a specified number of dimensions and overlays
         items in the split out Stacks.
         """
         if self.ndims == 1:
@@ -656,9 +657,11 @@ class Stack(NdMapping):
 
         for outer, stack in split_stack.items():
             key, overlay = stack.items()[0]
-            overlay.legend_label = stack.pprint_dimkey(key)
+            overlay.constant_dimensions = stack.dimensions
+            overlay.constant_values = key
             for inner, v in list(stack.items())[1:]:
-                v.legend_label = stack.pprint_dimkey(inner)
+                v.constant_dimensions = stack.dimensions
+                v.constant_values = inner
                 overlay = overlay * v
             new_stack[outer] = overlay
 
@@ -668,7 +671,7 @@ class Stack(NdMapping):
             return new_stack
 
 
-    def grid(self, dimensions, layout=False):
+    def grid(self, dimensions, layout=False, constant_dims=True):
         """
         Grid takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a Grid.
@@ -676,22 +679,20 @@ class Stack(NdMapping):
         if len(dimensions) > 2:
             raise ValueError('At most two dimensions can be laid out in a grid.')
 
-        if self.ndims == 1 and dimensions == self.dimension_labels:
+        if len(dimensions) == self.ndims:
             split_stack = self
         elif all(d in self.dimension_labels for d in dimensions):
             split_dims = [d for d in self.dimension_labels if d not in dimensions]
             split_stack = self.split_dimensions(split_dims)
             split_stack = split_stack.reindex(dimensions)
         else:
-            raise ValueError('Stack does not have supplied dimensions.')
+            raise ValueError('HoloMap does not have supplied dimensions.')
 
         if layout:
             for keys, stack in split_stack._data.items():
-                label = ', '.join([d.pprint_value(k) for d, k in
-                                   zip(split_stack.dimensions, keys)])
-                for view in stack.values():
-                    if label not in view.title:
-                        view.title = ' '.join([view.title, label])
+                if constant_dims:
+                    stack.constant_dimensions = split_stack.dimensions
+                    stack.constant_values = keys
             return GridLayout(split_stack)
         else:
             return Grid(split_stack, dimensions=split_stack.dimensions)
@@ -717,10 +718,10 @@ class Stack(NdMapping):
 
     def split_overlays(self):
         """
-        Given a Stack of Overlays of N layers, split out the layers
+        Given a HoloMap of Overlays of N layers, split out the layers
         into N separate Stacks.
         """
-        if self.type is not self.overlay_type:
+        if self.type is not Overlay:
             return self.clone(self.items())
 
         stacks = []
@@ -738,9 +739,9 @@ class Stack(NdMapping):
         """
         The mul (*) operator implements overlaying of different Views.
         This method tries to intelligently overlay Stacks with differing
-        keys. If the Stack is mulled with a simple View each element in
-        the Stack is overlaid with the View. If the element the Stack is
-        mulled with is another Stack it will try to match up the dimensions,
+        keys. If the HoloMap is mulled with a simple View each element in
+        the HoloMap is overlaid with the View. If the element the HoloMap is
+        mulled with is another HoloMap it will try to match up the dimensions,
         making sure that items with completely different dimensions aren't
         overlaid.
         """
@@ -791,8 +792,8 @@ class Stack(NdMapping):
 
     def dframe(self):
         """
-        Gets a dframe for each View in the Stack, appends the dimensions
-        of the Stack as series and concatenates the dframes.
+        Gets a dframe for each View in the HoloMap, appends the dimensions
+        of the HoloMap as series and concatenates the dframes.
         """
         import pandas
         dframes = []
@@ -934,6 +935,7 @@ class Layout(param.Parameterized, Dimensional):
                  for k, v in self.data.items()]
         return self.__class__(dict(items))
 
+
     def __iter__(self):
         i = 0
         while i < len(self):
@@ -952,8 +954,8 @@ class Layout(param.Parameterized, Dimensional):
 
 class GridLayout(NdMapping):
     """
-    A GridLayout is an NdMapping, which can contain any View or Stack type.
-    It is used to group different View or Stack elements into a grid for
+    A GridLayout is an NdMapping, which can contain any View or HoloMap type.
+    It is used to group different View or HoloMap elements into a grid for
     display. Just like all other NdMappings it can be sliced and indexed
     allowing selection of subregions of the grid.
     """
@@ -1144,10 +1146,10 @@ class Grid(NdMapping):
             zipped = zip(self.keys(), self.values(), other.values())
             overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
             return self.clone(overlayed_items)
-        elif isinstance(other, Stack) and len(other) == 1:
+        elif isinstance(other, HoloMap) and len(other) == 1:
             view = other.last
-        elif isinstance(other, Stack) and len(other) != 1:
-            raise Exception("Can only overlay with Stack of length 1")
+        elif isinstance(other, HoloMap) and len(other) != 1:
+            raise Exception("Can only overlay with HoloMap of length 1")
         else:
             view = other
 
@@ -1214,7 +1216,7 @@ class Grid(NdMapping):
         for v in self.values():
             if isinstance(v, Layout):
                 v = v.main
-            if isinstance(v, Stack):
+            if isinstance(v, HoloMap):
                 keys_list.append(list(v._data.keys()))
         return sorted(set(itertools.chain(*keys_list)))
 
@@ -1230,7 +1232,7 @@ class Grid(NdMapping):
         for v in self.values():
             if isinstance(v, Layout):
                 v = v.main
-            if isinstance(v, Stack):
+            if isinstance(v, HoloMap):
                 keys_list.append(list(v._data.keys()))
         if all(x == keys_list[0] for x in keys_list):
             return keys_list[0]
@@ -1299,4 +1301,4 @@ class Grid(NdMapping):
 
 
 __all__ = list(set([_k for _k,_v in locals().items() if isinstance(_v,type) and
-                    (issubclass(_v, NdMapping) or issubclass(_v, View))]))
+                    (issubclass(_v, Dimensional))]))

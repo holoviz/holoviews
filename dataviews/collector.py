@@ -9,7 +9,7 @@ from collections import OrderedDict
 import param
 from .sheetviews import CoordinateGrid
 from .sheetviews import SheetView  # pyflakes:ignore (Needed for doctests)
-from .views import GridLayout, Stack, View, NdMapping, Dimension
+from .views import GridLayout, HoloMap, View, NdMapping, Dimension
 
 from .ipython.widgets import RunProgress, ProgressBar
 
@@ -77,7 +77,7 @@ class AttrTree(object):
             child_ordering = ordering
 
         children = [self.__dict__[l] for l in child_ordering]
-        dataview_types = (View, Stack, GridLayout, CoordinateGrid)
+        dataview_types = (View, HoloMap, GridLayout, CoordinateGrid)
         return GridLayout(list(child for child in children
                                if isinstance(child, dataview_types)))
 
@@ -389,7 +389,7 @@ class ViewRef(Reference):
 
     @property
     def resolved_type(self):
-        return (View, Stack, CoordinateGrid)
+        return (View, HoloMap, CoordinateGrid)
 
 
     def _resolve_ref(self, ref, attrtree):
@@ -602,7 +602,7 @@ class Collect(object):
         """
         if isinstance(val, View):
             current_val[time] = val
-        elif (isinstance(current_val, Stack) and 'Time' not in current_val.dimension_labels):
+        elif (isinstance(current_val, HoloMap) and 'Time' not in current_val.dimension_labels):
             raise Exception("Time dimension is missing.")
         else:
             current_val.update(val)
@@ -681,7 +681,7 @@ class Collator(NdMapping):
     Collator is an NdMapping holding AttrTree objects and
     provides methods to filter and merge them via the call
     method. Collation inserts the Collator dimensions on
-    each Stack type contained within the AttrTree objects.
+    each HoloMap type contained within the AttrTree objects.
     """
 
     drop = param.List(default=[], doc="""
@@ -730,7 +730,7 @@ class Collator(NdMapping):
         """
         Recursively descend through an AttrTree and NdMapping objects
         in order to add the supplied dimension values to all contained
-        Stack objects.
+        HoloMap objects.
         """
         if isinstance(item, AttrTree):
             item.fixed = False
@@ -738,7 +738,7 @@ class Collator(NdMapping):
         new_item = item.clone({}) if isinstance(item, NdMapping) else item
         for k in item.keys():
             v = item[k]
-            if isinstance(v, Stack):
+            if isinstance(v, HoloMap):
                 dim_vals = [(dim, val) for dim, val in dims[::-1]
                             if dim not in self.drop]
                 for dim, val in dim_vals:
@@ -787,7 +787,7 @@ class Collector(AttrTree):
     >>> data = c(times=[1,2,3,4,5])
     >>> isinstance(data, AttrTree)
     True
-    >>> isinstance(data.Target.Path, Stack)
+    >>> isinstance(data.Target.Path, HoloMap)
     True
 
     >>> times = data.Target.Path.keys()
@@ -807,7 +807,7 @@ class Collector(AttrTree):
 
     # A callable that returns the time where the time may be the
     # simulation time or wall-clock time. The time values are
-    # recorded by the Stack keys
+    # recorded by the HoloMap keys
     time_fn = param.Dynamic.time_fn
 
     type_hooks = {}

@@ -54,7 +54,6 @@ class DFrameViewPlot(Plot):
 
     apply_databounds = False
 
-    _stack_type = DFrameStack
     _view_type = DataFrameView
 
 

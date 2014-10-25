@@ -3,7 +3,7 @@ Test cases for ViewTestCase which implements view comparison.
 """
 import numpy as np
 
-from dataviews import SheetView, SheetStack
+from dataviews import SheetView, LayerMap
 from dataviews.ndmapping import Dimension
 from dataviews.sheetviews import BoundingBox
 from dataviews.testing import ViewTestCase
@@ -42,45 +42,45 @@ class StackTestCase(SheetOverlayTestCase):
     def setUp(self):
         super(StackTestCase, self).setUp()
         # Example 1D stack
-        self.stack1_1D = SheetStack(dimensions=['int'])
+        self.stack1_1D = LayerMap(dimensions=['int'])
         self.stack1_1D[0] = self.sv1
         self.stack1_1D[1] = self.sv2
         # Changed keys...
-        self.stack2_1D = SheetStack(dimensions=['int'])
+        self.stack2_1D = LayerMap(dimensions=['int'])
         self.stack2_1D[1] = self.sv1
         self.stack2_1D[2] = self.sv2
         # Changed number of keys...
-        self.stack3_1D = SheetStack(dimensions=['int'])
+        self.stack3_1D = LayerMap(dimensions=['int'])
         self.stack3_1D[1] = self.sv1
         self.stack3_1D[2] = self.sv2
         self.stack3_1D[3] = self.sv3
         # Changed values...
-        self.stack4_1D = SheetStack(dimensions=['int'])
+        self.stack4_1D = LayerMap(dimensions=['int'])
         self.stack4_1D[0] = self.sv1
         self.stack4_1D[1] = self.sv3
         # Changed bounds...
-        self.stack5_1D = SheetStack(dimensions=['int'])
+        self.stack5_1D = LayerMap(dimensions=['int'])
         self.stack5_1D[0] = self.sv4
         self.stack5_1D[1] = self.sv5
         # Example dimension label
-        self.stack6_1D = SheetStack(dimensions=['int_v2'])
+        self.stack6_1D = LayerMap(dimensions=['int_v2'])
         self.stack6_1D[0] = self.sv1
         self.stack6_1D[1] = self.sv2
-        # A SheetStack of Overlays
-        self.stack7_1D = SheetStack(dimensions=['int'])
+        # A LayerMap of Overlays
+        self.stack7_1D = LayerMap(dimensions=['int'])
         self.stack7_1D[0] =  self.overlay1_depth2
         self.stack7_1D[1] =  self.overlay2_depth2
-        # A different SheetStack of Overlays
-        self.stack8_1D = SheetStack(dimensions=['int'])
+        # A different LayerMap of Overlays
+        self.stack8_1D = LayerMap(dimensions=['int'])
         self.stack8_1D[0] =  self.overlay2_depth2
         self.stack8_1D[1] =  self.overlay1_depth2
 
         # Example 2D stack
-        self.stack1_2D = SheetStack(dimensions=['int', Dimension('float')])
+        self.stack1_2D = LayerMap(dimensions=['int', Dimension('float')])
         self.stack1_2D[0, 0.5] = self.sv1
         self.stack1_2D[1, 1.0] = self.sv2
         # Changed 2D keys...
-        self.stack2_2D = SheetStack(dimensions=['int', Dimension('float')])
+        self.stack2_2D = LayerMap(dimensions=['int', Dimension('float')])
         self.stack2_2D[0, 1.0] = self.sv1
         self.stack2_2D[1, 1.5] = self.sv2
 
