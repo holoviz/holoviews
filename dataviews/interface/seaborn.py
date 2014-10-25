@@ -104,8 +104,8 @@ class Distribution(Layer):
     list. Internally it uses seaborn to make all the conversions.
     """
 
-    value = param.ClassSelector(class_=(str, Dimension),
-                                default='Frequency')
+    value = param.ClassSelector(class_=Dimension,
+                                default=Dimension('Frequency'))
 
     @property
     def xlim(self):
