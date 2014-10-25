@@ -599,7 +599,7 @@ class LayoutPlot(Plot):
                 subplot = Plot.sideplots[vtype](view, **plotopts)
 
             # 'Main' views that should be displayed with square aspect
-            if pos == 'main' and issubclass(vtype, (DataOverlay, DataLayer)):
+            if pos == 'main' and issubclass(vtype, (Layer, Overlay)):
                 subplot.aspect='square'
 
             subplot(ax)
@@ -810,12 +810,21 @@ class OverlayPlot(Plot):
     examples of OverlayPlots.
     """
 
+    style_opts = param.List(default=[], constant=True, doc="""
+     SheetPlot renders overlay layers which individually have style
+     options but SheetPlot itself does not.""")
+
+    _view_type = Overlay
+
     _abstract = True
 
     def __init__(self, overlay, **kwargs):
         self.plots = []
         super(OverlayPlot, self).__init__(overlay, **kwargs)
 
+    def _check_stack(self, view):
+        stack = super(OverlayPlot, self)._check_stack(view)
+        return self._collapse_channels(stack)
 
     def _collapse(self, overlay, pattern, fn, style_key):
         """
@@ -833,7 +842,7 @@ class OverlayPlot(Plot):
             matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
             if matching and len(layer_labels)==len(pattern):
                 views = [el for el in overlay.data if el.label in layer_labels]
-                overlay_slice = SheetOverlay(views, overlay.bounds)
+                overlay_slice = Overlay(views)
                 collapsed_view = fn(overlay_slice)
                 collapsed_views.append(collapsed_view)
                 skip = len(views)-1
@@ -851,7 +860,7 @@ class OverlayPlot(Plot):
         """
         if not issubclass(stack.type, Overlay):
             return stack
-        elif not SheetOverlay.channels.keys(): # No potential channel reductions
+        elif not Overlay.channels.keys(): # No potential channel reductions
             return stack
         else:
             # The original stack should not be mutated by this operation
@@ -859,20 +868,61 @@ class OverlayPlot(Plot):
 
         # Apply all customized channel operations
         for overlay in stack:
-            customized = [k for k in SheetOverlay.channels.keys()
+            customized = [k for k in Overlay.channels.keys()
                           if overlay.label and k.startswith(overlay.label)]
             # Largest reductions should be applied first
-            sorted_customized = sorted(customized, key=lambda k: -SheetOverlay.channels[k].size)
-            sorted_reductions = sorted(SheetOverlay.channels.options(),
-                                       key=lambda k: -SheetOverlay.channels[k].size)
+            sorted_customized = sorted(customized, key=lambda k: -Overlay.channels[k].size)
+            sorted_reductions = sorted(Overlay.channels.options(),
+                                       key=lambda k: -Overlay.channels[k].size)
             # Collapse the customized channel before the other definitions
             for key in sorted_customized + sorted_reductions:
-                channel = SheetOverlay.channels[key]
+                channel = Overlay.channels[key]
                 if channel.mode is None: continue
                 collapse_fn = channel.operation
                 fn = collapse_fn.instance(**channel.opts)
                 self._collapse(overlay, channel.pattern, fn, key)
         return stack
+
+
+    def __call__(self, axis=None, lbrt=None, **kwargs):
+
+        self.ax = self._init_axis(axis)
+        stacks = self._stack.split_overlays()
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(stacks, lambda s: s.style))
+
+        for zorder, stack in enumerate(stacks):
+            cyclic_index, _ = next(style_groups[stack.style])
+            plotopts = View.options.plotting(stack).opts
+
+            if zorder == 0:
+                self.rescale = plotopts.get('rescale_individually', False)
+                lbrt = self._stack.last.lbrt if self.rescale else self._stack.lbrt
+
+            plotype = Plot.defaults[stack.type]
+            plot = plotype(stack, size=self.size, all_keys=self._keys,
+                           show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
+                           show_legend=self.show_legend, show_title=self.show_title,
+                           show_grid=self.show_grid, zorder=zorder,
+                           **dict(plotopts, **kwargs))
+            plot.aspect = self.aspect
+
+            lbrt = None if stack.type == Annotation else lbrt
+            plot(self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
+            self.plots.append(plot)
+
+        return self._finalize_axis(None)
+
+
+    def update_frame(self, n, lbrt=None):
+        n = n if n < len(self) else len(self) - 1
+        key = self._keys[n]
+        view = self._stack.get(key, None)
+        for zorder, plot in enumerate(self.plots):
+            if zorder == 0 and lbrt is None and view:
+                lbrt = view.lbrt if self.rescale else self._stack.lbrt
+            plot.update_frame(n, lbrt)
+        self._finalize_axis(None)
 
 
 class AnnotationPlot(Plot):
@@ -1020,5 +1070,6 @@ class AnnotationPlot(Plot):
 Plot.defaults.update({Grid: GridPlot,
                       GridLayout: GridLayoutPlot,
                       Layout: GridLayoutPlot,
+                      Overlay: OverlayPlot,
                       Annotation: AnnotationPlot,
                       DataGrid: GridPlot})

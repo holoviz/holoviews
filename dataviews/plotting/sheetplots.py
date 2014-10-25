@@ -3,12 +3,11 @@ from itertools import groupby
 
 import numpy as np
 
-from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 
 import param
 
-from .. import SheetStack, Points, View, SheetView, SheetOverlay, \
+from .. import LayerMap, Points, View, SheetView, Overlay, \
     CoordinateGrid, NdMapping, Contours, VectorField
 from .dataplots import MatrixPlot
 from .viewplots import OverlayPlot, Plot
@@ -260,58 +259,6 @@ class SheetViewPlot(MatrixPlot):
     _view_type = SheetView
 
 
-
-class SheetPlot(OverlayPlot):
-    """
-    A generic plot that visualizes SheetOverlays which themselves may
-    contain SheetLayers of type SheetView, Points or Contour objects.
-    """
-
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     SheetPlot renders overlay layers which individually have style
-     options but SheetPlot itself does not.""")
-
-    _stack_type = SheetStack
-    _view_type = SheetOverlay
-
-
-    def _check_stack(self, view):
-        stack = super(SheetPlot, self)._check_stack(view)
-        return self._collapse_channels(stack)
-
-
-    def __call__(self, axis=None, lbrt=None):
-        self.ax = self._init_axis(axis)
-        stacks = self._stack.split_overlays()
-
-        sorted_stacks = sorted(stacks, key=lambda x: x.style)
-        style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(sorted_stacks, lambda s: s.style))
-
-        for zorder, stack in enumerate(stacks):
-            cyclic_index, _ = next(style_groups[stack.style])
-            plotype = Plot.defaults[stack.type]
-            plot = plotype(stack, zorder=zorder, all_keys=self._keys,
-                           **View.options.plotting(stack).opts)
-
-            plot(self.ax, cyclic_index=cyclic_index)
-            self.plots.append(plot)
-
-        if 'fig' in self.handles:
-            fig = self.handles['fig']
-            plt.close(fig)
-            return fig
-        else:
-            return axis
-
-
-    def update_frame(self, n, lbrt=None):
-        n = n  if n < len(self) else len(self) - 1
-        for plot in self.plots:
-            plot.update_frame(n)
-
-
 class CoordinateGridPlot(OverlayPlot):
     """
     CoordinateGridPlot evenly spaces out plots of individual projections on
@@ -362,7 +309,7 @@ class CoordinateGridPlot(OverlayPlot):
         for row in grid_shape:
             for view in row:
                 w, h = self._get_dims(view)
-                if view.type == SheetOverlay:
+                if view.type == Overlay:
                     data = view.last[-1].data if self.situate else view.last[-1].roi.data
                     opts = View.options.style(view.last[-1]).opts
                 else:
@@ -383,7 +330,7 @@ class CoordinateGridPlot(OverlayPlot):
         n = n  if n < len(self) else len(self) - 1
         for i, plot in enumerate(self.handles['projs']):
             view = self.grid.values()[i][self._keys[n]]
-            if isinstance(view, SheetOverlay):
+            if isinstance(view, Overlay):
                 data = view[-1].data if self.situate else view[-1].roi.data
             else:
                 data = view.data if self.situate else view.roi.data
@@ -448,8 +395,7 @@ class CoordinateGridPlot(OverlayPlot):
 Plot.defaults.update({SheetView: SheetViewPlot,
                       Points: PointPlot,
                       Contours: ContourPlot,
-                      SheetOverlay: SheetPlot,
                       CoordinateGrid: CoordinateGridPlot,
-                      VectorField:VectorFieldPlot})
+                      VectorField: VectorFieldPlot})
 
 Plot.sideplots.update({CoordinateGrid: CoordinateGridPlot})

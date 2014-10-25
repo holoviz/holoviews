@@ -4,57 +4,9 @@ from matplotlib import pyplot as plt
 
 import param
 
-from .. import View
-from ..interface.pandas import DFrame, DFrameStack, DFrameOverlay, DataFrameView, pd
-from .viewplots import Plot, OverlayPlot
-
-
-
-class DFramePlot(OverlayPlot):
-    """
-    A high-level plot, which will plot any DataFrameView or DFrameStack type
-    including DataOverlays.
-
-    A generic plot that visualizes DFrameStacks containing DFrameOverlay or
-    DataFrameView objects.
-    """
-
-    _stack_type = DFrameStack
-    _view_type = DFrameOverlay
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     DataPlot renders overlay layers which individually have style
-     options but DataPlot itself does not.""")
-
-    def __call__(self, axis=None, lbrt=None, **kwargs):
-
-        ax = self._init_axis(axis)
-
-        stacks = self._stack.split_overlays()
-
-        for zorder, stack in enumerate(stacks):
-            plotopts = View.options.plotting(stack).opts
-
-            plotype = Plot.defaults[stack.type]
-            plot = plotype(stack, size=self.size, all_keys=self._keys,
-                           show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
-                           show_legend=self.show_legend, show_title=self.show_title,
-                           show_grid=self.show_grid, zorder=zorder,
-                           **dict(plotopts, **kwargs))
-            plot.aspect = self.aspect
-
-            plot(ax)
-            self.plots.append(plot)
-
-        if axis is None: plt.close(self.handles['fig'])
-        return ax if axis else self.handles['fig']
-
-
-    def update_frame(self, n, lbrt=None):
-        n = n if n < len(self) else len(self) - 1
-        for zorder, plot in enumerate(self.plots):
-            plot.update_frame(n)
-
+from .. import View, LayerMap
+from ..interface.pandas import DFrame, DataFrameView, pd
+from .viewplots import Plot
 
 
 class DFrameViewPlot(Plot):
@@ -173,5 +125,4 @@ class DFrameViewPlot(Plot):
 
 
 Plot.defaults.update({DataFrameView: DFrameViewPlot,
-                      DFrame: DFrameViewPlot,
-                      DFrameOverlay: DFramePlot})
+                      DFrame: DFrameViewPlot})

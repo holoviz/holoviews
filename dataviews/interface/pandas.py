@@ -324,18 +324,6 @@ class DFrame(DataFrameView):
         if 1 > len(dims) > 2:
             raise Exception("HeatMap supports either one or two dimensions")
         return self._export_dataview(value_dim, indices, reduce_fn, dims,
-                                     stack_dims, self._create_heatmap, DataStack)
-
-
-
-class DFrameOverlay(Overlay, DFrameLayer):
-    """
-    DFrameOverlay provides a compatibility layer to overlay Pandas
-    Views. Required to allow isinstance checks to work.
-    """
-
-    pass
-
 
 
 class DFrameStack(Stack):

@@ -11,7 +11,7 @@ import numpy as np
 import param
 
 from .ndmapping import NdMapping, Dimensional, Dimension
-from .options import options
+from .options import options, channels
 
 
 class View(param.Parameterized, Dimensional):
@@ -299,11 +299,17 @@ class Annotation(View):
         raise Exception("An annotation can only be overlaid over a different View type.")
 
 
+
 class Overlay(View):
     """
     An Overlay allows a group of Layers to be overlaid together. Layers can
     be indexed out of an overlay and an overlay is an iterable that iterates
     over the contained layers.
+
+    A SheetOverlay may be used to overlay lines or points over a
+    SheetView. In addition, if an overlay consists of three or four
+    SheetViews of depth 1, the overlay may be converted to an RGB(A)
+    SheetView via the rgb property.
     """
 
     dimensions = param.List(default=[Dimension('Overlay')], constant=True, doc="""List
@@ -316,6 +322,7 @@ class Overlay(View):
       Overlays should not have their label set directly by the user as
       the label is only for defining custom channel operations.""")
 
+    channels = channels
 
     _abstract = True
 
@@ -323,6 +330,9 @@ class Overlay(View):
 
     def __init__(self, overlays, **kwargs):
         super(Overlay, self).__init__([], **kwargs)
+        self._xlim = None
+        self._ylim = None
+        self._layer_dimensions = None
         self.set(overlays)
 
 
@@ -346,9 +356,53 @@ class Overlay(View):
         """
         Overlay a single layer on top of the existing overlay.
         """
+        if isinstance(layer, Annotation): pass
+        elif not len(self):
+            self._layer_dimensions = layer.dimension_labels
+            self.xlim = layer.xlim
+            self.ylim = layer.ylim
+            self.value = layer.value
+            self.label = layer.label
+        else:
+            self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
+            self.ylim = layer.ylim if self.xlim is None else find_minmax(self.ylim, layer.ylim)
+            if layer.dimension_labels != self._layer_dimensions:
+                raise Exception("DataLayers must share common dimensions.")
         if layer.label in [o.label for o in self.data]:
             self.warning('Label %s already defined in Overlay' % layer.label)
         self.data.append(layer)
+
+
+    @property
+    def range(self):
+        range = self[0].range
+        cyclic = self[0].cyclic_range is not None
+        for view in self:
+            if isinstance(view, SheetView):
+                if cyclic != (self[0].cyclic_range is not None):
+                    raise Exception("Overlay contains cyclic and non-cyclic "
+                                    "SheetViews, cannot compute range.")
+                range = find_minmax(range, view.range)
+        return range
+
+
+    @property
+    def cyclic_range(self):
+        return self[0].cyclic_range if len(self) else None
+
+
+    def __mul__(self, other):
+        if isinstance(other, HoloMap):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items=items)
+        elif isinstance(other, Overlay):
+            overlays = self.data + other.data
+        elif isinstance(other, (View, Annotation)):
+            overlays = self.data + [other]
+        else:
+            raise TypeError('Can only create an overlay of DataViews.')
+
+        return Overlay(overlays)
 
 
     def set(self, layers):
@@ -359,6 +413,21 @@ class Overlay(View):
         for layer in layers:
             self.add(layer)
         return self
+
+
+    def hist(self, index=None, adjoin=True, **kwargs):
+        valid_ind = isinstance(index, int) and (0 <= index < len(self))
+        valid_label = index in [el.label for el in self.data]
+        if index is None or not any([valid_ind, valid_label]):
+            raise TypeError("Please supply a suitable index for the histogram data")
+
+        hist = self[index].hist(adjoin=False, **kwargs)
+        if adjoin:
+            layout = self << hist
+            layout.main_layer = index
+            return layout
+        else:
+            return hist
 
 
     def __getitem__(self, ind):
@@ -378,6 +447,32 @@ class Overlay(View):
                                   **dict(self.get_param_values()))
         else:
             return self.data[ind][ind2]
+
+
+    def __getstate__(self):
+        """
+        When pickling, make sure to save the relevant channel
+        definitions.
+        """
+        obj_dict = self.__dict__.copy()
+        channels = dict((k, self.channels[k]) for k in self.channels.keys())
+        obj_dict['channel_definitions'] = channels
+        return obj_dict
+
+
+    def __setstate__(self, d):
+        """
+        When unpickled, restore the saved channel definitions.
+        """
+
+        if 'channel_definitions' not in d:
+            self.__dict__.update(d)
+            return
+
+        unpickled_channels = d.pop('channel_definitions')
+        for key, defs in unpickled_channels.items():
+            self.channels[key] = defs
+        self.__dict__.update(d)
 
 
     def __len__(self):

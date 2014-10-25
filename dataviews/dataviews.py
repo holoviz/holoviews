@@ -338,47 +338,6 @@ class Histogram(Layer):
 
 
 
-class DataOverlay(DataLayer, Overlay):
-    """
-    A DataOverlay can contain a number of DataLayer objects, which are to be
-    overlayed on one axis. When adding new DataLayers to the DataOverlay
-    it ensures the DataLayers have the same x- and y-label and recomputes the
-    axis limits.
-    """
-
-    def __init__(self, overlays, **kwargs):
-        Overlay.__init__(self, [], **kwargs)
-        self._xlim = None
-        self._ylim = None
-        self.set(overlays)
-
-
-    def __getitem__(self, ind):
-        return Overlay.__getitem__(self, ind)
-
-
-    def add(self, layer):
-        if isinstance(layer, Annotation): pass
-        elif not len(self):
-            self.xlim = layer.xlim
-            self.ylim = layer.ylim
-            self.dimensions = layer.dimensions
-            self.value = layer.value
-            self.label = layer.label
-        else:
-            self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
-            self.ylim = layer.ylim if self.xlim is None else find_minmax(self.ylim, layer.ylim)
-            if layer.dimension_labels != self.dimension_labels:
-                raise Exception("DataLayers must share common dimensions.")
-        self.data.append(layer)
-
-
-    @property
-    def cyclic_range(self):
-        return self[0].cyclic_range if len(self) else None
-
-
-
 class Matrix(Layer):
     """
     Matrix is a basic 2D atomic View type.
