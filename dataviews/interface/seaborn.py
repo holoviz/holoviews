@@ -148,12 +148,13 @@ class DFrame(PandasDFrame):
     in a multi-dimensional Pandas dframe.
     """
 
-    plot_type = param.ObjectSelector(default=None, objects=['interact', 'regplot',
-                                                            'lmplot', 'corrplot',
-                                                            'plot', 'boxplot',
-                                                            'hist', 'scatter_matrix',
-                                                            'autocorrelation_plot',
-                                                            None],
+    plot_type = param.ObjectSelector(default=None,
+                                     objects=['interact', 'regplot',
+                                              'lmplot', 'corrplot',
+                                              'plot', 'boxplot',
+                                              'hist', 'scatter_matrix',
+                                              'autocorrelation_plot',
+                                              None],
                                      doc="""Selects which Pandas or Seaborn plot
                                             type to use, when visualizing the plot.""")
 
