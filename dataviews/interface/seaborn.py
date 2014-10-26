@@ -12,7 +12,7 @@ import param
 
 from ..ndmapping import Dimension
 from ..views import Overlay
-from ..dataviews import Layer, Scatter, LayerMap
+from ..dataviews import Layer, Scatter, LayerMap, DataView
 from ..options import options, StyleOpts, Cycle
 from .pandas import DFrame as PandasDFrame
 
@@ -74,11 +74,14 @@ class TimeSeries(Layer):
 
     @property
     def ylim(self):
-        return (np.min(self.data), np.max(self.data))
+        if self._ylim:
+            return self._ylim
+        else:
+            return (np.min(self.data), np.max(self.data))
 
 
 
-class Bivariate(Scatter):
+class Bivariate(DataView):
     """
     Bivariate Views are containers for two dimensional data,
     which is to be visualized as a kernel density estimate. The
@@ -96,7 +99,7 @@ class Bivariate(Scatter):
 
 
 
-class Distribution(Layer):
+class Distribution(DataView):
     """
     Distribution Views provide a container for data to be
     visualized as a one-dimensional distribution. The data should
@@ -111,8 +114,6 @@ class Distribution(Layer):
     def xlim(self):
         if self._xlim:
             return self._xlim
-        elif isinstance(self, Overlay):
-            return None
         elif self.cyclic_range is not None:
             return (0, self.cyclic_range)
         else:
@@ -158,6 +159,12 @@ class DFrame(PandasDFrame):
 
     x2 = param.String(doc="""Dimension to visualize along a second
                              dependent axis.""")
+
+
+    @property
+    def ylabel(self):
+        return self.x2 if self.x2 else self.y
+
 
 
 options.TimeSeries = StyleOpts(color=Cycle())

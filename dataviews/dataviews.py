@@ -11,44 +11,13 @@ from .views import View, Overlay, Annotation, HoloMap, find_minmax
 
 class Layer(View):
     """
-    Layer is a 2D View type used to hold data indexed
-    by an x-dimension and y-dimension. The data held within
-    the Layer is a numpy array of shape (n, 2). 
-    Layer objects are sliceable along the X dimension
-    allowing easy selection of subsets of the data.
-    However, subclasses can override the default storage type,
-    dimensions and slicing operations.
+    Layer is the baseclass for all 2D View types, with an x- and
+    y-dimension. Subclasses should define the data storage in the
+    constructor, as well as methods and properties, which define how
+    the data maps onto the x- and y- and value dimensions.
     """
 
-    dimensions = param.List(default=[Dimension('X')], doc="""
-        Dimensions on Layers determine the number of indexable
-        dimensions.""")
-
     legend_label = param.String(default="", doc="Legend labels")
-
-    value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
-
-    def __init__(self, data, **kwargs):
-        settings = {}
-        if isinstance(data, Layer):
-            settings = dict(data.get_param_values())
-            data = data.data
-        elif isinstance(data, HoloMap) or (isinstance(data, list) and data
-                                         and isinstance(data[0], Layer)):
-            data, settings = self._process_stack(data)
-
-        if len(data) and not isinstance(data, np.ndarray):
-            data = np.array(data)
-
-        self._xlim = None
-        self._ylim = None
-        settings.update(kwargs)
-        super(Layer, self).__init__(data, **settings)
-
-
-    @property
-    def stack_type(self):
-        return LayerMap
 
 
     def _process_stack(self, stack):
@@ -72,6 +41,159 @@ class Layer(View):
         combined_layers = self_layers + other_layers
 
         return Overlay(combined_layers)
+
+
+    def __mul__(self, other):
+        if isinstance(other, LayerMap):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items=items)
+        elif isinstance(other, Overlay):
+            overlays = [self] + other.data
+        elif isinstance(other, (Layer, Annotation)):
+            overlays = [self, other]
+        else:
+            raise TypeError('Can only create an overlay of DataViews.')
+
+        return Overlay(overlays)
+
+
+    ########################
+    # Subclassable methods #
+    ########################
+
+
+    def __init__(self, data, **kwargs):
+        self._xlim = None
+        self._ylim = None
+        super(Layer, self).__init__(data, **kwargs)
+
+
+    @property
+    def cyclic_range(self):
+        if self.dimensions[0].cyclic:
+            return self.dimensions[0].range[1]
+        else:
+            return None
+
+    @property
+    def range(self):
+        if self.cyclic_range:
+            return self.cyclic_range
+        y_vals = self.data[:, 1]
+        return (float(min(y_vals)), float(max(y_vals)))
+
+
+    @property
+    def xlabel(self):
+        return self.dimensions[0].pprint_label
+
+
+    @property
+    def ylabel(self):
+        if len(self.dimensions) == 1:
+            return self.value.pprint_label
+        else:
+            return self.dimensions[1].pprint_label
+
+    @property
+    def xlim(self):
+        if self._xlim:
+            return self._xlim
+        elif self.cyclic_range is not None:
+            return (0, self.cyclic_range)
+        else:
+            x_vals = self.data[:, 0]
+            return (float(min(x_vals)), float(max(x_vals)))
+
+    @xlim.setter
+    def xlim(self, limits):
+        if self.cyclic_range:
+            self.warning('Cannot override the limits of a '
+                         'cyclic dimension.')
+        elif limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._xlim = limits
+        else:
+            raise ValueError('xlim needs to be a length two tuple or None.')
+
+
+    @property
+    def ylim(self):
+        if self._ylim:
+            return self._ylim
+        else:
+            y_vals = self.data[:, 1]
+            return (float(min(y_vals)), float(max(y_vals)))
+
+
+    @ylim.setter
+    def ylim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._ylim = limits
+        else:
+            raise ValueError('xlim needs to be a length two tuple or None.')
+
+
+    @property
+    def lbrt(self):
+        l, r = self.xlim if self.xlim else (None, None)
+        b, t = self.ylim if self.ylim else (None, None)
+        return l, b, r, t
+
+
+    @lbrt.setter
+    def lbrt(self, lbrt):
+        l, b, r, t = lbrt
+        self.xlim, self.ylim = (l, r), (b, t)
+
+
+
+class DataView(Layer):
+    """
+    The data held within an Array is a numpy array of shape (n, 2).
+    Layer objects are sliceable along the X dimension allowing easy
+    selection of subsets of the data.
+    """
+
+    dimensions = param.List(default=[Dimension('X')], doc="""
+        Dimensions on Layers determine the number of indexable
+        dimensions.""")
+
+    value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
+
+    def __init__(self, data, **kwargs):
+        settings = {}
+        if isinstance(data, DataView):
+            settings = dict(data.get_param_values())
+            data = data.data
+        elif isinstance(data, HoloMap) or (isinstance(data, list) and data
+                                           and isinstance(data[0], Layer)):
+            data, settings = self._process_stack(data)
+
+        if len(data) and not isinstance(data, np.ndarray):
+            data = np.array(data)
+        settings.update(kwargs)
+        super(DataView, self).__init__(data, **settings)
+
+
+    def __getitem__(self, slc):
+        """
+        Implements slicing or indexing of the data by the data x-value.
+        If a single element is indexed reduces the Layer to a single
+        Scatter object.
+        """
+        if slc is ():
+            return self
+        if isinstance(slc, slice):
+            start, stop = slc.start, slc.stop
+            xvals = self.data[:, 0]
+            start_idx = np.abs((xvals - start)).argmin()
+            stop_idx = np.abs((xvals - stop)).argmin()
+            return self.__class__(self.data[start_idx:stop_idx, :],
+                                  **dict(self.get_param_values()))
+        else:
+            slc = np.where(self.data[:, 0] == slc)
+            sample = self.data[slc, :]
+            return Scatter(sample, **dict(self.get_param_values()))
 
 
     def sample(self, samples=[]):
@@ -98,130 +220,14 @@ class Layer(View):
                      value=self.value(value))
 
 
-    def __getitem__(self, slc):
-        """
-        Implements slicing or indexing of the data by the data x-value.
-        If a single element is indexed reduces the Layer to a single
-        Scatter object.
-        """
-        if slc is ():
-            return self
-        if isinstance(slc, slice):
-            start, stop = slc.start, slc.stop
-            xvals = self.data[:, 0]
-            start_idx = np.abs((xvals - start)).argmin()
-            stop_idx = np.abs((xvals - stop)).argmin()
-            return self.__class__(self.data[start_idx:stop_idx, :],
-                                  **dict(self.get_param_values()))
-        else:
-            slc = np.where(self.data[:, 0] == slc)
-            sample = self.data[slc, :]
-            return Scatter(sample, **dict(self.get_param_values()))
-
-
-    def __mul__(self, other):
-        if isinstance(other, LayerMap):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
-        elif isinstance(other, Overlay):
-            overlays = [self] + other.data
-        elif isinstance(other, (Layer, Annotation)):
-            overlays = [self, other]
-        else:
-            raise TypeError('Can only create an overlay of DataViews.')
-
-        return Overlay(overlays)
-
-
-    @property
-    def cyclic_range(self):
-        if self.dimensions[0].cyclic:
-            return self.dimensions[0].range[1]
-        else:
-            return None
-
-
-    @property
-    def xlabel(self):
-        return self.dimensions[0].pprint_label
-
-
-    @property
-    def ylabel(self):
-        if len(self.dimensions) == 1:
-            return self.value.pprint_label
-        else:
-            return self.dimensions[1].pprint_label
-
-
-    @property
-    def xlim(self):
-        if self._xlim:
-            return self._xlim
-        elif isinstance(self, Overlay):
-            return None
-        elif self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        else:
-            x_vals = self.data[:, 0]
-            return (float(min(x_vals)), float(max(x_vals)))
-
-
-    @xlim.setter
-    def xlim(self, limits):
-        xmin, xmax = limits
-        xlim = self._xlim
-        if self.cyclic_range and not isinstance(self, Overlay):
-            self.warning('Cannot override the limits of a cyclic dimension')
-        elif xlim is None or (xmin <= xlim[0] and xmax >= xlim[1]):
-            self._xlim = (xmin, xmax)
-        elif not isinstance(self, Overlay):
-            self.warning('Applied x-limits need to be inclusive '
-                         'of all data.')
-
-
-    @property
-    def range(self):
-        y_vals = self.data[:, 1]
-        return (float(min(y_vals)), float(max(y_vals)))
-
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        elif isinstance(self, Overlay):
-            return None
-        else:
-            return self.range
-
-
-    @ylim.setter
-    def ylim(self, limits):
-        ymin, ymax = limits
-        ylim = self._ylim
-        if ylim is None or (ymin <= ylim[0] and ymax >= ylim[1]):
-            self._ylim = (ymin, ymax)
-        elif not isinstance(self, Overlay):
-            self.warning('Applied y-limits need to be inclusive '
-                         'of all data.')
-
-
-    @property
-    def lbrt(self):
-        if self.xlim is None: return None, None, None, None
-        l, r = self.xlim
-        b, t = self.ylim
-        return l, b, r, t
-
-
     def dframe(self):
         import pandas as pd
-        return pd.DataFrame(self.data, columns=[self.dimension_labels[0], self.value.name])
+        columns = [self.dimension_labels[0], self.value.name]
+        return pd.DataFrame(self.data, columns=columns)
 
 
 
-class Scatter(Layer):
+class Scatter(DataView):
     """
     Scatter is a simple 1D View, which gets displayed as a number of
     disconnected points.
@@ -231,13 +237,17 @@ class Scatter(Layer):
 
 
 
-class Curve(Layer):
+class Curve(DataView):
     """
     Curve is a simple 1D View of points and therefore assumes the data is
     ordered.
     """
 
-    def animate(self):
+    def progressive(self):
+        """
+        Create map indexed by Curve x-axis with progressively expanding number
+        of curve samples.
+        """
         stack = LayerMap(None, dimensions=[self.xlabel], title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
@@ -248,10 +258,11 @@ class Curve(Layer):
         return stack
 
 
-class Bars(Layer):
+
+class Bars(DataView):
     """
-    A bar is a simple 1D View of bars, which assumes that the data is sorted by
-    x-value and there are no gaps in the bars.
+    A bar is a simple 1D View of bars, which assumes that the data is
+    sorted by x-value and there are no gaps in the bars.
     """
 
     def __init__(self, data, width=None, **kwargs):
@@ -265,13 +276,24 @@ class Bars(Layer):
         else:
             return self._width
 
+    @width.setter
+    def width(self, width):
+        if np.isscalar(width) or len(width) == len(self):
+            self._width = width
+        else:
+            raise ValueError('width should be either a scalar or '
+                             'match the number of bars in length.')
 
 
 class Histogram(Layer):
     """
-    Histogram contains a number of bins, which are defined by the upper
-    and lower bounds of their edges and the computed bin values.
+    Histogram contains a number of bins, which are defined by the
+    upper and lower bounds of their edges and the computed bin values.
     """
+
+    dimensions = param.List(default=[Dimension('X')], doc="""
+        Dimensions on Layers determine the number of indexable
+        dimensions.""")
 
     title = param.String(default='{label} {type}')
 
@@ -280,8 +302,7 @@ class Histogram(Layer):
     def __init__(self, values, edges=None, **kwargs):
         self.values, self.edges, settings = self._process_data(values, edges)
         settings.update(kwargs)
-        super(Histogram, self).__init__([], **settings)
-        self.data = (self.values, self.edges)
+        super(Histogram, self).__init__((self.values, self.edges), **settings)
 
 
     def _process_data(self, values, edges):
@@ -551,11 +572,6 @@ class Matrix(Layer):
         return self.normalize()
 
 
-    @property
-    def ylabel(self):
-        return self.dimensions[1].pprint_label
-
-
 
 class HeatMap(Matrix):
     """
@@ -624,12 +640,14 @@ class HeatMap(Matrix):
 
     @property
     def xlim(self):
+        if self._xlim: return self._xlim
         dim1_keys, _ = self.dense_keys()
         return min(dim1_keys), max(dim1_keys)
 
 
     @property
     def ylim(self):
+        if self._ylim: return self._ylim
         _, dim2_keys = self.dense_keys()
         return min(dim2_keys), max(dim2_keys)
 
@@ -668,7 +686,7 @@ class LayerMap(HoloMap):
     def xlim(self):
         xlim = self.last.xlim
         for data in self.values():
-            xlim = find_minmax(xlim, data.xlim)
+            xlim = find_minmax(xlim, data.xlim) if data.xlim and xlim else xlim
         return xlim
 
 
@@ -676,7 +694,7 @@ class LayerMap(HoloMap):
     def ylim(self):
         ylim = self.last.ylim
         for data in self.values():
-            ylim = find_minmax(ylim, data.ylim)
+            ylim = find_minmax(ylim, data.ylim) if data.ylim and ylim else ulim
         return ylim
 
 
@@ -781,8 +799,8 @@ class Items(Layer):
     """
 
     xlabel, ylabel = None, None
-    xlim, ylim = (None, None), (None, None)
-    lbrt = xlim + ylim
+    xlim, ylim = None, None
+    lbrt = None, None, None, None
 
     @property
     def rows(self):
@@ -802,7 +820,7 @@ class Items(Layer):
             data = OrderedDict([(h, data[h]) for h in headings])
         if 'dimensions' not in kwargs:
             kwargs['dimensions'] = headings
-        View.__init__(self, data=data, **kwargs)
+        super(Items, self).__init__(data=data, **kwargs)
 
 
     def __getitem__(self, heading):

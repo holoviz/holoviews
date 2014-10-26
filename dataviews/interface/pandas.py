@@ -176,6 +176,13 @@ class DataFrameView(Layer):
         """
         return self._split_dimensions(dimensions, LayerMap)
 
+    @property
+    def xlabel(self):
+        return self.x
+
+    @property
+    def ylabel(self):
+        return self.y
 
     @property
     def xlim(self):
@@ -185,8 +192,7 @@ class DataFrameView(Layer):
             xdata = self.data[self.x]
             return min(xdata), max(xdata)
         else:
-            return None, None
-
+            return None
 
     @property
     def ylim(self):
@@ -196,7 +202,7 @@ class DataFrameView(Layer):
             ydata = self.data[self.y]
             return min(ydata), max(ydata)
         else:
-            return None, None
+            return None
 
 
 

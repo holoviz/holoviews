@@ -195,12 +195,6 @@ class Points(Layer):
 
 
     @property
-    def ylim(self):
-        ydata = self.data[:, 1]
-        return min(ydata), max(ydata)
-
-
-    @property
     def range(self):
         """
         The range of magnitudes (if available) otherwise None.
