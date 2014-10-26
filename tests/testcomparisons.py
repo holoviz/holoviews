@@ -124,12 +124,6 @@ class SheetOverlayComparisonTest(SheetOverlayTestCase):
         except AssertionError as e:
             assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
 
-    def test_bounds_mismatch(self):
-        try:
-            self.assertEqual(self.overlay1_depth2, self.overlay3_depth2)
-        except AssertionError as e:
-            assert str(e).startswith('BoundingBoxes are mismatched.')
-
 
 
 class StackComparisonTest(StackTestCase):
@@ -163,25 +157,10 @@ class StackComparisonTest(StackTestCase):
         except AssertionError as e:
             assert str(e).startswith("Stacks have different sets of keys.")
 
-    def test_bounds_mismatch(self):
-        try:
-            self.assertEqual(self.stack1_1D, self.stack5_1D)
-            raise AssertionError("Mismatch in element bounding boxes.")
-        except AssertionError as e:
-            assert str(e).startswith("BoundingBoxes are mismatched.")
-
     def test_element_mismatch(self):
         try:
             self.assertEqual(self.stack1_1D, self.stack4_1D)
             raise AssertionError("Element mismatch in array data not detected.")
-        except AssertionError as e:
-            assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
-
-
-    def test_overlay_mismatch(self):
-        try:
-            self.assertEqual(self.stack7_1D, self.stack8_1D)
-            raise AssertionError("Overlay element mismatch in array data not detected.")
         except AssertionError as e:
             assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
 

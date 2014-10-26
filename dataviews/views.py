@@ -91,11 +91,6 @@ class View(param.Parameterized, Dimensional):
 
 
     @property
-    def stack_type(self):
-        return HoloMap
-
-
-    @property
     def style(self):
         """
         The name of the style that may be used to control display of
@@ -380,11 +375,10 @@ class Overlay(View):
         range = self[0].range
         cyclic = self[0].cyclic_range is not None
         for view in self:
-            if isinstance(view, SheetView):
-                if cyclic != (self[0].cyclic_range is not None):
-                    raise Exception("Overlay contains cyclic and non-cyclic "
-                                    "SheetViews, cannot compute range.")
-                range = find_minmax(range, view.range)
+            if cyclic != (self[0].cyclic_range is not None):
+                raise Exception("Overlay contains cyclic and non-cyclic "
+                                "Views, cannot compute range.")
+            range = find_minmax(range, view.range)
         return range
 
 

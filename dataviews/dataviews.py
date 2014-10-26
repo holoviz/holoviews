@@ -884,10 +884,6 @@ class Table(Items, NdMapping):
         self._data = self.data
 
     @property
-    def stack_type(self):
-        return TableStack
-
-    @property
     def rows(self):
         return len(self) + 1
 

@@ -229,8 +229,8 @@ class DFrame(DataFrameView):
         DataFrame to select, additionally indices or a reduce_fn can
         be supplied to select or reduce multiple entries in the
         DataFrame. Further, the view_dims and stack_dims determine
-        which Dimension will be grouped and supplied to the appropriate
-        view_method and stack_type respectively.
+        which Dimensions will be grouped and supplied to the appropriate
+        view_method and ViewMap respectively.
         """
 
         # User error checking

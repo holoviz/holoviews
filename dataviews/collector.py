@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 import param
 from .sheetviews import CoordinateGrid
+from .dataviews import LayerMap
 from .sheetviews import SheetView  # pyflakes:ignore (Needed for doctests)
 from .views import GridLayout, HoloMap, View, NdMapping, Dimension
 
@@ -586,7 +587,7 @@ class Collect(object):
 
         if self.path not in attrtree:
             if not isinstance(val, NdMapping):
-                val = val.stack_type([((time,), val)], dimensions=[Time])
+                val = LayerMap([((time,), val)], dimensions=[Time])
         else:
             current_val = attrtree.path_items[self.path]
             val = self._merge_views(current_val, val, time)

@@ -26,21 +26,19 @@ class ViewTestCase(unittest.TestCase):
         # General view classes
         self.addTypeEqualityFunc(GridLayout,   self.compare_gridlayout)
         self.addTypeEqualityFunc(Layout,       self.compare_layouts)
+        self.addTypeEqualityFunc(Overlay,       self.compare_overlays)
         self.addTypeEqualityFunc(Annotation,   self.compare_annotations)
         self.addTypeEqualityFunc(Grid,         self.compare_grids)
 
         # DataLayers
-        self.addTypeEqualityFunc(DataOverlay,  self.compare_dataoverlays)
         self.addTypeEqualityFunc(LayerMap,    self.compare_datastack)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
         self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
         self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
-        self.addTypeEqualityFunc(TableStack,   self.compare_tablestack)
         self.addTypeEqualityFunc(Items,        self.compare_tables)
         # SheetLayers
-        self.addTypeEqualityFunc(SheetOverlay, self.compare_sheetoverlays)
         self.addTypeEqualityFunc(SheetView,    self.compare_sheetviews)
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)
@@ -115,6 +113,12 @@ class ViewTestCase(unittest.TestCase):
         for el1, el2 in zip(view1, view1):
             self.assertEqual(el1, el2)
 
+    def compare_overlays(self, view1, view2, msg):
+        if len(view1) != len(view2):
+            raise self.failureException("Overlays have different lengths.")
+
+        for (layer1, layer2) in zip(view1, view2):
+            self.assertEqual(layer1, layer2)
 
     def compare_intervals(self, interval1, interval2):
         if (interval1, interval2) == (None,None):
@@ -169,14 +173,6 @@ class ViewTestCase(unittest.TestCase):
         self.compare_stack(view1, view2, msg)
 
 
-    def compare_dataoverlays(self, view1, view2, msg):
-        if len(view1) != len(view2):
-            raise self.failureException("DataOverlays have different lengths.")
-
-        for (layer1, layer2) in zip(view1, view2):
-            self.assertEqual(layer1, layer2)
-
-
     def compare_curve(self, view1, view2, msg):
         if view1.cyclic_range != view2.cyclic_range:
             raise self.failureException("Curves do not have matching cyclic_range.")
@@ -225,21 +221,6 @@ class ViewTestCase(unittest.TestCase):
     #=============#
     # SheetLayers #
     #=============#
-
-    def compare_sheetstack(self, view1, view2, msg):
-        self.bounds_check(view1,view2)
-        self.compare_stack(view1, view2, msg)
-
-
-    def compare_sheetoverlays(self, view1, view2, msg):
-        if len(view1) != len(view2):
-            raise self.failureException("SheetOverlays have different lengths.")
-
-        self.bounds_check(view1, view2)
-
-        for (layer1, layer2) in zip(view1, view2):
-            self.assertEqual(layer1, layer2)
-
 
     def compare_sheetviews(self, view1, view2, msg):
         self.compare_arrays(view1.data, view2.data, 'SheetView')
