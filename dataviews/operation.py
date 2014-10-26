@@ -16,10 +16,9 @@ import param
 from param import ParamOverrides
 
 from .ndmapping import Dimension
-from .views import Overlay, GridLayout, HoloMap
-from .sheetviews import SheetView, DataGrid, Contours, VectorField
+from .views import Overlay, GridLayout, HoloMap, Grid
+from .sheetviews import SheetView,  Contours, VectorField
 from .dataviews import View, Items, LayerMap, Table, Items, Curve
-from .sheetviews import CoordinateGrid
 
 from .options import options, StyleOpts, ChannelOpts, Cycle
 from .styles import GrayNearest
@@ -83,15 +82,14 @@ class ViewOperation(param.ParameterizedFunction):
             else:
                 return views[0]
 
-        elif isinstance(view, CoordinateGrid):
+        elif isinstance(view, Grid):
             grids = []
             for pos, cell in view.items():
                 val = self(cell, **params)
                 stacks = val.values() if isinstance(val, GridLayout) else [val]
                 # Initialize the list of data or coordinate grids
                 if grids == []:
-                    grids = [(DataGrid if not isinstance(stack.type, (SheetLayer))
-                              else CoordinateGrid)(view.bounds, None, view.xdensity, view.ydensity, label=view.label)
+                    grids = [Grid(view.bounds, None, view.xdensity, view.ydensity, label=view.label)
                              for stack in stacks]
                 # Populate the grids
                 for ind, stack in enumerate(stacks):

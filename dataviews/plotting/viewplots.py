@@ -14,7 +14,7 @@ import matplotlib.patches as patches
 import param
 
 from dataviews import Grid, View, HoloMap, Layer, LayerMap, NdMapping, \
-    GridLayout, Overlay, Annotation, DataGrid
+    GridLayout, Overlay, Annotation
 from ..views import Layout
 
 
@@ -328,7 +328,7 @@ class GridPlot(Plot):
 
     def __init__(self, grid, **kwargs):
         if not isinstance(grid, Grid):
-            raise Exception("GridPlot only accepts DataGrids.")
+            raise Exception("GridPlot only accepts Grid.")
 
         self.grid = grid
         self.subplots = []
@@ -806,7 +806,7 @@ class GridLayoutPlot(Plot):
 class OverlayPlot(Plot):
     """
     An OverlayPlot supports processing of channel operations on
-    Overlays across stacks. SheetPlot and CoordinateGridPlot are
+    Overlays across stacks. SheetPlot and MatrixGridPlot are
     examples of OverlayPlots.
     """
 
@@ -1071,5 +1071,4 @@ Plot.defaults.update({Grid: GridPlot,
                       GridLayout: GridLayoutPlot,
                       Layout: GridLayoutPlot,
                       Overlay: OverlayPlot,
-                      Annotation: AnnotationPlot,
-                      DataGrid: GridPlot})
+                      Annotation: AnnotationPlot})

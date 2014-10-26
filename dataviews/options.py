@@ -370,8 +370,6 @@ options =  OptionsGroup([Options('plotting', PlotOpts),
 
 
 # Default Plotopts
-options.CoordinateGrid = PlotOpts()
-options.DataGrid = PlotOpts()
 options.Grid = PlotOpts()
 options.GridLayout = PlotOpts()
 

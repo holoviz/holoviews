@@ -1,7 +1,8 @@
 import unittest
 
 from dataviews.sheetviews import BoundingBox
-from dataviews.views import View, Annotation, Layout, Overlay, GridLayout, Grid
+from dataviews.dataviews import Layer, View
+from dataviews.views import Annotation, Layout, Overlay, GridLayout, Grid
 
 
 class ViewTest(unittest.TestCase):

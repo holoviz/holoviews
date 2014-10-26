@@ -1111,15 +1111,14 @@ class Grid(NdMapping):
     to be of the same type. Unlike GridLayouts, which have integer keys,
     Grids usually have floating point keys, which correspond to a grid
     sampling in some two-dimensional space. This two-dimensional space may
-    have to arbitrary dimensions, e.g. for 2D parameter spaces. CoordinateGrid
-    is implemented specifically sampling in 2D spatial coordinates.
+    have to arbitrary dimensions, e.g. for 2D parameter spaces.
     """
 
     dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")])
 
     label = param.String(constant=True, doc="""
       A short label used to indicate what kind of data is contained
-      within the CoordinateGrid.""")
+      within the Grid.""")
 
     title = param.String(default='{label}', doc="""
        The title formatting string allows the title to be composed

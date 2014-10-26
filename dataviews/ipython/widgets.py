@@ -26,8 +26,8 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 import param
 
 from .. import GridLayout, NdMapping
-from ..views import Layout, Overlay, View
-from ..sheetviews import CoordinateGrid
+from ..views import Layout, Overlay, View, Grid
+from ..dataviews import LayerMap
 from ..plotting import Plot, GridLayoutPlot
 from .magics import ViewMagic
 
@@ -276,11 +276,11 @@ class NdWidget(param.Parameterized):
         keys_list = []
         dimensions = []
         for i, v in enumerate(view):
-            if isinstance(v, CoordinateGrid): v = v.values()[0]
+            if isinstance(v, Grid): v = v.values()[0]
             if isinstance(v, Layout): v = v.main
             if isinstance(v, Overlay): v = v[0]
             if isinstance(v, View):
-                v = v.stack_type([((0,), v)], dimensions=['Frame'])
+                v = LayerMap([((0,), v)], dimensions=['Frame'])
 
             keys_list.append(list(v._data.keys()))
             if i == 0: dimensions = v.dimensions

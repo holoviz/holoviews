@@ -4,10 +4,9 @@ from nose.plugins.skip import SkipTest
 from numpy.testing import assert_array_almost_equal
 
 from . import Dimension
-from . import LayerMap,  Annotation, Curve, Histogram, Matrix, HeatMap
-from . import TableStack, Items
+from . import Overlay, LayerMap,  Annotation, Curve, Histogram, Matrix, HeatMap
+from . import Items
 from . import SheetView, Points, Contours, VectorField
-from . import CoordinateGrid, DataGrid
 from .views import Layout, GridLayout, Grid
 from .options import StyleOpts, PlotOpts, ChannelOpts
 
@@ -43,9 +42,6 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)
         self.addTypeEqualityFunc(VectorField,       self.compare_vectorfield)
-        # CoordinateGrid and DataGrid
-        self.addTypeEqualityFunc(CoordinateGrid, self.compare_coordgrids)
-        self.addTypeEqualityFunc(DataGrid,       self.compare_datagrids)
         # Option objects
         self.addTypeEqualityFunc(StyleOpts, self.compare_opts)
         self.addTypeEqualityFunc(PlotOpts, self.compare_opts)
@@ -276,15 +272,6 @@ class ViewTestCase(unittest.TestCase):
 
     def compare_grids(self, view1, view2, msg):
         self._compare_grids(view1, view2, 'Grid')
-
-
-    def compare_coordgrids(self, view1, view2, msg):
-        self.bounds_check(view1, view2)
-        self._compare_grids(view1, view2, 'CoordinateGrid')
-
-
-    def compare_datagrids(self, view1, view2, msg):
-        self._compare_grids(view1, view2, 'DataGrid')
 
     #=========#
     # Options #

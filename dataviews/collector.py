@@ -7,10 +7,9 @@ import numpy as np
 from collections import OrderedDict
 
 import param
-from .sheetviews import CoordinateGrid
 from .dataviews import LayerMap
 from .sheetviews import SheetView  # pyflakes:ignore (Needed for doctests)
-from .views import GridLayout, HoloMap, View, NdMapping, Dimension
+from .views import GridLayout, HoloMap, View, NdMapping, Dimension, Grid
 
 from .ipython.widgets import RunProgress, ProgressBar
 
@@ -78,7 +77,7 @@ class AttrTree(object):
             child_ordering = ordering
 
         children = [self.__dict__[l] for l in child_ordering]
-        dataview_types = (View, HoloMap, GridLayout, CoordinateGrid)
+        dataview_types = (View, HoloMap, GridLayout, Grid)
         return GridLayout(list(child for child in children
                                if isinstance(child, dataview_types)))
 
@@ -390,7 +389,7 @@ class ViewRef(Reference):
 
     @property
     def resolved_type(self):
-        return (View, HoloMap, CoordinateGrid)
+        return (View, HoloMap, Grid)
 
 
     def _resolve_ref(self, ref, attrtree):

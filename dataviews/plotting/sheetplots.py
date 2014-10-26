@@ -8,7 +8,7 @@ from matplotlib.collections import LineCollection
 import param
 
 from .. import LayerMap, Points, View, SheetView, Overlay, \
-    CoordinateGrid, NdMapping, Contours, VectorField
+    Grid, NdMapping, Contours, VectorField
 from .dataplots import MatrixPlot
 from .viewplots import OverlayPlot, Plot
 
@@ -254,11 +254,10 @@ class SheetViewPlot(MatrixPlot):
     _view_type = SheetView
 
 
-class CoordinateGridPlot(OverlayPlot):
+class MatrixGridPlot(OverlayPlot):
     """
-    CoordinateGridPlot evenly spaces out plots of individual projections on
-    a grid, even when they differ in size. The projections can be situated
-    or an ROI can be applied to each element. Since this class uses a single
+    MatrixGridPlot evenly spaces out plots of individual projections on
+    a grid, even when they differ in size. Since this class uses a single
     axis to generate all the individual plots it is much faster than the
     equivalent using subplots.
     """
@@ -277,19 +276,18 @@ class CoordinateGridPlot(OverlayPlot):
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
                                      'visible', 'filterrad', 'origin'],
                             constant=True, doc="""
-       The style options for CoordinateGridPlot match those of
+       The style options for MatrixGridPlot match those of
        matplotlib's imshow command.""")
 
 
     def __init__(self, grid, **kwargs):
         self.layout = kwargs.pop('layout', None)
-        if not isinstance(grid, CoordinateGrid):
-            raise Exception("CoordinateGridPlot only accepts ProjectionGrids.")
         self.grid = copy.deepcopy(grid)
         for k, stack in self.grid.items():
             self.grid[k] = self._collapse_channels(self.grid[k])
         Plot.__init__(self, **kwargs)
         self._keys = grid.all_keys
+
 
     def __call__(self, axis=None):
         grid_shape = [[v for (k, v) in col[1]]
@@ -390,7 +388,5 @@ class CoordinateGridPlot(OverlayPlot):
 Plot.defaults.update({SheetView: SheetViewPlot,
                       Points: PointPlot,
                       Contours: ContourPlot,
-                      CoordinateGrid: CoordinateGridPlot,
                       VectorField: VectorFieldPlot})
 
-Plot.sideplots.update({CoordinateGrid: CoordinateGridPlot})
