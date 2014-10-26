@@ -1149,6 +1149,26 @@ class Grid(NdMapping):
         overlayed_items = [(k, el * view) for k, el in self.items()]
         return self.clone(overlayed_items)
 
+    def _nearest_neighbor(self, key):
+        q = np.array(key)
+        idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
+                         if self.ndims == 2 else np.abs(q-x)
+                         for x in self.keys()])
+        return self.values()[idx]
+
+
+    def __getitem__(self, indexslice):
+        if indexslice in [Ellipsis, ()]:
+            return self
+
+        map_slice, data_slice = self._split_index(indexslice)
+        map_slice = self._transform_indices(map_slice)
+
+        if all(not isinstance(el, slice) for el in map_slice):
+            return self._dataslice(self._nearest_neighbor(map_slice), data_slice)
+        else:
+            return super(Grid, self).__getitem__(indexslice)
+
 
     def keys(self, full_grid=False):
         """
