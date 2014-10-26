@@ -748,7 +748,7 @@ class LayerMap(HoloMap):
 
     @property
     def empty_element(self):
-        return self._type(None, self.bounds)
+        return self._type(None)
 
 
     @property
