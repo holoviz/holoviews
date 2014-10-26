@@ -589,11 +589,11 @@ class NdMapping(NdIndexableMapping):
 
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)
-        conditions = self._generate_conditions(map_slice)
 
         if all(not isinstance(el, slice) for el in map_slice):
             return self._dataslice(self._data[map_slice], data_slice)
         else:
+            conditions = self._generate_conditions(map_slice)
             items = self._data.items()
             for cidx, condition in enumerate(conditions):
                 items = [(k, v) for k, v in items if condition(k[cidx])]
