@@ -1,6 +1,8 @@
-from dataviews.testing import ViewTestCase
-from dataviews.ndmapping import Dimension, NdIndexableMapping
 from collections import OrderedDict
+
+from holoviews.core.ndmapping import NdIndexableMapping
+from holoviews.testing import ViewTestCase
+from holoviews.ndmapping import Dimension
 
 
 class DimensionTest(ViewTestCase):

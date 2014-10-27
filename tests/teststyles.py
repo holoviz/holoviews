@@ -1,10 +1,9 @@
 from collections import namedtuple
 
-from dataviews.options import OptionsGroup, Options
-from dataviews.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
-from dataviews.testing import ViewTestCase
-from dataviews.views import View
-
+from holoviews.core import View
+from holoviews.core.options import OptionsGroup, Options
+from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
+from holoviews.testing import ViewTestCase
 
 
 class TestOpts(ViewTestCase):

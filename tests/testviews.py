@@ -1,8 +1,8 @@
 import unittest
+from holoviews import Annotation
+from holoviews.core.layer import Layer
 
-from dataviews.sheetviews import BoundingBox
-from dataviews.dataviews import Layer, View
-from dataviews.views import Annotation, Layout, Overlay, GridLayout, Grid
+from holoviews.core import BoundingBox, View, Layout, Overlay, GridLayout, Grid
 
 
 class ViewTest(unittest.TestCase):
@@ -82,9 +82,9 @@ class CompositeTest(unittest.TestCase):
         self.data2 = 'Another example...'
         self.data3 = 'A third example.'
 
-        self.view1 = View(self.data1, label='view1')
-        self.view2 = View(self.data2, label='view2')
-        self.view3 = View(self.data3, label='view3')
+        self.view1 = Layer(self.data1, label='view1')
+        self.view2 = Layer(self.data2, label='view2')
+        self.view3 = Layer(self.data3, label='view3')
 
 
 class LayoutTest(CompositeTest):
