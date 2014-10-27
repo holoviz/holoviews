@@ -4,8 +4,9 @@ from unittest import SkipTest
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .options import ChannelOpts, PlotOpts, StyleOpts
-from ..views import *
+from .core import GridLayout, Layout, Overlay, Annotation, Grid
+from .core.options import ChannelOpts, PlotOpts, StyleOpts
+from .views import *
 
 
 class ViewTestCase(unittest.TestCase):

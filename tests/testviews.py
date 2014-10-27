@@ -2,7 +2,7 @@ import unittest
 from holoviews import Annotation
 from holoviews.core.layer import Layer
 
-from holoviews.core import BoundingBox, View, Layout, Overlay, GridLayout, Grid
+from holoviews.core import BoundingBox, View, HoloMap, Layout, Overlay, GridLayout, Grid
 
 
 class ViewTest(unittest.TestCase):

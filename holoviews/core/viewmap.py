@@ -19,7 +19,7 @@ class ViewMap(HoloMap):
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (Layer, HoloMap, Overlay, Annotation)
+    data_type = (View, HoloMap, Overlay, Annotation)
 
     @property
     def range(self):
