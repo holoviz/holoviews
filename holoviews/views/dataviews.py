@@ -15,12 +15,6 @@ class DataView(Layer):
     selection of subsets of the data.
     """
 
-    dimensions = param.List(default=[Dimension('X')], doc="""
-        Dimensions on Layers determine the number of indexable
-        dimensions.""")
-
-    value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
-
     def __init__(self, data, **kwargs):
         settings = {}
         if isinstance(data, DataView):

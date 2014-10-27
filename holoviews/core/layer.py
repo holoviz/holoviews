@@ -17,8 +17,13 @@ class Layer(View):
     the data maps onto the x- and y- and value dimensions.
     """
 
+    dimensions = param.List(default=[Dimension('X')], doc="""
+        Dimensions on Layers determine the number of indexable
+        dimensions.""")
+
     legend_label = param.String(default="", doc="Legend labels")
 
+    value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
 
     def _process_stack(self, stack):
         """
