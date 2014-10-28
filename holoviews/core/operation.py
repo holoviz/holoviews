@@ -85,7 +85,7 @@ class ViewOperation(param.ParameterizedFunction):
 
 
         elif isinstance(view, HoloMap):
-            mapped_items = [(k, self._process(k, key=el)) for k, el in view.items()]
+            mapped_items = [(k, self._process(el, key=k)) for k, el in view.items()]
             stacks = [ViewMap(dimensions=view.dimensions) for stack_tp in range(len(mapped_items[0][1]))]
             for k, views in mapped_items:
                 for ind, v in enumerate(views):
