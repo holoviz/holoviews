@@ -3,7 +3,7 @@ import numpy as np
 
 import param
 
-from ..core import ViewOperation
+from ..core import Dimension, ViewOperation, Overlay
 from ..views import ItemTable, SheetMatrix, VectorField, Contours
 
 
@@ -48,8 +48,8 @@ class operator(ViewOperation):
             raise Exception("Operation requires an Overlay as input")
 
         new_data = self.p.operator(*[el.data for el in overlay.data])
-        return [SheetMatrix(new_data, bounds=overlay.bounds, label=self.p.label,
-                          roi_bounds=overlay.roi_bounds)]
+        return [SheetMatrix(new_data, bounds=overlay[0].bounds, label=self.p.label,
+                            roi_bounds=overlay[0].roi_bounds)]
 
 
 class contours(ViewOperation):
