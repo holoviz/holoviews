@@ -208,7 +208,12 @@ def grid_display(grid, size=256):
 
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
-    gridplot = Plot.defaults[grid.__class__](grid, size=grid_size)
+    layer_types = grid.layer_types
+    if len(layer_types) == 1 and issubclass(layer_types[0], Matrix):
+        plot_type = MatrixGridPlot
+    else:
+        plot_type = GridPlot
+    gridplot = plot_type(grid, size=grid_size)
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)

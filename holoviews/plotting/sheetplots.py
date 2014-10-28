@@ -360,10 +360,6 @@ class MatrixGridPlot(OverlayPlot):
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")
 
-    situate = param.Boolean(default=False, doc="""
-        Determines whether to situate the projection in the full bounds or
-        apply the ROI.""")
-
     num_ticks = param.Number(default=5)
 
     show_frame = param.Boolean(default=False)
@@ -398,10 +394,10 @@ class MatrixGridPlot(OverlayPlot):
             for view in row:
                 w, h = self._get_dims(view)
                 if view.type == Overlay:
-                    data = view.last[-1].data if self.situate else view.last[-1].roi.data
+                    data = view.last[-1].data
                     opts = View.options.style(view.last[-1]).opts
                 else:
-                    data = view.last.data if self.situate else view.last.roi.data
+                    data = view.last.data
                     opts = View.options.style(view).opts
 
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
@@ -418,10 +414,7 @@ class MatrixGridPlot(OverlayPlot):
         n = n  if n < len(self) else len(self) - 1
         for i, plot in enumerate(self.handles['projs']):
             view = self.grid.values()[i][self._keys[n]]
-            if isinstance(view, Overlay):
-                data = view[-1].data if self.situate else view[-1].roi.data
-            else:
-                data = view.data if self.situate else view.roi.data
+            data = view[-1].data if isinstance(view, Overlay) else view.data
             plot.set_data(data)
 
         grid_shape = [[v for (k, v) in col[1]]
@@ -441,8 +434,8 @@ class MatrixGridPlot(OverlayPlot):
 
 
     def _get_dims(self, view):
-        l,b,r,t = view.bounds.lbrt() if self.situate else view.roi.bounds.lbrt()
-        return (r-l, t-b)
+        l, b, r, t = view.lbrt
+        return (r - l, t - b)
 
 
     def _compute_borders(self, grid_shape):
@@ -467,7 +460,7 @@ class MatrixGridPlot(OverlayPlot):
 
 
     def _compute_ticks(self, width, height):
-        l, b, r, t = self.grid.lbrt
+        l, b, r, t = self.grid.grid_lbrt
 
         xpositions = np.linspace(0, width, self.num_ticks)
         xlabels = np.linspace(l, r, self.num_ticks).round(3)

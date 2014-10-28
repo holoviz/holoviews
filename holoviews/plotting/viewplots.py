@@ -593,10 +593,19 @@ class LayoutPlot(Plot):
             # Override the plotopts as required
             plotopts.update(override_opts)
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
-            if pos == 'main':
-                subplot = Plot.defaults[vtype](view, **plotopts)
+            layer_types = (vtype,) if isinstance(view, View) else view.layer_types
+            if isinstance(view, Grid):
+                if len(layer_types) == 1 and issubclass(layer_types[0], Matrix):
+                    from .sheetplots import MatrixGridPlot
+                    plot_type = MatrixGridPlot
+                else:
+                    plot_type = GridPlot
             else:
-                subplot = Plot.sideplots[vtype](view, **plotopts)
+                if pos == 'main':
+                    plot_type = Plot.defaults[vtype]
+                else:
+                    plot_type = Plot.sideplots[vtype]
+            subplot = plot_type(view, **plotopts)
 
             # 'Main' views that should be displayed with square aspect
             if pos == 'main' and issubclass(vtype, (Layer, Overlay)):
