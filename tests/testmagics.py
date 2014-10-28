@@ -1,7 +1,7 @@
 from holoviews.core import View
 from holoviews.testing import IPTestCase
 
-from holoviews import ipython
+from holoviews import ipython, Overlay
 from holoviews.core.options import OptionsGroup, Options
 from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts
 
@@ -45,13 +45,13 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_opts_style_name1(self):
         self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
         self.cell_magic('opts', " SheetMatrix cmap='hot'", 'sv1')
-        self.assertEqual(self.get_object('sv1').style, 'Custom[<sv1>]_SheetView')
+        self.assertEqual(self.get_object('sv1').style, 'Custom[<sv1>]_SheetMatrix')
 
 
     def test_cell_opts_style_name2(self):
         self.cell("sv2 = SheetMatrix(np.random.rand(5,5), name='sv2')")
         self.cell_magic('opts', " SheetMatrix cmap='cool'", 'sv2')
-        self.assertEqual(self.get_object('sv2').style, 'Custom[<sv2>]_SheetView')
+        self.assertEqual(self.get_object('sv2').style, 'Custom[<sv2>]_SheetMatrix')
 
 
     def test_cell_opts_style1(self):
@@ -63,7 +63,7 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_opts_style2(self):
         self.cell("sv2 = SheetMatrix(np.random.rand(5,5), name='sv2')")
         self.cell_magic('opts', " SheetMatrix cmap='cool' interpolation='bilinear'", 'sv2')
-        self.assertEqual(self.options.style['Custom[<sv2>]_SheetView'].opts,
+        self.assertEqual(self.options.style['Custom[<sv2>]_SheetMatrix'].opts,
                          {'cmap':'cool', 'interpolation':'bilinear'})
 
     #============================#
@@ -91,15 +91,15 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_magic_plotopts1(self):
         self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
         self.cell_magic('opts', " SheetMatrix [show_title=True]", 'sv1')
-        self.assertEqual(self.options.plotting['Custom[<sv1>]_SheetView'].opts,
+        self.assertEqual(self.options.plotting['Custom[<sv1>]_SheetMatrix'].opts,
                          {'show_title':True})
 
     def test_cell_magic_plotopts_and_styleopts(self):
         self.cell("sv2 = SheetMatrix(np.random.rand(5,5), name='sv2')")
         self.cell_magic('opts', " SheetMatrix [show_grid=True] cmap='jet'", 'sv2')
-        self.assertEqual(self.options.plotting['Custom[<sv2>]_SheetView'].opts,
+        self.assertEqual(self.options.plotting['Custom[<sv2>]_SheetMatrix'].opts,
                          {'show_grid':True})
-        self.assertEqual(self.options.style['Custom[<sv2>]_SheetView'].opts,
+        self.assertEqual(self.options.style['Custom[<sv2>]_SheetMatrix'].opts,
                          {'cmap':'jet'})
 
     def test_cell_magic_complex_example(self):
@@ -107,9 +107,9 @@ class TestOptsMagic(ExtensionTestCase):
                            Points(np.random.rand(2,5))], BoundingBox(), name='complex_view')""")
         opts = " SheetMatrix [show_grid=True] cmap='hsv' Points [show_title=False] color='r'"
         self.cell_magic('opts', opts, 'o')
-        self.assertEqual(self.options.style['Custom[<complex_view>]_SheetView'].opts,
+        self.assertEqual(self.options.style['Custom[<complex_view>]_SheetMatrix'].opts,
                          {'cmap':'hsv'})
-        self.assertEqual(self.options.plotting['Custom[<complex_view>]_SheetView'].opts,
+        self.assertEqual(self.options.plotting['Custom[<complex_view>]_SheetMatrix'].opts,
                          {'show_grid':True})
         self.assertEqual(self.options.style['Custom[<complex_view>]_Points'].opts,
                          {'color':'r'})
@@ -173,11 +173,11 @@ class TestChannelMagic(ExtensionTestCase):
     def setUp(self):
         super(TestChannelMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.core import BoundingBox, Overlay")
+        self.cell("from holoviews.core import Overlay")
         self.cell("from holoviews.views import SheetMatrix")
         self.channels = OptionsGroup([Options('definitions',
                                               ChannelOpts)])
-        SheetOverlay.channels = self.channels
+        Overlay.channels = self.channels
 
 
     def tearDown(self):
@@ -188,29 +188,29 @@ class TestChannelMagic(ExtensionTestCase):
         self.cell("R = SheetMatrix(np.random.rand(5,5), label='R_Channel')")
         self.cell("G = SheetMatrix(np.random.rand(5,5), label='G_Channel')")
         self.cell("B = SheetMatrix(np.random.rand(5,5), label='B_Channel')")
-        self.cell("overlay = Overlay([R, G, B], BoundingBox(), name='RGBTest')")
+        self.cell("overlay = Overlay([R, G, B], name='RGBTest')")
         definition = " R_Channel * G_Channel * B_Channel => RGBA []"
         self.cell_magic('channels', definition, 'overlay')
 
         expected_key = 'Custom[<RGBTest>]_RGBA'
-        self.assertEqual(SheetOverlay.channels.keys(), [expected_key])
-        self.assertEqual(SheetOverlay.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
-        self.assertEqual(SheetOverlay.channels[expected_key].mode, 'RGBA')
+        self.assertEqual(Overlay.channels.keys(), [expected_key])
+        self.assertEqual(Overlay.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
+        self.assertEqual(Overlay.channels[expected_key].mode, 'RGBA')
 
 
     def test_HCS_channeldef(self):
         self.cell("H = SheetMatrix(np.random.rand(5,5), label='H_Channel')")
         self.cell("C = SheetMatrix(np.random.rand(5,5), label='C_Channel')")
         self.cell("S = SheetMatrix(np.random.rand(5,5), label='S_Channel')")
-        self.cell("overlay = Overlay([H, C, S], BoundingBox(), name='HCSTest')")
+        self.cell("overlay = Overlay([H, C, S], name='HCSTest')")
         definition = " H_Channel * C_Channel *S_Channel => HCS [S_multiplier=2.5]"
         self.cell_magic('channels', definition, 'overlay')
 
         expected_key = 'Custom[<HCSTest>]_HCS'
-        self.assertEqual(SheetOverlay.channels.keys(), [expected_key])
-        self.assertEqual(SheetOverlay.channels[expected_key].pattern, 'H_Channel * C_Channel * S_Channel')
-        self.assertEqual(SheetOverlay.channels[expected_key].mode, 'HCS')
-        self.assertEqual(SheetOverlay.channels[expected_key].opts, {'S_multiplier':2.5})
+        self.assertEqual(Overlay.channels.keys(), [expected_key])
+        self.assertEqual(Overlay.channels[expected_key].pattern, 'H_Channel * C_Channel * S_Channel')
+        self.assertEqual(Overlay.channels[expected_key].mode, 'HCS')
+        self.assertEqual(Overlay.channels[expected_key].opts, {'S_multiplier':2.5})
 
 if __name__ == "__main__":
     import sys

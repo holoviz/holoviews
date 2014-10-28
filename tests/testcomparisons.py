@@ -116,7 +116,7 @@ class SheetOverlayComparisonTest(SheetOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay4_depth3)
         except AssertionError as e:
-            assert str(e).startswith("SheetOverlays have different lengths.")
+            assert str(e).startswith("Overlays have different lengths.")
 
     def test_element_mismatch(self):
         try:
@@ -133,14 +133,14 @@ class StackComparisonTest(StackTestCase):
              self.assertEqual(self.stack1_1D, self.stack1_2D)
              raise AssertionError("Mismatch in dimension number not detected.")
          except AssertionError as e:
-             assert str(e).startswith("Stacks have different numbers of dimensions.")
+             assert str(e).startswith("HoloMaps have different numbers of dimensions.")
 
     def test_dimension_label_mismatch(self):
          try:
              self.assertEqual(self.stack1_1D, self.stack6_1D)
              raise AssertionError("Mismatch in dimension labels not detected.")
          except AssertionError as e:
-             assert str(e).startswith("Stacks have different dimension labels.")
+             assert str(e).startswith("HoloMaps have different dimension labels.")
 
 
     def test_key_len_mismatch(self):
@@ -148,14 +148,14 @@ class StackComparisonTest(StackTestCase):
             self.assertEqual(self.stack1_1D, self.stack3_1D)
             raise AssertionError("Mismatch in stack key number not detected.")
         except AssertionError as e:
-            assert str(e).startswith("Stacks have different numbers of keys.")
+            assert str(e).startswith("HoloMaps have different numbers of keys.")
 
     def test_key_mismatch(self):
         try:
             self.assertEqual(self.stack1_1D, self.stack2_1D)
             raise AssertionError("Mismatch in stack keys not detected.")
         except AssertionError as e:
-            assert str(e).startswith("Stacks have different sets of keys.")
+            assert str(e).startswith("HoloMaps have different sets of keys.")
 
     def test_element_mismatch(self):
         try:

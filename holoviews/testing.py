@@ -1,10 +1,11 @@
 import unittest
 from unittest import SkipTest
 
+import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import GridLayout, Layout, Overlay, Annotation, Grid
+from .core import GridLayout, Layout, Overlay, Annotation, Grid, ViewMap, Dimension
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
 from .views import *
 
@@ -91,6 +92,9 @@ class ViewTestCase(unittest.TestCase):
     # Generic classes #
     #=================#
 
+    def compare_viewmap(self, view1, view2, msg):
+        self.compare_holomaps(view1, view2, msg)
+
     def compare_gridlayout(self, view1, view2, msg):
         if len(view1) != len(view2):
             raise self.failureException("GridLayouts have different sizes.")
@@ -160,9 +164,6 @@ class ViewTestCase(unittest.TestCase):
     #============#
     # DataLayers #
     #============#
-
-    def compare_viewmap(self, view1, view2, msg):
-        self.compare_holomap(view1, view2, msg)
 
 
     def compare_curve(self, view1, view2, msg):
