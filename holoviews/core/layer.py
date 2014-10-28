@@ -1,15 +1,12 @@
-import numpy as np
-
 import param
 
 from .dimension import Dimension
 from .holoview import View, HoloMap, find_minmax
-from .layout import GridLayout, Layout
-from .ndmapping import NdMapping
+from .layout import Element, GridLayout
 from .options import channels
 
 
-class Layer(View):
+class Layer(Element):
     """
     Layer is the baseclass for all 2D View types, with an x- and
     y-dimension. Subclasses should define the data storage in the
@@ -21,19 +18,7 @@ class Layer(View):
         Dimensions on Layers determine the number of indexable
         dimensions.""")
 
-    legend_label = param.String(default="", doc="Legend labels")
-
     value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
-
-    def _process_stack(self, stack):
-        """
-        Base class to process a ViewMap to be collapsed into a Layer.
-        Should return the data and parameters of reduced View.
-        """
-        data = []
-        for v in stack:
-            data.append(v.data)
-        return np.concatenate(data), dict(v.get_param_values())
 
 
     def __mul__(self, other):
@@ -47,32 +32,6 @@ class Layer(View):
 
         return Overlay(combined_layers)
 
-
-    def __mul__(self, other):
-        if isinstance(other, HoloMap):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
-        elif isinstance(other, Overlay):
-            overlays = [self] + other.data
-        elif isinstance(other, (Layer, Annotation)):
-            overlays = [self, other]
-        else:
-            raise TypeError('Can only create an overlay of holoviews.')
-
-        return Overlay(overlays)
-
-    def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
-
-
-    def __lshift__(self, other):
-        if isinstance(other, (View, Overlay, NdMapping)):
-            return Layout([self, other])
-        elif isinstance(other, Layout):
-            return Layout(other.data.values()+[self])
-        else:
-            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
 
     ########################
     # Subclassable methods #
@@ -161,6 +120,7 @@ class Layer(View):
     def lbrt(self, lbrt):
         l, b, r, t = lbrt
         self.xlim, self.ylim = (l, r), (b, t)
+
 
 
 class Overlay(View):

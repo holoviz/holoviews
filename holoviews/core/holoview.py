@@ -32,6 +32,8 @@ class View(Dimensioned):
         A string label or Dimension object used to indicate what kind of data
         is contained within the view object.""")
 
+    legend_label = param.String(default="", doc="Legend labels")
+
     title = param.String(default='{label}', doc="""
         The title formatting string allows the title to be composed from
         the view {label}, {value} quantity and view {type} but can also be set

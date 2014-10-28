@@ -30,6 +30,17 @@ class DataView(Layer):
         super(DataView, self).__init__(data, **settings)
 
 
+    def _process_stack(self, stack):
+        """
+        Base class to process a ViewMap to be collapsed into a Layer.
+        Should return the data and parameters of reduced View.
+        """
+        data = []
+        for v in stack:
+            data.append(v.data)
+        return np.concatenate(data), dict(v.get_param_values())
+
+
     def __getitem__(self, slc):
         """
         Implements slicing or indexing of the data by the data x-value.

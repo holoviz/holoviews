@@ -12,6 +12,27 @@ from .ndmapping import NdMapping
 from .options import options
 
 
+
+class Element(View):
+    """
+    Element extends the View type with the add and left shift operators
+    which allow the Element to be embedded within Layouts and GridLayouts.
+    """
+
+    def __add__(self, obj):
+        if not isinstance(obj, GridLayout):
+            return GridLayout(initial_items=[self, obj])
+
+
+    def __lshift__(self, other):
+        if isinstance(other, (View, NdMapping)):
+            return Layout([self, other])
+        elif isinstance(other, Layout):
+            return Layout(other.data.values()+[self])
+        else:
+            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+
+
 class GridLayout(NdMapping):
     """
     A GridLayout is an NdMapping, which can contain any View or HoloMap type.
@@ -277,6 +298,7 @@ class Layout(Dimensioned):
         else:
             elements = [self, other]
         return GridLayout(elements)
+
 
 
 class Grid(NdMapping):
