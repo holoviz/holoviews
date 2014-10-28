@@ -196,14 +196,54 @@ class Overlay(View):
 
 
     @property
+    def layer_types(self):
+        """
+        The type of Layers stored in the Overlay.
+        """
+        if len(self) == 0:
+            return None
+        else:
+            return tuple(set(layer.__class__ for layer in self))
+
+    @property
+    def xlim(self):
+        xlim = self[0].xlim if isinstance(self[0], Layer) else None
+        for data in self:
+            data_xlim = data.xlim if isinstance(data, Layer) else None
+            xlim = find_minmax(xlim, data.xlim) if data_xlim and xlim else xlim
+        return xlim
+
+    @xlim.setter
+    def xlim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._xlim = limits
+        else:
+            raise ValueError('xlim needs to be a length two tuple or None.')
+
+    @property
+    def ylim(self):
+        ylim = self[0].ylim if isinstance(self[0], Layer) else None
+        for data in self:
+            data_ylim = data.ylim if isinstance(data, Layer) else None
+            ylim = find_minmax(ylim, data.ylim) if data_ylim and ylim else ylim
+        return ylim
+
+    @ylim.setter
+    def ylim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._ylim = limits
+        else:
+            raise ValueError('ylim needs to be a length two tuple or None.')
+
+    @property
     def range(self):
-        range = self[0].range
+        range = self[0].range if self[0].range is not None else None
         cyclic = self[0].cyclic_range is not None
         for view in self:
             if cyclic != (self[0].cyclic_range is not None):
                 raise Exception("Overlay contains cyclic and non-cyclic "
                                 "Views, cannot compute range.")
-            range = find_minmax(range, view.range)
+            range = find_minmax(range, view.range) if view.range is not None else range
         return range
 
 

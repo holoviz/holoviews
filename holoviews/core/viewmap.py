@@ -32,17 +32,31 @@ class ViewMap(HoloMap):
 
 
     @property
+    def layer_types(self):
+        """
+        The type of layers stored in the ViewMap.
+        """
+        if self.type == Overlay:
+            return self.last.layer_types
+        else:
+            return (self.type)
+
+
+    @property
     def xlabel(self):
+        if not issubclass(self.type, (Layer, Overlay)): return None
         return self.last.xlabel
 
 
     @property
     def ylabel(self):
+        if not issubclass(self.type, (Layer, Overlay)): return None
         return self.last.ylabel
 
 
     @property
     def xlim(self):
+        if not issubclass(self.type, (Layer, Overlay)): return None
         xlim = self.last.xlim
         for data in self.values():
             xlim = find_minmax(xlim, data.xlim) if data.xlim and xlim else xlim
@@ -51,6 +65,7 @@ class ViewMap(HoloMap):
 
     @property
     def ylim(self):
+        if not issubclass(self.type, (Layer, Overlay)): return None
         ylim = self.last.ylim
         for data in self.values():
             ylim = find_minmax(ylim, data.ylim) if data.ylim and ylim else ylim
@@ -59,6 +74,7 @@ class ViewMap(HoloMap):
 
     @property
     def lbrt(self):
+        if self.xlim is None: return None, None, None, None
         l, r = self.xlim
         b, t = self.ylim
         return float(l), float(b), float(r), float(t)
