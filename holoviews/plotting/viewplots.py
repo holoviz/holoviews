@@ -14,7 +14,7 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import NdMapping, HoloMap, View, Layer, Overlay, ViewMap, Layout, \
+from ..core import NdMapping, HoloMap, View, Layer, Overlay, ViewMap, AdjointLayout, \
     GridLayout, Grid
 from ..views import Annotation, Matrix
 
@@ -485,7 +485,7 @@ class LayoutPlot(Plot):
     in either a 'top' or 'right' position.
 
     Initially, a LayoutPlot computes an appropriate layout based for
-    the number of Views in the Layout object it has been given, but
+    the number of Views in the AdjointLayout object it has been given, but
     when embedded in a GridLayout, it can recompute the layout to
     match the number of rows and columns as part of a larger grid.
     """
@@ -512,7 +512,7 @@ class LayoutPlot(Plot):
 
 
     def __init__(self, layout, **params):
-        # The Layout View object
+        # The AdjointLayout View object
         self.layout = layout
         layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
         # Type may be set to 'Embedded Dual' by a call it grid_situate
@@ -562,7 +562,7 @@ class LayoutPlot(Plot):
 
     def __call__(self, subaxes=[]):
         """
-        Plot all the views contained in the Layout Object using axes
+        Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
         supplied by GridLayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
@@ -705,7 +705,7 @@ class GridLayoutPlot(Plot):
 
 
     def __init__(self, grid, **kwargs):
-        grid = GridLayout([grid]) if isinstance(grid, Layout) else grid
+        grid = GridLayout([grid]) if isinstance(grid, AdjointLayout) else grid
         if not isinstance(grid, GridLayout):
             raise Exception("GridLayoutPlot only accepts GridLayouts.")
         # LayoutPlots indexed by their row and column indices
@@ -734,7 +734,7 @@ class GridLayoutPlot(Plot):
         row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
             view = self.grid.get((r, c), None)
-            layout_view = view if isinstance(view, Layout) else Layout([view])
+            layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layout = LayoutPlot(layout_view)
             subplots[(r, c)] = layout
             # For each row and column record the width and height ratios
@@ -795,7 +795,7 @@ class GridLayoutPlot(Plot):
                 layout_plot(subaxes)
         plt.draw()
 
-        # Adjusts the Layout subplot positions
+        # Adjusts the AdjointLayout subplot positions
         for (r, c) in self.coords:
             self.subplots.get((r, c), None).adjust_positions()
 
@@ -1078,6 +1078,6 @@ class AnnotationPlot(Plot):
 
 Plot.defaults.update({Grid: GridPlot,
                       GridLayout: GridLayoutPlot,
-                      Layout: GridLayoutPlot,
+                      AdjointLayout: GridLayoutPlot,
                       Overlay: OverlayPlot,
                       Annotation: AnnotationPlot})

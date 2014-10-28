@@ -160,7 +160,7 @@ class StackComparisonTest(StackTestCase):
     def test_element_mismatch(self):
         try:
             self.assertEqual(self.stack1_1D, self.stack4_1D)
-            raise AssertionError("Element mismatch in array data not detected.")
+            raise AssertionError("Pane mismatch in array data not detected.")
         except AssertionError as e:
             assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
 

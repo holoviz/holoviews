@@ -9,7 +9,7 @@ import numpy as np
 from .holoview import View, HoloMap, find_minmax
 from .ndmapping import NdMapping
 from .layer import Layer, Overlay, Grid
-from .layout import Layout, GridLayout
+from .layout import AdjointLayout, GridLayout
 
 
 class ViewMap(HoloMap):
@@ -241,11 +241,11 @@ class ViewMap(HoloMap):
 
     def __lshift__(self, other):
         if isinstance(other, (View, Overlay, NdMapping)):
-            return Layout([self, other])
-        elif isinstance(other, Layout):
-            return Layout(other.data+[self])
+            return AdjointLayout([self, other])
+        elif isinstance(other, AdjointLayout):
+            return AdjointLayout(other.data+[self])
         else:
-            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
     def sample(self, samples=[], **sample_values):

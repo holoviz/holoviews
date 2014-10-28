@@ -6,11 +6,11 @@ import param
 from .dimension import Dimension
 from .holoview import View, HoloMap, find_minmax
 from .ndmapping import NdMapping
-from .layout import Element, GridLayout, Layout
+from .layout import Pane, GridLayout, AdjointLayout
 from .options import options, channels
 
 
-class Layer(Element):
+class Layer(Pane):
     """
     Layer is the baseclass for all 2D View types, with an x- and
     y-dimension. Subclasses should define the data storage in the
@@ -486,7 +486,7 @@ class Grid(NdMapping):
         """
         keys_list = []
         for v in self.values():
-            if isinstance(v, Layout):
+            if isinstance(v, AdjointLayout):
                 v = v.main
             if isinstance(v, HoloMap):
                 keys_list.append(list(v._data.keys()))
@@ -502,7 +502,7 @@ class Grid(NdMapping):
         """
         keys_list = []
         for v in self.values():
-            if isinstance(v, Layout):
+            if isinstance(v, AdjointLayout):
                 v = v.main
             if isinstance(v, HoloMap):
                 keys_list.append(list(v._data.keys()))

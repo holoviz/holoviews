@@ -21,7 +21,7 @@ try:
 except:
     jsdisplay = None
 
-from ..core import View, HoloMap, Layout, GridLayout, Grid
+from ..core import View, HoloMap, AdjointLayout, GridLayout, Grid
 from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
 from ..views import Annotation, Matrix
 from . import magics
@@ -174,7 +174,7 @@ def stack_display(stack, size=256):
 
 @display_hook
 def layout_display(grid, size=256):
-    if not isinstance(grid, (GridLayout, Layout)): return None
+    if not isinstance(grid, (GridLayout, AdjointLayout)): return None
     if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
         return widget_display(grid)
     shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
@@ -237,6 +237,6 @@ def set_display_hooks(ip):
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
     html_formatter.for_type(View, view_display)
     html_formatter.for_type(HoloMap, stack_display)
-    html_formatter.for_type(Layout, layout_display)
+    html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(GridLayout, layout_display)
     html_formatter.for_type(Grid, grid_display)

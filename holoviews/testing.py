@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import Dimension, GridLayout, Layout, Overlay, Grid, ViewMap
+from .core import Dimension, GridLayout, AdjointLayout, Overlay, Grid, ViewMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
 from .views import *
 
@@ -21,7 +21,7 @@ class ViewTestCase(unittest.TestCase):
         super(ViewTestCase, self).__init__(*args, **kwargs)
         # General view classes
         self.addTypeEqualityFunc(GridLayout,   self.compare_gridlayout)
-        self.addTypeEqualityFunc(Layout,       self.compare_layouts)
+        self.addTypeEqualityFunc(AdjointLayout,       self.compare_layouts)
         self.addTypeEqualityFunc(Overlay,       self.compare_overlays)
         self.addTypeEqualityFunc(Annotation,   self.compare_annotations)
         self.addTypeEqualityFunc(Grid,         self.compare_grids)

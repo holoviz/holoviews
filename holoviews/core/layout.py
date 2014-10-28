@@ -9,10 +9,10 @@ from .options import options
 
 
 
-class Element(View):
+class Pane(View):
     """
-    Element extends the View type with the add and left shift operators
-    which allow the Element to be embedded within Layouts and GridLayouts.
+    Pane extends the View type with the add and left shift operators
+    which allow the Pane to be embedded within Layouts and GridLayouts.
     """
 
     def __add__(self, obj):
@@ -22,11 +22,11 @@ class Element(View):
 
     def __lshift__(self, other):
         if isinstance(other, (View, NdMapping)):
-            return Layout([self, other])
-        elif isinstance(other, Layout):
-            return Layout(other.data.values()+[self])
+            return AdjointLayout([self, other])
+        elif isinstance(other, AdjointLayout):
+            return AdjointLayout(other.data.values()+[self])
         else:
-            raise TypeError('Cannot append {0} to a Layout'.format(type(other).__name__))
+            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
 class GridLayout(NdMapping):
@@ -43,7 +43,7 @@ class GridLayout(NdMapping):
     def __init__(self, initial_items=[], **kwargs):
         self._max_cols = 4
         self._style = None
-        if all(isinstance(el, (View, NdMapping, Layout)) for el in initial_items):
+        if all(isinstance(el, (View, NdMapping, AdjointLayout)) for el in initial_items):
             initial_items = self._grid_to_items([initial_items])
         super(GridLayout, self).__init__(initial_items=initial_items, **kwargs)
 
@@ -148,7 +148,7 @@ class GridLayout(NdMapping):
         for (k, v) in self.items():
             if isinstance(v, NdMapping):
                 item = (k, v.clone((v.last_key, v.last)))
-            elif isinstance(v, Layout):
+            elif isinstance(v, AdjointLayout):
                 item = (k, v.last)
             else:
                 item = (k, v)
@@ -175,11 +175,11 @@ class GridLayout(NdMapping):
         self._style = val
 
 
-class Layout(Dimensioned):
+class AdjointLayout(Dimensioned):
     """
-    A Layout provides a convenient container to lay out a primary plot
+    A AdjointLayout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a
-    SheetMatrix annotated with a luminance histogram. Layout accepts a
+    SheetMatrix annotated with a luminance histogram. AdjointLayout accepts a
     list of three View elements, which are laid out as follows with
     the names 'main', 'top' and 'right':
      ___________ __
@@ -201,12 +201,12 @@ class Layout(Dimensioned):
 
         self.main_layer = 0 # The index of the main layer if .main is an overlay
         if len(views) > 3:
-            raise Exception('Layout accepts no more than three elements.')
+            raise Exception('AdjointLayout accepts no more than three elements.')
 
         if isinstance(views, dict):
             wrong_pos = [k for k in views if k not in self.layout_order]
             if wrong_pos:
-                raise Exception('Wrong Layout positions provided.')
+                raise Exception('Wrong AdjointLayout positions provided.')
             else:
                 self.data = views
         elif isinstance(views, list):
@@ -216,7 +216,7 @@ class Layout(Dimensioned):
             params['dimensions'] = [d if isinstance(d, Dimension) else Dimension(d)
                                     for d in params.pop('dimensions')]
 
-        super(Layout, self).__init__(**params)
+        super(AdjointLayout, self).__init__(**params)
 
 
     def __len__(self):
@@ -237,12 +237,12 @@ class Layout(Dimensioned):
         elif isinstance(key, str) and key in self.data:
             return self.data[key]
         else:
-            raise KeyError("Key {0} not found in Layout.".format(key))
+            raise KeyError("Key {0} not found in AdjointLayout.".format(key))
 
 
     @property
     def deep_dimensions(self):
-        return ['Layout'] + self.main.deep_dimensions
+        return ['AdjointLayout'] + self.main.deep_dimensions
 
     @property
     def style(self):
@@ -256,10 +256,10 @@ class Layout(Dimensioned):
 
 
     def __lshift__(self, other):
-        if isinstance(other, Layout):
-            raise Exception("Cannot adjoin two Layout objects.")
+        if isinstance(other, AdjointLayout):
+            raise Exception("Cannot adjoin two AdjointLayout objects.")
         views = [self.data.get(k, None) for k in self.layout_order]
-        return Layout([v for v in views if v is not None] + [other])
+        return AdjointLayout([v for v in views if v is not None] + [other])
 
 
     @property
