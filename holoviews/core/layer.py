@@ -1,9 +1,13 @@
+import itertools
+import numpy as np
+
 import param
 
 from .dimension import Dimension
 from .holoview import View, HoloMap, find_minmax
-from .layout import Element, GridLayout
-from .options import channels
+from .ndmapping import NdMapping
+from .layout import Element, GridLayout, Layout
+from .options import options, channels
 
 
 class Layer(Element):
@@ -58,11 +62,9 @@ class Layer(Element):
         y_vals = self.data[:, 1]
         return (float(min(y_vals)), float(max(y_vals)))
 
-
     @property
     def xlabel(self):
         return self.dimensions[0].pprint_label
-
 
     @property
     def ylabel(self):
@@ -91,7 +93,6 @@ class Layer(Element):
         else:
             raise ValueError('xlim needs to be a length two tuple or None.')
 
-
     @property
     def ylim(self):
         if self._ylim:
@@ -100,14 +101,12 @@ class Layer(Element):
             y_vals = self.data[:, 1]
             return (float(min(y_vals)), float(max(y_vals)))
 
-
     @ylim.setter
     def ylim(self, limits):
         if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
             self._ylim = limits
         else:
             raise ValueError('xlim needs to be a length two tuple or None.')
-
 
     @property
     def lbrt(self):
@@ -179,7 +178,7 @@ class Overlay(View):
         """
         Overlay a single layer on top of the existing overlay.
         """
-        if isinstance(layer, Annotation): pass
+        if not isinstance(layer, Layer): pass
         elif not len(self):
             self._layer_dimensions = layer.dimension_labels
             self.xlim = layer.xlim
@@ -224,7 +223,7 @@ class Overlay(View):
             return other.clone(items=items)
         elif isinstance(other, Overlay):
             overlays = self.data + other.data
-        elif isinstance(other, (View, Annotation)):
+        elif isinstance(other, (View)):
             overlays = self.data + [other]
         else:
             raise TypeError('Can only create an overlay of holoviews.')
@@ -313,131 +312,231 @@ class Overlay(View):
             i += 1
 
 
-class Annotation(View):
+class Grid(NdMapping):
     """
-    An annotation is a type of View that is displayed on the top of an
-    overlay. Annotations elements do not depend on the details of the
-    data displayed and are generally for the convenience of the user
-    (e.g. to draw attention to specific areas of the figure using
-    arrows, boxes or labels).
-
-    All annotations have an optional interval argument that indicates
-    which stack elements they apply to. For instance, this allows
-    annotations for a specific time interval when overlaid over a
-    ViewMap or ViewMap with a 'Time' dimension. The interval
-    argument is a dictionary of dimension keys and tuples containing
-    (start, end) values. A value of None, indicates an unspecified
-    constraint.
+    Grids are distinct from GridLayouts as they ensure all contained elements
+    to be of the same type. Unlike GridLayouts, which have integer keys,
+    Grids usually have floating point keys, which correspond to a grid
+    sampling in some two-dimensional space. This two-dimensional space may
+    have to arbitrary dimensions, e.g. for 2D parameter spaces.
     """
 
-    def __init__(self, boxes=[], vlines=[], hlines=[], arrows=[], **kwargs):
-        """
-        Annotations may be added via method calls or supplied directly
-        to the constructor using lists of specification elements or
-        (specification, interval) tuples. The specification element
-        formats are listed below:
+    dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")])
 
-        box: A BoundingBox or ((left, bottom), (right, top)) tuple.
+    label = param.String(constant=True, doc="""
+      A short label used to indicate what kind of data is contained
+      within the Grid.""")
 
-        hline/vline specification: The vertical/horizontal coordinate.
+    title = param.String(default='{label}', doc="""
+       The title formatting string allows the title to be composed
+       from the label and type.""")
 
-        arrow: An (xy, kwargs) tuple where xy is a coordinate tuple
-        and kwargs is a dictionary of the optional arguments accepted
-        by the arrow method.
-        """
-        super(Annotation, self).__init__([], **kwargs)
-
-        for box in boxes:
-            if hasattr(box, 'lbrt'):         self.box(box, None)
-            elif isinstance(box[1], dict):   self.box(*box)
-            else:                            self.box(box, None)
-
-        for vline in vlines:
-            self.vline(*(vline if isinstance(vline, tuple) else (vline, None)))
-
-        for hline in hlines:
-            self.hline(*(hline if isinstance(hline, tuple) else (hline, None)))
-
-        for arrow in arrows:
-            spec, interval = (arrow, None) if isinstance(arrow[0], tuple) else arrow
-            self.arrow(spec[0], **dict(spec[1], interval=interval))
-
-
-    def arrow(self, xy, text='', direction='<', points=40,
-              arrowstyle='->', interval=None):
-        """
-        Draw an arrow along one of the cardinal directions with option
-        text. The direction indicates the direction the arrow is
-        pointing and the points argument defines the length of the
-        arrow in points. Different arrow head styles are supported via
-        the arrowstyle argument.
-        """
-        directions = ['<', '^', '>', 'v']
-        if direction.lower() not in directions:
-            raise Exception("Valid arrow directions are: %s"
-                            % ', '.join(repr(d) for d in directions))
-
-        arrowstyles = ['-', '->', '-[', '-|>', '<->', '<|-|>']
-        if arrowstyle not in arrowstyles:
-            raise Exception("Valid arrow styles are: %s"
-                            % ', '.join(repr(a) for a in arrowstyles))
-
-        self.data.append((direction.lower(), text, xy, points, arrowstyle, interval))
-
-
-    def line(self, coords, interval=None):
-        """
-        Draw an arbitrary polyline that goes through the listed
-        coordinates.  Coordinates are specified using a list of (x,y)
-        tuples.
-        """
-        self.data.append(('line', coords, interval))
-
-
-    def spline(self, coords, codes, interval=None):
-        """
-        Draw a spline using the given handle coordinates and handle
-        codes. Follows matplotlib spline definitions as used in
-        matplotlib.path.Path with the following codes:
-
-        Path.STOP     : 0
-        Path.MOVETO   : 1
-        Path.LINETO   : 2
-        Path.CURVE3   : 3
-        Path.CURVE4   : 4
-        Path.CLOSEPLOY: 79
-        """
-        self.data.append(('spline', coords, codes, interval))
-
-
-    def box(self, box, interval=None):
-        """
-        Draw a box with corners specified in the positions specified
-        by ((left, bottom), (right, top)). Alternatively, a
-        BoundingBox may be supplied.
-        """
-        if hasattr(box, 'lbrt'):
-            (l,b,r,t) = box.lbrt()
-        else:
-            ((l,b), (r,t)) = box
-
-        self.line(((t,l), (t,r), (b,r), (b,l), (t,l)),
-                  interval=interval)
-
-
-    def vline(self, x, interval=None):
-        """
-        Draw an axis vline (vertical line) at the given x value.
-        """
-        self.data.append(('vline', x, interval))
-
-
-    def hline(self, y, interval=None):
-        """
-        Draw an axis hline (horizontal line) at the given y value.
-        """
-        self.data.append(('hline', y, interval))
+    def __init__(self, initial_items=None, **params):
+        super(Grid, self).__init__(initial_items, **params)
+        if self.ndims > 2:
+            raise Exception('Grids can have no more than two dimensions.')
+        self._style = None
+        self._type = None
 
 
     def __mul__(self, other):
-        raise Exception("An annotation can only be overlaid over a different View type.")
+        if isinstance(other, Grid):
+            if set(self.keys()) != set(other.keys()):
+                raise KeyError("Can only overlay two ParameterGrids if their keys match")
+            zipped = zip(self.keys(), self.values(), other.values())
+            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
+            return self.clone(overlayed_items)
+        elif isinstance(other, HoloMap) and len(other) == 1:
+            view = other.last
+        elif isinstance(other, HoloMap) and len(other) != 1:
+            raise Exception("Can only overlay with HoloMap of length 1")
+        else:
+            view = other
+
+        overlayed_items = [(k, el * view) for k, el in self.items()]
+        return self.clone(overlayed_items)
+
+
+    def _transform_indices(self, key):
+        if all(not isinstance(el, slice) for el in key):
+            keys = self.keys()
+            q = np.array(key)
+            idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
+                             if self.ndims == 2 else np.abs(q-x)
+                             for x in keys])
+            return keys[idx]
+        elif any(not isinstance(el, slice) for el in key):
+            index_ind = [idx for idx, el in enumerate(key) if not isinstance(el, slice)][0]
+            temp_key = [el.start if isinstance(el, slice) else el for el in key]
+            snapped_key = self._transform_indices(temp_key)
+            key = list(key)
+            key[index_ind] = snapped_key[index_ind]
+            return tuple(key)
+        return key
+
+
+    def keys(self, full_grid=False):
+        """
+        Returns a complete set of keys on a Grid, even when Grid isn't fully
+        populated. This makes it easier to identify missing elements in the
+        Grid.
+        """
+        keys = super(Grid, self).keys()
+        if self.ndims == 1 or not full_grid:
+            return keys
+        dim1_keys = sorted(set(k[0] for k in keys))
+        dim2_keys = sorted(set(k[1] for k in keys))
+        return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
+
+
+    @property
+    def last(self):
+        """
+        The last of a Grid is another Grid
+        constituted of the last of the individual elements. To access
+        the elements by their X,Y position, either index the position
+        directly or use the items() method.
+        """
+
+        last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
+                      for (k, v) in self.items()]
+        return self.clone(last_items)
+
+
+    @property
+    def type(self):
+        """
+        The type of elements stored in the Grid.
+        """
+        if self._type is None:
+            if not len(self) == 0:
+                item = self.values()[0]
+                self._type = item.type if isinstance(item, HoloMap) else item.__class__
+        return self._type
+
+
+    @property
+    def layer_types(self):
+        """
+        The type of layers stored in the Grid.
+        """
+        if self.type == Overlay:
+            return self.values()[0].layer_types
+        else:
+            return (self.type,)
+
+
+    def __len__(self):
+        """
+        The maximum depth of all the elements. Matches the semantics
+        of __len__ used by Stacks. For the total number of
+        elements, count the full set of keys.
+        """
+        return max([(len(v) if hasattr(v, '__len__') else 1) for v in self.values()] + [0])
+
+
+    def __add__(self, obj):
+        if not isinstance(obj, GridLayout):
+            return GridLayout(initial_items=[self, obj])
+
+    @property
+    def all_keys(self):
+        """
+        Returns a list of all keys of the elements in the grid.
+        """
+        keys_list = []
+        for v in self.values():
+            if isinstance(v, Layout):
+                v = v.main
+            if isinstance(v, HoloMap):
+                keys_list.append(list(v._data.keys()))
+        return sorted(set(itertools.chain(*keys_list)))
+
+
+    @property
+    def common_keys(self):
+        """
+        Returns a list of common keys. If all elements in the Grid share
+        keys it will return the full set common of keys, otherwise returns
+        None.
+        """
+        keys_list = []
+        for v in self.values():
+            if isinstance(v, Layout):
+                v = v.main
+            if isinstance(v, HoloMap):
+                keys_list.append(list(v._data.keys()))
+        if all(x == keys_list[0] for x in keys_list):
+            return keys_list[0]
+        else:
+            return None
+
+    @property
+    def shape(self):
+        keys = self.keys()
+        if self.ndims == 1:
+            return (1, len(keys))
+        return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
+
+
+    @property
+    def xlim(self):
+        xlim = list(self.values())[-1].xlim
+        for data in self.values():
+            xlim = find_minmax(xlim, data.xlim)
+        return xlim
+
+
+    @property
+    def ylim(self):
+        ylim = list(self.values())[-1].ylim
+        for data in self.values():
+            ylim = find_minmax(ylim, data.ylim)
+        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
+        return ylim
+
+
+    @property
+    def grid_lbrt(self):
+        grid_dimensions = []
+        for dim in self.dimension_labels:
+            grid_dimensions.append(self.dim_range(dim))
+        if self.ndims == 1:
+            grid_dimensions.append((0, 1))
+        xdim, ydim = grid_dimensions
+        return (xdim[0], ydim[0], xdim[1], ydim[1])
+
+
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view.
+        """
+        if self._style:
+            return self._style
+
+        class_name = self.__class__.__name__
+        matches = options.fuzzy_match_keys(class_name)
+        return matches[0] if matches else class_name
+
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
+
+    def dframe(self):
+        """
+        Gets a Pandas dframe from each of the items in the Grid, appends the
+        Grid coordinates and concatenates all the dframes.
+        """
+        import pandas
+        dframes = []
+        for coords, stack in self.items():
+            stack_frame = stack.dframe()
+            for coord, dim in zip(coords, self.dimension_labels)[::-1]:
+                if dim in stack_frame: dim = 'Grid_' + dim
+                stack_frame.insert(0, dim.replace(' ','_'), coord)
+            dframes.append(stack_frame)
+        return pandas.concat(dframes)

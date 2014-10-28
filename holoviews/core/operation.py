@@ -8,8 +8,8 @@ conveniently, often by creating or manipulating color channels.
 import param
 
 from .holoview import View, HoloMap
-from .layer import Layer, Overlay
-from .layout import GridLayout, Grid
+from .layer import Layer, Overlay, Grid
+from .layout import GridLayout
 from .viewmap import ViewMap
 
 

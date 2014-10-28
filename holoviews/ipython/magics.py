@@ -2,8 +2,6 @@ import itertools
 import string
 
 from IPython.core import page
-from holoviews.core import View
-
 
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_cell_magic
@@ -11,7 +9,7 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import HoloMap, Overlay, Layout, GridLayout, Grid
+from ..core import HoloMap, View, Overlay, Layout, GridLayout, Grid
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 

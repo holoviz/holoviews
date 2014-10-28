@@ -8,7 +8,7 @@ import numpy as np
 
 from .holoview import View, HoloMap, find_minmax
 from .ndmapping import NdMapping
-from .layer import Overlay, Layer, Annotation
+from .layer import Layer, Overlay, Grid
 from .layout import Layout, GridLayout
 
 
@@ -19,7 +19,7 @@ class ViewMap(HoloMap):
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (View, HoloMap, Overlay, Annotation)
+    data_type = (View, HoloMap, Overlay)
 
     @property
     def range(self):

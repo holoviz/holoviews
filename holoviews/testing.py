@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import GridLayout, Layout, Overlay, Annotation, Grid, ViewMap, Dimension
+from .core import Dimension, GridLayout, Layout, Overlay, Grid, ViewMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
 from .views import *
 

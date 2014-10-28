@@ -1,7 +1,7 @@
 import unittest
 
-from holoviews import Annotation
 from holoviews.core import BoundingBox, View
+from holoviews.views import Annotation
 
 
 class ViewTest(unittest.TestCase):

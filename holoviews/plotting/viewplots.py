@@ -11,10 +11,12 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path
 import matplotlib.patches as patches
 
+
 import param
 
-from ..core import NdMapping, HoloMap, View, Layer, Overlay, Annotation,\
-    ViewMap, Layout, Grid, GridLayout
+from ..core import NdMapping, HoloMap, View, Layer, Overlay, ViewMap, Layout, \
+    GridLayout, Grid
+from ..views import Annotation, Matrix
 
 
 class Plot(param.Parameterized):

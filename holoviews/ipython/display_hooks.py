@@ -1,7 +1,6 @@
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from holoviews.core import View
 
 try:    from matplotlib import animation
 except: animation = None
@@ -22,8 +21,9 @@ try:
 except:
     jsdisplay = None
 
-from ..core import HoloMap, Annotation, Layout, GridLayout, Grid
-from ..plotting import GridLayoutPlot, Plot
+from ..core import View, HoloMap, Layout, GridLayout, Grid
+from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
+from ..views import Annotation, Matrix
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
 from .widgets import ViewSelector, JSSelector

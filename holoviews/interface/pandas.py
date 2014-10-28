@@ -18,7 +18,7 @@ except:
 
 import param
 
-from ..core import Dimension, NdMapping, View, Layer, ViewMap, Grid, GridLayout
+from ..core import Dimension, NdMapping, View, Layer, ViewMap, GridLayout, Grid
 from ..core.options import options, PlotOpts
 from ..views import HeatMap, ItemTable
 
