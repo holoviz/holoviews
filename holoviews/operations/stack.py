@@ -32,7 +32,7 @@ class table_collate(StackOperation):
         entries = [(entry, (stack_fn() if new_dimensions else None)) for entry in entry_keys]
         stacks = ViewMap(entries, dimensions=outer_dims)
         for new_key, collate_stack in nested_stack.items():
-            curve_data = OrderedDict([(k, []) for k in entry_keys])
+            curve_data = OrderedDict((k, []) for k in entry_keys)
             # Get the x- and y-values for each entry in the ItemTable
             xvalues = [float(k) for k in collate_stack.keys()]
             for x, table in collate_stack.items():

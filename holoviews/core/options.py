@@ -253,8 +253,8 @@ class OptionsGroup(object):
             self.__dict__[optmap.name] = optmap
 
         self.__dict__['_keys'] = set()
-        self.__dict__['_opttypes'] = OrderedDict([(optmap.opt_type, optmap)
-                                                  for optmap in optmaps])
+        self.__dict__['_opttypes'] = OrderedDict((optmap.opt_type, optmap)
+                                                 for optmap in optmaps)
 
 
     def __setattr__(self, k, v):

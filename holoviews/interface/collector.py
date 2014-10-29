@@ -214,7 +214,7 @@ class AttrTree(object):
         if label in self.children:
             del self.__dict__[label]
             del self.children[self.children.index(label)]
-            self.path_items = OrderedDict([(k, v) for k, v in self.path_items.items() if k[0] != label])
+            self.path_items = OrderedDict((k, v) for k, v in self.path_items.items() if k[0] != label)
         else:
             raise KeyError(label)
 
@@ -268,8 +268,8 @@ class AttrTree(object):
             path = [node.label] + path
             node = node.parent
 
-        filtered = OrderedDict([(k,v) for (k,v) in node.path_items.items()
-                                if k[:len(path)]==tuple(path)])
+        filtered = OrderedDict((k,v) for (k,v) in node.path_items.items()
+                               if k[:len(path)]==tuple(path))
         if len(filtered) == 0:
             return "Dangling AttrTree node with no leaf items."
 

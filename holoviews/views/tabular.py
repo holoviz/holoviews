@@ -35,7 +35,7 @@ class ItemTable(Layer):
         headings = data.keys()
         if type(data) == dict:
             headings = sorted(headings)
-            data = OrderedDict([(h, data[h]) for h in headings])
+            data = OrderedDict((h, data[h]) for h in headings)
         if 'dimensions' not in kwargs:
             kwargs['dimensions'] = headings
         super(ItemTable, self).__init__(data=data, **kwargs)
@@ -54,10 +54,10 @@ class ItemTable(Layer):
 
     def sample(self, samples=None):
         if callable(samples):
-            sampled_data = OrderedDict([item for item in self.data.items()
-                                        if samples(item)])
+            sampled_data = OrderedDict(item for item in self.data.items()
+                                       if samples(item))
         else:
-            sampled_data = OrderedDict([(s, self.data[s]) for s in samples])
+            sampled_data = OrderedDict((s, self.data[s]) for s in samples)
         return self.clone(sampled_data)
 
 
