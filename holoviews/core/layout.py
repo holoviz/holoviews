@@ -2,11 +2,11 @@ import math
 from collections import OrderedDict
 
 import param
+
 from .dimension import Dimension, Dimensioned
-from .holoview import View
 from .ndmapping import NdMapping
 from .options import options
-
+from .view import View
 
 
 class Pane(View):
@@ -31,8 +31,8 @@ class Pane(View):
 
 class GridLayout(NdMapping):
     """
-    A GridLayout is an NdMapping, which can contain any View or HoloMap type.
-    It is used to group different View or HoloMap elements into a grid for
+    A GridLayout is an NdMapping, which can contain any View or Map type.
+    It is used to group different View or Map elements into a grid for
     display. Just like all other NdMappings it can be sliced and indexed
     allowing selection of subregions of the grid.
     """

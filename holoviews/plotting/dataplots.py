@@ -7,7 +7,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
 import param
-from ..core import HoloMap, View, Overlay
+from ..core import Map, View, Overlay
 from ..views import Scatter, Curve, Histogram, ItemTable, Table
 from .sheetplots import MatrixPlot
 from .viewplots import Plot
@@ -507,7 +507,7 @@ class SideHistogramPlot(HistogramPlot):
         offset = self.offset * lims[3] * (1-self.offset)
         individually = View.options.plotting(main).opts.get('normalize_individually', False)
 
-        if isinstance(main, HoloMap):
+        if isinstance(main, Map):
             if issubclass(main.type, Overlay):
                 if individually:
                     main_range = main.split_stack()[0][key].range
@@ -526,8 +526,8 @@ class SideHistogramPlot(HistogramPlot):
             self._update_separator(lims, offset)
 
 
-        # If .main is an Overlay or a HoloMap of Overlays get the correct style
-        if isinstance(main, HoloMap) and issubclass(main.type, Overlay):
+        # If .main is an Overlay or a Map of Overlays get the correct style
+        if isinstance(main, Map) and issubclass(main.type, Overlay):
             style =  main.last[self.layout.main_layer].style
         elif isinstance(main, Overlay):
             style = main[self.layout.main_layer].style

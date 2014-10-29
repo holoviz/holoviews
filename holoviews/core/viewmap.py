@@ -6,20 +6,20 @@ from collections import defaultdict
 
 import numpy as np
 
-from .holoview import View, HoloMap, find_minmax
+from .view import View, Map, find_minmax
 from .ndmapping import NdMapping
 from .layer import Layer, Overlay, Grid
 from .layout import AdjointLayout, GridLayout
 
 
-class ViewMap(HoloMap):
+class ViewMap(Map):
     """
     A ViewMap can hold any number of DataLayers indexed by a list of
     dimension values. It also has a number of properties, which can find
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (View, HoloMap, Overlay)
+    data_type = (View, Map)
 
     @property
     def range(self):
@@ -83,7 +83,7 @@ class ViewMap(HoloMap):
 
     def overlay_dimensions(self, dimensions):
         """
-        Splits the HoloMap along a specified number of dimensions and overlays
+        Splits the Map along a specified number of dimensions and overlays
         items in the split out Stacks.
         """
         if self.ndims == 1:
@@ -124,7 +124,7 @@ class ViewMap(HoloMap):
             split_stack = self.split_dimensions(split_dims)
             split_stack = split_stack.reindex(dimensions)
         else:
-            raise ValueError('HoloMap does not have supplied dimensions.')
+            raise ValueError('ViewMap does not have supplied dimensions.')
 
         if layout:
             for keys, stack in split_stack._data.items():
@@ -137,7 +137,7 @@ class ViewMap(HoloMap):
 
     def split_overlays(self):
         """
-        Given a HoloMap of Overlays of N layers, split out the layers
+        Given a Map of Overlays of N layers, split out the layers
         into N separate Stacks.
         """
         if self.type is not Overlay:
@@ -158,9 +158,9 @@ class ViewMap(HoloMap):
         """
         The mul (*) operator implements overlaying of different Views.
         This method tries to intelligently overlay Stacks with differing
-        keys. If the HoloMap is mulled with a simple View each element in
-        the HoloMap is overlaid with the View. If the element the HoloMap is
-        mulled with is another HoloMap it will try to match up the dimensions,
+        keys. If the Map is mulled with a simple View each element in
+        the Map is overlaid with the View. If the element the Map is
+        mulled with is another Map it will try to match up the dimensions,
         making sure that items with completely different dimensions aren't
         overlaid.
         """
@@ -211,8 +211,8 @@ class ViewMap(HoloMap):
 
     def dframe(self):
         """
-        Gets a dframe for each View in the HoloMap, appends the dimensions
-        of the HoloMap as series and concatenates the dframes.
+        Gets a dframe for each View in the Map, appends the dimensions
+        of the Map as series and concatenates the dframes.
         """
         import pandas
         dframes = []
@@ -250,7 +250,7 @@ class ViewMap(HoloMap):
 
     def sample(self, samples=[], **sample_values):
         """
-        Sample each Layer in the HoloMap by passing either a list
+        Sample each Layer in the Map by passing either a list
         of samples or request a single sample using dimension-value
         pairs.
         """
@@ -261,7 +261,7 @@ class ViewMap(HoloMap):
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Reduce each SheetMatrix in the HoloMap using a function supplied
+        Reduce each SheetMatrix in the Map using a function supplied
         via the kwargs, where the keyword has to match a particular
         dimension in the View.
         """

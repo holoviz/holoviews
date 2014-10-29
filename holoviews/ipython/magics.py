@@ -9,7 +9,7 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import HoloMap, View, Overlay, AdjointLayout, GridLayout, Grid
+from ..core import Map, View, Overlay, AdjointLayout, GridLayout, Grid
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
@@ -223,7 +223,7 @@ class ChannelMagic(Magics):
         if isinstance(obj, (AdjointLayout, Grid, GridLayout)):
             for subview in obj:
                 cls._set_overlay_labels(subview, label)
-        elif isinstance(obj, HoloMap) and issubclass(obj.type, Overlay):
+        elif isinstance(obj, Map) and issubclass(obj.type, Overlay):
             for overlay in obj:
                 overlay.label = label
         elif isinstance(obj, Overlay):
@@ -349,12 +349,12 @@ class OptsMagic(Magics):
             if isinstance(obj, (AdjointLayout, Overlay)):
                 return group
 
-        if isinstance(obj, HoloMap) and not issubclass(obj.type, Overlay):
+        if isinstance(obj, Map) and not issubclass(obj.type, Overlay):
             key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
                 group.update({val:obj.type})
-        elif isinstance(obj, HoloMap):
+        elif isinstance(obj, Map):
             for subview in obj.last:
                 group.update(cls.collect(subview, attr))
         else:

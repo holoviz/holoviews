@@ -149,15 +149,15 @@ class View(Dimensioned):
 
 
 
-class HoloMap(NdMapping):
+class Map(NdMapping):
     """
-    A HoloMap is a map of Views over a number of specified dimensions. The
+    A Map is a map of Views over a number of specified dimensions. The
     dimension may be a spatial dimension (i.e., a ZStack), time
     (specifying a frame sequence) or any other combination of Dimensions.
-    HoloMap also adds handling of styles, appending the Dimension keys and
+    Map also adds handling of styles, appending the Dimension keys and
     values to titles and a number of methods to manipulate the Dimensions.
 
-    HoloMap objects can be sliced, sampled, reduced, overlaid and split along
+    Map objects can be sliced, sampled, reduced, overlaid and split along
     its and its containing Views dimensions. Subclasses should implement
     the appropriate slicing, sampling and reduction methods for their View
     type.
@@ -165,8 +165,8 @@ class HoloMap(NdMapping):
 
     title_suffix = param.String(default='\n {dims}', doc="""
        A string appended to the View titles when they are added to the
-       HoloMap. Default adds a new line with the formatted dimensions
-       of the HoloMap inserted using the {dims} formatting keyword.""")
+       Map. Default adds a new line with the formatted dimensions
+       of the Map inserted using the {dims} formatting keyword.""")
 
     data_type = (View, NdMapping)
 
@@ -218,13 +218,13 @@ class HoloMap(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of View." %
                                  self.__class__.__name__)
-        super(HoloMap, self)._item_check(dim_vals, data)
+        super(Map, self)._item_check(dim_vals, data)
 
 
     def get_title(self, key, item, group_size=2):
         """
         Resolves the title string on the View being added to the
-        HoloMap, adding the Stacks title suffix.
+        Map, adding the Stacks title suffix.
         """
         if self.ndims == 1 and self.dim_dict.get('Default'):
             title_suffix = ''
@@ -272,11 +272,11 @@ class HoloMap(NdMapping):
         """
         Split the dimensions in the NdMapping across two NdMappings,
         where the inner mapping is of the same type as the original
-        HoloMap.
+        Map.
         """
         inner_dims, deep_dims = self._split_dims(dimensions)
         if self.ndims == 1:
-            self.warning('Cannot split HoloMap with only one dimension.')
+            self.warning('Cannot split Map with only one dimension.')
             return self
         if len(deep_dims):
             raise Exception('NdMapping does not support splitting of deep dimensions.')

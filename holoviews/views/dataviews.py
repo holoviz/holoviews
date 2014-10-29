@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, HoloMap, Layer, ViewMap
+from ..core import Dimension, Map, Layer, ViewMap
 from .tabular import ItemTable, Table
 
 
@@ -20,7 +20,7 @@ class DataView(Layer):
         if isinstance(data, DataView):
             settings = dict(data.get_param_values())
             data = data.data
-        elif isinstance(data, HoloMap) or (isinstance(data, list) and data
+        elif isinstance(data, Map) or (isinstance(data, list) and data
                                            and isinstance(data[0], Layer)):
             data, settings = self._process_stack(data)
 

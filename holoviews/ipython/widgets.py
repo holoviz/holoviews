@@ -250,7 +250,7 @@ def get_plot_size():
 class NdWidget(param.Parameterized):
     """
     NdWidget is an abstract base class implementing a method to
-    find the dimensions and keys of any View, Grid or HoloMap type.
+    find the dimensions and keys of any View, Grid or Map type.
     In the process it creates a mock_obj to hold the dimensions
     and keys.
     """

@@ -1,4 +1,4 @@
-from ..core.holoview import View
+from ..core.view import View
 
 from .dataviews import * # pyflakes:ignore (API import)
 from .sheetviews import * # pyflakes:ignore (API import)

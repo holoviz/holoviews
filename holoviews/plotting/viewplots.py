@@ -14,7 +14,7 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import NdMapping, HoloMap, View, Layer, Overlay, ViewMap, AdjointLayout, \
+from ..core import NdMapping, Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
     GridLayout, Grid
 from ..views import Annotation, Matrix
 
@@ -107,7 +107,7 @@ class Plot(param.Parameterized):
             stack = view
 
         if not issubclass(stack.type, self._view_type):
-            raise TypeError("Requires View, Animation or HoloMap of type %s" % element_type)
+            raise TypeError("Requires View, Animation or Map of type %s" % element_type)
         return stack
 
 
@@ -350,7 +350,7 @@ class GridPlot(Plot):
             view = self.grid.get(coord, None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r, c])
-                vtype = view.type if isinstance(view, HoloMap) else view.__class__
+                vtype = view.type if isinstance(view, Map) else view.__class__
                 opts = View.options.plotting(view).opts
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title)
@@ -375,7 +375,7 @@ class GridPlot(Plot):
 
     def _format_title(self, n):
         view = self.grid.values()[0]
-        if isinstance(view, HoloMap):
+        if isinstance(view, Map):
             key = view.keys()[n]
             key = key if isinstance(key, tuple) else (key,)
             title_format = view.get_title(key, self.grid)
@@ -456,7 +456,7 @@ class GridPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) if isinstance(v, HoloMap) else 1
+        return max([len(v) if isinstance(v, Map) else 1
                     for v in self.grid]+[1])
 
 
@@ -575,7 +575,7 @@ class LayoutPlot(Plot):
 
             # Override the plotopts as required
             plotopts.update(override_opts)
-            vtype = view.type if isinstance(view, HoloMap) else view.__class__
+            vtype = view.type if isinstance(view, Map) else view.__class__
             layer_types = (vtype,) if isinstance(view, View) else view.layer_types
             if isinstance(view, Grid):
                 if len(layer_types) == 1 and issubclass(layer_types[0], Matrix):

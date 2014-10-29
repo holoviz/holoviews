@@ -218,7 +218,7 @@ class DFrame(DataFrameView):
                          view_dims=[], stack_dims=[], view_method=None):
         """
         The core conversion method from the Pandas DataFrame to a View
-        or HoloMap type. The value_dim specifies the column in the
+        or Map type. The value_dim specifies the column in the
         DataFrame to select, additionally indices or a reduce_fn can
         be supplied to select or reduce multiple entries in the
         DataFrame. Further, the view_dims and stack_dims determine
@@ -236,7 +236,7 @@ class DFrame(DataFrameView):
         filter_dims = list(set(self.dimension_labels) - set(selected_dims))        
         df = self.data.filter(selected_dims) if filter_dims else self.dframe()
 
-        # Set up for View and HoloMap dimension splitting operations
+        # Set up for View and Map dimension splitting operations
         view_dimensions = view_dims
         if stack_dims:
             stack_dfs = df.groupby(stack_dims)

@@ -5,10 +5,10 @@ import numpy as np
 import param
 
 from .dimension import Dimension
-from .holoview import View, HoloMap, find_minmax
 from .ndmapping import NdMapping
 from .layout import Pane, GridLayout, AdjointLayout
 from .options import options, channels
+from .view import View, Map, find_minmax
 
 
 class Layer(Pane):
@@ -27,7 +27,7 @@ class Layer(Pane):
 
 
     def __mul__(self, other):
-        if isinstance(other, HoloMap):
+        if isinstance(other, Map):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
 
@@ -290,7 +290,7 @@ class Overlay(Pane, NdMapping):
 
 
     def __mul__(self, other):
-        if isinstance(other, HoloMap):
+        if isinstance(other, Map):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
         elif isinstance(other, Overlay):
@@ -378,10 +378,10 @@ class Grid(NdMapping):
             zipped = zip(self.keys(), self.values(), other.values())
             overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
             return self.clone(overlayed_items)
-        elif isinstance(other, HoloMap) and len(other) == 1:
+        elif isinstance(other, Map) and len(other) == 1:
             view = other.last
-        elif isinstance(other, HoloMap) and len(other) != 1:
-            raise Exception("Can only overlay with HoloMap of length 1")
+        elif isinstance(other, Map) and len(other) != 1:
+            raise Exception("Can only overlay with Map of length 1")
         else:
             view = other
 
@@ -443,7 +443,7 @@ class Grid(NdMapping):
         if self._type is None:
             if not len(self) == 0:
                 item = self.values()[0]
-                self._type = item.type if isinstance(item, HoloMap) else item.__class__
+                self._type = item.type if isinstance(item, Map) else item.__class__
         return self._type
 
 
@@ -480,7 +480,7 @@ class Grid(NdMapping):
         for v in self.values():
             if isinstance(v, AdjointLayout):
                 v = v.main
-            if isinstance(v, HoloMap):
+            if isinstance(v, Map):
                 keys_list.append(list(v._data.keys()))
         return sorted(set(itertools.chain(*keys_list)))
 
@@ -496,7 +496,7 @@ class Grid(NdMapping):
         for v in self.values():
             if isinstance(v, AdjointLayout):
                 v = v.main
-            if isinstance(v, HoloMap):
+            if isinstance(v, Map):
                 keys_list.append(list(v._data.keys()))
         if all(x == keys_list[0] for x in keys_list):
             return keys_list[0]
@@ -572,3 +572,4 @@ class Grid(NdMapping):
                 stack_frame.insert(0, dim.replace(' ','_'), coord)
             dframes.append(stack_frame)
         return pandas.concat(dframes)
+

@@ -25,7 +25,7 @@ class TimeSeries(Layer):
     The curves should be supplied as an NxM dimensional array,
     x-values may also be supplied and must be of length N or M.
 
-    Alternatively a HoloMap or Overlay of Curve objects may be
+    Alternatively a Map or Overlay of Curve objects may be
     supplied.
     """
 

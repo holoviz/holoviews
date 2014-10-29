@@ -6,7 +6,7 @@ import param
 from ..core import Dimension, NdMapping, Layer
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.holoview import find_minmax
+from ..core.view import find_minmax
 from ..core.options import options
 from .dataviews import Histogram, Curve
 from .tabular import Table
@@ -67,7 +67,7 @@ class Matrix(Layer):
         the Matrix as a side-plot.
 
         The 'individually' argument specifies whether the histogram
-        will be rescaled for each Matrix in a HoloMap.
+        will be rescaled for each Matrix in a Map.
         """
         range = find_minmax(self.range, (0, -float('inf')))\
             if bin_range is None else bin_range

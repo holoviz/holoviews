@@ -1,10 +1,10 @@
 from .boundingregion import * # pyflakes:ignore (API import)
 from .dimension import * # pyflakes:ignore (API import)
-from .holoview import * # pyflakes:ignore (API import)
 from .layer import * # pyflakes:ignore (API import)
 from .layout import * # pyflakes:ignore (API import)
 from .operation import * # pyflakes:ignore (API import)
 from .sheetcoords import * # pyflakes:ignore (API import)
+from .view import * # pyflakes:ignore (API import)
 
 
 def public(obj):
