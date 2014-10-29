@@ -1,20 +1,7 @@
-import numpy as np
 import param
-
 from .dimension import Dimension, Dimensioned
 from .options import options
 from .ndmapping import NdMapping
-
-
-def find_minmax(lims, olims):
-    """
-    Takes (a1, a2) and (b1, b2) as input and returns
-    (np.min(a1, b1), np.max(a2, b2)). Used to calculate
-    min and max values of a number of items.
-    """
-
-    limzip = zip(list(lims), list(olims), [np.min, np.max])
-    return tuple([float(fn([l, ol])) for l, ol, fn in limzip])
 
 
 class View(Dimensioned):
@@ -55,7 +42,6 @@ class View(Dimensioned):
         elif 'value' not in kwargs:
             kwargs['value'] = self.value
         super(View, self).__init__(**kwargs)
-
 
 
     def sample(self, **samples):

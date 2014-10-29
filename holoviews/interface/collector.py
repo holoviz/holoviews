@@ -5,9 +5,8 @@ for holding and collecting DataView objects.
 import uuid
 from collections import OrderedDict
 
-import numpy as np
-
 import param
+import numpy as np
 
 from ..core import GridLayout, Map, NdMapping, Dimension, Grid, View, ViewMap
 from ..ipython.widgets import RunProgress, ProgressBar

@@ -9,7 +9,6 @@ import param
 
 from .layer import Layer, Overlay, Grid
 from .layout import GridLayout
-from .viewmap import ViewMap
 from .view import View, Map
 
 
@@ -86,7 +85,7 @@ class ViewOperation(param.ParameterizedFunction):
 
         elif isinstance(view, Map):
             mapped_items = [(k, self._process(el, key=k)) for k, el in view.items()]
-            stacks = [ViewMap(dimensions=view.dimensions) for stack_tp in range(len(mapped_items[0][1]))]
+            stacks = [view.clone(dimensions=view.dimensions) for _ in range(len(mapped_items[0][1]))]
             for k, views in mapped_items:
                 for ind, v in enumerate(views):
                     stacks[ind][k] = v

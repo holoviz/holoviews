@@ -1,12 +1,12 @@
 from collections import OrderedDict
-import numpy as np
 
 import param
+import numpy as np
 
 from ..core import Dimension, NdMapping, Layer
 from ..core.boundingregion import BoundingRegion, BoundingBox
+from ..core.layer import find_minmax
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.view import find_minmax
 from ..core.options import options
 from .dataviews import Histogram, Curve
 from .tabular import Table
