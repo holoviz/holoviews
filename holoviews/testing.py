@@ -20,37 +20,37 @@ class ViewTestCase(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(ViewTestCase, self).__init__(*args, **kwargs)
         # General view classes
-        self.addTypeEqualityFunc(GridLayout,   self.compare_gridlayout)
-        self.addTypeEqualityFunc(AdjointLayout,       self.compare_layouts)
+        self.addTypeEqualityFunc(GridLayout,    self.compare_gridlayout)
+        self.addTypeEqualityFunc(AdjointLayout, self.compare_layouts)
         self.addTypeEqualityFunc(Overlay,       self.compare_overlays)
-        self.addTypeEqualityFunc(Annotation,   self.compare_annotations)
-        self.addTypeEqualityFunc(Grid,         self.compare_grids)
+        self.addTypeEqualityFunc(Annotation,    self.compare_annotations)
+        self.addTypeEqualityFunc(Grid,          self.compare_grids)
 
         # DataLayers
-        self.addTypeEqualityFunc(ViewMap,    self.compare_viewmap)
+        self.addTypeEqualityFunc(ViewMap,      self.compare_viewmap)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
         self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
         self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
-        self.addTypeEqualityFunc(ItemTable,        self.compare_tables)
+        self.addTypeEqualityFunc(ItemTable,    self.compare_tables)
         # SheetLayers
-        self.addTypeEqualityFunc(SheetMatrix,    self.compare_sheetmatrix)
+        self.addTypeEqualityFunc(SheetMatrix,  self.compare_sheetmatrix)
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)
-        self.addTypeEqualityFunc(VectorField,       self.compare_vectorfield)
+        self.addTypeEqualityFunc(VectorField,  self.compare_vectorfield)
         # Option objects
-        self.addTypeEqualityFunc(StyleOpts, self.compare_opts)
-        self.addTypeEqualityFunc(PlotOpts, self.compare_opts)
-        self.addTypeEqualityFunc(ChannelOpts, self.compare_channelopts)
+        self.addTypeEqualityFunc(StyleOpts,    self.compare_opts)
+        self.addTypeEqualityFunc(PlotOpts,     self.compare_opts)
+        self.addTypeEqualityFunc(ChannelOpts,  self.compare_channelopts)
         # Dimension objects
-        self.addTypeEqualityFunc(Dimension, self.compare_dims)
+        self.addTypeEqualityFunc(Dimension,    self.compare_dims)
 
         # Float comparisons
-        self.addTypeEqualityFunc(float, self.compare_floats)
-        self.addTypeEqualityFunc(np.float, self.compare_floats)
-        self.addTypeEqualityFunc(np.float32, self.compare_floats)
-        self.addTypeEqualityFunc(np.float64, self.compare_floats)
+        self.addTypeEqualityFunc(float,        self.compare_floats)
+        self.addTypeEqualityFunc(np.float,     self.compare_floats)
+        self.addTypeEqualityFunc(np.float32,   self.compare_floats)
+        self.addTypeEqualityFunc(np.float64,   self.compare_floats)
 
     #================#
     # Helper methods #
