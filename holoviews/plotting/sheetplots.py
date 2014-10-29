@@ -424,9 +424,10 @@ class MatrixGridPlot(OverlayPlot):
         self._finalize_axis(None, lbrt=(0, 0, width, height))
 
 
-    def _format_title(self, n):
+    def _format_title(self, key):
         stack = self.grid.values()[0]
-        key, _ = stack.items()[n]
+        view = stack.get(key, None)
+        if view is None: return None
         title_format = stack.get_title(key if isinstance(key, tuple) else (key,), self.grid)
         if title_format is None:
             return None
