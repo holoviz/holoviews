@@ -74,7 +74,7 @@ class ViewMap(HoloMap):
 
     @property
     def lbrt(self):
-        if self.xlim is None: return None, None, None, None
+        if self.xlim is None: return np.NaN, np.NaN, np.NaN, np.Nan
         l, r = self.xlim
         b, t = self.ylim
         return float(l), float(b), float(r), float(t)

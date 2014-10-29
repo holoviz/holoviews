@@ -211,7 +211,7 @@ class Plot(param.Parameterized):
                 axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
 
             if lbrt and self.apply_databounds:
-                (l, b, r, t) = lbrt
+                (l, b, r, t) = [coord if np.isreal(coord) else np.NaN for coord in lbrt]
                 if not np.NaN in (l, r): axis.set_xlim((l, r))
                 if b == t: t += 1. # Arbitrary y-extent if zero range
                 if not np.NaN in (b, t): axis.set_ylim((b, t))
