@@ -92,7 +92,7 @@ class Dimensioned(param.Parameterized):
 
     @property
     def dim_dict(self):
-        return OrderedDict([(d.name, d) for d in self.dimensions])
+        return OrderedDict((d.name, d) for d in self.dimensions)
 
 
     @property

@@ -36,7 +36,7 @@ holoviews modules
  Defines the Dimension and NdMapping classes, which implement
  n-dimensional data containers.
 `operation`_
- Defines ViewOperation and StackOperation classes used to manipulate and
+ Defines ViewOperation and MapOperation classes used to manipulate and
  transform existing Views and Stacks.
 `options`_
  Defines options which control plotting and style configuration.

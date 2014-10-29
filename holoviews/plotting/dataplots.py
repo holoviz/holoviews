@@ -253,7 +253,7 @@ class TablePlot(Plot):
             return formatted
 
 
-    def __call__(self, axis=None):
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 
         tableview = self._stack.last
         self.ax = self._init_axis(axis)
