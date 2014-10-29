@@ -5,7 +5,7 @@ from .sheetviews import * # pyflakes:ignore (API import)
 from .tabular import * # pyflakes:ignore (API import)
 
 
-class Annotation(View):
+class Annotation(Layer):
     """
     An annotation is a type of View that is displayed on the top of an
     overlay. Annotations elements do not depend on the details of the
@@ -21,6 +21,9 @@ class Annotation(View):
     (start, end) values. A value of None, indicates an unspecified
     constraint.
     """
+
+    xlim, ylim = None, None
+    xlabel, ylabel = "", ""
 
     def __init__(self, boxes=[], vlines=[], hlines=[], arrows=[], **kwargs):
         """

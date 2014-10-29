@@ -106,8 +106,6 @@ class Plot(param.Parameterized):
         else:
             stack = view
 
-        if not issubclass(stack.type, self._view_type):
-            raise TypeError("Requires View, Animation or Map of type %s" % element_type)
         return stack
 
 
@@ -1026,7 +1024,7 @@ class AnnotationPlot(Plot):
         return True
 
 
-    def _draw_annotations(self, annotation, axis, key):
+    def _draw_annotations(self, annotation, key):
         """
         Draw the elements specified by the Annotation View on the
         axis, return a list of handles.
@@ -1043,21 +1041,21 @@ class AnnotationPlot(Plot):
             if not self._active_interval(key, interval):
                 continue
             if mode == 'vline':
-                handles.append(axis.axvline(spec[1], **opts))
+                handles.append(self.ax.axvline(spec[1], **opts))
                 continue
             elif mode == 'hline':
-                handles.append(axis.axhline(spec[1], **opts))
+                handles.append(self.ax.axhline(spec[1], **opts))
                 continue
             elif mode == 'line':
                 line = LineCollection([np.array(info[0])], **opts)
-                axis.add_collection(line)
+                self.ax.add_collection(line)
                 handles.append(line)
                 continue
             elif mode == 'spline':
                 verts, codes = info
                 patch = patches.PathPatch(Path(verts, codes),
                                           facecolor='none', **opts)
-                axis.add_patch(patch)
+                self.ax.add_patch(patch)
                 continue
 
 
@@ -1067,22 +1065,18 @@ class AnnotationPlot(Plot):
                 xytext = (0, points if mode=='v' else -points)
             elif mode in ['>', '<']:
                 xytext = (points if mode=='<' else -points, 0)
-            arrow = axis.annotate(text, xy=xy, textcoords='offset points',
-                                  xytext=xytext, ha="center", va="center",
-                                  arrowprops=arrowprops, **opts)
+            arrow = self.ax.annotate(text, xy=xy, textcoords='offset points',
+                                     xytext=xytext, ha="center", va="center",
+                                     arrowprops=arrowprops, **opts)
             handles.append(arrow)
         return handles
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-
-        if axis is None:
-            raise Exception("Annotations can only be plotted as part of overlays.")
-
-        self.ax = axis
-        handles = self._draw_annotations(self._stack.last, axis, list(self._stack.keys())[-1])
+        self.ax = self._init_axis(axis)
+        handles = self._draw_annotations(self._stack.last, list(self._stack.keys())[-1])
         self.handles['annotations'] = handles
-        return axis
+        return self._finalize_axis(self._keys[-1])
 
 
     def update_handles(self, annotation, key, lbrt=None):

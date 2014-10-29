@@ -223,7 +223,6 @@ def grid_display(grid, size=256):
 @display_hook
 def view_display(view, size=256):
     if not isinstance(view, View): return None
-    if isinstance(view, Annotation): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
     opts = dict(View.options.plotting(view).opts, size=get_plot_size())
