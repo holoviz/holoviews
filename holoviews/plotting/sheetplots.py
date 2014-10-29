@@ -375,9 +375,9 @@ class MatrixGridPlot(OverlayPlot):
         self.layout = kwargs.pop('layout', None)
         self.grid = copy.deepcopy(grid)
         for k, stack in self.grid.items():
-            self.grid[k] = self._collapse_channels(self.grid[k])
+            self.grid[k] = self._check_stack(self.grid[k])
         Plot.__init__(self, **kwargs)
-        self._keys = grid.all_keys
+        self._keys = self.grid.all_keys
 
 
     def __call__(self, axis=None):
