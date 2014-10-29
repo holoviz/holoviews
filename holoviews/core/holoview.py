@@ -56,7 +56,6 @@ class View(Dimensioned):
             kwargs['value'] = Dimension(kwargs['value'])
         elif 'value' not in kwargs:
             kwargs['value'] = self.value
-        if not 'label' in kwargs: kwargs['label'] = str(kwargs.get('value', ''))
         super(View, self).__init__(**kwargs)
 
 
