@@ -394,8 +394,8 @@ class MatrixGridPlot(OverlayPlot):
             for view in row:
                 w, h = self._get_dims(view)
                 if view.type == Overlay:
-                    data = view.last[-1].data
-                    opts = View.options.style(view.last[-1]).opts
+                    data = view.last.last.data
+                    opts = View.options.style(view.last.last).opts
                 else:
                     data = view.last.data
                     opts = View.options.style(view).opts

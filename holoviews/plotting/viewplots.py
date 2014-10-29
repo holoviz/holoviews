@@ -850,7 +850,7 @@ class OverlayPlot(Plot):
             layer_labels = overlay.labels[i:len(pattern)+i]
             matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
             if matching and len(layer_labels)==len(pattern):
-                views = [el for el in overlay.data if el.label in layer_labels]
+                views = [el for el in overlay if el.label in layer_labels]
                 overlay_slice = Overlay(views)
                 collapsed_view = fn(overlay_slice)
                 collapsed_views.append(collapsed_view)
@@ -859,7 +859,7 @@ class OverlayPlot(Plot):
                 skip = 0 if skip <= 0 else (skip - 1)
             else:
                 collapsed_views.append(overlay[i])
-        overlay.data = collapsed_views
+        overlay.set(collapsed_views)
 
 
     def _collapse_channels(self, stack):

@@ -154,20 +154,25 @@ class Overlay(Pane, NdMapping):
     def __init__(self, overlays, **kwargs):
         self._xlim = None
         self._ylim = None
-        data = self._process_overlays(overlays)
+        data = self._process_layers(overlays)
         super(Overlay, self).__init__(data, **kwargs)
         self._data = self.data
 
 
-    def _process_overlays(self, layers):
+    def _process_layers(self, layers):
         """
         Set a collection of layers to be overlaid with each other.
         """
         if isinstance(layers, NdMapping):
-            return layers, layers.get_param_values()
+            return layers
         keys = range(len(layers))
         data = OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
         return data
+
+
+    def set(self, layers):
+        data = self._process_layers(layers)
+        self._data = data
 
 
     @property
@@ -282,7 +287,7 @@ class Overlay(Pane, NdMapping):
 
     def hist(self, index=None, adjoin=True, **kwargs):
         valid_ind = isinstance(index, int) and (0 <= index < len(self))
-        valid_label = index in [el.label for el in self.data]
+        valid_label = index in [el.label for el in self]
         if index is None or not any([valid_ind, valid_label]):
             raise TypeError("Please supply a suitable index for the histogram data")
 

@@ -27,23 +27,23 @@ class RGBA(ViewOperation):
     def _process(self, overlay, key=None):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
-        if not all(isinstance(el, SheetMatrix) for el in overlay.data):
-            raise Exception("All layers must be SheetViews to convert"
+        if not all(isinstance(el, SheetMatrix) for el in overlay):
+            raise Exception("All layers must be SheetMatrix to convert"
                             " to RGB(A) format")
-        if not all(el.depth == 1 for el in overlay.data):
+        if not all(el.depth == 1 for el in overlay):
             raise Exception("All SheetViews must have a depth of one for"
                             " conversion to RGB(A) format")
 
         arrays = []
-        for el in overlay.data:
+        for el in overlay:
             if el.data.max() > 1.0 or el.data.min() < 0:
                 self.warning("Clipping data into the interval [0, 1]")
                 el.data.clip(0,1.0)
             arrays.append(el.data)
 
 
-        return [SheetMatrix(np.dstack(arrays), overlay.data[0].bounds, label=self.p.label,
-                          roi_bounds=overlay.data[0].roi_bounds, value=overlay[0].value)]
+        return [SheetMatrix(np.dstack(arrays), overlay[0].bounds, label=self.p.label,
+                            roi_bounds=overlay[0].roi_bounds, value=overlay[0].value)]
 
 
 class alpha_overlay(ViewOperation):
@@ -137,7 +137,7 @@ class colorize(ViewOperation):
          hcs = HCS(overlay[1] * C * overlay[0].N)
 
          return [SheetMatrix(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
-                           label=self.p.label, value=hcs.value)]
+                             label=self.p.label, value=hcs.value)]
 
 
 class cmap2rgb(ViewOperation):

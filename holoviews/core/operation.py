@@ -50,7 +50,7 @@ class ViewOperation(param.ParameterizedFunction):
         condition or to extract the appropriate views from an Overlay.
         """
         if isinstance(view, Overlay):
-            matches = [v for v in view.data if v.label.endswith(pattern)]
+            matches = [v for v in view if v.label.endswith(pattern)]
         elif isinstance(view, Layer):
             matches = [view] if view.label.endswith(pattern) else []
 

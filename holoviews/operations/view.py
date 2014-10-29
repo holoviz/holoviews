@@ -47,7 +47,7 @@ class operator(ViewOperation):
         if not isinstance(overlay, Overlay):
             raise Exception("Operation requires an Overlay as input")
 
-        new_data = self.p.operator(*[el.data for el in overlay.data])
+        new_data = self.p.operator(*[el.data for el in overlay])
         return [SheetMatrix(new_data, bounds=overlay[0].bounds, label=self.p.label,
                             roi_bounds=overlay[0].roi_bounds)]
 
