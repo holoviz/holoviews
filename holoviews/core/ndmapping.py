@@ -427,6 +427,61 @@ class NdIndexableMapping(Dimensioned):
         return len(self._data)
 
 
+    def split_dimensions(self, dimensions):
+        """
+        Split the dimensions in the NdMapping across two NdMappings,
+        where the inner mapping is of the same type as the original
+        Map.
+        """
+        inner_dims, deep_dims = self._split_dims(dimensions)
+        if self.ndims == 1:
+            self.warning('Cannot split Map with only one dimension.')
+            return self
+        if len(deep_dims):
+            raise Exception('NdMapping does not support splitting of deep dimensions.')
+        first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
+        self._check_key_type = False # Speed optimization
+        own_keys = self._data.keys()
+
+        split_data = NdMapping(dimensions=first_dims)
+        split_data._check_key_type = False # Speed optimization
+        for fk in first_keys:  # The first groups keys
+            split_data[fk] = self.clone(dimensions=second_dims)
+            split_data[fk]._check_key_type = False # Speed optimization
+            for sk in set(second_keys):  # The second groups keys
+                # Generate a candidate expanded key
+                unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
+                sorted_key = self.sort_key(unordered_dimkeys)
+                if sorted_key in own_keys:  # If the expanded key actually exists...
+                    split_data[fk][sk] = self[sorted_key]
+            split_data[fk]._check_key_type = True # Speed optimization
+        split_data._check_key_type = True # Speed optimization
+
+        self._check_key_type = True # Re-enable checks
+
+        return split_data
+
+
+    def _split_dim_keys(self, dimensions):
+        """
+        Split the NdMappings keys into two groups given a list of
+        dimensions to split out.
+        """
+
+        # Find dimension indices
+        first_dims = [d for d in self.dimensions if d.name not in dimensions]
+        first_inds = [self.dim_index(d.name) for d in first_dims]
+        second_dims = [d for d in self.dimensions if d.name in dimensions]
+        second_inds = [self.dim_index(d.name) for d in second_dims]
+
+        # Split the keys
+        keys = list(self._data.keys())
+        first_keys, second_keys = zip(*[(tuple(k[fi] for fi in first_inds),
+                                        tuple(k[si] for si in second_inds))
+                                        for k in keys])
+        return first_dims, first_keys, second_dims, second_keys
+
+
 class NdMapping(NdIndexableMapping):
     """
     NdMapping supports the same indexing semantics as NdIndexableMapping but
