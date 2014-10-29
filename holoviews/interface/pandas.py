@@ -18,7 +18,7 @@ except:
 
 import param
 
-from ..core import Dimension, NdMapping, View, Layer, ViewMap, GridLayout, Grid
+from ..core import Dimension, NdMapping, View, Layer, Overlay, ViewMap, GridLayout, Grid
 from ..core.options import options, PlotOpts
 from ..views import HeatMap, ItemTable
 
@@ -138,19 +138,7 @@ class DataFrameView(Layer):
 
 
     def overlay_dimensions(self, dimensions):
-        ndmapping = self._split_dimensions(dimensions)
-        views = ndmapping._data.items()
-        dimensions = ndmapping.dimensions
-        overlaid = views[0][1]
-        for keys, view in views:
-            label = ', '.join([d.pprint_value(k) for d, k in
-                               zip(dimensions, keys)])
-            if overlaid == view:
-                overlaid.legend_label = label
-                continue
-            view.legend_label = label
-            overlaid *= view
-        return overlaid
+        return self._split_dimensions(dimensions, Overlay)
 
 
     def grid(self, dimensions=[], layout=False, cols=4):
