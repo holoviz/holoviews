@@ -57,7 +57,7 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_opts_style1(self):
         self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
         self.cell_magic('opts', " SheetMatrix cmap='hot'", 'sv1')
-        self.assertEqual(self.options.style['Custom[<sv1>]_SheetView'].opts,
+        self.assertEqual(self.options.style['Custom[<sv1>]_SheetMatrix'].opts,
                          {'cmap':'hot'})
 
     def test_cell_opts_style2(self):
@@ -103,8 +103,8 @@ class TestOptsMagic(ExtensionTestCase):
                          {'cmap':'jet'})
 
     def test_cell_magic_complex_example(self):
-        self.cell("""o = SheetOverlay([SheetMatrix(np.random.rand(5,5)),
-                           Points(np.random.rand(2,5))], BoundingBox(), name='complex_view')""")
+        self.cell("""o = Overlay([SheetMatrix(np.random.rand(5,5)),
+                           Points(np.random.rand(2,5))], name='complex_view')""")
         opts = " SheetMatrix [show_grid=True] cmap='hsv' Points [show_title=False] color='r'"
         self.cell_magic('opts', opts, 'o')
         self.assertEqual(self.options.style['Custom[<complex_view>]_SheetMatrix'].opts,
