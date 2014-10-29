@@ -95,22 +95,22 @@ class ViewOperation(param.ParameterizedFunction):
             else:                 return GridLayout(stacks)
 
 
-class StackOperation(param.ParameterizedFunction):
+class MapOperation(param.ParameterizedFunction):
     """
-    A StackOperation takes a HoloMap of Views or Overlays as inputs
+    A MapOperation takes a HoloMap of Views or Overlays as inputs
     and processes them, returning arbitrary new HoloMap objects as output.
     """
 
-    label = param.String(default='StackOperation', doc="""
-        The label to identifiy the output of the StackOperation. By
-        default this will match the name of the StackOperation.""")
+    label = param.String(default='MapOperation', doc="""
+        The label to identifiy the output of the MapOperation. By
+        default this will match the name of the MapOperation.""")
 
 
     def __call__(self, stack, **params):
         self.p = param.ParamOverrides(self, params)
 
         if not isinstance(stack, HoloMap):
-            raise Exception('StackOperation can only process Stacks.')
+            raise Exception('MapOperation can only process HoloMaps.')
 
         stacks = self._process(stack)
 

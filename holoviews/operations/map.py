@@ -3,11 +3,11 @@ from collections import OrderedDict
 import param
 
 from ..core import ViewMap
-from ..core.operation import StackOperation
+from ..core.operation import MapOperation
 from ..views import Table, Curve
 
 
-class table_collate(StackOperation):
+class table_collate(MapOperation):
 
     collation_dim = param.String(default="")
 
