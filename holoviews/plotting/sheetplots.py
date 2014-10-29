@@ -406,14 +406,17 @@ class MatrixGridPlot(OverlayPlot):
             y = b_h
             x += w + b_w
 
-        return self._finalize_axis(None, lbrt=(0, 0, width, height), xticks=xticks,
-                                   yticks=yticks)
+        key = self._keys[-1]
+        return self._finalize_axis(key, lbrt=(0, 0, width, height),
+                                   title=self._format_title(key),
+                                   xticks=xticks, yticks=yticks)
 
 
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
+        key = self._keys[n]
         for i, plot in enumerate(self.handles['projs']):
-            view = self.grid.values()[i][self._keys[n]]
+            view = self.grid.values()[i][key]
             data = view[-1].data if isinstance(view, Overlay) else view.data
             plot.set_data(data)
 
@@ -421,13 +424,13 @@ class MatrixGridPlot(OverlayPlot):
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
-        self._finalize_axis(None, lbrt=(0, 0, width, height))
+        self._finalize_axis(key, lbrt=(0, 0, width, height))
 
 
     def _format_title(self, key):
         stack = self.grid.values()[0]
         view = stack.get(key, None)
-        if view is None: return None
+        if view is None: return ""
         title_format = stack.get_title(key if isinstance(key, tuple) else (key,), self.grid)
         if title_format is None:
             return None
