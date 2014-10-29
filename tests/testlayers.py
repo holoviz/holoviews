@@ -33,12 +33,6 @@ class OverlayTest(CompositeTest):
         overlay = Overlay(views)
         self.assertEqual(overlay.labels, [v.label for v in views])
 
-    def test_overlay_set(self):
-        new_layers = [self.view1, self.view3]
-        overlay = Overlay([self.view2])
-        overlay.set(new_layers)
-        self.assertEqual(len(overlay), len(new_layers))
-
 
     def test_overlay_add(self):
         overlay = Overlay([self.view1])
@@ -53,17 +47,4 @@ class OverlayTest(CompositeTest):
         try:
             overlay[3]
             raise AssertionError("Index should be out of range.")
-        except IndexError: pass
-
-
-    def test_overlay_str_indexing(self):
-        overlay = Overlay([self.view1, self.view2, self.view3])
-
-        self.assertEqual(overlay[self.view1.label], self.view1)
-        self.assertEqual(overlay[self.view2.label], self.view2)
-        self.assertEqual(overlay[self.view3.label], self.view3)
-
-        try:
-            overlay['Invalid key']
-            raise AssertionError("Index should be an invalid key.")
         except KeyError: pass

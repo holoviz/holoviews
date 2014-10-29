@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import itertools
 import numpy as np
 
@@ -110,8 +111,8 @@ class Layer(Pane):
 
     @property
     def lbrt(self):
-        l, r = self.xlim if self.xlim else (None, None)
-        b, t = self.ylim if self.ylim else (None, None)
+        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
+        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
         return l, b, r, t
 
 
@@ -122,7 +123,7 @@ class Layer(Pane):
 
 
 
-class Overlay(View):
+class Overlay(Pane, NdMapping):
     """
     An Overlay allows a group of Layers to be overlaid together. Layers can
     be indexed out of an overlay and an overlay is an iterable that iterates
@@ -134,8 +135,8 @@ class Overlay(View):
     SheetMatrix via the rgb property.
     """
 
-    dimensions = param.List(default=[Dimension('Overlay')], constant=True, doc="""List
-      of dimensions the View can be indexed by.""")
+    dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
+      of dimensions the Overlay can be indexed by.""")
 
     label = param.String(doc="""
       A short label used to indicate what kind of data is contained
@@ -151,11 +152,22 @@ class Overlay(View):
     _deep_indexable = True
 
     def __init__(self, overlays, **kwargs):
-        super(Overlay, self).__init__([], **kwargs)
         self._xlim = None
         self._ylim = None
-        self._layer_dimensions = None
-        self.set(overlays)
+        data = self._process_overlays(overlays)
+        super(Overlay, self).__init__(data, **kwargs)
+        self._data = self.data
+
+
+    def _process_overlays(self, layers):
+        """
+        Set a collection of layers to be overlaid with each other.
+        """
+        if isinstance(layers, NdMapping):
+            return layers, layers.get_param_values()
+        keys = range(len(layers))
+        data = OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
+        return data
 
 
     @property
@@ -165,8 +177,7 @@ class Overlay(View):
 
     @property
     def style(self):
-        return [el.style for el in self.data]
-
+        return [el.style for el in self]
 
     @style.setter
     def style(self, styles):
@@ -174,25 +185,28 @@ class Overlay(View):
             layer.style = style
 
 
-    def add(self, layer):
-        """
-        Overlay a single layer on top of the existing overlay.
-        """
+    def item_check(self, dim_vals, layer):
         if not isinstance(layer, Layer): pass
         elif not len(self):
             self._layer_dimensions = layer.dimension_labels
-            self.xlim = layer.xlim
-            self.ylim = layer.ylim
             self.value = layer.value
             self.label = layer.label
         else:
-            self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
-            self.ylim = layer.ylim if self.xlim is None else find_minmax(self.ylim, layer.ylim)
+            if layer.xlim:
+                self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
+            if layer.xlim:
+                self.ylim = layer.ylim if self.ylim is None else find_minmax(self.ylim, layer.ylim)
             if layer.dimension_labels != self._layer_dimensions:
                 raise Exception("DataLayers must share common dimensions.")
         if layer.label in [o.label for o in self.data]:
             self.warning('Label %s already defined in Overlay' % layer.label)
-        self.data.append(layer)
+
+
+    def add(self, layer):
+        """
+        Overlay a single layer on top of the existing overlay.
+        """
+        self[len(self)] = layer
 
 
     @property
@@ -252,33 +266,18 @@ class Overlay(View):
         return self[0].cyclic_range if len(self) else None
 
 
-    def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
-
-
     def __mul__(self, other):
         if isinstance(other, HoloMap):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
         elif isinstance(other, Overlay):
-            overlays = self.data + other.data
+            overlays = self.values() + other.values()
         elif isinstance(other, (View)):
-            overlays = self.data + [other]
+            overlays = self.values() + [other]
         else:
             raise TypeError('Can only create an overlay of holoviews.')
 
         return Overlay(overlays)
-
-
-    def set(self, layers):
-        """
-        Set a collection of layers to be overlaid with each other.
-        """
-        self.data = []
-        for layer in layers:
-            self.add(layer)
-        return self
 
 
     def hist(self, index=None, adjoin=True, **kwargs):
@@ -294,25 +293,6 @@ class Overlay(View):
             return layout
         else:
             return hist
-
-
-    def __getitem__(self, ind):
-        if isinstance(ind, str):
-            matches = [o for o in self.data if o.label == ind]
-            if matches == []: raise KeyError('Key %s not found.' % ind)
-            return matches[0]
-
-        if ind is ():
-            return self
-        elif isinstance(ind, tuple):
-            ind, ind2 = (ind[0], ind[1:])
-        else:
-            return self.data[ind]
-        if isinstance(ind, slice):
-            return self.__class__([d[ind2] for d in self.data[ind]],
-                                  **dict(self.get_param_values()))
-        else:
-            return self.data[ind][ind2]
 
 
     def __getstate__(self):
@@ -339,17 +319,6 @@ class Overlay(View):
         for key, defs in unpickled_channels.items():
             self.channels[key] = defs
         self.__dict__.update(d)
-
-
-    def __len__(self):
-        return len(self.data)
-
-
-    def __iter__(self):
-        i = 0
-        while i < len(self):
-            yield self[i]
-            i += 1
 
 
 class Grid(NdMapping):
