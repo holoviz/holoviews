@@ -111,22 +111,6 @@ class Plot(param.Parameterized):
         return stack
 
 
-    def _adjust_legend(self):
-        # If legend enabled update handles and labels
-        if not self.ax or not self.ax.get_legend(): return
-        handles, labels = self.ax.get_legend_handles_labels()
-        if len(handles) and self.show_legend:
-            fontP = FontProperties()
-            fontP.set_size('medium')
-            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
-            leg.get_frame().set_alpha(1.0)
-        frame = self.ax.get_legend().get_frame()
-        frame.set_facecolor('1.0')
-        frame.set_edgecolor('0.0')
-        frame.set_linewidth('1.5')
-
-
-
     def _format_title(self, key):
         view = self._stack.get(key, None)
         if view is None: return None
@@ -232,7 +216,6 @@ class Plot(param.Parameterized):
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
 
-        self._adjust_legend()
 
         if 'fig' in self.handles:
             plt.draw()
@@ -893,10 +876,41 @@ class OverlayPlot(Plot):
         return stack
 
 
+    def _adjust_legend(self):
+        # If legend enabled update handles and labels
+        if not self.ax or not self.ax.get_legend(): return
+        handles, _ = self.ax.get_legend_handles_labels()
+        labels = self._stack.last.legend
+        if len(handles) and self.show_legend:
+            fontP = FontProperties()
+            fontP.set_size('medium')
+            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg.get_frame().set_alpha(1.0)
+        frame = self.ax.get_legend().get_frame()
+        frame.set_facecolor('1.0')
+        frame.set_edgecolor('0.0')
+        frame.set_linewidth('1.5')
+
+    def _format_title(self, key):
+        view = self._stack.get(key, None)
+        if view is None: return None
+        title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
+        if title_format is None: return None
+
+        labels = view.labels
+        label = labels[0] if len(set(labels)) == 1 else ""
+
+        values = [str(v.value) for v in view]
+        value = values[0] if len(set(values)) == 1 else ""
+        return title_format.format(label=label, value=value,
+                                   type=view.__class__.__name__)
+
+
     def __call__(self, axis=None, lbrt=None, **kwargs):
 
         self.ax = self._init_axis(axis)
         stacks = self._stack.split_overlays()
+
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(stacks, lambda s: s.style))
 
@@ -909,18 +923,21 @@ class OverlayPlot(Plot):
                 lbrt = self._stack.last.lbrt if self.rescale else self._stack.lbrt
 
             plotype = Plot.defaults[stack.type]
-            plot = plotype(stack, size=self.size, all_keys=self._keys,
+            plot = plotype(stack,
+                           **dict(plotopts, size=self.size, all_keys=self._keys,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
-                           show_grid=self.show_grid, zorder=zorder,
-                           **dict(plotopts, **kwargs))
+                           show_grid=self.show_grid, zorder=zorder, **kwargs))
             plot.aspect = self.aspect
 
             lbrt = None if stack.type == Annotation else lbrt
             plot(self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
             self.plots.append(plot)
 
-        return self._finalize_axis(None)
+        self._adjust_legend()
+        key = self._keys[-1]
+        title = self._format_title(key)
+        return self._finalize_axis(None, title=title)
 
 
     def update_frame(self, n, lbrt=None):

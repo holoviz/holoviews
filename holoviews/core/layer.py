@@ -145,6 +145,8 @@ class Overlay(Pane, NdMapping):
       Overlays should not have their label set directly by the user as
       the label is only for defining custom channel operations.""")
 
+    title = param.String(default="{value}")
+
     channels = channels
 
     _abstract = True
@@ -178,6 +180,22 @@ class Overlay(Pane, NdMapping):
     @property
     def labels(self):
         return [el.label for el in self]
+
+
+    @property
+    def legend(self):
+        if self.dimension_labels == ['Layer']:
+            labels = self.labels
+            if len(set(labels)) == len(labels):
+                return labels
+            else:
+                return None
+        else:
+            labels = []
+            for key in self.keys():
+                labels.append(','.join([dim.pprint_value(k) for dim, k in
+                                        zip(self.dimensions, key)]))
+            return labels
 
 
     @property

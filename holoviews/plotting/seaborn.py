@@ -78,7 +78,7 @@ class RegressionPlot(FullRedrawPlot):
 
     def _update_plot(self, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=self.ax, label=view.legend_label,
+                    ax=self.ax, label=view.label,
                     **View.options.style(view)[self.cyclic_index])
 
 
@@ -142,8 +142,7 @@ class BivariatePlot(FullRedrawPlot):
                                                 view.data[:,1],
                                                 **self.style).fig
         else:
-            sns.kdeplot(view.data, ax=self.ax,
-                        label=view.legend_label,
+            sns.kdeplot(view.data, ax=self.ax, label=view.label,
                         zorder=self.zorder, **self.style)
 
 
@@ -197,7 +196,7 @@ class TimeSeriesPlot(FullRedrawPlot):
 
     def _update_plot(self, view):
         sns.tsplot(view.data, view.xdata, ax=self.ax,
-                   condition=view.legend_label,
+                   condition=view.label,
                    zorder=self.zorder, **self.style)
 
 
@@ -239,8 +238,8 @@ class DistributionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, view):
-        sns.distplot(view.data, ax=self.ax,
-                     label=view.legend_label, **self.style)
+        sns.distplot(view.data, ax=self.ax, label=view.label,
+                     **self.style)
 
 
 

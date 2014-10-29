@@ -131,7 +131,7 @@ class CurvePlot(Plot):
 
         # Create line segments and apply style
         line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
-                                    zorder=self.zorder, label=curveview.legend_label,
+                                    zorder=self.zorder, label=curveview.label,
                                     **View.options.style(curveview)[cyclic_index])[0]
 
         self.handles['line_segment'] = line_segment
@@ -174,7 +174,7 @@ class ScatterPlot(CurvePlot):
 
         # Create line segments and apply style
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
-                                zorder=self.zorder, label=scatterview.legend_label,
+                                zorder=self.zorder, label=scatterview.label,
                                 **View.options.style(scatterview)[cyclic_index])
 
         self.handles['paths'] = paths
@@ -190,7 +190,7 @@ class ScatterPlot(CurvePlot):
         self.handles['paths'].remove()
 
         paths = self.ax.scatter(view.data[:, 0], view.data[:, 1],
-                                zorder=self.zorder, label=view.legend_label,
+                                zorder=self.zorder, label=view.label,
                                 **View.options.style(view)[self.cyclic_index])
 
         self.handles['paths'] = paths
