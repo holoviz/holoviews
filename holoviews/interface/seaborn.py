@@ -88,6 +88,10 @@ class Bivariate(DataView):
     and y-data.
     """
 
+    dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
+
+    value = param.ClassSelector(class_=Dimension, default=None)
+
     @property
     def xlabel(self):
         return str(self.dimensions[0])
