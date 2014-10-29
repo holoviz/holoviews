@@ -109,7 +109,7 @@ class MapOperation(param.ParameterizedFunction):
         self.p = param.ParamOverrides(self, params)
 
         if not isinstance(stack, Map):
-            raise Exception('MapOperation can only process HoloMaps.')
+            raise Exception('MapOperation can only process Maps.')
 
         stacks = self._process(stack)
 

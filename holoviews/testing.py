@@ -71,19 +71,19 @@ class ViewTestCase(unittest.TestCase):
             raise self.failureException("BoundingBoxes are mismatched.")
 
 
-    def compare_holomaps(self, view1, view2, msg):
+    def compare_maps(self, view1, view2, msg):
 
         if view1.ndims != view2.ndims:
-            raise self.failureException("HoloMaps have different numbers of dimensions.")
+            raise self.failureException("Maps have different numbers of dimensions.")
 
         if view1.dimension_labels != view2.dimension_labels:
-            raise self.failureException("HoloMaps have different dimension labels.")
+            raise self.failureException("Maps have different dimension labels.")
 
         if len(view1.keys()) != len(view2.keys()):
-            raise self.failureException("HoloMaps have different numbers of keys.")
+            raise self.failureException("Maps have different numbers of keys.")
 
         if set(view1.keys()) != set(view2.keys()):
-            raise self.failureException("HoloMaps have different sets of keys.")
+            raise self.failureException("Maps have different sets of keys.")
 
         for el1, el2 in zip(view1, view2):
             self.assertEqual(el1,el2)
@@ -93,7 +93,7 @@ class ViewTestCase(unittest.TestCase):
     #=================#
 
     def compare_viewmap(self, view1, view2, msg):
-        self.compare_holomaps(view1, view2, msg)
+        self.compare_maps(view1, view2, msg)
 
     def compare_gridlayout(self, view1, view2, msg):
         if len(view1) != len(view2):
