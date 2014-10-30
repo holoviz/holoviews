@@ -66,9 +66,9 @@ class Dimension(param.Parameterized):
 
 class Dimensioned(param.Parameterized):
     """
-    Abstract baseclass implementing common methods for objects with associated
-    dimensions. Assumes a list of dimension objects or strings is available on
-    the object via the .dimensions attribute.
+    Abstract baseclass implementing common methods for objects with
+    associated dimensions. Assumes a list of dimension objects or
+    strings is available on the object via the .dimensions attribute.
     """
 
     _abstract = True
