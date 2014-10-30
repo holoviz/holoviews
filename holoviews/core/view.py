@@ -19,7 +19,7 @@ class View(Dimensioned):
     the addition operator.
     """
 
-    _abstract = True
+    __abstract = True
 
     dimensions = param.List(default=[], doc="""List of dimensions the View
         can be indexed by.""")

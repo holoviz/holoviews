@@ -77,7 +77,7 @@ class Dimensioned(param.Parameterized):
     strings is available on the object via the .dimensions attribute.
     """
 
-    _abstract = True
+    __abstract = True
 
     _deep_indexable = False
 
