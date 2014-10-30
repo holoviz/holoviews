@@ -52,6 +52,47 @@ class operator(ViewOperation):
                             roi_bounds=overlay[0].roi_bounds)]
 
 
+class convolve(ViewOperation):
+    """
+    Apply a convolution to an overlay using the top layer as the
+    kernel used to convolve the bottom layer. Both input SheetMatrix
+    elements in the overlay should be single-channel.
+    """
+
+    label = param.String(default='Convolution', doc="""
+        The label to identify the output of the Convolution.""")
+
+    kernel_roi = param.NumericTuple(default=(0,0,0,0), length=4, doc="""
+        A 2-dimensional slice of the kernel layer to use in the
+        convolution in lbrt (left, bottom, right, top) format. By
+        default, no slicing is applied.""")
+
+    def _process(self, view, key=None):
+
+        if len(view) != 2:
+            raise Exception("Overlay of two layers required.")
+
+        [target, kernel] = view[0], view[1]
+
+        if len(target.data.shape) != 2:
+            raise Exception("Convolve requires monochrome inputs.")
+
+        xslice = slice(self.p.kernel_roi[0], self.p.kernel_roi[2])
+        yslice = slice(self.p.kernel_roi[1], self.p.kernel_roi[3])
+
+        k = kernel.data if self.p.kernel_roi == (0,0,0,0) else kernel[xslice, yslice].data
+
+        fft1 = np.fft.fft2(target.data)
+        fft2 = np.fft.fft2(k, s= target.data.shape)
+        convolved_raw = np.fft.ifft2(fft1 * fft2).real
+
+        k_rows, k_cols = k.shape
+        rolled = np.roll(np.roll(convolved_raw, -(k_cols//2), axis=-1), -(k_rows//2), axis=-2)
+        convolved = rolled / float(k.sum())
+
+        return [SheetMatrix(convolved, bounds=target.bounds)]
+
+
 class contours(ViewOperation):
     """
     Given a SheetMatrix with a single channel, annotate it with contour
