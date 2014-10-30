@@ -19,6 +19,8 @@ class View(Dimensioned):
     the addition operator.
     """
 
+    _abstract = True
+
     dimensions = param.List(default=[], doc="""List of dimensions the View
         can be indexed by.""")
 
@@ -163,6 +165,7 @@ class Map(NdMapping):
 
     data_type = (View, NdMapping)
 
+    _abstract = True
     _deep_indexable = True
     _type = None
     _style = None
@@ -257,4 +260,3 @@ class Map(NdMapping):
         appropriately implement reducing the correct view types.
         """
         raise NotImplementedError
-
