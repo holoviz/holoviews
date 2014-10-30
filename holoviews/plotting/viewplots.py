@@ -1084,7 +1084,7 @@ class AnnotationPlot(Plot):
         for element in self.handles['annotations']:
             element.remove()
 
-        self.handles['annotations'] = self._draw_annotations(annotation, self.ax, key)
+        self.handles['annotations'] = self._draw_annotations(annotation, key)
 
 
 Plot.defaults.update({Grid: GridPlot,
