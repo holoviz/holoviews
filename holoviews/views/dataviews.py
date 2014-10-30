@@ -24,7 +24,7 @@ class DataView(Layer):
                                            and isinstance(data[0], Layer)):
             data, settings = self._process_stack(data)
 
-        if len(data) and not isinstance(data, np.ndarray):
+        if len(list(data)) and not isinstance(data, np.ndarray):
             data = np.array(data)
         settings.update(kwargs)
         super(DataView, self).__init__(data, **settings)
