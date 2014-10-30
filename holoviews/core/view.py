@@ -1,3 +1,10 @@
+"""
+Supplies the View and Map abstract base classes. A View the basic data
+structure that holds raw data and can be visualized. A Map is an
+instance of NdMapping, a sliceable, multi-dimensional container that
+holds View objects as values.
+"""
+
 import param
 from .dimension import Dimension, Dimensioned
 from .options import options

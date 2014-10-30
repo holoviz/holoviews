@@ -1,11 +1,11 @@
 """
-Options abstract away different class of options (e.g. matplotlib
-specific styles and plot specific parameters) away from View and Stack
-objects, allowing these objects to share options by name.
+Options abstract away different classes of options (e.g. matplotlib
+specific styles and plot specific parameters) away from View and Map
+objects to allow these objects to share options by name.
 
 StyleOpts is an OptionMap that allows matplotlib style options to be
 defined, allowing customization of how individual View objects are
-displayed if they have the appropriate style name.
+displayed given the appropriate style name.
 """
 
 

@@ -1,3 +1,9 @@
+"""
+Supplies NdIndexableMapping and NdMapping which are multi-dimensional
+map types. The former class only allows indexing whereas the latter
+also enables slicing over multiple dimension ranges.
+"""
+
 from collections import OrderedDict
 
 import param

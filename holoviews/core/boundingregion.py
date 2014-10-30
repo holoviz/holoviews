@@ -1,5 +1,7 @@
 """
 Bounding regions and bounding boxes.
+
+File originally part of the Topographica project.
 """
 
 from numpy import inf

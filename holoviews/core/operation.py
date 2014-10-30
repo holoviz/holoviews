@@ -1,8 +1,8 @@
 """
 ViewOperations manipulate holoviews, typically for the purposes of
-visualization. Such operations often apply to SheetViews or
-ViewMaps and compose the data together in ways that can be viewed
-conveniently, often by creating or manipulating color channels.
+analysis or visualization. Such operations apply to Views or ViewMaps
+and return the appropriate objects to visualize and access the
+processed data.
 """
 
 import param

@@ -1,3 +1,9 @@
+"""
+Provides Dimension objects for tracking the properties of a value,
+axis or map dimension. Also supplies the Dimensioned abstract
+baseclass for classes that accept Dimension values.
+"""
+
 from collections import OrderedDict
 
 import param

@@ -1,6 +1,7 @@
 """
-Provides SheetCoordinateSystem, allowing conversion between the two
-coordinate systems used in ImaGen.
+File originally part of the Topographica project. Provides
+SheetCoordinateSystem, allowing conversion between continuous 'sheet
+coordinates' and integer matrix coordinates.
 
 'Sheet coordinates' allow simulation parameters to be specified in
 units that are density-independent, whereas 'matrix coordinates'

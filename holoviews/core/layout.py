@@ -1,3 +1,10 @@
+"""
+Supplies Pane, GridLayout and AdjointLayout. Pane extends View to
+allow multiple Views to be presented side-by-side in a GridLayout. An
+AdjointLayout allows one or two Views to be ajoined to a primary View
+to act as supplementary elements.
+"""
+
 import math
 from collections import OrderedDict
 
