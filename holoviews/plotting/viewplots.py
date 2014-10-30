@@ -895,12 +895,9 @@ class OverlayPlot(Plot):
         title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None: return None
 
-        labels = view.labels
-        label = labels[0] if len(set(labels)) == 1 else ""
-
         values = [str(v.value) for v in view]
         value = values[0] if len(set(values)) == 1 else ""
-        return title_format.format(label=label, value=value,
+        return title_format.format(label=view.labels[0], value=value,
                                    type=view.__class__.__name__)
 
 

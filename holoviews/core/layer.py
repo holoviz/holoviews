@@ -165,7 +165,7 @@ class Overlay(Pane, NdMapping):
       Overlays should not have their label set directly by the user as
       the label is only for defining custom channel operations.""")
 
-    title = param.String(default="{value}")
+    title = param.String(default="{label}")
 
     channels = channels
 
