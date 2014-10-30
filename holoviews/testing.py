@@ -33,7 +33,8 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
         self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
-        self.addTypeEqualityFunc(ItemTable,    self.compare_tables)
+        self.addTypeEqualityFunc(ItemTable,    self.compare_itemtables)
+        self.addTypeEqualityFunc(Table,        self.compare_tables)
         # SheetLayers
         self.addTypeEqualityFunc(SheetMatrix,  self.compare_sheetmatrix)
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
@@ -193,6 +194,18 @@ class ViewTestCase(unittest.TestCase):
     # Tables #
     #========#
 
+    def compare_itemtables(self, view1, view2, msg):
+
+        if view1.rows != view2.rows:
+            raise self.failureException("Tables have different numbers of rows.")
+
+        if view1.cols != view2.cols:
+            raise self.failureException("Tables have different numbers of columns.")
+
+        if view1.dimension_labels != view2.dimension_labels:
+            raise self.failureException("Tables have different Dimensions.")
+
+
     def compare_tables(self, view1, view2, msg):
 
         if view1.rows != view2.rows:
@@ -201,11 +214,8 @@ class ViewTestCase(unittest.TestCase):
         if view1.cols != view2.cols:
             raise self.failureException("Tables have different numbers of columns.")
 
-        if view1.heading_map != view2.heading_map:
-            raise self.failureException("Tables have different headings.")
+        self.compare_maps(view1, view2, msg)
 
-        for heading in view1.heading_values():
-            self.assertEqual(view1[heading], view2[heading])
 
     #=============#
     # SheetLayers #
@@ -217,8 +227,6 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_contours(self, view1, view2, msg):
-        self.bounds_check(view1, view2)
-
         if len(view1) != len(view2):
             raise self.failureException("Contours do not have a matching number of contours.")
 
@@ -227,8 +235,6 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_points(self, view1, view2, msg):
-        self.bounds_check(view1, view2)
-
         if len(view1) != len(view2):
             raise self.failureException("Points objects have different numbers of points.")
 
@@ -236,8 +242,6 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_vectorfield(self, view1, view2, msg):
-        self.bounds_check(view1, view2)
-
         if len(view1) != len(view2):
             raise self.failureException("VectorField objects have different numbers of vectors.")
 
