@@ -168,9 +168,6 @@ class Overlay(Pane, NdMapping):
     title = param.String(default="{label}")
 
     channels = channels
-
-    _abstract = True
-
     _deep_indexable = True
 
     def __init__(self, overlays, **kwargs):
