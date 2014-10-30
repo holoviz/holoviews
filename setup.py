@@ -29,7 +29,7 @@ for package_list in packages_to_state:
 
 
 setup_args.update(dict(
-    name='dataviews',
+    name='holoviews',
     version="0.7",
     description='Composable, declarative data structures for building complex visualizations in Python.',
     long_description=open('README.rst').read(),
@@ -39,15 +39,17 @@ setup_args.update(dict(
     maintainer_email= "developers@topographica.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
-    url='http://ioam.github.com/dataviews/',
-    packages = ["dataviews",
-                "dataviews.sheetviews",
-                "dataviews.ipython",
-                "dataviews.styles",
-                "dataviews.plotting",
-                "dataviews.interface"],
-    package_data={'dataviews.styles': ['*.mplstyle'],
-                  'dataviews.ipython': ['*.jinja']},
+    url='http://ioam.github.com/holoviews/',
+    packages = ["holoviews",
+                "holoviews.core",
+                "holoviews.ipython",
+                "holoviews.styles",
+                "holoviews.operations",
+                "holoviews.plotting",
+                "holoviews.interface",
+                "holoviews.views"],
+    package_data={'holoviews.styles': ['*.mplstyle'],
+                  'holoviews.ipython': ['*.jinja']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
         "Development Status :: 4 - Beta",
@@ -66,7 +68,7 @@ setup_args.update(dict(
 if __name__=="__main__":
 
     if 'upload' in sys.argv:
-        import dataviews
-        dataviews.__version__.verify(setup_args['version'])
+        import holoviews
+        holoviews.__version__.verify(setup_args['version'])
 
     setup(**setup_args)

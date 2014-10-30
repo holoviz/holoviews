@@ -4,7 +4,7 @@ Test cases for boundingregion
 
 import unittest
 
-from dataviews.sheetviews import BoundingBox, BoundingCircle, BoundingEllipse, AARectangle
+from holoviews.core import BoundingBox, BoundingCircle, BoundingEllipse, AARectangle
 
 class TestAARectangle(unittest.TestCase):
     def setUp(self):

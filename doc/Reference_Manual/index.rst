@@ -3,8 +3,8 @@ Reference Manual
 ****************
 
 This reference manual contains detailed documentation of each
-component making up DataViews, assuming that the user is already
-familiar with basic DataViews usage. (See the `Tutorials`_ for such
+component making up holoviews, assuming that the user is already
+familiar with basic holoviews usage. (See the `Tutorials`_ for such
 an introduction.) The reference manual is
 generated directly from documentation and declarations in the source
 code, and is often much more verbose than necessary, because many
@@ -14,17 +14,17 @@ comprehensive listing of all attributes and methods, inherited or
 otherwise, which is difficult to obtain from the source code
 directly and is not covered by the User Manual or Tutorials.
 
-DataViews package
+holoviews package
 _________________
 
-`An overview of the DataViews package. <dataviews.html>`_
+`An overview of the holoviews package. <holoviews.html>`_
 
-DataViews modules
+holoviews modules
 -----------------
 
 `collector`_
  Defines classes to collect and collate data.
-`dataviews`_
+`holoviews`_
  View classes associated with arbitrary dimensions such as Curves
  and Annotations.
 `interface`_
@@ -36,7 +36,7 @@ DataViews modules
  Defines the Dimension and NdMapping classes, which implement
  n-dimensional data containers.
 `operation`_
- Defines ViewOperation and StackOperation classes used to manipulate and
+ Defines ViewOperation and MapOperation classes used to manipulate and
  transform existing Views and Stacks.
 `options`_
  Defines options which control plotting and style configuration.
@@ -58,15 +58,15 @@ DataViews modules
 .. _external dependencies: ../Downloads/dependencies.html
 .. _main reference manual page: hierarchy.html
 
-.. _collector: dataviews.html#module-dataviews.collector
-.. _dataviews: dataviews.html#module-dataviews.dataviews
-.. _interface: dataviews.interface.html
-.. _ipython: dataviews.ipython.html
-.. _ndmapping: dataviews.html#module-dataviews.ndmapping
-.. _sheetviews: dataviews.sheetviews.html
-.. _operation: dataviews.html#module-dataviews.operation
-.. _options: dataviews.html#module-dataviews.options
-.. _plotting: dataviews.plotting.html
-.. _styles: dataviews.styles.html
-.. _testing: dataviews.html#module-dataviews.ndmapping
-.. _views: dataviews.html#module-dataviews.views
+.. _collector: holoviews.html#module-holoviews.collector
+.. _holoviews: holoviews.html#module-holoviews.holoviews
+.. _interface: holoviews.interface.html
+.. _ipython: holoviews.ipython.html
+.. _ndmapping: holoviews.html#module-holoviews.ndmapping
+.. _sheetviews: holoviews.sheetviews.html
+.. _operation: holoviews.html#module-holoviews.operation
+.. _options: holoviews.html#module-holoviews.options
+.. _plotting: holoviews.plotting.html
+.. _styles: holoviews.styles.html
+.. _testing: holoviews.html#module-holoviews.ndmapping
+.. _views: holoviews.html#module-holoviews.views

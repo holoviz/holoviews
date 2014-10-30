@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-from dataviews.sheetviews import BoundingBox
-from dataviews import SheetView
+from holoviews.core import BoundingBox
+from holoviews.views import SheetMatrix
 
 
 # Duplicates testsheetview from topographica
@@ -14,7 +14,7 @@ class TestSheetView(unittest.TestCase):
         self.bounds = BoundingBox(radius=0.5)
 
     def test_init(self):
-        SheetView(self.activity1, self.bounds)
+        SheetMatrix(self.activity1, self.bounds)
 
 
 if __name__ == "__main__":

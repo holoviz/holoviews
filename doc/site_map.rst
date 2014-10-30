@@ -1,5 +1,5 @@
 *************************
-Map of the DataViews Site
+Map of the holoviews Site
 *************************
 
 .. toctree::

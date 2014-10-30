@@ -1,10 +1,11 @@
 import pickle
-import numpy as np
-from dataviews import SheetView
-from dataviews.collector import AttrTree, ViewRef
-from dataviews.testing import ViewTestCase
-
 from collections import OrderedDict
+
+import numpy as np
+
+from holoviews import SheetMatrix
+from holoviews.interface.collector import AttrTree, ViewRef
+from holoviews.testing import ViewTestCase
 
 
 class AttrTreeTest(ViewTestCase):
@@ -114,8 +115,8 @@ class ViewRefTest(ViewTestCase):
     def setUp(self):
         super(ViewRefTest, self).setUp()
         tree = AttrTree()
-        tree.Example.Path1 = SheetView(np.random.rand(5,5))
-        tree.Example.Path2 = SheetView(np.random.rand(5,5))
+        tree.Example.Path1 = SheetMatrix(np.random.rand(5,5))
+        tree.Example.Path2 = SheetMatrix(np.random.rand(5,5))
         self.tree = tree
 
     def test_resolve_constructor(self):

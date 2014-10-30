@@ -3,11 +3,10 @@ Test cases for ViewTestCase which implements view comparison.
 """
 import numpy as np
 
-from dataviews import SheetView, SheetStack
-from dataviews.ndmapping import Dimension
-from dataviews.sheetviews import BoundingBox
-from dataviews.testing import ViewTestCase
 
+from holoviews.core import BoundingBox, Dimension, ViewMap
+from holoviews.testing import ViewTestCase
+from holoviews.views import SheetMatrix
 
 class SheetViewTestCase(ViewTestCase):
 
@@ -16,12 +15,12 @@ class SheetViewTestCase(ViewTestCase):
         self.arr2 = np.array([[10,2], [3,4]])
         self.arr3 = np.array([[10,2], [3,40]])
         # Varying arrays, default bounds
-        self.sv1 = SheetView(self.arr1, BoundingBox())
-        self.sv2 = SheetView(self.arr2, BoundingBox())
-        self.sv3 = SheetView(self.arr3, BoundingBox())
+        self.sv1 = SheetMatrix(self.arr1, BoundingBox())
+        self.sv2 = SheetMatrix(self.arr2, BoundingBox())
+        self.sv3 = SheetMatrix(self.arr3, BoundingBox())
         # Varying arrays, different bounds
-        self.sv4 = SheetView(self.arr1, BoundingBox(radius=0.3))
-        self.sv5 = SheetView(self.arr2, BoundingBox(radius=0.3))
+        self.sv4 = SheetMatrix(self.arr1, BoundingBox(radius=0.3))
+        self.sv5 = SheetMatrix(self.arr2, BoundingBox(radius=0.3))
 
 
 class SheetOverlayTestCase(SheetViewTestCase):
@@ -42,45 +41,45 @@ class StackTestCase(SheetOverlayTestCase):
     def setUp(self):
         super(StackTestCase, self).setUp()
         # Example 1D stack
-        self.stack1_1D = SheetStack(dimensions=['int'])
+        self.stack1_1D = ViewMap(dimensions=['int'])
         self.stack1_1D[0] = self.sv1
         self.stack1_1D[1] = self.sv2
         # Changed keys...
-        self.stack2_1D = SheetStack(dimensions=['int'])
+        self.stack2_1D = ViewMap(dimensions=['int'])
         self.stack2_1D[1] = self.sv1
         self.stack2_1D[2] = self.sv2
         # Changed number of keys...
-        self.stack3_1D = SheetStack(dimensions=['int'])
+        self.stack3_1D = ViewMap(dimensions=['int'])
         self.stack3_1D[1] = self.sv1
         self.stack3_1D[2] = self.sv2
         self.stack3_1D[3] = self.sv3
         # Changed values...
-        self.stack4_1D = SheetStack(dimensions=['int'])
+        self.stack4_1D = ViewMap(dimensions=['int'])
         self.stack4_1D[0] = self.sv1
         self.stack4_1D[1] = self.sv3
         # Changed bounds...
-        self.stack5_1D = SheetStack(dimensions=['int'])
+        self.stack5_1D = ViewMap(dimensions=['int'])
         self.stack5_1D[0] = self.sv4
         self.stack5_1D[1] = self.sv5
         # Example dimension label
-        self.stack6_1D = SheetStack(dimensions=['int_v2'])
+        self.stack6_1D = ViewMap(dimensions=['int_v2'])
         self.stack6_1D[0] = self.sv1
         self.stack6_1D[1] = self.sv2
-        # A SheetStack of Overlays
-        self.stack7_1D = SheetStack(dimensions=['int'])
+        # A ViewMap of Overlays
+        self.stack7_1D = ViewMap(dimensions=['int'])
         self.stack7_1D[0] =  self.overlay1_depth2
         self.stack7_1D[1] =  self.overlay2_depth2
-        # A different SheetStack of Overlays
-        self.stack8_1D = SheetStack(dimensions=['int'])
+        # A different ViewMap of Overlays
+        self.stack8_1D = ViewMap(dimensions=['int'])
         self.stack8_1D[0] =  self.overlay2_depth2
         self.stack8_1D[1] =  self.overlay1_depth2
 
         # Example 2D stack
-        self.stack1_2D = SheetStack(dimensions=['int', Dimension('float')])
+        self.stack1_2D = ViewMap(dimensions=['int', Dimension('float')])
         self.stack1_2D[0, 0.5] = self.sv1
         self.stack1_2D[1, 1.0] = self.sv2
         # Changed 2D keys...
-        self.stack2_2D = SheetStack(dimensions=['int', Dimension('float')])
+        self.stack2_2D = ViewMap(dimensions=['int', Dimension('float')])
         self.stack2_2D[0, 1.0] = self.sv1
         self.stack2_2D[1, 1.5] = self.sv2
 
@@ -100,7 +99,7 @@ class SheetComparisonTest(SheetViewTestCase):
             self.assertEqual(self.sv1, self.sv2)
             raise AssertionError("Array mismatch not detected")
         except AssertionError as e:
-            assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
+            assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
 
     def test_bounds_mismatch(self):
         try:
@@ -116,19 +115,13 @@ class SheetOverlayComparisonTest(SheetOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay4_depth3)
         except AssertionError as e:
-            assert str(e).startswith("SheetOverlays have different lengths.")
+            assert str(e).startswith("Overlays have different lengths.")
 
     def test_element_mismatch(self):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
-
-    def test_bounds_mismatch(self):
-        try:
-            self.assertEqual(self.overlay1_depth2, self.overlay3_depth2)
-        except AssertionError as e:
-            assert str(e).startswith('BoundingBoxes are mismatched.')
+            assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
 
 
 
@@ -139,14 +132,14 @@ class StackComparisonTest(StackTestCase):
              self.assertEqual(self.stack1_1D, self.stack1_2D)
              raise AssertionError("Mismatch in dimension number not detected.")
          except AssertionError as e:
-             assert str(e).startswith("Stacks have different numbers of dimensions.")
+             assert str(e).startswith("Maps have different numbers of dimensions.")
 
     def test_dimension_label_mismatch(self):
          try:
              self.assertEqual(self.stack1_1D, self.stack6_1D)
              raise AssertionError("Mismatch in dimension labels not detected.")
          except AssertionError as e:
-             assert str(e).startswith("Stacks have different dimension labels.")
+             assert str(e).startswith("Maps have different dimension labels.")
 
 
     def test_key_len_mismatch(self):
@@ -154,36 +147,21 @@ class StackComparisonTest(StackTestCase):
             self.assertEqual(self.stack1_1D, self.stack3_1D)
             raise AssertionError("Mismatch in stack key number not detected.")
         except AssertionError as e:
-            assert str(e).startswith("Stacks have different numbers of keys.")
+            assert str(e).startswith("Maps have different numbers of keys.")
 
     def test_key_mismatch(self):
         try:
             self.assertEqual(self.stack1_1D, self.stack2_1D)
             raise AssertionError("Mismatch in stack keys not detected.")
         except AssertionError as e:
-            assert str(e).startswith("Stacks have different sets of keys.")
-
-    def test_bounds_mismatch(self):
-        try:
-            self.assertEqual(self.stack1_1D, self.stack5_1D)
-            raise AssertionError("Mismatch in element bounding boxes.")
-        except AssertionError as e:
-            assert str(e).startswith("BoundingBoxes are mismatched.")
+            assert str(e).startswith("Maps have different sets of keys.")
 
     def test_element_mismatch(self):
         try:
             self.assertEqual(self.stack1_1D, self.stack4_1D)
-            raise AssertionError("Element mismatch in array data not detected.")
+            raise AssertionError("Pane mismatch in array data not detected.")
         except AssertionError as e:
-            assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
-
-
-    def test_overlay_mismatch(self):
-        try:
-            self.assertEqual(self.stack7_1D, self.stack8_1D)
-            raise AssertionError("Overlay element mismatch in array data not detected.")
-        except AssertionError as e:
-            assert str(e).startswith('SheetView: \nArrays are not almost equal to 6 decimals')
+            assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
 
 
 if __name__ == "__main__":
