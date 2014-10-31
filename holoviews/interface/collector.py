@@ -10,7 +10,7 @@ import numpy as np
 
 from ..core import GridLayout, Map, NdMapping, Dimension, Grid, View, ViewMap
 from ..ipython.widgets import RunProgress, ProgressBar
-from ..views import SheetMatrix
+from ..view import SheetMatrix
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 

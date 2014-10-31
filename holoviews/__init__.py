@@ -11,7 +11,7 @@ from .core import boundingregion, sheetcoords
 from .core import * # pyflakes:ignore (API import)
 from .ipython import * # pyflakes:ignore (API import)
 from .operation import * # pyflakes:ignore (API import)
-from .views import * # pyflakes:ignore (API import)
+from .view import * # pyflakes:ignore (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False

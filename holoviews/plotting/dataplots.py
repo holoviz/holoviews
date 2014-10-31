@@ -8,7 +8,7 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 from ..core import Map, View, Overlay
-from ..views import Scatter, Curve, Histogram, ItemTable, Table
+from ..view import Scatter, Curve, Histogram, ItemTable, Table
 from .sheetplots import MatrixPlot
 from .viewplots import Plot
 

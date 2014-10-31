@@ -6,7 +6,7 @@ import numpy as np
 
 from holoviews.core import BoundingBox, Dimension, ViewMap
 from holoviews.testing import ViewTestCase
-from holoviews.views import SheetMatrix
+from holoviews.view import SheetMatrix
 
 class SheetViewTestCase(ViewTestCase):
 

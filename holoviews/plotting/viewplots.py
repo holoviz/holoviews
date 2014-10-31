@@ -16,7 +16,7 @@ import param
 
 from ..core import NdMapping, Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
     GridLayout, Grid
-from ..views import Annotation, Matrix
+from ..view import Annotation, Matrix
 
 
 class Plot(param.Parameterized):

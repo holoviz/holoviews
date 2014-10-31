@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewOperation, Overlay
-from ..views import ItemTable, SheetMatrix, VectorField, Contours
+from ..view import ItemTable, SheetMatrix, VectorField, Contours
 
 
 class chain(ViewOperation):

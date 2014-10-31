@@ -20,7 +20,7 @@ import param
 
 from ..core import Dimension, NdMapping, View, Layer, Overlay, ViewMap, GridLayout, Grid
 from ..core.options import options, PlotOpts
-from ..views import HeatMap, ItemTable
+from ..view import HeatMap, ItemTable
 
 
 class DataFrameView(Layer):

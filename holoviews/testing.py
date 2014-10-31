@@ -7,7 +7,7 @@ from IPython.display import HTML, SVG
 
 from .core import Dimension, GridLayout, AdjointLayout, Overlay, Grid, ViewMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
-from .views import *
+from .view import *
 
 
 class ViewTestCase(unittest.TestCase):

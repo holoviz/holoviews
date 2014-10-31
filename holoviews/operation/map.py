@@ -4,7 +4,7 @@ import param
 
 from ..core import ViewMap
 from ..core.operation import MapOperation
-from ..views import Table, Curve
+from ..view import Table, Curve
 
 
 class table_collate(MapOperation):

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 
 from holoviews.core import BoundingBox
-from holoviews.views import SheetMatrix
+from holoviews.view import SheetMatrix
 
 
 # Duplicates testsheetview from topographica

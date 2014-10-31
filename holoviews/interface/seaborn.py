@@ -11,8 +11,8 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewMap, Layer, Overlay
-from ..views import DataView, Scatter
 from ..core.options import options, StyleOpts, Cycle
+from ..view import DataView, Scatter
 from .pandas import DFrame as PandasDFrame
 
 

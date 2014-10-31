@@ -23,7 +23,7 @@ except:
 
 from ..core import View, Map, AdjointLayout, GridLayout, Grid
 from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
-from ..views import Annotation, Matrix
+from ..view import Annotation, Matrix
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
 from .widgets import ViewSelector, JSSelector
