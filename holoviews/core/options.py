@@ -368,9 +368,3 @@ class ChannelOpts(Opts):
 channels = OptionsGroup([Options('definitions', ChannelOpts)])
 options =  OptionsGroup([Options('plotting', PlotOpts),
                          Options('style', StyleOpts)])
-
-
-# Default Plotopts
-options.Grid = PlotOpts()
-options.GridLayout = PlotOpts()
-

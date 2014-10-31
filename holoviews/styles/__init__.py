@@ -10,9 +10,14 @@ import matplotlib.pyplot as plt
 from matplotlib import rc_params_from_file
 
 # Default Styles
-from ..core.options import options, Cycle, StyleOpts
+from ..core.options import options, Cycle, StyleOpts, PlotOpts
 
 options.Style = StyleOpts()
+
+# Default Plotopts
+options.Grid = PlotOpts()
+options.GridLayout = PlotOpts()
+
 options.Contours = StyleOpts(color='k')
 options.SheetMatrix = StyleOpts(cmap='gray', interpolation='nearest')
 options.Matrix = StyleOpts(cmap='jet', interpolation='nearest')
