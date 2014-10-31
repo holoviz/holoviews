@@ -14,7 +14,7 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import NdMapping, Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
+from ..core import Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
     GridLayout, Grid
 from ..view import Annotation, Matrix
 
@@ -660,7 +660,7 @@ class LayoutPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) for v in self.layout if isinstance(v, NdMapping)]+[1])
+        return max([len(v) for v in self.layout if isinstance(v, ViewMap)]+[1])
 
 
 class GridLayoutPlot(Plot):
