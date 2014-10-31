@@ -857,7 +857,7 @@ class ViewMap(Map):
         in each of the split out Stacks into Curves. If there are multiple
         entries in the ItemTable it will lay them out into a Grid.
         """
-        from ..operations import table_collate
+        from ..operation import table_collate
         return table_collate(self, collation_dim=collate_dim)
 
 
