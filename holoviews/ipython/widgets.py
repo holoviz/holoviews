@@ -255,8 +255,6 @@ class NdWidget(param.Parameterized):
     and keys.
     """
 
-    _figure_display_mode = 'print_figure'
-
     def _process_view(self, view):
         """
         Determine the dimensions and keys to be turned into widgets and
@@ -300,15 +298,12 @@ class NdWidget(param.Parameterized):
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_html(fig)
-        elif self._figure_display_mode == 'print_figure':
+        else:
             return print_figure(fig)
-        elif self._figure_display_mode == 'figure_display':
-            from .display_hooks import figure_display
-            return figure_display(fig)
 
 
 
-class ViewSelector(NdWidget):
+class IPySelectionWidget(NdWidget):
     """
     Interactive widget to select and view View objects contained
     in an NdMapping. ViewSelector creates Slider and Dropdown widgets
@@ -437,35 +432,58 @@ class ViewSelector(NdWidget):
 
 
 
-class JSSelector(NdWidget):
+class SelectionWidget(NdWidget):
     """
     Javascript based widget to select and view View objects contained
     in an NdMapping. For each dimension in the NdMapping a slider or
-    dropdown selection widget is created and can be used to select
-    the html output associated with the selected View type. Supports
+    dropdown selection widget is created and can be used to select the
+    html output associated with the selected View type. Supports
     selection of any holoviews static output type including png, svg
-    and mpld3 output.
+    and mpld3 output. Unlike the IPSelectionWidget, this widget type
+    is exportable to a static html.
+
+    Optionally the individual plots can be exported to json, which can
+    be dynamically loaded by serving the data the data for each frame
+    on a simple server.
     """
 
-    export_json = param.Boolean(default=False)
+    template = param.String('jsslider.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
 
-    server_url = param.String(default='')
+    #######################
+    # JSON export options #
+    #######################
 
-    json_path = param.String(default='./json_figures')
+    export_json = param.Boolean(default=False, doc="""Whether to export
+         plots as json files, which can be dynamically loaded through
+         a callback from the slider.""")
 
-    _figure_display_mode = 'figure_display'
+    json_path = param.String(default='./json_figures', doc="""
+         If export_json is True the json files will be written to this
+         directory.""")
+
+    server_url = param.String(default='', doc="""If export_json is
+         True the slider widget will expect to be served the plot data
+         from this URL. Data should be served from:
+         server_url/fig_{id}/{frame}.""")
+
+    ##############################
+    # Javascript include options #
+    ##############################
+
+    jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
+    mpld3_url = '//mpld3.github.io/js/mpld3.v0.3git.js'
+    d3_url = '//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
     def __init__(self, view, **params):
-        super(JSSelector, self).__init__(**params)
+        super(SelectionWidget, self).__init__(**params)
         self.view = view
         self._process_view(view)
         self.frames = OrderedDict((k, self._plot_figure(idx))
                                   for idx, k in enumerate(self._keys))
 
 
-    def __call__(self):
-        id = uuid.uuid4().hex
-
+    def get_widgets(self):
         # Generate widget data
         widgets = []
         dimensions = []
@@ -482,41 +500,80 @@ class JSSelector(NdWidget):
             widgets.append(dict(dim=dim_str, dim_idx=idx, vals=repr(dim_vals),
                                 type=widget_type))
             dimensions.append(dim_str)
+        return widgets, dimensions, init_dim_vals
 
+
+    def get_key_data(self):
         # Generate key data
         key_data = {}
         for i, k in enumerate(self.mock_obj._data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
                    if isnumeric(v) else v for v in k]
             key_data[str(tuple(key))] = i
+        return key_data
 
-        frames = {idx: str(frame) for idx, frame in enumerate(self.frames.values())}
+
+    def get_frames(self, id):
+        use_mpld3 = ViewMagic.FIGURE_FORMAT == 'mpld3'
+        frames = {idx: frame if use_mpld3 or self.export_json else
+                  str(frame) for idx, frame in enumerate(self.frames.values())}
+        encoder = {}
+        if use_mpld3:
+            import mpld3
+            encoder = dict(cls=mpld3._display.NumpyEncoder)
+
         if self.export_json:
             if not os.path.isdir(self.json_path):
                 os.mkdir(self.json_path)
-            json_data = {idx: frame for idx, frame in enumerate(frames)}
             with open(self.json_path+'/fig_%s.json' % id, 'wb') as f:
-                json.dump(json_data, f)
-            frames = {frame: str(frame) for frame in range(len(frames))}
+                json.dump(frames, f, **encoder)
+            frames = {}
+        elif use_mpld3:
+            frames = json.dumps(frames, **encoder)
+        return frames
 
 
+    def render_html(self, data):
         # Set up jinja2 templating
         import jinja2
         path, _ = os.path.split(os.path.abspath(__file__))
         templateLoader = jinja2.FileSystemLoader(searchpath=path)
         templateEnv = jinja2.Environment(loader=templateLoader)
-        templateEnv.filters['escapejs'] = jinja2_escapejs_filter
         template = templateEnv.get_template('jsslider.jinja')
 
-        return template.render(id=id, Nframes=len(self.mock_obj),
-                               Nwidget=self.mock_obj.ndims,
-                               frames=frames,
-                               dimensions=dimensions,
-                               key_data=repr(key_data),
-                               widgets=widgets,
-                               init_dim_vals=init_dim_vals,
-                               load_json=str(self.export_json).lower(),
-                               server=self.server_url)
+        return template.render(**data)
+
+
+    def __call__(self):
+        id = uuid.uuid4().hex
+        widgets, dimensions, init_dim_vals = self.get_widgets()
+        key_data = self.get_key_data()
+        frames = self.get_frames(id)
+
+        data = {'id': id, 'Nframes': len(self.mock_obj),
+                'Nwidget': self.mock_obj.ndims,
+                'frames': frames, 'dimensions': dimensions,
+                'key_data': repr(key_data), 'widgets': widgets,
+                'init_dim_vals': init_dim_vals,
+                'load_json': str(self.export_json).lower(),
+                'server': self.server_url,
+                'mpld3_url': self.mpld3_url,
+                'jqueryui_url': self.jqueryui_url[:-3],
+                'd3_url': self.d3_url[:-3],
+                'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
+
+        return self.render_html(data)
+
+
+    def _plot_figure(self, idx):
+        fig = self.plot[idx]
+        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+            import mpld3
+            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
+            return mpld3.fig_to_dict(fig)
+        else:
+            from .display_hooks import figure_display
+            return figure_display(fig)
 
 
 

@@ -26,7 +26,7 @@ from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
 from ..view import Annotation, Matrix
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
-from .widgets import ViewSelector, JSSelector
+from .widgets import IPySelectionWidget, SelectionWidget
 
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
@@ -149,11 +149,11 @@ def animation_display(anim):
 def widget_display(view):
     mode = ViewMagic.VIDEO_FORMAT[1]
     if mode == 'embedded':
-        return JSSelector(view)()
+        return SelectionWidget(view)()
     elif mode == 'cached':
-        return ViewSelector(view, cached=True)()
+        return IPySelectionWidget(view, cached=True)()
     else:
-        return ViewSelector(view, cached=False)()
+        return IPySelectionWidget(view, cached=False)()
 
 @display_hook
 def stack_display(stack, size=256):

@@ -1,6 +1,7 @@
 <script language="javascript">
     /* Define the NDSlider class */
-    function NDSlider(frames, id, slider_ids, keyMap, dim_vals, load_json){
+    function NDSlider(frames, id, slider_ids, keyMap, dim_vals, load_json, mpld3){
+        this.frames = frames;
         this.fig_id = "fig_" + id;
         this.img_id = "_anim_img" + id;
         this.slider_ids = slider_ids;
@@ -8,9 +9,9 @@
         this.current_frame = 0;
         this.current_vals = dim_vals;
         this.load_json = load_json;
-        this.frames = frames;
+        this.mpld3 = mpld3;
 
-        this.set_frame(this.current_frame);
+        this.set_frame(this.current_vals[0], 0);
     }
 
     NDSlider.prototype.set_frame = function(dim_val, dim_idx){
@@ -31,13 +32,28 @@
         }
         key += ")";
         this.current_frame = this.keyMap[key];
-        if(this.load_json) {
-            $("#" + this.img_id).load("{{ server }}/" + this.fig_id + "/" + this.frames[this.current_frame]);
+		if(this.load_json) {
+            var data_url = "{{ server }}/" + this.fig_id + "/" + this.current_frame;
+		    if(this.mpld3) {
+                d3.select("#"+this.img_id).selectAll("*").remove();
+				$.getJSON(data_url,
+                    (function(img_id) {
+					     return function(data) {
+                             mpld3.draw_figure(img_id, data);
+					     };
+				     }(this.img_id))
+				);
+			} else {
+                $("#" + this.img_id).load("{{ server }}/" + this.fig_id + "/" + this.current_frame);
+            }
+		}else {
+		    if(this.mpld3) {
+                d3.select("#"+this.img_id).selectAll("*").remove();
+                mpld3.draw_figure(this.img_id, this.frames[this.current_frame]);
+            }else {
+                $("#" + this.img_id).html(this.frames[this.current_frame]);
+            }
         }
-        else {
-            $("#" + this.img_id).html(this.frames[this.current_frame]);
-        }
-
     }
 </script>
 
@@ -45,12 +61,9 @@
     <div style="display: inline-block; vertical-align:middle; width:59%;">
         <div id="_anim_img{{ id }}" align="center"></div>
     </div>
-
     <div style="display: inline-block; vertical-align:middle; margin: 0 auto; width: 39%;">
-
         {% for widget_data in widgets %}
         {% if widget_data['type'] == 'slider' %}
-
         <div style="width: 90%; margin: auto auto;">
             <div>
                 <div style="display: inline-block; vertical-align:middle; margin: 0 auto; width: 40%;">
@@ -61,34 +74,69 @@
                     </input>
                 </div>
             </div>
-
             </br>
-
             <div id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" style="width:95%; margin: auto auto;"></div>
         </div>
-
         </br>
         </br>
-
         <script>
-            var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
-
-            $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
-                min: 0,
-                max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
+			/* Load JQuery UI CSS */
+            function loadcssfile(filename){
+              var fileref=document.createElement("link")
+              fileref.setAttribute("rel", "stylesheet")
+              fileref.setAttribute("type", "text/css")
+              fileref.setAttribute("href", filename)
+              document.getElementsByTagName("head")[0].appendChild(fileref)
+            }
+            loadcssfile("https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css");
+			/* Check if jQuery and jQueryUI have been loaded
+               otherwise load with require.js */
+            var jQuery = window.jQuery,
+                // check for old versions of jQuery
+                oldjQuery = jQuery && !!jQuery.fn.jquery.match(/^1\.[0-4](\.|$)/),
+                jquery_path = 'https://code.jquery.com/jquery-1.11.1.min',
+                paths = {},
+                noConflict;
+            var jQueryUI = jQuery.ui;
+            // check for jQuery
+            if (!jQuery || oldjQuery) {
+                // load if it's not available or doesn't meet min standards
+                paths.jQuery = jQuery;
+                noConflict = !!oldjQuery;
+            } else {
+                // register the current jQuery
+                define('jquery', [], function() { return jQuery; });
+            }
+            if (!jQueryUI) {
+                paths.jQueryUI = "{{ jqueryui_url }}"
+            } else {
+                define('jQueryUI', [], function() { return jQuery.ui; });
+            }
+            var jquery_require = {paths: paths,
+                                  shim: {
+                                      "jQueryUI": {
+                                          export:"$" ,
+                                          deps: ['jquery']
+                                      }
+                                  }}
+            require.config(jquery_require);
+            require(["jquery", "jQueryUI"], function(args){
+                if (noConflict) $.noConflict(true);
+                var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
+                $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
+                    min: 0,
+                    max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
                     value: 0,
                     slide: function(event, ui) {
-                var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
-                $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
-                anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
-            }
+                        var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
+                        $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
+                        anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
+                    }
+                });
+                $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(valMap{{ id }}_{{ widget_data['dim'] }}[0]);
             });
-
-            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(valMap{{ id }}_{{ widget_data['dim'] }}[0]);
         </script>
-
         {% elif widget_data['type']=='dropdown' %}
-
         <div>
             <span>
                 {{ widget_data['dim'] }}:
@@ -99,10 +147,8 @@
                 </select>
             </span>
         </div>
-
         </br>
         </br>
-
         <script>
             var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
             var options = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
@@ -121,7 +167,6 @@
             }
             });
         </script>
-
         {% endif %}
         {% endfor %}
     </div>
@@ -133,20 +178,34 @@
     /* The IDs given should match those used in the template above. */
     (function() {
         var widget_ids = new Array({{ Nwidget }});
-
-    {% for dim in dimensions %}
+        {% for dim in dimensions %}
         widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim }}";
-    {% endfor %}
+        {% endfor %}
+        var frame_data = {{ frames | safe }};
+        var dim_vals = {{ init_dim_vals }};
+        var keyMap = {{ key_data }};
 
-    var frames = {{ frames | safe }}
+    	function create_widget() {
+            setTimeout(function() {
+	            anim{{ id }} = new NDSlider(frame_data, "{{ id }}", widget_ids, keyMap, dim_vals, {{ load_json }}, {{ mpld3 }});
+	        }, 0);
+	    }
 
-    var dim_vals = {{ init_dim_vals }};
-    var keyMap = {{ key_data }};
-
-    /* set a timeout to make sure all the above elements are created before
-       the object is initialized. */
-    setTimeout(function() {
-        anim{{ id }} = new NDSlider(frames, "{{ id }}", widget_ids, keyMap, dim_vals, {{ load_json }});
-    }, 0);
-    })()
+	    {% if mpld3 %}
+        if(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded){
+	        create_widget();
+        }else {
+	        var d3_require = {paths: {"d3" : "{{ d3_url }}"}}
+            require.config(d3_require);
+            require(["d3"], function(d3){
+                window.d3 = d3;
+                $.getScript("{{ mpld3_url }}", function(){
+	                create_widget();
+                });
+            });
+        }
+	    {% else %}
+	        create_widget();
+	    {% endif %}
+    })();
 </script>
