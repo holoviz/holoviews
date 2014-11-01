@@ -827,7 +827,7 @@ class OverlayPlot(Plot):
 
         skip=0
         collapsed_views = []
-        for i in range(len(overlay)):
+        for i, key in enumerate(overlay.keys()):
             layer_labels = overlay.labels[i:len(pattern)+i]
             matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
             if matching and len(layer_labels)==len(pattern):
@@ -839,7 +839,7 @@ class OverlayPlot(Plot):
             elif skip:
                 skip = 0 if skip <= 0 else (skip - 1)
             else:
-                collapsed_views.append(overlay[i])
+                collapsed_views.append(overlay[key])
         overlay.set(collapsed_views)
 
 
