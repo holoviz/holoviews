@@ -184,6 +184,8 @@ class Overlay(Pane, NdMapping):
         """
         if isinstance(layers, ViewMap):
             return layers
+        elif layers is None or not len(layers):
+            return OrderedDict()
         keys = range(len(layers))
         data = OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
         return data
