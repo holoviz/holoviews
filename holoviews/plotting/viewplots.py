@@ -46,8 +46,8 @@ class Plot(param.Parameterized):
         always be respected by all plots but should be respected by
         adjoined plots when appropriate.""")
 
-    rescale_individually = param.Boolean(default=True, doc="""
-        Whether to use redraw the axes per stack or per view.""")
+    rescale_individually = param.Boolean(default=False, doc="""
+        Whether to use redraw the axes per map or per view.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
