@@ -415,9 +415,10 @@ class MatrixGridPlot(OverlayPlot):
     def update_frame(self, n):
         n = n  if n < len(self) else len(self) - 1
         key = self._keys[n]
+        grid_values = self.grid.values()
         for i, plot in enumerate(self.handles['projs']):
-            view = self.grid.values()[i][key]
-            data = view[-1].data if isinstance(view, Overlay) else view.data
+            view = grid_values[i][key]
+            data = view.values()[0].data if isinstance(view, Overlay) else view.data
             plot.set_data(data)
 
         grid_shape = [[v for (k, v) in col[1]]
