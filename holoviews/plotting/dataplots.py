@@ -24,13 +24,20 @@ class CurvePlot(Plot):
     make the plots easier to interpret.
     """
 
-    center = param.Boolean(default=True)
+    autotick = param.Boolean(default=False, doc="""
+        Whether to let matplotlib automatically compute tick marks
+        or to allow the user to control tick marks.""")
 
-    num_ticks = param.Integer(default=5)
+    center_cyclic = param.Boolean(default=True, doc="""
+        If enabled and plotted quantity is cyclic will center the
+        plot around the peak.""")
 
-    relative_labels = param.Boolean(default=False)
+    num_ticks = param.Integer(default=5, doc="""
+        If autotick is disabled, this number of tickmarks will be drawn.""")
 
-    rescale_individually = param.Boolean(default=False)
+    relative_labels = param.Boolean(default=False, doc="""
+        If plotted quantity is cyclic and center_cyclic is enabled,
+        will compute tick labels relative to the center.""")
 
     show_frame = param.Boolean(default=False, doc="""
         Disabled by default for clarity.""")
@@ -99,7 +106,7 @@ class CurvePlot(Plot):
         """
         x_values = list(curveview.data[:, 0])
         y_values = list(curveview.data[:, 1])
-        if self.center:
+        if self.center_cyclic:
             rotate_n = self.peak_argmax+len(x_values)/2
             y_values = self._rotate(y_values, n=rotate_n)
             ticks = self._rotate(x_values, n=rotate_n)
@@ -115,14 +122,16 @@ class CurvePlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        curveview = self._stack.last
+        curveview = self._map.last
 
         self.ax = self._init_axis(axis)
 
         # Create xticks and reorder data if cyclic
         xvals = curveview.data[:, 0]
-        if self.cyclic_range is not None:
-            if self.center:
+        if self.autotick:
+            xticks = None
+        elif self.cyclic_range is not None:
+            if self.center_cyclic:
                 self.peak_argmax = np.argmax(curveview.data[:, 1])
             self._cyclic_curves(curveview)
             xticks = self._cyclic_reduce_ticks(self.xvalues)
