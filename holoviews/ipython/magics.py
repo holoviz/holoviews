@@ -339,7 +339,7 @@ class OptsMagic(Magics):
         Given a composite view object, build a dictionary of either
         the 'style' or 'label' attributes across all contained
         atoms. This method works across overlays, grid layouts and
-        stacks. The return is a dictionary with the collected string
+        maps. The return is a dictionary with the collected string
         values as keys for the the associated view type.
         """
         group = {}

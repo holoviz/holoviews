@@ -87,32 +87,33 @@ class Plot(param.Parameterized):
 
     def __init__(self, view=None, zorder=0, all_keys=None, **kwargs):
         if view is not None:
-            self._stack = self._check_stack(view)
-            self._keys = all_keys if all_keys else self._stack.keys()
+            self._map = self._check_map(view)
+            self._keys = all_keys if all_keys else self._map.keys()
         super(Plot, self).__init__(**kwargs)
         self.zorder = zorder
         self.ax = None
+        self._create_fig = True
         # List of handles to matplotlib objects for animation update
         self.handles = {}
 
 
-    def _check_stack(self, view, element_type=View):
+    def _check_map(self, view, element_type=View):
         """
         Helper method that ensures a given view is always returned as
         an ViewMap object.
         """
         if not isinstance(view, ViewMap):
-            stack = ViewMap(initial_items=(0, view))
+            vmap = ViewMap(initial_items=(0, view))
         else:
-            stack = view
+            vmap = view
 
-        return stack
+        return vmap
 
 
     def _format_title(self, key):
-        view = self._stack.get(key, None)
+        view = self._map.get(key, None)
         if view is None: return None
-        title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
+        title_format = self._map.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
         return title_format.format(label=view.label, value=str(view.value),
@@ -147,7 +148,7 @@ class Plot(param.Parameterized):
         axis = self.ax
 
         if self.zorder == 0 and axis is not None:
-            view = self._stack.get(key, None) if hasattr(self, '_stack') else None
+            view = self._map.get(key, None) if hasattr(self, '_map') else None
             if key is not None and view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
@@ -155,7 +156,7 @@ class Plot(param.Parameterized):
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
                 if lbrt is None and self.apply_databounds:
-                    lbrt = view.lbrt if self.rescale_individually else self._stack.lbrt
+                    lbrt = view.lbrt if self.rescale_individually else self._map.lbrt
 
             if self.show_grid:
                 axis.get_xaxis().grid(True)
@@ -261,7 +262,7 @@ class Plot(param.Parameterized):
         """
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
-        view = self._stack.get(key, None)
+        view = self._map.get(key, None)
         self.ax.set_visible(view is not None)
         axis_kwargs = self.update_handles(view, key, lbrt) if view is not None else {}
         self._finalize_axis(key, **dict({'lbrt': lbrt}, **(axis_kwargs if axis_kwargs else {})))
@@ -796,7 +797,7 @@ class GridLayoutPlot(Plot):
 class OverlayPlot(Plot):
     """
     An OverlayPlot supports processing of channel operations on
-    Overlays across stacks. SheetPlot and MatrixGridPlot are
+    Overlays across maps. SheetPlot and MatrixGridPlot are
     examples of OverlayPlots.
     """
 
@@ -812,9 +813,9 @@ class OverlayPlot(Plot):
         self.plots = []
         super(OverlayPlot, self).__init__(overlay, **kwargs)
 
-    def _check_stack(self, view):
-        stack = super(OverlayPlot, self)._check_stack(view)
-        return self._collapse_channels(stack)
+    def _check_map(self, view):
+        vmap = super(OverlayPlot, self)._check_map(view)
+        return self._collapse_channels(vmap)
 
     def _collapse(self, overlay, pattern, fn, style_key):
         """
@@ -843,21 +844,21 @@ class OverlayPlot(Plot):
         overlay.set(collapsed_views)
 
 
-    def _collapse_channels(self, stack):
+    def _collapse_channels(self, vmap):
         """
-        Given a stack of Overlays, apply all applicable channel
+        Given a map of Overlays, apply all applicable channel
         reductions.
         """
-        if not issubclass(stack.type, Overlay):
-            return stack
+        if not issubclass(vmap.type, Overlay):
+            return vmap
         elif not Overlay.channels.keys(): # No potential channel reductions
-            return stack
+            return vmap
         else:
-            # The original stack should not be mutated by this operation
-            stack = copy.deepcopy(stack)
+            # The original vmap should not be mutated by this operation
+            vmap = copy.deepcopy(vmap)
 
         # Apply all customized channel operations
-        for overlay in stack:
+        for overlay in vmap:
             customized = [k for k in Overlay.channels.keys()
                           if overlay.label and k.startswith(overlay.label)]
             # Largest reductions should be applied first
@@ -871,14 +872,14 @@ class OverlayPlot(Plot):
                 collapse_fn = channel.operation
                 fn = collapse_fn.instance(**channel.opts)
                 self._collapse(overlay, channel.pattern, fn, key)
-        return stack
+        return vmap
 
 
     def _adjust_legend(self):
         # If legend enabled update handles and labels
         if not self.ax or not self.ax.get_legend(): return
         handles, _ = self.ax.get_legend_handles_labels()
-        labels = self._stack.last.legend
+        labels = self._map.last.legend
         if len(handles) and self.show_legend:
             fontP = FontProperties()
             fontP.set_size('medium')
@@ -890,9 +891,9 @@ class OverlayPlot(Plot):
         frame.set_linewidth('1.5')
 
     def _format_title(self, key):
-        view = self._stack.get(key, None)
+        view = self._map.get(key, None)
         if view is None: return None
-        title_format = self._stack.get_title(key if isinstance(key, tuple) else (key,), view)
+        title_format = self._map.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None: return None
 
         values = [str(v.value) for v in view]
@@ -904,28 +905,28 @@ class OverlayPlot(Plot):
     def __call__(self, axis=None, lbrt=None, **kwargs):
 
         self.ax = self._init_axis(axis)
-        stacks = self._stack.split_overlays()
+        maps = self._map.split_overlays()
 
         style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(stacks, lambda s: s.style))
+                            in groupby(maps, lambda s: s.style))
 
-        for zorder, stack in enumerate(stacks):
-            cyclic_index, _ = next(style_groups[stack.style])
-            plotopts = View.options.plotting(stack).opts
+        for zorder, vmap in enumerate(maps):
+            cyclic_index, _ = next(style_groups[vmap.style])
+            plotopts = View.options.plotting(vmap).opts
 
             if zorder == 0:
                 self.rescale = plotopts.get('rescale_individually', False)
-                lbrt = self._stack.last.lbrt if self.rescale else self._stack.lbrt
+                lbrt = self._map.last.lbrt if self.rescale else self._map.lbrt
 
-            plotype = Plot.defaults[stack.type]
-            plot = plotype(stack,
+            plotype = Plot.defaults[vmap.type]
+            plot = plotype(vmap,
                            **dict(plotopts, size=self.size, all_keys=self._keys,
                            show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
                            show_legend=self.show_legend, show_title=self.show_title,
                            show_grid=self.show_grid, zorder=zorder, **kwargs))
             plot.aspect = self.aspect
 
-            lbrt = None if stack.type == Annotation else lbrt
+            lbrt = None if vmap.type == Annotation else lbrt
             plot(self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
             self.plots.append(plot)
 
@@ -938,10 +939,10 @@ class OverlayPlot(Plot):
     def update_frame(self, n, lbrt=None):
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
-        view = self._stack.get(key, None)
+        view = self._map.get(key, None)
         for zorder, plot in enumerate(self.plots):
             if zorder == 0 and lbrt is None and view:
-                lbrt = view.lbrt if self.rescale else self._stack.lbrt
+                lbrt = view.lbrt if self.rescale else self._map.lbrt
             plot.update_frame(n, lbrt)
         self._finalize_axis(None)
 
@@ -970,7 +971,7 @@ class AnnotationPlot(Plot):
     def __init__(self, annotation, **kwargs):
         self._annotation = annotation
         super(AnnotationPlot, self).__init__(annotation, **kwargs)
-        self._warn_invalid_intervals(self._stack)
+        self._warn_invalid_intervals(self._map)
         self.handles['annotations'] = []
 
         line_only = ['linewidth', 'linestyle']
@@ -983,12 +984,12 @@ class AnnotationPlot(Plot):
                            'spline': line_opts + ['edgecolor']}
 
 
-    def _warn_invalid_intervals(self, stack):
+    def _warn_invalid_intervals(self, vmap):
         "Check if the annotated intervals have appropriate keys"
-        dim_labels = self._stack.dimension_labels
+        dim_labels = self._map.dimension_labels
 
         mismatch_set = set()
-        for annotation in stack.values():
+        for annotation in vmap.values():
             for spec in annotation.data:
                 interval = spec[-1]
                 if interval is None or dim_labels == ['Default']:
@@ -1006,7 +1007,7 @@ class AnnotationPlot(Plot):
         Given an interval specification, determine whether the
         annotation should be shown or not.
         """
-        dim_labels = self._stack.dimension_labels
+        dim_labels = self._map.dimension_labels
         if (interval is None) or dim_labels == ['Default']:
             return True
 
@@ -1071,7 +1072,7 @@ class AnnotationPlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         self.ax = self._init_axis(axis)
-        handles = self._draw_annotations(self._stack.last, list(self._stack.keys())[-1])
+        handles = self._draw_annotations(self._map.last, list(self._map.keys())[-1])
         self.handles['annotations'] = handles
         return self._finalize_axis(self._keys[-1])
 

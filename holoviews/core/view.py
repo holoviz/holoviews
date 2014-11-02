@@ -173,7 +173,7 @@ class Map(NdMapping):
     @property
     def type(self):
         """
-        The type of elements stored in the stack.
+        The type of elements stored in the map.
         """
         if self._type is None:
             self._type = None if len(self) == 0 else self.last.__class__
@@ -183,7 +183,7 @@ class Map(NdMapping):
     @property
     def style(self):
         """
-        The style of elements stored in the stack.
+        The style of elements stored in the map.
         """
         if self._style is None:
             self._style = None if len(self) == 0 else self.last.style

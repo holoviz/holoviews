@@ -59,13 +59,12 @@ class DFrameViewPlot(Plot):
 
     def __init__(self, view, **params):
         super(DFrameViewPlot, self).__init__(view, **params)
-        if self._stack.last.plot_type and 'plot_type' not in params:
-            self.plot_type = self._stack.last.plot_type
+        if self._map.last.plot_type and 'plot_type' not in params:
+            self.plot_type = self._map.last.plot_type
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        dfview = self._stack.last
-
+        dfview = self._map.last
         self._validate(dfview, axis)
 
         self.ax = self._init_axis(axis)

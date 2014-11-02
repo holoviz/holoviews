@@ -20,7 +20,7 @@ class PointPlot(Plot):
 
     normalize_individually = param.Boolean(default=False, doc="""
       Whether to normalize the colors used to represent magnitude for
-      each frame or across the stack (when color is applicable).""")
+      each frame or across the map (when color is applicable).""")
 
     style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
                                      'linewidth', 'marker', 's', 'visible',
@@ -32,7 +32,7 @@ class PointPlot(Plot):
     _view_type = Points
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        points = self._stack.last
+        points = self._map.last
 
         self.ax = self._init_axis(axis)
 
@@ -49,7 +49,7 @@ class PointPlot(Plot):
         self.handles['scatter'] = scatterplot
 
         if cs is not None:
-            clims = points.range if self.normalize_individually else self._stack.range
+            clims = points.range if self.normalize_individually else self._map.range
             scatterplot.set_clim(clims)
 
         return self._finalize_axis(self._keys[-1])
@@ -98,7 +98,7 @@ class VectorFieldPlot(Plot):
 
     normalize_individually = param.Boolean(default=False, doc="""
         Whether to normalize the colors used as an extra dimension
-        per frame or across the stack (when color is applicable).""")
+        per frame or across the map (when color is applicable).""")
 
     arrow_heads = param.Boolean(default=True, doc="""
        Whether or not to draw arrow heads. If arrowheads are enabled,
@@ -114,17 +114,17 @@ class VectorFieldPlot(Plot):
 
     def __init__(self, *args, **kwargs):
         super(VectorFieldPlot, self).__init__(*args, **kwargs)
-        self._min_dist, self._max_magnitude = self._get_stack_info(self._stack)
+        self._min_dist, self._max_magnitude = self._get_map_info(self._map)
 
 
-    def _get_stack_info(self, stack):
+    def _get_map_info(self, vmap):
         """
         Get the minimum sample distance and maximum magnitude
         """
         if self.normalize_individually:
             return None, None
         dists, magnitudes  = [], []
-        for vfield in stack:
+        for vfield in vmap:
             dists.append(self._get_min_dist(vfield))
 
             if vfield.data.shape[1]>=4:
@@ -160,7 +160,7 @@ class VectorFieldPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        vfield = self._stack.last
+        vfield = self._map.last
         self.ax = self._init_axis(axis)
 
         colorized = self.color_dim is not None
@@ -187,7 +187,7 @@ class VectorFieldPlot(Plot):
             clims = vfield.value.range
             quiver.set_clim(clims)
         elif self.color_dim == 'magnitude':
-            clims = vfield.range if self.normalize_individually else self._stack.range
+            clims = vfield.range if self.normalize_individually else self._map.range
             quiver.set_clim(clims)
 
         self.ax.add_collection(quiver)
@@ -231,7 +231,7 @@ class ContourPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        lines = self._stack.last
+        lines = self._map.last
         self.ax = self._init_axis(axis)
 
         line_segments = LineCollection(lines.data, zorder=self.zorder,
@@ -265,10 +265,10 @@ class MatrixPlot(Plot):
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 
         self.ax = self._init_axis(axis)
-        view = self._stack.last
+        view = self._map.last
 
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
-            else self._stack.last.lbrt
+            else self._map.last.lbrt
         xticks, yticks = self._compute_ticks(view)
 
         opts = View.options.style(view)[cyclic_index]
@@ -286,7 +286,7 @@ class MatrixPlot(Plot):
 
         im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
-            clims = view.range if self.normalize_individually else self._stack.range
+            clims = view.range if self.normalize_individually else self._map.range
         im.set_clim(clims)
         self.handles['im'] = im
 
@@ -374,8 +374,8 @@ class MatrixGridPlot(OverlayPlot):
     def __init__(self, grid, **kwargs):
         self.layout = kwargs.pop('layout', None)
         self.grid = copy.deepcopy(grid)
-        for k, stack in self.grid.items():
-            self.grid[k] = self._check_stack(self.grid[k])
+        for k, vmap in self.grid.items():
+            self.grid[k] = self._check_map(self.grid[k])
         Plot.__init__(self, **kwargs)
         self._keys = self.grid.all_keys
 
@@ -429,10 +429,10 @@ class MatrixGridPlot(OverlayPlot):
 
 
     def _format_title(self, key):
-        stack = self.grid.values()[0]
-        view = stack.get(key, None)
+        vmap = self.grid.values()[0]
+        view = vmap.get(key, None)
         if view is None: return ""
-        title_format = stack.get_title(key if isinstance(key, tuple) else (key,), self.grid)
+        title_format = vmap.get_title(key if isinstance(key, tuple) else (key,), self.grid)
         if title_format is None:
             return None
         return title_format.format(label=self.grid.label, type=self.grid.__class__.__name__)

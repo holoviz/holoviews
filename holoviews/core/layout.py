@@ -149,7 +149,7 @@ class GridLayout(NdMapping):
     def last(self):
         """
         Returns another GridLayout constituted of the last views of the
-        individual elements (if they are stacks).
+        individual elements (if they are maps).
         """
         last_items = []
         for (k, v) in self.items():

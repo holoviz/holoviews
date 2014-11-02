@@ -156,21 +156,21 @@ def widget_display(view):
         return IPySelectionWidget(view, cached=False)()
 
 @display_hook
-def stack_display(stack, size=256):
-    if not isinstance(stack, Map): return None
-    magic_info = process_view_magics(stack)
+def map_display(vmap, size=256):
+    if not isinstance(vmap, Map): return None
+    magic_info = process_view_magics(vmap)
     if magic_info: return magic_info
     if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
-        return widget_display(stack)
-    opts = dict(View.options.plotting(stack).opts, size=get_plot_size())
-    stackplot = Plot.defaults[stack.type](stack, **opts)
-    if len(stackplot) == 0:
-        return repr(stack)
-    elif len(stackplot) == 1:
-        fig = stackplot()
+        return widget_display(vmap)
+    opts = dict(View.options.plotting(vmap).opts, size=get_plot_size())
+    mapplot = Plot.defaults[vmap.type](vmap, **opts)
+    if len(mapplot) == 0:
+        return repr(vmap)
+    elif len(mapplot) == 1:
+        fig = mapplot()
         return figure_display(fig)
 
-    return render(stackplot)
+    return render(mapplot)
 
 @display_hook
 def layout_display(grid, size=256):
@@ -235,7 +235,7 @@ def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
     html_formatter.for_type(View, view_display)
-    html_formatter.for_type(Map, stack_display)
+    html_formatter.for_type(Map, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(GridLayout, layout_display)
     html_formatter.for_type(Grid, grid_display)

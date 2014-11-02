@@ -585,12 +585,12 @@ class Grid(NdMapping):
         """
         import pandas
         dframes = []
-        for coords, stack in self.items():
-            stack_frame = stack.dframe()
+        for coords, vmap in self.items():
+            map_frame = vmap.dframe()
             for coord, dim in zip(coords, self.dimension_labels)[::-1]:
-                if dim in stack_frame: dim = 'Grid_' + dim
-                stack_frame.insert(0, dim.replace(' ','_'), coord)
-            dframes.append(stack_frame)
+                if dim in map_frame: dim = 'Grid_' + dim
+                map_frame.insert(0, dim.replace(' ','_'), coord)
+            dframes.append(map_frame)
         return pandas.concat(dframes)
 
 
@@ -670,26 +670,26 @@ class ViewMap(Map):
         items in the split out Stacks.
         """
         if self.ndims == 1:
-            split_stack = dict(default=self)
-            new_stack = dict()
+            split_map = dict(default=self)
+            new_map = dict()
         else:
-            split_stack = self.split_dimensions(dimensions)
-            new_stack = self.clone(dimensions=split_stack.dimensions)
+            split_map = self.split_dimensions(dimensions)
+            new_map = self.clone(dimensions=split_map.dimensions)
 
-        for outer, stack in split_stack.items():
-            key, overlay = stack.items()[0]
-            overlay.constant_dimensions = stack.dimensions
+        for outer, vmap in split_map.items():
+            key, overlay = vmap.items()[0]
+            overlay.constant_dimensions = vmap.dimensions
             overlay.constant_values = key
-            for inner, v in list(stack.items())[1:]:
-                v.constant_dimensions = stack.dimensions
+            for inner, v in list(vmap.items())[1:]:
+                v.constant_dimensions = vmap.dimensions
                 v.constant_values = inner
                 overlay = overlay * v
-            new_stack[outer] = overlay
+            new_map[outer] = overlay
 
         if self.ndims == 1:
-            return list(new_stack.values())[0]
+            return list(new_map.values())[0]
         else:
-            return new_stack
+            return new_map
 
 
     def grid(self, dimensions, layout=False, constant_dims=True):
@@ -701,22 +701,22 @@ class ViewMap(Map):
             raise ValueError('At most two dimensions can be laid out in a grid.')
 
         if len(dimensions) == self.ndims:
-            split_stack = self
+            split_map = self
         elif all(d in self.dimension_labels for d in dimensions):
             split_dims = [d for d in self.dimension_labels if d not in dimensions]
-            split_stack = self.split_dimensions(split_dims)
-            split_stack = split_stack.reindex(dimensions)
+            split_map = self.split_dimensions(split_dims)
+            split_map = split_map.reindex(dimensions)
         else:
             raise ValueError('ViewMap does not have supplied dimensions.')
 
         if layout:
-            for keys, stack in split_stack._data.items():
+            for keys, vmap in split_map._data.items():
                 if constant_dims:
-                    stack.constant_dimensions = split_stack.dimensions
-                    stack.constant_values = keys
-            return GridLayout(split_stack)
+                    vmap.constant_dimensions = split_map.dimensions
+                    vmap.constant_values = keys
+            return GridLayout(split_map)
         else:
-            return Grid(split_stack, dimensions=split_stack.dimensions)
+            return Grid(split_map, dimensions=split_map.dimensions)
 
     def split_overlays(self):
         """
@@ -726,15 +726,15 @@ class ViewMap(Map):
         if self.type is not Overlay:
             return self.clone(self.items())
 
-        stacks = []
-        item_stacks = defaultdict(list)
+        maps = []
+        item_maps = defaultdict(list)
         for k, overlay in self.items():
             for i, el in enumerate(overlay):
-                item_stacks[i].append((k, el))
+                item_maps[i].append((k, el))
 
-        for k in sorted(item_stacks.keys()):
-            stacks.append(self.clone(item_stacks[k]))
-        return stacks
+        for k in sorted(item_maps.keys()):
+            maps.append(self.clone(item_maps[k]))
+        return maps
 
 
     def __mul__(self, other):
@@ -788,8 +788,8 @@ class ViewMap(Map):
             items = [(k, v * other) for (k, v) in self.items()]
             return self.clone(items=items)
         else:
-            raise Exception("Can only overlay with {data} or {stack}.".format(
-                data=self.data_type, stack=self.__class__.__name__))
+            raise Exception("Can only overlay with {data} or {vmap}.".format(
+                data=self.data_type, vmap=self.__class__.__name__))
 
 
     def dframe(self):
@@ -865,7 +865,7 @@ class ViewMap(Map):
 
     def map(self, map_fn, **kwargs):
         """
-        Map a function across the stack, using the bounds of first
+        Map a function across the ViewMap, using the bounds of first
         mapped item.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
@@ -883,23 +883,23 @@ class ViewMap(Map):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histstack = ViewMap(dimensions=self.dimensions, title_suffix=self.title_suffix)
+        histmap = ViewMap(dimensions=self.dimensions, title_suffix=self.title_suffix)
 
-        stack_range = None if individually else self.range
-        bin_range = stack_range if bin_range is None else bin_range
+        map_range = None if individually else self.range
+        bin_range = map_range if bin_range is None else bin_range
         for k, v in self.items():
-            histstack[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
+            histmap[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
                                   individually=individually,
                                   style_prefix='Custom[<' + self.name + '>]_',
                                   adjoin=False,
                                   **kwargs)
 
         if adjoin and issubclass(self.type, Overlay):
-            layout = (self << histstack)
+            layout = (self << histmap)
             layout.main_layer = kwargs['index']
             return layout
 
-        return (self << histstack) if adjoin else histstack
+        return (self << histmap) if adjoin else histmap
 
 
     def normalize_elements(self, **kwargs):

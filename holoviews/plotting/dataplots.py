@@ -50,7 +50,7 @@ class CurvePlot(Plot):
 
     def __init__(self, curves, **kwargs):
         super(CurvePlot, self).__init__(curves, **kwargs)
-        self.cyclic_range = self._stack.last.cyclic_range
+        self.cyclic_range = self._map.last.cyclic_range
 
 
     def _format_x_tick_label(self, x):
@@ -167,7 +167,7 @@ class ScatterPlot(CurvePlot):
     _view_type = Scatter
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        scatterview = self._stack.last
+        scatterview = self._map.last
         self.cyclic_index = cyclic_index
 
         self.ax = self._init_axis(axis)
@@ -255,7 +255,7 @@ class TablePlot(Plot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 
-        tableview = self._stack.last
+        tableview = self._map.last
         self.ax = self._init_axis(axis)
 
         self.ax.set_axis_off()
@@ -339,7 +339,7 @@ class HistogramPlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        hist = self._stack.last
+        hist = self._map.last
         self.cyclic_index = cyclic_index
 
         # Get plot ranges and values
@@ -375,7 +375,7 @@ class HistogramPlot(Plot):
         hist_vals = np.array(hist.values[:])
         widths = np.diff(hist.edges)
         if lbrt is None:
-            xlims = hist.xlim if self.rescale_individually else self._stack.xlim
+            xlims = hist.xlim if self.rescale_individually else self._map.xlim
             ylims = hist.ylim
         else:
             l, b, r, t = lbrt
@@ -565,7 +565,7 @@ class SideHistogramPlot(HistogramPlot):
     def _update_separator(self, lims, offset):
         """
         Compute colorbar offset and update separator line
-        if stack is non-zero.
+        if map is non-zero.
         """
         _, _, y0, y1 = lims
         offset_line = self.handles['offset_line']

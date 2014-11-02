@@ -14,7 +14,7 @@ class Annotation(Layer):
     arrows, boxes or labels).
 
     All annotations have an optional interval argument that indicates
-    which stack elements they apply to. For instance, this allows
+    which map elements they apply to. For instance, this allows
     annotations for a specific time interval when overlaid over a
     ViewMap or ViewMap with a 'Time' dimension. The interval
     argument is a dictionary of dimension keys and tuples containing

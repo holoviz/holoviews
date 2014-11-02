@@ -654,13 +654,13 @@ class Analyze(Collect):
         else:
             self.times = []
         self.kwargs = kwargs
-        self.stackwise = kwargs.pop('stackwise', False)
+        self.mapwise = kwargs.pop('mapwise', False)
         self.mode = kwargs.pop('mode', 'set')
         self.path = None
 
 
     def _get_result(self, attrtree, time, times):
-        if self.stackwise and time != times[-1]:
+        if self.mapwise and time != times[-1]:
             return None
         else:
             try:
@@ -923,10 +923,10 @@ class Collector(AttrTree):
             interval_hook(float(t))
 
             # An empty attrtree buffer stops analysis repeatedly
-            # computing results over the entire accumulated stack
+            # computing results over the entire accumulated map
             attrtree_buffer = AttrTree()
             for task in self._scheduled_tasks:
-                if isinstance(task, Analyze) and task.stackwise:
+                if isinstance(task, Analyze) and task.mapwise:
                     task(attrtree, self.time_fn(), times)
                 else:
                     task(attrtree_buffer, self.time_fn(), times)

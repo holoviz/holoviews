@@ -149,15 +149,15 @@ class DataFrameView(Layer):
             raise Exception('Grids hold a maximum of two dimensions.')
         if layout:
             ndmapping = self._split_dimensions(dimensions, NdMapping)
-            for keys, stack in ndmapping._data.items():
+            for keys, vmap in ndmapping._data.items():
                 label = ', '.join([d.pprint_value(k) for d, k in
                                    zip(ndmapping.dimensions, keys)])
-                stack.title = ' '.join([label, stack.title])
+                vmap.title = ' '.join([label, vmap.title])
             return GridLayout(ndmapping).cols(cols)
         return self._split_dimensions(dimensions, Grid)
 
 
-    def stack(self, dimensions=[]):
+    def viewmap(self, dimensions=[]):
         """
         Splits the supplied dimensions out into a ViewMap.
         """
@@ -215,19 +215,19 @@ class DFrame(DataFrameView):
 
 
     def _export_dataview(self, value_dim='', indices=[], reduce_fn=None,
-                         view_dims=[], stack_dims=[], view_method=None):
+                         view_dims=[], map_dims=[], view_method=None):
         """
         The core conversion method from the Pandas DataFrame to a View
         or Map type. The value_dim specifies the column in the
         DataFrame to select, additionally indices or a reduce_fn can
         be supplied to select or reduce multiple entries in the
-        DataFrame. Further, the view_dims and stack_dims determine
+        DataFrame. Further, the view_dims and map_dims determine
         which Dimensions will be grouped and supplied to the appropriate
         view_method and ViewMap respectively.
         """
 
         # User error checking
-        selected_dims = [value_dim]+view_dims+stack_dims
+        selected_dims = [value_dim]+view_dims+map_dims
         for dim in selected_dims:
             if dim not in self.dimension_labels:
                 raise Exception("DataFrameView has no Dimension %s." % dim)
@@ -238,25 +238,25 @@ class DFrame(DataFrameView):
 
         # Set up for View and Map dimension splitting operations
         view_dimensions = view_dims
-        if stack_dims:
-            stack_dfs = df.groupby(stack_dims)
-            stack = ViewMap(None, dimensions=[self.dim_dict[d] for d in stack_dims])
+        if map_dims:
+            map_dfs = df.groupby(map_dims)
+            vmap = ViewMap(None, dimensions=[self.dim_dict[d] for d in map_dims])
         else:
-            stack_dfs = [(None, df)]
-            stack = {}
+            map_dfs = [(None, df)]
+            vmap = {}
 
-        # Iterating over stack elements
-        for stack_key, stack_group in stack_dfs:
+        # Iterating over vmap elements
+        for map_key, map_group in map_dfs:
             # Apply reduction function
             if reduce_fn:
                 # Find indices for value and View dimensions
-                cols = list(stack_group.columns)
+                cols = list(map_group.columns)
                 val_idx = cols.index(value_dim)
                 vdim_inds = [cols.index(d) for d in view_dims]
 
                 # Iterate over rows and collate the result.
                 temp_dict = defaultdict(list)
-                for row in stack_group.values:
+                for row in map_group.values:
                     if view_dims:
                         key = tuple((row[ind] for ind in vdim_inds))
                     else:
@@ -268,11 +268,11 @@ class DFrame(DataFrameView):
                 temp_dict = OrderedDict()
                 # If the selected dimensions values are not unique add Index
                 if not len(indices) == 1:
-                    indices = indices if indices else list(stack_group.index)
+                    indices = indices if indices else list(map_group.index)
                     view_dimensions = ['Index'] + view_dims
                 
                 # Get data from the DataFrame
-                view_groups = stack_group.groupby(view_dims) if view_dims else [((), stack_group)]
+                view_groups = map_group.groupby(view_dims) if view_dims else [((), map_group)]
                 for k, view_group in view_groups:
                     for ind in indices:
                         if view_dims:
@@ -283,39 +283,39 @@ class DFrame(DataFrameView):
                         else:
                             key = '_'.join([ind, value_dim])
                         temp_dict[key] = view_group.loc[ind, value_dim]
-            stack[stack_key] = view_method(temp_dict, value_dim, view_dimensions)
-        if stack_dims:
-            return stack
+            vmap[map_key] = view_method(temp_dict, value_dim, view_dimensions)
+        if map_dims:
+            return vmap
         else:
-            return stack[None]
+            return vmap[None]
 
 
-    def table(self, value_dim, indices=[], reduce_fn=None, dims=[], stack_dims=[]):
+    def table(self, value_dim, indices=[], reduce_fn=None, dims=[], map_dims=[]):
         """
         Conversion method from DataFrame to holoviews table. Requires
         a value_dimension to be specified. Optionally a list indices
         or a reduce_fn can be specified to select or reduce multiple
-        entries. Finally view_dims and stack_dims can be specified to
+        entries. Finally view_dims and map_dims can be specified to
         be inserted into the ItemTable and ViewMap respectively.  If
-        not stack_dims are specified a single ItemTable will be returned.
+        not map_dims are specified a single ItemTable will be returned.
         """
         return self._export_dataview(value_dim, indices, reduce_fn,
-                                     dims, stack_dims, self._create_table)
+                                     dims, map_dims, self._create_table)
 
 
-    def heatmap(self, value_dim, dims, index=None, reduce_fn=None, stack_dims=[]):
+    def heatmap(self, value_dim, dims, index=None, reduce_fn=None, map_dims=[]):
         """
         Conversion method from DataFrame to holoviews
         HeatMap. Requires a value_dim, the HeatMap dims and either a
         single index or a reduce_fn, to ensure there's only one value
-        returned. Optionally stack_dims can be specified to stack the
+        returned. Optionally map_dims can be specified to map the
         HeatMap over.
         """
         indices = [index] if index else []
         if 1 > len(dims) > 2:
             raise Exception("HeatMap supports either one or two dimensions")
         return self._export_dataview(value_dim, indices, reduce_fn, dims,
-                                     stack_dims, self._create_heatmap)
+                                     map_dims, self._create_heatmap)
 
 
 options.DFrameView = PlotOpts()

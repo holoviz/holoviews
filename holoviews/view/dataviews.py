@@ -22,7 +22,7 @@ class DataView(Layer):
             data = data.data
         elif isinstance(data, Map) or (isinstance(data, list) and data
                                            and isinstance(data[0], Layer)):
-            data, settings = self._process_stack(data)
+            data, settings = self._process_map(data)
         data = list(data)
         if len(data) and not isinstance(data, np.ndarray):
             data = np.array(data)
@@ -30,13 +30,13 @@ class DataView(Layer):
         super(DataView, self).__init__(data, **settings)
 
 
-    def _process_stack(self, stack):
+    def _process_map(self, vmap):
         """
         Base class to process a ViewMap to be collapsed into a Layer.
         Should return the data and parameters of reduced View.
         """
         data = []
-        for v in stack:
+        for v in vmap:
             data.append(v.data)
         return np.concatenate(data), dict(v.get_param_values())
 
@@ -112,14 +112,14 @@ class Curve(DataView):
         Create map indexed by Curve x-axis with progressively expanding number
         of curve samples.
         """
-        stack = ViewMap(None, dimensions=[self.xlabel], title=self.title+' {dims}')
+        vmap = ViewMap(None, dimensions=[self.xlabel], title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
-            if x in stack:
-                stack[x].data.append(self.data[0:idx])
+            if x in vmap:
+                vmap[x].data.append(self.data[0:idx])
             else:
-                stack[x] = Curve(self.data[0:idx])
-        return stack
+                vmap[x] = Curve(self.data[0:idx])
+        return vmap
 
 
 class Bars(DataView):

@@ -70,14 +70,14 @@ class ViewOperation(param.ParameterizedFunction):
             grids = []
             for pos, cell in view.items():
                 val = self(cell, **params)
-                stacks = val.values() if isinstance(val, GridLayout) else [val]
+                maps = val.values() if isinstance(val, GridLayout) else [val]
                 # Initialize the list of data or coordinate grids
                 if grids == []:
                     grids = [Grid(view.bounds, None, view.xdensity, view.ydensity, label=view.label)
-                             for stack in stacks]
+                             for vmap in maps]
                 # Populate the grids
-                for ind, stack in enumerate(stacks):
-                    grids[ind][pos] = stack
+                for ind, vmap in enumerate(maps):
+                    grids[ind][pos] = vmap
 
             if len(grids) == 1: return grids[0]
             else:               return GridLayout(grids)
@@ -85,13 +85,13 @@ class ViewOperation(param.ParameterizedFunction):
 
         elif isinstance(view, Map):
             mapped_items = [(k, self._process(el, key=k)) for k, el in view.items()]
-            stacks = [view.clone(dimensions=view.dimensions) for _ in range(len(mapped_items[0][1]))]
+            maps = [view.clone(dimensions=view.dimensions) for _ in range(len(mapped_items[0][1]))]
             for k, views in mapped_items:
                 for ind, v in enumerate(views):
-                    stacks[ind][k] = v
+                    maps[ind][k] = v
 
-            if len(stacks) == 1:  return stacks[0]
-            else:                 return GridLayout(stacks)
+            if len(maps) == 1:  return maps[0]
+            else:               return GridLayout(maps)
 
 
 class MapOperation(param.ParameterizedFunction):
@@ -105,24 +105,24 @@ class MapOperation(param.ParameterizedFunction):
         default this will match the name of the MapOperation.""")
 
 
-    def __call__(self, stack, **params):
+    def __call__(self, vmap, **params):
         self.p = param.ParamOverrides(self, params)
 
-        if not isinstance(stack, Map):
+        if not isinstance(vmap, Map):
             raise Exception('MapOperation can only process Maps.')
 
-        stacks = self._process(stack)
+        maps = self._process(vmap)
 
-        if len(stacks) == 1:
-            return stacks[0]
+        if len(maps) == 1:
+            return maps[0]
         else:
-            return GridLayout(stacks)
+            return GridLayout(maps)
 
 
     def _process(self, view):
         """
         Process a single input Map and output a list of views or
-        stacks. When multiple values are returned they are returned to
+        maps. When multiple values are returned they are returned to
         the user as a GridLayout.
         """
         raise NotImplementedError
