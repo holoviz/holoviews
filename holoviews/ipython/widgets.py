@@ -321,7 +321,7 @@ class IPySelectionWidget(NdWidget):
                               CSS to apply to the widgets.""")
 
     def __init__(self, view, **params):
-        super(ViewSelector, self).__init__(**params)
+        super(IPySelectionWidget, self).__init__(**params)
 
         if widgets is None:
             raise ImportError('ViewSelector requires IPython >= 2.0.')
