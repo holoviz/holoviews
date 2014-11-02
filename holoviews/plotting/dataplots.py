@@ -358,7 +358,7 @@ class HistogramPlot(Plot):
         # Plot bars and make any adjustments
         style = View.options.style(hist)[cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
-        self.handles['bars'] = self._update_plot(-1, bars, lims) # Indexing top
+        self.handles['bars'] = self._update_plot(self._keys[-1], bars, lims) # Indexing top
 
         ticks = self._compute_ticks(edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -415,7 +415,7 @@ class HistogramPlot(Plot):
         return axis_settings
 
 
-    def _update_plot(self, n, bars, lims):
+    def _update_plot(self, key, bars, lims):
         """
         Process bars can be subclassed to manually adjust bars
         after being plotted.
@@ -509,10 +509,11 @@ class SideHistogramPlot(HistogramPlot):
 
         if isinstance(main, Map):
             if issubclass(main.type, Overlay):
+                top_map = main.split_overlays()[0]
                 if individually:
-                    main_range = main.split_stack()[0][key].range
+                    main_range = top_map[key].range
                 else:
-                    main_range = main.last[self.layout.main_layer].range
+                    main_range = top_map.range
             else:
                 main_range = main[key].range if individually else main.range
         elif isinstance(main, View):
