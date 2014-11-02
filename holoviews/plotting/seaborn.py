@@ -33,7 +33,7 @@ class FullRedrawPlot(Plot):
         are also supported.""")
 
     rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per stack or per view.""")
+        Whether to use redraw the axes per map or per view.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Enables the axis grid.""")
@@ -72,7 +72,7 @@ class RegressionPlot(FullRedrawPlot):
 
         self.ax = self._init_axis(axis)
 
-        self._update_plot(self._stack.last)
+        self._update_plot(self._map.last)
         return self._finalize_axis(self._keys[-1], lbrt=lbrt)
 
 
@@ -111,17 +111,17 @@ class BivariatePlot(FullRedrawPlot):
 
     def __init__(self, kde, **kwargs):
         super(BivariatePlot, self).__init__(kde, **kwargs)
-        self.cyclic_range = self._stack.last.cyclic_range
+        self.cyclic_range = self._map.last.cyclic_range
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        kdeview = self._stack.last
+        kdeview = self._map.last
         self.style = View.options.style(kdeview)[cyclic_index]
 
         # Create xticks and reorder data if cyclic
         if lbrt is None:
             lbrt = kdeview.lbrt if self.rescale_individually else\
-                   self._stack.lbrt
+                   self._map.lbrt
 
         if self.joint:
             if axis is not None:
@@ -175,17 +175,17 @@ class TimeSeriesPlot(FullRedrawPlot):
 
     def __init__(self, curves, **kwargs):
         super(TimeSeriesPlot, self).__init__(curves, **kwargs)
-        self.cyclic_range = self._stack.last.cyclic_range
+        self.cyclic_range = self._map.last.cyclic_range
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        curveview = self._stack.last
+        curveview = self._map.last
         self.cyclic_index = cyclic_index
         self.style = View.options.style(curveview)[self.cyclic_index]
 
         if lbrt is None:
             lbrt = None if self.rescale_individually else\
-                   self._stack.lbrt
+                   self._map.lbrt
 
         self.ax = self._init_axis(axis)
 
@@ -224,11 +224,11 @@ class DistributionPlot(FullRedrawPlot):
 
     def __init__(self, dist, **kwargs):
         super(DistributionPlot, self).__init__(dist, **kwargs)
-        self.cyclic_range = self._stack.last.cyclic_range
+        self.cyclic_range = self._map.last.cyclic_range
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        distview = self._stack.last
+        distview = self._map.last
         self.style = View.options.style(distview)[cyclic_index]
         self.ax = self._init_axis(axis)
 
