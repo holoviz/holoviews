@@ -209,6 +209,11 @@ class Histogram(Layer):
 
 
     @property
+    def range(self):
+        return (min(self.values), max(self.values))
+
+
+    @property
     def xlim(self):
         if self.cyclic_range is not None:
             return (0, self.cyclic_range)
@@ -218,4 +223,4 @@ class Histogram(Layer):
 
     @property
     def ylim(self):
-        return (min(self.values), max(self.values))
+        return self.range
