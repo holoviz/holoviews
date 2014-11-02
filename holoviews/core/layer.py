@@ -823,7 +823,7 @@ class ViewMap(Map):
 
 
     def __lshift__(self, other):
-        if isinstance(other, (View, Overlay, ViewMap)):
+        if isinstance(other, (View, Overlay, ViewMap, Grid)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
