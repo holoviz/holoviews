@@ -125,7 +125,7 @@ class Plot(param.Parameterized):
         Return an axis which may need to be initialized from
         a new figure.
         """
-        if axis is None:
+        if axis is None and self._create_fig:
             fig = plt.figure()
             self.handles['fig'] = fig
             fig.set_size_inches(list(self.size))
