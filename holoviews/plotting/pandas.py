@@ -116,7 +116,7 @@ class DFrameViewPlot(Plot):
         Update the plot for an animation.
         """
         if not self.plot_type in ['hist', 'scatter_matrix']:
-            if self.zorder == 0: self.ax.cla()
+            if self.zorder == 0 and self.ax: self.ax.cla()
         self._update_plot(view)
 
 
