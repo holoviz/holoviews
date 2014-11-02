@@ -292,7 +292,7 @@ class SNSFramePlot(DFrameViewPlot):
 
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
-    def __init__(self,
+    def __init__(self, view, **params):
         super(SNSFramePlot, self).__init__(view, **params)
         if self.plot_type in ['pairgrid', 'pairplot', 'facetgrid']:
             self._create_fig = False
