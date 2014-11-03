@@ -4,7 +4,7 @@
 {% set script_files = script_files + ["_static/custom.js"] %}
 
 {% if 'Tutorial' in pagename %}
-{% set abs_path = "http://ioam.github.io/dataviews/" %}
+{% set abs_path = "http://ioam.github.io/holoviews/" %}
 {% else %}
 {% set abs_path = "" %}
 {% endif %}
@@ -12,11 +12,11 @@
 {# the menu at the top #}
 {% block rootrellink %}
 {% if 'Tutorial' in pagename %}
-<li><a href="{{ abs_path + 'index.html' }}">DataViews Home</a></li>
+<li><a href="{{ abs_path + 'index.html' }}">HoloViews Home</a></li>
 <li><a href="{{ abs_path + 'Tutorials/index.html' }}">Tutorials</a></li>
 <li><a href="{{ abs_path + 'Reference_Manual/index.html' }}">Reference Manual</a></li>
 {% else %}
-<li><a href="{{ pathto('index') }}">DataViews Home</a></li>
+<li><a href="{{ pathto('index') }}">HoloViews Home</a></li>
 <li><a href="{{ pathto('Tutorials/index') }}">Tutorials</a></li>
 <li><a href="{{ pathto('Reference_Manual/index') }}">Reference Manual</a></li>
 {% endif %}
@@ -42,13 +42,13 @@
 {% endblock %}
 
 {% block sidebartoc %}
-<div align="center"><h1>DataViews</h1></div>
+<div align="center"><h1>HoloViews</h1></div>
 <ul class="global-toc">
 {% if 'Tutorial' in pagename %}
 <li><a href="{{ abs_path + 'index.html' }}">Home</a></li>
 <li><a href="{{ abs_path + 'Tutorials/index.html' }}">Tutorials</a></li>
 <li><a href="{{ abs_path + 'Reference_Manual/index.html' }}">Reference Manual</a></li>
-<li><a href="http://github.com/ioam/dataviews">Github Source Code</a></li>
+<li><a href="http://github.com/ioam/holoviews">Github Source Code</a></li>
 <li><a href="{{ abs_path + 'site_map.html' }}">Site Map</a></li>
 </ul>
 <h3><a href="{{ abs_path + 'index.html' }}">{{ _('Table Of Contents') }}</a></h3>
@@ -56,7 +56,7 @@
 <li><a href="{{ pathto('index') }}">Home</a></li>
 <li><a href="{{ pathto('Tutorials/index') }}">Tutorials</a></li>
 <li><a href="{{ pathto('Reference_Manual/index') }}">Reference Manual</a></li>
-<li><a href="http://github.com/ioam/dataviews">Github Source Code</a></li>
+<li><a href="http://github.com/ioam/holoviews">Github Source Code</a></li>
 <li><a href="{{ pathto('site_map') }}">Site Map</a></li>
 </ul>
 <h3><a href="{{ pathto(master_doc) }}">{{ _('Table Of Contents') }}</a></h3>
