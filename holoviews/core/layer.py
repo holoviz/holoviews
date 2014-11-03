@@ -64,8 +64,9 @@ class Layer(Pane):
 
 
     def __init__(self, data, **kwargs):
-        self._xlim = None
-        self._ylim = None
+        lbrt = kwargs.pop('lbrt', None)
+        self._xlim = (lbrt[0], lbrt[2]) if lbrt else None
+        self._ylim = (lbrt[1], lbrt[3]) if lbrt else None
         super(Layer, self).__init__(data, **kwargs)
 
 
