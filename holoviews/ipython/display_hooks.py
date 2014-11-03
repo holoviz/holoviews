@@ -160,8 +160,6 @@ def map_display(vmap, size=256):
     if not isinstance(vmap, Map): return None
     magic_info = process_view_magics(vmap)
     if magic_info: return magic_info
-    if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
-        return widget_display(vmap)
     opts = dict(View.options.plotting(vmap).opts, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
@@ -169,14 +167,14 @@ def map_display(vmap, size=256):
     elif len(mapplot) == 1:
         fig = mapplot()
         return figure_display(fig)
+    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+        return widget_display(vmap)
 
     return render(mapplot)
 
 @display_hook
 def layout_display(grid, size=256):
     if not isinstance(grid, (GridLayout, AdjointLayout)): return None
-    if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
-        return widget_display(grid)
     shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
@@ -188,14 +186,14 @@ def layout_display(grid, size=256):
     if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
+    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+        return widget_display(grid)
 
     return render(gridplot)
 
 @display_hook
 def grid_display(grid, size=256):
     if not isinstance(grid, Grid): return None
-    if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
-        return widget_display(grid)
 
     max_dim = max(grid.shape)
     # Reduce plot size as Grid gets larger
@@ -217,6 +215,8 @@ def grid_display(grid, size=256):
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)
+    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+        return widget_display(grid)
 
     return render(gridplot)
 
