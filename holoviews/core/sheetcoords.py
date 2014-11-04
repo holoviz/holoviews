@@ -114,7 +114,6 @@ from .boundingregion import BoundingBox
 
 
 
-
 class SheetCoordinateSystem(object):
     """
     Provides methods to allow conversion between sheet and matrix
@@ -127,13 +126,13 @@ class SheetCoordinateSystem(object):
     def __get_shape(self):
         return self.__shape
 
-    xdensity = property(__get_xdensity,
-                        doc="""The spacing between elements in an underlying
-                        matrix representation, in the x direction.""")
+    xdensity = property(__get_xdensity, doc="""
+        The spacing between elements in an underlying matrix
+        representation, in the x direction.""")
 
-    ydensity = property(__get_ydensity,
-                        doc="""The spacing between elements in an underlying
-                        matrix representation, in the y direction.""")
+    ydensity = property(__get_ydensity, doc="""
+        The spacing between elements in an underlying matrix
+        representation, in the y direction.""")
 
     shape = property(__get_shape)
 
@@ -145,11 +144,11 @@ class SheetCoordinateSystem(object):
 
         If ydensity is not specified, it is assumed that the specified
         xdensity is nominal and that the true xdensity should be
-        calculated. The top and bottom bounds are adjusted so that
-        the ydensity is equal to the xdensity.
+        calculated. The top and bottom bounds are adjusted so that the
+        ydensity is equal to the xdensity.
 
-        If both xdensity and ydensity are specified, these and the bounds
-        are taken to be exact and are not adjusted.
+        If both xdensity and ydensity are specified, these and the
+        bounds are taken to be exact and are not adjusted.
         """
         if not ydensity:
             bounds,xdensity = self.__equalize_densities(bounds,xdensity)
@@ -179,7 +178,7 @@ class SheetCoordinateSystem(object):
         Calculate the true density along x, and adjust the top and
         bottom bounds so that the density along y will be equal.
 
-        Returns (adjusted_bounds,true_density)
+        Returns (adjusted_bounds, true_density)
         """
         left,bottom,right,top = nominal_bounds.lbrt()
         width = right-left; height = top-bottom
@@ -191,26 +190,26 @@ class SheetCoordinateSystem(object):
         n_cells = round(height*true_density,0)
         adjusted_half_height = n_cells/true_density/2.0
 
-        return (BoundingBox(points=((left,  center_y-adjusted_half_height),
+        return (BoundingBox(points=((left, center_y-adjusted_half_height),
                                     (right, center_y+adjusted_half_height))),
                 true_density)
 
 
     def sheet2matrix(self,x,y):
         """
-        Convert a point (x,y) in Sheet coordinates to continuous matrix
-        coordinates.
+        Convert a point (x,y) in Sheet coordinates to continuous
+        matrix coordinates.
 
-        Returns (float_row,float_col), where float_row corresponds to y,
-        and float_col to x.
+        Returns (float_row,float_col), where float_row corresponds to
+        y, and float_col to x.
 
         Valid for scalar or array x and y.
 
-        Note about Bounds
-        For a Sheet with BoundingBox(points=((-0.5,-0.5),(0.5,0.5)))
-        and density=3, x=-0.5 corresponds to float_col=0.0 and x=0.5
-        corresponds to float_col=3.0.  float_col=3.0 is not inside the
-        matrix representing this Sheet, which has the three columns
+        Note about Bounds For a Sheet with
+        BoundingBox(points=((-0.5,-0.5),(0.5,0.5))) and density=3,
+        x=-0.5 corresponds to float_col=0.0 and x=0.5 corresponds to
+        float_col=3.0.  float_col=3.0 is not inside the matrix
+        representing this Sheet, which has the three columns
         (0,1,2). That is, x=-0.5 is inside the BoundingBox but x=0.5
         is outside. Similarly, y=0.5 is inside (at row 0) but y=-0.5
         is outside (at row 3) (it's the other way round for y because
@@ -227,14 +226,14 @@ class SheetCoordinateSystem(object):
 
     def sheet2matrixidx(self,x,y):
         """
-        Convert a point (x,y) in sheet coordinates to the integer row and
-        column index of the matrix cell in which that point falls, given a
-        bounds and density.  Returns (row,column).
+        Convert a point (x,y) in sheet coordinates to the integer row
+        and column index of the matrix cell in which that point falls,
+        given a bounds and density.  Returns (row,column).
 
-        Note that if coordinates along the right or bottom boundary are
-        passed into this function, the returned matrix coordinate of the
-        boundary will be just outside the matrix, because the right and
-        bottom boundaries are exclusive.
+        Note that if coordinates along the right or bottom boundary
+        are passed into this function, the returned matrix coordinate
+        of the boundary will be just outside the matrix, because the
+        right and bottom boundaries are exclusive.
 
         Valid for scalar or array x and y.
         """
@@ -250,9 +249,9 @@ class SheetCoordinateSystem(object):
 
     def matrix2sheet(self,float_row,float_col):
         """
-        Convert a floating-point location (float_row,float_col) in matrix
-        coordinates to its corresponding location (x,y) in sheet
-        coordinates.
+        Convert a floating-point location (float_row,float_col) in
+        matrix coordinates to its corresponding location (x,y) in
+        sheet coordinates.
 
         Valid for scalar or array float_row and float_col.
 
@@ -265,14 +264,14 @@ class SheetCoordinateSystem(object):
 
     def matrixidx2sheet(self,row,col):
         """
-        Return (x,y) where x and y are the floating point coordinates of
-        the *center* of the given matrix cell (row,col). If the matrix cell
-        represents a 0.2 by 0.2 region, then the center location returned
-        would be 0.1,0.1.
+        Return (x,y) where x and y are the floating point coordinates
+        of the *center* of the given matrix cell (row,col). If the
+        matrix cell represents a 0.2 by 0.2 region, then the center
+        location returned would be 0.1,0.1.
 
         NOTE: This is NOT the strict mathematical inverse of
-        sheet2matrixidx(), because sheet2matrixidx() discards all but the integer
-        portion of the continuous matrix coordinate.
+        sheet2matrixidx(), because sheet2matrixidx() discards all but
+        the integer portion of the continuous matrix coordinate.
 
         Valid only for scalar or array row and col.
         """
@@ -319,11 +318,12 @@ class Slice(np.ndarray):
     SheetCoordinateSystem's bounds, use crop_to_sheet().
     """
 
+    __slots__ = []
+
     def compute_bounds(self,scs):
         spec = self._slicespec2boundsspec(self,scs)
         return BoundingBox(points=spec)
 
-    __slots__ = []
 
     def __new__(cls, bounds, sheet_coordinate_system, force_odd=False,
                 min_matrix_radius=1):
@@ -347,8 +347,8 @@ class Slice(np.ndarray):
         slice.
 
         Equivalent to computing the intersection between the
-        SheetCoordinateSystem's bounds and the bounds, and
-        returning the corresponding submatrix of the given matrix.
+        SheetCoordinateSystem's bounds and the bounds, and returning
+        the corresponding submatrix of the given matrix.
 
         The submatrix is just a view into the sheet_matrix; it is not
         an independent copy.
@@ -358,8 +358,8 @@ class Slice(np.ndarray):
     @staticmethod
     def findinputslice(coord, sliceshape, sheetshape):
         """
-        Gets the matrix indices of a slice within an array of size sheetshape from
-        a sliceshape, positioned at coord.
+        Gets the matrix indices of a slice within an array of size
+        sheetshape from a sliceshape, positioned at coord.
         """
         center_row, center_col = coord
         n_rows, n_cols = sliceshape
@@ -376,12 +376,13 @@ class Slice(np.ndarray):
     def positionlesscrop(self,x,y,sheet_coord_system):
         """
         Return the correct slice for a weights/mask matrix at this
-        ConnectionField's location on the sheet (i.e. for getting
-        the correct submatrix of the weights or mask in case the
-        unit is near the edge of the sheet).
+        ConnectionField's location on the sheet (i.e. for getting the
+        correct submatrix of the weights or mask in case the unit is
+        near the edge of the sheet).
         """
-        slice_inds = self.findinputslice(sheet_coord_system.sheet2matrixidx(x,y),
-                                         self.shape_on_sheet(), sheet_coord_system.shape)
+        slice_inds = self.findinputslice(
+            sheet_coord_system.sheet2matrixidx(x,y),
+            self.shape_on_sheet(), sheet_coord_system.shape)
 
         self.set(slice_inds)
 
@@ -404,25 +405,22 @@ class Slice(np.ndarray):
 
 
     def translate(self, r, c):
-        """
-        Translate the slice by the specified number of rows
-        and columns.
-        """
+        "Translate the slice by the given number of rows and columns."
         self+=[r,r,c,c]
 
 
     def set(self,slice_specification):
-        """Set this slice from some iterable that specifies (r1,r2,c1,c2)."""
+        "Set this slice from some iterable that specifies (r1,r2,c1,c2)."
         self.put([0,1,2,3],slice_specification) # pylint: disable-msg=E1101
 
 
     def shape_on_sheet(self):
-        """Return the shape of the array that this Slice would give on its sheet."""
+        "Return the shape of the array of the Slice on its sheet."
         return self[1]-self[0],self[3]-self[2]
 
 
     def crop_to_sheet(self,sheet_coord_system):
-        """Crop the slice to the SheetCoordinateSystem's bounds."""
+        "Crop the slice to the SheetCoordinateSystem's bounds."
         maxrow,maxcol = sheet_coord_system.shape
 
         self[0] = max(0,self[0])
