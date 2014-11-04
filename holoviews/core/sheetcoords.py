@@ -75,8 +75,7 @@ Of course, it would be an error to try to pass matrix coordinates like
 outside of the actual matrix.
 """
 
-from numpy import array,floor,ceil,round_,arange
-
+import numpy as np
 from .boundingregion import BoundingBox
 
 
@@ -161,7 +160,7 @@ class SheetCoordinateSystem(object):
         self.__set_xdensity(xdensity)
         self.__set_ydensity(ydensity or xdensity)
 
-        self.lbrt = array(bounds.lbrt())
+        self.lbrt = np.array(bounds.lbrt())
 
         r1,r2,c1,c2 = Slice._boundsspec2slicespec(self.lbrt,self)
         self.__shape = (r2-r1,c2-c1)
@@ -246,8 +245,8 @@ class SheetCoordinateSystem(object):
         Valid for scalar or array x and y.
         """
         r,c = self.sheet2matrix(x,y)
-        r = floor(r)
-        c = floor(c)
+        r = np.floor(r)
+        c = np.floor(c)
 
         # CB: was it better to have two different methods?
         if hasattr(r,'astype'):
@@ -291,7 +290,7 @@ class SheetCoordinateSystem(object):
         # Round eliminates any precision errors that have been compounded
         # via floating point operations so that the rounded number will better
         # match the floating number that we type in.
-        return round_(x,10),round_(y,10)
+        return np.around(x,10), np.around(y,10)
 
 
     def closest_cell_center(self,x,y):
@@ -309,7 +308,7 @@ class SheetCoordinateSystem(object):
         represents the corresponding y-center of the cell.
         """
         rows,cols = self.shape
-        return self.matrixidx2sheet(arange(rows),arange(cols))
+        return self.matrixidx2sheet(np.arange(rows), np.arange(cols))
 
 
 
@@ -329,9 +328,7 @@ class SheetCoordinateSystem(object):
 # So, not sure what to call this class. (Will need to rename some
 # methods, too.) SCSSlice? SheetSlice?
 
-from numpy import int32,ndarray
-
-class Slice(ndarray):
+class Slice(np.ndarray):
     """
     Represents a slice of a SheetCoordinateSystem; i.e., an array
     specifying the row and column start and end points for a submatrix
@@ -373,7 +370,7 @@ class Slice(ndarray):
         # numpy.int32 is specified explicitly in Slice to avoid having
         # it default to numpy.int. int32 saves memory (and is expected
         # by optimized C functions).
-        a = array(slicespec, dtype=int32, copy=False).view(cls)
+        a = np.array(slicespec, dtype=np.int32, copy=False).view(cls)
         return a
 
 
@@ -566,11 +563,11 @@ class Slice(ndarray):
         t_m,l_m = scs.sheet2matrix(l,t)
         b_m,r_m = scs.sheet2matrix(r,b)
 
-        l_idx = int(ceil(l_m-0.5))
-        t_idx = int(ceil(t_m-0.5))
+        l_idx = int(np.ceil(l_m-0.5))
+        t_idx = int(np.ceil(t_m-0.5))
         # CBENHANCEMENT: Python 2.6's math.trunc()?
-        r_idx = int(floor(r_m+0.5))
-        b_idx = int(floor(b_m+0.5))
+        r_idx = int(np.floor(r_m+0.5))
+        b_idx = int(np.floor(b_m+0.5))
 
         return t_idx,b_idx,l_idx,r_idx
 
