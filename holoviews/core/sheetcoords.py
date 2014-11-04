@@ -127,8 +127,6 @@ class SheetCoordinateSystem(object):
     def __get_shape(self):
         return self.__shape
 
-    #### These are all properties so that they can't be set ####
-    # CB: unnecessary? if we're going to keep this, what about bounds and lbrt?
     xdensity = property(__get_xdensity,
                         doc="""The spacing between elements in an underlying
                         matrix representation, in the x direction.""")
@@ -165,13 +163,11 @@ class SheetCoordinateSystem(object):
         r1,r2,c1,c2 = Slice._boundsspec2slicespec(self.lbrt,self)
         self.__shape = (r2-r1,c2-c1)
 
-
-    ### we use xstep and ystep so that the repeatedly performed
-    ### calculations in matrix2sheet() use multiplications rather than
-    ### divisions, for speed
+    # xstep and ystep allow division to be avoid for speed reasons
     def __set_xdensity(self,density):
         self.__xdensity=density
         self.__xstep = 1.0/density
+
 
     def __set_ydensity(self,density):
         self.__ydensity=density
@@ -188,14 +184,12 @@ class SheetCoordinateSystem(object):
         left,bottom,right,top = nominal_bounds.lbrt()
         width = right-left; height = top-bottom
         center_y = bottom + height/2.0
-        # The true density is not equal to the nominal_density
-        # when nominal_density*(right-left) is not an integer.
+        # True density is not equal to the nominal_density when
+        # nominal_density*(right-left) is not an integer.
         true_density = int(nominal_density*(width))/float(width)
 
         n_cells = round(height*true_density,0)
         adjusted_half_height = n_cells/true_density/2.0
-        # (The above might be clearer as (step*n_units)/2.0, where
-        # step=1.0/density.)
 
         return (BoundingBox(points=((left,  center_y-adjusted_half_height),
                                     (right, center_y+adjusted_half_height))),
@@ -248,7 +242,6 @@ class SheetCoordinateSystem(object):
         r = np.floor(r)
         c = np.floor(c)
 
-        # CB: was it better to have two different methods?
         if hasattr(r,'astype'):
             return r.astype(int), c.astype(int)
         else:
@@ -285,11 +278,7 @@ class SheetCoordinateSystem(object):
         """
         x,y = self.matrix2sheet((row+0.5), (col+0.5))
 
-        # Rounding is useful for comparing the result with a floating point number
-        # that we specify by typing the number out (e.g. fp = 0.5).
-        # Round eliminates any precision errors that have been compounded
-        # via floating point operations so that the rounded number will better
-        # match the floating number that we type in.
+        # Rounding allows easier comparison with user specified values
         return np.around(x,10), np.around(y,10)
 
 
@@ -311,22 +300,6 @@ class SheetCoordinateSystem(object):
         return self.matrixidx2sheet(np.arange(rows), np.arange(cols))
 
 
-
-
-
-
-
-# Needs cleanup/rename:
-#
-# since it's different from a Python slice.  It's our special slice
-# that's an array specifying row_start,row_stop,col_start,col_stop for
-# a Sheet (2d array).
-#
-# In python, a[slice(0,2)] (where a is a list/array/similar) is
-# equivalent to a[0:2].
-#
-# So, not sure what to call this class. (Will need to rename some
-# methods, too.) SCSSlice? SheetSlice?
 
 class Slice(np.ndarray):
     """
@@ -353,23 +326,17 @@ class Slice(np.ndarray):
     __slots__ = []
 
     def __new__(cls, bounds, sheet_coordinate_system, force_odd=False,
-                min_matrix_radius=1): # CEBALERT: min_matrix_radius only used for odd slice.
+                min_matrix_radius=1):
         """
         Create a slice of the given sheet_coordinate_system from the
         specified bounds.
         """
-        # I couldn't find documentation on subclassing array; I used
-        # the following as reference:
-        # http://scipy.org/scipy/numpy/browser/branches/maskedarray/
-        #  numpy/ma/tests/test_subclassing.py?rev=4577
         if force_odd:
             slicespec=Slice._createoddslicespec(bounds,sheet_coordinate_system,
                                                 min_matrix_radius)
         else:
             slicespec=Slice._boundsspec2slicespec(bounds.lbrt(),sheet_coordinate_system)
-        # numpy.int32 is specified explicitly in Slice to avoid having
-        # it default to numpy.int. int32 saves memory (and is expected
-        # by optimized C functions).
+        # Using numpy.int32 for legacy reasons
         a = np.array(slicespec, dtype=np.int32, copy=False).view(cls)
         return a
 
@@ -388,37 +355,24 @@ class Slice(np.ndarray):
         """
         return matrix[self[0]:self[1],self[2]:self[3]]
 
-    # CB: not sure if this is a good idea or not. In some ways, I
-    # think matrix[slice_()] would be clearer than
-    # slice.submatrix(matrix), but I'm not sure. cf.py is where
-    # to look to see this in action.
-##     def __call__(self):
-##         return slice(self[0],self[1]),slice(self[2],self[3])
-
-    ### CLEANUP ###
-
     @staticmethod
     def findinputslice(coord, sliceshape, sheetshape):
         """
         Gets the matrix indices of a slice within an array of size sheetshape from
         a sliceshape, positioned at coord.
         """
-
-        # get slice for the submatrix
         center_row, center_col = coord
         n_rows, n_cols = sliceshape
         sheet_rows, sheet_cols = sheetshape
 
-        c1 = -min(0, center_col-n_cols/2)  # assume odd weight matrix so can use n_cols/2
-        r1 = -min(0, center_row-n_rows/2)  # for top and bottom
+        c1 = -min(0, center_col-n_cols/2)  # assuming odd shape (n_cols/2)
+        r1 = -min(0, center_row-n_rows/2)  # top and bottom
         c2 = -max(-n_cols, center_col-sheet_cols-n_cols/2)
         r2 = -max(-n_rows, center_row-sheet_rows-n_rows/2)
 
         return (r1, r2, c1, c2)
 
 
-    # CEBALERT: unnecessary? use translate and crop and back. or is
-    # that more steps? rename
     def positionlesscrop(self,x,y,sheet_coord_system):
         """
         Return the correct slice for a weights/mask matrix at this
@@ -431,8 +385,7 @@ class Slice(np.ndarray):
 
         self.set(slice_inds)
 
-    # CBALERT: assumes the user wants the bounds to be centered about
-    # the unit, which might not be true.
+
     def positionedcrop(self,x,y,sheet_coord_system):
         """
         Offset the bounds_template to this cf's location and store the
@@ -440,12 +393,7 @@ class Slice(np.ndarray):
 
         Also stores the input_sheet_slice for access by C.
         """
-        # translate to this cf's location
         cf_row,cf_col = sheet_coord_system.sheet2matrixidx(x,y)
-
-        # should result in same no. of comps of right bounds as before during init,
-        # since i removed one calc from init
-
         bounds_x,bounds_y=self.compute_bounds(sheet_coord_system).centroid()
 
         b_row,b_col=sheet_coord_system.sheet2matrixidx(bounds_x,bounds_y)
@@ -453,8 +401,6 @@ class Slice(np.ndarray):
         row_offset = cf_row-b_row
         col_offset = cf_col-b_col
         self.translate(row_offset,col_offset)
-
-    ###############
 
 
     def translate(self, r, c):
@@ -464,13 +410,16 @@ class Slice(np.ndarray):
         """
         self+=[r,r,c,c]
 
+
     def set(self,slice_specification):
         """Set this slice from some iterable that specifies (r1,r2,c1,c2)."""
         self.put([0,1,2,3],slice_specification) # pylint: disable-msg=E1101
 
+
     def shape_on_sheet(self):
         """Return the shape of the array that this Slice would give on its sheet."""
         return self[1]-self[0],self[3]-self[2]
+
 
     def crop_to_sheet(self,sheet_coord_system):
         """Crop the slice to the SheetCoordinateSystem's bounds."""
@@ -480,10 +429,6 @@ class Slice(np.ndarray):
         self[1] = min(maxrow,self[1])
         self[2] = max(0,self[2])
         self[3] = min(maxcol,self[3])
-
-
-    ### CB: working on methods below here
-    # (+ not keeping these names)
 
 
     @staticmethod
@@ -509,7 +454,6 @@ class Slice(np.ndarray):
         bounds_xcenter,bounds_ycenter=bounds.centroid()
         sheet_rows,sheet_cols = scs.shape
 
-        # arbitrary (e.g. could use 0,0)
         center_row,center_col = sheet_rows/2,sheet_cols/2
         unit_xcenter,unit_ycenter=scs.matrixidx2sheet(center_row,
                                                       center_col)
@@ -517,10 +461,8 @@ class Slice(np.ndarray):
         bounds.translate(unit_xcenter-bounds_xcenter,
                          unit_ycenter-bounds_ycenter)
 
-        ########## CEBALERT: assumes weights are to be centered about each unit.
         r1,r2,c1,c2 = Slice._boundsspec2slicespec(bounds.lbrt(),scs)
 
-        # use the calculated radius unless it's smaller than the min
         xrad=max(c2-center_col-1,min_matrix_radius)
         yrad=max(r2-center_row-1,min_matrix_radius)
 
@@ -528,23 +470,7 @@ class Slice(np.ndarray):
         c2=center_col+xrad+1
         r1=center_row-yrad
         c1=center_col-xrad
-        ##########
-
-        # weights matrix must be odd (otherwise this method has an error)
-        # CEBALERT: this test should move to a test file.
-##         if rows%2!=1 or cols%2!=1:
-##             raise AssertionError("nominal_bounds_template yielded even-height or even-width weights matrix (%s rows, %s columns) - weights matrix must have odd dimensions."%(rows,cols))
-
         return (r1,r2,c1,c2)
-
-
-##         # CEBALERT: with min_matrix_radius, this test is unnecessary? (check)
-##         # user-supplied bounds must lead to a weights matrix of at least 1x1
-##         rows,cols = weights_slice.shape_on_sheet()
-##         if rows==0 or cols==0:
-##             raise ValueError("nominal_bounds_template results in a zero-sized weights matrix (%s,%s) - you may need to supply a larger nominal_bounds_template or increase the density of the sheet."%(rows,cols))
-
-
 
 
     @staticmethod
