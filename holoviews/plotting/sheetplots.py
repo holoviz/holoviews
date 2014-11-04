@@ -389,6 +389,7 @@ class MatrixGridPlot(OverlayPlot):
         self.ax = self._init_axis(axis)
 
         self.handles['projs'] = []
+        key = self._keys[-1]
         x, y = b_w, b_h
         for row in grid_shape:
             for view in row:
@@ -401,12 +402,15 @@ class MatrixGridPlot(OverlayPlot):
                     opts = View.options.style(view).opts
 
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
+                if key in view:
+                    plot.set_visible(True)
+                else:
+                    plot.set_visible(False)
                 self.handles['projs'].append(plot)
                 y += h + b_h
             y = b_h
             x += w + b_w
 
-        key = self._keys[-1]
         return self._finalize_axis(key, lbrt=(0, 0, width, height),
                                    title=self._format_title(key),
                                    xticks=xticks, yticks=yticks)
@@ -417,9 +421,13 @@ class MatrixGridPlot(OverlayPlot):
         key = self._keys[n]
         grid_values = self.grid.values()
         for i, plot in enumerate(self.handles['projs']):
-            view = grid_values[i][key]
-            data = view.values()[0].data if isinstance(view, Overlay) else view.data
-            plot.set_data(data)
+            view = grid_values[i].get(key, None)
+            if view:
+                plot.set_visible(True)
+                data = view.values()[0].data if isinstance(view, Overlay) else view.data
+                plot.set_data(data)
+            else:
+                plot.set_visible(False)
 
         grid_shape = [[v for (k, v) in col[1]]
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
