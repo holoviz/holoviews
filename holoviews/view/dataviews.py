@@ -79,11 +79,11 @@ class DataView(Layer):
         dimensions and reduce functions.
         """
         reduced_data = OrderedDict()
-        value = self.value(' '.join([label_prefix, self.value.name]))
+        value = ' '.join([self.value.name] + ([label_prefix] if label_prefix else []))
         for dimension, reduce_fn in reduce_map.items():
             reduced_data[value] = reduce_fn(self.data[:, 1])
         return ItemTable(reduced_data, label=self.label, title=self.title,
-                     value=self.value(value))
+                         value=self.value(value))
 
 
     def dframe(self):
