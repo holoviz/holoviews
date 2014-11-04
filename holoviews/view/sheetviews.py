@@ -341,8 +341,8 @@ class SheetMatrix(SheetCoordinateSystem, Matrix):
         xdensity = xdensity if xdensity else dim1/(r-l)
         ydensity = ydensity if ydensity else dim2/(t-b)
 
-        SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         Layer.__init__(self, data, **kwargs)
+        SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._lbrt = self.bounds.lbrt()
 
 
