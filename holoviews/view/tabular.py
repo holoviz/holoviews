@@ -95,17 +95,7 @@ class ItemTable(Layer):
         Generates a Pandas dframe from the ItemTable.
         """
         from pandas import DataFrame
-        df_dict = defaultdict(list)
-        for key, val in self.data.items():
-            if self.dimensions:
-                for key_val, dim in zip(key, self.dimension_labels):
-                    df_dict[dim.replace(' ','_')].append(key_val)
-                value_label = str(self.value).replace(' ','_')
-                df_dict[value_label].append(val)
-            else:
-                key = key.name if isinstance(key, Dimension) else key
-                df_dict[key.replace(' ','_')].append(val)
-        return DataFrame(dict(df_dict))
+        return DataFrame({k: [v] for k, v in self.data.items()})
 
 
 class Table(ItemTable, NdMapping):
