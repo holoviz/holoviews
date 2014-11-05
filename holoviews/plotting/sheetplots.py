@@ -7,7 +7,7 @@ from matplotlib.collections import LineCollection
 
 import param
 
-from ..core import NdMapping, View, Layer, Overlay
+from ..core import NdMapping, Map, View, Layer, Overlay
 from ..view import Matrix, HeatMap, Points, SheetMatrix, Contours, VectorField
 from .viewplots import OverlayPlot, Plot
 
