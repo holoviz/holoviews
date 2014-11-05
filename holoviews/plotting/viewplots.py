@@ -346,7 +346,7 @@ class GridPlot(Plot):
         self.subaxes = []
         r, c = (0, 0)
         for coord in self.grid.keys(full_grid=True):
-            view = self.grid.get(coord, None)
+            view = self.grid._data.get(coord, None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r, c])
                 vtype = view.type if isinstance(view, Map) else view.__class__
