@@ -373,7 +373,8 @@ class GridPlot(Plot):
 
 
     def _format_title(self, n):
-        view = sorted(self.grid.values(), key=lambda x: len(x))[-1]
+        view = sorted(self.grid.values(),
+                      key=lambda x: len(x) if isinstance(x, Map) else 1)[-1]
         if isinstance(view, Map):
             key = view.keys()[n]
             key = key if isinstance(key, tuple) else (key,)
