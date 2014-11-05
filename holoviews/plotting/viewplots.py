@@ -664,7 +664,8 @@ class LayoutPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) for v in self.layout if isinstance(v, ViewMap)]+[1])
+        return max([len(v) if isinstance(v, Map) else len(v.all_keys)
+                    for v in self.layout if isinstance(v, (Map, Grid))]+[1])
 
 
 class GridLayoutPlot(Plot):
