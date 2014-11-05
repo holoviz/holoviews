@@ -413,7 +413,9 @@ class MatrixGridPlot(OverlayPlot):
 
         return self._finalize_axis(key, lbrt=(0, 0, width, height),
                                    title=self._format_title(key),
-                                   xticks=xticks, yticks=yticks)
+                                   xticks=xticks, yticks=yticks,
+                                   xlabel=str(self.grid.dimensions[0]),
+                                   ylabel=str(self.grid.dimensions[1]))
 
 
     def update_frame(self, n):
@@ -433,7 +435,7 @@ class MatrixGridPlot(OverlayPlot):
                       for col in groupby(self.grid.items(), lambda item: item[0][0])]
         width, height, b_w, b_h = self._compute_borders(grid_shape)
 
-        self._finalize_axis(key, lbrt=(0, 0, width, height))
+        self._finalize_axis(key, lbrt=(0, 0, width, height), title=self._format_title(key))
 
 
     def _format_title(self, key):
