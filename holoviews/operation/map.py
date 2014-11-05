@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 import param
 
-from ..core import ViewMap
+from ..core import ViewMap, NdMapping
 from ..core.operation import MapOperation
 from ..view import Table, Curve
 
@@ -29,8 +29,8 @@ class table_collate(MapOperation):
 
         # Generate a ViewMap for every entry in the table
         map_fn = lambda: ViewMap(**dict(vmap.get_param_values(), dimensions=new_dimensions))
-        entries = [(entry, (map_fn() if new_dimensions else None)) for entry in entry_keys]
-        maps = ViewMap(entries, dimensions=outer_dims)
+        entries = [(entry, map_fn() if new_dimensions else None) for entry in entry_keys]
+        maps = NdMapping(entries, dimensions=outer_dims)
         for new_key, collate_map in nested_map.items():
             curve_data = OrderedDict((k, []) for k in entry_keys)
             # Get the x- and y-values for each entry in the ItemTable
@@ -62,10 +62,12 @@ class table_collate(MapOperation):
                     maps[label] = curve
 
         # If there are multiple table entries, generate grid
-        if maps.ndims in [1, 2]:
-            vmap = maps.map(lambda x,k: x.last)
+        maps = ViewMap(maps.items(), **dict(maps.get_param_values()))
         if isinstance(table, Table):
-            grid = maps.grid(maps.dimension_labels)
+            if len(maps) > 1:
+                grid = maps.grid(maps.dimension_labels)
+            else:
+                grid = maps.last
         else:
             grid = maps.grid(['Label'], layout=True, constant_dims=False)
         return [grid]
