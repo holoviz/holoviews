@@ -437,13 +437,15 @@ class MatrixGridPlot(OverlayPlot):
 
 
     def _format_title(self, key):
-        vmap = self.grid.values()[0]
-        view = vmap.get(key, None)
-        if view is None: return ""
-        title_format = vmap.get_title(key if isinstance(key, tuple) else (key,), self.grid)
-        if title_format is None:
-            return None
-        return title_format.format(label=self.grid.label, type=self.grid.__class__.__name__)
+        view = self.grid.values()[0]
+        if isinstance(view, Map):
+            key = key if isinstance(key, tuple) else (key,)
+            title_format = view.get_title(key, self.grid)
+            view = view.last
+        else:
+            title_format = self.grid.title
+        return title_format.format(label=view.label, value=str(view.value),
+                                   type=self.grid.__class__.__name__)
 
 
     def _get_dims(self, view):
@@ -483,7 +485,7 @@ class MatrixGridPlot(OverlayPlot):
 
 
     def __len__(self):
-        return max([len(v) for v in self.grid if isinstance(v, NdMapping)]+[1])
+        return max([len(self._keys), 1])
 
 
 Plot.defaults.update({Matrix: MatrixPlot,

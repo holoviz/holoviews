@@ -312,7 +312,10 @@ class GridPlot(Plot):
         if not isinstance(grid, Grid):
             raise Exception("GridPlot only accepts Grid.")
 
-        self.grid = grid
+        self.grid = copy.deepcopy(grid)
+        for k, vmap in self.grid.items():
+            self.grid[k] = self._check_map(self.grid[k])
+
         self.subplots = []
         if grid.ndims == 1:
             self.rows, self.cols = (1, len(grid.keys()))
@@ -372,11 +375,9 @@ class GridPlot(Plot):
         return ax if axis else self.handles['fig']
 
 
-    def _format_title(self, n):
-        view = sorted(self.grid.values(),
-                      key=lambda x: len(x) if isinstance(x, Map) else 1)[-1]
-        if isinstance(view, Map):
-            key = view.keys()[n]
+    def _format_title(self, key):
+        view = self.grid.values()[0]
+        if isinstance(view, Map) and len(self) > 1:
             key = key if isinstance(key, tuple) else (key,)
             title_format = view.get_title(key, self.grid)
             view = view.last
@@ -392,8 +393,9 @@ class GridPlot(Plot):
         grid_axis.patch.set_visible(False)
 
         # Set labels and titles
+        key = self.keys()[-1]
         grid_axis.set_xlabel(str(self.grid.dimensions[0]))
-        grid_axis.set_title(self._format_title(0))
+        grid_axis.set_title(self._format_title(key))
 
         # Compute and set x- and y-ticks
         keys = self.grid.keys()
@@ -450,14 +452,14 @@ class GridPlot(Plot):
 
 
     def update_frame(self, n):
+        key = self._keys[n]
         for subplot in self.subplots:
             subplot.update_frame(n)
-        self.handles['grid_axis'].set_title(self._format_title(n))
+        self.handles['grid_axis'].set_title(self._format_title(key))
 
 
     def __len__(self):
-        return max([len(v) if isinstance(v, Map) else 1
-                    for v in self.grid]+[1])
+        return max([len(self._all_keys), 1])
 
 
 class LayoutPlot(Plot):
