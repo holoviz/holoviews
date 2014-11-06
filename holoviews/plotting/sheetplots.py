@@ -9,7 +9,7 @@ import param
 
 from ..core import NdMapping, Map, View, Layer, Overlay
 from ..view import Matrix, HeatMap, Points, SheetMatrix, Contours, VectorField
-from .viewplots import OverlayPlot, Plot
+from .viewplots import OverlayPlot, Plot, GridPlot
 
 
 class PointPlot(Plot):
@@ -349,7 +349,7 @@ class MatrixPlot(Plot):
 
 
 
-class MatrixGridPlot(OverlayPlot):
+class MatrixGridPlot(GridPlot, OverlayPlot):
     """
     MatrixGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single
@@ -378,42 +378,48 @@ class MatrixGridPlot(OverlayPlot):
             self.grid[k] = self._check_map(self.grid[k])
         Plot.__init__(self, **kwargs)
         self._keys = self.grid.all_keys
+        xkeys, ykeys = zip(*self.grid._data.keys())
+        self._xkeys = sorted(set(xkeys))
+        self._ykeys = sorted(set(ykeys))
+        self._widths, self._heights = {}, {}
 
 
     def __call__(self, axis=None):
-        grid_shape = [[v for (k, v) in col[1]]
-                      for col in groupby(self.grid.items(), lambda item: item[0][0])]
-        width, height, b_w, b_h = self._compute_borders(grid_shape)
-        xticks, yticks = self._compute_ticks(width, height)
-
+        width, height, b_w, b_h, widths, heights = self._compute_borders()
         self.ax = self._init_axis(axis)
 
         self.handles['projs'] = []
         key = self._keys[-1]
         x, y = b_w, b_h
-        for row in grid_shape:
-            for view in row:
-                w, h = self._get_dims(view)
-                if view.type == Overlay:
-                    data = view.last.last.data
-                    opts = View.options.style(view.last.last).opts
+        xticks, yticks = [], []
+        for xidx, xkey in enumerate(self._xkeys):
+            w = widths[xidx]
+            for yidx, ykey in enumerate(self._ykeys):
+                h = heights[yidx]
+                vmap = self.grid.get((xkey, ykey), None)
+                pane = vmap.get(key, None) if vmap else None
+                if pane:
+                    if vmap.type == Overlay: pane = pane.last
+                    data = pane.data if pane else None
                 else:
-                    data = view.last.data
-                    opts = View.options.style(view).opts
-
+                    pane = vmap.last.last if vmap.type == Overlay else vmap.last
+                    data = pane.data
+                opts = View.options.style(pane).opts
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
-                if key in view:
-                    plot.set_visible(True)
-                else:
+                if key not in vmap:
                     plot.set_visible(False)
                 self.handles['projs'].append(plot)
                 y += h + b_h
+                if xidx == 0:
+                    yticks.append(y-b_h-h/2.)
             y = b_h
             x += w + b_w
+            xticks.append(x-b_w-w/2.)
 
         return self._finalize_axis(key, lbrt=(0, 0, width, height),
                                    title=self._format_title(key),
-                                   xticks=xticks, yticks=yticks,
+                                   xticks=(xticks, np.round(self._xkeys, 3)),
+                                   yticks=(yticks, np.round(self._ykeys, 3)),
                                    xlabel=str(self.grid.dimensions[0]),
                                    ylabel=str(self.grid.dimensions[1]))
 
@@ -431,59 +437,21 @@ class MatrixGridPlot(OverlayPlot):
             else:
                 plot.set_visible(False)
 
-        grid_shape = [[v for (k, v) in col[1]]
-                      for col in groupby(self.grid.items(), lambda item: item[0][0])]
-        width, height, b_w, b_h = self._compute_borders(grid_shape)
-
-        self._finalize_axis(key, lbrt=(0, 0, width, height), title=self._format_title(key))
+        self._finalize_axis(key, title=self._format_title(key))
 
 
-    def _format_title(self, key):
-        view = self.grid.values()[0]
-        if isinstance(view, Map):
-            key = key if isinstance(key, tuple) else (key,)
-            title_format = view.get_title(key, self.grid)
-            view = view.last
-        else:
-            title_format = self.grid.title
-        return title_format.format(label=view.label, value=str(view.value),
-                                   type=self.grid.__class__.__name__)
+    def _compute_borders(self):
+        width_lbrts = [self.grid[xkey, :].lbrt for xkey in self._xkeys]
+        height_lbrts = [self.grid[:, ykey].lbrt for ykey in self._ykeys]
+        widths = [lbrt[2]-lbrt[0] for lbrt in width_lbrts]
+        heights = [lbrt[3]-lbrt[1] for lbrt in height_lbrts]
+        width, height = np.sum(widths), np.sum(heights)
+        border_width = (width/10.)/(len(widths)+1)
+        border_height = (height/10.)/(len(heights)+1)
+        width += width/10.
+        height += height/10.
 
-
-    def _get_dims(self, view):
-        l, b, r, t = view.lbrt
-        return (r - l, t - b)
-
-
-    def _compute_borders(self, grid_shape):
-        height = 0
-        self.rows = 0
-        for view in grid_shape[0]:
-            height += self._get_dims(view)[1]
-            self.rows += 1
-
-        width = 0
-        self.cols = 0
-        for view in [row[0] for row in grid_shape]:
-            width += self._get_dims(view)[0]
-            self.cols += 1
-
-        border_width = (width/10)/(self.cols+1)
-        border_height = (height/10)/(self.rows+1)
-        width += width/10
-        height += height/10
-
-        return width, height, border_width, border_height
-
-
-    def _compute_ticks(self, width, height):
-        l, b, r, t = self.grid.grid_lbrt
-
-        xpositions = np.linspace(0, width, self.num_ticks)
-        xlabels = np.linspace(l, r, self.num_ticks).round(3)
-        ypositions = np.linspace(0, height, self.num_ticks)
-        ylabels = np.linspace(b, t, self.num_ticks).round(3)
-        return (xpositions, xlabels), (ypositions, ylabels)
+        return width, height, border_width, border_height, widths, heights
 
 
     def __len__(self):
