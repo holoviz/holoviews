@@ -417,14 +417,14 @@ class Grid(NdMapping):
             idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
                              if self.ndims == 2 else np.abs(q-x)
                              for x in keys])
-            return keys[idx]
+            key = keys[idx]
         elif any(not isinstance(el, slice) for el in key):
             index_ind = [idx for idx, el in enumerate(key) if not isinstance(el, slice)][0]
-            temp_key = [el.start if isinstance(el, slice) else el for el in key]
-            snapped_key = self._transform_indices(temp_key)
+            dim_keys = np.array([k[index_ind] for k in self.keys()])
+            snapped_val = dim_keys[np.argmin(dim_keys-key[index_ind])]
             key = list(key)
-            key[index_ind] = snapped_key[index_ind]
-            return tuple(key)
+            key[index_ind] = snapped_val
+            key = tuple(key)
         return key
 
 
