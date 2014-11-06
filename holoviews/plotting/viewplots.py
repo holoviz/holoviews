@@ -393,7 +393,7 @@ class GridPlot(Plot):
         grid_axis.patch.set_visible(False)
 
         # Set labels and titles
-        key = self.keys()[-1]
+        key = self._keys[-1]
         grid_axis.set_xlabel(str(self.grid.dimensions[0]))
         grid_axis.set_title(self._format_title(key))
 
