@@ -306,13 +306,16 @@ class HeatMap(Array2D):
 
 class Matrix(SheetCoordinateSystem, Array2D):
     """
-    Matrix is the atomic unit as which 2D data is stored, along with its
-    bounds object. Allows slicing operations of the data in sheet coordinates or
-    direct access to the data, via the .data attribute.
+    Matrix is the atomic unit as which 2D data is stored, along with
+    its bounds object. The input data may be a numpy.matrix object or
+    a two-dimensional numpy array.
 
-    Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
-    3D arrays, each depth layer is interpreted as a channel of the 2D
-    representation.
+    Numpy arrays with a shape of (X,Y,Z) are also valid. In this case
+    (3D arrays), each depth layer is interpreted as a channel of the
+    2D representation.
+
+    Allows slicing operations of the data in sheet coordinates or direct
+    access to the data, via the .data attribute.
     """
 
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
