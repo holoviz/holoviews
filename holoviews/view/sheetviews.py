@@ -12,9 +12,9 @@ from .dataviews import Histogram, Curve
 from .tabular import Table
 
 
-class Matrix(Layer):
+class Array2D(Layer):
     """
-    Matrix is a basic 2D atomic View type.
+    Array2D is a basic 2D atomic View type.
 
     Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
     3D arrays, each depth layer is interpreted as a channel of the 2D
@@ -23,7 +23,7 @@ class Matrix(Layer):
 
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
-        The label of the x- and y-dimension of the Matrix in form
+        The label of the x- and y-dimension of the Array2D in form
         of a string or dimension object.""")
 
     value = param.ClassSelector(class_=(str, Dimension),
@@ -31,13 +31,13 @@ class Matrix(Layer):
         The dimension description of the data held in the data array.""")
 
     def __init__(self, data, lbrt, **kwargs):
-        super(Matrix, self).__init__(data, **kwargs)
+        super(Array2D, self).__init__(data, **kwargs)
         self.xlim = lbrt[0], lbrt[2]
         self.ylim = lbrt[1], lbrt[3]
 
 
     def __getitem__(self, slc):
-        raise NotImplementedError('Slicing Matrix Views currently'
+        raise NotImplementedError('Slicing Array2D Views currently'
                                   ' not implemented.')
 
 
@@ -60,14 +60,14 @@ class Matrix(Layer):
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         """
-        Returns a Histogram of the Matrix data, binned into
+        Returns a Histogram of the Array2D data, binned into
         num_bins over the bin_range (if specified).
 
         If adjoin is True, the histogram will be returned adjoined to
-        the Matrix as a side-plot.
+        the Array2D as a side-plot.
 
         The 'individually' argument specifies whether the histogram
-        will be rescaled for each Matrix in a Map.
+        will be rescaled for each Array2D in a Map.
         """
         range = find_minmax(self.range, (0, -float('inf')))\
             if bin_range is None else bin_range
@@ -110,7 +110,7 @@ class Matrix(Layer):
 
     def sample(self, samples=[], **sample_values):
         """
-        Sample the Matrix along one or both of its dimensions,
+        Sample the Array2D along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a ItemTable, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
@@ -134,7 +134,7 @@ class Matrix(Layer):
             dimension, sample_coord = samples.items()[0]
             if isinstance(sample_coord, slice):
                 raise ValueError(
-                    'Matrix sampling requires coordinates not slices,'
+                    'Array2D sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
             other_dimension = [d for d in self.dimensions if
                                d.name != dimension]
@@ -155,7 +155,7 @@ class Matrix(Layer):
 
     def reduce(self, label_prefix='', **dimreduce_map):
         """
-        Reduces the Matrix using functions provided via the
+        Reduces the Array2D using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
         the result View label.
@@ -225,7 +225,7 @@ class Matrix(Layer):
         return self.normalize()
 
 
-class HeatMap(Matrix):
+class HeatMap(Array2D):
     """
     HeatMap is an atomic View element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -304,9 +304,9 @@ class HeatMap(Matrix):
         return min(dim2_keys), max(dim2_keys)
 
 
-class SheetMatrix(SheetCoordinateSystem, Matrix):
+class Matrix(SheetCoordinateSystem, Array2D):
     """
-    SheetMatrix is the atomic unit as which 2D data is stored, along with its
+    Matrix is the atomic unit as which 2D data is stored, along with its
     bounds object. Allows slicing operations of the data in sheet coordinates or
     direct access to the data, via the .data attribute.
 
@@ -320,7 +320,7 @@ class SheetMatrix(SheetCoordinateSystem, Matrix):
 
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
-        The label of the x- and y-dimension of the SheetMatrix in form
+        The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
 
     roi_bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
@@ -366,10 +366,9 @@ class SheetMatrix(SheetCoordinateSystem, Matrix):
         else:
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
-        return SheetMatrix(Slice(bounds, self).submatrix(self.data),
-                         bounds, xdensity=self.xdensity, ydensity=self.ydensity,
-                         label=self.label, style=self.style,
-                         value=self.value)
+        return Matrix(Slice(bounds, self).submatrix(self.data),
+                           bounds, xdensity=self.xdensity, ydensity=self.ydensity,
+                           label=self.label, style=self.style, value=self.value)
 
     @property
     def xlim(self):
@@ -411,7 +410,7 @@ class SheetMatrix(SheetCoordinateSystem, Matrix):
         else:
             data = np.dstack([Slice(roi_bounds, self).submatrix(
                 self.data[:, :, i]) for i in range(self.depth)])
-        return SheetMatrix(data, roi_bounds, style=self.style, value=self.value)
+        return Matrix(data, roi_bounds, style=self.style, value=self.value)
 
 
     def dimension_values(self, dimension):
@@ -452,7 +451,7 @@ class Points(Layer):
 
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
-        The label of the x- and y-dimension of the SheetMatrix in form
+        The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
 
 
@@ -555,7 +554,7 @@ class Contours(Layer):
 
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
-        The label of the x- and y-dimension of the SheetMatrix in form
+        The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
 
     def __init__(self, data, **kwargs):

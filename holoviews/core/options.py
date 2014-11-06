@@ -342,7 +342,7 @@ class ChannelOpts(Opts):
     # This dictionary specifies the available channel processing
     # operations. An channel operation is a ViewOperation that accept
     # Sheet Overlays as input and process them to return a single
-    # RGB(A) SheetMatrix.
+    # RGB(A) Matrix.
     operations={}
 
     def __init__(self, mode=None, pattern='', **kwargs):

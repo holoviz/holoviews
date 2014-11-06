@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from holoviews import SheetMatrix
+from holoviews import Matrix
 from holoviews.interface.collector import AttrTree, ViewRef
 from holoviews.testing import ViewTestCase
 
@@ -115,8 +115,8 @@ class ViewRefTest(ViewTestCase):
     def setUp(self):
         super(ViewRefTest, self).setUp()
         tree = AttrTree()
-        tree.Example.Path1 = SheetMatrix(np.random.rand(5,5))
-        tree.Example.Path2 = SheetMatrix(np.random.rand(5,5))
+        tree.Example.Path1 = Matrix(np.random.rand(5,5))
+        tree.Example.Path2 = Matrix(np.random.rand(5,5))
         self.tree = tree
 
     def test_resolve_constructor(self):

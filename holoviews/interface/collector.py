@@ -10,7 +10,7 @@ import numpy as np
 
 from ..core import GridLayout, Map, NdMapping, Dimension, Grid, View, ViewMap
 from ..ipython.widgets import RunProgress, ProgressBar
-from ..view import SheetMatrix
+from ..view import Matrix
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
@@ -333,8 +333,8 @@ class ViewRef(Reference):
     >>> ref = ViewRef('Example.Path1 * Example.Path2')
 
     >>> tree = AttrTree()
-    >>> tree.Example.Path1 = SheetMatrix(np.random.rand(5,5))
-    >>> tree.Example.Path2 = SheetMatrix(np.random.rand(5,5))
+    >>> tree.Example.Path1 = Matrix(np.random.rand(5,5))
+    >>> tree.Example.Path2 = Matrix(np.random.rand(5,5))
     >>> overlay = ref.resolve(tree)
     >>> len(overlay)
     2
@@ -608,7 +608,7 @@ class Collect(object):
     def _merge_views(self, current_val, val, time):
         """
         Helper for merging views together. For instance, this method
-        will add a SheetMatrix to a ViewMap or merge two ViewMaps.
+        will add a Matrix to a ViewMap or merge two ViewMaps.
         """
         if isinstance(val, View):
             current_val[time] = val

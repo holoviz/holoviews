@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewOperation, Overlay
-from ..view import ItemTable, SheetMatrix, VectorField, Contours
+from ..view import ItemTable, Matrix, VectorField, Contours
 
 
 class chain(ViewOperation):
@@ -18,7 +18,7 @@ class chain(ViewOperation):
     chain.instance(chain=lambda x: [cmap2rgb(operator(x).N, cmap='jet')])
 
     This is now a ViewOperation that sums the data in the input
-    overlay and turns it into an RGB SheetMatrix with the 'jet'
+    overlay and turns it into an RGB Matrix with the 'jet'
     colormap.
     """
 
@@ -37,7 +37,7 @@ class operator(ViewOperation):
     operator = param.Callable(np.add, doc="""
         The binary operator to apply between the data attributes of
         the supplied Views. By default, performs elementwise addition
-        across the SheetMatrix arrays.""")
+        across the Matrix arrays.""")
 
     label = param.String(default='Operation', doc="""
         The label for the result after having applied the operator.""")
@@ -48,14 +48,14 @@ class operator(ViewOperation):
             raise Exception("Operation requires an Overlay as input")
 
         new_data = self.p.operator(*[el.data for el in overlay])
-        return [SheetMatrix(new_data, bounds=overlay[0].bounds, label=self.p.label,
+        return [Matrix(new_data, bounds=overlay[0].bounds, label=self.p.label,
                             roi_bounds=overlay[0].roi_bounds)]
 
 
 class convolve(ViewOperation):
     """
     Apply a convolution to an overlay using the top layer as the
-    kernel used to convolve the bottom layer. Both input SheetMatrix
+    kernel used to convolve the bottom layer. Both input Matrix
     elements in the overlay should be single-channel.
     """
 
@@ -90,16 +90,16 @@ class convolve(ViewOperation):
         rolled = np.roll(np.roll(convolved_raw, -(k_cols//2), axis=-1), -(k_rows//2), axis=-2)
         convolved = rolled / float(k.sum())
 
-        return [SheetMatrix(convolved, bounds=target.bounds)]
+        return [Matrix(convolved, bounds=target.bounds)]
 
 
 class contours(ViewOperation):
     """
-    Given a SheetMatrix with a single channel, annotate it with contour
+    Given a Matrix with a single channel, annotate it with contour
     lines for a given set of contour levels.
 
     The return is a overlay with a Contours layer for each given
-    level, overlaid on top of the input SheetMatrix.
+    level, overlaid on top of the input Matrix.
     """
 
     levels = param.NumericTuple(default=(0.5,), doc="""
@@ -107,7 +107,7 @@ class contours(ViewOperation):
 
     label = param.String(default='Level', doc="""
       The label suffix used to label the resulting contour curves
-      where the suffix is added to the label of the  input SheetMatrix""")
+      where the suffix is added to the label of the  input Matrix""")
 
     def _process(self, sheetview, key=None):
 
@@ -132,9 +132,9 @@ class contours(ViewOperation):
 
 class vectorfield(ViewOperation):
     """
-    Given a SheetMatrix with a single channel, convert it to a
+    Given a Matrix with a single channel, convert it to a
     VectorField object at a given spatial sampling interval. The
-    values in the SheetMatrix are assumed to correspond to the vector
+    values in the Matrix are assumed to correspond to the vector
     angle in radians and the value is assumed to be cyclic.
 
     If supplied with an overlay, the second sheetview in the overlay
@@ -149,7 +149,7 @@ class vectorfield(ViewOperation):
 
     label = param.String(default='Vectors', doc="""
       The label suffix used to label the resulting vector field
-      where the suffix is added to the label of the  input SheetMatrix""")
+      where the suffix is added to the label of the  input Matrix""")
 
 
     def _process(self, view, key=None):
@@ -160,7 +160,7 @@ class vectorfield(ViewOperation):
             radians, lengths = view, None
 
         if not radians.value.cyclic:
-            raise Exception("First input SheetMatrix must be declared cyclic")
+            raise Exception("First input Matrix must be declared cyclic")
 
         l, b, r, t = radians.bounds.lbrt()
         X, Y = np.meshgrid(np.linspace(l, r, self.p.cols+2)[1:-1],
@@ -183,7 +183,7 @@ class vectorfield(ViewOperation):
 
 class threshold(ViewOperation):
     """
-    Threshold a given SheetMatrix at a given level into the specified
+    Threshold a given Matrix at a given level into the specified
     low and high values.  """
 
     level = param.Number(default=0.5, doc="""
@@ -200,7 +200,7 @@ class threshold(ViewOperation):
 
     label = param.String(default='Thresholded', doc="""
        The label suffix used to label the resulting sheetview where
-       the suffix is added to the label of the input SheetMatrix""")
+       the suffix is added to the label of the input Matrix""")
 
     def _process(self, view, key=None):
         arr = view.data
@@ -208,18 +208,18 @@ class threshold(ViewOperation):
         low = np.ones(arr.shape) * self.p.low
         thresholded = np.where(arr > self.p.level, high, low)
 
-        return [SheetMatrix(thresholded,
+        return [Matrix(thresholded,
                           label=view.label + ' ' + self.p.label)]
 
 
 class roi_table(ViewOperation):
     """
-    Compute a table of information from a SheetMatrix within the
+    Compute a table of information from a Matrix within the
     indicated region-of-interest (ROI). The function applied must
     accept a numpy array and return either a single value or a
     dictionary of values which is returned as a ItemTable or ViewMap.
 
-    The roi is specified using a boolean SheetMatrix overlay (e.g as
+    The roi is specified using a boolean Matrix overlay (e.g as
     generated by threshold) where zero values are excluded from the
     ROI.
     """
@@ -235,7 +235,7 @@ class roi_table(ViewOperation):
 
     label = param.String(default='ROI', doc="""
        The label suffix that labels the resulting table where this
-       suffix is added to the label of the input data SheetMatrix""")
+       suffix is added to the label of the input data Matrix""")
 
 
     def _process(self, view, key=None):

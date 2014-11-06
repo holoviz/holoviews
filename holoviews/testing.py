@@ -30,13 +30,13 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(ViewMap,      self.compare_viewmap)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
-        self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
+        self.addTypeEqualityFunc(Array2D,       self.compare_array2D)
         self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
         self.addTypeEqualityFunc(ItemTable,    self.compare_itemtables)
         self.addTypeEqualityFunc(Table,        self.compare_tables)
         # SheetLayers
-        self.addTypeEqualityFunc(SheetMatrix,  self.compare_sheetmatrix)
+        self.addTypeEqualityFunc(Matrix,       self.compare_matrix)
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)
         self.addTypeEqualityFunc(VectorField,  self.compare_vectorfield)
@@ -182,8 +182,8 @@ class ViewTestCase(unittest.TestCase):
         self.compare_arrays(view1.values, view2.values, "Histogram values")
 
 
-    def compare_matrix(self, view1, view2, msg):
-        self.compare_arrays(view1.data, view2.data, 'Matrix')
+    def compare_array2D(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Array2D')
 
 
     def compare_heatmap(self, view1, view2, msg):
@@ -221,8 +221,8 @@ class ViewTestCase(unittest.TestCase):
     # SheetLayers #
     #=============#
 
-    def compare_sheetmatrix(self, view1, view2, msg):
-        self.compare_arrays(view1.data, view2.data, 'SheetMatrix')
+    def compare_matrix(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Matrix')
         self.bounds_check(view1,view2)
 
 

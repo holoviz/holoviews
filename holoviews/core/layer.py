@@ -151,9 +151,9 @@ class Overlay(Pane, NdMapping):
     over the contained layers.
 
     A SheetOverlay may be used to overlay lines or points over a
-    SheetMatrix. In addition, if an overlay consists of three or four
+    Matrix. In addition, if an overlay consists of three or four
     SheetViews of depth 1, the overlay may be converted to an RGB(A)
-    SheetMatrix via the rgb property.
+    Matrix via the rgb property.
     """
 
     dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
@@ -851,7 +851,7 @@ class ViewMap(Map):
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Reduce each SheetMatrix in the Map using a function supplied
+        Reduce each Matrix in the Map using a function supplied
         via the kwargs, where the keyword has to match a particular
         dimension in the View.
         """

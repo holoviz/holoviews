@@ -8,7 +8,7 @@ import param
 from ..core.operation import ViewOperation
 from ..core.options import options, StyleOpts, ChannelOpts, Cycle
 from ..styles import GrayNearest
-from ..view import SheetMatrix
+from ..view import Matrix
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -22,13 +22,13 @@ class RGBA(ViewOperation):
     """
 
     label = param.String(default='RGBA', doc="""
-        The label to use for the resulting RGBA SheetMatrix.""")
+        The label to use for the resulting RGBA Matrix.""")
 
     def _process(self, overlay, key=None):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
-        if not all(isinstance(el, SheetMatrix) for el in overlay):
-            raise Exception("All layers must be SheetMatrix to convert"
+        if not all(isinstance(el, Matrix) for el in overlay):
+            raise Exception("All layers must be Matrix to convert"
                             " to RGB(A) format")
         if not all(el.depth == 1 for el in overlay):
             raise Exception("All SheetViews must have a depth of one for"
@@ -42,14 +42,14 @@ class RGBA(ViewOperation):
             arrays.append(el.data)
 
 
-        return [SheetMatrix(np.dstack(arrays), overlay[0].bounds, label=self.p.label,
+        return [Matrix(np.dstack(arrays), overlay[0].bounds, label=self.p.label,
                             roi_bounds=overlay[0].roi_bounds, value=overlay[0].value)]
 
 
 class alpha_overlay(ViewOperation):
     """
-    Accepts an overlay of a SheetMatrix defined with a cmap and converts
-    it to an RGBA SheetMatrix. The alpha channel of the result is
+    Accepts an overlay of a Matrix defined with a cmap and converts
+    it to an RGBA Matrix. The alpha channel of the result is
     defined by the second layer of the overlay.
     """
 
@@ -59,7 +59,7 @@ class alpha_overlay(ViewOperation):
 
     def _process(self, overlay, key=None):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
-        return [SheetMatrix(RGBA(R*G*B*overlay[1]).data, overlay[0].bounds,
+        return [Matrix(RGBA(R*G*B*overlay[1]).data, overlay[0].bounds,
                           label=self.p.label, value=overlay[0].value)]
 
 
@@ -103,7 +103,7 @@ class HCS(ViewOperation):
 
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
-        return [SheetMatrix(rgb, hue.bounds, roi_bounds=hue.roi_bounds,
+        return [Matrix(rgb, hue.bounds, roi_bounds=hue.roi_bounds,
                           label=self.p.label, value=hue.value)]
 
 
@@ -132,11 +132,11 @@ class colorize(ViewOperation):
              raise Exception("Shapes don't match.")
 
          # Needs a general approach which works with any color map
-         C = SheetMatrix(np.ones(overlay[0].data.shape),
+         C = Matrix(np.ones(overlay[0].data.shape),
                        bounds=overlay[0].bounds)
          hcs = HCS(overlay[1] * C * overlay[0].N)
 
-         return [SheetMatrix(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
+         return [Matrix(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
                              label=self.p.label, value=hcs.value)]
 
 
@@ -152,8 +152,8 @@ class cmap2rgb(ViewOperation):
           property of the applicable style is used.""")
 
     label = param.String(default='RGB', doc="""
-        The label suffix to use for the resulting RGB SheetMatrix where
-        the suffix is added to the label of the SheetMatrix to be
+        The label suffix to use for the resulting RGB Matrix where
+        the suffix is added to the label of the Matrix to be
         colored.""")
 
     def _process(self, sheetview, key=None):

@@ -25,7 +25,7 @@ class TestOptsMagic(ExtensionTestCase):
         super(TestOptsMagic, self).setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.core import BoundingBox, Overlay")
-        self.cell("from holoviews.view import SheetMatrix, Points")
+        self.cell("from holoviews.view import Matrix, Points")
 
         # Clear the options map
         self.options = OptionsGroup([Options('plotting', PlotOpts),
@@ -43,26 +43,26 @@ class TestOptsMagic(ExtensionTestCase):
     #============================#
 
     def test_cell_opts_style_name1(self):
-        self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
-        self.cell_magic('opts', " SheetMatrix cmap='hot'", 'sv1')
+        self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
+        self.cell_magic('opts', " Matrix cmap='hot'", 'sv1')
         self.assertEqual(self.get_object('sv1').style, 'Custom[<sv1>]_SheetMatrix')
 
 
     def test_cell_opts_style_name2(self):
-        self.cell("sv2 = SheetMatrix(np.random.rand(5,5), name='sv2')")
-        self.cell_magic('opts', " SheetMatrix cmap='cool'", 'sv2')
+        self.cell("sv2 = Matrix(np.random.rand(5,5), name='sv2')")
+        self.cell_magic('opts', " Matrix cmap='cool'", 'sv2')
         self.assertEqual(self.get_object('sv2').style, 'Custom[<sv2>]_SheetMatrix')
 
 
     def test_cell_opts_style1(self):
-        self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
-        self.cell_magic('opts', " SheetMatrix cmap='hot'", 'sv1')
+        self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
+        self.cell_magic('opts', " Matrix cmap='hot'", 'sv1')
         self.assertEqual(self.options.style['Custom[<sv1>]_SheetMatrix'].opts,
                          {'cmap':'hot'})
 
     def test_cell_opts_style2(self):
-        self.cell("sv2 = SheetMatrix(np.random.rand(5,5), name='sv2')")
-        self.cell_magic('opts', " SheetMatrix cmap='cool' interpolation='bilinear'", 'sv2')
+        self.cell("sv2 = Matrix(np.random.rand(5,5), name='sv2')")
+        self.cell_magic('opts', " Matrix cmap='cool' interpolation='bilinear'", 'sv2')
         self.assertEqual(self.options.style['Custom[<sv2>]_SheetMatrix'].opts,
                          {'cmap':'cool', 'interpolation':'bilinear'})
 
@@ -71,15 +71,15 @@ class TestOptsMagic(ExtensionTestCase):
     #============================#
 
     def test_line_opts_nostyle(self):
-        self.assertEqual(self.options.style['SheetMatrix'].opts, {})
+        self.assertEqual(self.options.style['Matrix'].opts, {})
 
     def test_line_opts_style1(self):
-        self.line_magic('opts', " SheetMatrix cmap='hot'")
-        self.assertEqual(self.options.style['SheetMatrix'].opts, {'cmap':'hot'})
+        self.line_magic('opts', " Matrix cmap='hot'")
+        self.assertEqual(self.options.style['Matrix'].opts, {'cmap':'hot'})
 
     def test_line_opts_style2(self):
-        self.line_magic('opts', " SheetMatrix cmap='cool' interpolation='bilinear'")
-        self.assertEqual(self.options.style['SheetMatrix'].opts,
+        self.line_magic('opts', " Matrix cmap='cool' interpolation='bilinear'")
+        self.assertEqual(self.options.style['Matrix'].opts,
                          {'cmap':'cool', 'interpolation':'bilinear'})
 
 
@@ -89,23 +89,23 @@ class TestOptsMagic(ExtensionTestCase):
 
 
     def test_cell_magic_plotopts1(self):
-        self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
-        self.cell_magic('opts', " SheetMatrix [show_title=True]", 'sv1')
+        self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
+        self.cell_magic('opts', " Matrix [show_title=True]", 'sv1')
         self.assertEqual(self.options.plotting['Custom[<sv1>]_SheetMatrix'].opts,
                          {'show_title':True})
 
     def test_cell_magic_plotopts_and_styleopts(self):
-        self.cell("sv2 = SheetMatrix(np.random.rand(5,5), name='sv2')")
-        self.cell_magic('opts', " SheetMatrix [show_grid=True] cmap='jet'", 'sv2')
+        self.cell("sv2 = Matrix(np.random.rand(5,5), name='sv2')")
+        self.cell_magic('opts', " Matrix [show_grid=True] cmap='jet'", 'sv2')
         self.assertEqual(self.options.plotting['Custom[<sv2>]_SheetMatrix'].opts,
                          {'show_grid':True})
         self.assertEqual(self.options.style['Custom[<sv2>]_SheetMatrix'].opts,
                          {'cmap':'jet'})
 
     def test_cell_magic_complex_example(self):
-        self.cell("""o = Overlay([SheetMatrix(np.random.rand(5,5)),
+        self.cell("""o = Overlay([Matrix(np.random.rand(5,5)),
                            Points(np.random.rand(2,5))], name='complex_view')""")
-        opts = " SheetMatrix [show_grid=True] cmap='hsv' Points [show_title=False] color='r'"
+        opts = " Matrix [show_grid=True] cmap='hsv' Points [show_title=False] color='r'"
         self.cell_magic('opts', opts, 'o')
         self.assertEqual(self.options.style['Custom[<complex_view>]_SheetMatrix'].opts,
                          {'cmap':'hsv'})
@@ -118,10 +118,10 @@ class TestOptsMagic(ExtensionTestCase):
 
 
     def test_cell_magic_syntaxerror(self):
-        self.cell("sv1 = SheetMatrix(np.random.rand(5,5), name='sv1')")
+        self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
 
         try:
-            self.cell_magic('opts', " SheetMatrix [show_title='True]", 'sv1')
+            self.cell_magic('opts', " Matrix [show_title='True]", 'sv1')
             raise AssertionError
         except SyntaxError:
             pass
@@ -174,7 +174,7 @@ class TestChannelMagic(ExtensionTestCase):
         super(TestChannelMagic, self).setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.core import Overlay")
-        self.cell("from holoviews.view import SheetMatrix")
+        self.cell("from holoviews.view import Matrix")
         self.channels = OptionsGroup([Options('definitions',
                                               ChannelOpts)])
         Overlay.channels = self.channels
@@ -185,9 +185,9 @@ class TestChannelMagic(ExtensionTestCase):
         super(TestChannelMagic, self).tearDown()
 
     def test_RGBA_channeldef(self):
-        self.cell("R = SheetMatrix(np.random.rand(5,5), label='R_Channel')")
-        self.cell("G = SheetMatrix(np.random.rand(5,5), label='G_Channel')")
-        self.cell("B = SheetMatrix(np.random.rand(5,5), label='B_Channel')")
+        self.cell("R = Matrix(np.random.rand(5,5), label='R_Channel')")
+        self.cell("G = Matrix(np.random.rand(5,5), label='G_Channel')")
+        self.cell("B = Matrix(np.random.rand(5,5), label='B_Channel')")
         self.cell("overlay = Overlay([R, G, B], name='RGBTest')")
         definition = " R_Channel * G_Channel * B_Channel => RGBA []"
         self.cell_magic('channels', definition, 'overlay')
@@ -199,9 +199,9 @@ class TestChannelMagic(ExtensionTestCase):
 
 
     def test_HCS_channeldef(self):
-        self.cell("H = SheetMatrix(np.random.rand(5,5), label='H_Channel')")
-        self.cell("C = SheetMatrix(np.random.rand(5,5), label='C_Channel')")
-        self.cell("S = SheetMatrix(np.random.rand(5,5), label='S_Channel')")
+        self.cell("H = Matrix(np.random.rand(5,5), label='H_Channel')")
+        self.cell("C = Matrix(np.random.rand(5,5), label='C_Channel')")
+        self.cell("S = Matrix(np.random.rand(5,5), label='S_Channel')")
         self.cell("overlay = Overlay([H, C, S], name='HCSTest')")
         definition = " H_Channel * C_Channel *S_Channel => HCS [S_multiplier=2.5]"
         self.cell_magic('channels', definition, 'overlay')

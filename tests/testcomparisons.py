@@ -6,7 +6,7 @@ import numpy as np
 
 from holoviews.core import BoundingBox, Dimension, ViewMap
 from holoviews.testing import ViewTestCase
-from holoviews.view import SheetMatrix
+from holoviews.view import Matrix
 
 class SheetViewTestCase(ViewTestCase):
 
@@ -15,12 +15,12 @@ class SheetViewTestCase(ViewTestCase):
         self.arr2 = np.array([[10,2], [3,4]])
         self.arr3 = np.array([[10,2], [3,40]])
         # Varying arrays, default bounds
-        self.sv1 = SheetMatrix(self.arr1, BoundingBox())
-        self.sv2 = SheetMatrix(self.arr2, BoundingBox())
-        self.sv3 = SheetMatrix(self.arr3, BoundingBox())
+        self.sv1 = Matrix(self.arr1, BoundingBox())
+        self.sv2 = Matrix(self.arr2, BoundingBox())
+        self.sv3 = Matrix(self.arr3, BoundingBox())
         # Varying arrays, different bounds
-        self.sv4 = SheetMatrix(self.arr1, BoundingBox(radius=0.3))
-        self.sv5 = SheetMatrix(self.arr2, BoundingBox(radius=0.3))
+        self.sv4 = Matrix(self.arr1, BoundingBox(radius=0.3))
+        self.sv5 = Matrix(self.arr2, BoundingBox(radius=0.3))
 
 
 class SheetOverlayTestCase(SheetViewTestCase):
@@ -99,7 +99,7 @@ class SheetComparisonTest(SheetViewTestCase):
             self.assertEqual(self.sv1, self.sv2)
             raise AssertionError("Array mismatch not detected")
         except AssertionError as e:
-            assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
+            assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
 
     def test_bounds_mismatch(self):
         try:
@@ -121,7 +121,7 @@ class SheetOverlayComparisonTest(SheetOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
+            assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
 
 
 
@@ -161,7 +161,7 @@ class StackComparisonTest(StackTestCase):
             self.assertEqual(self.stack1_1D, self.stack4_1D)
             raise AssertionError("Pane mismatch in array data not detected.")
         except AssertionError as e:
-            assert str(e).startswith('SheetMatrix: \nArrays are not almost equal to 6 decimals')
+            assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
 
 
 if __name__ == "__main__":

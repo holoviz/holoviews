@@ -8,7 +8,7 @@ from matplotlib.collections import LineCollection
 import param
 
 from ..core import NdMapping, Map, View, Layer, Overlay
-from ..view import Matrix, HeatMap, Points, SheetMatrix, Contours, VectorField
+from ..view import Array2D, HeatMap, Points, Matrix, Contours, VectorField
 from .viewplots import OverlayPlot, Plot, GridPlot
 
 
@@ -260,7 +260,7 @@ class MatrixPlot(Plot):
         by matplotlib's imshow command. If supplied, the clim option
         will be ignored as it is computed from the input View.""")
 
-    _view_type = (Matrix, Layer)
+    _view_type = (Array2D, Layer)
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 
@@ -458,9 +458,9 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         return max([len(self._keys), 1])
 
 
-Plot.defaults.update({Matrix: MatrixPlot,
+Plot.defaults.update({Array2D: MatrixPlot,
                       HeatMap: MatrixPlot,
-                      SheetMatrix: MatrixPlot,
+                      Matrix: MatrixPlot,
                       Points: PointPlot,
                       Contours: ContourPlot,
                       VectorField: VectorFieldPlot})
