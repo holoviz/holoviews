@@ -132,7 +132,7 @@ class Table(ItemTable, NdMapping):
         else:
             if col == self.ndims:
                 return self.values()[row-1]
-            return self.keys()[row-1][col]
+            return self._data.keys()[row-1][col]
             heading = list(self.dim_dict.keys())[row]
             return self.data[heading]
 
