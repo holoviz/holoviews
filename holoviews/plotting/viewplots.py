@@ -459,7 +459,7 @@ class GridPlot(Plot):
 
 
     def __len__(self):
-        return max([len(self._all_keys), 1])
+        return max([len(self._keys), 1])
 
 
 class LayoutPlot(Plot):
