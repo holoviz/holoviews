@@ -53,6 +53,17 @@ class View(Dimensioned):
         super(View, self).__init__(**kwargs)
 
 
+    def closest(self, coords):
+        """
+        Class method that returns the exact keys for a given list of
+        coordinates. The supplied bounds defines the extent within
+        which the samples are drawn and the optional shape argument is
+        the shape of the numpy array (typically the shape of the .data
+        attribute) when applicable.
+        """
+        return coords
+
+
     def sample(self, **samples):
         """
         Base class signature to demonstrate API for sampling Views.

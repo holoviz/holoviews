@@ -346,6 +346,18 @@ class Matrix(SheetCoordinateSystem, Array2D):
         self._lbrt = self.bounds.lbrt()
 
 
+    def closest(self, coords):
+        """
+        Given a single coordinate tuple (or list of coordinates)
+        return the coordinate (or coordinatess) needed to address the
+        corresponding Matrix exactly.
+        """
+        if isinstance(coords, tuple):
+            return self.closest_cell_center(*el)
+        else:
+            return [self.closest_cell_center(*el) for el in coords]
+
+
     def __getitem__(self, coords):
         """
         Slice the underlying numpy array in sheet coordinates.

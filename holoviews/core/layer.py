@@ -838,13 +838,41 @@ class ViewMap(Map):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-    def sample(self, samples=[], **sample_values):
+    def sample(self, shape, bounds=None, **sample_values):
         """
-        Sample each Layer in the Map by passing either a list
-        of samples or request a single sample using dimension-value
-        pairs.
+        Sample each Layer in the Map by passing a tuple containing the
+        number of regularly spaced samples per dimension based on the
+        last element in the ViewMap. Alternatively, a single sample
+        may be requested using dimension-value pairs. Optionally, the
+        bounds argument can be used to specify the bounding extent
+        from which the coordinates are to regularly sampled.
+
+        For 1D sampling, the shape is simply as the desired number of
+        samples (and not a tuple). The bounds format for 1D sampling
+        is the tuple (lower, upper) and the tuple (left, bottom,
+        right, top) for 2D sampling.
         """
-        sampled_items = [(k, view.sample(samples, **sample_values))
+        dims = self.last.ndims
+
+        if dims == 1:
+            lower, upper = (self.xlims[0],self.xlims[1]) if bounds is None else bounds
+            edges = np.linspace(lower, upper, shape+1)
+            linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
+
+        elif dims == 2:
+            (rows, cols) = shape
+            (l,b,r,t) = self.last.lbrt if bounds is None else bounds
+
+            xedges = np.linspace(l, r, cols+1)
+            yedges = np.linspace(b, t, rows+1)
+            xsamples = [(l+u)/2.0 for l,u in zip(xedges[:-1], xedges[1:])]
+            ysamples = [(l+u)/2.0 for l,u in zip(yedges[:-1], yedges[1:])]
+
+            X,Y = np.meshgrid(xsamples, ysamples)
+            linsamples = zip(X.flat, Y.flat)
+
+        closest_samples = set(self.last.closest(linsamples))
+        sampled_items = [(k, view.sample(closest_samples, **sample_values))
                          for k, view in self.items()]
         return self.clone(sampled_items)
 
