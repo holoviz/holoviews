@@ -131,7 +131,7 @@ class Array2D(Layer):
             return Table(table_data, dimensions=self.dimensions,
                              label=self.label, value=self.value)
         else:
-            dimension, sample_coord = samples.items()[0]
+            dimension, sample_coord = sample_values.items()[0]
             if isinstance(sample_coord, slice):
                 raise ValueError(
                     'Array2D sampling requires coordinates not slices,'
@@ -149,8 +149,8 @@ class Array2D(Layer):
             # Sample data
             x_vals = self.dimension_values(dimension)
             data = zip(x_vals, self.data[sample])
-            return Curve(data, **dict(self.get_param_values(),
-                                      dimensions=other_dimension))
+            return Curve(data, dimensions=other_dimension,
+                         value=self.value, label=self.label)
 
 
     def reduce(self, label_prefix='', **dimreduce_map):
