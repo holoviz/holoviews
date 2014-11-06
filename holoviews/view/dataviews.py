@@ -41,6 +41,17 @@ class DataView(Layer):
         return np.concatenate(data), dict(v.get_param_values())
 
 
+    def closest(self, coords):
+        """
+        Given single or multiple x-values, returns the list
+        of closest actual samples.
+        """
+        if not isinstance(coords, list): coords = [coords]
+        xs = self.data[:, 0]
+        idxs = [np.argmin(xs-coord) for coord in coords]
+        return [xs[idx] for idx in idxs]
+
+
     def __getitem__(self, slc):
         """
         Implements slicing or indexing of the data by the data x-value.
@@ -49,17 +60,20 @@ class DataView(Layer):
         """
         if slc is ():
             return self
+        xvals = self.data[:, 0]
         if isinstance(slc, slice):
             start, stop = slc.start, slc.stop
-            xvals = self.data[:, 0]
             start_idx = np.abs((xvals - start)).argmin()
+            start_idx += 0 if start <= xvals[start_idx] else 1
             stop_idx = np.abs((xvals - stop)).argmin()
-            return self.__class__(self.data[start_idx:stop_idx, :],
+            stop_idx -= 0 if stop > xvals[stop_idx] else 1
+            return self.__class__(self.data[start_idx:stop_idx+1, :],
                                   **dict(self.get_param_values()))
         else:
-            slc = np.where(self.data[:, 0] == slc)
-            sample = self.data[slc, :]
-            return Scatter(sample, **dict(self.get_param_values()))
+            index = np.abs((xvals - slc)).argmin()
+            data = {(self.data[index, 0],): self.data[index, 1]}
+            print data
+            return Table(data, **dict(self.get_param_values()))
 
 
     def sample(self, samples=[]):
