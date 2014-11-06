@@ -19,8 +19,8 @@ options.Grid = PlotOpts()
 options.GridLayout = PlotOpts()
 
 options.Contours = StyleOpts(color='k')
-options.SheetMatrix = StyleOpts(cmap='gray', interpolation='nearest')
-options.Matrix = StyleOpts(cmap='jet', interpolation='nearest')
+options.Matrix = StyleOpts(cmap='gray', interpolation='nearest')
+options.Array2D = StyleOpts(cmap='jet', interpolation='nearest')
 options.HeatMap = StyleOpts(cmap='jet', interpolation='nearest')
 options.GridLayout = StyleOpts(**{'font.size': 10, 'axes.labelsize': 'small',
                                   'axes.titlesize': 'small'})

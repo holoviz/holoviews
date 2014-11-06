@@ -45,25 +45,25 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_opts_style_name1(self):
         self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
         self.cell_magic('opts', " Matrix cmap='hot'", 'sv1')
-        self.assertEqual(self.get_object('sv1').style, 'Custom[<sv1>]_SheetMatrix')
+        self.assertEqual(self.get_object('sv1').style, 'Custom[<sv1>]_Matrix')
 
 
     def test_cell_opts_style_name2(self):
         self.cell("sv2 = Matrix(np.random.rand(5,5), name='sv2')")
         self.cell_magic('opts', " Matrix cmap='cool'", 'sv2')
-        self.assertEqual(self.get_object('sv2').style, 'Custom[<sv2>]_SheetMatrix')
+        self.assertEqual(self.get_object('sv2').style, 'Custom[<sv2>]_Matrix')
 
 
     def test_cell_opts_style1(self):
         self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
         self.cell_magic('opts', " Matrix cmap='hot'", 'sv1')
-        self.assertEqual(self.options.style['Custom[<sv1>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.style['Custom[<sv1>]_Matrix'].opts,
                          {'cmap':'hot'})
 
     def test_cell_opts_style2(self):
         self.cell("sv2 = Matrix(np.random.rand(5,5), name='sv2')")
         self.cell_magic('opts', " Matrix cmap='cool' interpolation='bilinear'", 'sv2')
-        self.assertEqual(self.options.style['Custom[<sv2>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.style['Custom[<sv2>]_Matrix'].opts,
                          {'cmap':'cool', 'interpolation':'bilinear'})
 
     #============================#
@@ -91,15 +91,15 @@ class TestOptsMagic(ExtensionTestCase):
     def test_cell_magic_plotopts1(self):
         self.cell("sv1 = Matrix(np.random.rand(5,5), name='sv1')")
         self.cell_magic('opts', " Matrix [show_title=True]", 'sv1')
-        self.assertEqual(self.options.plotting['Custom[<sv1>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.plotting['Custom[<sv1>]_Matrix'].opts,
                          {'show_title':True})
 
     def test_cell_magic_plotopts_and_styleopts(self):
         self.cell("sv2 = Matrix(np.random.rand(5,5), name='sv2')")
         self.cell_magic('opts', " Matrix [show_grid=True] cmap='jet'", 'sv2')
-        self.assertEqual(self.options.plotting['Custom[<sv2>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.plotting['Custom[<sv2>]_Matrix'].opts,
                          {'show_grid':True})
-        self.assertEqual(self.options.style['Custom[<sv2>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.style['Custom[<sv2>]_Matrix'].opts,
                          {'cmap':'jet'})
 
     def test_cell_magic_complex_example(self):
@@ -107,9 +107,9 @@ class TestOptsMagic(ExtensionTestCase):
                            Points(np.random.rand(2,5))], name='complex_view')""")
         opts = " Matrix [show_grid=True] cmap='hsv' Points [show_title=False] color='r'"
         self.cell_magic('opts', opts, 'o')
-        self.assertEqual(self.options.style['Custom[<complex_view>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.style['Custom[<complex_view>]_Matrix'].opts,
                          {'cmap':'hsv'})
-        self.assertEqual(self.options.plotting['Custom[<complex_view>]_SheetMatrix'].opts,
+        self.assertEqual(self.options.plotting['Custom[<complex_view>]_Matrix'].opts,
                          {'show_grid':True})
         self.assertEqual(self.options.style['Custom[<complex_view>]_Points'].opts,
                          {'color':'r'})
