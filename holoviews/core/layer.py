@@ -838,14 +838,15 @@ class ViewMap(Map):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-    def sample(self, shape, bounds=None, **sample_values):
+    def sample(self, samples, bounds=None, **sample_values):
         """
-        Sample each Layer in the Map by passing a tuple containing the
-        number of regularly spaced samples per dimension based on the
-        last element in the ViewMap. Alternatively, a single sample
-        may be requested using dimension-value pairs. Optionally, the
-        bounds argument can be used to specify the bounding extent
-        from which the coordinates are to regularly sampled.
+        Sample each Layer in the Map by passing either a list of
+        samples or a tuple specifying the number of regularly spaced
+        samples per dimension. Alternatively, a single sample may be
+        requested using dimension-value pairs. Optionally, the bounds
+        argument can be used to specify the bounding extent from which
+        the coordinates are to regularly sampled. Regular sampling
+        assumes homogenous and regularly sampled data.
 
         For 1D sampling, the shape is simply as the desired number of
         samples (and not a tuple). The bounds format for 1D sampling
@@ -853,26 +854,29 @@ class ViewMap(Map):
         right, top) for 2D sampling.
         """
         dims = self.last.ndims
+        if isinstance(samples, tuple) or np.isscalar(samples):
+            if dims == 1:
+                lower, upper = (self.xlims[0],self.xlims[1]) if bounds is None else bounds
+                edges = np.linspace(lower, upper, shape+1)
+                linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
+            elif dims == 2:
+                (rows, cols) = shape
+                (l,b,r,t) = self.last.lbrt if bounds is None else bounds
 
-        if dims == 1:
-            lower, upper = (self.xlims[0],self.xlims[1]) if bounds is None else bounds
-            edges = np.linspace(lower, upper, shape+1)
-            linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
+                xedges = np.linspace(l, r, cols+1)
+                yedges = np.linspace(b, t, rows+1)
+                xsamples = [(l+u)/2.0 for l,u in zip(xedges[:-1], xedges[1:])]
+                ysamples = [(l+u)/2.0 for l,u in zip(yedges[:-1], yedges[1:])]
 
-        elif dims == 2:
-            (rows, cols) = shape
-            (l,b,r,t) = self.last.lbrt if bounds is None else bounds
+                X,Y = np.meshgrid(xsamples, ysamples)
+                linsamples = zip(X.flat, Y.flat)
+            else:
+                raise NotImplementedError("Regular sampling not implented"
+                                          "for high-dimensional Views.")
 
-            xedges = np.linspace(l, r, cols+1)
-            yedges = np.linspace(b, t, rows+1)
-            xsamples = [(l+u)/2.0 for l,u in zip(xedges[:-1], xedges[1:])]
-            ysamples = [(l+u)/2.0 for l,u in zip(yedges[:-1], yedges[1:])]
+            samples = set(self.last.closest(linsamples))
 
-            X,Y = np.meshgrid(xsamples, ysamples)
-            linsamples = zip(X.flat, Y.flat)
-
-        closest_samples = set(self.last.closest(linsamples))
-        sampled_items = [(k, view.sample(closest_samples, **sample_values))
+        sampled_items = [(k, view.sample(samples, **sample_values))
                          for k, view in self.items()]
         return self.clone(sampled_items)
 
