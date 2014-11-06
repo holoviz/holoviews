@@ -11,12 +11,12 @@ from .viewplots import Plot
 
 class DFrameViewPlot(Plot):
     """
-    DFramePlot provides a wrapper around Pandas dataframe plots.
-    It takes a single DataFrameView or DFrameStack as input and plots it using
-    the plotting command selected via the plot_type.
+    DFramePlot provides a wrapper around Pandas dataframe plots.  It
+    takes a single DataFrameView or DFrameMap as input and plots it
+    using the plotting command selected via the plot_type.
 
-    The plot_options specifies the valid options to be supplied
-    to the selected plot_type via options.style_opts.
+    The plot_options specifies the valid options to be supplied to the
+    selected plot_type via options.style_opts.
     """
 
     aspect = param.Parameter(default='square', doc="""

@@ -159,14 +159,15 @@ class Map(NdMapping):
     """
     A Map is a map of Views over a number of specified dimensions. The
     dimension may be a spatial dimension (i.e., a ZStack), time
-    (specifying a frame sequence) or any other combination of Dimensions.
-    Map also adds handling of styles, appending the Dimension keys and
-    values to titles and a number of methods to manipulate the Dimensions.
+    (specifying a frame sequence) or any other combination of
+    Dimensions.  Map also adds handling of styles, appending the
+    Dimension keys and values to titles and a number of methods to
+    manipulate the Dimensions.
 
-    Map objects can be sliced, sampled, reduced, overlaid and split along
-    its and its containing Views dimensions. Subclasses should implement
-    the appropriate slicing, sampling and reduction methods for their View
-    type.
+    Map objects can be sliced, sampled, reduced, overlaid and split
+    along its and its containing Views dimensions. Subclasses should
+    implement the appropriate slicing, sampling and reduction methods
+    for their View type.
     """
 
     title_suffix = param.String(default='\n {dims}', doc="""
@@ -230,8 +231,8 @@ class Map(NdMapping):
 
     def get_title(self, key, item, group_size=2):
         """
-        Resolves the title string on the View being added to the
-        Map, adding the Stacks title suffix.
+        Resolves the title string on the View being added to the Map,
+        adding the Maps title suffix.
         """
         if self.ndims == 1 and self.dim_dict.get('Default'):
             title_suffix = ''

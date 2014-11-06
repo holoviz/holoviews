@@ -36,52 +36,52 @@ class SheetOverlayTestCase(SheetViewTestCase):
         self.overlay4_depth3 = (self.mat1 * self.mat2 * self.mat3)
 
 
-class StackTestCase(SheetOverlayTestCase):
+class MapTestCase(SheetOverlayTestCase):
 
     def setUp(self):
-        super(StackTestCase, self).setUp()
-        # Example 1D stack
-        self.stack1_1D = ViewMap(dimensions=['int'])
-        self.stack1_1D[0] = self.mat1
-        self.stack1_1D[1] = self.mat2
+        super(MapTestCase, self).setUp()
+        # Example 1D map
+        self.map1_1D = ViewMap(dimensions=['int'])
+        self.map1_1D[0] = self.mat1
+        self.map1_1D[1] = self.mat2
         # Changed keys...
-        self.stack2_1D = ViewMap(dimensions=['int'])
-        self.stack2_1D[1] = self.mat1
-        self.stack2_1D[2] = self.mat2
+        self.map2_1D = ViewMap(dimensions=['int'])
+        self.map2_1D[1] = self.mat1
+        self.map2_1D[2] = self.mat2
         # Changed number of keys...
-        self.stack3_1D = ViewMap(dimensions=['int'])
-        self.stack3_1D[1] = self.mat1
-        self.stack3_1D[2] = self.mat2
-        self.stack3_1D[3] = self.mat3
+        self.map3_1D = ViewMap(dimensions=['int'])
+        self.map3_1D[1] = self.mat1
+        self.map3_1D[2] = self.mat2
+        self.map3_1D[3] = self.mat3
         # Changed values...
-        self.stack4_1D = ViewMap(dimensions=['int'])
-        self.stack4_1D[0] = self.mat1
-        self.stack4_1D[1] = self.mat3
+        self.map4_1D = ViewMap(dimensions=['int'])
+        self.map4_1D[0] = self.mat1
+        self.map4_1D[1] = self.mat3
         # Changed bounds...
-        self.stack5_1D = ViewMap(dimensions=['int'])
-        self.stack5_1D[0] = self.mat4
-        self.stack5_1D[1] = self.mat5
+        self.map5_1D = ViewMap(dimensions=['int'])
+        self.map5_1D[0] = self.mat4
+        self.map5_1D[1] = self.mat5
         # Example dimension label
-        self.stack6_1D = ViewMap(dimensions=['int_v2'])
-        self.stack6_1D[0] = self.mat1
-        self.stack6_1D[1] = self.mat2
+        self.map6_1D = ViewMap(dimensions=['int_v2'])
+        self.map6_1D[0] = self.mat1
+        self.map6_1D[1] = self.mat2
         # A ViewMap of Overlays
-        self.stack7_1D = ViewMap(dimensions=['int'])
-        self.stack7_1D[0] =  self.overlay1_depth2
-        self.stack7_1D[1] =  self.overlay2_depth2
+        self.map7_1D = ViewMap(dimensions=['int'])
+        self.map7_1D[0] =  self.overlay1_depth2
+        self.map7_1D[1] =  self.overlay2_depth2
         # A different ViewMap of Overlays
-        self.stack8_1D = ViewMap(dimensions=['int'])
-        self.stack8_1D[0] =  self.overlay2_depth2
-        self.stack8_1D[1] =  self.overlay1_depth2
+        self.map8_1D = ViewMap(dimensions=['int'])
+        self.map8_1D[0] =  self.overlay2_depth2
+        self.map8_1D[1] =  self.overlay1_depth2
 
-        # Example 2D stack
-        self.stack1_2D = ViewMap(dimensions=['int', Dimension('float')])
-        self.stack1_2D[0, 0.5] = self.mat1
-        self.stack1_2D[1, 1.0] = self.mat2
+        # Example 2D map
+        self.map1_2D = ViewMap(dimensions=['int', Dimension('float')])
+        self.map1_2D[0, 0.5] = self.mat1
+        self.map1_2D[1, 1.0] = self.mat2
         # Changed 2D keys...
-        self.stack2_2D = ViewMap(dimensions=['int', Dimension('float')])
-        self.stack2_2D[0, 1.0] = self.mat1
-        self.stack2_2D[1, 1.5] = self.mat2
+        self.map2_2D = ViewMap(dimensions=['int', Dimension('float')])
+        self.map2_2D[0, 1.0] = self.mat1
+        self.map2_2D[1, 1.5] = self.mat2
 
 
 
@@ -125,18 +125,18 @@ class SheetOverlayComparisonTest(SheetOverlayTestCase):
 
 
 
-class StackComparisonTest(StackTestCase):
+class MapComparisonTest(MapTestCase):
 
     def test_dimension_mismatch(self):
          try:
-             self.assertEqual(self.stack1_1D, self.stack1_2D)
+             self.assertEqual(self.map1_1D, self.map1_2D)
              raise AssertionError("Mismatch in dimension number not detected.")
          except AssertionError as e:
              assert str(e).startswith("Maps have different numbers of dimensions.")
 
     def test_dimension_label_mismatch(self):
          try:
-             self.assertEqual(self.stack1_1D, self.stack6_1D)
+             self.assertEqual(self.map1_1D, self.map6_1D)
              raise AssertionError("Mismatch in dimension labels not detected.")
          except AssertionError as e:
              assert str(e).startswith("Maps have different dimension labels.")
@@ -144,21 +144,21 @@ class StackComparisonTest(StackTestCase):
 
     def test_key_len_mismatch(self):
         try:
-            self.assertEqual(self.stack1_1D, self.stack3_1D)
-            raise AssertionError("Mismatch in stack key number not detected.")
+            self.assertEqual(self.map1_1D, self.map3_1D)
+            raise AssertionError("Mismatch in map key number not detected.")
         except AssertionError as e:
             assert str(e).startswith("Maps have different numbers of keys.")
 
     def test_key_mismatch(self):
         try:
-            self.assertEqual(self.stack1_1D, self.stack2_1D)
-            raise AssertionError("Mismatch in stack keys not detected.")
+            self.assertEqual(self.map1_1D, self.map2_1D)
+            raise AssertionError("Mismatch in map keys not detected.")
         except AssertionError as e:
             assert str(e).startswith("Maps have different sets of keys.")
 
     def test_element_mismatch(self):
         try:
-            self.assertEqual(self.stack1_1D, self.stack4_1D)
+            self.assertEqual(self.map1_1D, self.map4_1D)
             raise AssertionError("Pane mismatch in array data not detected.")
         except AssertionError as e:
             assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')

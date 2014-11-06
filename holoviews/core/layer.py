@@ -482,8 +482,8 @@ class Grid(NdMapping):
     def __len__(self):
         """
         The maximum depth of all the elements. Matches the semantics
-        of __len__ used by Stacks. For the total number of
-        elements, count the full set of keys.
+        of __len__ used by Maps. For the total number of elements,
+        count the full set of keys.
         """
         return max([(len(v) if hasattr(v, '__len__') else 1) for v in self.values()] + [0])
 
@@ -673,8 +673,8 @@ class ViewMap(Map):
 
     def overlay_dimensions(self, dimensions):
         """
-        Splits the Map along a specified number of dimensions and overlays
-        items in the split out Stacks.
+        Splits the Map along a specified number of dimensions and
+        overlays items in the split out Maps.
         """
         if self.ndims == 1:
             split_map = dict(default=self)
@@ -727,8 +727,8 @@ class ViewMap(Map):
 
     def split_overlays(self):
         """
-        Given a Map of Overlays of N layers, split out the layers
-        into N separate Stacks.
+        Given a Map of Overlays of N layers, split out the layers into
+        N separate Maps.
         """
         if self.type is not Overlay:
             return self.clone(self.items())
@@ -747,12 +747,12 @@ class ViewMap(Map):
     def __mul__(self, other):
         """
         The mul (*) operator implements overlaying of different Views.
-        This method tries to intelligently overlay Stacks with differing
+        This method tries to intelligently overlay Maps with differing
         keys. If the Map is mulled with a simple View each element in
         the Map is overlaid with the View. If the element the Map is
-        mulled with is another Map it will try to match up the dimensions,
-        making sure that items with completely different dimensions aren't
-        overlaid.
+        mulled with is another Map it will try to match up the
+        dimensions, making sure that items with completely different
+        dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
             self_set = set(self.dimension_labels)
@@ -890,9 +890,10 @@ class ViewMap(Map):
 
     def collate(self, collate_dim):
         """
-        Collate splits out the specified dimension and joins the samples
-        in each of the split out Stacks into Curves. If there are multiple
-        entries in the ItemTable it will lay them out into a Grid.
+        Collate splits out the specified dimension and joins the
+        samples in each of the split out Maps into Curves. If there
+        are multiple entries in the ItemTable it will lay them out
+        into a Grid.
         """
         from ..operation import table_collate
         return table_collate(self, collation_dim=collate_dim)
