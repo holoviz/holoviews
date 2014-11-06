@@ -243,17 +243,17 @@ class roi_table(ViewOperation):
         if not isinstance(view, Overlay) or len(view) != 2:
             raise Exception("A Overlay of two SheetViews is required.")
 
-        sview, mask = view[0], view[1]
+        mview, mask = view[0], view[1]
 
-        if sview.data.shape != mask.data.shape:
+        if mview.data.shape != mask.data.shape:
             raise Exception("The data array shape of the mask layer"
                             " must match that of the data layer.")
 
         bit_mask = mask.data.astype(np.bool)
-        roi = sview.data[bit_mask]
+        roi = mview.data[bit_mask]
 
         results = self.p.fn(roi)
         if not isinstance(results, dict):
             results = {self.p.heading:results}
 
-        return [ItemTable(results, label=sview.label + ' ' + self.p.label)]
+        return [ItemTable(results, label=mview.label + ' ' + self.p.label)]

@@ -15,12 +15,12 @@ class SheetViewTestCase(ViewTestCase):
         self.arr2 = np.array([[10,2], [3,4]])
         self.arr3 = np.array([[10,2], [3,40]])
         # Varying arrays, default bounds
-        self.sv1 = Matrix(self.arr1, BoundingBox())
-        self.sv2 = Matrix(self.arr2, BoundingBox())
-        self.sv3 = Matrix(self.arr3, BoundingBox())
+        self.mat1 = Matrix(self.arr1, BoundingBox())
+        self.mat2 = Matrix(self.arr2, BoundingBox())
+        self.mat3 = Matrix(self.arr3, BoundingBox())
         # Varying arrays, different bounds
-        self.sv4 = Matrix(self.arr1, BoundingBox(radius=0.3))
-        self.sv5 = Matrix(self.arr2, BoundingBox(radius=0.3))
+        self.mat4 = Matrix(self.arr1, BoundingBox(radius=0.3))
+        self.mat5 = Matrix(self.arr2, BoundingBox(radius=0.3))
 
 
 class SheetOverlayTestCase(SheetViewTestCase):
@@ -28,12 +28,12 @@ class SheetOverlayTestCase(SheetViewTestCase):
     def setUp(self):
         super(SheetOverlayTestCase, self).setUp()
         # Two overlays of depth two with different layers
-        self.overlay1_depth2 = (self.sv1 * self.sv2)
-        self.overlay2_depth2 = (self.sv1 * self.sv3)
+        self.overlay1_depth2 = (self.mat1 * self.mat2)
+        self.overlay2_depth2 = (self.mat1 * self.mat3)
         # Overlay of depth 2 with different bounds
-        self.overlay3_depth2 = (self.sv4 * self.sv5)
+        self.overlay3_depth2 = (self.mat4 * self.mat5)
         # # Overlay of depth 3
-        self.overlay4_depth3 = (self.sv1 * self.sv2 * self.sv3)
+        self.overlay4_depth3 = (self.mat1 * self.mat2 * self.mat3)
 
 
 class StackTestCase(SheetOverlayTestCase):
@@ -42,29 +42,29 @@ class StackTestCase(SheetOverlayTestCase):
         super(StackTestCase, self).setUp()
         # Example 1D stack
         self.stack1_1D = ViewMap(dimensions=['int'])
-        self.stack1_1D[0] = self.sv1
-        self.stack1_1D[1] = self.sv2
+        self.stack1_1D[0] = self.mat1
+        self.stack1_1D[1] = self.mat2
         # Changed keys...
         self.stack2_1D = ViewMap(dimensions=['int'])
-        self.stack2_1D[1] = self.sv1
-        self.stack2_1D[2] = self.sv2
+        self.stack2_1D[1] = self.mat1
+        self.stack2_1D[2] = self.mat2
         # Changed number of keys...
         self.stack3_1D = ViewMap(dimensions=['int'])
-        self.stack3_1D[1] = self.sv1
-        self.stack3_1D[2] = self.sv2
-        self.stack3_1D[3] = self.sv3
+        self.stack3_1D[1] = self.mat1
+        self.stack3_1D[2] = self.mat2
+        self.stack3_1D[3] = self.mat3
         # Changed values...
         self.stack4_1D = ViewMap(dimensions=['int'])
-        self.stack4_1D[0] = self.sv1
-        self.stack4_1D[1] = self.sv3
+        self.stack4_1D[0] = self.mat1
+        self.stack4_1D[1] = self.mat3
         # Changed bounds...
         self.stack5_1D = ViewMap(dimensions=['int'])
-        self.stack5_1D[0] = self.sv4
-        self.stack5_1D[1] = self.sv5
+        self.stack5_1D[0] = self.mat4
+        self.stack5_1D[1] = self.mat5
         # Example dimension label
         self.stack6_1D = ViewMap(dimensions=['int_v2'])
-        self.stack6_1D[0] = self.sv1
-        self.stack6_1D[1] = self.sv2
+        self.stack6_1D[0] = self.mat1
+        self.stack6_1D[1] = self.mat2
         # A ViewMap of Overlays
         self.stack7_1D = ViewMap(dimensions=['int'])
         self.stack7_1D[0] =  self.overlay1_depth2
@@ -76,12 +76,12 @@ class StackTestCase(SheetOverlayTestCase):
 
         # Example 2D stack
         self.stack1_2D = ViewMap(dimensions=['int', Dimension('float')])
-        self.stack1_2D[0, 0.5] = self.sv1
-        self.stack1_2D[1, 1.0] = self.sv2
+        self.stack1_2D[0, 0.5] = self.mat1
+        self.stack1_2D[1, 1.0] = self.mat2
         # Changed 2D keys...
         self.stack2_2D = ViewMap(dimensions=['int', Dimension('float')])
-        self.stack2_2D[0, 1.0] = self.sv1
-        self.stack2_2D[1, 1.5] = self.sv2
+        self.stack2_2D[0, 1.0] = self.mat1
+        self.stack2_2D[1, 1.5] = self.mat2
 
 
 
@@ -92,18 +92,18 @@ class SheetComparisonTest(SheetViewTestCase):
     """
 
     def test_equal(self):
-        self.assertEqual(self.sv1, self.sv1)
+        self.assertEqual(self.mat1, self.mat1)
 
     def test_unequal_arrays(self):
         try:
-            self.assertEqual(self.sv1, self.sv2)
+            self.assertEqual(self.mat1, self.mat2)
             raise AssertionError("Array mismatch not detected")
         except AssertionError as e:
             assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
 
     def test_bounds_mismatch(self):
         try:
-            self.assertEqual(self.sv1, self.sv4)
+            self.assertEqual(self.mat1, self.mat4)
         except AssertionError as e:
             assert str(e).startswith('BoundingBoxes are mismatched.')
 
