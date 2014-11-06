@@ -429,14 +429,14 @@ class GridPlot(Plot):
         if self.cols == 1:
             b_w = 0
         else:
-            b_w = (w/10) / (self.cols - 1)
+            b_w = (w/10.) / (self.cols - 1)
 
         if self.rows == 1:
             b_h = 0
         else:
-            b_h = (h/10) / (self.rows - 1)
-        ax_w = (w - ((w/10) if self.cols > 1 else 0)) / self.cols
-        ax_h = (h - ((h/10) if self.rows > 1 else 0)) / self.rows
+            b_h = (h/10.) / (self.rows - 1)
+        ax_w = (w - ((w/10.) if self.cols > 1 else 0)) / self.cols
+        ax_h = (h - ((h/10.) if self.rows > 1 else 0)) / self.rows
 
         r, c = (0, 0)
         for ax in self.subaxes:
