@@ -72,7 +72,6 @@ class DataView(Layer):
         else:
             index = np.abs((xvals - slc)).argmin()
             data = {(self.data[index, 0],): self.data[index, 1]}
-            print data
             return Table(data, **dict(self.get_param_values()))
 
 
