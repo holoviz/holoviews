@@ -377,12 +377,12 @@ class GridPlot(Plot):
 
     def _format_title(self, key):
         view = self.grid.values()[0]
-        if isinstance(view, Map) and len(self) > 1:
-            key = key if isinstance(key, tuple) else (key,)
+        key = key if isinstance(key, tuple) else (key,)
+        if len(self) > 1:
             title_format = view.get_title(key, self.grid)
-            view = view.last
         else:
             title_format = self.grid.title
+        view = view.last
         return title_format.format(label=view.label, value=str(view.value),
                                    type=self.grid.__class__.__name__)
 
