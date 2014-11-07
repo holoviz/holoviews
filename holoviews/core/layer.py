@@ -852,10 +852,10 @@ class ViewMap(Map):
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
                 lower, upper = (self.xlims[0],self.xlims[1]) if bounds is None else bounds
-                edges = np.linspace(lower, upper, shape+1)
+                edges = np.linspace(lower, upper, samples+1)
                 linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
             elif dims == 2:
-                (rows, cols) = shape
+                (rows, cols) = samples
                 (l,b,r,t) = self.last.lbrt if bounds is None else bounds
 
                 xedges = np.linspace(l, r, cols+1)
