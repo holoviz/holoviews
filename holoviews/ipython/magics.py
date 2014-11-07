@@ -198,7 +198,7 @@ class ChannelMagic(Magics):
         The %%channels cell magic allows channel definitions to be
         defined on the displayed Overlay.
 
-        For instance, if you have three SheetViews (R,G and B)
+        For instance, if you have three Matrix Views (R,G and B)
         together in a Overlay with labels 'R_Channel',
         'G_Channel', 'B_Channel' respectively, you can display this
         object as an RGB image using:

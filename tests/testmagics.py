@@ -31,7 +31,7 @@ class TestOptsMagic(ExtensionTestCase):
         self.options = OptionsGroup([Options('plotting', PlotOpts),
                                      Options('style', StyleOpts)])
         View.options = self.options
-        self.options.SheetView = StyleOpts()
+        self.options.Matrix = StyleOpts()
 
     def tearDown(self):
         del self.options

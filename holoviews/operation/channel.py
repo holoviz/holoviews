@@ -31,7 +31,7 @@ class RGBA(ViewOperation):
             raise Exception("All layers must be Matrix to convert"
                             " to RGB(A) format")
         if not all(el.depth == 1 for el in overlay):
-            raise Exception("All SheetViews must have a depth of one for"
+            raise Exception("All Matrix elements must have a depth of one for"
                             " conversion to RGB(A) format")
 
         arrays = []
@@ -142,7 +142,7 @@ class colorize(ViewOperation):
 
 class cmap2rgb(ViewOperation):
     """
-    Convert SheetViews using colormaps to RGBA mode.  The colormap of
+    Convert Matrix Views using colormaps to RGBA mode. The colormap of
     the style is used, if available. Otherwise, the colormap may be
     forced as a parameter.
     """
@@ -158,7 +158,7 @@ class cmap2rgb(ViewOperation):
 
     def _process(self, sheetview, key=None):
         if sheetview.depth != 1:
-            raise Exception("Can only apply colour maps to SheetViews with depth of 1.")
+            raise Exception("Can only apply colour maps to Matrix with depth of 1.")
 
         style_cmap = options.style(sheetview)[0].get('cmap', None)
         if not any([self.p.cmap, style_cmap]):
@@ -170,7 +170,7 @@ class cmap2rgb(ViewOperation):
 
 class split(ViewOperation):
     """
-    Given SheetViews in RGBA mode, return the R,G,B and A channels as
+    Given Matrix in RGBA mode, return the R,G,B and A channels as
     a GridLayout.
     """
 
@@ -180,7 +180,7 @@ class split(ViewOperation):
 
     def _process(self, sheetview, key=None):
         if sheetview.mode not in ['rgb', 'rgba']:
-            raise Exception("Can only split SheetViews with a depth of 3 or 4")
+            raise Exception("Can only split Matrix with a depth of 3 or 4")
         return [sheetview.clone(sheetview.data[:, :, i],
                                 label='RGBA'[i] + ' ' + self.p.label)
                 for i in range(sheetview.depth)]
@@ -190,11 +190,11 @@ ChannelOpts.operations['RGBA'] = RGBA
 ChannelOpts.operations['HCS'] = HCS
 ChannelOpts.operations['alpha_overlay'] = alpha_overlay
 
-options.R_Channel_SheetView = GrayNearest
-options.G_Channel_SheetView = GrayNearest
-options.B_Channel_SheetView = GrayNearest
-options.A_Channel_SheetView = GrayNearest
+options.R_Channel_Matrix = GrayNearest
+options.G_Channel_Matrix = GrayNearest
+options.B_Channel_Matrix = GrayNearest
+options.A_Channel_Matrix = GrayNearest
 options.Level_Contours = StyleOpts(color=Cycle(['b', 'g', 'r']))
 
-options.RGB_SheetView = StyleOpts(interpolation='nearest')
-options.RGBA_SheetView = StyleOpts(interpolation='nearest')
+options.RGB_Matrix = StyleOpts(interpolation='nearest')
+options.RGBA_Matrix = StyleOpts(interpolation='nearest')

@@ -8,7 +8,7 @@ from holoviews.core import BoundingBox, Dimension, ViewMap
 from holoviews.testing import ViewTestCase
 from holoviews.view import Matrix
 
-class SheetViewTestCase(ViewTestCase):
+class MatrixTestCase(ViewTestCase):
 
     def setUp(self):
         self.arr1 = np.array([[1,2], [3,4]])
@@ -23,10 +23,10 @@ class SheetViewTestCase(ViewTestCase):
         self.mat5 = Matrix(self.arr2, BoundingBox(radius=0.3))
 
 
-class SheetOverlayTestCase(SheetViewTestCase):
+class MatrixOverlayTestCase(MatrixTestCase):
 
     def setUp(self):
-        super(SheetOverlayTestCase, self).setUp()
+        super(MatrixOverlayTestCase, self).setUp()
         # Two overlays of depth two with different layers
         self.overlay1_depth2 = (self.mat1 * self.mat2)
         self.overlay2_depth2 = (self.mat1 * self.mat3)
@@ -36,7 +36,7 @@ class SheetOverlayTestCase(SheetViewTestCase):
         self.overlay4_depth3 = (self.mat1 * self.mat2 * self.mat3)
 
 
-class MapTestCase(SheetOverlayTestCase):
+class MapTestCase(MatrixOverlayTestCase):
 
     def setUp(self):
         super(MapTestCase, self).setUp()
@@ -85,7 +85,7 @@ class MapTestCase(SheetOverlayTestCase):
 
 
 
-class SheetComparisonTest(SheetViewTestCase):
+class SheetComparisonTest(MatrixTestCase):
     """
     This tests the ViewTestCase class which is an important component
     of other tests.
@@ -109,7 +109,7 @@ class SheetComparisonTest(SheetViewTestCase):
 
 
 
-class SheetOverlayComparisonTest(SheetOverlayTestCase):
+class SheetOverlayComparisonTest(MatrixOverlayTestCase):
 
     def test_depth_mismatch(self):
         try:

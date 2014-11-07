@@ -7,7 +7,7 @@ from holoviews.view import Matrix
 
 # Duplicates testsheetview from topographica
 
-class TestSheetView(unittest.TestCase):
+class TestMatrix(unittest.TestCase):
 
     def setUp(self):
         self.activity1 = np.array([[1,2],[3,4]])

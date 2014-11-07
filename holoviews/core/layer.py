@@ -149,11 +149,6 @@ class Overlay(Pane, NdMapping):
     An Overlay allows a group of Layers to be overlaid together. Layers can
     be indexed out of an overlay and an overlay is an iterable that iterates
     over the contained layers.
-
-    A SheetOverlay may be used to overlay lines or points over a
-    Matrix. In addition, if an overlay consists of three or four
-    SheetViews of depth 1, the overlay may be converted to an RGB(A)
-    Matrix via the rgb property.
     """
 
     dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List

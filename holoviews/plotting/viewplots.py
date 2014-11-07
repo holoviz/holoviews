@@ -23,7 +23,7 @@ class Plot(param.Parameterized):
     """
     A Plot object returns either a matplotlib figure object (when
     called or indexed) or a matplotlib animation object as
-    appropriate. Plots take view objects such as SheetViews,
+    appropriate. Plots take view objects such as Matrix,
     Contours or Points as inputs and plots them in the
     appropriate format. As views may vary over time, all plots support
     animation via the anim() method.
