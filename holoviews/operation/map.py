@@ -48,7 +48,7 @@ class table_collate(MapOperation):
                     if not isinstance(new_key, tuple): new_key = (new_key,)
                     settings.update(value=table.value, label=table.label,
                                     dimensions=[collate_dim])
-                    key = new_key + label[0:max(0,len(label)-1)]
+                    key = new_key + label[0:max(0,len(label)-2)]
                     label = label[-2:]
                 else:
                     key = new_key
