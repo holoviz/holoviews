@@ -587,13 +587,19 @@ class Contours(Layer):
     @property
     def xlim(self):
         if self._xlim: return self._xlim
-        xmin = min(min(c[:, 0]) for c in self.data)
-        xmax = max(max(c[:, 0]) for c in self.data)
-        return xmin, xmax
+        elif len(self):
+            xmin = min(min(c[:, 0]) for c in self.data)
+            xmax = max(max(c[:, 0]) for c in self.data)
+            return xmin, xmax
+        else:
+            return None
 
     @property
     def ylim(self):
         if self._ylim: return self._ylim
-        ymin = min(min(c[:, 0]) for c in self.data)
-        ymax = max(max(c[:, 0]) for c in self.data)
-        return ymin, ymax
+        elif len(self):
+            ymin = min(min(c[:, 0]) for c in self.data)
+            ymax = max(max(c[:, 0]) for c in self.data)
+            return ymin, ymax
+        else:
+            return None
