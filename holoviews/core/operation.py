@@ -73,8 +73,7 @@ class ViewOperation(param.ParameterizedFunction):
                 maps = val.values() if isinstance(val, GridLayout) else [val]
                 # Initialize the list of data or coordinate grids
                 if grids == []:
-                    grids = [Grid(None, label=view.label)
-                             for vmap in maps]
+                    grids = [Grid(None, label=view.label) for vmap in maps]
                 # Populate the grids
                 for ind, vmap in enumerate(maps):
                     grids[ind][pos] = vmap
@@ -85,7 +84,7 @@ class ViewOperation(param.ParameterizedFunction):
 
         elif isinstance(view, Map):
             mapped_items = [(k, self._process(el, key=k)) for k, el in view.items()]
-            maps = [view.clone(dimensions=view.dimensions) for _ in range(len(mapped_items[0][1]))]
+            maps = [view.clone() for _ in range(len(mapped_items[0][1]))]
             for k, views in mapped_items:
                 for ind, v in enumerate(views):
                     maps[ind][k] = v
