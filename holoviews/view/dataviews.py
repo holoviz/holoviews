@@ -99,6 +99,10 @@ class DataView(Layer):
                          value=self.value(value))
 
 
+    def __len__(self):
+        return len(self.data[:,0])
+
+
     def dframe(self):
         import pandas as pd
         columns = [self.dimension_labels[0], self.value.name]
