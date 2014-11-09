@@ -670,7 +670,7 @@ class ViewMap(Map):
 
 
 
-    def overlay_dimensions(self, dimensions):
+    def overlay(self, dimensions):
         """
         Splits the Map along a specified number of dimensions and
         overlays items in the split out Maps.
@@ -683,14 +683,7 @@ class ViewMap(Map):
             new_map = self.clone(dimensions=split_map.dimensions)
 
         for outer, vmap in split_map.items():
-            key, overlay = vmap.items()[0]
-            overlay.constant_dimensions = vmap.dimensions
-            overlay.constant_values = key
-            for inner, v in list(vmap.items())[1:]:
-                v.constant_dimensions = vmap.dimensions
-                v.constant_values = inner
-                overlay = overlay * v
-            new_map[outer] = overlay
+            new_map[outer] = Overlay(vmap)
 
         if self.ndims == 1:
             return list(new_map.values())[0]
