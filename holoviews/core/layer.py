@@ -101,9 +101,11 @@ class Layer(Pane):
             return self._xlim
         elif self.cyclic_range is not None:
             return (0, self.cyclic_range)
-        else:
+        elif len(self):
             x_vals = self.data[:, 0]
             return (float(min(x_vals)), float(max(x_vals)))
+        else:
+            return None
 
     @xlim.setter
     def xlim(self, limits):
@@ -119,9 +121,11 @@ class Layer(Pane):
     def ylim(self):
         if self._ylim:
             return self._ylim
-        else:
+        elif len(self):
             y_vals = self.data[:, 1]
             return (float(min(y_vals)), float(max(y_vals)))
+        else:
+            return None
 
     @ylim.setter
     def ylim(self, limits):
