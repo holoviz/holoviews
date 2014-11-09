@@ -73,7 +73,7 @@ class ViewOperation(param.ParameterizedFunction):
                 maps = val.values() if isinstance(val, GridLayout) else [val]
                 # Initialize the list of data or coordinate grids
                 if grids == []:
-                    grids = [Grid(view.bounds, None, view.xdensity, view.ydensity, label=view.label)
+                    grids = [Grid(None, label=view.label)
                              for vmap in maps]
                 # Populate the grids
                 for ind, vmap in enumerate(maps):
