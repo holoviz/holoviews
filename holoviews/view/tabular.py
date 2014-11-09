@@ -175,4 +175,4 @@ class Table(ItemTable, NdMapping):
 
 
     def dframe(self):
-        return NdMapping.dframe(self)
+        return NdMapping.dframe(self, value_label=self.value.name)
