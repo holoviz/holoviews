@@ -798,7 +798,7 @@ class ViewMap(Map):
         """
         import pandas
         dframes = []
-        for key, view in self.items():
+        for key, view in self._data.items():
             view_frame = view.dframe()
             for val, dim in reversed(zip(key, self.dimension_labels)):
                 dim = dim.replace(' ', '_')
