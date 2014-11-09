@@ -110,7 +110,7 @@ class Table(ItemTable, NdMapping):
 
     @property
     def rows(self):
-        return len(self) + 1
+        return len(self._data) + 1
 
     @property
     def cols(self):
