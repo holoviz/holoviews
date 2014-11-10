@@ -7,7 +7,7 @@ import param
 __version__ = param.Version(release=(0,7), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
-from .core import options                     # pyflakes:ignore (API import)
+from .core.options import options             # pyflakes:ignore (API import)
 from .core.dimension import Dimension         # pyflakes:ignore (API import)
 from .core.boundingregion import BoundingBox  # pyflakes:ignore (API import)
 from .core.layer import *                     # pyflakes:ignore (API import)

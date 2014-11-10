@@ -272,3 +272,7 @@ class Map(NdMapping):
         appropriately implement reducing the correct view types.
         """
         raise NotImplementedError
+
+
+__all__ = list(set([_k for _k, _v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))

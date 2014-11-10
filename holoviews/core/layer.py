@@ -13,7 +13,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension
+from .dimension import Dimension, Dimensioned
 from .ndmapping import NdMapping
 from .layout import Pane, GridLayout, AdjointLayout
 from .options import options, channels
@@ -944,3 +944,8 @@ class ViewMap(Map):
         norm_factor = data_max-data_min
         return self.map(lambda x, _: x.normalize(min=min, max=max,
                                                  norm_factor=norm_factor))
+
+
+__all__ = list(set([_k for _k, _v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+
