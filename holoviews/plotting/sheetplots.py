@@ -374,14 +374,13 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     def __init__(self, grid, **kwargs):
         self.layout = kwargs.pop('layout', None)
         self.grid = copy.deepcopy(grid)
-        for k, vmap in self.grid.items():
+        for k, vmap in self.grid._data.items():
             self.grid[k] = self._check_map(self.grid[k])
         Plot.__init__(self, **kwargs)
         self._keys = self.grid.all_keys
         xkeys, ykeys = zip(*self.grid._data.keys())
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
-        self._widths, self._heights = {}, {}
 
 
     def __call__(self, axis=None):
@@ -418,8 +417,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
         return self._finalize_axis(key, lbrt=(0, 0, width, height),
                                    title=self._format_title(key),
-                                   xticks=(xticks, np.round(self._xkeys, 3)),
-                                   yticks=(yticks, np.round(self._ykeys, 3)),
+                                   xticks=(xticks, self._process_ticklabels(self._xkeys)),
+                                   yticks=(yticks, self._process_ticklabels(self._ykeys)),
                                    xlabel=str(self.grid.dimensions[0]),
                                    ylabel=str(self.grid.dimensions[1]))
 

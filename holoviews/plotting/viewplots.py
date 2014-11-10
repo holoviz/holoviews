@@ -313,7 +313,7 @@ class GridPlot(Plot):
             raise Exception("GridPlot only accepts Grid.")
 
         self.grid = copy.deepcopy(grid)
-        for k, vmap in self.grid.items():
+        for k, vmap in self.grid._data.items():
             self.grid[k] = self._check_map(self.grid[k])
 
         self.subplots = []
@@ -412,14 +412,17 @@ class GridPlot(Plot):
         plot_height = 1.0 / self.rows
         yticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
         grid_axis.set_xticks(xticks)
-        grid_axis.set_xticklabels([k if isinstance(k,str) else round(k, 3)
-                                   for k in sorted(set(dim1_keys))])
+        grid_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys))))
         grid_axis.set_yticks(yticks)
-        grid_axis.set_yticklabels([k if isinstance(k,str) else round(k, 3)
-                                   for k in sorted(set(dim2_keys))])
+        grid_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys))))
 
         self.handles['grid_axis'] = grid_axis
         plt.draw()
+
+
+    def _process_ticklabels(self, labels):
+        isstring = lambda k: isinstance(k,str) or isinstance(k, unicode)
+        return [k if isstring(k) else np.round(float(k), 3) for k in labels]
 
 
     def _adjust_subplots(self):
