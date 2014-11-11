@@ -5,7 +5,7 @@ holoviews Tutorials
 Introductory Tutorials
 ______________________
 
-1. `Tutorial 1: Basic Views, Overlays and styling <http://ioam.github.com/media/holoviews/DataView_Tutorial.html>`_
+1. `Tutorial 1: Basic Views, Overlays and styling <http://ioam.github.com/media/holoviews/HoloViews_Tutorial.html>`_
 
 2. `Tutorial 2: NdMappings, Dimensions and Animations <http://ioam.github.com/media/holoviews/NdMapping_UK_Forecast.html>`_
 

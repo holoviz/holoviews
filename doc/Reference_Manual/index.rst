@@ -22,34 +22,24 @@ _________________
 holoviews modules
 -----------------
 
-`collector`_
- Defines classes to collect and collate data.
-`holoviews`_
- View classes associated with arbitrary dimensions such as Curves
- and Annotations.
+`core`_
+ Base classes implementing the core data structures of HoloViews.
 `interface`_
- Defines interfaces to other visualization libraries including
- Pandas and Seaborn.
+ Defines interfaces to external libraries including Pandas and Seaborn,
+ but also to collect and collate data from an external source.
 `ipython`_
  Defines the IPython notebook magics and display hooks.
-`ndmapping`_
- Defines the Dimension and NdMapping classes, which implement
- n-dimensional data containers.
 `operation`_
  Defines ViewOperation and MapOperation classes used to manipulate and
  transform existing Views and Stacks.
-`options`_
- Defines options which control plotting and style configuration.
 `plotting`_
  Defines the plotting classes generating matplotlib figures.
-`sheetviews`_
- View classes associated with 2D sheets and projections from a 2D sheet.
 `styles`_
  Defines default styles for View objects and allows selecting different
  mplstyles. 
 `testing`_
  Defines TestComparison classes to compare different View objects.
-`views`_
+`view`_
  Defines the basic View classes forming the atomic display units.
 
 
@@ -58,15 +48,11 @@ holoviews modules
 .. _external dependencies: ../Downloads/dependencies.html
 .. _main reference manual page: hierarchy.html
 
-.. _collector: holoviews.html#module-holoviews.collector
-.. _holoviews: holoviews.html#module-holoviews.holoviews
+.. _core: holoviews.core.html
 .. _interface: holoviews.interface.html
 .. _ipython: holoviews.ipython.html
-.. _ndmapping: holoviews.html#module-holoviews.ndmapping
-.. _sheetviews: holoviews.sheetviews.html
-.. _operation: holoviews.html#module-holoviews.operation
-.. _options: holoviews.html#module-holoviews.options
+.. _operation: holoviews.operation.html
 .. _plotting: holoviews.plotting.html
 .. _styles: holoviews.styles.html
-.. _testing: holoviews.html#module-holoviews.ndmapping
-.. _views: holoviews.html#module-holoviews.views
+.. _testing: holoviews.html#module-holoviews.testing
+.. _view: holoviews.view.html
