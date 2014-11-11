@@ -182,14 +182,15 @@ class Overlay(Pane, NdMapping):
         """
         Set a collection of layers to be overlaid with each other.
         """
-        if isinstance(layers, ViewMap):
+        if isinstance(layers, (ViewMap)):
+            return layers._data
+        elif isinstance(layers, (dict, OrderedDict)):
             return layers
         elif layers is None or not len(layers):
             return OrderedDict()
-        keys = range(len(layers))
-        data = OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
-        return data
-
+        else:
+            keys = range(len(layers))
+            return OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
 
     def set(self, layers):
         data = self._process_layers(layers)
