@@ -171,6 +171,16 @@ class DFrame(PandasDFrame):
     def ylabel(self):
         return self.x2 if self.x2 else self.y
 
+    @property
+    def ylim(self):
+        if self._ylim:
+            return self._ylim
+        elif self.x2 or self.y:
+            ydata = self.data[self.x2 if self.x2 else self.y]
+            return min(ydata), max(ydata)
+        else:
+            return None
+
 
 
 options.TimeSeries = StyleOpts(color=Cycle())
