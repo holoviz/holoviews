@@ -684,7 +684,7 @@ class ViewMap(Map):
             new_map = self.clone(dimensions=split_map.dimensions)
 
         for outer, vmap in split_map.items():
-            new_map[outer] = Overlay(vmap)
+            new_map[outer] = Overlay(vmap, dimensions=vmap.dimensions)
 
         if self.ndims == 1:
             return list(new_map.values())[0]
