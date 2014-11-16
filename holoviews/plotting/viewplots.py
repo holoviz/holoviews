@@ -421,8 +421,7 @@ class GridPlot(Plot):
 
 
     def _process_ticklabels(self, labels):
-        isstring = lambda k: isinstance(k,str) or isinstance(k, unicode)
-        return [k if isstring(k) else np.round(float(k), 3) for k in labels]
+        return [k if isinstance(k, str) else np.round(float(k), 3) for k in labels]
 
 
     def _adjust_subplots(self):
