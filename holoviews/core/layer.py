@@ -212,7 +212,7 @@ class Overlay(Pane, NdMapping):
                 return None
         else:
             labels = []
-            for key in self.keys():
+            for key in self._data.keys():
                 labels.append(','.join([dim.pprint_value(k) for dim, k in
                                         zip(self.dimensions, key)]))
             return labels
