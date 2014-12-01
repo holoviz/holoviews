@@ -711,9 +711,11 @@ class ViewMap(Map):
 
         if layout:
             for keys, vmap in split_map._data.items():
-                if constant_dims:
-                    vmap.constant_dimensions = split_map.dimensions
-                    vmap.constant_values = keys
+                dim_labels = split_map.pprint_dimkey(keys)
+                if not isinstance(vmap, ViewMap): vmap = [vmap]
+                for vm in vmap:
+                    if dim_labels and dim_labels not in vm.title:
+                        vm.title = '\n'.join([vm.title, dim_labels])
             return GridLayout(split_map)
         else:
             return Grid(split_map, dimensions=split_map.dimensions)
