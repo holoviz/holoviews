@@ -360,9 +360,9 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")
 
-    num_ticks = param.Number(default=5)
-
     show_frame = param.Boolean(default=False)
+
+    show_title = param.Boolean(default=True)
 
     style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
                                      'visible', 'filterrad', 'origin'],
