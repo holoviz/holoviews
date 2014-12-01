@@ -692,7 +692,7 @@ class ViewMap(Map):
             return new_map
 
 
-    def grid(self, dimensions, layout=False, constant_dims=True):
+    def grid(self, dimensions, layout=False, set_title=True):
         """
         Grid takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a Grid.
@@ -710,15 +710,17 @@ class ViewMap(Map):
             raise ValueError('ViewMap does not have supplied dimensions.')
 
         if layout:
-            for keys, vmap in split_map._data.items():
-                dim_labels = split_map.pprint_dimkey(keys)
-                if not isinstance(vmap, ViewMap): vmap = [vmap]
-                for vm in vmap:
-                    if dim_labels and dim_labels not in vm.title:
-                        vm.title = '\n'.join([vm.title, dim_labels])
+            if set_title:
+                for keys, vmap in split_map._data.items():
+                    dim_labels = split_map.pprint_dimkey(keys)
+                    if not isinstance(vmap, ViewMap): vmap = [vmap]
+                    for vm in vmap:
+                        if dim_labels and dim_labels not in vm.title:
+                            vm.title = '\n'.join([vm.title, dim_labels])
             return GridLayout(split_map)
         else:
             return Grid(split_map, dimensions=split_map.dimensions)
+
 
     def split_overlays(self):
         """
