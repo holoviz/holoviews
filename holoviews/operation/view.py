@@ -112,7 +112,7 @@ class contours(ViewOperation):
     def _process(self, sheetview, key=None):
 
         figure_handle = plt.figure()
-        (l, b, r, t) = sheetview.bounds.lbrt()
+        (l, b, r, t) = sheetview.lbrt
         contour_set = plt.contour(sheetview.data, extent=(l, r, t, b),
                                   levels=self.p.levels)
 
@@ -127,7 +127,7 @@ class contours(ViewOperation):
         if len(contours) == 1:
             return [(sheetview * contours[0])]
         else:
-            return [sheetview * Overlay(contours, sheetview.bounds)]
+            return [sheetview * Overlay(contours)]
 
 
 class vectorfield(ViewOperation):
