@@ -260,8 +260,8 @@ class NdWidget(param.Parameterized):
         Determine the dimensions and keys to be turned into widgets and
         initialize the plots.
         """
-        if isinstance(view, GridLayout):
-            shape = view.shape
+        if isinstance(view, (GridLayout, AdjointLayout)):
+            shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
             self.plot = GridLayoutPlot(view, **dict(size=grid_size))
