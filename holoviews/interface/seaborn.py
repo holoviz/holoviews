@@ -158,7 +158,7 @@ class DFrame(PandasDFrame):
                                               'hist', 'scatter_matrix',
                                               'autocorrelation_plot',
                                               'pairgrid', 'facetgrid',
-                                              'pairplot',
+                                              'pairplot', 'violinplot',
                                               None],
                                      doc="""Selects which Pandas or Seaborn plot
                                             type to use, when visualizing the plot.""")
