@@ -266,7 +266,8 @@ class NdWidget(param.Parameterized):
                          shape[0]*get_plot_size()[0])
             self.plot = GridLayoutPlot(view, **dict(size=grid_size))
         else:
-            self.plot = Plot.defaults[view.type](view)
+            opts = dict(View.options.plotting(view).opts, size=get_plot_size())
+            self.plot = Plot.defaults[view.type](view, **opts)
             view = [view]
 
         keys_list = []
