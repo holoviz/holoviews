@@ -261,7 +261,7 @@ class SNSFramePlot(DFrameViewPlot):
                                               'hist', 'scatter_matrix',
                                               'autocorrelation_plot',
                                               'pairgrid', 'facetgrid',
-                                              'pairplot'],
+                                              'pairplot', 'violinplot'],
                                      doc="""
         Selects which Seaborn plot type to use, when visualizing the
         SNSFrame. The options that can be passed to the plot_type are
@@ -269,6 +269,9 @@ class SNSFramePlot(DFrameViewPlot):
 
     dframe_options = dict(DFrameViewPlot.dframe_options,
                           **{'regplot':   RegressionPlot.style_opts,
+                             'boxplot':   [],
+                             'violinplot':['groupby', 'positions',
+                                           'inner', 'bw', 'cut'],
                              'lmplot':    ['hue', 'col', 'row', 'palette',
                                            'sharex', 'dropna', 'legend'],
                              'corrplot':  ['annot', 'sig_stars', 'sig_tail',
@@ -347,6 +350,14 @@ class SNSFramePlot(DFrameViewPlot):
         if self.plot_type == 'regplot':
             sns.regplot(x=view.x, y=view.y, data=view.data,
                         ax=self.ax, **self.style)
+        elif self.plot_type == 'boxplot':
+            self.style.pop('return_type', None)
+            self.style.pop('figsize', None)
+            sns.boxplot(view.data[view.y], view.data[view.x], ax=self.ax,
+                        **self.style)
+        elif self.plot_type == 'violinplot':
+            sns.violinplot(view.data[view.y], view.data[view.x], ax=self.ax,
+                           **self.style)
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
                              data=view.data, ax=self.ax, **self.style)
