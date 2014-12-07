@@ -338,6 +338,10 @@ class Matrix(SheetCoordinateSystem, Raster):
 
     def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **kwargs):
         bounds = bounds if bounds else BoundingBox()
+        if isinstance(bounds, tuple):
+            bounds = BoundingBox(lbrt=bounds)
+        elif np.isscalar(bounds):
+            bounds = BoundingBox(radius=bounds)
         data = np.array([[0]]) if data is None else data
         l, b, r, t = bounds.lbrt()
         (dim1, dim2) = data.shape[0], data.shape[1]
