@@ -23,7 +23,7 @@ except:
 
 from ..core import View, Map, AdjointLayout, GridLayout, Grid
 from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
-from ..view import Annotation, Array2D
+from ..view import Annotation, Raster
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget
@@ -207,7 +207,7 @@ def grid_display(grid, size=256):
     magic_info = process_view_magics(grid)
     if magic_info: return magic_info
     layer_types = grid.layer_types
-    if len(layer_types) == 1 and issubclass(layer_types[0], Array2D):
+    if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot

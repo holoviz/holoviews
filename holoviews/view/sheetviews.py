@@ -12,9 +12,9 @@ from .dataviews import Histogram, Curve
 from .tabular import Table
 
 
-class Array2D(Layer):
+class Raster(Layer):
     """
-    Array2D is a basic 2D atomic View type.
+    Raster is a basic 2D atomic View type.
 
     Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
     3D arrays, each depth layer is interpreted as a channel of the 2D
@@ -23,7 +23,7 @@ class Array2D(Layer):
 
     dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
                             constant=True, doc="""
-        The label of the x- and y-dimension of the Array2D in form
+        The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
 
     value = param.ClassSelector(class_=(str, Dimension),
@@ -31,13 +31,13 @@ class Array2D(Layer):
         The dimension description of the data held in the data array.""")
 
     def __init__(self, data, lbrt, **kwargs):
-        super(Array2D, self).__init__(data, **kwargs)
+        super(Raster, self).__init__(data, **kwargs)
         self.xlim = lbrt[0], lbrt[2]
         self.ylim = lbrt[1], lbrt[3]
 
 
     def __getitem__(self, slc):
-        raise NotImplementedError('Slicing Array2D Views currently'
+        raise NotImplementedError('Slicing Raster Views currently'
                                   ' not implemented.')
 
 
@@ -60,14 +60,14 @@ class Array2D(Layer):
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         """
-        Returns a Histogram of the Array2D data, binned into
+        Returns a Histogram of the Raster data, binned into
         num_bins over the bin_range (if specified).
 
         If adjoin is True, the histogram will be returned adjoined to
-        the Array2D as a side-plot.
+        the Raster as a side-plot.
 
         The 'individually' argument specifies whether the histogram
-        will be rescaled for each Array2D in a Map.
+        will be rescaled for each Raster in a Map.
         """
         range = find_minmax(self.range, (0, -float('inf')))\
             if bin_range is None else bin_range
@@ -110,7 +110,7 @@ class Array2D(Layer):
 
     def sample(self, samples=[], **sample_values):
         """
-        Sample the Array2D along one or both of its dimensions,
+        Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
         a ItemTable, Curve or Scatter. If two dimension samples
         and a new_xaxis is provided the sample will be the value
@@ -134,7 +134,7 @@ class Array2D(Layer):
             dimension, sample_coord = sample_values.items()[0]
             if isinstance(sample_coord, slice):
                 raise ValueError(
-                    'Array2D sampling requires coordinates not slices,'
+                    'Raster sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
             other_dimension = [d for d in self.dimensions if
                                d.name != dimension]
@@ -155,7 +155,7 @@ class Array2D(Layer):
 
     def reduce(self, label_prefix='', **dimreduce_map):
         """
-        Reduces the Array2D using functions provided via the
+        Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
         the result View label.
@@ -225,7 +225,7 @@ class Array2D(Layer):
         return self.normalize()
 
 
-class HeatMap(Array2D):
+class HeatMap(Raster):
     """
     HeatMap is an atomic View element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -304,7 +304,7 @@ class HeatMap(Array2D):
         return min(dim2_keys), max(dim2_keys)
 
 
-class Matrix(SheetCoordinateSystem, Array2D):
+class Matrix(SheetCoordinateSystem, Raster):
     """
     Matrix is the atomic unit as which 2D data is stored, along with
     its bounds object. The input data may be a numpy.matrix object or

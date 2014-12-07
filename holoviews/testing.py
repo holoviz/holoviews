@@ -30,7 +30,7 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(ViewMap,      self.compare_viewmap)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
-        self.addTypeEqualityFunc(Array2D,       self.compare_array2D)
+        self.addTypeEqualityFunc(Raster,       self.compare_raster)
         self.addTypeEqualityFunc(HeatMap,      self.compare_heatmap)
         # Tables
         self.addTypeEqualityFunc(ItemTable,    self.compare_itemtables)
@@ -182,8 +182,8 @@ class ViewTestCase(unittest.TestCase):
         self.compare_arrays(view1.values, view2.values, "Histogram values")
 
 
-    def compare_array2D(self, view1, view2, msg):
-        self.compare_arrays(view1.data, view2.data, 'Array2D')
+    def compare_raster(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Raster')
 
 
     def compare_heatmap(self, view1, view2, msg):

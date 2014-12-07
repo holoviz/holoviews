@@ -16,7 +16,7 @@ import param
 
 from ..core import Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
     GridLayout, Grid
-from ..view import Annotation, Array2D
+from ..view import Annotation, Raster
 
 
 class Plot(param.Parameterized):
