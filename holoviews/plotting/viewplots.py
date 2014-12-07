@@ -147,9 +147,9 @@ class Plot(param.Parameterized):
 
         axis = self.ax
 
-        if self.zorder == 0 and axis is not None:
+        if self.zorder == 0 and axis is not None and key is not None:
             view = self._map.get(key, None) if hasattr(self, '_map') else None
-            if key is not None and view is not None:
+            if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
@@ -927,9 +927,7 @@ class OverlayPlot(Plot):
             plotype = Plot.defaults[vmap.type]
             plot = plotype(vmap,
                            **dict(plotopts, size=self.size, all_keys=self._keys,
-                           show_xaxis=self.show_xaxis, show_yaxis=self.show_yaxis,
-                           show_legend=self.show_legend, show_title=self.show_title,
-                           show_grid=self.show_grid, zorder=zorder, **kwargs))
+                                  show_legend=self.show_legend, zorder=zorder, **kwargs))
             plot.aspect = self.aspect
 
             lbrt = None if vmap.type == Annotation else lbrt
