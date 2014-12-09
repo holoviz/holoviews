@@ -261,6 +261,9 @@ class roi_table(ViewOperation):
         bit_mask = mask.data.astype(np.bool)
         roi = mview.data[bit_mask]
 
+        if len(roi) == 0:
+            raise Exception("No region of interest defined in ROI mask" )
+
         results = self.p.fn(roi)
         if not isinstance(results, dict):
             results = {self.p.heading:results}
