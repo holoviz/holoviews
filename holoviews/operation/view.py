@@ -31,23 +31,32 @@ class chain(ViewOperation):
 class operator(ViewOperation):
     """
     Applies any arbitrary operator on the data (currently only
-    supports SheetViews) and returns the result.
+    supports Matrix views) and returns the result.
     """
 
     operator = param.Callable(np.add, doc="""
-        The binary operator to apply between the data attributes of
-        the supplied Views. By default, performs elementwise addition
-        across the Matrix arrays.""")
+        The commutative operator to apply between the data attributes
+        of the supplied Views. By default, performs elementwise
+        addition across the Matrix arrays.""")
+
+    unpack = param.Boolean(default=True, doc=""" Whether the operator
+       is supplied the .data attributes as an unpack collection of
+       arguments or as a list.""")
 
     label = param.String(default='Operation', doc="""
         The label for the result after having applied the operator.""")
+
 
     def _process(self, overlay, key=None):
 
         if not isinstance(overlay, Overlay):
             raise Exception("Operation requires an Overlay as input")
 
-        new_data = self.p.operator(*[el.data for el in overlay])
+        if self.p.unpack:
+            new_data = self.p.operator(*[el.data for el in overlay])
+        else:
+            new_data = self.p.operator([el.data for el in overlay])
+
         return [Matrix(new_data, bounds=overlay[0].bounds, label=self.p.label,
                             roi_bounds=overlay[0].roi_bounds)]
 
