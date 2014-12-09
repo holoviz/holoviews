@@ -713,7 +713,7 @@ class Collator(NdMapping):
 
         progressbar = ProgressBar(label='Collation')
         num_elements = len(self)
-        for idx, (key, data) in enumerate(self.items()):
+        for idx, (key, data) in enumerate(self._data.items()):
            attrtree = self._process_data(data).filter(path_filters)
 
            if merge:
