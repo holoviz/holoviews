@@ -752,7 +752,7 @@ class Collator(NdMapping):
                 dim_vals = [(dim, val) for dim, val in dims[::-1]
                             if dim not in self.drop]
                 for dim, val in dim_vals:
-                    if dim.capitalize() not in v.dimension_labels:
+                    if dim not in v.dimension_labels:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v
