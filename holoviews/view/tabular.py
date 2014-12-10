@@ -166,18 +166,23 @@ class Table(ItemTable, NdMapping):
 
     def reduce(self, **reduce_map):
         """
-        Allows collapsing the Table down to an ItemTable View
-        with a single entry.
+        Allows collapsing the Table down by dimension by passing
+        the dimension name and reduce_fn as kwargs. Reduces
+        dimensionality of Table until only an ItemTable is left.
         """
-        reduced_data = OrderedDict()
+        dim_labels = self.dimension_labels
         reduced_table = self
-        for dimension, reduce_fn in reduce_map.items():
-            split_dims = [self.dim_dict[d] for d in self.dimension_labels
-                          if d != dimension]
-            split_map = reduced_table.split_dimensions([dimension])
-            reduced_table = self.clone(None, dimensions=split_dims)
-            for k, table in split_map.items():
-                reduced_table[k] = reduce_fn(table.data.values())
+        for dim, reduce_fn in reduce_map.items():
+            split_dims = [self.dim_dict[d] for d in dim_labels if d != dim]
+            if len(split_dims):
+                split_map = reduced_table.split_dimensions([dim])
+                reduced_table = self.clone(None, dimensions=split_dims)
+                for k, table in split_map.items():
+                    reduced_table[k] = reduce_fn(table.data.values())
+            else:
+                data = reduce_fn(reduced_table.data.values())
+                reduced_table = ItemTable({self.value.name: data},
+                                          dimensions=self.value)
         return reduced_table
 
 
