@@ -104,9 +104,14 @@ class Table(ItemTable, NdMapping):
                                 default=Dimension('Value'), doc="""
         The dimension description of the data held in the data array.""")
 
-    def __init__(self, data, **params):
-        super(Table, self).__init__(data, **params)
-        self._data = self.data
+    def __init__(self, data=None, **kwargs):
+        if not isinstance(kwargs.get('value', None), Dimension):
+            kwargs['value'] = Dimension(kwargs['value'])
+        NdMapping.__init__(self, data, **kwargs)
+        self.data = self._data
+
+    def __getitem__(self, *args):
+        return NdMapping.__getitem__(self, *args)
 
     @property
     def rows(self):
@@ -115,6 +120,9 @@ class Table(ItemTable, NdMapping):
     @property
     def cols(self):
         return self.ndims + 1
+
+    def clone(self, *args, **kwargs):
+        return NdMapping.clone(self, *args, **kwargs)
 
 
     def cell_value(self, row, col):
@@ -156,16 +164,21 @@ class Table(ItemTable, NdMapping):
         return Table(sample_data, **dict(self.get_param_values()))
 
 
-    def reduce(self, label_prefix='', **reduce_map):
+    def reduce(self, **reduce_map):
         """
         Allows collapsing the Table down to an ItemTable View
         with a single entry.
         """
         reduced_data = OrderedDict()
-        value = self.value(' '.join([label_prefix, self.value.name]))
+        reduced_table = self
         for dimension, reduce_fn in reduce_map.items():
-            reduced_data[value] = reduce_fn(self.values())
-        return ItemTable(reduced_data, title=self.title, value=self.value(value))
+            split_dims = [self.dim_dict[d] for d in self.dimension_labels
+                          if d != dimension]
+            split_map = reduced_table.split_dimensions([dimension])
+            reduced_table = self.clone(None, dimensions=split_dims)
+            for k, table in split_map.items():
+                reduced_table[k] = reduce_fn(table.data.values())
+        return reduced_table
 
 
     def _item_check(self, dim_vals, data):
