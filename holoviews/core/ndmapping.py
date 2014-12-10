@@ -175,7 +175,7 @@ class NdIndexableMapping(Dimensioned):
         specified items (empty by default).
         """
         settings = dict(self.get_param_values(), **kwargs)
-        return self.__class__(initial_items=items, **settings)
+        return self.__class__(items, **settings)
 
     def copy(self):
         return self.clone(list(self.items()))
@@ -431,6 +431,15 @@ class NdIndexableMapping(Dimensioned):
 
     def __len__(self):
         return len(self._data)
+
+
+    def sort_key(self, unordered):
+        """
+        Given an unordered list of (dimension, value) pairs returns
+        the sorted key.
+        """
+        dim_orderfn = lambda k: self.dim_index(k[0].name)
+        return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
 
 
     def split_dimensions(self, dimensions):

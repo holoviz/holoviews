@@ -247,15 +247,6 @@ class Map(NdMapping):
         return item.title + title_suffix
 
 
-    def sort_key(self, unordered):
-        """
-        Given an unordered list of (dimension, value) pairs returns
-        the sorted key.
-        """
-        dim_orderfn = lambda k: self.dim_index(k[0].name)
-        return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
-
-
     def sample(self, dimsample_map, new_axis=None):
         """
         Base class implements signature for sampling View dimensions
