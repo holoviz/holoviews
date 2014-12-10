@@ -69,5 +69,8 @@ class table_collate(MapOperation):
             else:
                 grid = maps.last
         else:
-            grid = maps.grid(['Label'], layout=True, set_title=False)
+            if len(maps) > 1:
+                grid = maps.grid(['Label'], layout=True, set_title=False)
+            else:
+                grid = maps.last
         return [grid]
