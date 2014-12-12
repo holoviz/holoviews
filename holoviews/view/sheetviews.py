@@ -314,7 +314,7 @@ class Matrix(SheetCoordinateSystem, Raster):
     _deep_indexable = True
 
     def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **kwargs):
-        bounds = bounds if bounds else BoundingBox()
+        bounds = bounds if bounds is not None else BoundingBox()
         if isinstance(bounds, tuple):
             bounds = BoundingBox(lbrt=bounds)
         elif np.isscalar(bounds):
@@ -337,7 +337,7 @@ class Matrix(SheetCoordinateSystem, Raster):
         corresponding Matrix exactly.
         """
         if isinstance(coords, tuple):
-            return self.closest_cell_center(*el)
+            return self.closest_cell_center(*coords)
         else:
             return [self.closest_cell_center(*el) for el in coords]
 
@@ -440,7 +440,7 @@ class Points(Layer):
 
     _null_value = np.array([[], []]).T # For when data is None
     _min_dims = 2                      # Minimum number of columns
-    _range_column = 3                 # Column used by range property
+    _range_column = 2                  # Column used by range property
 
     value = param.ClassSelector(class_=(str, Dimension),
                                 default=Dimension('Magnitude'))
@@ -475,8 +475,8 @@ class Points(Layer):
         """
         col = self._range_column
         if self.data.shape[1] < col: return None
-        return (self.data[:,col-1:col].min(),
-                self.data[:,col-1:col].max())
+        return (self.data[:, col].min(),
+                self.data[:, col].max())
 
 
     def __len__(self):
@@ -529,7 +529,7 @@ class VectorField(Points):
 
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns
-    _range_column = 4                          # Column used by range property
+    _range_column = 3                          # Column used by range property
 
     value = param.ClassSelector(class_=(str, Dimension),
                                 default=Dimension('PolarVector', cyclic=True,
