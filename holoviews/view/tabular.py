@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, Layer, NdMapping, Pane
+from ..core import Dimension, Layer, NdMapping, ViewMap
 
 
 class ItemTable(Layer):
@@ -205,6 +205,18 @@ class Table(Layer, NdMapping):
         if not np.isscalar(data):
             raise TypeError('Table only accepts scalar values.')
         super(Table, self)._item_check(dim_vals, data)
+
+
+    def viewmap(self, dimensions):
+        split_dims = [dim for dim in self.dimension_labels
+                      if dim not in dimensions]
+        if len(dimensions) < self.ndims:
+            return self.split_dimensions(split_dims, map_type=ViewMap)
+        else:
+            vmap = ViewMap(dimensions=dimensions)
+            for k, v in self.items():
+                vmap[k] = Table({self.value.name: v}, value=self.value)
+            return vmap
 
 
     def dim_values(self, dim):
