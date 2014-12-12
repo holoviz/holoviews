@@ -197,7 +197,7 @@ class Table(Layer, NdMapping):
             else:
                 data = reduce_fn(reduced_table.data.values())
                 reduced_table = ItemTable({self.value.name: data},
-                                          dimensions=self.value)
+                                          dimensions=[self.value])
         return reduced_table
 
 
@@ -215,7 +215,7 @@ class Table(Layer, NdMapping):
         else:
             vmap = ViewMap(dimensions=dimensions)
             for k, v in self.items():
-                vmap[k] = Table({self.value.name: v}, value=self.value)
+                vmap[k] = ItemTable({self.value.name: v}, dimensions=[self.value])
             return vmap
 
 
