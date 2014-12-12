@@ -442,7 +442,7 @@ class NdIndexableMapping(Dimensioned):
         return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
 
 
-    def split_dimensions(self, dimensions):
+    def split_dimensions(self, dimensions, map_type=None):
         """
         Split the dimensions in the NdMapping across two NdMappings,
         where the inner mapping is of the same type as the original
@@ -458,7 +458,8 @@ class NdIndexableMapping(Dimensioned):
         self._check_key_type = False # Speed optimization
         own_keys = self._data.keys()
 
-        split_data = NdMapping(dimensions=first_dims)
+        map_type = map_type if map_type else NdMapping
+        split_data = map_type(dimensions=first_dims)
         split_data._check_key_type = False # Speed optimization
         for fk in first_keys:  # The first groups keys
             split_data[fk] = self.clone(dimensions=second_dims)
