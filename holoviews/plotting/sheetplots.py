@@ -22,6 +22,14 @@ class PointPlot(Plot):
       Whether to normalize the colors used to represent magnitude for
       each frame or across the map (when color is applicable).""")
 
+    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
+      If values are supplied the area of the points is computed relative
+      to the marker size. It is then multiplied by scaling_factor to the power
+      of the ratio between the smallest point and all other points.
+      For values of 1 scaling by the values is disabled, a factor of 2
+      allows for linear scaling of the area and a factor of 4 linear
+      scaling of the point width.""")
+
     style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
                                      'linewidth', 'marker', 's', 'visible',
                                      'cmap', 'vmin', 'vmax'],
@@ -36,11 +44,17 @@ class PointPlot(Plot):
 
         self.ax = self._init_axis(axis)
 
+        values = points.data.shape[1]>=3
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        cs = points.data[:, 2] if points.data.shape[1]>=3 else None
+        cs = points.data[:, 2] if values else None
 
         kwargs = View.options.style(points)[cyclic_index]
+        if values and self.scaling_factor > 1:
+            ms = kwargs.pop('s') if 's' in kwargs else plt.rcParams['lines.markersize']
+            cs = np.ma.array(cs, mask=cs<=0)
+            scaled_sizes = cs / np.min(cs.nonzero())
+            kwargs['s'] = (ms*self.scaling_factor**scaled_sizes)
         scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
                                       **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
                                       if cs is not None else kwargs))
@@ -59,7 +73,11 @@ class PointPlot(Plot):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
-            scatter.set_array(view.data[:,2])
+            values = view.data[:,2]
+            scatter.set_array(values)
+            if self.scaling is not None:
+                sizes = values if self.scaling == 'radius' else values**2
+                scatter.set_sizes(sizes)
 
         if self.normalize_individually:
             scatter.set_clim(view.range)
