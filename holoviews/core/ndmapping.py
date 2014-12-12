@@ -264,7 +264,7 @@ class NdIndexableMapping(Dimensioned):
         """
         Returns a sorted list of values for a particular dimensions.
         """
-        return sorted(set([k[self.dim_index(dim)] for k in self._data.keys()]))
+        return [k[self.dim_index(dim)] for k in self._data.keys()]
 
 
     def dim_range(self, dim):

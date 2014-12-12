@@ -192,5 +192,11 @@ class Table(ItemTable, NdMapping):
         super(Table, self)._item_check(dim_vals, data)
 
 
+    def dim_values(self, dim):
+        if dim == self.value.name:
+            return self.values()
+        else:
+            return NdMapping.dim_values(self, dim)
+
     def dframe(self):
         return NdMapping.dframe(self, value_label=self.value.name)

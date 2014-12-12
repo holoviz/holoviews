@@ -133,6 +133,13 @@ class Annotation(Layer):
         """
         self.data.append(('hline', y, interval))
 
+    def dim_values(self, dim):
+        raise NotImplementedError("Annotation do not have explicit "
+                                  "dimension values")
+
+    def hist(self, *args, **kwargs):
+        raise NotImplementedError("Annotations don't support histograms.")
+
 
     def __mul__(self, other):
         raise Exception("An annotation can only be overlaid over a different View type.")

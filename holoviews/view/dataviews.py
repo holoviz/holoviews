@@ -103,6 +103,16 @@ class DataView(Layer):
         return len(self.data[:,0])
 
 
+    def dim_values(self, dim):
+        if dim == self.dimension_labels[0]:
+            return self.data[:, 0]
+        elif dim == self.value.name:
+            return self.value[:, 1]
+        else:
+            raise Exception("Dimension %s not found in %s." %
+                            (dim, self.__class__.__name__))
+
+
     def dframe(self):
         import pandas as pd
         columns = [self.dimension_labels[0], self.value.name]

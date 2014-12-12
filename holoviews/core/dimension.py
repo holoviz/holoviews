@@ -118,6 +118,14 @@ class Dimensioned(param.Parameterized):
         return len(self.dimensions)
 
 
+    def dim_values(self, dim):
+        """
+        Returns a list of all the values along
+        the given dimensions.
+        """
+        raise NotImplementedError
+
+
     def dim_index(self, dimension_label):
         """
         Returns the tuple index of the requested dimension.

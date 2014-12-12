@@ -491,9 +491,9 @@ class SelectionWidget(NdWidget):
         dimensions = []
         init_dim_vals = []
         for idx, dim in enumerate(self.mock_obj.dimensions):
-            dim_vals = self.mock_obj.dim_values(dim.name)
+            dim_vals = sorted(set(self.mock_obj.dim_values(dim.name)))
             if isnumeric(dim_vals[0]):
-                dim_vals = [round(v, 10) for v in self.mock_obj.dim_values(dim.name)]
+                dim_vals = [round(v, 10) for v in dim_vals]
                 widget_type = 'slider'
             else:
                 widget_type = 'dropdown'
