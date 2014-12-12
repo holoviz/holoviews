@@ -1,10 +1,10 @@
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 
 import numpy as np
 
 import param
 
-from ..core import Dimension, Layer, NdMapping
+from ..core import Dimension, Layer, NdMapping, Pane
 
 
 class ItemTable(Layer):
@@ -103,20 +103,30 @@ class ItemTable(Layer):
         return DataFrame({k: [v] for k, v in self.data.items()})
 
 
-class Table(ItemTable, NdMapping):
+class Table(Layer, NdMapping):
 
     value = param.ClassSelector(class_=Dimension,
                                 default=Dimension('Value'), doc="""
         The dimension description of the data held in the data array.""")
 
+    xlabel, ylabel = None, None
+    xlim, ylim = None, None
+    lbrt = None, None, None, None
+
     def __init__(self, data=None, **kwargs):
-        if not isinstance(kwargs.get('value', None), Dimension):
+        if 'value' in kwargs and not isinstance(kwargs['value'], Dimension):
             kwargs['value'] = Dimension(kwargs['value'])
+        self._style = None
         NdMapping.__init__(self, data, **kwargs)
         self.data = self._data
 
     def __getitem__(self, *args):
         return NdMapping.__getitem__(self, *args)
+
+    @property
+    def range(self):
+        values = self.values()
+        return (min(values), max(values))
 
     @property
     def rows(self):
@@ -202,6 +212,7 @@ class Table(ItemTable, NdMapping):
             return self.values()
         else:
             return NdMapping.dim_values(self, dim)
+
 
     def dframe(self):
         return NdMapping.dframe(self, value_label=self.value.name)
