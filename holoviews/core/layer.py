@@ -62,6 +62,13 @@ class Layer(Pane):
         return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
                          individually=individually, **kwargs)
 
+    def table(self):
+        from ..view import Table
+        dim_values = [self.dim_values(dim) for dim in self.dimension_labels]
+        values = self.dim_values(self.value.name)
+        return Table(zip(zip(*dim_values), values), dimensions=self.dimensions,
+                     value=self.value, label=self.label)
+
 
     ########################
     # Subclassable methods #
