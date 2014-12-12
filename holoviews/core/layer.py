@@ -57,6 +57,11 @@ class Layer(Pane):
 
         return Overlay(combined_layers)
 
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        from ..operation import histogram
+        return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
+                         individually=individually, **kwargs)
+
 
     ########################
     # Subclassable methods #
@@ -924,12 +929,11 @@ class ViewMap(Map):
 
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
+        style_prefix = 'Custom[<' + self.name + '>]_'
         for k, v in self.items():
-            histmap[k] = v.hist(num_bins=num_bins, bin_range=bin_range,
-                                  individually=individually,
-                                  style_prefix='Custom[<' + self.name + '>]_',
-                                  adjoin=False,
-                                  **kwargs)
+            histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
+                                individually=individually, num_bins=num_bins,
+                                style_prefix=style_prefix, **kwargs)
 
         if adjoin and issubclass(self.type, Overlay):
             layout = (self << histmap)

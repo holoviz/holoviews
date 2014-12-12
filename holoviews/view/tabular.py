@@ -81,6 +81,11 @@ class ItemTable(Layer):
             return self.data[heading]
 
 
+    def hist(self, *args, **kwargs):
+        raise NotImplementedError("ItemTables are not homogenous and "
+                                  "don't support histograms.")
+
+
     def cell_type(self, row, col):
         """
         Returns the cell type given a row and column index. The common

@@ -5,10 +5,8 @@ import numpy as np
 
 from ..core import Dimension, NdMapping, Layer
 from ..core.boundingregion import BoundingRegion, BoundingBox
-from ..core.layer import find_minmax
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.options import options
-from .dataviews import Histogram, Curve
+from .dataviews import Curve
 from .tabular import Table
 
 
@@ -58,46 +56,6 @@ class Raster(Layer):
         return self.clone(norm_data)
 
 
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        """
-        Returns a Histogram of the Raster data, binned into
-        num_bins over the bin_range (if specified).
-
-        If adjoin is True, the histogram will be returned adjoined to
-        the Raster as a side-plot.
-
-        The 'individually' argument specifies whether the histogram
-        will be rescaled for each Raster in a Map.
-        """
-        range = find_minmax(self.range, (0, -float('inf')))\
-            if bin_range is None else bin_range
-
-        # Avoids range issues including zero bin range and empty bins
-        if range == (0, 0):
-            range = (0.0, 0.1)
-        try:
-            data = self.data.flatten()
-            data = data[np.invert(np.isnan(data))]
-            hist, edges = np.histogram(data, normed=True,
-                                       range=range, bins=num_bins)
-        except:
-            edges = np.linspace(range[0], range[1], num_bins + 1)
-            hist = np.zeros(num_bins)
-        hist[np.isnan(hist)] = 0
-
-        hist_view = Histogram(hist, edges, dimensions=[self.value],
-                              label=self.label, value='Frequency')
-
-        # Set plot and style options
-        style_prefix = kwargs.get('style_prefix',
-                                  'Custom[<' + self.name + '>]_')
-        opts_name = style_prefix + hist_view.label.replace(' ', '_')
-        hist_view.style = opts_name
-        options[opts_name] = options.plotting(self)(
-            **dict(rescale_individually=individually))
-        return (self << hist_view) if adjoin else hist_view
-
-
     def _coord2matrix(self, coord):
         xd, yd = self.data.shape
         l, b, r, t = self.lbrt
@@ -129,7 +87,7 @@ class Raster(Layer):
             for c in samples:
                 table_data[c] = self.data[self._coord2matrix(c)]
             return Table(table_data, dimensions=self.dimensions,
-                             label=self.label, value=self.value)
+                         label=self.label, value=self.value)
         else:
             dimension, sample_coord = sample_values.items()[0]
             if isinstance(sample_coord, slice):
@@ -223,6 +181,25 @@ class Raster(Layer):
     @property
     def N(self):
         return self.normalize()
+
+
+    def dim_values(self, dim):
+        """
+        The set of samples available along a particular dimension.
+        """
+        if dim in self.dimension_labels:
+            dim_index = self.dim_index(dim)
+            l, b, r, t = self.lbrt
+            shape = self.data.shape[abs(dim_index-1)]
+            dim_min, dim_max = [(l, r), (b, t)][dim_index]
+            dim_len = self.data.shape[dim_index]
+            half_unit = (dim_max - dim_min)/dim_len/2.
+            coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
+            linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
+            return [self.closest_cell_center(*coord_fn(v))[dim_index]
+                    for v in linspace] * shape
+        elif dim == self.value.name:
+            return self.data.flatten()
 
 
 class HeatMap(Raster):
@@ -432,19 +409,6 @@ class Matrix(SheetCoordinateSystem, Raster):
         return Matrix(data, roi_bounds, style=self.style, value=self.value)
 
 
-    def dimension_values(self, dimension):
-        """
-        The set of samples available along a particular dimension.
-        """
-        dim_index = self.dim_index(dimension)
-        l, b, r, t = self.lbrt
-        dim_min, dim_max = [(l, r), (b, t)][dim_index]
-        dim_len = self.data.shape[dim_index]
-        half_unit = (dim_max - dim_min)/dim_len/2.
-        coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
-        return [self.closest_cell_center(*coord_fn(v))[dim_index]
-                for v in np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)]
-
 
 class Points(Layer):
     """
@@ -524,6 +488,17 @@ class Points(Layer):
         while i < len(self):
             yield tuple(self.data[i, ...])
             i += 1
+
+
+    def dim_values(self, dim):
+        if dim in self.dimension_labels:
+            return self.data[:, self.dim_index(dim)]
+        elif dim == self.value.name:
+            return self.data[:, self._range_column]
+        else:
+            raise Exception("Dimension %s not found in %s." %
+                            (dim, self.__class__.__name__))
+
 
 
 class VectorField(Points):

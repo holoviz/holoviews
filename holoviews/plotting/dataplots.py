@@ -8,8 +8,7 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 from ..core import Map, View, Overlay
-from ..view import Scatter, Curve, Histogram, ItemTable, Table
-from .sheetplots import MatrixPlot
+from ..view import Raster, Scatter, Curve, Histogram, ItemTable, Table
 from .viewplots import Plot
 
 
@@ -263,7 +262,6 @@ class TablePlot(Plot):
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-
         tableview = self._map.last
         self.ax = self._init_axis(axis)
 
@@ -537,15 +535,20 @@ class SideHistogramPlot(HistogramPlot):
 
 
         # If .main is an Overlay or a Map of Overlays get the correct style
-        if isinstance(main, Map) and issubclass(main.type, Overlay):
-            style =  main.last[self.layout.main_layer].style
-        elif isinstance(main, Overlay):
+        if isinstance(main, Map):
+            main = main.last
+
+        if isinstance(main, Overlay):
+            main = main[self.layout.main_layer]
             style = main[self.layout.main_layer].style
         else:
             style = main.style
 
-        cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
-        main_range = View.options.style(style).opts.get('clims', main_range) if self.offset else None
+        if isinstance(main, Raster):
+            cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
+            main_range = View.options.style(style).opts.get('clims', main_range) if self.offset else None
+        else:
+            cmap = None
 
         if cmap is not None:
             self._colorize_bars(cmap, bars, main_range)

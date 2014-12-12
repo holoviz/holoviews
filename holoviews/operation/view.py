@@ -4,7 +4,9 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewOperation, Overlay
-from ..view import ItemTable, Matrix, VectorField, Contours
+from ..core.layer import find_minmax
+from ..core.options import options
+from ..view import ItemTable, Matrix, VectorField, Contours, Histogram
 
 
 class chain(ViewOperation):
@@ -137,6 +139,67 @@ class contours(ViewOperation):
             return [(sheetview * contours[0])]
         else:
             return [sheetview * Overlay(contours)]
+
+
+class histogram(ViewOperation):
+    """
+    Returns a Histogram of the Raster data, binned into
+    num_bins over the bin_range (if specified).
+
+    If adjoin is True, the histogram will be returned adjoined to
+    the Raster as a side-plot.
+    """
+
+    adjoin = param.Boolean(default=True, doc="""
+      Whether to adjoin the histogram to the View.""")
+
+    bin_range = param.NumericTuple(default=(0, 0), doc="""
+      Specifies the range within which to compute the bins.""")
+
+    dimension = param.String(default=None, doc="""
+      Along which dimension of the View to compute the histogram.""")
+
+    normed = param.Boolean(default=True, doc="""
+      Whether the histogram frequencies are normalized.""")
+
+    individually = param.Boolean(default=True, doc="""
+      Specifies whether the histogram will be rescaled for each Raster in a Map.""")
+
+    num_bins = param.Integer(default=20, doc="""
+      Number of bins in the histogram .""")
+
+    style_prefix = param.String(default=None, allow_None=None, doc="""
+      Used for setting a common style for histograms in a ViewMap or AdjointLayout.""")
+
+    def _process(self, view, key=None):
+        data = np.array(view.dim_values(self.p.dimension if self.p.dimension else view.value.name))
+        range = find_minmax((np.min(data), np.max(data)), (0, -float('inf')))\
+            if self.p.bin_range is None else self.p.bin_range
+
+        # Avoids range issues including zero bin range and empty bins
+        if range == (0, 0):
+            range = (0.0, 0.1)
+        try:
+            data = data[np.invert(np.isnan(data))]
+            hist, edges = np.histogram(data, normed=self.p.normed,
+                                       range=range, bins=self.p.num_bins)
+        except:
+            edges = np.linspace(range[0], range[1], self.p.num_bins + 1)
+            hist = np.zeros(self.p.num_bins)
+        hist[np.isnan(hist)] = 0
+
+        hist_view = Histogram(hist, edges, dimensions=[view.value],
+                              label=view.label, value='Frequency')
+
+        # Set plot and style options
+        style_prefix = self.p.style_prefix if self.p.style_prefix else \
+            'Custom[<' + self.name + '>]_'
+        opts_name = style_prefix + hist_view.label.replace(' ', '_')
+        hist_view.style = opts_name
+        options[opts_name] = options.plotting(view)(
+            **dict(rescale_individually=self.p.individually))
+        return [(view << hist_view) if self.p.adjoin else hist_view]
+
 
 
 class vectorfield(ViewOperation):
