@@ -107,7 +107,7 @@ class DataView(Layer):
         if dim == self.dimension_labels[0]:
             return self.data[:, 0]
         elif dim == self.value.name:
-            return self.value[:, 1]
+            return self.data[:, 1]
         else:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
