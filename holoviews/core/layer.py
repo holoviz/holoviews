@@ -298,6 +298,12 @@ class Overlay(Pane, NdMapping):
             raise ValueError('ylim needs to be a length two tuple or None.')
 
     @property
+    def lbrt(self):
+        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
+        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
+        return l, b, r, t
+
+    @property
     def range(self):
         range = self[0].range if self[0].range is not None else None
         cyclic = self[0].cyclic_range is not None
