@@ -4,6 +4,7 @@ from .layer import *           # pyflakes:ignore (API import)
 from .layout import *          # pyflakes:ignore (API import)
 from .operation import *       # pyflakes:ignore (API import)
 from .sheetcoords import *     # pyflakes:ignore (API import)
+from .tree import *            # pyflakes:ignore (API import)
 from .view import *            # pyflakes:ignore (API import)
 from . import options          # pyflakes:ignore (API import)
 
@@ -11,7 +12,7 @@ from . import options          # pyflakes:ignore (API import)
 def public(obj):
     if not isinstance(obj, type): return False
     baseclasses = [Dimension, Dimensioned, ViewOperation, BoundingBox,
-                   SheetCoordinateSystem]
+                   SheetCoordinateSystem, AttrTree]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 _public = list(set([_k for _k, _v in locals().items() if public(_v)]))

@@ -13,6 +13,7 @@ from .core.boundingregion import BoundingBox  # pyflakes:ignore (API import)
 from .core.layer import *                     # pyflakes:ignore (API import)
 from .core.layout import *                    # pyflakes:ignore (API import)
 from .core.sheetcoords import *               # pyflakes:ignore (API import)
+from .core.tree import *                      # pyflakes:ignore (API import)
 
 from .operation import ViewOperation, MapOperation # pyflakes:ignore (API import)
 from .view import *                                # pyflakes:ignore (API import)

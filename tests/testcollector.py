@@ -4,7 +4,8 @@ from collections import OrderedDict
 import numpy as np
 
 from holoviews import Matrix
-from holoviews.interface.collector import AttrTree, ViewRef
+from holoviews.core.tree import AttrTree
+from holoviews.interface.collector import ViewRef
 from holoviews.testing import ViewTestCase
 
 
