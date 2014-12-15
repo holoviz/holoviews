@@ -47,12 +47,12 @@ class GridLayout(NdMapping):
     dimensions = param.List(default=[Dimension('Row', type=int),
                                      Dimension('Column', type=int)], constant=True)
 
-    def __init__(self, initial_items=[], **kwargs):
+    def __init__(self, initial_items=[], **params):
         self._max_cols = 4
         self._style = None
         if all(isinstance(el, (View, NdMapping, AdjointLayout)) for el in initial_items):
             initial_items = self._grid_to_items([initial_items])
-        super(GridLayout, self).__init__(initial_items=initial_items, **kwargs)
+        super(GridLayout, self).__init__(initial_items=initial_items, **params)
 
 
     @property

@@ -25,7 +25,7 @@ class Annotation(Layer):
     xlim, ylim = None, None
     xlabel, ylabel = "", ""
 
-    def __init__(self, boxes=[], vlines=[], hlines=[], arrows=[], **kwargs):
+    def __init__(self, boxes=[], vlines=[], hlines=[], arrows=[], **params):
         """
         Annotations may be added via method calls or supplied directly
         to the constructor using lists of specification elements or
@@ -40,7 +40,7 @@ class Annotation(Layer):
         and kwargs is a dictionary of the optional arguments accepted
         by the arrow method.
         """
-        super(Annotation, self).__init__([], **kwargs)
+        super(Annotation, self).__init__([], **params)
 
         for box in boxes:
             if hasattr(box, 'lbrt'):         self.box(box, None)

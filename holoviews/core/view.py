@@ -40,17 +40,17 @@ class View(Dimensioned):
 
     options = options
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, **params):
         self.data = data
-        self._style = kwargs.pop('style', None)
-        if 'dimensions' in kwargs:
-            kwargs['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
-                                    for d in kwargs.pop('dimensions')]
-        if 'value' in kwargs and not isinstance(kwargs['value'], Dimension):
-            kwargs['value'] = Dimension(kwargs['value'])
-        elif 'value' not in kwargs:
-            kwargs['value'] = self.value
-        super(View, self).__init__(**kwargs)
+        self._style = params.pop('style', None)
+        if 'dimensions' in params:
+            params['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
+                                    for d in params.pop('dimensions')]
+        if 'value' in params and not isinstance(params['value'], Dimension):
+            params['value'] = Dimension(params['value'])
+        elif 'value' not in params:
+            params['value'] = self.value
+        super(View, self).__init__(**params)
 
 
     def closest(self, coords):

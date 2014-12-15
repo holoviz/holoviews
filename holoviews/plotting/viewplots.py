@@ -85,11 +85,11 @@ class Plot(param.Parameterized):
     # A mapping from View types to their corresponding side plot types
     sideplots = {}
 
-    def __init__(self, view=None, zorder=0, all_keys=None, **kwargs):
+    def __init__(self, view=None, zorder=0, all_keys=None, **params):
         if view is not None:
             self._map = self._check_map(view)
             self._keys = all_keys if all_keys else self._map.keys()
-        super(Plot, self).__init__(**kwargs)
+        super(Plot, self).__init__(**params)
         self.zorder = zorder
         self.ax = None
         self._create_fig = True
@@ -308,7 +308,7 @@ class GridPlot(Plot):
         GridPlot renders groups of DataLayers which individually have
         style options but GridPlot itself does not.""")
 
-    def __init__(self, grid, **kwargs):
+    def __init__(self, grid, **params):
         if not isinstance(grid, Grid):
             raise Exception("GridPlot only accepts Grid.")
 
@@ -326,7 +326,7 @@ class GridPlot(Plot):
         extra_opts = View.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
-                                       **dict(kwargs, **extra_opts))
+                                       **dict(params, **extra_opts))
         self._keys = self.grid.all_keys
 
 
@@ -692,7 +692,7 @@ class GridLayoutPlot(Plot):
       Default value is set conservatively to avoid overlap of subplots.""")
 
 
-    def __init__(self, grid, **kwargs):
+    def __init__(self, grid, **params):
         grid = GridLayout([grid]) if isinstance(grid, AdjointLayout) else grid
         if not isinstance(grid, GridLayout):
             raise Exception("GridLayoutPlot only accepts GridLayouts.")
@@ -703,7 +703,7 @@ class GridLayoutPlot(Plot):
         self.coords = [(r, c) for r in range(self.rows)
                        for c in range(self.cols)]
 
-        super(GridLayoutPlot, self).__init__(**kwargs)
+        super(GridLayoutPlot, self).__init__(**params)
         self.subplots, self.grid_indices = self._compute_gridspecs()
 
 
@@ -815,9 +815,9 @@ class OverlayPlot(Plot):
 
     _abstract = True
 
-    def __init__(self, overlay, **kwargs):
+    def __init__(self, overlay, **params):
         self.plots = []
-        super(OverlayPlot, self).__init__(overlay, **kwargs)
+        super(OverlayPlot, self).__init__(overlay, **params)
 
     def _check_map(self, view):
         vmap = super(OverlayPlot, self)._check_map(view)
@@ -972,9 +972,9 @@ class AnnotationPlot(Plot):
 
     _view_type = Annotation
 
-    def __init__(self, annotation, **kwargs):
+    def __init__(self, annotation, **params):
         self._annotation = annotation
-        super(AnnotationPlot, self).__init__(annotation, **kwargs)
+        super(AnnotationPlot, self).__init__(annotation, **params)
         self._warn_invalid_intervals(self._map)
         self.handles['annotations'] = []
 

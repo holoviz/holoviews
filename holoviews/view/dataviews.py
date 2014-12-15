@@ -15,7 +15,7 @@ class DataView(Layer):
     selection of subsets of the data.
     """
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, **params):
         settings = {}
         if isinstance(data, DataView):
             settings = dict(data.get_param_values())
@@ -26,7 +26,7 @@ class DataView(Layer):
         data = list(data)
         if len(data) and not isinstance(data, np.ndarray):
             data = np.array(data)
-        settings.update(kwargs)
+        settings.update(params)
         super(DataView, self).__init__(data, **settings)
 
 
@@ -155,8 +155,8 @@ class Bars(DataView):
     sorted by x-value and there are no gaps in the bars.
     """
 
-    def __init__(self, data, width=None, **kwargs):
-        super(Bars, self).__init__(data, **kwargs)
+    def __init__(self, data, width=None, **params):
+        super(Bars, self).__init__(data, **params)
         self._width = width
 
     @property
@@ -189,9 +189,9 @@ class Histogram(Layer):
 
     value = param.ClassSelector(class_=Dimension, default=Dimension('Frequency'))
 
-    def __init__(self, values, edges=None, **kwargs):
+    def __init__(self, values, edges=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)
-        settings.update(kwargs)
+        settings.update(params)
         super(Histogram, self).__init__((self.values, self.edges), **settings)
 
 

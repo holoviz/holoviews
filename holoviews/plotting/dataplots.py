@@ -54,8 +54,8 @@ class CurvePlot(Plot):
 
     _view_type = Curve
 
-    def __init__(self, curves, **kwargs):
-        super(CurvePlot, self).__init__(curves, **kwargs)
+    def __init__(self, curves, **params):
+        super(CurvePlot, self).__init__(curves, **params)
         self.cyclic_range = self._map.last.cyclic_range
 
 
@@ -332,12 +332,12 @@ class HistogramPlot(Plot):
 
     _view_type = Histogram
 
-    def __init__(self, histograms, **kwargs):
+    def __init__(self, histograms, **params):
         self.center = False
         self.cyclic = False
         self.cyclic_index = 0
 
-        super(HistogramPlot, self).__init__(histograms, **kwargs)
+        super(HistogramPlot, self).__init__(histograms, **params)
 
         if self.orientation == 'vertical':
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
@@ -476,9 +476,9 @@ class SideHistogramPlot(HistogramPlot):
         Whether to show the x-label of the plot. Disabled by default
         because plots are often too cramped to fit the title correctly.""")
 
-    def __init__(self, *args, **kwargs):
-        self.layout = kwargs.pop('layout', None)
-        super(SideHistogramPlot, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **params):
+        self.layout = params.pop('layout', None)
+        super(SideHistogramPlot, self).__init__(*args, **params)
 
     def _process_hist(self, hist, lbrt):
         """

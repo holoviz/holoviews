@@ -109,8 +109,8 @@ class BivariatePlot(FullRedrawPlot):
 
     _view_type = Bivariate
 
-    def __init__(self, kde, **kwargs):
-        super(BivariatePlot, self).__init__(kde, **kwargs)
+    def __init__(self, kde, **params):
+        super(BivariatePlot, self).__init__(kde, **params)
         self.cyclic_range = self._map.last.cyclic_range
 
 
@@ -173,8 +173,8 @@ class TimeSeriesPlot(FullRedrawPlot):
 
     _view_type = TimeSeries
 
-    def __init__(self, curves, **kwargs):
-        super(TimeSeriesPlot, self).__init__(curves, **kwargs)
+    def __init__(self, curves, **params):
+        super(TimeSeriesPlot, self).__init__(curves, **params)
         self.cyclic_range = self._map.last.cyclic_range
 
 
@@ -222,8 +222,8 @@ class DistributionPlot(FullRedrawPlot):
 
     _view_type = Distribution
 
-    def __init__(self, dist, **kwargs):
-        super(DistributionPlot, self).__init__(dist, **kwargs)
+    def __init__(self, dist, **params):
+        super(DistributionPlot, self).__init__(dist, **params)
         self.cyclic_range = self._map.last.cyclic_range
 
 

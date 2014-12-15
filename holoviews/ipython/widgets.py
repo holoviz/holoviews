@@ -66,8 +66,8 @@ class ProgressBar(param.Parameterized):
 
     cache = {}
 
-    def __init__(self, **kwargs):
-        super(ProgressBar,self).__init__(**kwargs)
+    def __init__(self, **params):
+        super(ProgressBar,self).__init__(**params)
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
@@ -129,8 +129,8 @@ class RemoteProgress(ProgressBar):
     port = param.Integer(default=8080,
                          doc="""Target port on hostname.""")
 
-    def __init__(self, port, **kwargs):
-        super(RemoteProgress, self).__init__(port=port, **kwargs)
+    def __init__(self, port, **params):
+        super(RemoteProgress, self).__init__(port=port, **params)
 
     def __call__(self):
         import zmq
@@ -181,8 +181,8 @@ class RunProgress(ProgressBar):
         callable where display of progress level is desired.""")
 
 
-    def __init__(self, **kwargs):
-        super(RunProgress,self).__init__(**kwargs)
+    def __init__(self, **params):
+        super(RunProgress,self).__init__(**params)
 
     def __call__(self, value):
         """

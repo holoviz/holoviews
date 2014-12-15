@@ -42,13 +42,13 @@ class NdIndexableMapping(Dimensioned):
 
     _deep_indexable = False
 
-    def __init__(self, initial_items=None, **kwargs):
+    def __init__(self, initial_items=None, **params):
         self._data = OrderedDict()
 
-        if 'dimensions' in kwargs:
-            kwargs['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
-                                    for d in kwargs.pop('dimensions')]
-        super(NdIndexableMapping, self).__init__(**kwargs)
+        if 'dimensions' in params:
+            params['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
+                                    for d in params.pop('dimensions')]
+        super(NdIndexableMapping, self).__init__(**params)
 
         self._next_ind = 0
         self._check_key_type = True

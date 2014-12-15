@@ -30,15 +30,15 @@ class ItemTable(Layer):
         return 2
 
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, **params):
         # Assume OrderedDict if not a vanilla Python dict
         headings = data.keys()
         if type(data) == dict:
             headings = sorted(headings)
             data = OrderedDict((h, data[h]) for h in headings)
-        if 'dimensions' not in kwargs:
-            kwargs['dimensions'] = headings
-        super(ItemTable, self).__init__(data=data, **kwargs)
+        if 'dimensions' not in params:
+            params['dimensions'] = headings
+        super(ItemTable, self).__init__(data=data, **params)
 
 
     def __getitem__(self, heading):
@@ -113,11 +113,11 @@ class Table(Layer, NdMapping):
     xlim, ylim = None, None
     lbrt = None, None, None, None
 
-    def __init__(self, data=None, **kwargs):
-        if 'value' in kwargs and not isinstance(kwargs['value'], Dimension):
-            kwargs['value'] = Dimension(kwargs['value'])
+    def __init__(self, data=None, **params):
+        if 'value' in params and not isinstance(params['value'], Dimension):
+            params['value'] = Dimension(params['value'])
         self._style = None
-        NdMapping.__init__(self, data, **kwargs)
+        NdMapping.__init__(self, data, **params)
         self.data = self._data
 
     def __getitem__(self, *args):
@@ -136,8 +136,8 @@ class Table(Layer, NdMapping):
     def cols(self):
         return self.ndims + 1
 
-    def clone(self, *args, **kwargs):
-        return NdMapping.clone(self, *args, **kwargs)
+    def clone(self, *args, **params):
+        return NdMapping.clone(self, *args, **params)
 
 
     def cell_value(self, row, col):

@@ -130,8 +130,8 @@ class VectorFieldPlot(Plot):
 
     _view_type = VectorField
 
-    def __init__(self, *args, **kwargs):
-        super(VectorFieldPlot, self).__init__(*args, **kwargs)
+    def __init__(self, *args, **params):
+        super(VectorFieldPlot, self).__init__(*args, **params)
         self._min_dist, self._max_magnitude = self._get_map_info(self._map)
 
 
@@ -243,9 +243,9 @@ class ContourPlot(Plot):
 
     _view_type = Contours
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **params):
         self.aspect = 'equal'
-        super(ContourPlot, self).__init__(*args, **kwargs)
+        super(ContourPlot, self).__init__(*args, **params)
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -389,12 +389,12 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
        matplotlib's imshow command.""")
 
 
-    def __init__(self, grid, **kwargs):
-        self.layout = kwargs.pop('layout', None)
+    def __init__(self, grid, **params):
+        self.layout = params.pop('layout', None)
         self.grid = copy.deepcopy(grid)
         for k, vmap in self.grid._data.items():
             self.grid[k] = self._check_map(self.grid[k])
-        Plot.__init__(self, **kwargs)
+        Plot.__init__(self, **params)
         self._keys = self.grid.all_keys
         xkeys, ykeys = zip(*self.grid._data.keys())
         self._xkeys = sorted(set(xkeys))

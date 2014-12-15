@@ -28,15 +28,15 @@ class Dimension(param.Parameterized):
 
     format_string = param.String(default="{name} = {val}{unit}")
 
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, **params):
         """
         Initializes the Dimension object with a name.
         """
         if isinstance(name, Dimension):
-            params = dict(name.get_param_values())
+            existing_params = dict(name.get_param_values())
         else:
-            params = {'name': name}
-        super(Dimension, self).__init__(**dict(params, **kwargs))
+            existing_params = {'name': name}
+        super(Dimension, self).__init__(**dict(existing_params, **params))
 
 
     def __call__(self, name=None, **params):

@@ -28,8 +28,8 @@ class Raster(Layer):
                                 default=Dimension('Z'), doc="""
         The dimension description of the data held in the data array.""")
 
-    def __init__(self, data, lbrt, **kwargs):
-        super(Raster, self).__init__(data, **kwargs)
+    def __init__(self, data, lbrt, **params):
+        super(Raster, self).__init__(data, **params)
         self.xlim = lbrt[0], lbrt[2]
         self.ylim = lbrt[1], lbrt[3]
 
@@ -216,12 +216,12 @@ class HeatMap(Raster):
 
     _deep_indexable = True
 
-    def __init__(self, data, **kwargs):
-        dimensions = kwargs['dimensions'] if 'dimensions' in kwargs else self.dimensions
+    def __init__(self, data, **params):
+        dimensions = params['dimensions'] if 'dimensions' in params else self.dimensions
         if isinstance(data, NdMapping):
             self._data = data
-            if 'dimensions' not in kwargs:
-                kwargs['dimensions'] = data.dimensions
+            if 'dimensions' not in params:
+                params['dimensions'] = data.dimensions
         elif isinstance(data, (dict, OrderedDict)):
             self._data = NdMapping(data, dimensions=dimensions)
         elif data is None:
@@ -232,7 +232,7 @@ class HeatMap(Raster):
         self._style = None
         self._xlim = None
         self._ylim = None
-        param.Parameterized.__init__(self, **kwargs)
+        param.Parameterized.__init__(self, **params)
 
 
     def __getitem__(self, coords):
@@ -314,7 +314,7 @@ class Matrix(SheetCoordinateSystem, Raster):
 
     _deep_indexable = True
 
-    def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **kwargs):
+    def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **params):
         bounds = bounds if bounds is not None else BoundingBox()
         if isinstance(bounds, tuple):
             bounds = BoundingBox(lbrt=bounds)
@@ -326,7 +326,7 @@ class Matrix(SheetCoordinateSystem, Raster):
         xdensity = xdensity if xdensity else dim1/(r-l)
         ydensity = ydensity if ydensity else dim2/(t-b)
 
-        Layer.__init__(self, data, **kwargs)
+        Layer.__init__(self, data, **params)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._lbrt = self.bounds.lbrt()
 
@@ -446,7 +446,7 @@ class Points(Layer):
     value = param.ClassSelector(class_=(str, Dimension),
                                 default=Dimension('Magnitude'))
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, **params):
         if isinstance(data, tuple):
             arrays = [np.array(d) for d in data]
             if not all(len(arr)==len(arrays[0]) for arr in arrays):
@@ -462,7 +462,7 @@ class Points(Layer):
             raise Exception("%s requires a minimum of %s columns."
                             % (self.__class__.__name__, self._min_dims))
 
-        super(Points, self).__init__(data, **kwargs)
+        super(Points, self).__init__(data, **params)
 
 
     def __getitem__(self, keys):
@@ -552,9 +552,9 @@ class Contours(Layer):
         The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, **params):
         data = [] if data is None else data
-        super(Contours, self).__init__(data, **kwargs)
+        super(Contours, self).__init__(data, **params)
 
 
     def resize(self, bounds):

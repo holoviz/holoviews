@@ -75,11 +75,11 @@ class Layer(Pane):
     ########################
 
 
-    def __init__(self, data, **kwargs):
-        lbrt = kwargs.pop('lbrt', None)
+    def __init__(self, data, **params):
+        lbrt = params.pop('lbrt', None)
         self._xlim = (lbrt[0], lbrt[2]) if lbrt else None
         self._ylim = (lbrt[1], lbrt[3]) if lbrt else None
-        super(Layer, self).__init__(data, **kwargs)
+        super(Layer, self).__init__(data, **params)
 
 
     @property
@@ -182,11 +182,11 @@ class Overlay(Pane, NdMapping):
     channels = channels
     _deep_indexable = True
 
-    def __init__(self, overlays, **kwargs):
+    def __init__(self, overlays, **params):
         self._xlim = None
         self._ylim = None
         data = self._process_layers(overlays)
-        super(Overlay, self).__init__(data, **kwargs)
+        super(Overlay, self).__init__(data, **params)
         self._data = self.data
 
 
