@@ -582,7 +582,7 @@ class LayoutPlot(Plot):
             vtype = view.type if isinstance(view, Map) else view.__class__
             layer_types = (vtype,) if isinstance(view, View) else view.layer_types
             if isinstance(view, Grid):
-                if len(layer_types) == 1 and issubclass(layer_types[0], Array2D):
+                if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
                     from .sheetplots import MatrixGridPlot
                     plot_type = MatrixGridPlot
                 else:
