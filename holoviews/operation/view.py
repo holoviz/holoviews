@@ -1,4 +1,3 @@
-from matplotlib import pyplot as plt
 import numpy as np
 
 import param
@@ -121,6 +120,7 @@ class contours(ViewOperation):
       where the suffix is added to the label of the  input Matrix""")
 
     def _process(self, sheetview, key=None):
+        from matplotlib import pyplot as plt
 
         figure_handle = plt.figure()
         (l, b, r, t) = sheetview.lbrt

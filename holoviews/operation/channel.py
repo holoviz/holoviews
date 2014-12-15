@@ -1,7 +1,6 @@
 import colorsys
 
 import numpy as np
-import matplotlib
 
 import param
 
@@ -157,6 +156,8 @@ class cmap2rgb(ViewOperation):
         colored.""")
 
     def _process(self, sheetview, key=None):
+        import matplotlib
+
         if sheetview.depth != 1:
             raise Exception("Can only apply colour maps to Matrix with depth of 1.")
 
