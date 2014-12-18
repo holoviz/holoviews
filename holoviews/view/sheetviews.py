@@ -317,7 +317,8 @@ class Matrix(SheetCoordinateSystem, Raster):
     def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **params):
         bounds = bounds if bounds is not None else BoundingBox()
         if isinstance(bounds, tuple):
-            bounds = BoundingBox(lbrt=bounds)
+            l, b, r, t = bounds
+            bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)
         data = np.array([[0]]) if data is None else data
