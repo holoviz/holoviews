@@ -16,17 +16,12 @@ try:
 except:
     mpld3 = None
 
-try:
-    from JSAnimation import IPython_display as jsdisplay
-except:
-    jsdisplay = None
-
 from ..core import View, Map, AdjointLayout, GridLayout, Grid
 from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
-from ..view import Annotation, Raster
+from ..view import Raster
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
-from .widgets import IPySelectionWidget, SelectionWidget
+from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
@@ -45,10 +40,6 @@ def get_plot_size():
 def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-
-    if writer == 'html':
-        anim_kwargs.pop('extra_args')
-        return jsdisplay.anim_to_html(anim, **anim_kwargs)
 
     if not hasattr(anim, '_encoded_video'):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
@@ -147,6 +138,8 @@ def animation_display(anim):
     return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.VIDEO_FORMAT])
 
 def widget_display(view):
+    if ViewMagic.VIDEO_FORMAT == 'scrubber':
+        return ScrubberWidget(view)()
     mode = ViewMagic.VIDEO_FORMAT[1]
     if mode == 'embedded':
         return SelectionWidget(view)()
@@ -167,7 +160,8 @@ def map_display(vmap, size=256):
     elif len(mapplot) == 1:
         fig = mapplot()
         return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
+                    ViewMagic.VIDEO_FORMAT == 'scrubber':
         return widget_display(vmap)
 
     return render(mapplot)
@@ -186,7 +180,8 @@ def layout_display(grid, size=256):
     if len(gridplot)==1:
         fig =  gridplot()
         return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
+                    ViewMagic.VIDEO_FORMAT == 'scrubber':
         return widget_display(grid)
 
     return render(gridplot)
@@ -215,7 +210,8 @@ def grid_display(grid, size=256):
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple):
+    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
+                    ViewMagic.VIDEO_FORMAT == 'scrubber':
         return widget_display(grid)
 
     return render(gridplot)

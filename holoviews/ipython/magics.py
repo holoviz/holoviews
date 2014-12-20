@@ -28,15 +28,15 @@ VIDEO_TAG = """<center><video controls style='max-width:100%'>
 
 # 'format name':(animation writer, mime_type,  anim_kwargs, extra_args, tag)
 ANIMATION_OPTS = {
-    'webm':('ffmpeg', 'webm',  {},
-            ['-vcodec', 'libvpx', '-b', '1000k'],
-            VIDEO_TAG),
-    'h264':('ffmpeg', 'mp4', {'codec':'libx264'},
-            ['-pix_fmt', 'yuv420p'],
-            VIDEO_TAG),
-    'gif':('imagemagick', 'gif', {'fps':10}, [],
-           GIF_TAG),
-    'scrubber':('html', None, {'fps':5, 'default_mode':'once'}, None, None)
+    'webm': ('ffmpeg', 'webm', {},
+             ['-vcodec', 'libvpx', '-b', '1000k'],
+             VIDEO_TAG),
+    'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+             ['-pix_fmt', 'yuv420p'],
+             VIDEO_TAG),
+    'gif': ('imagemagick', 'gif', {'fps': 10}, [],
+            GIF_TAG),
+    'scrubber': ('html', None, {'fps': 5}, None, None)
 }
 
 

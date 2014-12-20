@@ -1,0 +1,197 @@
+<script language="javascript">
+  /* Define the Animation class */
+  function Animation(frames, num_frames, img_id, slider_id, interval, loop_select_id, load_json, mpld3){
+      this.img_id = img_id;
+      this.slider_id = slider_id;
+      this.loop_select_id = loop_select_id;
+      this.interval = interval;
+      this.current_frame = 0;
+      this.direction = 0;
+      this.timer = null;
+      this.load_json = load_json;
+      this.mpld3 = mpld3;
+      this.frames = frames;
+      this.length = num_frames;
+
+      document.getElementById(this.slider_id).max = this.length - 1;
+      this.set_frame(this.current_frame);
+  }
+  Animation.prototype.get_loop_state = function(){
+      var button_group = document[this.loop_select_id].state;
+      for (var i = 0; i < button_group.length; i++) {
+          var button = button_group[i];
+          if (button.checked) {
+              return button.value;
+          }
+      }
+      return undefined;
+  }
+  Animation.prototype.set_frame = function(frame){
+      this.current_frame = frame;
+      document.getElementById(this.slider_id).value = this.current_frame;
+      if(this.load_json) {
+          var data_url = "{{ server }}/" + this.fig_id + "/" + this.current_frame;
+          if(this.mpld3) {
+              d3.select("#"+this.img_id).selectAll("*").remove();
+              $.getJSON(data_url,
+                  (function(img_id) {
+                       return function(data) {
+                           mpld3.draw_figure(img_id, data);
+                       };
+                   }(this.img_id))
+              );
+          } else {
+              $("#" + this.img_id).load("{{ server }}/" + this.fig_id + "/" + this.current_frame);
+          }
+      }else {
+          if(this.mpld3) {
+              d3.select("#"+this.img_id).selectAll("*").remove();
+              mpld3.draw_figure(this.img_id, this.frames[this.current_frame]);
+          }else {
+              $("#" + this.img_id).html(this.frames[this.current_frame]);
+          }
+      }
+  }
+  Animation.prototype.next_frame = function()
+  {
+      this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
+  }
+  Animation.prototype.previous_frame = function()
+  {
+      this.set_frame(Math.max(0, this.current_frame - 1));
+  }
+  Animation.prototype.first_frame = function()
+  {
+      this.set_frame(0);
+  }
+  Animation.prototype.last_frame = function()
+  {
+      this.set_frame(this.length - 1);
+  }
+  Animation.prototype.slower = function()
+  {
+      this.interval /= 0.7;
+      if(this.direction > 0){this.play_animation();}
+      else if(this.direction < 0){this.reverse_animation();}
+  }
+  Animation.prototype.faster = function()
+  {
+      this.interval *= 0.7;
+      if(this.direction > 0){this.play_animation();}
+      else if(this.direction < 0){this.reverse_animation();}
+  }
+  Animation.prototype.anim_step_forward = function()
+  {
+      this.current_frame += 1;
+      if(this.current_frame < this.length){
+          this.set_frame(this.current_frame);
+      }else{
+          var loop_state = this.get_loop_state();
+          if(loop_state == "loop"){
+              this.first_frame();
+          }else if(loop_state == "reflect"){
+              this.last_frame();
+              this.reverse_animation();
+          }else{
+              this.pause_animation();
+              this.last_frame();
+          }
+      }
+  }
+  Animation.prototype.anim_step_reverse = function()
+  {
+      this.current_frame -= 1;
+      if(this.current_frame >= 0){
+          this.set_frame(this.current_frame);
+      }else{
+          var loop_state = this.get_loop_state();
+          if(loop_state == "loop"){
+              this.last_frame();
+          }else if(loop_state == "reflect"){
+              this.first_frame();
+              this.play_animation();
+          }else{
+              this.pause_animation();
+              this.first_frame();
+          }
+      }
+  }
+  Animation.prototype.pause_animation = function()
+  {
+      this.direction = 0;
+      if (this.timer){
+          clearInterval(this.timer);
+          this.timer = null;
+      }
+  }
+  Animation.prototype.play_animation = function()
+  {
+      this.pause_animation();
+      this.direction = 1;
+      var t = this;
+      if (!this.timer) this.timer = setInterval(function(){t.anim_step_forward();}, this.interval);
+  }
+  Animation.prototype.reverse_animation = function()
+  {
+      this.pause_animation();
+      this.direction = -1;
+      var t = this;
+      if (!this.timer) this.timer = setInterval(function(){t.anim_step_reverse();}, this.interval);
+  }
+</script>
+
+<div class="animation" align="center">
+    <div id="_anim_img{{ id }}"></div>
+    <br>
+    <input id="_anim_slider{{ id }}" type="range" style="width:350px" name="points" min="0" max="1" step="1" value="0" onchange="anim{{ id }}.set_frame(parseInt(this.value));"></input>
+    <br>
+    <button onclick="anim{{ id }}.slower()" style="text-align: center">&#8211;</button>
+    <button onclick="anim{{ id }}.first_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;&#9664;</button>
+    <button onclick="anim{{ id }}.previous_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;</button>
+    <button onclick="anim{{ id }}.reverse_animation()" style="text-align: center; min-width: 40px">&#9664;</button>
+    <button onclick="anim{{ id }}.pause_animation()" style="text-align: center; min-width: 40px">&#9616;&#9616;</button>
+    <button onclick="anim{{ id }}.play_animation()" style="text-align: center; min-width: 40px">&#9654;</button>
+    <button onclick="anim{{ id }}.next_frame()" style="text-align: center; min-width: 40px">&#9654;&#9616;</button>
+    <button onclick="anim{{ id }}.last_frame()" style="text-align: center; min-width: 40px">&#9654;&#9654;&#9616;</button>
+    <button onclick="anim{{ id }}.faster()" style="text-align: center">+</button>
+  <form action="#n" name="_anim_loop_select{{ id }}" class="anim_control">
+    <input type="radio" name="state" value="once" {once_checked}> Once </input>
+    <input type="radio" name="state" value="loop" {loop_checked}> Loop </input>
+    <input type="radio" name="state" value="reflect" {reflect_checked}> Reflect </input>
+  </form>
+</div>
+
+
+<script language="javascript">
+  /* Instantiate the Animation class. */
+  /* The IDs given should match those used in the template above. */
+  (function() {
+      var img_id = "_anim_img{{ id }}";
+      var slider_id = "_anim_slider{{ id }}";
+      var loop_select_id = "_anim_loop_select{{ id }}";
+      var frame_data = {{ frames | safe }};
+
+      function create_widget() {
+          setTimeout(function() {
+              anim{{ id }} = new Animation(frame_data, {{ Nframes }}, img_id, slider_id, {{ interval }}, loop_select_id, {{ load_json }}, {{ mpld3 }});
+          }, 0);
+      }
+
+      {% if mpld3 %}
+      if(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded){
+          create_widget();
+      }else {
+          var d3_require = {paths: {"d3" : "{{ d3_url }}"}}
+          require.config(d3_require);
+          require(["d3"], function(d3){
+              window.d3 = d3;
+              $.getScript("{{ mpld3_url }}", function(){
+                  create_widget();
+              });
+          });
+      }
+      {% else %}
+          create_widget();
+      {% endif %}
+  })()
+</script>

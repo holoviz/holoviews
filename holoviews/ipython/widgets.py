@@ -26,7 +26,7 @@ import param
 
 from ..core import NdMapping, View, ViewMap, GridLayout, AdjointLayout, Grid, Overlay
 from ..plotting import Plot, GridLayoutPlot
-from .magics import ViewMagic
+from .magics import ViewMagic, ANIMATION_OPTS
 
 
 class ProgressBar(param.Parameterized):
@@ -434,22 +434,19 @@ class IPySelectionWidget(NdWidget):
 
 
 
-class SelectionWidget(NdWidget):
+class ScrubberWidget(NdWidget):
     """
-    Javascript based widget to select and view View objects contained
-    in an NdMapping. For each dimension in the NdMapping a slider or
-    dropdown selection widget is created and can be used to select the
-    html output associated with the selected View type. Supports
-    selection of any holoviews static output type including png, svg
-    and mpld3 output. Unlike the IPSelectionWidget, this widget type
-    is exportable to a static html.
+    ScrubberWidget generates a basic animation widget with a slider
+    and various play/rewind/stepping options. It has been adapted
+    from Jake Vanderplas' JSAnimation library, which was released
+    under BSD license.
 
     Optionally the individual plots can be exported to json, which can
     be dynamically loaded by serving the data the data for each frame
     on a simple server.
     """
 
-    template = param.String('jsslider.jinja', doc="""
+    template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
     #######################
@@ -473,12 +470,101 @@ class SelectionWidget(NdWidget):
     # Javascript include options #
     ##############################
 
-    jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
     mpld3_url = '//mpld3.github.io/js/mpld3.v0.3git.js'
     d3_url = '//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
     def __init__(self, view, **params):
-        super(SelectionWidget, self).__init__(**params)
+        super(ScrubberWidget, self).__init__(**params)
+        self.view = view
+        self._process_view(view)
+        self.frames = OrderedDict((idx, self._plot_figure(idx))
+                                  for idx, k in enumerate(self._keys))
+
+
+    def get_frames(self, id):
+        use_mpld3 = ViewMagic.FIGURE_FORMAT == 'mpld3'
+        frames = {idx: frame if use_mpld3 or self.export_json else
+                  str(frame) for idx, frame in enumerate(self.frames.values())}
+        encoder = {}
+        if use_mpld3:
+            import mpld3
+            encoder = dict(cls=mpld3._display.NumpyEncoder)
+
+        if self.export_json:
+            if not os.path.isdir(self.json_path):
+                os.mkdir(self.json_path)
+            with open(self.json_path+'/fig_%s.json' % id, 'wb') as f:
+                json.dump(frames, f, **encoder)
+            frames = {}
+        elif use_mpld3:
+            frames = json.dumps(frames, **encoder)
+        return frames
+
+
+    def render_html(self, data):
+        # Set up jinja2 templating
+        import jinja2
+        path, _ = os.path.split(os.path.abspath(__file__))
+        templateLoader = jinja2.FileSystemLoader(searchpath=path)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template(self.template)
+
+        return template.render(**data)
+
+
+    def _plot_figure(self, idx):
+        fig = self.plot[idx]
+        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+            import mpld3
+            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
+            return mpld3.fig_to_dict(fig)
+        else:
+            from .display_hooks import figure_display
+            return figure_display(fig)
+
+
+    def __call__(self):
+        id = uuid.uuid4().hex
+        frames = self.get_frames(id)
+
+        data = {'id': id, 'Nframes': len(self.mock_obj),
+                'interval': int(1000. / ANIMATION_OPTS['scrubber'][2]['fps']),
+                'frames': frames,
+                'load_json': str(self.export_json).lower(),
+                'server': self.server_url,
+                'mpld3_url': self.mpld3_url,
+                'd3_url': self.d3_url[:-3],
+                'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
+
+        return self.render_html(data)
+
+
+
+class SelectionWidget(ScrubberWidget):
+    """
+    Javascript based widget to select and view View objects contained
+    in an NdMapping. For each dimension in the NdMapping a slider or
+    dropdown selection widget is created and can be used to select the
+    html output associated with the selected View type. Supports
+    selection of any holoviews static output type including png, svg
+    and mpld3 output. Unlike the IPSelectionWidget, this widget type
+    is exportable to a static html.
+
+    Just like the ScrubberWidget the data can be optionally saved
+    to json and dynamically loaded from a server.
+    """
+
+    template = param.String('jsslider.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
+
+    ##############################
+    # Javascript include options #
+    ##############################
+
+    jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
+
+    def __init__(self, view, **params):
+        NdWidget.__init__(self, **params)
         self.view = view
         self._process_view(view)
         self.frames = OrderedDict((k, self._plot_figure(idx))
@@ -515,37 +601,6 @@ class SelectionWidget(NdWidget):
         return key_data
 
 
-    def get_frames(self, id):
-        use_mpld3 = ViewMagic.FIGURE_FORMAT == 'mpld3'
-        frames = {idx: frame if use_mpld3 or self.export_json else
-                  str(frame) for idx, frame in enumerate(self.frames.values())}
-        encoder = {}
-        if use_mpld3:
-            import mpld3
-            encoder = dict(cls=mpld3._display.NumpyEncoder)
-
-        if self.export_json:
-            if not os.path.isdir(self.json_path):
-                os.mkdir(self.json_path)
-            with open(self.json_path+'/fig_%s.json' % id, 'wb') as f:
-                json.dump(frames, f, **encoder)
-            frames = {}
-        elif use_mpld3:
-            frames = json.dumps(frames, **encoder)
-        return frames
-
-
-    def render_html(self, data):
-        # Set up jinja2 templating
-        import jinja2
-        path, _ = os.path.split(os.path.abspath(__file__))
-        templateLoader = jinja2.FileSystemLoader(searchpath=path)
-        templateEnv = jinja2.Environment(loader=templateLoader)
-        template = templateEnv.get_template('jsslider.jinja')
-
-        return template.render(**data)
-
-
     def __call__(self):
         id = uuid.uuid4().hex
         widgets, dimensions, init_dim_vals = self.get_widgets()
@@ -565,17 +620,6 @@ class SelectionWidget(NdWidget):
                 'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
 
         return self.render_html(data)
-
-
-    def _plot_figure(self, idx):
-        fig = self.plot[idx]
-        if ViewMagic.FIGURE_FORMAT == 'mpld3':
-            import mpld3
-            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            return mpld3.fig_to_dict(fig)
-        else:
-            from .display_hooks import figure_display
-            return figure_display(fig)
 
 
 
