@@ -1,9 +1,10 @@
 <script language="javascript">
   /* Define the Animation class */
-  function Animation(frames, num_frames, img_id, slider_id, interval, loop_select_id, load_json, mpld3){
-      this.img_id = img_id;
-      this.slider_id = slider_id;
-      this.loop_select_id = loop_select_id;
+  function Animation(frames, num_frames, id, interval, load_json, mpld3){
+      this.img_id = "_anim_img" + id;
+      this.slider_id = "_anim_slider" + id;
+      this.loop_select_id = "_anim_loop_select" + id;
+      this.fig_id = "fig_" + id;
       this.interval = interval;
       this.current_frame = 0;
       this.direction = 0;
@@ -166,14 +167,11 @@
   /* Instantiate the Animation class. */
   /* The IDs given should match those used in the template above. */
   (function() {
-      var img_id = "_anim_img{{ id }}";
-      var slider_id = "_anim_slider{{ id }}";
-      var loop_select_id = "_anim_loop_select{{ id }}";
       var frame_data = {{ frames | safe }};
 
       function create_widget() {
           setTimeout(function() {
-              anim{{ id }} = new Animation(frame_data, {{ Nframes }}, img_id, slider_id, {{ interval }}, loop_select_id, {{ load_json }}, {{ mpld3 }});
+              anim{{ id }} = new Animation(frame_data, {{ Nframes }}, {{ id }}, {{ interval }}, {{ load_json }}, {{ mpld3 }});
           }, 0);
       }
 
