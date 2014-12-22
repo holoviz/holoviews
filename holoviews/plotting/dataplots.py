@@ -8,7 +8,7 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 from ..core import Map, View, Overlay
-from ..view import Raster, Scatter, Curve, Histogram, ItemTable, Table
+from ..view import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table
 from .viewplots import Plot
 
 
@@ -599,6 +599,7 @@ Plot.defaults.update({Curve: CurvePlot,
                       Scatter: ScatterPlot,
                       ItemTable: TablePlot,
                       Table: TablePlot,
+                      Bars: HistogramPlot,
                       Histogram: HistogramPlot})
 
 
