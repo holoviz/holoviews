@@ -166,6 +166,26 @@ class DFrame(PandasDFrame):
     x2 = param.String(doc="""Dimension to visualize along a second
                              dependent axis.""")
 
+    def bivariate(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Bivariate, **kwargs))
+
+    def distribution(self, value_dim, map_dims=[]):
+        if map_dims:
+            map_groups = self.data.groupby(map_dims)
+            vm_dims = map_dims
+        else:
+            map_groups = [(0, self.data)]
+            vm_dims = ['None']
+
+        vmap = ViewMap(dimensions=vm_dims)
+        for map_key, group in map_groups:
+            vmap[map_key] = Distribution(np.array(group[value_dim]),
+                                         dimensions=[self.dim_dict[value_dim]])
+        return vmap if map_dims else vmap.last
+
+    def regression(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Regression, **kwargs))
+
 
     @property
     def ylabel(self):

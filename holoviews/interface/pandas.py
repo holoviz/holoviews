@@ -9,7 +9,9 @@ convert it to standard holoviews View types.
 
 from __future__ import absolute_import
 
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
+
+import numpy as np
 
 try:
     import pandas as pd
@@ -20,7 +22,7 @@ import param
 
 from ..core import Dimension, NdMapping, View, Layer, Overlay, ViewMap, GridLayout, Grid
 from ..core.options import options, PlotOpts
-from ..view import HeatMap, ItemTable
+from ..view import HeatMap, Table, Curve, Scatter, Bars, Points, VectorField
 
 
 class DataFrameView(Layer):
@@ -198,124 +200,53 @@ class DFrame(DataFrameView):
     DFrame is a DataFrameView type, which additionally provides
     methods to convert Pandas DataFrames to different View types,
     currently including Tables and HeatMaps.
+
+    The View conversion methods all share a common signature:
+
+      * The value dimension (string).
+      * The index dimensions (list of strings).
+      * An optional reduce_fn.
+      * Optional map_dims (list of strings).
     """
 
-    def _create_table(self, temp_dict, value_dim, dims):
-        dimensions = [self.dim_dict.get(d, d) for d in dims] if dims else {}
-        label = self.label + (' - ' if self.label else '') + value_dim
-        return ItemTable(temp_dict, value=value_dim, dimensions=dimensions,
-                     label=label)
+    def bars(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Bars, **kwargs))
 
+    def curve(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Curve, **kwargs))
 
-    def _create_heatmap(self, temp_dict, value_dim, dims):
-        label = self.label + (' - ' if self.label else '') + value_dim
-        dimensions = [self.dim_dict.get(d, d) for d in dims]
-        return HeatMap(temp_dict, label=label, dimensions=dimensions,
-                       value=self.dim_dict[value_dim])
+    def heatmap(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=HeatMap, **kwargs))
 
+    def points(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Points, **kwargs))
 
-    def _export_dataview(self, value_dim='', indices=[], reduce_fn=None,
-                         view_dims=[], map_dims=[], view_method=None):
-        """
-        The core conversion method from the Pandas DataFrame to a View
-        or Map type. The value_dim specifies the column in the
-        DataFrame to select, additionally indices or a reduce_fn can
-        be supplied to select or reduce multiple entries in the
-        DataFrame. Further, the view_dims and map_dims determine
-        which Dimensions will be grouped and supplied to the appropriate
-        view_method and ViewMap respectively.
-        """
+    def scatter(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Scatter, **kwargs))
 
-        # User error checking
-        selected_dims = [value_dim]+view_dims+map_dims
-        for dim in selected_dims:
-            if dim not in self.dimension_labels:
-                raise Exception("DataFrameView has no Dimension %s." % dim)
+    def vectorfield(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=VectorField, **kwargs))
 
-        # Filtering out unselected dimensions
-        filter_dims = list(set(self.dimension_labels) - set(selected_dims))        
-        df = self.data.filter(selected_dims) if filter_dims else self.dframe()
-
-        # Set up for View and Map dimension splitting operations
-        view_dimensions = view_dims
+    def table(self, value_dim, dimensions, reduce_fn=None, map_dims=[], view_type=None):
         if map_dims:
-            map_dfs = df.groupby(map_dims)
-            vmap = ViewMap(None, dimensions=[self.dim_dict[d] for d in map_dims])
+            map_groups = self.data.groupby(map_dims)
+            vm_dims = map_dims
         else:
-            map_dfs = [(None, df)]
-            vmap = {}
+            map_groups = [(0, self.data)]
+            vm_dims = ['None']
 
-        # Iterating over vmap elements
-        for map_key, map_group in map_dfs:
-            # Apply reduction function
-            if reduce_fn:
-                # Find indices for value and View dimensions
-                cols = list(map_group.columns)
-                val_idx = cols.index(value_dim)
-                vdim_inds = [cols.index(d) for d in view_dims]
+        vmap = ViewMap(dimensions=vm_dims)
+        vdims = [self.dim_dict[dim] for dim in dimensions]
+        for map_key, group in map_groups:
+            table_data = OrderedDict()
+            for k, v in group.groupby(dimensions):
+                data = np.array(v[value_dim])
+                table_data[k] = reduce_fn(data) if reduce_fn else data[0]
+                view = Table(table_data, dimensions=vdims,
+                             value=self.dim_dict[value_dim])
+            vmap[map_key] = view_type(view) if view_type else view
 
-                # Iterate over rows and collate the result.
-                temp_dict = defaultdict(list)
-                for row in map_group.values:
-                    if view_dims:
-                        key = tuple((row[ind] for ind in vdim_inds))
-                    else:
-                        key = value_dim
-                    temp_dict[key].append(row[val_idx])
-                temp_dict = {k:reduce_fn(v) for k, v in temp_dict.items()}
-            # Select values by indices
-            else:
-                temp_dict = OrderedDict()
-                # If the selected dimensions values are not unique add Index
-                if not len(indices) == 1:
-                    indices = indices if indices else list(map_group.index)
-                    view_dimensions = ['Index'] + view_dims
-                
-                # Get data from the DataFrame
-                view_groups = map_group.groupby(view_dims) if view_dims else [((), map_group)]
-                for k, view_group in view_groups:
-                    for ind in indices:
-                        if view_dims:
-                            key = tuple(k)
-                            if not len(indices) == 1:
-                                key = (ind,) + key
-                            key = key if len(key) > 1 else key[0]
-                        else:
-                            key = '_'.join([ind, value_dim])
-                        temp_dict[key] = view_group.loc[ind, value_dim]
-            vmap[map_key] = view_method(temp_dict, value_dim, view_dimensions)
-        if map_dims:
-            return vmap
-        else:
-            return vmap[None]
-
-
-    def table(self, value_dim, indices=[], reduce_fn=None, dims=[], map_dims=[]):
-        """
-        Conversion method from DataFrame to holoviews table. Requires
-        a value_dimension to be specified. Optionally a list indices
-        or a reduce_fn can be specified to select or reduce multiple
-        entries. Finally view_dims and map_dims can be specified to
-        be inserted into the ItemTable and ViewMap respectively.  If
-        not map_dims are specified a single ItemTable will be returned.
-        """
-        return self._export_dataview(value_dim, indices, reduce_fn,
-                                     dims, map_dims, self._create_table)
-
-
-    def heatmap(self, value_dim, dims, index=None, reduce_fn=None, map_dims=[]):
-        """
-        Conversion method from DataFrame to holoviews
-        HeatMap. Requires a value_dim, the HeatMap dims and either a
-        single index or a reduce_fn, to ensure there's only one value
-        returned. Optionally map_dims can be specified to map the
-        HeatMap over.
-        """
-        indices = [index] if index else []
-        if 1 > len(dims) > 2:
-            raise Exception("HeatMap supports either one or two dimensions")
-        return self._export_dataview(value_dim, indices, reduce_fn, dims,
-                                     map_dims, self._create_heatmap)
+        return vmap if map_dims else vmap.last
 
 
 options.DFrameView = PlotOpts()
