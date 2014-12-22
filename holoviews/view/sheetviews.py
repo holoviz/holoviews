@@ -516,7 +516,10 @@ class Points(Layer):
         if dim in self.dimension_labels:
             return self.data[:, self.dim_index(dim)]
         elif dim == self.value.name:
-            return self.data[:, self._range_column]
+            if self._range_column < self.data.shape[1]:
+                return self.data[:, self._range_column]
+            else:
+                return [np.NaN] * len(self)
         else:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
