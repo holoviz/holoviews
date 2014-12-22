@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, Map, Layer, ViewMap
+from ..core import Dimension, NdMapping, Layer, ViewMap
 from .tabular import ItemTable, Table
 
 
@@ -20,7 +20,7 @@ class DataView(Layer):
         if isinstance(data, DataView):
             settings = dict(data.get_param_values())
             data = data.data
-        elif isinstance(data, Map) or (isinstance(data, list) and data
+        elif isinstance(data, NdMapping) or (isinstance(data, list) and data
                                            and isinstance(data[0], Layer)):
             data, settings = self._process_map(data)
         data = list(data)
@@ -30,15 +30,22 @@ class DataView(Layer):
         super(DataView, self).__init__(data, **settings)
 
 
-    def _process_map(self, vmap):
+    def _process_map(self, ndmap):
         """
-        Base class to process a ViewMap to be collapsed into a Layer.
-        Should return the data and parameters of reduced View.
+        Base class to process an NdMapping to be collapsed into a DataView.
+        Should return the data and parameters of the new DataView.
         """
-        data = []
-        for v in vmap:
-            data.append(v.data)
-        return np.concatenate(data), dict(v.get_param_values())
+        if isinstance(ndmap, Table):
+            if ndmap.ndims == 1:
+                data = ndmap.items()
+                settings = dict(ndmap.get_param_values())
+            else:
+                raise Exception("Only single dimensioned Table can become"
+                                "a %s" % self.__class__.__name__)
+        else:
+            data = np.concatenate([v.data for v in ndmap])
+            settings = dict([v for v in ndmap][0].get_param_values())
+        return data, settings
 
 
     def closest(self, coords):
