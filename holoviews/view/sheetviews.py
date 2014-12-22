@@ -196,11 +196,14 @@ class Raster(Layer):
             half_unit = (dim_max - dim_min)/dim_len/2.
             coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
             linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
-            coords = [self.closest_cell_center(*coord_fn(v))[dim_index]
+            coords = [self.closest(coord_fn(v))[dim_index]
                       for v in linspace] * shape
             return coords if dim_index else sorted(coords)
         elif dim == self.value.name:
             return np.flipud(self.data).T.flatten()
+        else:
+            raise Exception("Dimension not found.")
+
 
 
 class HeatMap(Raster):
