@@ -27,8 +27,12 @@ def find_minmax(lims, olims):
     min and max values of a number of items.
     """
 
-    limzip = zip(list(lims), list(olims), [np.min, np.max])
-    return tuple([float(fn([l, ol])) for l, ol, fn in limzip])
+    try:
+        limzip = zip(list(lims), list(olims), [np.min, np.max])
+        limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
+    except:
+        limits = (np.NaN, np.NaN)
+    return limits
 
 
 class Layer(Pane):
