@@ -960,6 +960,13 @@ class ViewMap(Map):
         return (self << histmap) if adjoin else histmap
 
 
+    def table(self):
+        from ..view import Table
+        keys = zip(*[self.dim_values(dm) for dm in self.dimension_labels])
+        vals = self.dim_values(self.value.name)
+        return Table(zip(keys, vals), **dict(self.get_param_values()))
+
+
     def normalize_elements(self, **kwargs):
         return self.map(lambda x, _: x.normalize(**kwargs))
 
