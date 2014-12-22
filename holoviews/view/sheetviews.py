@@ -252,6 +252,16 @@ class HeatMap(Raster):
         return dim1_keys, dim2_keys
 
 
+    def dim_values(self, dim):
+        if dim in self.dimension_labels:
+            idx = self.dim_index(dim)
+            return [k[idx] for k in self._data.keys()]
+        elif dim == self.value.name:
+            return self._data.values()
+        else:
+            raise Exception("Dimension not found.")
+
+
     @property
     def data(self):
         dim1_keys, dim2_keys = self.dense_keys()
