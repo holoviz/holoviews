@@ -468,6 +468,13 @@ class Points(Layer):
 
             arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
                                               else (len(arr), 1)) for arr in arrays))
+        elif isinstance(data, Table):
+            table_dims = data.dimension_labels + [data.value.name]
+            arr = np.array(zip(*[data.dim_values(dim) for dim in table_dims]))
+            if 'dimensions' not in params:
+                params['dimensions'] = data.dimensions
+            if 'value' not in params:
+                params['value'] = data.value
         else:
             arr = np.array(data)
 
