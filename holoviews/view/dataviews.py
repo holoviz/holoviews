@@ -119,6 +119,7 @@ class DataView(Layer):
         return pd.DataFrame(self.data, columns=columns)
 
 
+
 class Scatter(DataView):
     """
     Scatter is a simple 1D View, which gets displayed as a number of
@@ -162,9 +163,17 @@ class Bars(DataView):
     @property
     def width(self):
         if self._width == None:
-            return set(np.diff(self.data[:, 1]))[0]
+            return list(set(np.diff(self.data[:, 0])))[0]
         else:
             return self._width
+
+    @property
+    def edges(self):
+        return list(self.data[:, 0] - self.width) + [self.data[-1, 0] + self.width]
+
+    @property
+    def values(self):
+        return self.data[:, 1]
 
     @width.setter
     def width(self, width):
