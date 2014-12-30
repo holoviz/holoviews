@@ -109,6 +109,10 @@ class DataFrameView(Layer):
         return self.clone(df)
 
 
+    def dim_values(self, dim):
+        return np.array(self.data[dim])
+
+
     def apply(self, name, *args, **kwargs):
         """
         Applies the Pandas dframe method corresponding to the supplied
