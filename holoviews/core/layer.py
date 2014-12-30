@@ -450,7 +450,7 @@ class Grid(NdMapping):
             if len(dim_inds):
                 keys = list({tuple(k[i] for i in dim_inds)
                              for k in self.keys()})
-                q = np.array([tuple(k[i] for i in dim_inds) for k in key])
+                q = np.array([tuple(key[i] for i in dim_inds)])
                 idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
                                  if len(dim_inds) == 2 else np.abs(q-x)
                                      for x in keys])
