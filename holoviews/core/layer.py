@@ -455,7 +455,7 @@ class Grid(NdMapping):
                                  if len(dim_inds) == 2 else np.abs(q-x)
                                      for x in keys])
                 num_keys = iter(keys[idx])
-            key = tuple(num_keys.next() if i in dim_inds else str_keys.next()
+            key = tuple(next(num_keys) if i in dim_inds else next(str_keys)
                         for i in range(self.ndims))
         elif any(not isinstance(el, slice) for el in key):
             index_ind = [idx for idx, el in enumerate(key)
