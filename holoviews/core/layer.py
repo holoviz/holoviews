@@ -55,8 +55,8 @@ class Layer(Pane):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items=items)
 
-        self_layers = self.data if isinstance(self, Overlay) else [self]
-        other_layers = other.data if isinstance(other, Overlay) else [other]
+        self_layers = self.data.values() if isinstance(self, Overlay) else [self]
+        other_layers = other.data.values() if isinstance(other, Overlay) else [other]
         combined_layers = self_layers + other_layers
 
         return Overlay(combined_layers)
