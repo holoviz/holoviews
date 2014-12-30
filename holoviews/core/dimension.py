@@ -118,6 +118,22 @@ class Dimensioned(param.Parameterized):
         return len(self.dimensions)
 
 
+    def dim_type(self, dim):
+        """
+        Returns the specified Dimension type if specified or
+        if the dim_values types are consistent otherwise
+        None is returned.
+        """
+        dim_obj = self.dim_dict[dim]
+        if dim_obj.type:
+            return dim_obj.type
+        dim_vals = [type(v) for v in self.dim_values(dim)]
+        if len(set(dim_vals)) == 1:
+            return dim_vals[0]
+        else:
+            None
+
+
     def dim_values(self, dim):
         """
         Returns a list of all the values along
