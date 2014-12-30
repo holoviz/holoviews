@@ -119,7 +119,10 @@ class Layer(Pane):
             return (0, self.cyclic_range)
         elif len(self):
             x_vals = self.data[:, 0]
-            return (float(min(x_vals)), float(max(x_vals)))
+            try:
+                return (float(min(x_vals)), float(max(x_vals)))
+            except:
+                return None, None
         else:
             return None
 

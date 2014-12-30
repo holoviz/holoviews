@@ -170,17 +170,32 @@ class Bars(DataView):
     @property
     def width(self):
         if self._width == None:
-            return list(set(np.diff(self.data[:, 0])))[0]
+            try:
+                return list(set(np.diff(self.data[:, 0])))[0]
+            except:
+                return None
         else:
             return self._width
 
     @property
     def edges(self):
-        return list(self.data[:, 0] - self.width) + [self.data[-1, 0] + self.width]
+        try:
+            return list(self.data[:, 0] - self.width) + [self.data[-1, 0] + self.width]
+        except:
+            return range(len(self)+1)
+
+    @property
+    def ylim(self):
+        return self.range
+
+    @property
+    def range(self):
+        vals = self.values
+        return min(vals), max(vals)
 
     @property
     def values(self):
-        return self.data[:, 1]
+        return np.array(self.data[:, 1], dtype=np.float64)
 
     @width.setter
     def width(self, width):

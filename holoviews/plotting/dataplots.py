@@ -367,7 +367,7 @@ class HistogramPlot(Plot):
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self._keys[-1], bars, lims) # Indexing top
 
-        ticks = self._compute_ticks(edges, widths, lims)
+        ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
 
         return self._finalize_axis(self._keys[-1], **ax_settings)
@@ -379,8 +379,8 @@ class HistogramPlot(Plot):
         """
         self.cyclic = False if hist.cyclic_range is None else True
         edges = hist.edges[:-1]
-        hist_vals = np.array(hist.values[:])
-        widths = np.diff(hist.edges)
+        hist_vals = np.array(hist.values)
+        widths = [hist._width] * len(hist) if hist._width else np.diff(hist.edges)
         if lbrt is None:
             xlims = hist.xlim if self.rescale_individually else self._map.xlim
             ylims = hist.ylim
@@ -392,7 +392,7 @@ class HistogramPlot(Plot):
         return edges, hist_vals, widths, lims
 
 
-    def _compute_ticks(self, edges, widths, lims):
+    def _compute_ticks(self, view, edges, widths, lims):
         """
         Compute the ticks either as cyclic values in degrees or as roughly
         evenly spaced bin centers.
@@ -402,11 +402,16 @@ class HistogramPlot(Plot):
             xvals = np.linspace(x0, x1, self.num_ticks)
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         else:
-            edge_inds = list(range(len(edges)))
-            step = len(edges)/float(self.num_ticks-1)
-            inds = [0] + [edge_inds[int(i*step)-1] for i in range(1, self.num_ticks)]
-            xvals = [edges[i]+widths[i]/2. for i in inds]
-            labels = ["%g" % round(x, 2) for x in xvals]
+            dim_type = view.dim_type(view.dimension_labels[0])
+            if dim_type in [str, unicode, type(None), np.string_]:
+                xvals = [edges[i]+widths[i]/2. for i in range(len(edges))]
+                labels = list(view.data[:, 0])
+            else:
+                edge_inds = list(range(len(edges)))
+                step = len(edges)/float(self.num_ticks-1)
+                inds = [0] + [edge_inds[int(i*step)-1] for i in range(1, self.num_ticks)]
+                xvals = [edges[i]+widths[i]/2. for i in inds]
+                labels = ["%g" % round(x, 2) for x in xvals]
         return [xvals, labels]
 
 
@@ -454,7 +459,7 @@ class HistogramPlot(Plot):
         # Process values, axes and style
         edges, hvals, widths, lims = self._process_hist(view, lbrt)
 
-        ticks = self._compute_ticks(edges, widths, lims)
+        ticks = self._compute_ticks(view, edges, widths, lims)
         ax_settings = self._process_axsettings(view, lims, ticks)
         self._update_artists(key, edges, hvals, widths, lims)
         return ax_settings
