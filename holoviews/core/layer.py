@@ -7,6 +7,7 @@ Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
 
+from numbers import Number
 from collections import OrderedDict, defaultdict
 import itertools
 import numpy as np
@@ -442,7 +443,7 @@ class Grid(NdMapping):
         """
         if all(not isinstance(el, slice) for el in key):
             dim_inds = [self.dim_index(l) for l in self.dimension_labels
-                        if unicode(self.dim_type(l)).isnumeric()]
+                        if issubclass(self.dim_type(l), Number)]
             str_keys = iter(key[i] for i in range(self.ndims)
                             if i not in dim_inds)
             num_keys = []

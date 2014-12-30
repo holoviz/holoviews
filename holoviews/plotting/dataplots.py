@@ -403,7 +403,7 @@ class HistogramPlot(Plot):
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         else:
             dim_type = view.dim_type(view.dimension_labels[0])
-            if dim_type in [str, unicode, type(None), np.string_]:
+            if dim_type in [str, type(None), np.string_]:
                 xvals = [edges[i]+widths[i]/2. for i in range(len(edges))]
                 labels = list(view.data[:, 0])
             else:
