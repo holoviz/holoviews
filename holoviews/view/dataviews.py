@@ -107,7 +107,7 @@ class DataView(Layer):
 
 
     def __len__(self):
-        return len(self.data[:,0])
+        return len(self.data)
 
 
     def dim_values(self, dim):
