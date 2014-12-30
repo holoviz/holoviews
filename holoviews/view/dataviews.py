@@ -224,6 +224,7 @@ class Histogram(Layer):
         self.values, self.edges, settings = self._process_data(values, edges)
         settings.update(params)
         super(Histogram, self).__init__((self.values, self.edges), **settings)
+        self._width = None
 
 
     def _process_data(self, values, edges):
@@ -256,6 +257,15 @@ class Histogram(Layer):
 
     def __getitem__(self, slc):
         raise NotImplementedError('Slicing and indexing of histograms currently not implemented.')
+
+
+    def dim_values(self, dim):
+        if dim == self.value:
+            return self.values
+        elif dim == self.dimension_labels[0]:
+            return self.edges
+        else:
+            raise Exception("Could not find dimension.")
 
 
     def sample(self, **samples):
