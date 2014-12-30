@@ -433,15 +433,29 @@ class Grid(NdMapping):
 
 
     def _transform_indices(self, key):
+        """
+        Transforms indices by snapping to the closest value if
+        values are numeric, otherwise applies no transformation.
+        """
         if all(not isinstance(el, slice) for el in key):
-            keys = self.keys()
-            q = np.array(key)
-            idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
-                             if self.ndims == 2 else np.abs(q-x)
-                             for x in keys])
-            key = keys[idx]
+            dim_inds = [self.dim_index(l) for l in self.dimension_labels
+                        if unicode(self.dim_type(l)).isnumeric()]
+            str_keys = iter(key[i] for i in range(self.ndims)
+                            if i not in dim_inds)
+            num_keys = []
+            if len(dim_inds):
+                keys = list({tuple(k[i] for i in dim_inds)
+                             for k in self.keys()})
+                q = np.array([tuple(k[i] for i in dim_inds) for k in key])
+                idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
+                                 if len(dim_inds) == 2 else np.abs(q-x)
+                                     for x in keys])
+                num_keys = iter(keys[idx])
+            key = tuple(num_keys.next() if i in dim_inds else str_keys.next()
+                        for i in range(self.ndims))
         elif any(not isinstance(el, slice) for el in key):
-            index_ind = [idx for idx, el in enumerate(key) if not isinstance(el, slice)][0]
+            index_ind = [idx for idx, el in enumerate(key)
+                         if not isinstance(el, (slice, str))][0]
             dim_keys = np.array([k[index_ind] for k in self.keys()])
             snapped_val = dim_keys[np.argmin(dim_keys-key[index_ind])]
             key = list(key)
