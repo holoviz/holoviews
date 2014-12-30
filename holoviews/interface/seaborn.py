@@ -31,11 +31,11 @@ class TimeSeries(Layer):
 
     def __init__(self, data, xvals=None, **params):
         if isinstance(data, ViewMap):
-            self.xdata = data.values()[0].data[:,0]
+            self.xdata = data.values()[0].data[:, 0]
             data = np.array([dv.data[:, 1] for dv in data.values()])
         elif isinstance(data, Overlay):
-            self.xdata = data.data[0].data[:,0]
-            data = np.array([dv.data[:, 1] for dv in data.data])
+            self.xdata = data.data.values()[0].data[:, 0]
+            data = np.array([dv.data[:, 1] for dv in data])
         else:
             self.xdata = np.array(range(len(data[0, :]))) if xvals is None\
                 else xvals
