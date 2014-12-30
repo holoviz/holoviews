@@ -12,7 +12,7 @@ import param
 
 from ..core import Dimension, ViewMap, Layer, Overlay
 from ..core.options import options, StyleOpts, Cycle
-from ..view import DataView, Scatter
+from ..view import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
 
 
@@ -186,6 +186,10 @@ class DFrame(PandasDFrame):
     def regression(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Regression, **kwargs))
 
+    def timeseries(self, value_dim, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
+        curve_map = self.table(value_dim, dimensions, reduce_fn=reduce_fn,
+                               map_dims=ts_dims+map_dims, **dict(view_type=Curve, **kwargs))
+        return TimeSeries(curve_map.overlay(ts_dims))
 
     @property
     def ylabel(self):
