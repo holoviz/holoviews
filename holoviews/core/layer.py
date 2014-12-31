@@ -284,7 +284,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def xlim(self):
-        xlim = self[0].xlim if isinstance(self[0], Layer) else None
+        xlim = self.last.xlim if isinstance(self.last, Layer) else None
         for data in self:
             data_xlim = data.xlim if isinstance(data, Layer) else None
             xlim = find_minmax(xlim, data.xlim) if data_xlim and xlim else xlim
@@ -299,7 +299,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def ylim(self):
-        ylim = self[0].ylim if isinstance(self[0], Layer) else None
+        ylim = self.last.ylim if isinstance(self.last, Layer) else None
         for data in self:
             data_ylim = data.ylim if isinstance(data, Layer) else None
             ylim = find_minmax(ylim, data.ylim) if data_ylim and ylim else ylim
