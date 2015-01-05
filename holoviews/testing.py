@@ -7,6 +7,8 @@ from IPython.display import HTML, SVG
 
 from .core import Dimension, GridLayout, AdjointLayout, Overlay, Grid, ViewMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
+from .interface.pandas import *
+from .interface.seaborn import *
 from .view import *
 
 
@@ -40,6 +42,18 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(Contours,     self.compare_contours)
         self.addTypeEqualityFunc(Points,       self.compare_points)
         self.addTypeEqualityFunc(VectorField,  self.compare_vectorfield)
+
+        # Pandas DFrame objects
+        self.addTypeEqualityFunc(DataFrameView, self.compare_dframe)
+        self.addTypeEqualityFunc(PandasDFrame,  self.compare_dframe)
+        self.addTypeEqualityFunc(DFrame,        self.compare_dframe)
+
+        # Seaborn Views
+        self.addTypeEqualityFunc(Bivariate,    self.compare_bivariate)
+        self.addTypeEqualityFunc(Distribution, self.compare_distribution)
+        self.addTypeEqualityFunc(Regression,   self.compare_regression)
+        self.addTypeEqualityFunc(TimeSeries,   self.compare_timeseries)
+
         # Option objects
         self.addTypeEqualityFunc(StyleOpts,    self.compare_opts)
         self.addTypeEqualityFunc(PlotOpts,     self.compare_opts)
@@ -247,6 +261,32 @@ class ViewTestCase(unittest.TestCase):
 
         self.compare_arrays(view1.data, view2.data, 'VectorField data')
 
+    #========#
+    # Pandas #
+    #========#
+
+    def compare_dframe(self, view1, view2, msg):
+        from pandas.util.testing import assert_frame_equal
+        try:
+            assert_frame_equal(view1.data, view2.data)
+        except AssertionError as e:
+            raise self.failureException(msg+': '+str(e))
+
+    #=========#
+    # Seaborn #
+    #=========#
+
+    def compare_distribution(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Distribution data')
+
+    def compare_timeseries(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'TimeSeries data')
+
+    def compare_bivariate(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Bivariate data')
+
+    def compare_regression(self, view1, view2, msg):
+        self.compare_arrays(view1.data, view2.data, 'Regression data')
 
     #=======#
     # Grids #
