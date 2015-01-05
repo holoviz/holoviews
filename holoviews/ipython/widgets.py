@@ -275,7 +275,7 @@ class NdWidget(param.Parameterized):
         for i, v in enumerate(view):
             if isinstance(v, Grid): v = v.values()[0]
             if isinstance(v, AdjointLayout): v = v.main
-            if isinstance(v, Overlay): v = v[0]
+            if isinstance(v, Overlay): v = v.values()[0]
             if isinstance(v, View):
                 v = ViewMap([((0,), v)], dimensions=['Frame'])
 
@@ -478,7 +478,7 @@ class ScrubberWidget(NdWidget):
         self.view = view
         self._process_view(view)
         self.frames = OrderedDict((idx, self._plot_figure(idx))
-                                  for idx, k in enumerate(self._keys))
+                                  for idx in range(len(self.plot)))
 
 
     def get_frames(self, id):
@@ -527,7 +527,7 @@ class ScrubberWidget(NdWidget):
         id = uuid.uuid4().hex
         frames = self.get_frames(id)
 
-        data = {'id': id, 'Nframes': len(self.mock_obj),
+        data = {'id': id, 'Nframes': len(self.plot),
                 'interval': int(1000. / ANIMATION_OPTS['scrubber'][2]['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
