@@ -380,7 +380,7 @@ class HistogramPlot(Plot):
         self.cyclic = False if hist.cyclic_range is None else True
         edges = hist.edges[:-1]
         hist_vals = np.array(hist.values)
-        widths = [hist._width] * len(hist) if hist._width else np.diff(hist.edges)
+        widths = [hist._width] * len(hist) if getattr(hist, '_width', None) else np.diff(hist.edges)
         if lbrt is None:
             xlims = hist.xlim if self.rescale_individually else self._map.xlim
             ylims = hist.ylim
