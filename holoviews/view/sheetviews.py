@@ -105,7 +105,7 @@ class Raster(Layer):
             sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[sample_ind]
 
             # Sample data
-            x_vals = self.dimension_values(dimension)
+            x_vals = sorted(set(self.dim_values(dimension)))
             data = zip(x_vals, self.data[sample])
             return Curve(data, dimensions=other_dimension,
                          value=self.value, label=self.label)
@@ -129,7 +129,7 @@ class Raster(Layer):
         else:
             dimension, reduce_fn = dimreduce_map.items()[0]
             other_dimension = [d for d in self.dimensions if d.name != dimension]
-            x_vals = self.dimension_values(dimension)
+            x_vals = sorted(set(self.dim_values(dimension)))
             data = zip(x_vals, reduce_fn(self.data, axis=self.dim_index(dimension)))
             return Curve(data, dimensions=other_dimension, label=label,
                          title=self.title, value=self.value)
