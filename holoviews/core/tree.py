@@ -89,7 +89,7 @@ class AttrTree(object):
                 self[label] = item
             else:
                 self[label].update(item)
-        (self.fixed, other.fixed) =  fixed_status
+        (self.fixed, other.fixed) = fixed_status
 
 
     def set_path(self, path, val):
