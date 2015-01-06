@@ -129,11 +129,10 @@ class AttrTree(object):
 
     def _propagate(self, path, val):
         """
-        Propagate the value to the root node.
+        Propagate the value up to the root node.
         """
-        if self.parent is None: # Root
-            self.path_items[path] = val
-        else:
+        self.path_items[path] = val
+        if self.parent is not None:
             self.parent._propagate((self.label,)+path, val)
 
 
@@ -163,15 +162,17 @@ class AttrTree(object):
         """
         keyerror_msg = ''
         split_label = (tuple(label.split('.'))
-                       if isinstance(label, str) else label)
-        if label in self.children:
-            return self.__dict__[label]
-        elif self.parent is None and (split_label in self.path_items):
-            return self.path_items[split_label]
-        elif (self.parent is not None) and '.' in label:
-            keyerror_msg = "Dotted string format only applicable to root nodes"
-
-        raise KeyError(label + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
+                       if isinstance(label, str) else tuple(label))
+        if len(split_label) == 1:
+            label = split_label[0]
+            if label in self.children:
+                return self.__dict__[label]
+            else:
+                raise KeyError(label + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
+        path_item = self
+        for label in split_label:
+            path_item = path_item[label]
+        return path_item
 
 
     def get(self, label, default=None):
