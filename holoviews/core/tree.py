@@ -119,7 +119,7 @@ class AttrTree(object):
                         else pf for pf in path_filters]
 
         # Search for substring matches between paths and path filters
-        new_attrtree = AttrTree()
+        new_attrtree = self.__class__()
         for path, item in self.path_items.items():
             if any([all([subpath in path for subpath in pf]) for pf in path_filters]):
                 new_attrtree.set_path(path, item)
@@ -231,7 +231,7 @@ class AttrTree(object):
 
         if label[0].isupper():
             self.children.append(label)
-            child_tree = AttrTree(label=label, parent=self)
+            child_tree = self.__class__(label=label, parent=self)
             self.__dict__[label] = child_tree
             return child_tree
         else:
