@@ -32,13 +32,16 @@ class AttrTree(object):
         self.__dict__['parent'] = parent
         self.__dict__['label'] = label
         self.__dict__['children'] = []
-        # Path items will only be populated at root node
-        self.__dict__['path_items'] = path_items if path_items else OrderedDict()
-
         self.__dict__['_fixed'] = False
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
+        self.__dict__['path_items'] = OrderedDict()
+        if path_items:
+            path_items = OrderedDict(path_items)
+            for path, item in path_items.items():
+                self.set_path(path, item)
+
 
     def __iter__(self):
         return iter(self.path_items.values())
