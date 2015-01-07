@@ -3,8 +3,8 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewOperation, Overlay
-from ..core.layer import find_minmax
 from ..core.options import options
+from ..core.util import find_minmax
 from ..view import ItemTable, Matrix, VectorField, Contours, Histogram
 
 
