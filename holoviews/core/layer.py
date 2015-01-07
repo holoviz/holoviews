@@ -454,6 +454,13 @@ class Grid(NdMapping):
         return key
 
 
+    def relabel(self, label):
+        """
+        Recreates the Grid with a supplied label.
+        """
+        return self.clone(self._data, label=label)
+
+
     def keys(self, full_grid=False):
         """
         Returns a complete set of keys on a Grid, even when Grid isn't fully
