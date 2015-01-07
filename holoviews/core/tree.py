@@ -1,8 +1,6 @@
 from collections import OrderedDict
 
-from .layer import Grid
-from .layout import GridLayout
-from .view import View, Map
+from .view import View
 
 
 class AttrTree(object):
@@ -54,24 +52,6 @@ class AttrTree(object):
     @fixed.setter
     def fixed(self, val):
         self.__dict__['_fixed'] = val
-
-    def grid(self, ordering='alphanumeric'):
-        """
-        Turn the AttrTree into a GridLayout with the available View
-        objects ordering specified by a list of labels or by the
-        specified ordering mode ('alphanumeric' or 'insertion').
-        """
-        if ordering == 'alphanumeric':
-            child_ordering = sorted(self.children)
-        elif ordering == 'insertion':
-            child_ordering = self.children
-        else:
-            child_ordering = ordering
-
-        children = [self.__dict__[l] for l in child_ordering]
-        dataview_types = (View, Map, GridLayout, Grid)
-        return GridLayout(list(child for child in children
-                               if isinstance(child, dataview_types)))
 
 
     def update(self, other):
