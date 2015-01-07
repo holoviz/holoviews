@@ -4,6 +4,7 @@ allow multiple Views to be presented side-by-side in a GridLayout. An
 AdjointLayout allows one or two Views to be ajoined to a primary View
 to act as supplementary elements.
 """
+from itertools import groupby
 
 import math
 from collections import OrderedDict
@@ -13,7 +14,8 @@ import param
 from .dimension import Dimension, Dimensioned
 from .ndmapping import NdMapping
 from .options import options
-from .view import View
+from .tree import AttrTree
+from .view import View, Map
 
 
 class Pane(View):
@@ -295,13 +297,86 @@ class AdjointLayout(Dimensioned):
             i += 1
 
 
+class ViewTree(AttrTree):
+
+    def __init__(self, *args, **kwargs):
+        self.__dict__['_cols'] = 4
+        super(ViewTree, self).__init__(*args, **kwargs)
+
+    def cols(self, ncols):
+        self._cols = ncols
+        return self
+
+    def __getitem__(self, key):
+        if len(key) == 2 and not any([isinstance(k, str) for k in key]):
+            row, col = key
+            idx = row * self._cols + col
+            keys = self.path_items.keys()
+            if idx >= len(keys) or col >= self._cols:
+                raise KeyError('Index %s is outside available item range' % str(key))
+            key = keys[idx]
+        return super(ViewTree, self).__getitem__(key)
+
+    @staticmethod
+    def int_to_roman(input):
+       if type(input) != type(1):
+          raise TypeError, "expected integer, got %s" % type(input)
+       if not 0 < input < 4000:
+          raise ValueError, "Argument must be between 1 and 3999"
+       ints = (1000, 900,  500, 400, 100,  90, 50,  40, 10,  9,   5,  4,   1)
+       nums = ('M',  'CM', 'D', 'CD','C', 'XC','L','XL','X','IX','V','IV','I')
+       result = ""
+       for i in range(len(ints)):
+          count = int(input / ints[i])
+          result += nums[i] * count
+          input -= ints[i] * count
+       return result
+
+    @property
+    def shape(self):
+        num = len(self.path_items)
+        if num <= self._cols:
+            return (1, num)
+        nrows = num // self._cols
+        return nrows, self._cols
+
+
+    def _merge_trees(self, other):
+        items = list(self.path_items.items()) + list(other.path_items.items())
+        expanded_items = []
+        for path, group in groupby(items, key=lambda x: x[0][0:2]):
+            group = list(group)
+            if len(group) == 1:
+                expanded_items.append((path, group[0][1]))
+                continue
+            for idx, (path, item) in enumerate(group):
+                if len(path) == 2:
+                    numeral = self.int_to_roman(idx+1)
+                    path = (path[0], numeral) if not item.label else path + (numeral,)
+                expanded_items.append((path, item))
+        return ViewTree(path_items=expanded_items)
+
+
+    @staticmethod
+    def from_view(view):
+        unpacked = view
+        if isinstance(unpacked, ViewTree):           return unpacked
+        if unpacked.__class__.__name__ == 'Grid':    unpacked = unpacked.values()[0]
+        if isinstance(unpacked, AdjointLayout):      unpacked = unpacked.main
+        if isinstance(unpacked, Map):                unpacked = unpacked.last
+        if unpacked.__class__.__name__ == 'Overlay': unpacked = unpacked.values()[0]
+        value = unpacked.value.name
+        if value == unpacked.params('value').default.name:
+            value = unpacked.__class__.__name__
+        label = unpacked.label if unpacked.label else 'I'
+        return ViewTree(path_items=[((value, label), view)])
+
+
     def __add__(self, other):
-        if isinstance(other, GridLayout):
-            elements = [self] + list(other.values())
-        else:
-            elements = [self, other]
-        return GridLayout(elements)
+        return self._merge_trees(self.from_view(other))
+
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+                    if isinstance(_v, type) and (issubclass(_v, Dimensioned)
+                                                 or issubclass(_v, ViewTree))]))
