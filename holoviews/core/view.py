@@ -84,6 +84,13 @@ class View(Dimensioned):
         raise NotImplementedError
 
 
+    def relabel(self, label):
+        """
+        Recreates the View with the supplied label.
+        """
+        return self.clone(self._data, label=label)
+
+
     def clone(self, data, type=None, **kwargs):
         """
         Returns a clone with matching parameter values containing the
