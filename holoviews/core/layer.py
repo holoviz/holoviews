@@ -165,11 +165,9 @@ class Overlay(Pane, NdMapping):
       of dimensions the Overlay can be indexed by.""")
 
     label = param.String(doc="""
-      A short label used to indicate what kind of data is contained
-      within the view object.
-
-      Overlays should not have their label set directly by the user as
-      the label is only for defining custom channel operations.""")
+      A label used to indicate what kind of data is contained
+      within the Overlay. This overrides the auto-generated title
+      made up of the individual Views.""")
 
     title = param.String(default="{label}")
 
