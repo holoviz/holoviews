@@ -25,8 +25,7 @@ class Pane(View):
     """
 
     def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
+        return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
 
     def __lshift__(self, other):
@@ -295,6 +294,10 @@ class AdjointLayout(Dimensioned):
         while i < len(self):
             yield self[i]
             i += 1
+
+
+    def __add__(self, obj):
+        return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
 
 class ViewTree(AttrTree):

@@ -16,7 +16,7 @@ import param
 
 from .dimension import Dimension, Dimensioned
 from .ndmapping import NdMapping
-from .layout import Pane, GridLayout, AdjointLayout
+from .layout import Pane, GridLayout, AdjointLayout, ViewTree
 from .options import options, channels
 from .util import find_minmax
 from .view import View, Map
@@ -515,8 +515,8 @@ class Grid(NdMapping):
 
 
     def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
+        return ViewTree.from_view(self) + ViewTree.from_view(obj)
+
 
     @property
     def all_keys(self):
@@ -844,12 +844,7 @@ class ViewMap(Map):
 
 
     def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
-        else:
-            grid = GridLayout(initial_items=[self])
-            grid.update(obj)
-            return grid
+        return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
 
     def __lshift__(self, other):
