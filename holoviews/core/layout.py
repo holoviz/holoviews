@@ -327,7 +327,8 @@ class ViewTree(AttrTree):
         if num <= self._cols:
             return (1, num)
         nrows = num // self._cols
-        return nrows, self._cols
+        last_row_cols = num % self._cols
+        return nrows+(1 if last_row_cols else 0), self._cols
 
 
     def _merge_trees(self, other):
