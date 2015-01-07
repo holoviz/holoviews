@@ -334,14 +334,15 @@ class ViewTree(AttrTree):
     def _merge_trees(self, other):
         items = list(self.path_items.items()) + list(other.path_items.items())
         expanded_items = []
-        for path, group in groupby(items, key=lambda x: x[0][0:2]):
+        group_fn = lambda x: x[0][0:2] if len(x[0]) > 2 else x[0][0]
+        for path, group in groupby(items, key=group_fn):
             group = list(group)
             if len(group) == 1:
                 expanded_items.append((path, group[0][1]))
                 continue
             for idx, (path, item) in enumerate(group):
-                if len(path) == 2:
-                    numeral = self.int_to_roman(idx+1)
+                if len(path) == 2 and not item.label:
+                    numeral = int_to_roman(idx+1)
                     path = (path[0], numeral) if not item.label else path + (numeral,)
                 expanded_items.append((path, item))
         return ViewTree(path_items=expanded_items)
