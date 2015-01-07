@@ -351,14 +351,20 @@ class ViewTree(AttrTree):
     def from_view(view):
         unpacked = view
         if isinstance(unpacked, ViewTree):           return unpacked
-        if unpacked.__class__.__name__ == 'Grid':    unpacked = unpacked.values()[0]
+        if unpacked.__class__.__name__ == 'Grid':
+            label = unpacked.label if unpacked.label else 'I'
+            return ViewTree(path_items=[(('Grid', label), view)])
         if isinstance(unpacked, AdjointLayout):      unpacked = unpacked.main
         if isinstance(unpacked, Map):                unpacked = unpacked.last
-        if unpacked.__class__.__name__ == 'Overlay': unpacked = unpacked.values()[0]
+        if unpacked.__class__.__name__ == 'Overlay':
+            label = unpacked.label if unpacked.label else 'I'
+            return ViewTree(path_items=[(('Overlay', label), view)])
         value = unpacked.value.name
         if value == unpacked.params('value').default.name:
             value = unpacked.__class__.__name__
         label = unpacked.label if unpacked.label else 'I'
+        value = value.replace(' ', '_')
+        label = label.replace(' ', '_')
         return ViewTree(path_items=[((value, label), view)])
 
 
