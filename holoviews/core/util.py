@@ -28,3 +28,25 @@ def int_to_roman(input):
       result += nums[i] * count
       input -= ints[i] * count
    return result
+
+
+def gen_valid_identifier(seq):
+    # get an iterator
+    itr = iter(seq)
+    # pull characters until we get a legal one for first in identifer
+    for ch in itr:
+        if ch == '_' or ch.isalpha():
+            yield ch
+            break
+    # pull remaining characters and yield legal ones for identifier
+    prev = None
+    for ch in itr:
+        if ch == '_' or ch.isalpha() or ch.isdigit():
+            prev = ch
+            yield ch
+        elif prev != '_':
+            prev = '_'
+            yield '_'
+
+def sanitize_identifier(name):
+    return ''.join(gen_valid_identifier(name))
