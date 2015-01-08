@@ -9,7 +9,7 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import Map, View, Overlay, AdjointLayout, GridLayout, Grid
+from ..core import Map, View, Overlay, AdjointLayout, GridLayout, Grid, ViewTree
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
@@ -343,7 +343,7 @@ class OptsMagic(Magics):
         values as keys for the the associated view type.
         """
         group = {}
-        if isinstance(obj, (Overlay, AdjointLayout, Grid, GridLayout)):
+        if isinstance(obj, (Overlay, AdjointLayout, Grid, GridLayout, ViewTree)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
             if isinstance(obj, (AdjointLayout, Overlay)):
@@ -383,7 +383,7 @@ class OptsMagic(Magics):
         name for all matches. A match occurs when the basename of the
         view.style is found in the supplied dictionary.
         """
-        if isinstance(obj, (AdjointLayout, Grid, GridLayout)):
+        if isinstance(obj, (AdjointLayout, Grid, GridLayout, ViewTree)):
             for subview in obj:
                 cls._set_style_names(subview, custom_name_map)
             if isinstance(obj, AdjointLayout):
@@ -446,7 +446,8 @@ class OptsMagic(Magics):
         errmsg = ''
         for key, (plot_kws, style_kws) in custom_options.items():
             for name, viewtype in styles.items():
-                plottype = Plot.defaults[viewtype]
+                plottype = Plot.defaults.get(viewtype, None)
+                if plottype is None: continue
                 if cls._basename(name) != key: continue
                 # Plot options checks
                 params = [k for (k,v) in plottype.params().items() if not v.constant]

@@ -4,9 +4,8 @@ allow multiple Views to be presented side-by-side in a GridLayout. An
 AdjointLayout allows one or two Views to be ajoined to a primary View
 to act as supplementary elements.
 """
+import math, uuid
 from itertools import groupby
-
-import math
 from collections import OrderedDict
 
 import param
@@ -303,8 +302,11 @@ class AdjointLayout(Dimensioned):
 
 class ViewTree(AttrTree):
 
+    style = 'ViewTree'
+
     def __init__(self, *args, **kwargs):
         self.__dict__['_cols'] = 4
+        self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())
         super(ViewTree, self).__init__(*args, **kwargs)
 
     def cols(self, ncols):
@@ -341,7 +343,7 @@ class ViewTree(AttrTree):
                 expanded_items.append((path, group[0][1]))
                 continue
             for idx, (path, item) in enumerate(group):
-                if len(path) == 2 and not item.label:
+                if len(path) == 2 and not isinstance(item, AdjointLayout) and not item.label:
                     numeral = int_to_roman(idx+1)
                     path = (path[0], numeral) if not item.label else path + (numeral,)
                 expanded_items.append((path, item))
