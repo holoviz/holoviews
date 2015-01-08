@@ -17,6 +17,7 @@ options.Style = StyleOpts()
 # Default Plotopts
 options.Grid = PlotOpts()
 options.GridLayout = PlotOpts()
+options.ViewTree = PlotOpts()
 
 options.Contours = StyleOpts(color='k')
 options.Matrix = StyleOpts(cmap='gray', interpolation='nearest')
