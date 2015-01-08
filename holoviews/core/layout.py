@@ -14,7 +14,7 @@ from .dimension import Dimension, Dimensioned
 from .ndmapping import NdMapping
 from .options import options
 from .tree import AttrTree
-from .util import int_to_roman
+from .util import int_to_roman, sanitize_identifier
 from .view import View, Map
 
 
@@ -309,9 +309,11 @@ class ViewTree(AttrTree):
         self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())
         super(ViewTree, self).__init__(*args, **kwargs)
 
+
     def cols(self, ncols):
         self._cols = ncols
         return self
+
 
     def __getitem__(self, key):
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
@@ -323,6 +325,7 @@ class ViewTree(AttrTree):
             key = keys[idx]
         return super(ViewTree, self).__getitem__(key)
 
+
     @property
     def shape(self):
         num = len(self.path_items)
@@ -333,46 +336,60 @@ class ViewTree(AttrTree):
         return nrows+(1 if last_row_cols else 0), self._cols
 
 
-    def _merge_trees(self, other):
-        items = list(self.path_items.items()) + list(other.path_items.items())
-        expanded_items = []
-        group_fn = lambda x: x[0][0:2] if len(x[0]) > 2 else x[0][0]
+    def _relabel(self, items):
+        relabelled_items = []
+        group_fn = lambda x: x[0][0:2] if len(x[0]) > 2 else (x[0][0],)
         for path, group in groupby(items, key=group_fn):
             group = list(group)
-            if len(group) == 1:
-                expanded_items.append((path, group[0][1]))
+            if len(group) == 1 and len(path) > 1:
+                relabelled_items.append((path, group[0][1]))
                 continue
             for idx, (path, item) in enumerate(group):
-                if len(path) == 2 and not isinstance(item, AdjointLayout) and not item.label:
+                label = ViewTree._get_path(item, True)[1]
+                if len(path) == 2 and not label:
                     numeral = int_to_roman(idx+1)
-                    path = (path[0], numeral) if not item.label else path + (numeral,)
-                expanded_items.append((path, item))
-        return ViewTree(path_items=expanded_items)
+                    new_path = (path[0], numeral) if not label else path + (numeral,)
+                else:
+                    new_path = path
+                relabelled_items.append((new_path, item))
+        return relabelled_items
+
+
+    @staticmethod
+    def _get_path(view, real=False):
+        if view.__class__.__name__ == 'Grid':
+            label = view.label if view.label or real else 'I'
+            return ('Grid', sanitize_identifier(label))
+        if isinstance(view, AdjointLayout):
+            view = view.main
+        if isinstance(view, Map):
+            view = view.last
+        if view.__class__.__name__ == 'Overlay':
+            label = view.label if view.label or real else 'I'
+            return ('Overlay', sanitize_identifier(label))
+        value = view.value.name
+        if value == view.params('value').default.name:
+            value = view.__class__.__name__
+        label = view.label if view.label or real else 'I'
+        return (sanitize_identifier(value), sanitize_identifier(label))
 
 
     @staticmethod
     def from_view(view):
-        unpacked = view
-        if isinstance(unpacked, ViewTree):           return unpacked
-        if unpacked.__class__.__name__ == 'Grid':
-            label = unpacked.label if unpacked.label else 'I'
-            return ViewTree(path_items=[(('Grid', label), view)])
-        if isinstance(unpacked, AdjointLayout):      unpacked = unpacked.main
-        if isinstance(unpacked, Map):                unpacked = unpacked.last
-        if unpacked.__class__.__name__ == 'Overlay':
-            label = unpacked.label if unpacked.label else 'I'
-            return ViewTree(path_items=[(('Overlay', label), view)])
-        value = unpacked.value.name
-        if value == unpacked.params('value').default.name:
-            value = unpacked.__class__.__name__
-        label = unpacked.label if unpacked.label else 'I'
-        value = value.replace(' ', '_')
-        label = label.replace(' ', '_')
-        return ViewTree(path_items=[((value, label), view)])
+        if isinstance(view, ViewTree): return view
+        return ViewTree(path_items=[(ViewTree._get_path(view), view)])
+
+
+    def group(self, name):
+        new_items = [((name, path[-1]), item) for path, item in self.path_items.items()]
+        return ViewTree(path_items=self._relabel(new_items))
 
 
     def __add__(self, other):
-        return self._merge_trees(self.from_view(other))
+        other = self.from_view(other)
+        items = list(self.path_items.items()) + list(other.path_items.items())
+        relabelled_items = self._relabel(items)
+        return ViewTree(path_items=relabelled_items)
 
 
 
