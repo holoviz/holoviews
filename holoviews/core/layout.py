@@ -39,27 +39,26 @@ class Pane(View):
 
 class GridLayout(NdMapping):
     """
-    A GridLayout is an NdMapping, which can contain any View or Map type.
-    It is used to group different View or Map elements into a grid for
-    display. Just like all other NdMappings it can be sliced and indexed
-    allowing selection of subregions of the grid.
+    A GridLayout is an NdMapping, which unlike a ViewMap lays
+    the individual elements out in a Grid.
     """
 
-    dimensions = param.List(default=[Dimension('Row', type=int),
-                                     Dimension('Column', type=int)], constant=True)
-
-    def __init__(self, initial_items=[], **params):
+    def __init__(self, initial_items, **params):
         self._max_cols = 4
         self._style = None
-        if all(isinstance(el, (View, NdMapping, AdjointLayout)) for el in initial_items):
-            initial_items = self._grid_to_items([initial_items])
+        if isinstance(initial_items, list):
+            initial_items = [(idx, item) for idx, item in enumerate(initial_items)]
         super(GridLayout, self).__init__(initial_items=initial_items, **params)
 
 
     @property
     def shape(self):
-        rows, cols = list(zip(*list(self.keys())))
-        return max(rows)+1, max(cols)+1
+        num = len(self.keys())
+        if num <= self._max_cols:
+            return (1, num)
+        nrows = num // self._max_cols
+        last_row_cols = num % self._max_cols
+        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
     @property
@@ -69,81 +68,22 @@ class GridLayout(NdMapping):
         current set of items (i.e. tuples of form ((row, column), view))
         """
         if list(self.keys()) == []:  return []
-        return [(r, c, v) for ((r, c), v) in zip(list(self.keys()), list(self.values()))]
-
+        cols = self._max_cols
+        return [((idx // cols, idx % cols), item)
+                for idx, item in enumerate(self)]
 
     @property
-    def max_cols(self):
-        return self._max_cols
-
-
-    @max_cols.setter
-    def max_cols(self, n):
-        self._max_cols = n
-        self.reorder({}, n)
+    def grid_dict(self):
+        return OrderedDict(self.coords)
 
 
     def cols(self, n):
-        self.reorder({}, n)
+        self._max_cols = n
         return self
 
 
-    def _grid_to_items(self, grid):
-        """
-        Given a grid (i.e. a list of lists), compute the list of
-        items.
-        """
-        items = []  # Flatten this method to single list comprehension.
-        for rind, row in enumerate(grid):
-            for cind, view in enumerate(row):
-                items.append(((rind, cind), view))
-        return items
-
-
-    def reorder(self, other, cols=None):
-        """
-        Given a mapping or iterable of additional views, extend the
-        grid in scanline order, obeying max_cols (if applicable).
-        """
-        values = other if isinstance(other, list) else list(other.values())
-        grid = [[]] if self.coords == [] else self._grid(self.coords)
-        new_grid = grid[:-1] + ([grid[-1]+ values])
-        cols = self.max_cols if cols is None else cols
-        reshaped_grid = self._reshape_grid(new_grid, cols)
-        self._data = OrderedDict(self._grid_to_items(reshaped_grid))
-
-
-    def _grid(self, coords):
-        """
-        From a list of coordinates of form [<(row, col, view)>] build
-        a corresponding list of lists grid.
-        """
-        rows = max(r for (r, _, _) in coords) + 1 if coords != [] else 0
-        unpadded_grid = [[p for (r, _, p) in coords if r == row] for row in
-                         range(rows)]
-        return unpadded_grid
-
-
-    def _reshape_grid(self, grid, cols):
-        """
-        Given a grid (i.e. a list of lists) , reformat it to a layout
-        with a maximum of cols columns (if not None).
-        """
-        if cols is None: return grid
-        flattened = [view for row in grid for view in row if (view is not None)]
-        row_num = int(math.ceil(len(flattened) / float(cols)))
-
-        reshaped_grid = []
-        for rind in range(row_num):
-            new_row = flattened[rind*cols:cols*(rind+1)]
-            reshaped_grid.append(new_row)
-
-        return reshaped_grid
-
-
-    def __add__(self, other):
-        new_values = list(other.values()) if isinstance(other, GridLayout) else [other]
-        return self.clone(list(self.values())+new_values)
+    def __add__(self, obj):
+        return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
 
     @property
