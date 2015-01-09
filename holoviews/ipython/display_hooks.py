@@ -176,7 +176,7 @@ def tree_display(tree, size=256):
                  shape[0]*get_plot_size()[0])
 
     grid = GridLayout(list(tree.path_items.values()))
-    grid.cols(tree._cols)
+    grid.cols(tree._max_cols)
     opts = dict(View.options.plotting(grid).opts, size=grid_size)
     gridplot = GridLayoutPlot(grid, **opts)
     if len(gridplot)==1:

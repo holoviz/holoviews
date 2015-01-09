@@ -245,13 +245,13 @@ class ViewTree(AttrTree):
     style = 'ViewTree'
 
     def __init__(self, *args, **kwargs):
-        self.__dict__['_cols'] = 4
+        self.__dict__['_max_cols'] = 4
         self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())
         super(ViewTree, self).__init__(*args, **kwargs)
 
 
     def cols(self, ncols):
-        self._cols = ncols
+        self._max_cols = ncols
         return self
 
 
@@ -269,11 +269,11 @@ class ViewTree(AttrTree):
     @property
     def shape(self):
         num = len(self.path_items)
-        if num <= self._cols:
+        if num <= self._max_cols:
             return (1, num)
-        nrows = num // self._cols
-        last_row_cols = num % self._cols
-        return nrows+(1 if last_row_cols else 0), self._cols
+        nrows = num // self._max_cols
+        last_row_cols = num % self._max_cols
+        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
     def _relabel(self, items):
