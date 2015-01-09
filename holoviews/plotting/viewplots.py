@@ -721,7 +721,7 @@ class GridLayoutPlot(Plot):
         subplots, grid_indices = {}, {}
         row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
-            view = self.grid.get((r, c), None)
+            view = self.grid.grid_dict.get((r, c), None)
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layout = LayoutPlot(layout_view)
             subplots[(r, c)] = layout
