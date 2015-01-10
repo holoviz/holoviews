@@ -542,12 +542,9 @@ class SideHistogramPlot(HistogramPlot):
         # If .main is an Overlay or a Map of Overlays get the correct style
         if isinstance(main, Map):
             main = main.last
-
         if isinstance(main, Overlay):
-            main = main[self.layout.main_layer]
-            style = main[self.layout.main_layer].style
-        else:
-            style = main.style
+            main = main.values()[0]
+        style = main.style
 
         if isinstance(main, Raster):
             cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
