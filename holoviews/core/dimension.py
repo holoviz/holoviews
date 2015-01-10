@@ -71,11 +71,11 @@ class Dimension(param.Parameterized):
 
     def __eq__(self, other):
         "Dimensions are sorted alphanumerically by name"
-        return self.name == other.name
+        return self.name == other.name if isinstance(other, Dimension) else other
 
     def __lt__(self, other):
         "Dimensions are sorted alphanumerically by name"
-        return self.name < other.name
+        return self.name < other.name if isinstance(other, Dimension) else other
 
 
 class Dimensioned(param.Parameterized):
