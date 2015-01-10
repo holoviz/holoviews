@@ -37,10 +37,10 @@ class ItemTable(Layer):
         if type(data) == dict:
             data = OrderedDict(sorted(data.items()))
 
-        data=dict((k.name if isinstance(k, Dimension)
-                   else k ,v) for (k,v) in data.items())
+        str_keys=dict((k.name if isinstance(k, Dimension)
+                       else k ,v) for (k,v) in data.items())
         params = dict(params, dimensions=data.keys())
-        super(ItemTable, self).__init__(data, **params)
+        super(ItemTable, self).__init__(str_keys, **params)
 
 
     def __getitem__(self, heading):
