@@ -172,8 +172,7 @@ class Table(Layer, NdMapping):
         Returns the cell type given a row and column index. The common
         basic cell types are 'data' and 'heading'.
         """
-        if col == self.ndims and row > 0:  return 'heading'
-        else:         return 'data'
+        return 'heading' if row == 0 else 'data'
 
 
     def sample(self, samples=[]):
