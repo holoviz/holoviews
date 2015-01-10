@@ -62,7 +62,7 @@ class ItemTable(Layer):
 
 
     def reduce(self, **reduce_map):
-        raise NotImplementedError('Tables are for heterogeneous data, which'
+        raise NotImplementedError('ItemTables are for heterogeneous data, which'
                                   'cannot be reduced.')
 
 
