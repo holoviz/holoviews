@@ -111,26 +111,37 @@ class ItemTable(Layer):
 
 class Table(Layer, NdMapping):
 
-    value = param.ClassSelector(class_=Dimension,
-                                default=Dimension('Value'), doc="""
-        The dimension description of the data held in the data array.""")
+    value = param.Parameter(default=Dimension('Value'), doc="""
+        The dimension description(s) of the data held in the data
+        array. A single Dimension may be specified if there is a
+        single data column, otherwise, a list of Dimension objects
+        must be supplied.""")
 
     xlabel, ylabel = None, None
     xlim, ylim = None, None
     lbrt = None, None, None, None
 
     def __init__(self, data=None, **params):
-        if 'value' in params and not isinstance(params['value'], Dimension):
-            params['value'] = Dimension(params['value'])
         self._style = None
-        NdMapping.__init__(self, data, **params)
-        self.data = self._data
+        NdMapping.__init__(self, data,**params)
+        self.data = self._data # For multiple columns, values are tuples.
 
     def __getitem__(self, *args):
-        return NdMapping.__getitem__(self, *args)
+        value = NdMapping.__getitem__(self, *args)
+        val_dims = self.value if isinstance(self.value, list) else [self.value]
+        if len(args)==self.ndims:
+            return ItemTable(dict(zip(val_dims, value)))
+        elif len(args)==self.ndims+1:
+            if args[-1] not in val_dims:
+                raise KeyError("No column with dimension label %r" % args[-1])
+            elif len(val_dims) != 1:
+                return value[[v.name for v in self.value].index(args[-1])]
+        return value
 
     @property
     def range(self):
+        if isinstance(self.value, list) and len(self.value) != 1:
+            raise Exception("Range only supported if there is a single value column")
         values = self.values()
         return (min(values), max(values))
 
@@ -140,7 +151,7 @@ class Table(Layer, NdMapping):
 
     @property
     def cols(self):
-        return self.ndims + 1
+        return self.ndims + len(self.value) if isinstance(self.value, list) else 1
 
     def clone(self, *args, **params):
         return NdMapping.clone(self, *args, **params)
@@ -155,12 +166,13 @@ class Table(Layer, NdMapping):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif row == 0:
-            if col == self.ndims:
-                return str(self.value)
+            if col >= self.ndims:
+                return str(self.value[col - self.ndims])
             return str(self.dimensions[col])
         else:
-            if col == self.ndims:
-                return self.values()[row-1]
+            if col >= self.ndims:
+                return self.values()[row-1][col - self.ndims]
+
             return self._data.keys()[row-1][col]
             heading = list(self.dim_dict.keys())[row]
             return self.data[heading]
@@ -208,6 +220,10 @@ class Table(Layer, NdMapping):
 
 
     def _item_check(self, dim_vals, data):
+        if isinstance(data, tuple):
+            for el in data:
+                self._item_check(dim_vals, el)
+            return
         if not np.isscalar(data):
             raise TypeError('Table only accepts scalar values.')
         super(Table, self)._item_check(dim_vals, data)
@@ -228,6 +244,9 @@ class Table(Layer, NdMapping):
     def dim_values(self, dim):
         if dim == self.value.name:
             return self.values()
+        elif isinstance(self.value, list) and dim in self.value:
+            index = [v.name for v in self.value].index(dim)
+            return [v[index] for v in self.values()]
         else:
             return NdMapping.dim_values(self, dim)
 
