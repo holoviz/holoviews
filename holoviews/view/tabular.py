@@ -12,8 +12,10 @@ class ItemTable(Layer):
     A tabular view type to allow convenient visualization of either a
     standard Python dictionary or an OrderedDict. If an OrderedDict is
     used, the headings will be kept in the correct order. Tables store
-    heterogeneous data with different labels. Optionally a list of
-    dimensions corresponding to the labels can be supplied.
+    heterogeneous data with different labels.
+
+    Dimension objects are also accepted as keys, allowing dimensional
+    information (e.g type and units) to be associated per heading.
     """
 
     xlabel, ylabel = None, None
@@ -32,13 +34,12 @@ class ItemTable(Layer):
 
     def __init__(self, data, **params):
         # Assume OrderedDict if not a vanilla Python dict
-        headings = data.keys()
         if type(data) == dict:
-            headings = sorted(headings)
-            data = OrderedDict((h, data[h]) for h in headings)
-        if 'dimensions' not in params:
-            params['dimensions'] = headings
-        super(ItemTable, self).__init__(data=data, **params)
+            data = OrderedDict(sorted(data.items()))
+
+        data=dict((k.name if isinstance(k, Dimension)
+                   else k ,v) for (k,v) in data.items())
+        super(ItemTable, self).__init__(data, dimensions=data.keys(), **params)
 
 
     def __getitem__(self, heading):
@@ -49,7 +50,10 @@ class ItemTable(Layer):
             return self
         if heading not in self.dim_dict:
             raise IndexError("%r not in available headings." % heading)
-        return self.data[heading]
+        if isinstance(heading, Dimension):
+            return self.data[heading.name]
+        else:
+            return self.data[heading]
 
 
     def sample(self, samples=None):
@@ -100,7 +104,9 @@ class ItemTable(Layer):
         Generates a Pandas dframe from the ItemTable.
         """
         from pandas import DataFrame
-        return DataFrame({k: [v] for k, v in self.data.items()})
+        return DataFrame({(k.name if isinstance(k, Dimension)
+                           else k): [v] for k, v in self.data.items()})
+
 
 
 class Table(Layer, NdMapping):
