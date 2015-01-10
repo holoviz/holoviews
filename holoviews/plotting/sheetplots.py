@@ -51,10 +51,7 @@ class PointPlot(Plot):
 
         kwargs = View.options.style(points)[cyclic_index]
         if values and self.scaling_factor > 1:
-            ms = kwargs.pop('s') if 's' in kwargs else plt.rcParams['lines.markersize']
-            cs = np.ma.array(cs, mask=cs<=0)
-            scaled_sizes = cs / np.min(cs.nonzero())
-            kwargs['s'] = (ms*self.scaling_factor**scaled_sizes)
+            kwargs['s'] = self._compute_size(cs, kwargs)
         scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
                                       **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
                                       if cs is not None else kwargs))
@@ -68,16 +65,22 @@ class PointPlot(Plot):
 
         return self._finalize_axis(self._keys[-1])
 
+    def _compute_size(self, sizes, opts):
+        ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
+        sizes = np.ma.array(sizes, mask=sizes<=0)
+        scaled_sizes = sizes / np.min(sizes.nonzero())
+        return (ms*self.scaling_factor**sizes)
+
 
     def update_handles(self, view, key, lbrt=None):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
+            opts = View.options.style(view)[0]
             values = view.data[:,2]
             scatter.set_array(values)
-            if self.scaling_factor is not None:
-                sizes = values if self.scaling_factor == 'radius' else values**2
-                scatter.set_sizes(sizes)
+            if self.scaling_factor > 1:
+                scatter.set_sizes(self._compute_size(values, opts))
 
         if self.normalize_individually:
             scatter.set_clim(view.range)
