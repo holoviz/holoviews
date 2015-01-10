@@ -69,6 +69,14 @@ class Dimension(param.Parameterized):
     def __str__(self):
         return self.pprint_label
 
+    def __eq__(self, other):
+        "Dimensions are sorted alphanumerically by name"
+        return self.name == other.name
+
+    def __lt__(self, other):
+        "Dimensions are sorted alphanumerically by name"
+        return self.name < other.name
+
 
 class Dimensioned(param.Parameterized):
     """
