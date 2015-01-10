@@ -75,8 +75,8 @@ class PointPlot(Plot):
         if view.data.shape[1]==3:
             values = view.data[:,2]
             scatter.set_array(values)
-            if self.scaling is not None:
-                sizes = values if self.scaling == 'radius' else values**2
+            if self.scaling_factor is not None:
+                sizes = values if self.scaling_factor == 'radius' else values**2
                 scatter.set_sizes(sizes)
 
         if self.normalize_individually:
