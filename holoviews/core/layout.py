@@ -4,9 +4,10 @@ allow multiple Views to be presented side-by-side in a GridLayout. An
 AdjointLayout allows one or two Views to be ajoined to a primary View
 to act as supplementary elements.
 """
-import math, uuid
+import uuid
 from itertools import groupby
-from collections import OrderedDict
+
+import numpy as np
 
 import param
 
@@ -62,19 +63,15 @@ class GridLayout(NdMapping):
 
 
     @property
-    def coords(self):
+    def grid_items(self):
         """
-        Compute the list of (row,column,view) elements from the
-        current set of items (i.e. tuples of form ((row, column), view))
+        Compute a dict of {(row,column): view} elements from the
+        current set of items and specified number of columns.
         """
-        if list(self.keys()) == []:  return []
+        if list(self.keys()) == []:  return {}
         cols = self._max_cols
-        return [((idx // cols, idx % cols), item)
-                for idx, item in enumerate(self)]
-
-    @property
-    def grid_dict(self):
-        return OrderedDict(self.coords)
+        return {(idx // cols, idx % cols): item
+                for idx, item in enumerate(self)}
 
 
     def cols(self, n):
@@ -267,8 +264,18 @@ class ViewTree(AttrTree):
 
 
     @property
+    def grid_items(self):
+        return {tuple(np.unravel_index(idx, self.shape)): el
+                for idx, el in enumerate(self)}
+
+
+    def __len__(self):
+        return len(self.path_items)
+
+
+    @property
     def shape(self):
-        num = len(self.path_items)
+        num = len(self)
         if num <= self._max_cols:
             return (1, num)
         nrows = num // self._max_cols

@@ -17,7 +17,7 @@ except:
     mpld3 = None
 
 from ..core import View, Map, AdjointLayout, GridLayout, Grid, ViewTree
-from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
+from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from ..view import Raster
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
@@ -166,47 +166,27 @@ def map_display(vmap, size=256):
 
     return render(mapplot)
 
-@display_hook
-def tree_display(tree, size=256):
-    # Needed once ViewTree supports options
-    magic_info = process_view_magics(tree)
-    if magic_info: return magic_info
-    shape = tree.shape
-    grid_size = (shape[1]*get_plot_size()[1],
-                 shape[0]*get_plot_size()[0])
-
-    grid = GridLayout(list(tree.path_items.values()))
-    grid.cols(tree._max_cols)
-    opts = dict(View.options.plotting(grid).opts, size=grid_size)
-    gridplot = GridLayoutPlot(grid, **opts)
-    if len(gridplot)==1:
-        fig =  gridplot()
-        return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
-        return widget_display(grid)
-
-    return render(gridplot)
 
 @display_hook
-def layout_display(grid, size=256):
-    if not isinstance(grid, (GridLayout, AdjointLayout)): return None
-    shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
-    magic_info = process_view_magics(grid)
+def layout_display(layout, size=256):
+    if isinstance(layout, AdjointLayout): layout = GridLayout([layout])
+    if not isinstance(layout, (ViewTree, GridLayout)): return None
+    shape = layout.shape
+    magic_info = process_view_magics(layout)
     if magic_info: return magic_info
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(View.options.plotting(grid).opts, size=grid_size)
-    gridplot = GridLayoutPlot(grid, **opts)
-    if len(gridplot)==1:
-        fig =  gridplot()
+    opts = dict(View.options.plotting(layout).opts, size=grid_size)
+    layoutplot = LayoutPlot(layout, **opts)
+    if len(layoutplot) == 1:
+        fig = layoutplot()
         return figure_display(fig)
     elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
                     ViewMagic.VIDEO_FORMAT == 'scrubber':
-        return widget_display(grid)
+        return widget_display(layoutplot)
 
-    return render(gridplot)
+    return render(layoutplot)
 
 @display_hook
 def grid_display(grid, size=256):
@@ -257,4 +237,4 @@ def set_display_hooks(ip):
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(GridLayout, layout_display)
     html_formatter.for_type(Grid, grid_display)
-    html_formatter.for_type(ViewTree, tree_display)
+    html_formatter.for_type(ViewTree, layout_display)

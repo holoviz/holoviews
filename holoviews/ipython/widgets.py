@@ -24,8 +24,8 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import NdMapping, View, ViewMap, GridLayout, AdjointLayout, Grid, Overlay
-from ..plotting import Plot, GridLayoutPlot
+from ..core import NdMapping, View, ViewMap, GridLayout, AdjointLayout, Grid, Overlay, ViewTree
+from ..plotting import Plot, LayoutPlot
 from .magics import ViewMagic, ANIMATION_OPTS
 
 
@@ -260,11 +260,11 @@ class NdWidget(param.Parameterized):
         Determine the dimensions and keys to be turned into widgets and
         initialize the plots.
         """
-        if isinstance(view, (GridLayout, AdjointLayout)):
+        if isinstance(view, (GridLayout, ViewTree, AdjointLayout)):
             shape = view.shape if isinstance(view, GridLayout) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
-            self.plot = GridLayoutPlot(view, **dict(size=grid_size))
+            self.plot = LayoutPlot(view, **dict(size=grid_size))
         else:
             opts = dict(View.options.plotting(view).opts, size=get_plot_size())
             self.plot = Plot.defaults[view.type](view, **opts)

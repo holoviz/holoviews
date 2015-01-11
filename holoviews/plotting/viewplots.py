@@ -1,5 +1,5 @@
 import copy
-from itertools import groupby
+from itertools import groupby, product
 
 import numpy as np
 
@@ -15,7 +15,7 @@ import matplotlib.patches as patches
 import param
 
 from ..core import Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
-    GridLayout, Grid
+    GridLayout, Grid, ViewTree
 from ..view import Annotation, Raster
 
 
@@ -464,7 +464,7 @@ class GridPlot(Plot):
         return max([len(self._keys), 1])
 
 
-class LayoutPlot(Plot):
+class AdjointLayoutPlot(Plot):
     """
     LayoutPlot allows placing up to three Views in a number of
     predefined and fixed layouts, which are defined by the layout_dict
@@ -509,7 +509,7 @@ class LayoutPlot(Plot):
 
         # The supplied (axes, view) objects as indexed by position
         self.plot_axes = {} # Populated by call, used in adjust_positions
-        super(LayoutPlot, self).__init__(**params)
+        super(AdjointLayoutPlot, self).__init__(**params)
 
 
     @property
@@ -670,14 +670,7 @@ class LayoutPlot(Plot):
                     for v in self.layout if isinstance(v, (Map, Grid))]+[1])
 
 
-class GridLayoutPlot(Plot):
-    """
-    Plot a group of views in a grid layout based on a GridLayout view
-    object.
-    """
-
-    roi = param.Boolean(default=False, doc="""
-      Whether to apply the ROI to each element of the grid.""")
+class LayoutPlot(Plot):
 
     style_opts = param.List(default=[], constant=True, doc="""
       GridLayoutPlot renders a group of views which individually have
@@ -691,21 +684,18 @@ class GridLayoutPlot(Plot):
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
+    def __init__(self, layout, **params):
+        if not isinstance(layout, (GridLayout, ViewTree)):
+            raise Exception("ViewTreePlot only accepts ViewTree objects.")
 
-    def __init__(self, grid, **params):
-        grid = GridLayout([grid]) if isinstance(grid, AdjointLayout) else grid
-        if not isinstance(grid, GridLayout):
-            raise Exception("GridLayoutPlot only accepts GridLayouts.")
-        # LayoutPlots indexed by their row and column indices
-        self.grid = grid
+        self.layout = layout
         self.subplots = {}
-        self.rows, self.cols = grid.shape
-        self.coords = [(r, c) for r in range(self.rows)
-                       for c in range(self.cols)]
+        self.rows, self.cols = layout.shape
+        self.coords = list(product(range(self.rows),
+                                   range(self.cols)))
 
-        super(GridLayoutPlot, self).__init__(**params)
+        super(LayoutPlot, self).__init__(**params)
         self.subplots, self.grid_indices = self._compute_gridspecs()
-
 
     def _compute_gridspecs(self):
         """
@@ -721,9 +711,9 @@ class GridLayoutPlot(Plot):
         subplots, grid_indices = {}, {}
         row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
-            view = self.grid.grid_dict.get((r, c), None)
+            view = self.layout.grid_items.get((r, c), None)
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
-            layout = LayoutPlot(layout_view)
+            layout = AdjointLayoutPlot(layout_view)
             subplots[(r, c)] = layout
             # For each row and column record the width and height ratios
             # of the LayoutPlot with the most horizontal or vertical splits
@@ -778,7 +768,7 @@ class GridLayoutPlot(Plot):
             layout_plot = self.subplots.get((r, c), None)
             subaxes = [plt.subplot(self.gs[ind]) for ind in self.grid_indices[(r, c)]]
 
-            rcopts = View.options.style(self.grid).opts
+            rcopts = View.options.style(self.layout).opts
             with matplotlib.rc_context(rcopts):
                 layout_plot(subaxes)
         plt.draw()
@@ -1090,7 +1080,8 @@ class AnnotationPlot(Plot):
 
 
 Plot.defaults.update({Grid: GridPlot,
-                      GridLayout: GridLayoutPlot,
-                      AdjointLayout: GridLayoutPlot,
+                      GridLayout: LayoutPlot,
+                      ViewTree: LayoutPlot,
+                      AdjointLayout: AdjointLayoutPlot,
                       Overlay: OverlayPlot,
                       Annotation: AnnotationPlot})
