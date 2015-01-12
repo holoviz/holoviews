@@ -314,5 +314,12 @@ class Table(Layer, NdMapping):
             return NdMapping.dim_values(self, dim)
 
 
-    def dframe(self):
-        return NdMapping.dframe(self, value_label=self.value.name)
+    def dframe(self, value_label='data'):
+        try:
+            import pandas
+        except ImportError:
+            raise Exception("Cannot build a DataFrame without the pandas library.")
+        labels = self.dimension_labels + [dim.name for dim in self.value_dimensions]
+        return pandas.DataFrame(
+            [dict(zip(labels, k+ (v if isinstance(v, tuple) else (v,))))
+             for (k, v) in self._data.items()])
