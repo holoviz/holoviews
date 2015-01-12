@@ -229,7 +229,7 @@ class Table(Layer, NdMapping):
 
     @property
     def cols(self):
-        return self.ndims + max([len(self.value_dimensions),1])
+        return self.ndims + len(self.value_dimensions)
 
     def clone(self, *args, **params):
         return NdMapping.clone(self, *args, **params)
@@ -252,10 +252,8 @@ class Table(Layer, NdMapping):
                 row_values = self.values()[row-1]
                 return (row_values[col - self.ndims]
                         if isinstance(row_values, tuple) else row_values)
-
-            return self._data.keys()[row-1][col]
-            heading = list(self.dim_dict.keys())[row]
-            return self.data[heading]
+            row_data = self._data.keys()[row-1]
+            return row_data[col] if isinstance(row_data, tuple) else row_data
 
 
     def cell_type(self, row, col):
@@ -286,15 +284,20 @@ class Table(Layer, NdMapping):
         reduced_table = self
         for dim, reduce_fn in reduce_map.items():
             split_dims = [self.dim_dict[d] for d in dim_labels if d != dim]
-            if len(split_dims):
+            if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.split_dimensions([dim])
                 reduced_table = self.clone(None, dimensions=split_dims)
                 for k, table in split_map.items():
-                    reduced_table[k] = reduce_fn(table.data.values())
+                    if len(self.value_dimensions) > 1:
+                        reduced = tuple(reduce_fn(table.dim_values(vdim.name))
+                                        for vdim in self.value_dimensions)
+                    else:
+                        reduced = reduce_fn(table.data.values())
+                    reduced_table[k] = reduced
             else:
-                data = reduce_fn(reduced_table.data.values())
-                reduced_table = ItemTable({self.value.name: data},
-                                          dimensions=[self.value])
+                reduced = {vdim: reduce_fn(self.dim_values(vdim.name))
+                           for vdim in self.value_dimensions}
+                reduced_table = ItemTable(reduced, dimensions=[self.value])
         return reduced_table
 
 
@@ -308,7 +311,7 @@ class Table(Layer, NdMapping):
         super(Table, self)._item_check(dim_vals, data)
 
 
-    def viewmap(self, dimensions):
+    def tablemap(self, dimensions):
         split_dims = [dim for dim in self.dimension_labels
                       if dim not in dimensions]
         if len(dimensions) < self.ndims:
@@ -316,18 +319,24 @@ class Table(Layer, NdMapping):
         else:
             vmap = ViewMap(dimensions=dimensions)
             for k, v in self.items():
-                vmap[k] = ItemTable({self.value.name: v}, dimensions=[self.value])
+                vmap[k] = ItemTable(dict(zip(self.value_dimensions, v)),
+                                    dimensions=self.value_dimensions)
             return vmap
 
 
     def dim_values(self, dim):
+        if isinstance(dim, Dimension):
+            raise Exception('Dimension to be specified by name')
         if dim == self.value.name:
             return self.values()
-        elif isinstance(self.value, list) and dim in self.value:
-            index = [v.name for v in self.value].index(dim)
+        elif dim in self.value_dimensions:
+            if len(self.value_dimensions) == 1: return self.values()
+            index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
-        else:
+        elif dim in self.dimension_labels:
             return NdMapping.dim_values(self, dim)
+        else:
+            raise Exception('Dimension not found.')
 
 
     def dframe(self, value_label='data'):
