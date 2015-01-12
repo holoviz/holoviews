@@ -110,12 +110,35 @@ class ItemTable(Layer):
 
 
 class Table(Layer, NdMapping):
+    """
+    A Table is an NdMapping that is rendered in tabular form. In
+    addition to the usual multi-dimensional keys of NdMappings
+    (rendered as columns), Tables also support multi-dimensional
+    values also rendered as columns. The values held in a multi-valued
+    Table are tuples, where each component of the tuple maps to a
+    column as described by the value_dimensions parameter.
 
-    value = param.Parameter(default=Dimension('Value'), doc="""
-        The dimension description(s) of the data held in the data
-        array. A single Dimension may be specified if there is a
-        single data column, otherwise, a list of Dimension objects
-        must be supplied.""")
+    In other words, the columns of a table are partitioned into two
+    groups: the columns based on the key and the value columns that
+    contain the components of the value tuple.
+
+    One feature of Tables is that they support an additional level of
+    index over NdMappings: the last index may be a column name or a
+    slice over the column names (using alphanumeric ordering).
+    """
+
+    value = param.ClassSelector(class_=Dimension,
+                                default=Dimension('Tabulation'),  doc="""
+         The value Dimension is used to describe the table. Example of
+         dimension names include 'Summary' or 'Statistics'. """)
+
+    value_dimensions = param.List(default=[Dimension('Data')],
+                                  bounds=(1,None), doc="""
+        The dimension description(s) of the values held in data tuples
+        that map to the value columns of the table.
+
+        Note: String values may be supplied in the constructor which
+        will then be promoted to Dimension objects.""")
 
     xlabel, ylabel = None, None
     xlim, ylim = None, None
@@ -125,18 +148,55 @@ class Table(Layer, NdMapping):
         self._style = None
         NdMapping.__init__(self, data,**params)
         self.data = self._data # For multiple columns, values are tuples.
+        value_dimensions = [v if isinstance(v, Dimension)
+                            else Dimension(v) for v in self.value_dimensions]
+        self.value_dimensions = value_dimensions
 
-    def __getitem__(self, *args):
-        value = NdMapping.__getitem__(self, *args)
-        val_dims = self.value if isinstance(self.value, list) else [self.value]
-        if len(args)==self.ndims:
-            return ItemTable(dict(zip(val_dims, value)))
-        elif len(args)==self.ndims+1:
-            if args[-1] not in val_dims:
-                raise KeyError("No column with dimension label %r" % args[-1])
-            elif len(val_dims) != 1:
-                return value[[v.name for v in self.value].index(args[-1])]
-        return value
+
+    def _filter_columns(self, index, col_names):
+        "Returns the column names specified by index (which may be a slice)"
+        if isinstance(index, slice):
+            cols  = [col for col in sorted(col_names)]
+            if index.start:
+                cols = [col for col in cols if col > index.start]
+            if index.stop:
+                cols = [col for col in cols if col < index.stop]
+            cols = cols[::index.step] if index.step else cols
+        elif index not in col_names:
+            raise KeyError("No column with dimension label %r" % index)
+        else:
+            cols= [index]
+        if cols==[]:
+            raise KeyError("No columns selected in the given slice")
+        return cols
+
+
+    def __getitem__(self, args):
+        """
+        In addition to usual NdMapping indexing, Tables can be indexed
+        by column name (or a slice over column names)
+        """
+        ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
+        subtable = NdMapping.__getitem__(self, ndmap_index)
+
+        if not isinstance(subtable, Table):
+            # If a value tuple, turn into an ItemTable
+            subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)))
+
+        if not isinstance(args, tuple) or len(args) <= self.ndims:
+            return subtable
+
+        col_names = [dim.name for dim in self.value_dimensions]
+        cols = self._filter_columns(args[-1], col_names)
+        indices = [col_names.index(col) for col in cols]
+        value_dimensions=[self.value_dimensions[i] for i in indices]
+        if isinstance(subtable, ItemTable):
+            return ItemTable(OrderedDict([(h,v) for (h,v) in subtable.data.items()
+                                          if h in cols]))
+
+        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
+        return subtable.clone(items, value_dimensions=value_dimensions)
+
 
     @property
     def range(self):
@@ -151,7 +211,7 @@ class Table(Layer, NdMapping):
 
     @property
     def cols(self):
-        return self.ndims + len(self.value) if isinstance(self.value, list) else 1
+        return self.ndims + max([len(self.value_dimensions),1])
 
     def clone(self, *args, **params):
         return NdMapping.clone(self, *args, **params)
@@ -167,11 +227,13 @@ class Table(Layer, NdMapping):
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif row == 0:
             if col >= self.ndims:
-                return str(self.value[col - self.ndims])
+                return str(self.value_dimensions[col - self.ndims])
             return str(self.dimensions[col])
         else:
             if col >= self.ndims:
-                return self.values()[row-1][col - self.ndims]
+                row_values = self.values()[row-1]
+                return (row_values[col - self.ndims]
+                        if isinstance(row, tuple) else row_values)
 
             return self._data.keys()[row-1][col]
             heading = list(self.dim_dict.keys())[row]
@@ -183,8 +245,7 @@ class Table(Layer, NdMapping):
         Returns the cell type given a row and column index. The common
         basic cell types are 'data' and 'heading'.
         """
-        if col == self.ndims and row > 0:  return 'heading'
-        else:         return 'data'
+        return 'heading' if row == 0 else 'data'
 
 
     def sample(self, samples=[]):
