@@ -195,7 +195,9 @@ def layout_display(layout, size=256):
     if isinstance(layout, ViewTree):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in layout.path_items.keys()]))
-            if len(layout.path_items) * len(layoutplot) > ViewMagic.MAX_FRAMES:
+            if branches > ViewMagic.MAX_BRANCHES:
+                return '<tt>'+ sanitized_repr(layout) + '</tt>'
+            elif len(layout.path_items) * len(layoutplot) > ViewMagic.MAX_FRAMES:
                 max_frame_warning(ViewMagic.MAX_FRAMES)
                 return '<tt>'+ sanitized_repr(layout) + '</tt>'
 
