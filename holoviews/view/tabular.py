@@ -146,7 +146,8 @@ class Table(Layer, NdMapping):
 
     def __init__(self, data=None, **params):
         self._style = None
-        NdMapping.__init__(self, data,**params)
+        NdMapping.__init__(self, data, **dict(params,
+                                              value=params.get('value',self.value)))
         self.data = self._data # For multiple columns, values are tuples.
         value_dimensions = [v if isinstance(v, Dimension)
                             else Dimension(v) for v in self.value_dimensions]
