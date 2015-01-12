@@ -182,7 +182,8 @@ class Table(Layer, NdMapping):
 
         if not isinstance(subtable, Table):
             # If a value tuple, turn into an ItemTable
-            subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)))
+            subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)),
+                                 label=self.label)
 
         if not isinstance(args, tuple) or len(args) <= self.ndims:
             return subtable
@@ -192,8 +193,8 @@ class Table(Layer, NdMapping):
         indices = [col_names.index(col) for col in cols]
         value_dimensions=[self.value_dimensions[i] for i in indices]
         if isinstance(subtable, ItemTable):
-            return ItemTable(OrderedDict([(h,v) for (h,v) in subtable.data.items()
-                                          if h in cols]))
+            items = OrderedDict([(h,v) for (h,v) in subtable.data.items() if h in cols])
+            return ItemTable(items, label=self.label)
 
         items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
         return subtable.clone(items, value_dimensions=value_dimensions)
