@@ -8,7 +8,7 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 from ..core import Map, View, Overlay
-from ..view import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table
+from ..view import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table, Points
 from .viewplots import Plot
 
 
@@ -546,7 +546,7 @@ class SideHistogramPlot(HistogramPlot):
             main = main.values()[0]
         style = main.style
 
-        if isinstance(main, Raster):
+        if isinstance(main, (Raster, Points)):
             cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
             main_range = View.options.style(style).opts.get('clims', main_range) if self.offset else None
         else:
