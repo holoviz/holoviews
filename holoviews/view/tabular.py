@@ -128,7 +128,7 @@ class Table(Layer, NdMapping):
     """
 
     value = param.ClassSelector(class_=Dimension,
-                                default=Dimension('Tabulation'),  doc="""
+                                default=Dimension(name='Table'),  doc="""
          The value Dimension is used to describe the table. Example of
          dimension names include 'Summary' or 'Statistics'. """)
 
