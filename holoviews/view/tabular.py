@@ -148,10 +148,26 @@ class Table(Layer, NdMapping):
         self._style = None
         NdMapping.__init__(self, data, **dict(params,
                                               value=params.get('value',self.value)))
-        self.data = self._data # For multiple columns, values are tuples.
         value_dimensions = [v if isinstance(v, Dimension)
                             else Dimension(v) for v in self.value_dimensions]
         self.value_dimensions = value_dimensions
+        for k, v in self._data.items():
+            self[k] = v # Unpacks any ItemTables
+        self.data = self._data # For multiple columns, values are tuples.
+
+
+    def __setitem__(self, key, value):
+        if isinstance(value, ItemTable):
+            indices = []
+            if len(value.dimensions) != len(self.value_dimensions):
+                raise Exception("Input ItemTables dimensions must match value dimensions.")
+            for dim in self.value_dimensions:
+                idx = [d.name for d in value.dimensions].index(dim.name)
+                if hash(dim) != hash(value.dimensions[idx]):
+                    raise Exception("Input ItemTables dimensions must match value dimensions.")
+                indices.append(idx)
+            value = tuple(value.data.values()[i] for i in indices)
+        self._data[key] = value
 
 
     def _filter_columns(self, index, col_names):
@@ -287,7 +303,7 @@ class Table(Layer, NdMapping):
             for el in data:
                 self._item_check(dim_vals, el)
             return
-        if not np.isscalar(data):
+        if not isinstance(data, ItemTable) and not np.isscalar(data):
             raise TypeError('Table only accepts scalar values.')
         super(Table, self)._item_check(dim_vals, data)
 
