@@ -210,30 +210,32 @@ class AttrTree(object):
             raise AttributeError("%s: Custom paths elements must be capitalized." % label)
 
 
+    def _draw_tree(self, node, prefix='', label=''):
+        """
+        Recursive function that builds up an ASCII tree given an
+        AttrTree node.
+        """
+        children = node.children if isinstance(node, AttrTree) else []
+        if isinstance(node, AttrTree):
+            label = 'root' if node.label is None else node.label
+        else:
+            label = label + ' : ' + str(type(node).__name__)
+
+        tree =  prefix[:-3] + '  +--' if prefix else prefix
+        tree += label + '\n'
+        for index, child in enumerate(children):
+            child_prefix = prefix + ('   ' if index+1 == len(children) else '  |')
+            tree += self._draw_tree(node[child], child_prefix, child)
+        return tree
+
     def __repr__(self):
         """
-        A useful summary of the contents of the AttrTree node that
-        works for any node in the tree. Note that this is not a repr
-        that can be evaluated.
+        The repr of an AttrTree is an ASCII tree showing the structure
+        of the tree and the types of leaves.
         """
-        path, node = [], self
-        while node.parent is not None:
-            path = [node.label] + path
-            node = node.parent
-
-        filtered = OrderedDict((k,v) for (k,v) in node.path_items.items()
-                               if k[:len(path)]==tuple(path))
-        if len(filtered) == 0:
+        if len(self.path_items) == 0:
             return "Dangling AttrTree node with no leaf items."
-
-        path_strs = ['.'.join(p) for p in filtered]
-        max_chars = max(len(el) for el in path_strs)
-
-        lines = ["AttrTree with %d leaf nodes of type:\n" % len(filtered)]
-        for (path_str, val) in zip(path_strs, filtered.values()):
-            val_type = type(val).__name__
-            lines.append("   %s : %s" % (path_str.ljust(max_chars), val_type))
-        return "\n".join(lines)
+        return self._draw_tree(self)
 
 
     def __contains__(self, name):
