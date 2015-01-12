@@ -243,7 +243,7 @@ class ViewTree(AttrTree):
 
     def __init__(self, *args, **kwargs):
         self.__dict__['_max_cols'] = 4
-        self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())
+        self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())[0:4]
         super(ViewTree, self).__init__(*args, **kwargs)
 
 
