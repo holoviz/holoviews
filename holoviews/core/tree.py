@@ -217,7 +217,7 @@ class AttrTree(object):
         """
         children = node.children if isinstance(node, AttrTree) else []
         if isinstance(node, AttrTree):
-            label = 'root' if node.label is None else node.label
+            label = '--+' if node.label is None else node.label
         else:
             label = label + ' : ' + str(type(node).__name__)
 
@@ -235,7 +235,9 @@ class AttrTree(object):
         """
         if len(self.path_items) == 0:
             return "Dangling AttrTree node with no leaf items."
-        return self._draw_tree(self)
+        return "%s of %s items:\n\n%s" % (self.__class__.__name__,
+                                          len(self.path_items),
+                                          self._draw_tree(self))
 
 
     def __contains__(self, name):
