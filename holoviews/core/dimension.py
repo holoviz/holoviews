@@ -66,16 +66,19 @@ class Dimension(param.Parameterized):
         return self.format_string.format(name=self.name.capitalize(),
                                          val=val, unit=unit)
 
+    def __hash__(self):
+        return sum([hash(value) for name, value in self.get_param_values()])
+
     def __str__(self):
         return self.pprint_label
 
     def __eq__(self, other):
         "Dimensions are sorted alphanumerically by name"
-        return self.name == other.name
+        return self.name == other.name if isinstance(other, Dimension) else other
 
     def __lt__(self, other):
         "Dimensions are sorted alphanumerically by name"
-        return self.name < other.name
+        return self.name < other.name if isinstance(other, Dimension) else other
 
 
 class Dimensioned(param.Parameterized):
