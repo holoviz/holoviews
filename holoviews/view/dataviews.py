@@ -260,7 +260,7 @@ class Histogram(Layer):
 
 
     def dim_values(self, dim):
-        if dim == self.value:
+        if dim == self.value.name:
             return self.values
         elif dim == self.dimension_labels[0]:
             return self.edges
