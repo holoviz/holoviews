@@ -242,9 +242,20 @@ class ViewTree(AttrTree):
     style = 'ViewTree'
 
     def __init__(self, *args, **kwargs):
+        self.__dict__['_display'] = 'auto'
         self.__dict__['_max_cols'] = 4
         self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())[0:4]
         super(ViewTree, self).__init__(*args, **kwargs)
+
+
+    def display(self, option):
+        "Sets the display policy of the ViewTree before returning self"
+        options = ['auto', 'all']
+        if option not in options:
+            raise Exception("Display option must be one of %s" %
+                            ','.join(repr(el) for el in options))
+        self._display = option
+        return self
 
 
     def cols(self, ncols):
@@ -336,7 +347,7 @@ class ViewTree(AttrTree):
         other = self.from_view(other)
         items = list(self.path_items.items()) + list(other.path_items.items())
         relabelled_items = self._relabel(items)
-        return ViewTree(path_items=relabelled_items)
+        return ViewTree(path_items=relabelled_items).display('all')
 
 
 
