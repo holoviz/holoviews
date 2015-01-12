@@ -235,7 +235,7 @@ class Table(Layer, NdMapping):
             if col >= self.ndims:
                 row_values = self.values()[row-1]
                 return (row_values[col - self.ndims]
-                        if isinstance(row, tuple) else row_values)
+                        if isinstance(row_values, tuple) else row_values)
 
             return self._data.keys()[row-1][col]
             heading = list(self.dim_dict.keys())[row]
