@@ -515,7 +515,7 @@ class AdjointLayoutPlot(Plot):
     @property
     def shape(self):
         """
-        Property used by GridLayoutPlot to compute an overall grid
+        Property used by LayoutPlot to compute an overall grid
         structure in which to position LayoutPlots.
         """
         return (len(self.height_ratios), len(self.width_ratios))
@@ -551,7 +551,7 @@ class AdjointLayoutPlot(Plot):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
-        supplied by GridLayoutPlot - the purpose of the call is to
+        supplied by LayoutPlot - the purpose of the call is to
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
@@ -608,7 +608,7 @@ class AdjointLayoutPlot(Plot):
         Make adjustments to the positions of subplots (if available)
         relative to the main plot axes as required.
 
-        This method is called by GridLayoutPlot after an initial pass
+        This method is called by LayoutPlot after an initial pass
         used to position all the Layouts together. This method allows
         LayoutPlots to make final adjustments to the axis positions.
         """
@@ -628,13 +628,13 @@ class AdjointLayoutPlot(Plot):
 
     def grid_situate(self, current_idx, layout_type, subgrid_width):
         """
-        Situate the current LayoutPlot in a GridLayoutPlot. The
+        Situate the current LayoutPlot in a LayoutPlot. The
         GridLayout specifies a layout_type into which the LayoutPlot
         must be embedded. This enclosing layout is guaranteed to have
         enough cells to display all the views.
 
         Based on this enforced layout format, a starting index
-        supplied by GridLayoutPlot (indexing into a large gridspec
+        supplied by LayoutPlot (indexing into a large gridspec
         arrangement) is updated to the appropriate embedded value. It
         will also return a list of gridspec indices associated with
         the all the required layout axes.
@@ -671,10 +671,14 @@ class AdjointLayoutPlot(Plot):
 
 
 class LayoutPlot(Plot):
+    """
+    A LayoutPlot accepts either a ViewTree or a GridLayout and
+    displays the elements in a cartesian grid in scanline order.
+    """
 
     style_opts = param.List(default=[], constant=True, doc="""
-      GridLayoutPlot renders a group of views which individually have
-      style options but GridLayoutPlot itself does not.""")
+      LayoutPlot renders a group of views which individually have
+      style options but LayoutPlot itself does not.""")
 
     horizontal_spacing = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
@@ -686,7 +690,7 @@ class LayoutPlot(Plot):
 
     def __init__(self, layout, **params):
         if not isinstance(layout, (GridLayout, ViewTree)):
-            raise Exception("ViewTreePlot only accepts ViewTree objects.")
+            raise Exception("LayoutPlot only accepts ViewTree objects.")
 
         self.layout = layout
         self.subplots = {}
