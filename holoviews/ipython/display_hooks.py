@@ -109,6 +109,15 @@ def figure_display(fig, size=None, message=None, max_width='100%'):
 # Display hooks #
 #===============#
 
+def sanitized_repr(obj):
+    "Sanitize text output for HTML display"
+    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
+
+def max_frame_warning(max_frames):
+    sys.stderr.write("Skipping matplotlib display to avoid "
+                     "lengthy animation render times\n"
+                     "[Total item frames exceeds ViewMagic.MAX_FRAMES (%d)]"
+                     % max_frames)
 
 def process_view_magics(obj):
     "Hook into %%opts and %%channels magics to process display view"
@@ -156,7 +165,10 @@ def map_display(vmap, size=256):
     opts = dict(View.options.plotting(vmap).opts, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
-        return repr(vmap)
+        return sanitized_repr(vmap)
+    elif len(mapplot) > ViewMagic.MAX_FRAMES:
+        max_frame_warning(ViewMagic.MAX_FRAMES)
+        return sanitized_repr(vmap)
     elif len(mapplot) == 1:
         fig = mapplot()
         return figure_display(fig)
@@ -179,6 +191,14 @@ def layout_display(layout, size=256):
 
     opts = dict(View.options.plotting(layout).opts, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
+
+    if isinstance(layout, ViewTree):
+        if layout._display == 'auto':
+            branches = len(set([path[0] for path in layout.path_items.keys()]))
+            if len(layout.path_items) * len(layoutplot) > ViewMagic.MAX_FRAMES:
+                max_frame_warning(ViewMagic.MAX_FRAMES)
+                return '<tt>'+ sanitized_repr(layout) + '</tt>'
+
     if len(layoutplot) == 1:
         fig = layoutplot()
         return figure_display(fig)
@@ -209,6 +229,9 @@ def grid_display(grid, size=256):
     else:
         plot_type = GridPlot
     gridplot = plot_type(grid, size=grid_size)
+    if len(gridplot) > ViewMagic.MAX_FRAMES:
+        max_frame_warning(ViewMagic.MAX_FRAMES)
+        return sanitized_repr(grid)
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)
