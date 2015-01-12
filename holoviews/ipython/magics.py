@@ -73,15 +73,18 @@ class ViewMagic(Magics):
     FIGURE_FORMAT = 'png'
     VIDEO_FORMAT = 'webm'
 
+    MAX_FRAMES = 500
+    MAX_BRANCHES = 2
+
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|widgets[:embedded|cached|live]|scrubber] [<percent size>]"
+        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|widgets[:embedded|cached|live]|scrubber] [<percent size>] [MAX_FRAMES=<N>] [MAX_BRANCHES=<N>]"
         self.usage_info += " (Arguments may be in any order)"
 
     @classmethod
     def option_completer(cls, k,v):
-        return cls.anim_formats + cls.fig_formats
+        return cls.anim_formats + cls.fig_formats + ['MAX_FRAMES=', 'MAX_BRANCHES=']
 
     def _set_animation_options(self, anim_spec):
         """
@@ -169,7 +172,23 @@ class ViewMagic(Magics):
                       ViewMagic.PERCENTAGE_SIZE,  ViewMagic.FPS]
 
         opts = line.split()
-        success = self._parse_settings(opts)
+        filtered = [opt for opt in opts if '=' not in opt]
+        success = self._parse_settings(filtered)
+        for keyword in [opt for opt in opts if '=' in opt]:
+            try:
+                success = True
+                item = eval('dict(%s)' % keyword)
+                if item.keys()[0]=='MAX_FRAMES':
+                    ViewMagic.MAX_FRAMES = item.values()[0]
+                elif item.keys()[0]=='MAX_BRANCHES':
+                    ViewMagic.MAX_BRANCHES = item.values()[0]
+                else:
+                    success=False
+            except:
+                success = False
+            if not success:
+                print("Could not set keyword option: %s" % keyword)
+
 
         if cell is None and success:
             if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
