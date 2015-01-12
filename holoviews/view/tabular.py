@@ -39,7 +39,7 @@ class ItemTable(Layer):
 
         data=dict((k.name if isinstance(k, Dimension)
                    else k ,v) for (k,v) in data.items())
-        super(ItemTable, self).__init__(data, dimensions=data.keys(), **params)
+        super(ItemTable, self).__init__(data, **dict(params, dimensions=data.keys()))
 
 
     def __getitem__(self, heading):
