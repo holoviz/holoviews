@@ -17,7 +17,7 @@ class Dimension(param.Parameterized):
 
     name = param.String(default="", doc="Name of the Dimension.")
 
-    range = param.NumericTuple(default=(0, 0), doc="""
+    range = param.Tuple(default=(None, None), doc="""
         Lower and upper values for a Dimension.""")
 
     type = param.Parameter(default=None, doc="""
@@ -26,7 +26,7 @@ class Dimension(param.Parameterized):
     unit = param.String(default=None, doc="Unit string associated with"
                                           "the Dimension.")
 
-    format_string = param.String(default="{name} = {val}{unit}")
+    format_string = param.String(default="{name}: {val}{unit}")
 
     def __init__(self, name, **params):
         """
