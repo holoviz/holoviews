@@ -21,35 +21,31 @@ class View(Dimensioned):
 
     __abstract = True
 
-    dimensions = param.List(default=[], doc="""List of dimensions the View
+    index_dimensions = param.List(default=[], doc="""List of dimensions the View
         can be indexed by.""")
 
     label = param.String(default='', constant=True, doc="""
         A string label or Dimension object used to indicate what kind of data
         is contained within the view object.""")
 
-    title = param.String(default='{label}', doc="""
+    title = param.String(default='{label} {value}', doc="""
         The title formatting string allows the title to be composed from
         the view {label}, {value} quantity and view {type} but can also be set
         to a simple string.""")
 
-    value = param.ClassSelector(class_=Dimension,
-                                default=Dimension('Y'), doc="""
-        The value is a string or Dimension object, describing the quantity
-        being held in the View.""")
+    value = param.String(default='View')
+
+    value_dimensions = param.List(default=[], doc="""
+        The value_dimensions holds a list of Dimension objects, describing the
+        quantities being held in the View.""")
 
     options = options
+
+    _dimension_groups = ['index', 'value']
 
     def __init__(self, data, **params):
         self.data = data
         self._style = params.pop('style', None)
-        if 'dimensions' in params:
-            params['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
-                                    for d in params.pop('dimensions')]
-        if 'value' in params and not isinstance(params['value'], Dimension):
-            params['value'] = Dimension(params['value'])
-        elif 'value' not in params:
-            params['value'] = self.value
         super(View, self).__init__(**params)
 
 
@@ -88,21 +84,7 @@ class View(Dimensioned):
         """
         Recreates the View with the supplied label.
         """
-        return self.clone(self._data, label=label)
-
-
-    def clone(self, data, type=None, **kwargs):
-        """
-        Returns a clone with matching parameter values containing the
-        specified items (empty by default).
-        """
-        settings = dict(self.get_param_values(), **kwargs)
-        return self.__class__(data, **settings)
-
-
-    @property
-    def deep_dimensions(self):
-        return self.dimension_labels
+        return self.clone(self.data, label=label)
 
 
     @property
@@ -182,6 +164,8 @@ class Map(NdMapping):
        Map. Default adds a new line with the formatted dimensions
        of the Map inserted using the {dims} formatting keyword.""")
 
+    value = param.String(default='Map')
+
     data_type = (View, NdMapping)
 
     _abstract = True
@@ -215,12 +199,6 @@ class Map(NdMapping):
         for val in self.values():
             val.style = style_name
 
-
-    @property
-    def deep_dimensions(self):
-        return self.dimension_labels + self.last.deep_dimensions
-
-
     @property
     def empty_element(self):
         return self._type(None)
@@ -241,12 +219,12 @@ class Map(NdMapping):
         Resolves the title string on the View being added to the Map,
         adding the Maps title suffix.
         """
-        if self.ndims == 1 and self.dim_dict.get('Default'):
+        if self.ndims() == 1 and self.get_dimension('Default'):
             title_suffix = ''
         else:
             title_suffix = self.title_suffix
         dimension_labels = [dim.pprint_value(k) for dim, k in
-                            zip(self.dimensions, key)]
+                            zip(self.index_dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         dims = '\n '.join(g for g in groups if g)
