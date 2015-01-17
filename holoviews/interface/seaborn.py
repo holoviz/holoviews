@@ -10,7 +10,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ViewMap, Layer, Overlay
+from ..core import Dimension, NdMapping, ViewMap, Layer, Overlay
 from ..core.options import options, StyleOpts, Cycle
 from ..view import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
@@ -31,22 +31,17 @@ class TimeSeries(Layer):
 
     value = param.String(default='TimeSeries')
 
-    value_dimensions = param.List(default=[Dimension('X')], bounds=(1,1))
-
     value_dimensions = param.List(default=[Dimension('Y'),
                                            Dimension('Observation')],
                                   bounds=(2,2))
 
-    def __init__(self, data, xvals=None, **params):
-        if isinstance(data, ViewMap):
+    def __init__(self, data, xdata=None, **params):
+        if isinstance(data, NdMapping):
             self.xdata = data.values()[0].data[:, 0]
-            data = np.array([dv.data[:, 1] for dv in data.values()])
-        elif isinstance(data, Overlay):
-            self.xdata = data.data.values()[0].data[:, 0]
             data = np.array([dv.data[:, 1] for dv in data])
         else:
-            self.xdata = np.array(range(len(data[0, :]))) if xvals is None\
-                else xvals
+            self.xdata = np.array(range(len(data[0, :]))) if xdata is None\
+                else xdata
         super(TimeSeries, self).__init__(data, **params)
 
 
@@ -59,6 +54,16 @@ class TimeSeries(Layer):
                                       'implemented.')
 
 
+    def dimension_values(self, dimension):
+        dim_idx = self.get_dimension_index(dimension)
+        if dim_idx == 0:
+            return self.xdata
+        elif dim_idx == 1:
+            return self.data.flatten()
+        elif dim_idx == 2:
+            return self.data.shape[1]
+
+
     def sample(self, **samples):
         raise NotImplementedError('Cannot sample a TimeSeries.')
 
@@ -66,26 +71,6 @@ class TimeSeries(Layer):
     def reduce(self, **dimreduce_map):
         raise NotImplementedError('Reduction of TimeSeries not '
                                   'implemented.')
-
-
-    @property
-    def xlim(self):
-        if self._xlim:
-            return self._xlim
-        elif self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        else:
-            x_vals = self.xdata
-            return (float(min(x_vals)), float(max(x_vals)))
-
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        else:
-            return (np.min(self.data), np.max(self.data))
-
 
 
 class Bivariate(DataView):
