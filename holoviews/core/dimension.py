@@ -127,13 +127,13 @@ class Dimensioned(param.Parameterized):
         super(Dimensioned, self).__init__(**params)
 
 
-    def clone(self, items=None, **kwargs):
+    def clone(self, data=None, *args, **kwargs):
         """
         Returns a clone with matching parameter values containing the
-        specified items (empty by default).
+        specified args and kwargs (empty by default).
         """
         settings = dict(self.get_param_values(), **kwargs)
-        return self.__class__(items, **settings)
+        return self.__class__(data, *args, **settings)
 
 
     def dimensions(self, selection='index', labels=False):

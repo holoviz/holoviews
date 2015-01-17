@@ -35,7 +35,7 @@ class Layer(Pane):
     def __mul__(self, other):
         if isinstance(other, ViewMap):
             items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
+            return other.clone(items)
 
         self_layers = self.data.values() if isinstance(self, Overlay) else [self]
         other_layers = other.data.values() if isinstance(other, Overlay) else [other]
@@ -264,7 +264,7 @@ class Overlay(Pane, NdMapping):
     def __mul__(self, other):
         if isinstance(other, ViewMap):
             items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
+            return other.clone(items)
         elif isinstance(other, Overlay):
             overlays = self.values() + other.values()
         elif isinstance(other, (View)):
@@ -753,10 +753,10 @@ class ViewMap(Map):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items=items, index_dimensions=dimensions)
+            return self.clone(items, index_dimensions=dimensions)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
-            return self.clone(items=items)
+            return self.clone(items)
         else:
             raise Exception("Can only overlay with {data} or {vmap}.".format(
                 data=self.data_type, vmap=self.__class__.__name__))
