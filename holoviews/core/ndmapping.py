@@ -5,6 +5,7 @@ also enables slicing over multiple dimension ranges.
 """
 
 from collections import OrderedDict
+import numpy as np
 
 import param
 
@@ -36,18 +37,18 @@ class NdIndexableMapping(Dimensioned):
     classes easier to understand.
     """
 
-    dimensions = param.List(default=[Dimension("Default")], constant=True)
+    index_dimensions = param.List(default=[Dimension("Default")], constant=True)
+
+    value = param.String(default='NdIndexableMapping')
 
     data_type = None
 
     _deep_indexable = False
+    _sorted = True
+    _dimension_groups = ['index', 'deep']
 
     def __init__(self, initial_items=None, **params):
-        self._data = OrderedDict()
-
-        if 'dimensions' in params:
-            params['dimensions'] = [Dimension(d) if not isinstance(d, Dimension) else d
-                                    for d in params.pop('dimensions')]
+        self.data = OrderedDict()
         super(NdIndexableMapping, self).__init__(**params)
 
         self._next_ind = 0
@@ -57,6 +58,15 @@ class NdIndexableMapping(Dimensioned):
             self._add_item(initial_items[0], initial_items[1])
         elif initial_items is not None:
             self.update(OrderedDict(initial_items))
+
+
+    @property
+    def deep_dimensions(self):
+        dimensions = []
+        if self._deep_indexable:
+            item = self.values()[0]
+            dimensions += item.dimensions('all')
+        return dimensions
 
 
     def _item_check(self, dim_vals, data):
@@ -74,17 +84,18 @@ class NdIndexableMapping(Dimensioned):
                             'to be a {restr}.'.format(slf=type(self).__name__,
                                                       data=type(data).__name__,
                                                       restr=data_type))
-        elif not len(dim_vals) == self.ndims:
+        elif not len(dim_vals) == self.ndims():
             raise KeyError('Key has to match number of dimensions.')
 
 
     def _resort(self):
-        self._data = OrderedDict(sorted(self._data.items()))
+        self.data = OrderedDict(sorted(self.data.items()))
 
 
     def _add_item(self, dim_vals, data, sort=True):
         """
-        Records data indexing it in the specified feature dimensions.
+        Adds item to the data, applying dimension types and
+        making key consistent.
         """
         if not isinstance(dim_vals, tuple):
             dim_vals = (dim_vals,)
@@ -101,10 +112,10 @@ class NdIndexableMapping(Dimensioned):
         Subclasses default method to allow updating of nested data structures
         rather than simply overriding them.
         """
-        if dim_vals in self._data and hasattr(self._data[dim_vals], 'update'):
-            self._data[dim_vals].update(data)
+        if dim_vals in self.data and hasattr(self.data[dim_vals], 'update'):
+            self.data[dim_vals].update(data)
         else:
-            self._data[dim_vals] = data
+            self.data[dim_vals] = data
 
 
     def update(self, other):
@@ -130,65 +141,72 @@ class NdIndexableMapping(Dimensioned):
         value uniquely.
         """
 
-        indices = [self.dim_index(el) for el in dimension_labels]
+        indices = [self.get_dimension_index(el) for el in dimension_labels]
 
-        keys = [tuple(k[i] for i in indices) for k in self._data.keys()]
+        keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
-            (k, v) for (k, v) in zip(keys, self._data.values()))
-        reduced_dims = set(self.dimension_labels).difference(dimension_labels)
-        dimensions = [self.dim_dict[d] for d in dimension_labels if d not in reduced_dims]
+            (k, v) for (k, v) in zip(keys, self.data.values()))
+        reduced_dims = set(self.dimensions(labels=True)).difference(dimension_labels)
+        dimensions = [self.get_dimension(d) for d in dimension_labels if d not in reduced_dims]
 
         if len(set(keys)) != len(keys):
             raise Exception("Given dimension labels not sufficient to address all values uniquely")
 
-        return self.clone(reindexed_items, dimensions=dimensions)
+        return self.clone(reindexed_items, index_dimensions=dimensions)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
         Create a new object with an additional dimension along which items are
         indexed. Requires the dimension name, the desired position in the
-        dimension labels and a dimension value that applies to all existing
+        index_dimensions and a dimension value that applies to all existing
         elements.
         """
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
 
-        if dimension.name in self.dimension_labels:
+        if dimension.name in self.dimensions(labels=True):
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.dimensions[:]
+        dimensions = self.index_dimensions[:]
         dimensions.insert(dim_pos, dimension)
 
         items = OrderedDict()
-        for key, val in self._data.items():
+        for key, val in self.data.items():
             new_key = list(key)
             new_key.insert(dim_pos, dim_val)
             items[tuple(new_key)] = val
 
-        return self.clone(items, dimensions=dimensions, **kwargs)
+        return self.clone(items, index_dimensions=dimensions, **kwargs)
 
-
-    def clone(self, items=None, **kwargs):
-        """
-        Returns a clone with matching parameter values containing the
-        specified items (empty by default).
-        """
-        settings = dict(self.get_param_values(), **kwargs)
-        return self.__class__(items, **settings)
 
     def copy(self):
         return self.clone(list(self.items()))
 
 
-    def dframe(self, value_label='data'):
+    def dframe(self):
         try:
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimension_labels + [value_label]
+        labels = self.dimensions(labels=True) + [self.value]
         return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self._data.items()])
+            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
+
+
+    def dimension_values(self, dimension):
+        if isinstance(dimension, int):
+            dimension = self.dimensions('all', True)[dimension]
+
+        if dimension in self.dimensions('index', True):
+            values = [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
+        elif dimension in self.dimensions('all', True):
+            values = [el.dimension_values(dimension) for el in self
+                      if dimension in el.dimensions('all')]
+            values = np.concatenate(values)
+        else:
+            raise Exception('Dimension %s not found.' % dimension)
+        return values
 
 
     def _apply_key_type(self, keys):
@@ -197,7 +215,7 @@ class NdIndexableMapping(Dimensioned):
         type to the supplied key.
         """
         typed_key = ()
-        for dim, key in zip(self.dimensions, keys):
+        for dim, key in zip(self.index_dimensions, keys):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -219,13 +237,13 @@ class NdIndexableMapping(Dimensioned):
         """
         if not isinstance(key, tuple):
             key = (key,)
-        map_slice = key[:self.ndims]
+        map_slice = key[:self.ndims()]
         if self._check_key_type:
             map_slice = self._apply_key_type(map_slice)
-        if len(key) == self.ndims:
+        if len(key) == self.ndims():
             return map_slice, ()
         else:
-            return map_slice, key[self.ndims:]
+            return map_slice, key[self.ndims():]
 
 
     def __getitem__(self, key):
@@ -236,7 +254,7 @@ class NdIndexableMapping(Dimensioned):
         if key in [Ellipsis, ()]:
             return self
         map_slice, data_slice = self._split_index(key)
-        return self._dataslice(self._data[map_slice], data_slice)
+        return self._dataslice(self.data[map_slice], data_slice)
 
 
     def _dataslice(self, data, indices):
@@ -260,50 +278,12 @@ class NdIndexableMapping(Dimensioned):
         return repr(self)
 
 
-    def dim_values(self, dim):
-        """
-        Returns a sorted list of values for a particular dimensions.
-        """
-        return [k[self.dim_index(dim)] for k in self._data.keys()]
-
-
-    def dim_range(self, dim):
-        dimkeys = sorted([k[self.dim_index(dim)] for k in self._data.keys()])
-        return (dimkeys[0], dimkeys[-1])
-
-
-    @property
-    def dim_ranges(self):
-        """
-        Get the ranges of all dimensions.
-        """
-        return [(d, self.dim_range(d)) for d in self.dimension_labels]
-
-
-    @property
-    def constant_dims(self):
-        """
-        Return all constant dimensions.
-        """
-        return [d for d, drange in self.dim_ranges
-                if drange[0] == drange[1]]
-
-
-    @property
-    def varying_dims(self):
-        """
-        Return all varying dimensions.
-        """
-        return [d for d, drange in self.dim_ranges
-                if drange[0] != drange[1]]
-
-
     def key_items(self, key):
         """
         Returns a dictionary of dimension and key values.
         """
         if not isinstance(key, (tuple, list)): key = (key,)
-        return dict(zip(self.dimension_labels, key))
+        return dict(zip(self.dimensions(labels=True), key))
 
 
     @property
@@ -311,7 +291,7 @@ class NdIndexableMapping(Dimensioned):
         """"
         Returns the item highest data item along the map dimensions.
         """
-        return list(self._data.values())[-1] if len(self) else None
+        return list(self.data.values())[-1] if len(self) else None
 
 
     @property
@@ -326,7 +306,7 @@ class NdIndexableMapping(Dimensioned):
         """
         Returns the list of keys together with the dimension labels.
         """
-        return [tuple(zip(self.dimension_labels, [k] if self.ndims == 1 else k))
+        return [tuple(zip(self.dimensions(labels=True), [k] if self.ndims() == 1 else k))
                 for k in self.keys()]
 
 
@@ -336,7 +316,7 @@ class NdIndexableMapping(Dimensioned):
         of the dimension and value pairs.
         """
         key = key if isinstance(key, (tuple, list)) else (key,)
-        return ', '.join(self.dimensions[i].pprint_value(v)
+        return ', '.join(self.index_dimensions[i].pprint_value(v)
                          for i, v in enumerate(key))
 
 
@@ -345,9 +325,9 @@ class NdIndexableMapping(Dimensioned):
         Drop dimension from the NdMapping using the supplied
         dimension name and value.
         """
-        slices = [slice(None) for i in range(self.ndims)]
-        slices[self.dim_index(dim)] = val
-        dim_labels = [d for d in self.dimension_labels if d != dim]
+        slices = [slice(None) for i in range(self.ndims())]
+        slices[self.get_dimension_index(dim)] = val
+        dim_labels = [d for d in self.dimensions(labels=True) if d != dim]
         return self[tuple(slices)].reindex(dim_labels)
 
 
@@ -355,14 +335,14 @@ class NdIndexableMapping(Dimensioned):
         """
         Returns indices for all data elements.
         """
-        if self.ndims == 1:
-            return [k[0] for k in self._data.keys()]
+        if self.ndims() == 1:
+            return [k[0] for k in self.data.keys()]
         else:
-            return list(self._data.keys())
+            return list(self.data.keys())
 
 
     def values(self):
-        return list(self._data.values())
+        return list(self.data.values())
 
 
     def items(self):
@@ -392,45 +372,44 @@ class NdIndexableMapping(Dimensioned):
                        for (i, els) in enumerate(item_groups))
         return clones if len(clones) > 1 else clones[0]
 
-
     @property
     def info(self):
         """
-        Prints information about the NdMapping, including the number and type
+        Prints information about the Dimensioned object, including the number and type
         of objects contained within it and information about its dimensions.
         """
         info_str = self.__class__.__name__ +\
                    " containing %d items of type %s\n" % (len(self.keys()),
                                                           type(self.values()[0]).__name__)
         info_str += ('-' * (len(info_str)-1)) + "\n\n"
-        info_str += 'Dimensions: \n'
-        for d in self.dimensions:
-            dmin, dmax = self.dim_range(d.name)
-            info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
-        deep_dimensions = [d for d in self.deep_dimensions if d not in self.dimension_labels]
-        if len(deep_dimensions):
-            info_str += '\nDeep Dimensions: ' + ', '.join(deep_dimensions)
+        for group in self._dimension_groups:
+            dimensions = self.dimensions(group)
+            if dimensions:
+                info_str += '%s Dimensions: \n' % group.capitalize()
+            for d in self.dimensions(group):
+                dmin, dmax = self.range(d.name)
+                info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
         print(info_str)
 
 
     def pop(self, *args):
         if len(args) > 0 and not isinstance(args[0], tuple):
             args[0] = (args[0],)
-        return self._data.pop(*args)
+        return self.data.pop(*args)
 
 
     def __iter__(self):
         return iter(self.values())
 
     def __contains__(self, key):
-        if self.ndims == 1:
-            return key in self._data.keys()
+        if self.ndims() == 1:
+            return key in self.data.keys()
         else:
             return key in self.keys()
 
 
     def __len__(self):
-        return len(self._data)
+        return len(self.data)
 
 
     def sort_key(self, unordered):
@@ -438,7 +417,7 @@ class NdIndexableMapping(Dimensioned):
         Given an unordered list of (dimension, value) pairs returns
         the sorted key.
         """
-        dim_orderfn = lambda k: self.dim_index(k[0].name)
+        dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
         return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
 
 
@@ -449,20 +428,20 @@ class NdIndexableMapping(Dimensioned):
         Map.
         """
         inner_dims, deep_dims = self._split_dims(dimensions)
-        if self.ndims == 1:
+        if self.ndims() == 1:
             self.warning('Cannot split Map with only one dimension.')
             return self
         if len(deep_dims):
             raise Exception('NdMapping does not support splitting of deep dimensions.')
         first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
         self._check_key_type = False # Speed optimization
-        own_keys = self._data.keys()
+        own_keys = self.data.keys()
 
         map_type = map_type if map_type else NdMapping
-        split_data = map_type(dimensions=first_dims)
+        split_data = map_type(index_dimensions=first_dims)
         split_data._check_key_type = False # Speed optimization
         for fk in first_keys:  # The first groups keys
-            split_data[fk] = self.clone(dimensions=second_dims)
+            split_data[fk] = self.clone(index_dimensions=second_dims)
             split_data[fk]._check_key_type = False # Speed optimization
             for sk in set(second_keys):  # The second groups keys
                 # Generate a candidate expanded key
@@ -485,17 +464,18 @@ class NdIndexableMapping(Dimensioned):
         """
 
         # Find dimension indices
-        first_dims = [d for d in self.dimensions if d.name not in dimensions]
-        first_inds = [self.dim_index(d.name) for d in first_dims]
-        second_dims = [d for d in self.dimensions if d.name in dimensions]
-        second_inds = [self.dim_index(d.name) for d in second_dims]
+        first_dims = [d for d in self.index_dimensions if d.name not in dimensions]
+        first_inds = [self.get_dimension_index(d.name) for d in first_dims]
+        second_dims = [d for d in self.index_dimensions if d.name in dimensions]
+        second_inds = [self.get_dimension_index(d.name) for d in second_dims]
 
         # Split the keys
-        keys = list(self._data.keys())
+        keys = list(self.data.keys())
         first_keys, second_keys = zip(*[(tuple(k[fi] for fi in first_inds),
                                         tuple(k[si] for si in second_inds))
                                         for k in keys])
         return first_dims, first_keys, second_dims, second_keys
+
 
 
 class NdMapping(NdIndexableMapping):
@@ -503,6 +483,8 @@ class NdMapping(NdIndexableMapping):
     NdMapping supports the same indexing semantics as NdIndexableMapping but
     also supports filtering of items using slicing ranges.
     """
+
+    value = param.String(default='NdMapping')
 
     def __getitem__(self, indexslice):
         """
@@ -517,14 +499,14 @@ class NdMapping(NdIndexableMapping):
         map_slice = self._transform_indices(map_slice)
 
         if all(not isinstance(el, slice) for el in map_slice):
-            return self._dataslice(self._data[map_slice], data_slice)
+            return self._dataslice(self.data[map_slice], data_slice)
         else:
             conditions = self._generate_conditions(map_slice)
-            items = self._data.items()
+            items = self.data.items()
             for cidx, condition in enumerate(conditions):
                 items = [(k, v) for k, v in items if condition(k[cidx])]
             items = [(k, self._dataslice(v, data_slice)) for k, v in items]
-            if self.ndims == 1:
+            if self.ndims() == 1:
                 items = [(k[0], v) for (k, v) in items]
             if len(items) == 0:
                 raise KeyError('No items within specified slice.')
@@ -537,11 +519,11 @@ class NdMapping(NdIndexableMapping):
         keyword arguments matching the names of the dimensions.
         """
         deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
-                           and (kw not in self.dimension_labels)])
-        selection_depth = len(self.deep_dimensions) if deep_select else self.ndims
+                           and (kw not in self.dimensions(labels=True))])
+        selection_depth = self.ndims(['value', 'deep']) if deep_select else self.ndims()
         selection = [slice(None) for i in range(selection_depth)]
         for dim, val in kwargs.items():
-            selection[self.dim_index(dim)] = val
+            selection[self.get_dimension_index(dim)] = val
         return self.__getitem__(tuple(selection))
 
 
