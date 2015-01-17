@@ -277,10 +277,10 @@ class NdWidget(param.Parameterized):
             if isinstance(v, AdjointLayout): v = v.main
             if isinstance(v, Overlay): v = v.values()[0]
             if isinstance(v, View):
-                v = ViewMap([((0,), v)], dimensions=['Frame'])
+                v = ViewMap([((0,), v)], index_dimensions=['Frame'])
 
-            keys_list.append(list(v._data.keys()))
-            if i == 0: dimensions = v.dimensions
+            keys_list.append(list(v.data.keys()))
+            if i == 0: dimensions = v.index_dimensions
 
         # Check if all elements in the Grid have common dimensions
         if all(x == keys_list[0] for x in keys_list):
@@ -292,7 +292,7 @@ class NdWidget(param.Parameterized):
 
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, 0) for k in self._keys],
-                                  dimensions=self.dimensions)
+                                  index_dimensions=self.dimensions)
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
@@ -343,7 +343,7 @@ class IPySelectionWidget(NdWidget):
 
         self.pwidgets = {}
         self.dim_val = {}
-        for didx, dim in enumerate(self.mock_obj.dimension_labels):
+        for didx, dim in enumerate(self.mock_obj.dimensions(labels=True)):
             all_vals = [k[didx] for k in self._keys]
 
             # Initialize dimension value
@@ -410,10 +410,10 @@ class IPySelectionWidget(NdWidget):
 
         # Find the closest matching key along each dimension and update
         # the matching widget accordingly.
-        checked = [slice(None) for i in range(self.mock_obj.ndims)]
+        checked = [slice(None) for i in range(self.mock_obj.ndims())]
         for dim, val in dimvals:
             if not isnumeric(val): val = str(val)
-            dim_idx = self.mock_obj.dim_index(dim)
+            dim_idx = self.mock_obj.get_dimension_index(dim)
             widget = self.pwidgets[dim]
             vals = self._get_dim_vals(checked, dim_idx)
             if val not in vals:
@@ -576,8 +576,8 @@ class SelectionWidget(ScrubberWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
-        for idx, dim in enumerate(self.mock_obj.dimensions):
-            dim_vals = sorted(set(self.mock_obj.dim_values(dim.name)))
+        for idx, dim in enumerate(self.mock_obj.index_dimensions):
+            dim_vals = sorted(set(self.mock_obj.dimension_values(dim.name)))
             if isnumeric(dim_vals[0]):
                 dim_vals = [round(v, 10) for v in dim_vals]
                 widget_type = 'slider'
@@ -594,7 +594,7 @@ class SelectionWidget(ScrubberWidget):
     def get_key_data(self):
         # Generate key data
         key_data = {}
-        for i, k in enumerate(self.mock_obj._data.keys()):
+        for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
                    if isnumeric(v) else v for v in k]
             key_data[str(tuple(key))] = i
@@ -608,7 +608,7 @@ class SelectionWidget(ScrubberWidget):
         frames = self.get_frames(id)
 
         data = {'id': id, 'Nframes': len(self.mock_obj),
-                'Nwidget': self.mock_obj.ndims,
+                'Nwidget': self.mock_obj.ndims(),
                 'frames': frames, 'dimensions': dimensions,
                 'key_data': repr(key_data), 'widgets': widgets,
                 'init_dim_vals': init_dim_vals,
