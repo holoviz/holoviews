@@ -22,6 +22,8 @@ class Annotation(Layer):
     constraint.
     """
 
+    value = param.String(default='Annotation')
+
     xlim, ylim = None, None
     xlabel, ylabel = "", ""
 
@@ -133,7 +135,7 @@ class Annotation(Layer):
         """
         self.data.append(('hline', y, interval))
 
-    def dim_values(self, dim):
+    def dimension_values(self, dim):
         raise NotImplementedError("Annotation do not have explicit "
                                   "dimension values")
 

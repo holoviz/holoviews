@@ -3,7 +3,7 @@ from collections import OrderedDict
 import param
 import numpy as np
 
-from ..core import Dimension, NdMapping, Layer
+from ..core import Dimension, Dimensioned, NdMapping, Layer
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .dataviews import Curve
@@ -19,13 +19,14 @@ class Raster(Layer):
     representation.
     """
 
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
-                            constant=True, doc="""
+    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+                                  bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
 
-    value = param.ClassSelector(class_=(str, Dimension),
-                                default=Dimension('Z'), doc="""
+    value = param.String(default='Raster')
+
+    value_dimensions = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
 
     def __init__(self, data, lbrt, **params):
@@ -40,7 +41,7 @@ class Raster(Layer):
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
-        norm_factor = self.cyclic_range if norm_factor is None else norm_factor
+        norm_factor = self.range(2) if norm_factor is None else norm_factor
         if norm_factor is None:
             norm_factor = self.data.max() - self.data.min()
         else:
@@ -78,15 +79,15 @@ class Raster(Layer):
         if isinstance(samples, tuple):
             X, Y = samples
             samples = zip(X, Y)
-        if len(sample_values) == self.ndims or len(samples):
+        if len(sample_values) == self.ndims() or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
-                               sorted([(self.dim_index(k), v) for k, v in
+                               sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
             table_data = OrderedDict()
             for c in samples:
                 table_data[c] = self.data[self._coord2matrix(c)]
-            return Table(table_data, dimensions=self.dimensions,
+            return Table(table_data, index_dimensions=self.index_dimensions,
                          label=self.label, value=self.value)
         else:
             dimension, sample_coord = sample_values.items()[0]
@@ -94,20 +95,20 @@ class Raster(Layer):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
-            other_dimension = [d for d in self.dimensions if
+            other_dimension = [d for d in self.index_dimensions if
                                d.name != dimension]
             # Indices inverted for indexing
-            sample_ind = self.dim_index(other_dimension[0].name)
+            sample_ind = self.get_dimension_index(other_dimension[0].name)
 
             # Generate sample slice
-            sample = [slice(None) for i in range(self.ndims)]
+            sample = [slice(None) for i in range(self.ndims())]
             coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
             sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[sample_ind]
 
             # Sample data
-            x_vals = sorted(set(self.dim_values(dimension)))
+            x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, self.data[sample])
-            return Curve(data, dimensions=other_dimension,
+            return Curve(data, index_dimensions=other_dimension,
                          value=self.value, label=self.label)
 
 
@@ -119,7 +120,7 @@ class Raster(Layer):
         the result View label.
         """
         label = ' '.join([label_prefix, self.label])
-        if len(dimreduce_map) == self.ndims:
+        if len(dimreduce_map) == self.ndims():
             reduced_view = self
             for dim, reduce_fn in dimreduce_map.items():
                 reduced_view = reduced_view.reduce(label_prefix=label_prefix,
@@ -128,35 +129,11 @@ class Raster(Layer):
             return reduced_view
         else:
             dimension, reduce_fn = dimreduce_map.items()[0]
-            other_dimension = [d for d in self.dimensions if d.name != dimension]
-            x_vals = sorted(set(self.dim_values(dimension)))
-            data = zip(x_vals, reduce_fn(self.data, axis=self.dim_index(dimension)))
-            return Curve(data, dimensions=other_dimension, label=label,
+            other_dimension = [d for d in self.index_dimensions if d.name != dimension]
+            x_vals = sorted(set(self.dimension_values(dimension)))
+            data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
+            return Curve(data, index_dimensions=other_dimension, label=label,
                          title=self.title, value=self.value)
-
-
-    @property
-    def cyclic_range(self):
-        """
-        For a cyclic quantity, the range over which the values
-        repeat. For instance, the orientation of a mirror-symmetric
-        pattern in a plane is pi-periodic, with orientation x the same
-        as orientation x+pi (and x+2pi, etc.). The property determines
-        the cyclic_range from the value dimensions range parameter.
-        """
-        if isinstance(self.value, Dimension) and self.value.cyclic:
-            return self.value.range[1]
-        else:
-            return None
-
-
-    @property
-    def range(self):
-        if self.cyclic_range:
-            return (0, self.cyclic_range)
-        else:
-            return (self.data.min(), self.data.max())
-
 
     @property
     def depth(self):
@@ -183,12 +160,12 @@ class Raster(Layer):
         return self.normalize()
 
 
-    def dim_values(self, dim):
+    def dimension_values(self, dim):
         """
         The set of samples available along a particular dimension.
         """
-        if dim in self.dimension_labels:
-            dim_index = self.dim_index(dim)
+        if dim in self.dimensions(labels=True):
+            dim_index = self.get_dimension_index(dim)
             l, b, r, t = self.lbrt
             shape = self.data.shape[abs(dim_index-1)]
             dim_min, dim_max = [(l, r), (b, t)][dim_index]
@@ -199,7 +176,7 @@ class Raster(Layer):
             coords = [self.closest(coord_fn(v))[dim_index]
                       for v in linspace] * shape
             return coords if dim_index else sorted(coords)
-        elif dim == self.value.name:
+        elif dim == self.dimensions('value', True)[0]:
             return np.flipud(self.data).T.flatten()
         else:
             raise Exception("Dimension not found.")
@@ -217,32 +194,32 @@ class HeatMap(Raster):
     available via the .data property.
     """
 
-    _deep_indexable = True
+    value = param.String(default='HeatMap')
 
     def __init__(self, data, **params):
-        dimensions = params['dimensions'] if 'dimensions' in params else self.dimensions
+        dimensions = params['index_dimensions'] if 'index_dimensions' in params else self.index_dimensions
         if isinstance(data, NdMapping):
             self._data = data
-            if 'dimensions' not in params:
-                params['dimensions'] = data.dimensions
+            if 'index_dimensions' not in params:
+                params['index_dimensions'] = data.index_dimensions
         elif isinstance(data, (dict, OrderedDict)):
-            self._data = NdMapping(data, dimensions=dimensions)
+            self._data = NdMapping(data, index_dimensions=dimensions)
         elif data is None:
-            self._data = NdMapping(dimensions=dimensions)
+            self._data = NdMapping(index_dimensions=dimensions)
         else:
             raise TypeError('HeatMap only accepts dict or NdMapping types.')
 
         self._style = None
         self._xlim = None
         self._ylim = None
-        param.Parameterized.__init__(self, **params)
+        Dimensioned.__init__(self, **params)
 
 
     def __getitem__(self, coords):
         """
         Slice the underlying NdMapping.
         """
-        return self.clone(self._data.select(**dict(zip(self._data.dimension_labels, coords))))
+        return self.clone(self._data.select(**dict(zip(self._data.dimensions(labels=True), coords))))
 
 
     def dense_keys(self):
@@ -252,14 +229,17 @@ class HeatMap(Raster):
         return dim1_keys, dim2_keys
 
 
-    def dim_values(self, dim):
-        if dim in self.dimension_labels:
-            idx = self.dim_index(dim)
+    def dimension_values(self, dim):
+        if isinstance(dim, int):
+            dim = self.get_dimension(dim)
+
+        if dim in self.dimensions(labels=True):
+            idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
-        elif dim == self.value.name:
+        elif dim in self.dimensions('value', labels=True):
             return self._data.values()
         else:
-            raise Exception("Dimension not found.")
+            raise Exception("Dimension %s not found." % dim)
 
 
     @property
@@ -273,12 +253,6 @@ class HeatMap(Raster):
             array[len(dim2_keys)-i2-1, i1] = self._data.get((d1, d2), np.NaN)
 
         return array
-
-
-    @property
-    def range(self):
-        vals = self._data.values()
-        return (min(vals), max(vals))
 
 
     @property
@@ -312,20 +286,11 @@ class Matrix(SheetCoordinateSystem, Raster):
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
-                            constant=True, doc="""
-        The label of the x- and y-dimension of the Matrix in form
-        of a string or dimension object.""")
-
     roi_bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
         The ROI can be specified to select only a sub-region of the bounds to
         be stored as data.""")
 
-    value = param.ClassSelector(class_=(str, Dimension),
-                                default=Dimension('Z'), doc="""
-        The dimension description of the data held in the data array.""")
-
-    _deep_indexable = True
+    value = param.String(default='Matrix')
 
     def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **params):
         bounds = bounds if bounds is not None else BoundingBox()
@@ -377,9 +342,8 @@ class Matrix(SheetCoordinateSystem, Raster):
         else:
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
-        return Matrix(Slice(bounds, self).submatrix(self.data),
-                           bounds, xdensity=self.xdensity, ydensity=self.ydensity,
-                           label=self.label, style=self.style, value=self.value)
+        return self.clone(Slice(bounds, self).submatrix(self.data))
+
 
     @property
     def xlim(self):
@@ -447,18 +411,18 @@ class Points(Layer):
     they should lie in the range [0,1].
     """
 
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
-                            constant=True, doc="""
+    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+                                  bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
 
+    value = param.String(default='Points')
+
+    value_dimensions = param.List(default=[Dimension('Magnitude')],
+                                  bounds=(1, 2))
 
     _null_value = np.array([[], []]).T # For when data is None
     _min_dims = 2                      # Minimum number of columns
-    _range_column = 2                  # Column used by range property
-
-    value = param.ClassSelector(class_=(str, Dimension),
-                                default=Dimension('Magnitude'))
 
     def __init__(self, data, **params):
         if isinstance(data, tuple):
@@ -469,12 +433,12 @@ class Points(Layer):
             arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
                                               else (len(arr), 1)) for arr in arrays))
         elif isinstance(data, Table):
-            table_dims = data.dimension_labels + [data.value.name]
-            arr = np.array(zip(*[data.dim_values(dim) for dim in table_dims]))
-            if 'dimensions' not in params:
-                params['dimensions'] = data.dimensions
-            if 'value' not in params:
-                params['value'] = data.value
+            table_dims = data.dimension_labels('all', True)
+            arr = np.array(zip(*[data.dimension_values(dim) for dim in table_dims]))
+            if 'index_dimensions' not in params:
+                params['index_dimensions'] = data.index_dimensions
+            if 'value_dimensions' not in params:
+                params['value_dimensions'] = data.value_dimensions
         else:
             arr = np.array(data)
 
@@ -490,17 +454,6 @@ class Points(Layer):
         pass
 
 
-    @property
-    def range(self):
-        """
-        The range of magnitudes (if available) otherwise None.
-        """
-        col = self._range_column
-        if self.data.shape[1] < col: return None
-        return (self.data[:, col].min(),
-                self.data[:, col].max())
-
-
     def __len__(self):
         return self.data.shape[0]
 
@@ -512,12 +465,11 @@ class Points(Layer):
             i += 1
 
 
-    def dim_values(self, dim):
-        if dim in self.dimension_labels:
-            return self.data[:, self.dim_index(dim)]
-        elif dim == self.value.name:
-            if self._range_column < self.data.shape[1]:
-                return self.data[:, self._range_column]
+    def dimension_values(self, dim):
+        if dim in self.dimensions('all', True):
+            dim_index = self.get_dimension_index(dim)
+            if dim_index < self.data.shape[1]:
+                return self.data[:, dim_index]
             else:
                 return [np.NaN] * len(self)
         else:
@@ -552,13 +504,13 @@ class VectorField(Points):
     higher.
     """
 
+    value = param.String(default='VectorField')
+
+    value_dimensions = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
+                                           Dimension('Magnitude')], bounds=(2, 2))
+
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns
-    _range_column = 3                          # Column used by range property
-
-    value = param.ClassSelector(class_=(str, Dimension),
-                                default=Dimension('PolarVector', cyclic=True,
-                                                  range=(0,2*np.pi)))
 
 
 class Contours(Layer):
@@ -571,15 +523,25 @@ class Contours(Layer):
     array corresponds to an X,Y coordinate.
     """
 
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')],
-                            constant=True, doc="""
+    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+                                  constant=True, bounds=(2, 2), doc="""
         The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
+
+    level = param.Number(default=None, doc="""
+        Optional level associated with Contours.""")
+
+    value_dimension = param.List(default=[], doc="""
+        Contours optionally accept a value dimension, corresponding
+        to the supplied values.""", bounds=(0,1))
+
+    value = param.String(default='Contours')
 
     def __init__(self, data, **params):
         data = [] if data is None else data
         super(Contours, self).__init__(data, **params)
-
+        if self.level and not self.ndims('value'):
+            self.value_dimensions = [Dimension('Level')]
 
     def resize(self, bounds):
         return Contours(self.contours, bounds, style=self.style)
@@ -607,3 +569,12 @@ class Contours(Layer):
             return ymin, ymax
         else:
             return None
+
+    def dimension_values(self, dimension):
+        dim_idx = self.get_dimension_index(dimension)
+        if dim_idx >= self.ndims('all'):
+            raise KeyError('Dimension %s not found' % str(dimension))
+        values = []
+        for contour in self.data:
+            values.append(contour[:, dim_idx])
+        return np.concatenate(values)
