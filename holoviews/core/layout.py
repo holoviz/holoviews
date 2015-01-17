@@ -25,6 +25,8 @@ class Pane(View):
     which allow the Pane to be embedded within Layouts and GridLayouts.
     """
 
+    value = param.String(default='Pane')
+
     def __add__(self, obj):
         return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
@@ -44,11 +46,15 @@ class GridLayout(NdMapping):
     the individual elements out in a Grid.
     """
 
+    value = param.String(default='GridLayout')
+
     def __init__(self, initial_items, **params):
         self._max_cols = 4
         self._style = None
         if isinstance(initial_items, list):
             initial_items = [(idx, item) for idx, item in enumerate(initial_items)]
+        elif isinstance(initial_items, NdMapping):
+            params = dict(initial_items.get_param_values(), **params)
         super(GridLayout, self).__init__(initial_items=initial_items, **params)
 
 
@@ -136,11 +142,14 @@ class AdjointLayout(Dimensioned):
     |___________|__|
     """
 
-    dimensions = param.List(default=[Dimension('Layout')], constant=True)
+    index_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
+
+    value = param.String(default='AdjointLayout')
 
     layout_order = ['main', 'right', 'top']
 
     _deep_indexable = True
+    _dimension_groups = ['index', 'deep']
 
     def __init__(self, views, **params):
 
@@ -171,6 +180,13 @@ class AdjointLayout(Dimensioned):
     def get(self, key, default=None):
         return self.data[key] if key in self.data else default
 
+    def dimension_values(self, dimension):
+        if isinstance(dimension, int):
+            dimension = self.get_dimension(dimension).name
+        if dimension in self.dimensions('index'):
+            return self.layout_order[:len(self.data)]
+        else:
+            return self.main.dimension_values(dimension)
 
     def __getitem__(self, key):
         if key is ():
@@ -187,7 +203,7 @@ class AdjointLayout(Dimensioned):
 
     @property
     def deep_dimensions(self):
-        return ['AdjointLayout'] + self.main.deep_dimensions
+        return self.main.dimensions('all')
 
     @property
     def style(self):
@@ -201,8 +217,6 @@ class AdjointLayout(Dimensioned):
 
 
     def __lshift__(self, other):
-        if isinstance(other, AdjointLayout):
-            raise Exception("Cannot adjoin two AdjointLayout objects.")
         views = [self.data.get(k, None) for k in self.layout_order]
         return AdjointLayout([v for v in views if v is not None] + [other])
 
@@ -303,10 +317,9 @@ class ViewTree(AttrTree):
                 relabelled_items.append((path, group[0][1]))
                 continue
             for idx, (path, item) in enumerate(group):
-                label = ViewTree._get_path(item, True)[1]
-                if len(path) == 2 and not label:
+                if len(path) == 2 and not item.label:
                     numeral = int_to_roman(idx+1)
-                    new_path = (path[0], numeral) if not label else path + (numeral,)
+                    new_path = (path[0], numeral) if not item.label else path + (numeral,)
                 else:
                     new_path = path
                 relabelled_items.append((new_path, item))
@@ -314,22 +327,10 @@ class ViewTree(AttrTree):
 
 
     @staticmethod
-    def _get_path(view, real=False):
-        if view.__class__.__name__ == 'Grid':
-            label = view.label if view.label or real else 'I'
-            return ('Grid', sanitize_identifier(label))
-        if isinstance(view, AdjointLayout):
-            view = view.main
-        if isinstance(view, Map):
-            view = view.last
-        if view.__class__.__name__ == 'Overlay':
-            label = view.label if view.label or real else 'I'
-            return ('Overlay', sanitize_identifier(label))
-        value = view.value.name
-        if value == view.params('value').default.name:
-            value = view.__class__.__name__
-        label = view.label if view.label or real else 'I'
-        return (sanitize_identifier(value), sanitize_identifier(label))
+    def _get_path(view):
+        label = view.label if view.label else 'I'
+        return (sanitize_identifier(view.value),
+                sanitize_identifier(label))
 
 
     @staticmethod
