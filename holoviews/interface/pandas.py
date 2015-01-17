@@ -55,29 +55,33 @@ class DataFrameView(Layer):
 
     x = param.String(doc="""Dimension to visualize along the x-axis.""")
 
+    x2 = param.String(doc="""Dimension to visualize along a second
+                             dependent axis.""")
+
     y = param.String(doc="""Dimension to visualize along the y-axis.""")
 
-    value = param.ClassSelector(class_=(str, Dimension), precedence=-1,
-                                doc="DataFrameView has no value dimension.")
+    value = param.String(default='DFrame')
 
-    def __init__(self, data, dimensions=None, **params):
+    value_dimensions = param.List(doc="DataFrameView has no value dimension.")
+
+    def __init__(self, data, index_dimensions=None, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame View type requires Pandas dataframe as data.')
-        if dimensions is None:
+        if index_dimensions is None:
             dims = list(data.columns)
         else:
             dims = ['' for i in range(len(data.columns))]
-            for dim in dimensions:
+            for dim in index_dimensions:
                 dim_name = dim.name if isinstance(dim, Dimension) else dim
                 if dim_name in data.columns:
                     dims[list(data.columns).index(dim_name)] = dim
 
         self._xlim = None
         self._ylim = None
-        View.__init__(self, data, dimensions=dims, **params)
-        self.data.columns = self.dimension_labels
+        View.__init__(self, data, index_dimensions=dims, **params)
+        self.data.columns = self.dimensions(labels=True)
 
 
     def __getitem__(self, key):
@@ -87,11 +91,11 @@ class DataFrameView(Layer):
         if key is ():
             return self
         else:
-            if len(key) <= self.ndims:
-                return self.select(**dict(zip(self.dimension_labels, key)))
+            if len(key) <= self.ndims():
+                return self.select(**dict(zip(self.dimensions(labels=True), key)))
             else:
                 raise Exception('Selection contains %d dimensions, DataFrameView '
-                                'only has %d dimensions.' % (self.ndims, len(key)))
+                                'only has %d index dimensions.' % (self.ndims(), len(key)))
 
 
     def select(self, **select):
@@ -109,7 +113,7 @@ class DataFrameView(Layer):
         return self.clone(df)
 
 
-    def dim_values(self, dim):
+    def dimension_values(self, dim):
         return np.array(self.data[dim])
 
 
@@ -129,45 +133,43 @@ class DataFrameView(Layer):
 
 
     def _split_dimensions(self, dimensions, ndmapping_type=NdMapping):
-        invalid_dims = list(set(dimensions) - set(self.dimension_labels))
+        invalid_dims = list(set(dimensions) - set(self.dimensions(labels=True)))
         if invalid_dims:
             raise Exception('Following dimensions could not be found %s.'
                             % invalid_dims)
 
-        ndmapping = ndmapping_type(None, dimensions=[self.dim_dict[d] for d in dimensions])
-        view_dims = set(self.dimension_labels) - set(dimensions)
-        view_dims = [self.dim_dict[d] for d in view_dims]
+        index_dims = [self.get_dimension(d) for d in dimensions]
+        ndmapping = ndmapping_type(None, index_dimensions=index_dims)
+        view_dims = set(self.dimensions(labels=True)) - set(dimensions)
+        view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
             ndmapping[k] = self.clone(v.drop(dimensions, axis=1),
-                                      dimensions=view_dims)
+                                      index_dimensions=view_dims)
         return ndmapping
 
 
-    def overlay_dimensions(self, dimensions):
+    def overlay(self, dimensions):
         return self._split_dimensions(dimensions, Overlay)
 
 
-    def grid(self, dimensions=[], layout=False, cols=4):
+    def layout(self, dimensions=[], cols=4):
+        return self._split_dimensions(dimensions, GridLayout).cols(4)
+
+
+    def grid(self, dimensions):
         """
         Splits the supplied the dimensions out into a Grid.
         """
         if len(dimensions) > 2:
             raise Exception('Grids hold a maximum of two dimensions.')
-        if layout:
-            ndmapping = self._split_dimensions(dimensions, NdMapping)
-            for keys, vmap in ndmapping._data.items():
-                label = ', '.join([d.pprint_value(k) for d, k in
-                                   zip(ndmapping.dimensions, keys)])
-                vmap.title = ' '.join([label, vmap.title])
-            return GridLayout(ndmapping).cols(cols)
-        return self._split_dimensions(dimensions, Grid)
+        return self._split_dimensions(dimensions, GridLayout)
 
 
-    def viewmap(self, dimensions=[]):
+    def viewmap(self, index_dimensions=[]):
         """
         Splits the supplied dimensions out into a ViewMap.
         """
-        return self._split_dimensions(dimensions, ViewMap)
+        return self._split_dimensions(index_dimensions, ViewMap)
 
     @property
     def xlabel(self):
@@ -239,15 +241,15 @@ class DFrame(DataFrameView):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(dimensions=vm_dims)
-        vdims = [self.dim_dict[dim] for dim in view_dims]
+        vmap = ViewMap(index_dimensions=vm_dims)
+        vdims = [self.get_dimension(dim) for dim in view_dims]
         for map_key, group in map_groups:
             table_data = OrderedDict()
             for k, v in group.groupby(view_dims):
                 data = np.array(v[value_dim])
                 table_data[k] = reduce_fn(data) if reduce_fn else data[0]
-                view = Table(table_data, dimensions=vdims,
-                             value=self.dim_dict[value_dim])
+                view = Table(table_data, index_dimensions=vdims,
+                             value=self.get_dimension(value_dim))
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
 
         return vmap if map_dims else vmap.last

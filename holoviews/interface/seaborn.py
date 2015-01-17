@@ -29,6 +29,14 @@ class TimeSeries(Layer):
     supplied.
     """
 
+    value = param.String(default='TimeSeries')
+
+    value_dimensions = param.List(default=[Dimension('X')], bounds=(1,1))
+
+    value_dimensions = param.List(default=[Dimension('Y'),
+                                           Dimension('Observation')],
+                                  bounds=(2,2))
+
     def __init__(self, data, xvals=None, **params):
         if isinstance(data, ViewMap):
             self.xdata = data.values()[0].data[:, 0]
@@ -88,17 +96,19 @@ class Bivariate(DataView):
     and y-data.
     """
 
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
+    index_dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
+
+    value_dimensions = param.List(default=[], bounds=(0,0))
 
     value = param.ClassSelector(class_=Dimension, default=None)
 
     @property
     def xlabel(self):
-        return str(self.dimensions[0])
+        return str(self.index_dimensions[0])
 
     @property
     def ylabel(self):
-        return str(self.dimensions[1])
+        return str(self.index_dimensions[1])
 
 
 
@@ -110,21 +120,28 @@ class Distribution(DataView):
     list. Internally it uses seaborn to make all the conversions.
     """
 
-    value = param.ClassSelector(class_=Dimension,
-                                default=Dimension('Frequency'))
+    index_dimensions = param.List(default=[], bounds=(0,0))
+
+    value = param.String(default='Distribution')
+
+    value_dimensions = param.List(default=[Dimension('Value'), Dimension('Frequency')])
 
     @property
     def xlim(self):
-        if self._xlim:
-            return self._xlim
-        elif self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        else:
-            return (np.min(self.data), np.max(self.data))
+        return self.range(0)
 
     @property
     def ylim(self):
-        return (np.NaN, np.NaN)
+        return (None, None)
+
+    def dimension_values(self, dimension):
+        dim_idx = self.get_dimension_index(dimension)
+        if dim_idx == 0:
+            return self.data
+        elif dim_idx == 1:
+            return []
+        else:
+            raise KeyError("Dimension %s not found" % str(dimension))
 
 
     def __getitem__(self, index):
@@ -139,7 +156,7 @@ class Regression(Scatter):
     more.
     """
 
-    pass
+    value = param.String(default='Regression')
 
 
 class DFrame(PandasDFrame):
@@ -163,9 +180,6 @@ class DFrame(PandasDFrame):
                                      doc="""Selects which Pandas or Seaborn plot
                                             type to use, when visualizing the plot.""")
 
-    x2 = param.String(doc="""Dimension to visualize along a second
-                             dependent axis.""")
-
     def bivariate(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Bivariate, **kwargs))
 
@@ -177,10 +191,10 @@ class DFrame(PandasDFrame):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(dimensions=vm_dims)
+        vmap = ViewMap(index_dimensions=vm_dims)
         for map_key, group in map_groups:
             vmap[map_key] = Distribution(np.array(group[value_dim]),
-                                         dimensions=[self.dim_dict[value_dim]])
+                                         index_dimensions=[self.get_dimension(value_dim)])
         return vmap if map_dims else vmap.last
 
     def regression(self, *args, **kwargs):
