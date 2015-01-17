@@ -56,7 +56,8 @@ class CurvePlot(Plot):
 
     def __init__(self, curves, **params):
         super(CurvePlot, self).__init__(curves, **params)
-        self.cyclic_range = self._map.last.cyclic_range
+        val_dim = self._map.last.get_dimension(1)
+        self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
     def _format_x_tick_label(self, x):
@@ -343,6 +344,8 @@ class HistogramPlot(Plot):
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
+        val_dim = self._map.last.get_dimension(1)
+        self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
@@ -377,7 +380,7 @@ class HistogramPlot(Plot):
         """
         Get data from histogram, including bin_ranges and values.
         """
-        self.cyclic = False if hist.cyclic_range is None else True
+        self.cyclic = hist.get_dimension(0).cyclic
         edges = hist.edges[:-1]
         hist_vals = np.array(hist.values)
         widths = [hist._width] * len(hist) if getattr(hist, '_width', None) else np.diff(hist.edges)
@@ -402,7 +405,7 @@ class HistogramPlot(Plot):
             xvals = np.linspace(x0, x1, self.num_ticks)
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         else:
-            dim_type = view.dim_type(view.dimension_labels[0])
+            dim_type = view.get_dimension_type(0)
             if dim_type in [str, type(None), np.string_]:
                 xvals = [edges[i]+widths[i]/2. for i in range(len(edges))]
                 labels = list(view.data[:, 0])
@@ -515,21 +518,23 @@ class SideHistogramPlot(HistogramPlot):
         the bars appropriately, respecting the required normalization
         settings.
         """
+        hist = self._map[key]
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
         individually = View.options.plotting(main).opts.get('normalize_individually', False)
 
+        hist_dim = hist.get_dimension(0).name
+        range_item = main
         if isinstance(main, Map):
             if issubclass(main.type, Overlay):
-                top_map = main.split_overlays()[0]
+                range_item = main.split_overlays()[0]
                 if individually:
-                    main_range = top_map[key].range
-                else:
-                    main_range = top_map.range
+                    range_item = range_item[key]
             else:
-                main_range = main[key].range if individually else main.range
+                range_item = main[key] if individually else main
         elif isinstance(main, View):
-            main_range = main.range
+            range_item = main
+        main_range = range_item.range(hist_dim)
 
         if offset and ('offset_line' not in self.handles):
             self.handles['offset_line'] = self.offset_linefn(offset,
@@ -587,7 +592,7 @@ class SideHistogramPlot(HistogramPlot):
         if full_range == 0:
             full_range = 1.
             y1 = y0 + 1.
-        offset = (full_range*self.offset)*(1-self.offset)
+        offset = (full_range*offset)*(1-offset)
         if y1 == 0:
             offset_line.set_visible(False)
         else:

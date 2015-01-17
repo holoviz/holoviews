@@ -109,11 +109,6 @@ class BivariatePlot(FullRedrawPlot):
 
     _view_type = Bivariate
 
-    def __init__(self, kde, **params):
-        super(BivariatePlot, self).__init__(kde, **params)
-        self.cyclic_range = self._map.last.cyclic_range
-
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         kdeview = self._map.last
         self.style = View.options.style(kdeview)[cyclic_index]
@@ -173,11 +168,6 @@ class TimeSeriesPlot(FullRedrawPlot):
 
     _view_type = TimeSeries
 
-    def __init__(self, curves, **params):
-        super(TimeSeriesPlot, self).__init__(curves, **params)
-        self.cyclic_range = self._map.last.cyclic_range
-
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         curveview = self._map.last
         self.cyclic_index = cyclic_index
@@ -221,11 +211,6 @@ class DistributionPlot(FullRedrawPlot):
        LineCollection object.""")
 
     _view_type = Distribution
-
-    def __init__(self, dist, **params):
-        super(DistributionPlot, self).__init__(dist, **params)
-        self.cyclic_range = self._map.last.cyclic_range
-
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         distview = self._map.last
@@ -331,7 +316,7 @@ class SNSFramePlot(DFrameViewPlot):
         super(SNSFramePlot, self)._validate(dfview, axis)
 
         composed = axis is not None
-        multi_dim = len(dfview.dimensions) > 1
+        multi_dim = dfview.ndims() > 1
         if composed and multi_dim and self.plot_type == 'lmplot':
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)

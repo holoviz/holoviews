@@ -116,7 +116,7 @@ class Plot(param.Parameterized):
         title_format = self._map.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
-        return title_format.format(label=view.label, value=str(view.value),
+        return title_format.format(label=view.label, value=view.value,
                                    type=view.__class__.__name__)
 
 
@@ -313,11 +313,11 @@ class GridPlot(Plot):
             raise Exception("GridPlot only accepts Grid.")
 
         self.grid = copy.deepcopy(grid)
-        for k, vmap in self.grid._data.items():
+        for k, vmap in self.grid.data.items():
             self.grid[k] = self._check_map(self.grid[k])
 
         self.subplots = []
-        if grid.ndims == 1:
+        if grid.ndims() == 1:
             self.rows, self.cols = (1, len(grid.keys()))
         else:
             x, y = list(zip(*list(grid.keys())))
@@ -349,7 +349,7 @@ class GridPlot(Plot):
         self.subaxes = []
         r, c = (0, 0)
         for coord in self.grid.keys(full_grid=True):
-            view = self.grid._data.get(coord, None)
+            view = self.grid.data.get(coord, None)
             if view is not None:
                 subax = plt.subplot(self._gridspec[r, c])
                 vtype = view.type if isinstance(view, Map) else view.__class__
@@ -383,7 +383,7 @@ class GridPlot(Plot):
         else:
             title_format = self.grid.title
         view = view.last
-        return title_format.format(label=view.label, value=str(view.value),
+        return title_format.format(label=view.label, value=view.value,
                                    type=self.grid.__class__.__name__)
 
 
@@ -399,7 +399,7 @@ class GridPlot(Plot):
 
         # Compute and set x- and y-ticks
         keys = self.grid.keys()
-        if self.grid.ndims == 1:
+        if self.grid.ndims() == 1:
             dim1_keys = keys
             dim2_keys = [0]
             grid_axis.get_yaxis().set_visible(False)
@@ -896,9 +896,9 @@ class OverlayPlot(Plot):
         title_format = self._map.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None: return None
 
-        values = [str(v.value) for v in view]
+        values = [v.value for v in view]
         value = values[0] if len(set(values)) == 1 else ""
-        return title_format.format(label=view.labels[0], value=value,
+        return title_format.format(label=view.label, value=value,
                                    type=view.__class__.__name__)
 
 
@@ -984,7 +984,7 @@ class AnnotationPlot(Plot):
 
     def _warn_invalid_intervals(self, vmap):
         "Check if the annotated intervals have appropriate keys"
-        dim_labels = self._map.dimension_labels
+        dim_labels = self._map.dimensions(labels=True)
 
         mismatch_set = set()
         for annotation in vmap.values():
@@ -1005,7 +1005,7 @@ class AnnotationPlot(Plot):
         Given an interval specification, determine whether the
         annotation should be shown or not.
         """
-        dim_labels = self._map.dimension_labels
+        dim_labels = self._map.dimensions(labels=True)
         if (interval is None) or dim_labels == ['Default']:
             return True
 
