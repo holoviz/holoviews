@@ -100,7 +100,7 @@ class Dimensioned(param.Parameterized):
     types should indicate whether they are _deep_indexable.
     """
 
-    index_dimensions = param.List(bounds=(0, None), doc="""
+    index_dimensions = param.List(bounds=(0, None), constant=True, doc="""
        The dimensions the values are indexed by.""")
 
     label = param.String(default='', doc="""
@@ -111,20 +111,26 @@ class Dimensioned(param.Parameterized):
        A string describing what the data of the object contain.
        By default this should mirror the class name.""")
 
+    value_dimensions = param.List(bounds=(0, None), constant=True, doc="""
+       The dimensions the values are indexed by. Subclasses should
+       restrict bounds to appropriate number of dimensions.""")
+
     __abstract = True
 
     _deep_indexable = False
     _sorted = False
-    _dimension_groups = ['index']
 
     def __init__(self, **params):
-        for group in self._dimension_groups:
+        for group in ['index', 'value']:
             group = group + '_dimensions'
             if group in params:
                 dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
                               for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(**params)
+        self.ndims = len(self.index_dimensions)
+        self._index_names = [d.name for d in self.index_dimensions]
+        self._value_names = [d.name for d in self.value_dimensions]
 
 
     def clone(self, data=None, *args, **kwargs):
@@ -135,35 +141,25 @@ class Dimensioned(param.Parameterized):
         settings = dict(self.get_param_values(), **kwargs)
         return self.__class__(data, *args, **settings)
 
+    @property
+    def deep_dimensions(self):
+        if self._deep_indexable:
+            return self.values()[0].dimensions
+        else:
+            return []
 
-    def dimensions(self, selection='index', labels=False):
-        """
-        Provides access to the dimension objects on the Dimensioned object.
-        Dimensions can be queried by supplying the desired dimension group.
-        Optionally just the dimension labels can be returned.
-        """
-        if selection in self._dimension_groups:
-            dimensions = getattr(self, selection + '_dimensions')
-            if labels:
-                return [dim.name for dim in dimensions]
-            else:
-                return dimensions
-        elif selection == 'all':
-            selection = self._dimension_groups
-        elif not isinstance(selection, list) and selection not in self._dimension_groups:
-            raise Exception('Dimension group %s not found.' % selection)
-
-        dimensions = []
-        for group in selection:
-            dimensions += self.dimensions(group, labels)
-        return dimensions
+    @property
+    def dimensions(self):
+        groups = ['index', 'value', 'deep']
+        return [dim for group in groups
+                for dim in getattr(self, group+'_dimensions')]
 
 
     def get_dimension(self, dimension, default=None):
         """
         Allows querying for a Dimension by name or index.
         """
-        all_dims = self.dimensions('all')
+        all_dims = self.dimensions
         if isinstance(dimension, int):
             return all_dims[dimension]
         else:
@@ -190,7 +186,9 @@ class Dimensioned(param.Parameterized):
         try:
             return np.min(dim_vals), np.max(dim_vals)
         except:
-            if dim in self.dimensions(labels=True) and self._sorted:
+            if dim in self.dimensions:
+                if not self._sorted:
+                    dim_vals = sorted(dim_vals)
                 return (dim_vals[0], dim_vals[-1])
             else:
                 return (None, None)
@@ -201,27 +199,15 @@ class Dimensioned(param.Parameterized):
         Returns the tuple index of the requested dimension.
         """
         if isinstance(dim, int):
-            if dim < self.ndims('all'):
+            if dim < len(self.dimensions):
                 return dim
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            return self.dimensions('all', True).index(dim)
+            return [d.name for d in self.dimensions].index(dim)
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
-
-
-    @property
-    def _types(self):
-        return [d.type for d in self.dimensions()]
-
-
-    def ndims(self, selection='index'):
-        """
-        Returns the number of dimensions in a dimension group.
-        """
-        return len(self.dimensions(selection))
 
 
     def get_dimension_type(self, dim):
@@ -238,17 +224,3 @@ class Dimensioned(param.Parameterized):
             return dim_vals[0]
         else:
             return None
-
-
-    def _split_dims(self, dimensions):
-        index_dims, value_dims = [], []
-        for d in dimensions:
-            if d in self.dimensions('index', True):
-                index_dims.append(d)
-            elif d in self.dimensions('value', True):
-                value_dims.append(d)
-            else:
-                raise ValueError('%s dimension not in %s' %
-                                 (d, type(self).__name__))
-
-        return (index_dims, value_dims)

@@ -351,7 +351,8 @@ class Collect(object):
         """
         if isinstance(val, View):
             current_val[time] = val
-        elif (isinstance(current_val, Map) and 'Time' not in current_val.dimensions(labels=True)):
+        elif (isinstance(current_val, Map) and 'Time' not in
+              [d.name for d in current_val.index_dimensions]):
             raise Exception("Time dimension is missing.")
         else:
             current_val.update(val)
@@ -447,7 +448,7 @@ class Collator(NdMapping):
         AttrTrees is returned. Optionally a list of dimensions
         to be ignored can be supplied.
         """
-        constant_dims = self.constant_dims()
+        constant_dims = self.constant_dimensions
         ndmapping = NdMapping(index_dimensions=self.index_dimensions)
 
         progressbar = ProgressBar(label='Collation')
@@ -456,7 +457,7 @@ class Collator(NdMapping):
            attrtree = self._process_data(data).filter(path_filters)
 
            if merge:
-              dim_keys = zip(self.dimensions(labels=True), key)
+              dim_keys = zip(self._index_names, key)
               varying_keys = [(d, k) for d, k in dim_keys
                               if d not in constant_dims]
               constant_keys = [(d, k) for d, k in dim_keys
@@ -475,24 +476,17 @@ class Collator(NdMapping):
         return ndmapping
 
 
-    def constant_dims(self, selection='index'):
+    @property
+    def constant_dimensions(self):
         """
         Return all constant dimensions.
         """
         dimensions = []
-        for dim in self.dimensions(selection):
+        for dim in self.index_dimensions:
             low, high = self.range(dim.name)
             if (low is not None and low == high) or set([self.dimension_values(dim.name)]):
                 dimensions.append(dim)
         return dimensions
-
-
-    def varying_dims(self, selection='index'):
-        """
-        Return all varying dimensions.
-        """
-        constant_dims = self.constant_dims(selection)
-        return [d for d in self.dimensions(selection) if d not in constant_dims]
 
 
     def _add_dimensions(self, item, dims, constant_keys):
@@ -511,7 +505,7 @@ class Collator(NdMapping):
                 dim_vals = [(dim, val) for dim, val in dims[::-1]
                             if dim not in self.drop]
                 for dim, val in dim_vals:
-                    if dim not in v.dimensions(labels=True):
+                    if dim not in [d.name for d in v.index_dimensions]:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v

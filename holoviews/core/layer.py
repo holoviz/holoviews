@@ -50,8 +50,8 @@ class Layer(Pane):
 
     def table(self):
         from ..view import Table
-        index_values = [self.dimension_values(dim) for dim in self.dimensions(labels=True)]
-        values = [self.dimension_values(dim) for dim in self.dimensions('value', True)]
+        index_values = [self.dimension_values(dim) for dim in self._index_names]
+        values = [self.dimension_values(dim) for dim in [d.name for d in self.value_dimensions]]
         return Table(zip(zip(*index_values), zip(*values)), index_dimensions=self.index_dimensions,
                      label=self.label, value=self.value, value_dimensions=self.value_dimensions)
 
@@ -176,7 +176,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def legend(self):
-        if self.dimensions(labels=True) == ['Layer']:
+        if self._index_names == ['Layer']:
             labels = self.labels
             if len(set(labels)) == len(labels):
                 return labels
@@ -202,19 +202,14 @@ class Overlay(Pane, NdMapping):
 
     def item_check(self, dim_vals, layer):
         if not isinstance(layer, Layer): pass
-        elif not len(self):
-            self._layer_dimensions = layer.dimensions(labels=True)
+        layer_dimensions = [d.name for d in layer.index_dimensions]
+        if len(self):
+            if layer_dimensions != self._layer_dimensions:
+                raise Exception("Layers must share common dimensions.")
+        else:
+            self._layer_dimensions = layer_dimensions
             self.value = layer.value
             self.label = layer.label
-        else:
-            if layer.xlim:
-                self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
-            if layer.xlim:
-                self.ylim = layer.ylim if self.ylim is None else find_minmax(self.ylim, layer.ylim)
-            if layer.dimensions(labels=True) != self._layer_dimensions:
-                raise Exception("DataLayers must share common dimensions.")
-        if layer.label in [o.label for o in self.data]:
-            self.warning('Label %s already defined in Overlay' % layer.label)
 
 
     def add(self, layer):
@@ -235,7 +230,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def xlim(self):
-        return self.range(self.dimensions('deep', labels=True)[0])
+        return self.range([d.name for d in self.deep_dimensions][0])
 
     @xlim.setter
     def xlim(self, limits):
@@ -246,7 +241,8 @@ class Overlay(Pane, NdMapping):
 
     @property
     def ylim(self):
-        return self.range(self.dimensions('deep', labels=True)[1])
+        return self.range([d.name for d in self.deep_dimensions][1])
+
     @ylim.setter
     def ylim(self, limits):
         if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
@@ -339,7 +335,7 @@ class Grid(NdMapping):
 
     def __init__(self, initial_items=None, **params):
         super(Grid, self).__init__(initial_items, **params)
-        if self.ndims() > 2:
+        if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
         self._style = None
         self._type = None
@@ -369,9 +365,9 @@ class Grid(NdMapping):
         values are numeric, otherwise applies no transformation.
         """
         if all(not isinstance(el, slice) for el in key):
-            dim_inds = [self.get_dimension_index(l) for l in self.dimensions(labels=True)
+            dim_inds = [self.get_dimension_index(l) for l in self._index_names
                         if issubclass(self.get_dimension_type(l), Number)]
-            str_keys = iter(key[i] for i in range(self.ndims())
+            str_keys = iter(key[i] for i in range(self.ndims)
                             if i not in dim_inds)
             num_keys = []
             if len(dim_inds):
@@ -383,7 +379,7 @@ class Grid(NdMapping):
                                      for x in keys])
                 num_keys = iter(keys[idx])
             key = tuple(next(num_keys) if i in dim_inds else next(str_keys)
-                        for i in range(self.ndims()))
+                        for i in range(self.ndims))
         elif any(not isinstance(el, slice) for el in key):
             index_ind = [idx for idx, el in enumerate(key)
                          if not isinstance(el, (slice, str))][0]
@@ -409,7 +405,7 @@ class Grid(NdMapping):
         Grid.
         """
         keys = super(Grid, self).keys()
-        if self.ndims() == 1 or not full_grid:
+        if self.ndims == 1 or not full_grid:
             return keys
         dim1_keys = sorted(set(k[0] for k in keys))
         dim2_keys = sorted(set(k[1] for k in keys))
@@ -501,7 +497,7 @@ class Grid(NdMapping):
     @property
     def shape(self):
         keys = self.keys()
-        if self.ndims() == 1:
+        if self.ndims == 1:
             return (1, len(keys))
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
 
@@ -532,9 +528,9 @@ class Grid(NdMapping):
     @property
     def grid_lbrt(self):
         grid_dimensions = []
-        for dim in self.dimensions(labels=True):
+        for dim in self._index_names:
             grid_dimensions.append(self.range(dim))
-        if self.ndims() == 1:
+        if self.ndims == 1:
             grid_dimensions.append((0, 1))
         xdim, ydim = grid_dimensions
         return (xdim[0], ydim[0], xdim[1], ydim[1])
@@ -568,7 +564,7 @@ class Grid(NdMapping):
         dframes = []
         for coords, vmap in self.items():
             map_frame = vmap.dframe()
-            for coord, dim in zip(coords, self.dimensions(labels=True))[::-1]:
+            for coord, dim in zip(coords, self._index_names)[::-1]:
                 if dim in map_frame: dim = 'Grid_' + dim
                 map_frame.insert(0, dim.replace(' ','_'), coord)
             dframes.append(map_frame)
@@ -642,17 +638,17 @@ class ViewMap(Map):
         Splits the Map along a specified number of dimensions and
         overlays items in the split out Maps.
         """
-        if self.ndims() == 1:
+        if self.ndims == 1:
             split_map = dict(default=self)
             new_map = dict()
         else:
-            split_map = self.split_dimensions(dimensions)
-            new_map = self.clone(index_dimensions=split_map.dimensions)
+            split_map = self.split_dimensions(dimensions, Overlay)
+            new_map = self.clone(index_dimensions=split_map.index_dimensions)
 
         for outer, vmap in split_map.items():
-            new_map[outer] = Overlay(vmap, index_dimensions=vmap.dimensions)
+            new_map[outer] = Overlay(vmap, index_dimensions=vmap.index_dimensions)
 
-        if self.ndims() == 1:
+        if self.ndims == 1:
             return list(new_map.values())[0]
         else:
             return new_map
@@ -666,10 +662,10 @@ class ViewMap(Map):
         if len(dimensions) > 2:
             raise ValueError('At most two dimensions can be laid out in a grid.')
 
-        if len(dimensions) == self.ndims():
+        if len(dimensions) == self.ndims:
             split_map = self
-        elif all(d in self.dimensions(labels=True) for d in dimensions):
-            split_dims = [d for d in self.dimensions(labels=True) if d not in dimensions]
+        elif all(d in self._index_names for d in dimensions):
+            split_dims = [d for d in self._index_names if d not in dimensions]
             split_map = self.split_dimensions(split_dims)
             split_map = split_map.reindex(dimensions)
         else:
@@ -718,8 +714,8 @@ class ViewMap(Map):
         dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
-            self_set = set(self.dimensions(labels=True))
-            other_set = set(other.dimensions(labels=True))
+            self_set = set(self._index_names)
+            other_set = set(other._index_names)
 
             # Determine which is the subset, to generate list of keys and
             # dimension labels for the new view
@@ -741,10 +737,10 @@ class ViewMap(Map):
                 # Generate keys for both subset and superset and sort them by the dimension index.
                 self_key = tuple(k for p, k in sorted(
                     [(self.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in self.dimensions(labels=True)]))
+                     if dim in self._index_names]))
                 other_key = tuple(k for p, k in sorted(
                     [(other.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in other.dimensions(labels=True)]))
+                     if dim in other._index_names]))
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
@@ -771,7 +767,7 @@ class ViewMap(Map):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            for val, dim in reversed(zip(key, self.dimensions(labels=True))):
+            for val, dim in reversed(zip(key, self._index_names)):
                 dim = dim.replace(' ', '_')
                 dimn = 1
                 while dim in view_frame:
@@ -811,7 +807,7 @@ class ViewMap(Map):
         is the tuple (lower, upper) and the tuple (left, bottom,
         right, top) for 2D sampling.
         """
-        dims = self.last.ndims()
+        dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
                 lower, upper = (self.xlims[0],self.xlims[1]) if bounds is None else bounds
@@ -901,7 +897,7 @@ class ViewMap(Map):
 
     def table(self):
         from ..view import Table
-        keys = zip(*[self.dimension_values(dm) for dm in self.dimensions(labels=True)])
+        keys = zip(*[self.dimension_values(dm) for dm in self._index_names])
         vals = self.dimension_values(self.value.name)
         return Table(zip(keys, vals), **dict(self.get_param_values()))
 

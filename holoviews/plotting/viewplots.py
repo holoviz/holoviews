@@ -317,7 +317,7 @@ class GridPlot(Plot):
             self.grid[k] = self._check_map(self.grid[k])
 
         self.subplots = []
-        if grid.ndims() == 1:
+        if grid.ndims == 1:
             self.rows, self.cols = (1, len(grid.keys()))
         else:
             x, y = list(zip(*list(grid.keys())))
@@ -399,7 +399,7 @@ class GridPlot(Plot):
 
         # Compute and set x- and y-ticks
         keys = self.grid.keys()
-        if self.grid.ndims() == 1:
+        if self.grid.ndims == 1:
             dim1_keys = keys
             dim2_keys = [0]
             grid_axis.get_yaxis().set_visible(False)
@@ -984,7 +984,7 @@ class AnnotationPlot(Plot):
 
     def _warn_invalid_intervals(self, vmap):
         "Check if the annotated intervals have appropriate keys"
-        dim_labels = self._map.dimensions(labels=True)
+        dim_labels = [d.name for d in self._map.index_dimensions]
 
         mismatch_set = set()
         for annotation in vmap.values():
@@ -1005,7 +1005,7 @@ class AnnotationPlot(Plot):
         Given an interval specification, determine whether the
         annotation should be shown or not.
         """
-        dim_labels = self._map.dimensions(labels=True)
+        dim_labels = [d.name for d in self._map.index_dimensions]
         if (interval is None) or dim_labels == ['Default']:
             return True
 

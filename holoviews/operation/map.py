@@ -15,7 +15,7 @@ class table_collate(MapOperation):
 
     def _process(self, vmap):
         collate_dim = self.p.collation_dim
-        new_dimensions = [d for d in vmap.dimensions() if d.name != collate_dim]
+        new_dimensions = [d for d in vmap.index_dimensions if d.name != collate_dim]
         nested_map = vmap.split_dimensions([collate_dim]) if new_dimensions else {(): vmap}
         collate_dim = vmap.get_dimension(collate_dim)
 
@@ -67,7 +67,7 @@ class table_collate(MapOperation):
         maps = ViewMap(maps.items(), **dict(maps.get_param_values()))
         if isinstance(table, Table):
             if len(maps) > 1:
-                grid = maps.grid(maps.dimensions(labels=True))
+                grid = maps.grid([d.name for d in maps.index_dimensions])
             else:
                 grid = maps.last
         else:

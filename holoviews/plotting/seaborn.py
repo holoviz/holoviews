@@ -316,7 +316,7 @@ class SNSFramePlot(DFrameViewPlot):
         super(SNSFramePlot, self)._validate(dfview, axis)
 
         composed = axis is not None
-        multi_dim = dfview.ndims() > 1
+        multi_dim = dfview.ndims > 1
         if composed and multi_dim and self.plot_type == 'lmplot':
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)

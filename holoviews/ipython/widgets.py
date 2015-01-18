@@ -343,12 +343,12 @@ class IPySelectionWidget(NdWidget):
 
         self.pwidgets = {}
         self.dim_val = {}
-        for didx, dim in enumerate(self.mock_obj.dimensions(labels=True)):
+        for didx, dim in enumerate(self.mock_obj.index_dimensions):
             all_vals = [k[didx] for k in self._keys]
 
             # Initialize dimension value
             vals = self._get_dim_vals(list(self._keys[0]), didx)
-            self.dim_val[dim] = vals[0]
+            self.dim_val[dim.name] = vals[0]
 
             # Initialize widget
             if isnumeric(vals[0]):
@@ -356,7 +356,7 @@ class IPySelectionWidget(NdWidget):
             else:
                 widget_type = widgets.DropdownWidget
                 all_vals = dict((str(v), v) for v in all_vals)
-            self.pwidgets[dim] = widget_type(values=sorted(set(all_vals)))
+            self.pwidgets[dim.name] = widget_type(values=sorted(set(all_vals)))
 
 
     def __call__(self):
@@ -410,7 +410,7 @@ class IPySelectionWidget(NdWidget):
 
         # Find the closest matching key along each dimension and update
         # the matching widget accordingly.
-        checked = [slice(None) for i in range(self.mock_obj.ndims())]
+        checked = [slice(None) for i in range(self.mock_obj.ndims)]
         for dim, val in dimvals:
             if not isnumeric(val): val = str(val)
             dim_idx = self.mock_obj.get_dimension_index(dim)
@@ -608,7 +608,7 @@ class SelectionWidget(ScrubberWidget):
         frames = self.get_frames(id)
 
         data = {'id': id, 'Nframes': len(self.mock_obj),
-                'Nwidget': self.mock_obj.ndims(),
+                'Nwidget': self.mock_obj.ndims,
                 'frames': frames, 'dimensions': dimensions,
                 'key_data': repr(key_data), 'widgets': widgets,
                 'init_dim_vals': init_dim_vals,

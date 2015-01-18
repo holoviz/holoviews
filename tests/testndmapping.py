@@ -56,12 +56,12 @@ class NdIndexableMappingTest(ViewTestCase):
 
     def test_idxmapping_dimension_labels(self):
         idxmap = NdIndexableMapping(self.init_item_odict, index_dimensions=[self.dim1, 'floatdim'])
-        self.assertEqual(idxmap.dimensions(labels=True), self.dimension_labels)
+        self.assertEqual([d.name for d in idxmap.index_dimensions], self.dimension_labels)
 
     def test_idxmapping_ndims(self):
         dims = [self.dim1, self.dim2, 'strdim']
         idxmap = NdIndexableMapping(index_dimensions=dims)
-        self.assertEqual(idxmap.ndims(), len(dims))
+        self.assertEqual(idxmap.ndims, len(dims))
 
     def test_idxmapping_key_len_check(self):
         try:
@@ -94,7 +94,7 @@ class NdIndexableMappingTest(ViewTestCase):
         reduced_dims = ['intdim']
         reduced_ndmap = ndmap.reindex(reduced_dims)
 
-        self.assertEqual(reduced_ndmap.dimensions(labels=True), reduced_dims)
+        self.assertEqual([d.name for d in reduced_ndmap.index_dimensions], reduced_dims)
 
     def test_idxmapping_add_dimension(self):
         ndmap = NdIndexableMapping(self.init_items_1D_list, index_dimensions=[self.dim1])

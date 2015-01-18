@@ -30,7 +30,7 @@ class ItemTable(Layer):
 
     @property
     def rows(self):
-        return self.ndims()
+        return self.ndims
 
 
     @property
@@ -55,14 +55,14 @@ class ItemTable(Layer):
         """
         if heading is ():
             return self
-        if heading not in self.dimensions(labels=True):
+        if heading not in self._index_names:
             raise IndexError("%r not in available headings." % heading)
         return self.data[heading]
 
 
     def dimension_values(self, dimension):
         if isinstance(dimension, int):
-            dimension = self.dimensions(labels=True)[dimension]
+            dimension = self._index_names[dimension]
         return [self.data[dimension]]
 
 
@@ -89,9 +89,9 @@ class ItemTable(Layer):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return str(self.dimensions()[row])
+            return str(self.dimensions[row])
         else:
-            heading = self.dimensions(labels=True)[row]
+            heading = self._index_names[row]
             return self.data[heading]
 
 
@@ -202,7 +202,7 @@ class Table(Layer, NdMapping):
         In addition to usual NdMapping indexing, Tables can be indexed
         by column name (or a slice over column names)
         """
-        ndmap_index = args[:self.ndims()] if isinstance(args, tuple) else args
+        ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
         if self.ndims('value') > 1 and not isinstance(subtable, Table):
@@ -210,7 +210,7 @@ class Table(Layer, NdMapping):
             subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)),
                                  label=self.label)
 
-        if not isinstance(args, tuple) or len(args) <= self.ndims():
+        if not isinstance(args, tuple) or len(args) <= self.ndims:
             return subtable
 
         col_names = [dim.name for dim in self.value_dimensions]
@@ -230,14 +230,14 @@ class Table(Layer, NdMapping):
 
     @property
     def cols(self):
-        return self.ndims() + len(self.value_dimensions)
+        return self.ndims + len(self.value_dimensions)
 
 
     def cell_value(self, row, col):
         """
         Get the stored value for a given row and column indices.
         """
-        ndims = self.ndims()
+        ndims = self.ndims
         if col >= self.cols:
             raise Exception("Maximum column index is %d" % self.cols-1)
         elif row >= self.rows:
@@ -279,11 +279,11 @@ class Table(Layer, NdMapping):
         the dimension name and reduce_fn as kwargs. Reduces
         dimensionality of Table until only an ItemTable is left.
         """
-        dim_labels = self.dimensions(labels=True)
+        dim_labels = self._index_names
         reduced_table = self
         for dim, reduce_fn in reduce_map.items():
             split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
-            if len(split_dims) and reduced_table.ndims() > 1:
+            if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.split_dimensions([dim])
                 reduced_table = self.clone(None, index_dimensions=split_dims)
                 for k, table in split_map.items():
@@ -311,9 +311,9 @@ class Table(Layer, NdMapping):
 
 
     def tablemap(self, dimensions):
-        split_dims = [dim for dim in self.dimensions(labels=True)
+        split_dims = [dim for dim in self._index_names
                       if dim not in dimensions]
-        if len(dimensions) < self.ndims():
+        if len(dimensions) < self.ndims:
             return self.split_dimensions(split_dims, map_type=ViewMap)
         else:
             vmap = ViewMap(index_dimensions=[self.get_dimension(d) for d in dimensions])
@@ -331,7 +331,7 @@ class Table(Layer, NdMapping):
             if len(self.value_dimensions) == 1: return self.values()
             index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
-        elif dim in self.dimensions(labels=True):
+        elif dim in self._index_names:
             return NdMapping.dimension_values(self, dim)
         else:
             raise Exception('Dimension not found.')
@@ -342,7 +342,7 @@ class Table(Layer, NdMapping):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimensions('all', True)
+        labels = [d.name for d in self.dimensions]
         return pandas.DataFrame(
             [dict(zip(labels, k+ (v if isinstance(v, tuple) else (v,))))
              for (k, v) in self.data.items()])

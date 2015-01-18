@@ -41,7 +41,7 @@ class Raster(Layer):
 
 
     def normalize(self, min=0.0, max=1.0, norm_factor=None, div_by_zero='ignore'):
-        norm_factor = self.range(2) if norm_factor is None else norm_factor
+        norm_factor = self.range(2)[1] if norm_factor is None else norm_factor
         if norm_factor is None:
             norm_factor = self.data.max() - self.data.min()
         else:
@@ -79,7 +79,7 @@ class Raster(Layer):
         if isinstance(samples, tuple):
             X, Y = samples
             samples = zip(X, Y)
-        if len(sample_values) == self.ndims() or len(samples):
+        if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
@@ -101,7 +101,7 @@ class Raster(Layer):
             sample_ind = self.get_dimension_index(other_dimension[0].name)
 
             # Generate sample slice
-            sample = [slice(None) for i in range(self.ndims())]
+            sample = [slice(None) for i in range(self.ndims)]
             coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
             sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[sample_ind]
 
@@ -120,7 +120,7 @@ class Raster(Layer):
         the result View label.
         """
         label = ' '.join([label_prefix, self.label])
-        if len(dimreduce_map) == self.ndims():
+        if len(dimreduce_map) == self.ndims:
             reduced_view = self
             for dim, reduce_fn in dimreduce_map.items():
                 reduced_view = reduced_view.reduce(label_prefix=label_prefix,
@@ -164,7 +164,7 @@ class Raster(Layer):
         """
         The set of samples available along a particular dimension.
         """
-        if dim in self.dimensions(labels=True):
+        if dim in self._index_names:
             dim_index = self.get_dimension_index(dim)
             l, b, r, t = self.lbrt
             shape = self.data.shape[abs(dim_index-1)]
@@ -176,7 +176,7 @@ class Raster(Layer):
             coords = [self.closest(coord_fn(v))[dim_index]
                       for v in linspace] * shape
             return coords if dim_index else sorted(coords)
-        elif dim == self.dimensions('value', True)[0]:
+        elif dim == self._value_names[0]:
             return np.flipud(self.data).T.flatten()
         else:
             raise Exception("Dimension not found.")
@@ -219,7 +219,7 @@ class HeatMap(Raster):
         """
         Slice the underlying NdMapping.
         """
-        return self.clone(self._data.select(**dict(zip(self._data.dimensions(labels=True), coords))))
+        return self.clone(self._data.select(**dict(zip(self._data._index_names, coords))))
 
 
     def dense_keys(self):
@@ -233,10 +233,10 @@ class HeatMap(Raster):
         if isinstance(dim, int):
             dim = self.get_dimension(dim)
 
-        if dim in self.dimensions(labels=True):
+        if dim in self._index_names:
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
-        elif dim in self.dimensions('value', labels=True):
+        elif dim in self._value_names:
             return self._data.values()
         else:
             raise Exception("Dimension %s not found." % dim)
@@ -466,7 +466,7 @@ class Points(Layer):
 
 
     def dimension_values(self, dim):
-        if dim in self.dimensions('all', True):
+        if dim in [d.name for d in self.dimensions]:
             dim_index = self.get_dimension_index(dim)
             if dim_index < self.data.shape[1]:
                 return self.data[:, dim_index]

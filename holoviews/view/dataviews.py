@@ -47,7 +47,7 @@ class DataView(Layer):
         Should return the data and parameters of the new DataView.
         """
         if isinstance(ndmap, Table):
-            if ndmap.ndims() == 1:
+            if ndmap.ndims == 1:
                 data = ndmap.items()
                 settings = dict(ndmap.get_param_values())
             else:
@@ -127,7 +127,7 @@ class DataView(Layer):
 
     def dframe(self):
         import pandas as pd
-        columns = self.dimensions('all', True)
+        columns = [d.name for d in self.dimensions]
         return pd.DataFrame(self.data, columns=columns)
 
 
@@ -265,9 +265,9 @@ class Histogram(Layer):
     def dimension_values(self, dim):
         if isinstance(dim, int):
             dim = self.get_dimension(dim).name
-        if dim in self.dimensions('value', True):
+        if dim in self._value_names:
             return self.values
-        elif dim in self.dimensions('index', True):
+        elif dim in self._index_names:
             return self.edges
         else:
             raise Exception("Could not find dimension.")

@@ -172,7 +172,10 @@ class histogram(ViewOperation):
       Used for setting a common style for histograms in a ViewMap or AdjointLayout.""")
 
     def _process(self, view, key=None):
-        selected_dim = self.p.dimension if self.p.dimension else view.dimensions('value', labels=True)[0]
+        if self.p.dimension:
+            selected_dim = self.p.dimension
+        else:
+            selected_dim = [d.name for d in view.value_dimensions][0]
         data = np.array(view.dimension_values(selected_dim))
         range = find_minmax((np.min(data), np.max(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range

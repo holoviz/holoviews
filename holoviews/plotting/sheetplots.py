@@ -309,7 +309,7 @@ class MatrixPlot(Plot):
 
         im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
-            val_dim = view.dimensions('value', labels=True)[0]
+            val_dim = [d.name for d in view.value_dimensions][0]
             clims = view.range(val_dim) if self.normalize_individually else self._map.range(val_dim)
         im.set_clim(clims)
         self.handles['im'] = im

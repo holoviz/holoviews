@@ -88,10 +88,10 @@ class ViewTestCase(unittest.TestCase):
 
     def compare_maps(self, view1, view2, msg):
 
-        if view1.ndims() != view2.ndims():
+        if view1.ndims != view2.ndims:
             raise self.failureException("Maps have different numbers of dimensions.")
 
-        if view1.dimensions(labels=True) != view2.dimensions(labels=True):
+        if [d.name for d in view1.dimensions] != [d.name for d in view2.dimensions]:
             raise self.failureException("Maps have different dimension labels.")
 
         if len(view1.keys()) != len(view2.keys()):
@@ -205,13 +205,13 @@ class ViewTestCase(unittest.TestCase):
     def compare_itemtables(self, view1, view2, msg):
 
         if view1.rows != view2.rows:
-            raise self.failureException("Tables have different numbers of rows.")
+            raise self.failureException("ItemTables have different numbers of rows.")
 
         if view1.cols != view2.cols:
-            raise self.failureException("Tables have different numbers of columns.")
+            raise self.failureException("ItemTables have different numbers of columns.")
 
-        if view1.dimensions(labels=True) != view2.dimensions(labels=True):
-            raise self.failureException("Tables have different Dimensions.")
+        if [d.name for d in view1.dimensions] != [d.name for d in view2.dimensions]:
+            raise self.failureException("ItemTables have different Dimensions.")
 
 
     def compare_tables(self, view1, view2, msg):

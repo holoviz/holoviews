@@ -149,7 +149,6 @@ class AdjointLayout(Dimensioned):
     layout_order = ['main', 'right', 'top']
 
     _deep_indexable = True
-    _dimension_groups = ['index', 'deep']
 
     def __init__(self, views, **params):
 
@@ -180,13 +179,15 @@ class AdjointLayout(Dimensioned):
     def get(self, key, default=None):
         return self.data[key] if key in self.data else default
 
+
     def dimension_values(self, dimension):
         if isinstance(dimension, int):
             dimension = self.get_dimension(dimension).name
-        if dimension in self.dimensions('index'):
+        if dimension in self._index_names:
             return self.layout_order[:len(self.data)]
         else:
             return self.main.dimension_values(dimension)
+
 
     def __getitem__(self, key):
         if key is ():
@@ -203,7 +204,7 @@ class AdjointLayout(Dimensioned):
 
     @property
     def deep_dimensions(self):
-        return self.main.dimensions('all')
+        return self.main.dimensions
 
     @property
     def style(self):

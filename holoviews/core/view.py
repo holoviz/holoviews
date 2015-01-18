@@ -21,9 +21,6 @@ class View(Dimensioned):
 
     __abstract = True
 
-    index_dimensions = param.List(default=[], doc="""List of dimensions the View
-        can be indexed by.""")
-
     label = param.String(default='', constant=True, doc="""
         A string label or Dimension object used to indicate what kind of data
         is contained within the view object.""")
@@ -35,13 +32,7 @@ class View(Dimensioned):
 
     value = param.String(default='View')
 
-    value_dimensions = param.List(default=[], doc="""
-        The value_dimensions holds a list of Dimension objects, describing the
-        quantities being held in the View.""")
-
     options = options
-
-    _dimension_groups = ['index', 'value']
 
     def __init__(self, data, **params):
         self.data = data
@@ -219,7 +210,7 @@ class Map(NdMapping):
         Resolves the title string on the View being added to the Map,
         adding the Maps title suffix.
         """
-        if self.ndims() == 1 and self.get_dimension('Default'):
+        if self.ndims == 1 and self.get_dimension('Default'):
             title_suffix = ''
         else:
             title_suffix = self.title_suffix
