@@ -540,7 +540,7 @@ class Contours(Layer):
     def __init__(self, data, **params):
         data = [] if data is None else data
         super(Contours, self).__init__(data, **params)
-        if self.level and not self.ndims('value'):
+        if self.level and not len(self.value_dimensions):
             self.value_dimensions = [Dimension('Level')]
 
     def resize(self, bounds):
@@ -572,7 +572,7 @@ class Contours(Layer):
 
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
-        if dim_idx >= self.ndims('all'):
+        if dim_idx >= len(self.dimensions):
             raise KeyError('Dimension %s not found' % str(dimension))
         values = []
         for contour in self.data:
