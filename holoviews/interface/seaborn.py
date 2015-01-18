@@ -101,11 +101,11 @@ class Distribution(DataView):
     list. Internally it uses seaborn to make all the conversions.
     """
 
-    index_dimensions = param.List(default=[], bounds=(0,0))
+    index_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
 
     value = param.String(default='Distribution')
 
-    value_dimensions = param.List(default=[Dimension('Value'), Dimension('Frequency')])
+    value_dimensions = param.List(default=[Dimension('Frequency')])
 
     @property
     def xlim(self):
