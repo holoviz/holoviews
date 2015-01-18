@@ -19,7 +19,8 @@ class ItemTable(Layer):
     """
 
     index_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
-       ItemTables """)
+       ItemTables hold an index Dimension for each value they contain, i.e.
+       they are equivalent to the keys.""")
 
     value_dimensions = param.List(default=[], bounds=(0, 0), doc="""
        ItemTables should have only index Dimensions.""")

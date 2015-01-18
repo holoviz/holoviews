@@ -529,7 +529,7 @@ class Contours(Layer):
         of a string or dimension object.""")
 
     level = param.Number(default=None, doc="""
-        Optional level associated with Contours.""")
+        Optional level associated with the set of Contours.""")
 
     value_dimension = param.List(default=[], doc="""
         Contours optionally accept a value dimension, corresponding

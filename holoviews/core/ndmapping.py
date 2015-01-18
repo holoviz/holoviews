@@ -123,12 +123,11 @@ class NdIndexableMapping(Dimensioned):
 
     def reindex(self, dimension_labels):
         """
-        Create a new object with a re-ordered or reduced set of dimension
-        labels. Accepts either a single dimension label or a list of chosen
-        dimension labels.
+        Create a new object with a re-ordered or reduced set of index
+        dimensions.
 
-        Reducing the number of dimension labels will discard information held in
-        the dropped dimensions. All data values are accessible in the newly
+        Reducing the number of index dimensions will discard information
+        from the keys. All data values are accessible in the newly
         created object as the new labels must be sufficient to address each
         value uniquely.
         """
