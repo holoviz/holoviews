@@ -233,7 +233,7 @@ class DFrame(DataFrameView):
     def vectorfield(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=VectorField, **kwargs))
 
-    def table(self, value_dim, view_dims, reduce_fn=None, map_dims=[], view_type=None, **kwargs):
+    def table(self, value_dims, view_dims, reduce_fn=None, map_dims=[], view_type=None, **kwargs):
         if map_dims:
             map_groups = self.data.groupby(map_dims)
             vm_dims = map_dims
@@ -243,15 +243,16 @@ class DFrame(DataFrameView):
 
         vmap = ViewMap(index_dimensions=vm_dims)
         vdims = [self.get_dimension(dim) for dim in view_dims]
+        valdims = [self.get_dimension(d) for d in value_dims]
         for map_key, group in map_groups:
             table_data = OrderedDict()
             for k, v in group.groupby(view_dims):
-                data = np.array(v[value_dim])
-                table_data[k] = reduce_fn(data) if reduce_fn else data[0]
-                view = Table(table_data, index_dimensions=vdims,
-                             value=self.get_dimension(value_dim))
+                data = np.vstack(np.array(v[d]) for d in value_dims)
+                data = reduce_fn(data, axis=0) if reduce_fn else data[0, :]
+                table_data[k] = reduce_fn(data, axis=0) if reduce_fn else data[0]
+            view = Table(table_data, index_dimensions=vdims,
+                         value_dimensions=valdims, value=self.value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
-
         return vmap if map_dims else vmap.last
 
 

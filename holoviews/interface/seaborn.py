@@ -29,6 +29,9 @@ class TimeSeries(Layer):
     supplied.
     """
 
+    index_dimensions = param.List(default=[Dimension('x')],
+                                  bounds=(1,1))
+
     value = param.String(default='TimeSeries')
 
     value_dimensions = param.List(default=[Dimension('y'),
@@ -38,6 +41,7 @@ class TimeSeries(Layer):
     def __init__(self, data, xdata=None, **params):
         if isinstance(data, NdMapping):
             self.xdata = data.values()[0].data[:, 0]
+            params = dict(data.values()[0].get_param_values(), **params)
             data = np.array([dv.data[:, 1] for dv in data])
         else:
             self.xdata = np.array(range(len(data[0, :]))) if xdata is None\
@@ -177,10 +181,11 @@ class DFrame(PandasDFrame):
     def regression(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Regression, **kwargs))
 
-    def timeseries(self, value_dim, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
-        curve_map = self.table(value_dim, dimensions, reduce_fn=reduce_fn,
+    def timeseries(self, value_dims, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
+        curve_map = self.table(value_dims, dimensions, reduce_fn=reduce_fn,
                                map_dims=ts_dims+map_dims, **dict(view_type=Curve, **kwargs))
-        return TimeSeries(curve_map.overlay(ts_dims))
+        return TimeSeries(curve_map.overlay(ts_dims), index_dimensions=[self.get_dimension(dimensions[0])],
+                          value_dimensions=[self.get_dimension(dim) for dim in value_dims+ts_dims])
 
     @property
     def ylabel(self):
