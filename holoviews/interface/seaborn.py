@@ -31,8 +31,8 @@ class TimeSeries(Layer):
 
     value = param.String(default='TimeSeries')
 
-    value_dimensions = param.List(default=[Dimension('Y'),
-                                           Dimension('Observation')],
+    value_dimensions = param.List(default=[Dimension('y'),
+                                           Dimension('z')],
                                   bounds=(2,2))
 
     def __init__(self, data, xdata=None, **params):
@@ -81,19 +81,11 @@ class Bivariate(DataView):
     and y-data.
     """
 
-    index_dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
+    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')])
 
     value_dimensions = param.List(default=[], bounds=(0,0))
 
     value = param.ClassSelector(class_=Dimension, default=None)
-
-    @property
-    def xlabel(self):
-        return str(self.index_dimensions[0])
-
-    @property
-    def ylabel(self):
-        return str(self.index_dimensions[1])
 
 
 
