@@ -242,14 +242,14 @@ class DFrame(DataFrameView):
             vm_dims = ['None']
 
         vmap = ViewMap(index_dimensions=vm_dims)
-        vdims = [self.get_dimension(dim) for dim in view_dims]
+        vdims = [self.get_dimension(d) for d in view_dims]
         valdims = [self.get_dimension(d) for d in value_dims]
         for map_key, group in map_groups:
             table_data = OrderedDict()
             for k, v in group.groupby(view_dims):
                 data = np.vstack(np.array(v[d]) for d in value_dims)
-                data = reduce_fn(data, axis=0) if reduce_fn else data[0, :]
-                table_data[k] = reduce_fn(data, axis=0) if reduce_fn else data[0]
+                data = reduce_fn(data, axis=1) if reduce_fn else data[:, 0]
+                table_data[k] = data
             view = Table(table_data, index_dimensions=vdims,
                          value_dimensions=valdims, value=self.value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
