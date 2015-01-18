@@ -138,8 +138,7 @@ class Table(Layer, NdMapping):
     slice over the column names (using alphanumeric ordering).
     """
 
-    value = param.ClassSelector(class_=Dimension,
-                                default=Dimension(name='Table'),  doc="""
+    value = param.String(default='Table', doc="""
          The value Dimension is used to describe the table. Example of
          dimension names include 'Summary' or 'Statistics'. """)
 
@@ -306,8 +305,6 @@ class Table(Layer, NdMapping):
             for el in data:
                 self._item_check(dim_vals, el)
             return
-        if not isinstance(data, ItemTable) and not np.isscalar(data):
-            raise TypeError('Table only accepts scalar values.')
         super(Table, self)._item_check(dim_vals, data)
 
 
