@@ -28,6 +28,10 @@ class Dimension(param.Parameterized):
     unit = param.String(default=None, doc="Unit string associated with"
                                           "the Dimension.")
 
+    values = param.List(default=[], doc="""
+        Values may optionally be specified to specify valid
+        dimension values and/or retain a categorical ordering.""")
+
     format_string = param.String(default="{name}: {val}{unit}")
 
     def __init__(self, name, **params):

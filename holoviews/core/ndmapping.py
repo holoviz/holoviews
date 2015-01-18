@@ -54,6 +54,8 @@ class NdIndexableMapping(Dimensioned):
         self._next_ind = 0
         self._check_key_type = True
         self._cached['index_types'] = [d.type for d in self.index_dimensions]
+        self._cached['index_values'] = {d.name:d.values for d in self.index_dimensions}
+        self._cached['categorical'] = any(d.values for d in self.index_dimensions)
 
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
@@ -81,19 +83,44 @@ class NdIndexableMapping(Dimensioned):
 
 
     def _resort(self):
-        self.data = OrderedDict(sorted(self.data.items()))
+        """
+        Sorts data by key or index in pre-defined index in Dimension
+        values.
+        """
+        dimensions = self.index_dimensions
+        sort_fn = lambda (k, v): k
+        if self._cached['categorical']:
+            sort_fn = lambda (k, v): tuple(dimensions[i].values.index(k[i])
+                                           if dimensions[i].values else k[i]
+                                           for i in range(self.ndims))
+        self.data = OrderedDict(sorted(self.data.items(), key=sort_fn))
 
 
     def _add_item(self, dim_vals, data, sort=True):
         """
         Adds item to the data, applying dimension types and
-        making key consistent.
+        ensuring key conforms to Dimension type and values.
         """
         if not isinstance(dim_vals, tuple):
             dim_vals = (dim_vals,)
+
         self._item_check(dim_vals, data)
+
+        # Apply dimension types
         dim_types = zip(self._cached['index_types'], dim_vals)
         dim_vals = tuple(v if t is None else t(v) for t, v in dim_types)
+
+        # Check and validate for categorical dimensions
+        if self._cached['categorical']:
+            valid_vals = zip(self._cached['index_names'], dim_vals)
+        else:
+            valid_vals = []
+        for dim, val in valid_vals:
+            vals = self._cached['index_values'][dim]
+            if vals and val not in vals:
+                raise KeyError('%s Dimension value %s not in'
+                               ' specified Dimension values.' % (dim, repr(val)))
+
         self._update_item(dim_vals, data)
         if sort:
             self._resort()

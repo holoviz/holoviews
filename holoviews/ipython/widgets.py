@@ -577,7 +577,7 @@ class SelectionWidget(ScrubberWidget):
         dimensions = []
         init_dim_vals = []
         for idx, dim in enumerate(self.mock_obj.index_dimensions):
-            dim_vals = sorted(set(self.mock_obj.dimension_values(dim.name)))
+            dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
             if isnumeric(dim_vals[0]):
                 dim_vals = [round(v, 10) for v in dim_vals]
                 widget_type = 'slider'
