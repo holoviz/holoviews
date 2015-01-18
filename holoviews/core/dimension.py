@@ -141,8 +141,8 @@ class Dimensioned(param.Parameterized):
                 params[group] = dimensions
         super(Dimensioned, self).__init__(**params)
         self.ndims = len(self.index_dimensions)
-        self._cached = dict(index_names=[d.name for d in self.index_dimensions],
-                            value_names=[d.name for d in self.value_dimensions])
+        self._cached_index_names = [d.name for d in self.index_dimensions]
+        self._cached_value_names = [d.name for d in self.value_dimensions]
 
 
     def clone(self, data=None, *args, **kwargs):
