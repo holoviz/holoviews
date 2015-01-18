@@ -204,11 +204,13 @@ class VectorFieldPlot(Plot):
                                 **({k:v for k,v in kwargs.items() if k!='color'}
                                 if colorized else kwargs))
 
+
         if self.color_dim == 'angle':
-            clims = vfield.value.range
+            clims = vfield.get_dimension(2).range
             quiver.set_clim(clims)
         elif self.color_dim == 'magnitude':
-            clims = vfield.range if self.normalize_individually else self._map.range
+            magnitude_dim = vfield.get_dimension(3).name
+            clims = vfield.range(magnitude_dim) if self.normalize_individually else self._map.range(magnitude_dim)
             quiver.set_clim(clims)
 
         self.ax.add_collection(quiver)
@@ -307,7 +309,8 @@ class MatrixPlot(Plot):
 
         im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
-            clims = view.range if self.normalize_individually else self._map.range
+            val_dim = [d.name for d in view.value_dimensions][0]
+            clims = view.range(val_dim) if self.normalize_individually else self._map.range(val_dim)
         im.set_clim(clims)
         self.handles['im'] = im
 
@@ -395,11 +398,11 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     def __init__(self, grid, **params):
         self.layout = params.pop('layout', None)
         self.grid = copy.deepcopy(grid)
-        for k, vmap in self.grid._data.items():
+        for k, vmap in self.grid.data.items():
             self.grid[k] = self._check_map(self.grid[k])
         Plot.__init__(self, **params)
         self._keys = self.grid.all_keys
-        xkeys, ykeys = zip(*self.grid._data.keys())
+        xkeys, ykeys = zip(*self.grid.data.keys())
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
 
@@ -440,8 +443,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                                    title=self._format_title(key),
                                    xticks=(xticks, self._process_ticklabels(self._xkeys)),
                                    yticks=(yticks, self._process_ticklabels(self._ykeys)),
-                                   xlabel=str(self.grid.dimensions[0]),
-                                   ylabel=str(self.grid.dimensions[1]))
+                                   xlabel=str(self.grid.get_dimension(0)),
+                                   ylabel=str(self.grid.get_dimension(1)))
 
 
     def update_frame(self, n):

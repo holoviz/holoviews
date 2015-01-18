@@ -91,7 +91,7 @@ class ViewTestCase(unittest.TestCase):
         if view1.ndims != view2.ndims:
             raise self.failureException("Maps have different numbers of dimensions.")
 
-        if view1.dimension_labels != view2.dimension_labels:
+        if [d.name for d in view1.dimensions] != [d.name for d in view2.dimensions]:
             raise self.failureException("Maps have different dimension labels.")
 
         if len(view1.keys()) != len(view2.keys()):
@@ -182,16 +182,10 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_curve(self, view1, view2, msg):
-        if view1.cyclic_range != view2.cyclic_range:
-            raise self.failureException("Curves do not have matching cyclic_range.")
         self.compare_arrays(view1.data, view2.data, 'Curve data')
 
 
     def compare_histogram(self, view1, view2, msg):
-
-        if view1.cyclic_range != view2.cyclic_range:
-            raise self.failureException("Histograms do not have matching cyclic_range.")
-
         self.compare_arrays(view1.edges, view2.edges, "Histogram edges")
         self.compare_arrays(view1.values, view2.values, "Histogram values")
 
@@ -211,13 +205,13 @@ class ViewTestCase(unittest.TestCase):
     def compare_itemtables(self, view1, view2, msg):
 
         if view1.rows != view2.rows:
-            raise self.failureException("Tables have different numbers of rows.")
+            raise self.failureException("ItemTables have different numbers of rows.")
 
         if view1.cols != view2.cols:
-            raise self.failureException("Tables have different numbers of columns.")
+            raise self.failureException("ItemTables have different numbers of columns.")
 
-        if view1.dimension_labels != view2.dimension_labels:
-            raise self.failureException("Tables have different Dimensions.")
+        if [d.name for d in view1.dimensions] != [d.name for d in view2.dimensions]:
+            raise self.failureException("ItemTables have different Dimensions.")
 
 
     def compare_tables(self, view1, view2, msg):

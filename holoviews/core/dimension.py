@@ -4,7 +4,7 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 
-from collections import OrderedDict
+import numpy as np
 
 import param
 
@@ -17,7 +17,7 @@ class Dimension(param.Parameterized):
 
     name = param.String(default="", doc="Name of the Dimension.")
 
-    range = param.NumericTuple(default=(0, 0), doc="""
+    range = param.Tuple(default=(None, None), doc="""
         Lower and upper values for a Dimension.""")
 
     type = param.Parameter(default=None, doc="""
@@ -26,7 +26,11 @@ class Dimension(param.Parameterized):
     unit = param.String(default=None, doc="Unit string associated with"
                                           "the Dimension.")
 
-    format_string = param.String(default="{name} = {val}{unit}")
+    values = param.List(default=[], doc="""
+        Values may optionally be specified to specify valid
+        dimension values and/or retain a categorical ordering.""")
+
+    format_string = param.String(default="{name}: {val}{unit}")
 
     def __init__(self, name, **params):
         """
@@ -81,94 +85,153 @@ class Dimension(param.Parameterized):
         return self.name < other.name if isinstance(other, Dimension) else other
 
 
+
 class Dimensioned(param.Parameterized):
     """
     Abstract baseclass implementing common methods for objects with
-    associated dimensions. Assumes a list of dimension objects or
-    strings is available on the object via the .dimensions attribute.
+    associated dimensions. Dimensioned support three dimension groups:
+
+    * index_dimensions: The Dimensioned objects should implement
+                        indexing and slicing for these dimensions.
+
+    * value_dimensions: These dimensions correspond to any data
+                        held on the Dimensioned object.
+
+    * deep_dimensions:  These are dynamically computed and
+                        correspond to any dimensions on items
+                        held on this object. Objects that support
+                        this should enable the _deep_indexable
+                        flag.
+
+    Dimensioned also provides convenient methods to find the
+    range and type of values along a particular Dimension.
+    For ranges to work appropriately subclasses should define
+    dimension_values methods, which return an array of all the
+    values along the supplied dimension.
     """
+
+    index_dimensions = param.List(bounds=(0, None), constant=True, doc="""
+       The dimensions the values are indexed by.""")
+
+    label = param.String(default='', doc="""
+       Optional label describing the data, e.g. where or how it
+       was measured.""")
+
+    value = param.String(default='Dimensioned', doc="""
+       A string describing what the data of the object contain.
+       By default this should mirror the class name.""")
+
+    value_dimensions = param.List(bounds=(0, None), constant=True, doc="""
+       The dimensions the values are indexed by. Subclasses should
+       restrict bounds to appropriate number of dimensions.""")
 
     __abstract = True
 
     _deep_indexable = False
+    _sorted = False
+    _dim_groups = ['index_dimensions',
+                   'value_dimensions',
+                   'deep_dimensions']
 
-    constant_dimensions = param.List(default=[], doc="""List of constant
-        dimensions.""")
+    def __init__(self, **params):
+        for group in self._dim_groups[0:2]:
+            if group in params:
+                dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
+                              for d in params.pop(group)]
+                params[group] = dimensions
+        super(Dimensioned, self).__init__(**params)
+        self.ndims = len(self.index_dimensions)
+        self._cached = dict(index_names=[d.name for d in self.index_dimensions],
+                            value_names=[d.name for d in self.value_dimensions])
 
-    constant_values = param.Dict(default={}, doc="""List of dimension
-        values.""")
+
+    def clone(self, data=None, *args, **kwargs):
+        """
+        Returns a clone with matching parameter values containing the
+        specified args and kwargs (empty by default).
+        """
+        settings = dict(self.get_param_values(), **kwargs)
+        return self.__class__(data, *args, **settings)
 
     @property
     def deep_dimensions(self):
-        dimensions = self.dimension_labels
         if self._deep_indexable:
-            item = self.values()[0]
-            dimensions += item.deep_dimensions
-        return dimensions
-
-
-    @property
-    def dim_dict(self):
-        return OrderedDict((d.name, d) for d in self.dimensions)
-
-
-    @property
-    def dimension_labels(self):
-        if not getattr(self, '_dimension_labels', False):
-            self._dimension_labels = [d.name for d in self.dimensions]
-        return self._dimension_labels
-
-
-    @property
-    def _types(self):
-        return [d.type for d in self.dimensions]
-
-
-    @property
-    def ndims(self):
-        return len(self.dimensions)
-
-
-    def dim_type(self, dim):
-        """
-        Returns the specified Dimension type if specified or
-        if the dim_values types are consistent otherwise
-        None is returned.
-        """
-        dim_obj = self.dim_dict[dim]
-        if dim_obj.type:
-            return dim_obj.type
-        dim_vals = [type(v) for v in self.dim_values(dim)]
-        if len(set(dim_vals)) == 1:
-            return dim_vals[0]
+            return self.values()[0].dimensions
         else:
-            None
+            return []
+
+    @property
+    def dimensions(self):
+        return [dim for group in self._dim_groups
+                for dim in getattr(self, group)]
 
 
-    def dim_values(self, dim):
+    def get_dimension(self, dimension, default=None):
         """
-        Returns a list of all the values along
-        the given dimensions.
+        Allows querying for a Dimension by name or index.
+        """
+        all_dims = self.dimensions
+        if isinstance(dimension, int):
+            return all_dims[dimension]
+        else:
+            return {dim.name: dim for dim in all_dims}.get(dimension, default)
+
+
+    def dimension_values(self, dimension):
+        """
+        Dimension values should return the values along the specified
+        dimension. This method has to be implemented appropriately
+        for each Dimensioned type.
         """
         raise NotImplementedError
 
 
-    def dim_index(self, dimension_label):
+    def range(self, dim):
+        """
+        Range will return the range of values along the specified dimension.
+        """
+        dimension = self.get_dimension(dim)
+        if dimension.range != (None, None):
+            return dimension.range
+        dim_vals = self.dimension_values(dimension.name)
+        try:
+            return np.min(dim_vals), np.max(dim_vals)
+        except:
+            if dim in self.dimensions:
+                if not self._sorted:
+                    dim_vals = sorted(dim_vals)
+                return (dim_vals[0], dim_vals[-1])
+            else:
+                return (None, None)
+
+
+    def get_dimension_index(self, dim):
         """
         Returns the tuple index of the requested dimension.
         """
-        return self.deep_dimensions.index(dimension_label)
-
-
-    def _split_dims(self, dimensions):
-        own_dims, deep_dims = [], []
-        for d in dimensions:
-            if d in self.dimension_labels:
-                own_dims.append(d)
-            elif d in self.deep_dimensions:
-                deep_dims.append(d)
+        if isinstance(dim, int):
+            if dim < len(self.dimensions):
+                return dim
             else:
-                raise ValueError('%s dimension not in %s' %
-                                 (d, type(self).__name__))
+                return IndexError('Dimension index out of bounds')
+        try:
+            return [d.name for d in self.dimensions].index(dim)
+        except ValueError:
+            raise Exception("Dimension %s not found in %s." %
+                            (dim, self.__class__.__name__))
 
-        return own_dims, deep_dims
+
+    def get_dimension_type(self, dim):
+        """
+        Returns the specified Dimension type if specified or
+        if the dimension_values types are consistent otherwise
+        None is returned.
+        """
+        dim_obj = self.get_dimension(dim)
+        if dim_obj.type is not None:
+            return dim_obj.type
+        dim_vals = [type(v) for v in self.dimension_values(dim)]
+        if len(set(dim_vals)) == 1:
+            return dim_vals[0]
+        else:
+            return None

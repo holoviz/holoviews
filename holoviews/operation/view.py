@@ -172,7 +172,11 @@ class histogram(ViewOperation):
       Used for setting a common style for histograms in a ViewMap or AdjointLayout.""")
 
     def _process(self, view, key=None):
-        data = np.array(view.dim_values(self.p.dimension if self.p.dimension else view.value.name))
+        if self.p.dimension:
+            selected_dim = self.p.dimension
+        else:
+            selected_dim = [d.name for d in view.value_dimensions][0]
+        data = np.array(view.dimension_values(selected_dim))
         range = find_minmax((np.min(data), np.max(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
 
@@ -188,8 +192,8 @@ class histogram(ViewOperation):
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
 
-        hist_view = Histogram(hist, edges, dimensions=[view.value],
-                              label=view.label, value='Frequency')
+        hist_view = Histogram(hist, edges, index_dimensions=[view.get_dimension(selected_dim)],
+                              label=view.label)
 
         # Set plot and style options
         style_prefix = self.p.style_prefix if self.p.style_prefix else \
@@ -247,10 +251,9 @@ class vectorfield(ViewOperation):
 
             vector_data.append(components)
 
-        value_dimension = Dimension('VectorField', cyclic=True, range=radians.range)
-        return [VectorField(vector_data,
-                            label=radians.label + ' ' + self.p.label,
-                            value=value_dimension)]
+        value_dimensions = [Dimension('Magnitude'), Dimension('Angle', cyclic=True, range=radians.range)]
+        return [VectorField(vector_data, label=radians.label, value=self.p.label,
+                            value_dimensions=value_dimensions)]
 
 
 class threshold(ViewOperation):
@@ -280,8 +283,8 @@ class threshold(ViewOperation):
         low = np.ones(arr.shape) * self.p.low
         thresholded = np.where(arr > self.p.level, high, low)
 
-        return [Matrix(thresholded,
-                          label=view.label + ' ' + self.p.label)]
+
+        return [view.clone(thresholded, value=self.p.label + ' ' + view.value)]
 
 
 class roi_table(ViewOperation):
@@ -331,4 +334,4 @@ class roi_table(ViewOperation):
         if not isinstance(results, dict):
             results = {self.p.heading:results}
 
-        return [ItemTable(results, label=mview.label + ' ' + self.p.label)]
+        return [ItemTable(results, label=mview.label, value=self.p.label + ' ' + mview.value)]

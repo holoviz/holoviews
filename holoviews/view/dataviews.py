@@ -15,6 +15,17 @@ class DataView(Layer):
     selection of subsets of the data.
     """
 
+    index_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
+        Dimensions on Layers determine the number of indexable
+        dimensions.""")
+
+    value = param.String(default='DataView')
+
+    value_dimensions = param.List(default=[Dimension('y')], bounds=(1,1), doc="""
+        Dimensions on Layers determine the number of indexable
+        dimensions.""")
+
+
     def __init__(self, data, **params):
         settings = {}
         if isinstance(data, DataView):
@@ -110,19 +121,13 @@ class DataView(Layer):
         return len(self.data)
 
 
-    def dim_values(self, dim):
-        if dim == self.dimension_labels[0]:
-            return self.data[:, 0]
-        elif dim == self.value.name:
-            return self.data[:, 1]
-        else:
-            raise Exception("Dimension %s not found in %s." %
-                            (dim, self.__class__.__name__))
-
+    def dimension_values(self, dim):
+        index = self.get_dimension_index(dim)
+        return self.data[:, index]
 
     def dframe(self):
         import pandas as pd
-        columns = [self.dimension_labels[0], self.value.name]
+        columns = [d.name for d in self.dimensions]
         return pd.DataFrame(self.data, columns=columns)
 
 
@@ -133,6 +138,8 @@ class Scatter(DataView):
     disconnected points.
     """
 
+    value = param.String(default='Scatter')
+
     pass
 
 
@@ -142,18 +149,21 @@ class Curve(DataView):
     ordered.
     """
 
+    value = param.String(default='Curve')
+
     def progressive(self):
         """
         Create map indexed by Curve x-axis with progressively expanding number
         of curve samples.
         """
-        vmap = ViewMap(None, dimensions=[self.xlabel], title=self.title+' {dims}')
+        vmap = ViewMap(None, index_dimensions=self.index_dimensions,
+                       title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
             if x in vmap:
                 vmap[x].data.append(self.data[0:idx])
             else:
-                vmap[x] = Curve(self.data[0:idx])
+                vmap[x] = self.clone(self.data[0:idx])
         return vmap
 
 
@@ -162,6 +172,8 @@ class Bars(DataView):
     A bar is a simple 1D View of bars, which assumes that the data is
     sorted by x-value and there are no gaps in the bars.
     """
+
+    value = param.String(default='Bars')
 
     def __init__(self, data, width=None, **params):
         super(Bars, self).__init__(data, **params)
@@ -185,15 +197,6 @@ class Bars(DataView):
             return range(len(self)+1)
 
     @property
-    def ylim(self):
-        return self.range
-
-    @property
-    def range(self):
-        vals = self.values
-        return min(vals), max(vals)
-
-    @property
     def values(self):
         return np.array(self.data[:, 1], dtype=np.float64)
 
@@ -212,13 +215,13 @@ class Histogram(Layer):
     upper and lower bounds of their edges and the computed bin values.
     """
 
-    dimensions = param.List(default=[Dimension('X')], doc="""
+    index_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
         Dimensions on Layers determine the number of indexable
         dimensions.""")
 
-    title = param.String(default='{label} {type}')
+    value = param.String(default='Histogram')
 
-    value = param.ClassSelector(class_=Dimension, default=Dimension('Frequency'))
+    value_dimensions = param.List(default=[Dimension('Frequency')])
 
     def __init__(self, values, edges=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)
@@ -259,10 +262,12 @@ class Histogram(Layer):
         raise NotImplementedError('Slicing and indexing of histograms currently not implemented.')
 
 
-    def dim_values(self, dim):
-        if dim == self.value.name:
+    def dimension_values(self, dim):
+        if isinstance(dim, int):
+            dim = self.get_dimension(dim).name
+        if dim in self._cached_value_names:
             return self.values
-        elif dim == self.dimension_labels[0]:
+        elif dim in self._cached_index_names:
             return self.edges
         else:
             raise Exception("Could not find dimension.")
@@ -274,21 +279,3 @@ class Histogram(Layer):
 
     def reduce(self, **dimreduce_map):
         raise NotImplementedError('Reduction of Histogram not implemented.')
-
-
-    @property
-    def range(self):
-        return (min(self.values), max(self.values))
-
-
-    @property
-    def xlim(self):
-        if self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        else:
-            return (min(self.edges), max(self.edges))
-
-
-    @property
-    def ylim(self):
-        return self.range

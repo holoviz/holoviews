@@ -95,7 +95,7 @@ class DFrameViewPlot(Plot):
     def _validate(self, dfview, axis):
         composed = axis is not None
 
-        if composed and len(dfview.dimensions) > 1 and self.plot_type in ['hist']:
+        if composed and dfview.ndims > 1 and self.plot_type in ['hist']:
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 

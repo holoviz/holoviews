@@ -10,7 +10,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ViewMap, Layer, Overlay
+from ..core import Dimension, NdMapping, ViewMap, Layer, Overlay
 from ..core.options import options, StyleOpts, Cycle
 from ..view import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
@@ -29,16 +29,23 @@ class TimeSeries(Layer):
     supplied.
     """
 
-    def __init__(self, data, xvals=None, **params):
-        if isinstance(data, ViewMap):
+    index_dimensions = param.List(default=[Dimension('x')],
+                                  bounds=(1,1))
+
+    value = param.String(default='TimeSeries')
+
+    value_dimensions = param.List(default=[Dimension('y'),
+                                           Dimension('z')],
+                                  bounds=(2,2))
+
+    def __init__(self, data, xdata=None, **params):
+        if isinstance(data, NdMapping):
             self.xdata = data.values()[0].data[:, 0]
-            data = np.array([dv.data[:, 1] for dv in data.values()])
-        elif isinstance(data, Overlay):
-            self.xdata = data.data.values()[0].data[:, 0]
+            params = dict(data.values()[0].get_param_values(), **params)
             data = np.array([dv.data[:, 1] for dv in data])
         else:
-            self.xdata = np.array(range(len(data[0, :]))) if xvals is None\
-                else xvals
+            self.xdata = np.array(range(len(data[0, :]))) if xdata is None\
+                else xdata
         super(TimeSeries, self).__init__(data, **params)
 
 
@@ -51,6 +58,16 @@ class TimeSeries(Layer):
                                       'implemented.')
 
 
+    def dimension_values(self, dimension):
+        dim_idx = self.get_dimension_index(dimension)
+        if dim_idx == 0:
+            return self.xdata
+        elif dim_idx == 1:
+            return self.data.flatten()
+        elif dim_idx == 2:
+            return self.data.shape[1]
+
+
     def sample(self, **samples):
         raise NotImplementedError('Cannot sample a TimeSeries.')
 
@@ -58,26 +75,6 @@ class TimeSeries(Layer):
     def reduce(self, **dimreduce_map):
         raise NotImplementedError('Reduction of TimeSeries not '
                                   'implemented.')
-
-
-    @property
-    def xlim(self):
-        if self._xlim:
-            return self._xlim
-        elif self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        else:
-            x_vals = self.xdata
-            return (float(min(x_vals)), float(max(x_vals)))
-
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        else:
-            return (np.min(self.data), np.max(self.data))
-
 
 
 class Bivariate(DataView):
@@ -88,17 +85,11 @@ class Bivariate(DataView):
     and y-data.
     """
 
-    dimensions = param.List(default=[Dimension('X'), Dimension('Y')])
+    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')])
+
+    value_dimensions = param.List(default=[], bounds=(0,0))
 
     value = param.ClassSelector(class_=Dimension, default=None)
-
-    @property
-    def xlabel(self):
-        return str(self.dimensions[0])
-
-    @property
-    def ylabel(self):
-        return str(self.dimensions[1])
 
 
 
@@ -110,21 +101,28 @@ class Distribution(DataView):
     list. Internally it uses seaborn to make all the conversions.
     """
 
-    value = param.ClassSelector(class_=Dimension,
-                                default=Dimension('Frequency'))
+    index_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
+
+    value = param.String(default='Distribution')
+
+    value_dimensions = param.List(default=[Dimension('Frequency')])
 
     @property
     def xlim(self):
-        if self._xlim:
-            return self._xlim
-        elif self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        else:
-            return (np.min(self.data), np.max(self.data))
+        return self.range(0)
 
     @property
     def ylim(self):
-        return (np.NaN, np.NaN)
+        return (None, None)
+
+    def dimension_values(self, dimension):
+        dim_idx = self.get_dimension_index(dimension)
+        if dim_idx == 0:
+            return self.data
+        elif dim_idx == 1:
+            return []
+        else:
+            raise KeyError("Dimension %s not found" % str(dimension))
 
 
     def __getitem__(self, index):
@@ -139,7 +137,7 @@ class Regression(Scatter):
     more.
     """
 
-    pass
+    value = param.String(default='Regression')
 
 
 class DFrame(PandasDFrame):
@@ -163,9 +161,6 @@ class DFrame(PandasDFrame):
                                      doc="""Selects which Pandas or Seaborn plot
                                             type to use, when visualizing the plot.""")
 
-    x2 = param.String(doc="""Dimension to visualize along a second
-                             dependent axis.""")
-
     def bivariate(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Bivariate, **kwargs))
 
@@ -177,19 +172,20 @@ class DFrame(PandasDFrame):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(dimensions=vm_dims)
+        vmap = ViewMap(index_dimensions=vm_dims)
         for map_key, group in map_groups:
             vmap[map_key] = Distribution(np.array(group[value_dim]),
-                                         dimensions=[self.dim_dict[value_dim]])
+                                         index_dimensions=[self.get_dimension(value_dim)])
         return vmap if map_dims else vmap.last
 
     def regression(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Regression, **kwargs))
 
-    def timeseries(self, value_dim, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
-        curve_map = self.table(value_dim, dimensions, reduce_fn=reduce_fn,
+    def timeseries(self, value_dims, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
+        curve_map = self.table(value_dims, dimensions, reduce_fn=reduce_fn,
                                map_dims=ts_dims+map_dims, **dict(view_type=Curve, **kwargs))
-        return TimeSeries(curve_map.overlay(ts_dims))
+        return TimeSeries(curve_map.overlay(ts_dims), index_dimensions=[self.get_dimension(dimensions[0])],
+                          value_dimensions=[self.get_dimension(dim) for dim in value_dims+ts_dims])
 
     @property
     def ylabel(self):

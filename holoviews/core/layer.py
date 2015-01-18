@@ -30,17 +30,12 @@ class Layer(Pane):
     the data maps onto the x- and y- and value dimensions.
     """
 
-    dimensions = param.List(default=[Dimension('X')], doc="""
-        Dimensions on Layers determine the number of indexable
-        dimensions.""")
-
-    value = param.ClassSelector(class_=Dimension, default=Dimension('Y'))
-
+    value = param.String(default='Layer')
 
     def __mul__(self, other):
         if isinstance(other, ViewMap):
             items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
+            return other.clone(items)
 
         self_layers = self.data.values() if isinstance(self, Overlay) else [self]
         other_layers = other.data.values() if isinstance(other, Overlay) else [other]
@@ -55,10 +50,10 @@ class Layer(Pane):
 
     def table(self):
         from ..view import Table
-        dim_values = [self.dim_values(dim) for dim in self.dimension_labels]
-        values = self.dim_values(self.value.name)
-        return Table(zip(zip(*dim_values), values), dimensions=self.dimensions,
-                     value=self.value, label=self.label)
+        index_values = [self.dimension_values(dim) for dim in self._cached_index_names]
+        values = [self.dimension_values(dim) for dim in [d.name for d in self.value_dimensions]]
+        return Table(zip(zip(*index_values), zip(*values)), index_dimensions=self.index_dimensions,
+                     label=self.label, value=self.value, value_dimensions=self.value_dimensions)
 
 
     ########################
@@ -72,53 +67,24 @@ class Layer(Pane):
         self._ylim = (lbrt[1], lbrt[3]) if lbrt else None
         super(Layer, self).__init__(data, **params)
 
-
-    @property
-    def cyclic_range(self):
-        if self.dimensions[0].cyclic:
-            return self.dimensions[0].range[1]
-        else:
-            return None
-
-    @property
-    def range(self):
-        if self.cyclic_range:
-            return self.cyclic_range
-        y_vals = self.data[:, 1]
-        return (float(min(y_vals)), float(max(y_vals)))
-
     @property
     def xlabel(self):
-        return self.dimensions[0].pprint_label
+        return self.get_dimension(0).pprint_label
 
     @property
     def ylabel(self):
-        if len(self.dimensions) == 1:
-            return self.value.pprint_label
-        else:
-            return self.dimensions[1].pprint_label
+        return self.get_dimension(1).pprint_label
 
     @property
     def xlim(self):
         if self._xlim:
             return self._xlim
-        elif self.cyclic_range is not None:
-            return (0, self.cyclic_range)
-        elif len(self):
-            x_vals = self.data[:, 0]
-            try:
-                return (float(min(x_vals)), float(max(x_vals)))
-            except:
-                return None, None
         else:
-            return None
+            return self.range(0)
 
     @xlim.setter
     def xlim(self, limits):
-        if self.cyclic_range:
-            self.warning('Cannot override the limits of a '
-                         'cyclic dimension.')
-        elif limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
             self._xlim = limits
         else:
             raise ValueError('xlim needs to be a length two tuple or None.')
@@ -127,11 +93,8 @@ class Layer(Pane):
     def ylim(self):
         if self._ylim:
             return self._ylim
-        elif len(self):
-            y_vals = self.data[:, 1]
-            return (float(min(y_vals)), float(max(y_vals)))
         else:
-            return None
+            return self.range(1)
 
     @ylim.setter
     def ylim(self, limits):
@@ -161,15 +124,15 @@ class Overlay(Pane, NdMapping):
     over the contained layers.
     """
 
-    dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
+    index_dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
       of dimensions the Overlay can be indexed by.""")
 
-    label = param.String(doc="""
+    label = param.String(default='', doc="""
       A label used to indicate what kind of data is contained
       within the Overlay. This overrides the auto-generated title
       made up of the individual Views.""")
 
-    title = param.String(default="{label}")
+    value = param.String(default='Overlay')
 
     channels = channels
     _deep_indexable = True
@@ -178,8 +141,12 @@ class Overlay(Pane, NdMapping):
         self._xlim = None
         self._ylim = None
         data = self._process_layers(overlays)
-        super(Overlay, self).__init__(data, **params)
-        self._data = self.data
+        Pane.__init__(self, data, **params)
+        NdMapping.__init__(self, data, **params)
+
+
+    def dimension_values(self, *args, **kwargs):
+        NdMapping.dimension_values(self, *args, **kwargs)
 
 
     def _process_layers(self, layers):
@@ -187,7 +154,7 @@ class Overlay(Pane, NdMapping):
         Set a collection of layers to be overlaid with each other.
         """
         if isinstance(layers, (ViewMap)):
-            return layers._data
+            return layers.data
         elif isinstance(layers, (dict, OrderedDict)):
             return layers
         elif layers is None or not len(layers):
@@ -198,7 +165,7 @@ class Overlay(Pane, NdMapping):
 
     def set(self, layers):
         data = self._process_layers(layers)
-        self._data = data
+        self.data = data
 
 
     @property
@@ -208,7 +175,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def legend(self):
-        if self.dimension_labels == ['Layer']:
+        if self._cached_index_names == ['Layer']:
             labels = self.labels
             if len(set(labels)) == len(labels):
                 return labels
@@ -216,9 +183,9 @@ class Overlay(Pane, NdMapping):
                 return None
         else:
             labels = []
-            for key in self._data.keys():
+            for key in self.data.keys():
                 labels.append(','.join([dim.pprint_value(k) for dim, k in
-                                        zip(self.dimensions, key)]))
+                                        zip(self.index_dimensions, key)]))
             return labels
 
 
@@ -234,19 +201,14 @@ class Overlay(Pane, NdMapping):
 
     def item_check(self, dim_vals, layer):
         if not isinstance(layer, Layer): pass
-        elif not len(self):
-            self._layer_dimensions = layer.dimension_labels
+        layer_dimensions = [d.name for d in layer.index_dimensions]
+        if len(self):
+            if layer_dimensions != self._layer_dimensions:
+                raise Exception("Layers must share common dimensions.")
+        else:
+            self._layer_dimensions = layer_dimensions
             self.value = layer.value
             self.label = layer.label
-        else:
-            if layer.xlim:
-                self.xlim = layer.xlim if self.xlim is None else find_minmax(self.xlim, layer.xlim)
-            if layer.xlim:
-                self.ylim = layer.ylim if self.ylim is None else find_minmax(self.ylim, layer.ylim)
-            if layer.dimension_labels != self._layer_dimensions:
-                raise Exception("DataLayers must share common dimensions.")
-        if layer.label in [o.label for o in self.data]:
-            self.warning('Label %s already defined in Overlay' % layer.label)
 
 
     def add(self, layer):
@@ -254,7 +216,6 @@ class Overlay(Pane, NdMapping):
         Overlay a single layer on top of the existing overlay.
         """
         self[len(self)] = layer
-
 
     @property
     def layer_types(self):
@@ -268,11 +229,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def xlim(self):
-        xlim = self.last.xlim if isinstance(self.last, Layer) else None
-        for data in self:
-            data_xlim = data.xlim if isinstance(data, Layer) else None
-            xlim = find_minmax(xlim, data.xlim) if data_xlim and xlim else xlim
-        return xlim
+        return self.range([d.name for d in self.deep_dimensions][0])
 
     @xlim.setter
     def xlim(self, limits):
@@ -283,11 +240,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def ylim(self):
-        ylim = self.last.ylim if isinstance(self.last, Layer) else None
-        for data in self:
-            data_ylim = data.ylim if isinstance(data, Layer) else None
-            ylim = find_minmax(ylim, data.ylim) if data_ylim and ylim else ylim
-        return ylim
+        return self.range([d.name for d in self.deep_dimensions][1])
 
     @ylim.setter
     def ylim(self, limits):
@@ -302,27 +255,11 @@ class Overlay(Pane, NdMapping):
         b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
         return l, b, r, t
 
-    @property
-    def range(self):
-        range = self[0].range if self[0].range is not None else None
-        cyclic = self[0].cyclic_range is not None
-        for view in self:
-            if cyclic != (self[0].cyclic_range is not None):
-                raise Exception("Overlay contains cyclic and non-cyclic "
-                                "Views, cannot compute range.")
-            range = find_minmax(range, view.range) if view.range is not None else range
-        return range
-
-
-    @property
-    def cyclic_range(self):
-        return self[0].cyclic_range if len(self) else None
-
 
     def __mul__(self, other):
         if isinstance(other, ViewMap):
             items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items=items)
+            return other.clone(items)
         elif isinstance(other, Overlay):
             overlays = self.values() + other.values()
         elif isinstance(other, (View)):
@@ -384,15 +321,16 @@ class Grid(NdMapping):
     have to arbitrary dimensions, e.g. for 2D parameter spaces.
     """
 
-    dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")])
+    index_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")], bounds=(2,2))
 
     label = param.String(constant=True, doc="""
       A short label used to indicate what kind of data is contained
       within the Grid.""")
 
-    title = param.String(default='{label}', doc="""
-       The title formatting string allows the title to be composed
-       from the label and type.""")
+    title = param.String(default="{label} {value}", doc="""
+      The title formatting string for the Grid object""")
+
+    value = param.String(default='Grid')
 
     def __init__(self, initial_items=None, **params):
         super(Grid, self).__init__(initial_items, **params)
@@ -426,8 +364,8 @@ class Grid(NdMapping):
         values are numeric, otherwise applies no transformation.
         """
         if all(not isinstance(el, slice) for el in key):
-            dim_inds = [self.dim_index(l) for l in self.dimension_labels
-                        if issubclass(self.dim_type(l), Number)]
+            dim_inds = [self.get_dimension_index(l) for l in self._cached_index_names
+                        if issubclass(self.get_dimension_type(l), Number)]
             str_keys = iter(key[i] for i in range(self.ndims)
                             if i not in dim_inds)
             num_keys = []
@@ -456,7 +394,7 @@ class Grid(NdMapping):
         """
         Recreates the Grid with a supplied label.
         """
-        return self.clone(self._data, label=label)
+        return self.clone(self.data, label=label)
 
 
     def keys(self, full_grid=False):
@@ -533,7 +471,7 @@ class Grid(NdMapping):
             if isinstance(v, AdjointLayout):
                 v = v.main
             if isinstance(v, ViewMap):
-                keys_list.append(list(v._data.keys()))
+                keys_list.append(list(v.data.keys()))
         return sorted(set(itertools.chain(*keys_list)))
 
 
@@ -549,7 +487,7 @@ class Grid(NdMapping):
             if isinstance(v, AdjointLayout):
                 v = v.main
             if isinstance(v, ViewMap):
-                keys_list.append(list(v._data.keys()))
+                keys_list.append(list(v.data.keys()))
         if all(x == keys_list[0] for x in keys_list):
             return keys_list[0]
         else:
@@ -589,8 +527,8 @@ class Grid(NdMapping):
     @property
     def grid_lbrt(self):
         grid_dimensions = []
-        for dim in self.dimension_labels:
-            grid_dimensions.append(self.dim_range(dim))
+        for dim in self._cached_index_names:
+            grid_dimensions.append(self.range(dim))
         if self.ndims == 1:
             grid_dimensions.append((0, 1))
         xdim, ydim = grid_dimensions
@@ -625,7 +563,7 @@ class Grid(NdMapping):
         dframes = []
         for coords, vmap in self.items():
             map_frame = vmap.dframe()
-            for coord, dim in zip(coords, self.dimension_labels)[::-1]:
+            for coord, dim in zip(coords, self._cached_index_names)[::-1]:
                 if dim in map_frame: dim = 'Grid_' + dim
                 map_frame.insert(0, dim.replace(' ','_'), coord)
             dframes.append(map_frame)
@@ -640,17 +578,9 @@ class ViewMap(Map):
     the x- and y-dimension limits and labels.
     """
 
+    value = param.String(default='ViewMap')
+
     data_type = (View, Map)
-
-    @property
-    def range(self):
-        if not hasattr(self.last, 'range'):
-            raise Exception('View type %s does not implement range.' % type(self.last))
-        range = self.last.range
-        for view in self._data.values():
-            range = find_minmax(range, view.range)
-        return range
-
 
     @property
     def layer_types(self):
@@ -711,11 +641,11 @@ class ViewMap(Map):
             split_map = dict(default=self)
             new_map = dict()
         else:
-            split_map = self.split_dimensions(dimensions)
-            new_map = self.clone(dimensions=split_map.dimensions)
+            split_map = self.split_dimensions(dimensions, Overlay)
+            new_map = self.clone(index_dimensions=split_map.index_dimensions)
 
         for outer, vmap in split_map.items():
-            new_map[outer] = Overlay(vmap, dimensions=vmap.dimensions)
+            new_map[outer] = Overlay(vmap, index_dimensions=vmap.index_dimensions)
 
         if self.ndims == 1:
             return list(new_map.values())[0]
@@ -733,8 +663,8 @@ class ViewMap(Map):
 
         if len(dimensions) == self.ndims:
             split_map = self
-        elif all(d in self.dimension_labels for d in dimensions):
-            split_dims = [d for d in self.dimension_labels if d not in dimensions]
+        elif all(d in self._cached_index_names for d in dimensions):
+            split_dims = [d for d in self._cached_index_names if d not in dimensions]
             split_map = self.split_dimensions(split_dims)
             split_map = split_map.reindex(dimensions)
         else:
@@ -742,7 +672,7 @@ class ViewMap(Map):
 
         if layout:
             if set_title:
-                for keys, vmap in split_map._data.items():
+                for keys, vmap in split_map.data.items():
                     dim_labels = split_map.pprint_dimkey(keys)
                     if not isinstance(vmap, ViewMap): vmap = [vmap]
                     for vm in vmap:
@@ -750,7 +680,7 @@ class ViewMap(Map):
                             vm.title = '\n'.join([vm.title, dim_labels])
             return GridLayout(split_map)
         else:
-            return Grid(split_map, dimensions=split_map.dimensions)
+            return Grid(split_map, index_dimensions=split_map.index_dimensions)
 
 
     def split_overlays(self):
@@ -783,18 +713,18 @@ class ViewMap(Map):
         dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
-            self_set = set(self.dimension_labels)
-            other_set = set(other.dimension_labels)
+            self_set = set(self._cached_index_names)
+            other_set = set(other._cached_index_names)
 
             # Determine which is the subset, to generate list of keys and
             # dimension labels for the new view
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
-            dimensions = self.dimensions
+            dimensions = self.index_dimensions
             if self_in_other and other_in_self: # superset of each other
                 super_keys = sorted(set(self.dimension_keys() + other.dimension_keys()))
             elif self_in_other: # self is superset
-                dimensions = other.dimensions
+                dimensions = other.index_dimensions
                 super_keys = other.dimension_keys()
             elif other_in_self: # self is superset
                 super_keys = self.dimension_keys()
@@ -805,11 +735,11 @@ class ViewMap(Map):
             for dim_keys in super_keys:
                 # Generate keys for both subset and superset and sort them by the dimension index.
                 self_key = tuple(k for p, k in sorted(
-                    [(self.dim_index(dim), v) for dim, v in dim_keys
-                     if dim in self.dimension_labels]))
+                    [(self.get_dimension_index(dim), v) for dim, v in dim_keys
+                     if dim in self._cached_index_names]))
                 other_key = tuple(k for p, k in sorted(
-                    [(other.dim_index(dim), v) for dim, v in dim_keys
-                     if dim in other.dimension_labels]))
+                    [(other.get_dimension_index(dim), v) for dim, v in dim_keys
+                     if dim in other._cached_index_names]))
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
@@ -818,10 +748,10 @@ class ViewMap(Map):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items=items, dimensions=dimensions)
+            return self.clone(items, index_dimensions=dimensions)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
-            return self.clone(items=items)
+            return self.clone(items)
         else:
             raise Exception("Can only overlay with {data} or {vmap}.".format(
                 data=self.data_type, vmap=self.__class__.__name__))
@@ -834,9 +764,9 @@ class ViewMap(Map):
         """
         import pandas
         dframes = []
-        for key, view in self._data.items():
+        for key, view in self.data.items():
             view_frame = view.dframe()
-            for val, dim in reversed(zip(key, self.dimension_labels)):
+            for val, dim in reversed(zip(key, self._cached_index_names)):
                 dim = dim.replace(' ', '_')
                 dimn = 1
                 while dim in view_frame:
@@ -946,7 +876,7 @@ class ViewMap(Map):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = ViewMap(dimensions=self.dimensions, title_suffix=self.title_suffix)
+        histmap = ViewMap(index_dimensions=self.index_dimensions, title_suffix=self.title_suffix)
 
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
@@ -966,8 +896,8 @@ class ViewMap(Map):
 
     def table(self):
         from ..view import Table
-        keys = zip(*[self.dim_values(dm) for dm in self.dimension_labels])
-        vals = self.dim_values(self.value.name)
+        keys = zip(*[self.dimension_values(dm) for dm in self._cached_index_names])
+        vals = self.dimension_values(self.value.name)
         return Table(zip(keys, vals), **dict(self.get_param_values()))
 
 

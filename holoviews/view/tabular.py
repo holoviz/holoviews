@@ -18,6 +18,13 @@ class ItemTable(Layer):
     information (e.g type and units) to be associated per heading.
     """
 
+    index_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
+       ItemTables hold an index Dimension for each value they contain, i.e.
+       they are equivalent to the keys.""")
+
+    value_dimensions = param.List(default=[], bounds=(0, 0), doc="""
+       ItemTables should have only index Dimensions.""")
+
     xlabel, ylabel = None, None
     xlim, ylim = None, None
     lbrt = None, None, None, None
@@ -39,7 +46,7 @@ class ItemTable(Layer):
 
         str_keys=dict((k.name if isinstance(k, Dimension)
                        else k ,v) for (k,v) in data.items())
-        params = dict(params, dimensions=data.keys())
+        params = dict(params, index_dimensions=data.keys())
         super(ItemTable, self).__init__(str_keys, **params)
 
 
@@ -49,12 +56,15 @@ class ItemTable(Layer):
         """
         if heading is ():
             return self
-        if heading not in self.dim_dict:
+        if heading not in self._cached_index_names:
             raise IndexError("%r not in available headings." % heading)
-        if isinstance(heading, Dimension):
-            return self.data[heading.name]
-        else:
-            return self.data[heading]
+        return self.data[heading]
+
+
+    def dimension_values(self, dimension):
+        if isinstance(dimension, int):
+            dimension = self._cached_index_names[dimension]
+        return [self.data[dimension]]
 
 
     def sample(self, samples=None):
@@ -80,9 +90,9 @@ class ItemTable(Layer):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return list(self.dim_dict.values())[row]
+            return str(self.dimensions[row])
         else:
-            heading = list(self.dim_dict.keys())[row]
+            heading = self._cached_index_names[row]
             return self.data[heading]
 
 
@@ -128,8 +138,7 @@ class Table(Layer, NdMapping):
     slice over the column names (using alphanumeric ordering).
     """
 
-    value = param.ClassSelector(class_=Dimension,
-                                default=Dimension(name='Table'),  doc="""
+    value = param.String(default='Table', doc="""
          The value Dimension is used to describe the table. Example of
          dimension names include 'Summary' or 'Statistics'. """)
 
@@ -145,30 +154,28 @@ class Table(Layer, NdMapping):
     xlim, ylim = None, None
     lbrt = None, None, None, None
 
+    _deep_indexable = False
+
     def __init__(self, data=None, **params):
         self._style = None
         NdMapping.__init__(self, data, **dict(params,
                                               value=params.get('value',self.value)))
-        value_dimensions = [v if isinstance(v, Dimension)
-                            else Dimension(v) for v in self.value_dimensions]
-        self.value_dimensions = value_dimensions
-        for k, v in self._data.items():
+        for k, v in self.data.items():
             self[k] = v # Unpacks any ItemTables
-        self.data = self._data # For multiple columns, values are tuples.
 
 
     def __setitem__(self, key, value):
         if isinstance(value, ItemTable):
             indices = []
-            if len(value.dimensions) != len(self.value_dimensions):
+            if len(value.index_dimensions) != len(self.value_dimensions):
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             for dim in self.value_dimensions:
-                idx = [d.name for d in value.dimensions].index(dim.name)
-                if hash(dim) != hash(value.dimensions[idx]):
+                idx = [d.name for d in value.index_dimensions].index(dim.name)
+                if hash(dim) != hash(value.index_dimensions[idx]):
                     raise Exception("Input ItemTables dimensions must match value dimensions.")
                 indices.append(idx)
             value = tuple(value.data.values()[i] for i in indices)
-        self._data[key] = value
+        self.data[key] = value
 
 
     def _filter_columns(self, index, col_names):
@@ -197,7 +204,7 @@ class Table(Layer, NdMapping):
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
-        if not isinstance(subtable, Table):
+        if len(self.value_dimensions) > 1 and not isinstance(subtable, Table):
             # If a value tuple, turn into an ItemTable
             subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)),
                                  label=self.label)
@@ -216,44 +223,35 @@ class Table(Layer, NdMapping):
         items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
         return subtable.clone(items, value_dimensions=value_dimensions)
 
-
-    @property
-    def range(self):
-        if isinstance(self.value, list) and len(self.value) != 1:
-            raise Exception("Range only supported if there is a single value column")
-        values = self.values()
-        return (min(values), max(values))
-
     @property
     def rows(self):
-        return len(self._data) + 1
+        return len(self.data) + 1
 
     @property
     def cols(self):
         return self.ndims + len(self.value_dimensions)
-
-    def clone(self, *args, **params):
-        return NdMapping.clone(self, *args, **params)
 
 
     def cell_value(self, row, col):
         """
         Get the stored value for a given row and column indices.
         """
+        ndims = self.ndims
         if col >= self.cols:
             raise Exception("Maximum column index is %d" % self.cols-1)
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif row == 0:
-            if col >= self.ndims:
-                return str(self.value_dimensions[col - self.ndims])
-            return str(self.dimensions[col])
+            if col >= ndims:
+                return str(self.value_dimensions[col - ndims])
+            return str(self.index_dimensions[col])
         else:
-            if col >= self.ndims:
+            if col >= ndims:
                 row_values = self.values()[row-1]
-                return (row_values[col - self.ndims]
-                        if isinstance(row_values, tuple) else row_values)
-            row_data = self._data.keys()[row-1]
+                return (row_values[col - ndims]
+                        if not np.isscalar(row_values) else row_values)
+            row_data = self.data.keys()[row-1]
+
             return row_data[col] if isinstance(row_data, tuple) else row_data
 
 
@@ -281,24 +279,24 @@ class Table(Layer, NdMapping):
         the dimension name and reduce_fn as kwargs. Reduces
         dimensionality of Table until only an ItemTable is left.
         """
-        dim_labels = self.dimension_labels
+        dim_labels = self._cached_index_names
         reduced_table = self
         for dim, reduce_fn in reduce_map.items():
-            split_dims = [self.dim_dict[d] for d in dim_labels if d != dim]
+            split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
             if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.split_dimensions([dim])
-                reduced_table = self.clone(None, dimensions=split_dims)
+                reduced_table = self.clone(None, index_dimensions=split_dims)
                 for k, table in split_map.items():
                     if len(self.value_dimensions) > 1:
-                        reduced = tuple(reduce_fn(table.dim_values(vdim.name))
+                        reduced = tuple(reduce_fn(table.dimension_values(vdim.name))
                                         for vdim in self.value_dimensions)
                     else:
                         reduced = reduce_fn(table.data.values())
                     reduced_table[k] = reduced
             else:
-                reduced = {vdim: reduce_fn(self.dim_values(vdim.name))
+                reduced = {vdim: reduce_fn(self.dimension_values(vdim.name))
                            for vdim in self.value_dimensions}
-                reduced_table = ItemTable(reduced, dimensions=[self.value])
+                reduced_table = ItemTable(reduced)
         return reduced_table
 
 
@@ -307,25 +305,22 @@ class Table(Layer, NdMapping):
             for el in data:
                 self._item_check(dim_vals, el)
             return
-        if not isinstance(data, ItemTable) and not np.isscalar(data):
-            raise TypeError('Table only accepts scalar values.')
         super(Table, self)._item_check(dim_vals, data)
 
 
     def tablemap(self, dimensions):
-        split_dims = [dim for dim in self.dimension_labels
+        split_dims = [dim for dim in self._cached_index_names
                       if dim not in dimensions]
         if len(dimensions) < self.ndims:
             return self.split_dimensions(split_dims, map_type=ViewMap)
         else:
-            vmap = ViewMap(dimensions=dimensions)
+            vmap = ViewMap(index_dimensions=[self.get_dimension(d) for d in dimensions])
             for k, v in self.items():
-                vmap[k] = ItemTable(dict(zip(self.value_dimensions, v)),
-                                    dimensions=self.value_dimensions)
+                vmap[k] = ItemTable(dict(zip(self.value_dimensions, v)))
             return vmap
 
 
-    def dim_values(self, dim):
+    def dimension_values(self, dim):
         if isinstance(dim, Dimension):
             raise Exception('Dimension to be specified by name')
         if dim == self.value.name:
@@ -334,8 +329,8 @@ class Table(Layer, NdMapping):
             if len(self.value_dimensions) == 1: return self.values()
             index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
-        elif dim in self.dimension_labels:
-            return NdMapping.dim_values(self, dim)
+        elif dim in self._cached_index_names:
+            return NdMapping.dimension_values(self, dim)
         else:
             raise Exception('Dimension not found.')
 
@@ -345,7 +340,7 @@ class Table(Layer, NdMapping):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimension_labels + [dim.name for dim in self.value_dimensions]
+        labels = [d.name for d in self.dimensions]
         return pandas.DataFrame(
             [dict(zip(labels, k+ (v if isinstance(v, tuple) else (v,))))
-             for (k, v) in self._data.items()])
+             for (k, v) in self.data.items()])

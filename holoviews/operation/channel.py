@@ -41,8 +41,8 @@ class RGBA(ViewOperation):
             arrays.append(el.data)
 
 
-        return [Matrix(np.dstack(arrays), overlay[0].bounds, label=self.p.label,
-                            roi_bounds=overlay[0].roi_bounds, value=overlay[0].value)]
+        return [Matrix(np.dstack(arrays), overlay[0].bounds, label=overlay[0].label,
+                       roi_bounds=overlay[0].roi_bounds, value=self.p.label)]
 
 
 class alpha_overlay(ViewOperation):
@@ -59,7 +59,8 @@ class alpha_overlay(ViewOperation):
     def _process(self, overlay, key=None):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
         return [Matrix(RGBA(R*G*B*overlay[1]).data, overlay[0].bounds,
-                          label=self.p.label, value=overlay[0].value)]
+                       label=overlay[0].label, value=self.p.label,
+                       value_dimensions=overlay[0].value_dimensions)]
 
 
 class HCS(ViewOperation):
@@ -103,7 +104,7 @@ class HCS(ViewOperation):
         r, g, b = hsv_to_rgb(h, s, v)
         rgb = np.dstack([r,g,b])
         return [Matrix(rgb, hue.bounds, roi_bounds=hue.roi_bounds,
-                          label=self.p.label, value=hue.value)]
+                       label=hue.label, value=self.p.label)]
 
 
 class colorize(ViewOperation):
@@ -136,7 +137,7 @@ class colorize(ViewOperation):
          hcs = HCS(overlay[1] * C * overlay[0].N)
 
          return [Matrix(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
-                             label=self.p.label, value=hcs.value)]
+                        label=hcs.label, value=self.p.label)]
 
 
 class cmap2rgb(ViewOperation):
@@ -166,7 +167,7 @@ class cmap2rgb(ViewOperation):
             raise Exception("No color map supplied and no cmap in the active style.")
 
         cmap = matplotlib.cm.get_cmap(style_cmap if self.p.cmap is None else self.p.cmap)
-        return [sheetview.clone(cmap(sheetview.data), label=self.p.label)]
+        return [sheetview.clone(cmap(sheetview.data), value=self.p.label)]
 
 
 class split(ViewOperation):
@@ -183,7 +184,7 @@ class split(ViewOperation):
         if sheetview.mode not in ['rgb', 'rgba']:
             raise Exception("Can only split Matrix with a depth of 3 or 4")
         return [sheetview.clone(sheetview.data[:, :, i],
-                                label='RGBA'[i] + ' ' + self.p.label)
+                                value='RGBA'[i] + ' ' + self.p.label)
                 for i in range(sheetview.depth)]
 
 
