@@ -323,7 +323,7 @@ class Table(Layer, NdMapping):
     def dimension_values(self, dim):
         if isinstance(dim, Dimension):
             raise Exception('Dimension to be specified by name')
-        if dim == self.value.name:
+        if dim == self.value:
             return self.values()
         elif dim in self.value_dimensions:
             if len(self.value_dimensions) == 1: return self.values()
