@@ -265,9 +265,9 @@ class Histogram(Layer):
     def dimension_values(self, dim):
         if isinstance(dim, int):
             dim = self.get_dimension(dim).name
-        if dim in self._value_names:
+        if dim in self._cached['value_names']:
             return self.values
-        elif dim in self._index_names:
+        elif dim in self._cached['index_names']:
             return self.edges
         else:
             raise Exception("Could not find dimension.")

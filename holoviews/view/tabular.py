@@ -56,14 +56,14 @@ class ItemTable(Layer):
         """
         if heading is ():
             return self
-        if heading not in self._index_names:
+        if heading not in self._cached['index_names']:
             raise IndexError("%r not in available headings." % heading)
         return self.data[heading]
 
 
     def dimension_values(self, dimension):
         if isinstance(dimension, int):
-            dimension = self._index_names[dimension]
+            dimension = self._cached['index_names'][dimension]
         return [self.data[dimension]]
 
 
@@ -92,7 +92,7 @@ class ItemTable(Layer):
         elif col == 0:
             return str(self.dimensions[row])
         else:
-            heading = self._index_names[row]
+            heading = self._cached['index_names'][row]
             return self.data[heading]
 
 
@@ -280,7 +280,7 @@ class Table(Layer, NdMapping):
         the dimension name and reduce_fn as kwargs. Reduces
         dimensionality of Table until only an ItemTable is left.
         """
-        dim_labels = self._index_names
+        dim_labels = self._cached['index_names']
         reduced_table = self
         for dim, reduce_fn in reduce_map.items():
             split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
@@ -312,7 +312,7 @@ class Table(Layer, NdMapping):
 
 
     def tablemap(self, dimensions):
-        split_dims = [dim for dim in self._index_names
+        split_dims = [dim for dim in self._cached['index_names']
                       if dim not in dimensions]
         if len(dimensions) < self.ndims:
             return self.split_dimensions(split_dims, map_type=ViewMap)
@@ -332,7 +332,7 @@ class Table(Layer, NdMapping):
             if len(self.value_dimensions) == 1: return self.values()
             index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
-        elif dim in self._index_names:
+        elif dim in self._cached['index_names']:
             return NdMapping.dimension_values(self, dim)
         else:
             raise Exception('Dimension not found.')

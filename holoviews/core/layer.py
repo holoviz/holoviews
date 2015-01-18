@@ -50,7 +50,7 @@ class Layer(Pane):
 
     def table(self):
         from ..view import Table
-        index_values = [self.dimension_values(dim) for dim in self._index_names]
+        index_values = [self.dimension_values(dim) for dim in self._cached['index_names']]
         values = [self.dimension_values(dim) for dim in [d.name for d in self.value_dimensions]]
         return Table(zip(zip(*index_values), zip(*values)), index_dimensions=self.index_dimensions,
                      label=self.label, value=self.value, value_dimensions=self.value_dimensions)
@@ -176,7 +176,7 @@ class Overlay(Pane, NdMapping):
 
     @property
     def legend(self):
-        if self._index_names == ['Layer']:
+        if self._cached['index_names'] == ['Layer']:
             labels = self.labels
             if len(set(labels)) == len(labels):
                 return labels
@@ -365,7 +365,7 @@ class Grid(NdMapping):
         values are numeric, otherwise applies no transformation.
         """
         if all(not isinstance(el, slice) for el in key):
-            dim_inds = [self.get_dimension_index(l) for l in self._index_names
+            dim_inds = [self.get_dimension_index(l) for l in self._cached['index_names']
                         if issubclass(self.get_dimension_type(l), Number)]
             str_keys = iter(key[i] for i in range(self.ndims)
                             if i not in dim_inds)
@@ -528,7 +528,7 @@ class Grid(NdMapping):
     @property
     def grid_lbrt(self):
         grid_dimensions = []
-        for dim in self._index_names:
+        for dim in self._cached['index_names']:
             grid_dimensions.append(self.range(dim))
         if self.ndims == 1:
             grid_dimensions.append((0, 1))
@@ -564,7 +564,7 @@ class Grid(NdMapping):
         dframes = []
         for coords, vmap in self.items():
             map_frame = vmap.dframe()
-            for coord, dim in zip(coords, self._index_names)[::-1]:
+            for coord, dim in zip(coords, self._cached['index_names'])[::-1]:
                 if dim in map_frame: dim = 'Grid_' + dim
                 map_frame.insert(0, dim.replace(' ','_'), coord)
             dframes.append(map_frame)
@@ -664,8 +664,8 @@ class ViewMap(Map):
 
         if len(dimensions) == self.ndims:
             split_map = self
-        elif all(d in self._index_names for d in dimensions):
-            split_dims = [d for d in self._index_names if d not in dimensions]
+        elif all(d in self._cached['index_names'] for d in dimensions):
+            split_dims = [d for d in self._cached['index_names'] if d not in dimensions]
             split_map = self.split_dimensions(split_dims)
             split_map = split_map.reindex(dimensions)
         else:
@@ -714,8 +714,8 @@ class ViewMap(Map):
         dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
-            self_set = set(self._index_names)
-            other_set = set(other._index_names)
+            self_set = set(self._cached['index_names'])
+            other_set = set(other._cached['index_names'])
 
             # Determine which is the subset, to generate list of keys and
             # dimension labels for the new view
@@ -737,10 +737,10 @@ class ViewMap(Map):
                 # Generate keys for both subset and superset and sort them by the dimension index.
                 self_key = tuple(k for p, k in sorted(
                     [(self.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in self._index_names]))
+                     if dim in self._cached['index_names']]))
                 other_key = tuple(k for p, k in sorted(
                     [(other.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in other._index_names]))
+                     if dim in other._cached['index_names']]))
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
@@ -767,7 +767,7 @@ class ViewMap(Map):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            for val, dim in reversed(zip(key, self._index_names)):
+            for val, dim in reversed(zip(key, self._cached['index_names'])):
                 dim = dim.replace(' ', '_')
                 dimn = 1
                 while dim in view_frame:
@@ -897,7 +897,7 @@ class ViewMap(Map):
 
     def table(self):
         from ..view import Table
-        keys = zip(*[self.dimension_values(dm) for dm in self._index_names])
+        keys = zip(*[self.dimension_values(dm) for dm in self._cached['index_names']])
         vals = self.dimension_values(self.value.name)
         return Table(zip(keys, vals), **dict(self.get_param_values()))
 
