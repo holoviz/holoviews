@@ -197,22 +197,27 @@ class HeatMap(Raster):
     value = param.String(default='HeatMap')
 
     def __init__(self, data, **params):
-        dimensions = params['index_dimensions'] if 'index_dimensions' in params else self.index_dimensions
-        if isinstance(data, NdMapping):
-            self._data = data
-            if 'index_dimensions' not in params:
-                params['index_dimensions'] = data.index_dimensions
-        elif isinstance(data, (dict, OrderedDict)):
-            self._data = NdMapping(data, index_dimensions=dimensions)
-        elif data is None:
-            self._data = NdMapping(index_dimensions=dimensions)
-        else:
-            raise TypeError('HeatMap only accepts dict or NdMapping types.')
-
+        self._data, dimensions = self._process_data(data, params)
         self._style = None
         self._xlim = None
         self._ylim = None
-        Dimensioned.__init__(self, **params)
+        Dimensioned.__init__(self, **dict(params, **dimensions))
+
+
+    def _process_data(self, data, params):
+        groups = ['index_dimensions', 'value_dimensions']
+        dimensions = {group: params.get(group, getattr(self, group)) for group in groups}
+        if isinstance(data, NdMapping):
+            self._data = data
+            if 'index_dimensions' not in params:
+                dimensions['index_dimensions'] = data.index_dimensions
+            if 'value_dimensions' not in params:
+                dimensions['value_dimensions'] = data.value_dimensions
+        elif isinstance(dict, OrderedDict, type(None)):
+            data = NdMapping(data, **dimensions)
+        else:
+            raise TypeError('HeatMap only accepts dict or NdMapping types.')
+        return data, dimensions
 
 
     def __getitem__(self, coords):
