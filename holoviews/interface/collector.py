@@ -457,7 +457,7 @@ class Collator(NdMapping):
            attrtree = self._process_data(data).filter(path_filters)
 
            if merge:
-              dim_keys = zip(self._cached['index_names'], key)
+              dim_keys = zip(self._cached_index_names, key)
               varying_keys = [(d, k) for d, k in dim_keys
                               if d not in constant_dims]
               constant_keys = [(d, k) for d, k in dim_keys

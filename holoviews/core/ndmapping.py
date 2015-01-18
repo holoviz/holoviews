@@ -52,9 +52,9 @@ class NdIndexableMapping(Dimensioned):
 
         self._next_ind = 0
         self._check_key_type = True
-        self._cached['index_types'] = [d.type for d in self.index_dimensions]
-        self._cached['index_values'] = {d.name:d.values for d in self.index_dimensions}
-        self._cached['categorical'] = any(d.values for d in self.index_dimensions)
+        self._cached_index_types = [d.type for d in self.index_dimensions]
+        self._cached_index_values = {d.name:d.values for d in self.index_dimensions}
+        self._cached_categorical = any(d.values for d in self.index_dimensions)
 
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
@@ -88,7 +88,7 @@ class NdIndexableMapping(Dimensioned):
         """
         dimensions = self.index_dimensions
         sort_fn = lambda (k, v): k
-        if self._cached['categorical']:
+        if self._cached_categorical:
             sort_fn = lambda (k, v): tuple(dimensions[i].values.index(k[i])
                                            if dimensions[i].values else k[i]
                                            for i in range(self.ndims))
@@ -106,16 +106,16 @@ class NdIndexableMapping(Dimensioned):
         self._item_check(dim_vals, data)
 
         # Apply dimension types
-        dim_types = zip(self._cached['index_types'], dim_vals)
+        dim_types = zip(self._cached_index_types, dim_vals)
         dim_vals = tuple(v if t is None else t(v) for t, v in dim_types)
 
         # Check and validate for categorical dimensions
-        if self._cached['categorical']:
-            valid_vals = zip(self._cached['index_names'], dim_vals)
+        if self._cached_categorical:
+            valid_vals = zip(self._cached_index_names, dim_vals)
         else:
             valid_vals = []
         for dim, val in valid_vals:
-            vals = self._cached['index_values'][dim]
+            vals = self._cached_index_values[dim]
             if vals and val not in vals:
                 raise KeyError('%s Dimension value %s not in'
                                ' specified Dimension values.' % (dim, repr(val)))
@@ -163,7 +163,7 @@ class NdIndexableMapping(Dimensioned):
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set(self._cached['index_names']).difference(dimension_labels)
+        reduced_dims = set(self._cached_index_names).difference(dimension_labels)
         dimensions = [self.get_dimension(d) for d in dimension_labels if d not in reduced_dims]
 
         if len(set(keys)) != len(keys):
@@ -182,7 +182,7 @@ class NdIndexableMapping(Dimensioned):
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
 
-        if dimension.name in self._cached['index_names']:
+        if dimension.name in self._cached_index_names:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
         dimensions = self.index_dimensions[:]
@@ -206,7 +206,7 @@ class NdIndexableMapping(Dimensioned):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self._cached['index_names'] + [self.value]
+        labels = self._cached_index_names + [self.value]
         return pandas.DataFrame(
             [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
@@ -216,7 +216,7 @@ class NdIndexableMapping(Dimensioned):
         if isinstance(dimension, int):
             dimension = all_dims[dimension]
 
-        if dimension in self._cached['index_names']:
+        if dimension in self._cached_index_names:
             values = [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
         elif dimension in all_dims:
             values = [el.dimension_values(dimension) for el in self
@@ -301,7 +301,7 @@ class NdIndexableMapping(Dimensioned):
         Returns a dictionary of dimension and key values.
         """
         if not isinstance(key, (tuple, list)): key = (key,)
-        return dict(zip(self._cached['index_names'], key))
+        return dict(zip(self._cached_index_names, key))
 
 
     @property
@@ -324,7 +324,7 @@ class NdIndexableMapping(Dimensioned):
         """
         Returns the list of keys together with the dimension labels.
         """
-        return [tuple(zip(self._cached['index_names'], [k] if self.ndims == 1 else k))
+        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
                 for k in self.keys()]
 
 
@@ -345,7 +345,7 @@ class NdIndexableMapping(Dimensioned):
         """
         slices = [slice(None) for i in range(self.ndims)]
         slices[self.get_dimension_index(dim)] = val
-        dim_labels = [d for d in self._cached['index_names'] if d != dim]
+        dim_labels = [d for d in self._cached_index_names if d != dim]
         return self[tuple(slices)].reindex(dim_labels)
 
 
@@ -445,7 +445,7 @@ class NdIndexableMapping(Dimensioned):
         where the inner mapping is of the same type as the original
         Map.
         """
-        inner_dims = [d for d in dimensions if d in self._cached['index_names']]
+        inner_dims = [d for d in dimensions if d in self._cached_index_names]
         deep_dims = [d for d in dimensions
                      if d in [d.name for d in self.deep_dimensions]]
         if self.ndims == 1:
@@ -539,7 +539,7 @@ class NdMapping(NdIndexableMapping):
         keyword arguments matching the names of the dimensions.
         """
         deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
-                           and (kw not in self._cached['index_names'])])
+                           and (kw not in self._cached_index_names)])
         selection_depth = len(self.dimensions) if deep_select else self.ndims
         selection = [slice(None) for i in range(selection_depth)]
         for dim, val in kwargs.items():

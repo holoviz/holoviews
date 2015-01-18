@@ -183,7 +183,7 @@ class AdjointLayout(Dimensioned):
     def dimension_values(self, dimension):
         if isinstance(dimension, int):
             dimension = self.get_dimension(dimension).name
-        if dimension in self._cached['index_names']:
+        if dimension in self._cached_index_names:
             return self.layout_order[:len(self.data)]
         else:
             return self.main.dimension_values(dimension)

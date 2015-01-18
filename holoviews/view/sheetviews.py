@@ -164,7 +164,7 @@ class Raster(Layer):
         """
         The set of samples available along a particular dimension.
         """
-        if dim in self._cached['index_names']:
+        if dim in self._cached_index_names:
             dim_index = self.get_dimension_index(dim)
             l, b, r, t = self.lbrt
             shape = self.data.shape[abs(dim_index-1)]
@@ -176,7 +176,7 @@ class Raster(Layer):
             coords = [self.closest(coord_fn(v))[dim_index]
                       for v in linspace] * shape
             return coords if dim_index else sorted(coords)
-        elif dim == self._cached['value_names'][0]:
+        elif dim == self._cached_value_names[0]:
             return np.flipud(self.data).T.flatten()
         else:
             raise Exception("Dimension not found.")
@@ -224,7 +224,7 @@ class HeatMap(Raster):
         """
         Slice the underlying NdMapping.
         """
-        return self.clone(self._data.select(**dict(zip(self._data._cached['index_names'], coords))))
+        return self.clone(self._data.select(**dict(zip(self._data._cached_index_names, coords))))
 
 
     def dense_keys(self):
@@ -238,10 +238,10 @@ class HeatMap(Raster):
         if isinstance(dim, int):
             dim = self.get_dimension(dim)
 
-        if dim in self._cached['index_names']:
+        if dim in self._cached_index_names:
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
-        elif dim in self._cached['value_names']:
+        elif dim in self._cached_value_names:
             return self._data.values()
         else:
             raise Exception("Dimension %s not found." % dim)

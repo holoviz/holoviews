@@ -81,7 +81,7 @@ class DataFrameView(Layer):
         self._xlim = None
         self._ylim = None
         View.__init__(self, data, index_dimensions=dims, **params)
-        self.data.columns = self._cached['index_names']
+        self.data.columns = self._cached_index_names
 
 
     def __getitem__(self, key):
@@ -92,7 +92,7 @@ class DataFrameView(Layer):
             return self
         else:
             if len(key) <= self.ndims:
-                return self.select(**dict(zip(self._cached['index_names'], key)))
+                return self.select(**dict(zip(self._cached_index_names, key)))
             else:
                 raise Exception('Selection contains %d dimensions, DataFrameView '
                                 'only has %d index dimensions.' % (self.ndims, len(key)))
@@ -133,14 +133,14 @@ class DataFrameView(Layer):
 
 
     def _split_dimensions(self, dimensions, ndmapping_type=NdMapping):
-        invalid_dims = list(set(dimensions) - set(self._cached['index_names']))
+        invalid_dims = list(set(dimensions) - set(self._cached_index_names))
         if invalid_dims:
             raise Exception('Following dimensions could not be found %s.'
                             % invalid_dims)
 
         index_dims = [self.get_dimension(d) for d in dimensions]
         ndmapping = ndmapping_type(None, index_dimensions=index_dims)
-        view_dims = set(self._cached['index_names']) - set(dimensions)
+        view_dims = set(self._cached_index_names) - set(dimensions)
         view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
             ndmapping[k] = self.clone(v.drop(dimensions, axis=1),
