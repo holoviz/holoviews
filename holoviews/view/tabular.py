@@ -205,7 +205,7 @@ class Table(Layer, NdMapping):
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
-        if self.ndims('value') > 1 and not isinstance(subtable, Table):
+        if len(self.value_dimensions) > 1 and not isinstance(subtable, Table):
             # If a value tuple, turn into an ItemTable
             subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)),
                                  label=self.label)
@@ -250,8 +250,9 @@ class Table(Layer, NdMapping):
             if col >= ndims:
                 row_values = self.values()[row-1]
                 return (row_values[col - ndims]
-                        if isinstance(row_values, tuple) else row_values)
+                        if not np.isscalar(row_values) else row_values)
             row_data = self.data.keys()[row-1]
+
             return row_data[col] if isinstance(row_data, tuple) else row_data
 
 
