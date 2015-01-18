@@ -136,7 +136,6 @@ class Overlay(Pane, NdMapping):
 
     channels = channels
     _deep_indexable = True
-    _dimension_groups = ['index', 'deep']
 
     def __init__(self, overlays, **params):
         self._xlim = None

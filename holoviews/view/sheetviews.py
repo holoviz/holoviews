@@ -205,8 +205,8 @@ class HeatMap(Raster):
 
 
     def _process_data(self, data, params):
-        groups = ['index_dimensions', 'value_dimensions']
-        dimensions = {group: params.get(group, getattr(self, group)) for group in groups}
+        dimensions = {group: params.get(group, getattr(self, group))
+                      for group in self._dim_groups}
         if isinstance(data, NdMapping):
             self._data = data
             if 'index_dimensions' not in params:

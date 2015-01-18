@@ -4,8 +4,6 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 
-from collections import OrderedDict
-
 import numpy as np
 
 import param
@@ -91,17 +89,25 @@ class Dimension(param.Parameterized):
 class Dimensioned(param.Parameterized):
     """
     Abstract baseclass implementing common methods for objects with
-    associated dimensions. Subclasses should define appropriate
-    _dimension_groups, which should be accessible via
-    group+'_dimensions'. All Dimensioned objects should have
-    index_dimensions at minimum.
+    associated dimensions. Dimensioned support three dimension groups:
+
+    * index_dimensions: The Dimensioned objects should implement
+                        indexing and slicing for these dimensions.
+
+    * value_dimensions: These dimensions correspond to any data
+                        held on the Dimensioned object.
+
+    * deep_dimensions:  These are dynamically computed and
+                        correspond to any dimensions on items
+                        held on this object. Objects that support
+                        this should enable the _deep_indexable
+                        flag.
 
     Dimensioned also provides convenient methods to find the
     range and type of values along a particular Dimension.
     For ranges to work appropriately subclasses should define
     dimension_values methods, which return an array of all the
-    values along the supplied dimension. Finally Dimensioned
-    types should indicate whether they are _deep_indexable.
+    values along the supplied dimension.
     """
 
     index_dimensions = param.List(bounds=(0, None), constant=True, doc="""
@@ -123,10 +129,12 @@ class Dimensioned(param.Parameterized):
 
     _deep_indexable = False
     _sorted = False
+    _dim_groups = ['index_dimensions',
+                   'value_dimensions',
+                   'deep_dimensions']
 
     def __init__(self, **params):
-        for group in ['index', 'value']:
-            group = group + '_dimensions'
+        for group in self._dim_groups[0:2]:
             if group in params:
                 dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
                               for d in params.pop(group)]
@@ -154,9 +162,8 @@ class Dimensioned(param.Parameterized):
 
     @property
     def dimensions(self):
-        groups = ['index', 'value', 'deep']
-        return [dim for group in groups
-                for dim in getattr(self, group+'_dimensions')]
+        return [dim for group in self._dim_groups
+                for dim in getattr(self, group)]
 
 
     def get_dimension(self, dimension, default=None):

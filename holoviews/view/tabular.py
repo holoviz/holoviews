@@ -155,7 +155,6 @@ class Table(Layer, NdMapping):
     lbrt = None, None, None, None
 
     _deep_indexable = False
-    _dimension_groups = ['index', 'value']
 
     def __init__(self, data=None, **params):
         self._style = None

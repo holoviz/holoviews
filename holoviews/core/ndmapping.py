@@ -45,7 +45,6 @@ class NdIndexableMapping(Dimensioned):
 
     _deep_indexable = False
     _sorted = True
-    _dimension_groups = ['index', 'deep']
 
     def __init__(self, initial_items=None, **params):
         self.data = OrderedDict()
@@ -401,8 +400,8 @@ class NdIndexableMapping(Dimensioned):
                    " containing %d items of type %s\n" % (len(self.keys()),
                                                           type(self.values()[0]).__name__)
         info_str += ('-' * (len(info_str)-1)) + "\n\n"
-        for group in ['index', 'deep']:
-            dimensions = getattr(self, group+'_dimensions')
+        for group in self._dim_groups:
+            dimensions = getattr(self, group)
             if dimensions:
                 info_str += '%s Dimensions: \n' % group.capitalize()
             for d in dimensions:
