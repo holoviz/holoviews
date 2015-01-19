@@ -253,6 +253,21 @@ class AdjointLayout(Dimensioned):
 
 
 class ViewTree(AttrTree):
+    """
+    A ViewTree is an AttrTree with View objects as leaf values. Unlike
+    AttrTree, a ViewTree supports a rich display, displaying leaf
+    items in a grid style layout. In addition to the usual AttrTree
+    indexing, ViewTree supports indexing of items by their row and
+    column index in the layout.
+
+    The maximum number of columns in such a layout may be controlled
+    with the cols method and the display policy is set with the
+    display method. A display policy of 'auto' may use the string repr
+    of the tree for large trees that would otherwise take a long time
+    to display wheras a policy of 'all' will always display all the
+    available leaves. The detailed settings for the 'auto' policy may
+    be set using the MAX_BRANCHES option of the %view magic.
+    """
 
     style = 'ViewTree'
 
@@ -310,6 +325,13 @@ class ViewTree(AttrTree):
 
 
     def _relabel(self, items):
+        """
+        Given a list of path items (list of tuples where each element
+        is a (path, view) pair), generate a new set of path items that
+        guarantees that no paths clash. This uses the view labels as
+        appropriate and automatically generates roman numeral
+        identifiers if necessary.
+        """
         relabelled_items = []
         group_fn = lambda x: x[0][0:2] if len(x[0]) > 2 else (x[0][0],)
         for path, group in groupby(items, key=group_fn):
