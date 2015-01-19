@@ -337,7 +337,7 @@ class Collect(object):
             if not isinstance(val, NdMapping):
                 val = ViewMap([((time,), val)], index_dimensions=[Time])
         else:
-            current_val = attrtree.path_items[self.path]
+            current_val = attrtree.data[self.path]
             val = self._merge_views(current_val, val, time)
 
         attrtree.set_path(self.path,  val)
@@ -469,7 +469,7 @@ class Collator(NdMapping):
 
         if merge:
             trees = ndmapping.values()
-            accumulator = AttrTree(path_items=trees[0].path_items)
+            accumulator = AttrTree(data=trees[0].data)
             for tree in trees:
                 accumulator.update(tree)
             return accumulator
@@ -597,7 +597,7 @@ class Collector(AttrTree):
 
         for (path_spec, obj) in specs:
             if path_spec is None:
-                self.__dict__['path_items'][uuid.uuid4().hex] = obj
+                self.__dict__['data'][uuid.uuid4().hex] = obj
             else:
                 path = path_spec.rsplit('.')
                 self.set_path(path, obj)
@@ -629,7 +629,7 @@ class Collector(AttrTree):
         """
         task = Collect(obj, *args, **kwargs)
         if task.mode == 'merge':
-            self.path_items[uuid.uuid4().hex] = task
+            self.data[uuid.uuid4().hex] = task
             return None
         return task
 
@@ -641,7 +641,7 @@ class Collector(AttrTree):
         """
         task = Analyze(reference, analysisfn, *args, **kwargs)
         if task.mode == 'merge':
-            self.path_items[uuid.uuid4().hex] = task
+            self.data[uuid.uuid4().hex] = task
         return task
 
 
@@ -694,7 +694,7 @@ class Collector(AttrTree):
         Given a set of times this method checks that all
         scheduled measurements will actually be carried out.
         """
-        for path, task in self.path_items.items():
+        for path, task in self.items():
             if task.times:
                 self._verify_task_times(task, times, strict)
 
@@ -718,11 +718,11 @@ class Collector(AttrTree):
 
     def _schedule_tasks(self, times, strict=False):
         """
-        Inspect the path_items to find all the Collects that have
+        Inspect the data to find all the Collects that have
         been specified and add them to the scheduled tasks list.
         """
         self._scheduled_tasks = []
-        for path, task in self.path_items.items():
+        for path, task in self.items():
 
             if task is None:
                 raise Exception("Incorrect task definition for %r" % '.'.join(path))
@@ -743,22 +743,21 @@ class Collector(AttrTree):
 
     def __repr__(self):
         spec_strs = []
-        for path, val in self.path_items.items():
+        for path, val in self.items():
             key = repr('.'.join(path)) if isinstance(path, tuple) else 'None'
             spec_strs.append('\n(%s, %r)' % (key, val))
         return 'Collector([%s])' % ', '.join(spec_strs)
 
     def __str__(self):
         indent = '  '
-        num_items = len(self.path_items)
-        padding = len(str(num_items))
+        padding = len(str(len(self)))
         num_fmt = '%%0%dd.' % padding
 
-        lines = ["%d tasks scheduled:\n" % num_items]
+        lines = ["%d tasks scheduled:\n" % len(self)]
         dotted_line = indent + num_fmt +"  %s"
         merge_line = indent + num_fmt + "  [...] "
         value_line = indent*3 + ' '*padding + " %s %s"
-        for i, (path, val) in enumerate(self.path_items.items()):
+        for i, (path, val) in enumerate(self.items()):
             if isinstance(path, tuple):
                 lines.append(dotted_line % (i+1, '.'.join(p for p in path)))
                 lines.append(value_line % (' ', val))

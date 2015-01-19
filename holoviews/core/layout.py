@@ -297,7 +297,7 @@ class ViewTree(AttrTree):
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
             row, col = key
             idx = row * self._cols + col
-            keys = self.path_items.keys()
+            keys = self.data.keys()
             if idx >= len(keys) or col >= self._cols:
                 raise KeyError('Index %s is outside available item range' % str(key))
             key = keys[idx]
@@ -311,7 +311,7 @@ class ViewTree(AttrTree):
 
 
     def __len__(self):
-        return len(self.path_items)
+        return len(self.data)
 
 
     @property
@@ -352,18 +352,18 @@ class ViewTree(AttrTree):
     @staticmethod
     def from_view(view):
         if isinstance(view, ViewTree): return view
-        return ViewTree(path_items=[((view.value, view.label if view.label else 'I'), view)])
+        return ViewTree(data=[((view.value, view.label if view.label else 'I'), view)])
 
 
     def group(self, name):
-        new_items = [((name, path[-1]), item) for path, item in self.path_items.items()]
-        return ViewTree(path_items=self._relabel(new_items))
+        new_items = [((name, path[-1]), item) for path, item in self.data.items()]
+        return ViewTree(data=self._relabel(new_items))
 
 
     def __add__(self, other):
         other = self.from_view(other)
-        items = list(self.path_items.items()) + list(other.path_items.items())
-        return ViewTree(path_items=self._relabel(items)).display('all')
+        items = list(self.data.items()) + list(other.data.items())
+        return ViewTree(data=self._relabel(items)).display('all')
 
 
 
