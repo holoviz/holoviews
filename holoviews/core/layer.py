@@ -120,11 +120,6 @@ class Overlay(Pane, NdMapping):
     index_dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
       of dimensions the Overlay can be indexed by.""")
 
-    label = param.String(default='', doc="""
-      A label used to indicate what kind of data is contained
-      within the Overlay. This overrides the auto-generated title
-      made up of the individual Views.""")
-
     value = param.String(default='Overlay')
 
     channels = channels

@@ -21,10 +21,6 @@ class View(Dimensioned):
 
     __abstract = True
 
-    label = param.String(default='', constant=True, doc="""
-        A string label or Dimension object used to indicate what kind of data
-        is contained within the view object.""")
-
     title = param.String(default='{label} {value}', doc="""
         The title formatting string allows the title to be composed from
         the view {label}, {value} quantity and view {type} but can also be set
