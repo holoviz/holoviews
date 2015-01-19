@@ -37,7 +37,7 @@ class AttrTree(object):
         require an identifier.
         """
         self.__dict__['parent'] = parent
-        self.__dict__['identifier'] = identifier
+        self.__dict__['identifier'] = self._valid_identifier(identifier)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
 
@@ -49,6 +49,17 @@ class AttrTree(object):
             for path, item in path_items.items():
                 self.set_path(path, item)
 
+    def _valid_identifier(self, identifier):
+        """
+        Replace spaces with underscores and returns value after
+        checking validity.
+        """
+        if identifier is None: return
+        identifier = identifier.replace(' ', '_')
+        invalid_chars = any(not el.isalnum() and el!='_' for el in identifier)
+        if invalid_chars or not identifier[0].isalpha():
+            raise SyntaxError("Invalid Python identifier: %r" % identifier)
+        return identifier
 
     def __iter__(self):
         return iter(self.path_items.values())
@@ -93,10 +104,9 @@ class AttrTree(object):
 
         if len(path) > 1:
             attrtree = self.__getattr__(path[0])
-            clean_path = tuple(el.replace(' ', '_') for el in path[1:])
-            attrtree.set_path(clean_path, val)
+            attrtree.set_path(path[1:], val)
         else:
-            self.__setattr__(path[0].replace(' ', '_'), val)
+            self.__setattr__(path[0], val)
 
 
     def filter(self, path_filters):
@@ -184,6 +194,7 @@ class AttrTree(object):
 
 
     def __setattr__(self, identifier, val):
+        identifier = self._valid_identifier(identifier)
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
         if identifier[0].isupper() and self.fixed and shallow:

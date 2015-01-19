@@ -15,7 +15,7 @@ from .dimension import Dimension, Dimensioned
 from .ndmapping import NdMapping
 from .options import options
 from .tree import AttrTree
-from .util import int_to_roman, sanitize_identifier
+from .util import int_to_roman
 from .view import View, Map
 
 
@@ -350,16 +350,9 @@ class ViewTree(AttrTree):
 
 
     @staticmethod
-    def _get_path(view):
-        label = view.label if view.label else 'I'
-        return (sanitize_identifier(view.value),
-                sanitize_identifier(label))
-
-
-    @staticmethod
     def from_view(view):
         if isinstance(view, ViewTree): return view
-        return ViewTree(path_items=[(ViewTree._get_path(view), view)])
+        return ViewTree(path_items=[((view.value, view.label if view.label else 'I'), view)])
 
 
     def group(self, name):
