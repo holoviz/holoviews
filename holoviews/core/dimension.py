@@ -113,11 +113,11 @@ class Dimensioned(param.Parameterized):
     index_dimensions = param.List(bounds=(0, None), constant=True, doc="""
        The dimensions the values are indexed by.""")
 
-    label = param.String(default='', doc="""
+    label = param.String(default='', constant=True, doc="""
        Optional label describing the data, e.g. where or how it
        was measured.""")
 
-    value = param.String(default='Dimensioned', doc="""
+    value = param.String(default='Dimensioned', constant=True, doc="""
        A string describing what the data of the object contain.
        By default this should mirror the class name.""")
 
