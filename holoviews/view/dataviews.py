@@ -236,6 +236,7 @@ class Histogram(Layer):
         histogram bins rather than bin centers.
         """
         settings = {}
+        (value, edges) = values if isinstance(values, tuple) else (values, edges)
         if isinstance(values, Layer):
             values = values.data[:, 0]
             edges = values.data[:, 1]
