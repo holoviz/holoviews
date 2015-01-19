@@ -86,13 +86,13 @@ class NdIndexableMapping(Dimensioned):
         Sorts data by key or index in pre-defined index in Dimension
         values.
         """
+        sortkws = {}
         dimensions = self.index_dimensions
-        sort_fn = lambda (k, v): k
         if self._cached_categorical:
-            sort_fn = lambda (k, v): tuple(dimensions[i].values.index(k[i])
-                                           if dimensions[i].values else k[i]
-                                           for i in range(self.ndims))
-        self.data = OrderedDict(sorted(self.data.items(), key=sort_fn))
+            sortkws['key'] = lambda (k, v): tuple(dimensions[i].values.index(k[i])
+                                                  if dimensions[i].values else k[i]
+                                                  for i in range(self.ndims))
+        self.data = OrderedDict(sorted(self.data.items(), **sortkws))
 
 
     def _add_item(self, dim_vals, data, sort=True):
