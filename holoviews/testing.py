@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import Dimension, GridLayout, AdjointLayout, Overlay, Grid, ViewMap
+from .core import Dimension, GridLayout, AdjointLayout, Layers, Grid, ViewMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
 from .interface.pandas import *
 from .interface.seaborn import *
@@ -24,7 +24,7 @@ class ViewTestCase(unittest.TestCase):
         # General view classes
         self.addTypeEqualityFunc(GridLayout,    self.compare_gridlayout)
         self.addTypeEqualityFunc(AdjointLayout, self.compare_layouts)
-        self.addTypeEqualityFunc(Overlay,       self.compare_overlays)
+        self.addTypeEqualityFunc(Layers,        self.compare_layers)
         self.addTypeEqualityFunc(Annotation,    self.compare_annotations)
         self.addTypeEqualityFunc(Grid,          self.compare_grids)
 
@@ -124,9 +124,9 @@ class ViewTestCase(unittest.TestCase):
         for el1, el2 in zip(view1, view1):
             self.assertEqual(el1, el2)
 
-    def compare_overlays(self, view1, view2, msg):
+    def compare_layers(self, view1, view2, msg):
         if len(view1) != len(view2):
-            raise self.failureException("Overlays have different lengths.")
+            raise self.failureException("Layers have different lengths.")
 
         for (layer1, layer2) in zip(view1, view2):
             self.assertEqual(layer1, layer2)

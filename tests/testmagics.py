@@ -1,7 +1,7 @@
 from holoviews.core import View
 from holoviews.testing import IPTestCase
 
-from holoviews import ipython, Overlay
+from holoviews import ipython, Layers
 from holoviews.core.options import OptionsGroup, Options
 from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts
 
@@ -24,7 +24,7 @@ class TestOptsMagic(ExtensionTestCase):
     def setUp(self):
         super(TestOptsMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.core import BoundingBox, Overlay")
+        self.cell("from holoviews.core import BoundingBox, Layers")
         self.cell("from holoviews.view import Matrix, Points")
 
         # Clear the options map
@@ -103,7 +103,7 @@ class TestOptsMagic(ExtensionTestCase):
                          {'cmap':'jet'})
 
     def test_cell_magic_complex_example(self):
-        self.cell("""o = Overlay([Matrix(np.random.rand(5,5)),
+        self.cell("""o = Layers([Matrix(np.random.rand(5,5)),
                            Points(np.random.rand(2,5))], name='complex_view')""")
         opts = " Matrix [show_grid=True] cmap='hsv' Points [show_title=False] color='r'"
         self.cell_magic('opts', opts, 'o')
@@ -173,11 +173,11 @@ class TestChannelMagic(ExtensionTestCase):
     def setUp(self):
         super(TestChannelMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.core import Overlay")
+        self.cell("from holoviews.core import Layers")
         self.cell("from holoviews.view import Matrix")
         self.channels = OptionsGroup([Options('definitions',
                                               ChannelOpts)])
-        Overlay.channels = self.channels
+        Layers.channels = self.channels
 
 
     def tearDown(self):
@@ -188,29 +188,29 @@ class TestChannelMagic(ExtensionTestCase):
         self.cell("R = Matrix(np.random.rand(5,5), label='R_Channel')")
         self.cell("G = Matrix(np.random.rand(5,5), label='G_Channel')")
         self.cell("B = Matrix(np.random.rand(5,5), label='B_Channel')")
-        self.cell("overlay = Overlay([R, G, B], name='RGBTest')")
+        self.cell("overlay = Layers([R, G, B], name='RGBTest')")
         definition = " R_Channel * G_Channel * B_Channel => RGBA []"
         self.cell_magic('channels', definition, 'overlay')
 
         expected_key = 'Custom[<RGBTest>]_RGBA'
-        self.assertEqual(Overlay.channels.keys(), [expected_key])
-        self.assertEqual(Overlay.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
-        self.assertEqual(Overlay.channels[expected_key].mode, 'RGBA')
+        self.assertEqual(Layers.channels.keys(), [expected_key])
+        self.assertEqual(Layers.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
+        self.assertEqual(Layers.channels[expected_key].mode, 'RGBA')
 
 
     def test_HCS_channeldef(self):
         self.cell("H = Matrix(np.random.rand(5,5), label='H_Channel')")
         self.cell("C = Matrix(np.random.rand(5,5), label='C_Channel')")
         self.cell("S = Matrix(np.random.rand(5,5), label='S_Channel')")
-        self.cell("overlay = Overlay([H, C, S], name='HCSTest')")
+        self.cell("overlay = Layers([H, C, S], name='HCSTest')")
         definition = " H_Channel * C_Channel *S_Channel => HCS [S_multiplier=2.5]"
         self.cell_magic('channels', definition, 'overlay')
 
         expected_key = 'Custom[<HCSTest>]_HCS'
-        self.assertEqual(Overlay.channels.keys(), [expected_key])
-        self.assertEqual(Overlay.channels[expected_key].pattern, 'H_Channel * C_Channel * S_Channel')
-        self.assertEqual(Overlay.channels[expected_key].mode, 'HCS')
-        self.assertEqual(Overlay.channels[expected_key].opts, {'S_multiplier':2.5})
+        self.assertEqual(Layers.channels.keys(), [expected_key])
+        self.assertEqual(Layers.channels[expected_key].pattern, 'H_Channel * C_Channel * S_Channel')
+        self.assertEqual(Layers.channels[expected_key].mode, 'HCS')
+        self.assertEqual(Layers.channels[expected_key].opts, {'S_multiplier':2.5})
 
 if __name__ == "__main__":
     import sys

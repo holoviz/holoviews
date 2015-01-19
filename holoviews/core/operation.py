@@ -7,7 +7,7 @@ processed data.
 
 import param
 
-from .layer import Layer, Overlay, Grid
+from .layer import Layer, Layers, Grid
 from .layout import GridLayout
 from .view import View, Map
 
@@ -46,9 +46,9 @@ class ViewOperation(param.ParameterizedFunction):
         Helper method that return a list of views with labels ending
         with the given pattern and which have the specified type. This
         may be useful to check is a single view satisfies some
-        condition or to extract the appropriate views from an Overlay.
+        condition or to extract the appropriate views from an Layers.
         """
-        if isinstance(view, Overlay):
+        if isinstance(view, Layers):
             matches = [v for v in view if v.label.endswith(pattern)]
         elif isinstance(view, Layer):
             matches = [view] if view.label.endswith(pattern) else []

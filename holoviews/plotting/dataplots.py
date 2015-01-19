@@ -7,7 +7,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
 import param
-from ..core import Map, View, Overlay
+from ..core import Map, View, Layers
 from ..view import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table, Points
 from .viewplots import Plot
 
@@ -536,7 +536,7 @@ class SideHistogramPlot(HistogramPlot):
         hist_dim = hist.get_dimension(0).name
         range_item = main
         if isinstance(main, Map):
-            if issubclass(main.type, Overlay):
+            if issubclass(main.type, Layers):
                 range_item = main.split_overlays()[0]
                 if individually:
                     range_item = range_item[key]
@@ -554,10 +554,10 @@ class SideHistogramPlot(HistogramPlot):
             self._update_separator(lims, offset)
 
 
-        # If .main is an Overlay or a Map of Overlays get the correct style
+        # If .main is an Layers or a Map of Overlays get the correct style
         if isinstance(main, Map):
             main = main.last
-        if isinstance(main, Overlay):
+        if isinstance(main, Layers):
             main = main.values()[0]
         style = main.style
 

@@ -20,7 +20,7 @@ except:
 
 import param
 
-from ..core import Dimension, NdMapping, View, Layer, Overlay, ViewMap, GridLayout, Grid
+from ..core import Dimension, NdMapping, View, Layer, Layers, ViewMap, GridLayout, Grid
 from ..core.options import options, PlotOpts
 from ..view import HeatMap, Table, Curve, Scatter, Bars, Points, VectorField
 
@@ -149,7 +149,7 @@ class DataFrameView(Layer):
 
 
     def overlay(self, dimensions):
-        return self._split_dimensions(dimensions, Overlay)
+        return self._split_dimensions(dimensions, Layers)
 
 
     def layout(self, dimensions=[], cols=4):

@@ -10,7 +10,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, ViewMap, Layer, Overlay
+from ..core import Dimension, NdMapping, ViewMap, Layer, Layers
 from ..core.options import options, StyleOpts, Cycle
 from ..view import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
@@ -25,7 +25,7 @@ class TimeSeries(Layer):
     The curves should be supplied as an NxM dimensional array,
     x-values may also be supplied and must be of length N or M.
 
-    Alternatively a Map or Overlay of Curve objects may be
+    Alternatively a Map or Layers of Curve objects may be
     supplied.
     """
 

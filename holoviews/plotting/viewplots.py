@@ -14,7 +14,7 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import Map, View, Layer, Overlay, ViewMap, AdjointLayout, \
+from ..core import Map, View, Layer, Layers, ViewMap, AdjointLayout, \
     GridLayout, Grid, ViewTree
 from ..view import Annotation, Raster
 
@@ -595,7 +595,7 @@ class AdjointLayoutPlot(Plot):
             subplot = plot_type(view, **plotopts)
 
             # 'Main' views that should be displayed with square aspect
-            if pos == 'main' and issubclass(vtype, (Layer, Overlay)):
+            if pos == 'main' and issubclass(vtype, (Layer, Layers)):
                 subplot.aspect='square'
 
             subplot(ax)
@@ -805,17 +805,32 @@ class OverlayPlot(Plot):
      SheetPlot renders overlay layers which individually have style
      options but SheetPlot itself does not.""")
 
-    _view_type = Overlay
+    _view_type = Layers
 
     _abstract = True
 
     def __init__(self, overlay, **params):
-        self.plots = []
         super(OverlayPlot, self).__init__(overlay, **params)
+        self.subplots = self._create_subplots()
 
-    def _check_map(self, view):
-        vmap = super(OverlayPlot, self)._check_map(view)
-        return self._collapse_channels(vmap)
+
+    def _create_subplots(self):
+        subplots = {}
+
+        overlay = self._collapse_channels(self._map.last)
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(overlay, lambda s: s.style))
+
+        for zorder, vmap in enumerate(overlay):
+            cyclic_index, _ = next(style_groups[vmap.style])
+            plotopts = View.options.plotting(vmap).opts
+            plotype = Plot.defaults[type(vmap)]
+            subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
+                                                    show_legend=self.show_legend, zorder=zorder,
+                                                    aspect=self.aspect))
+
+        return subplots
+
 
     def _collapse(self, overlay, pattern, fn, style_key):
         """
@@ -827,52 +842,46 @@ class OverlayPlot(Plot):
         if len(pattern) > len(overlay): return
 
         skip=0
-        collapsed_views = []
+        collapsed_overlay = overlay.clone(None)
         for i, key in enumerate(overlay.keys()):
             layer_labels = overlay.labels[i:len(pattern)+i]
             matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
             if matching and len(layer_labels)==len(pattern):
                 views = [el for el in overlay if el.label in layer_labels]
-                overlay_slice = Overlay(views)
+                overlay_slice = Layers(views)
                 collapsed_view = fn(overlay_slice)
-                collapsed_views.append(collapsed_view)
+                if isinstance(overlay, ViewTree):
+                    collapsed_overlay *= collapsed_view
+                else:
+                    collapsed_overlay[key] = collapsed_view
                 skip = len(views)-1
             elif skip:
                 skip = 0 if skip <= 0 else (skip - 1)
             else:
-                collapsed_views.append(overlay[key])
-        overlay.set(collapsed_views)
+                collapsed_overlay[key] = overlay[key]
+        return collapsed_overlay
 
 
-    def _collapse_channels(self, vmap):
+    def _collapse_channels(self, overlay):
         """
         Given a map of Overlays, apply all applicable channel
         reductions.
         """
-        if not issubclass(vmap.type, Overlay):
-            return vmap
-        elif not Overlay.channels.keys(): # No potential channel reductions
-            return vmap
-        else:
-            # The original vmap should not be mutated by this operation
-            vmap = copy.deepcopy(vmap)
-
         # Apply all customized channel operations
-        for overlay in vmap:
-            customized = [k for k in Overlay.channels.keys()
-                          if overlay.label and k.startswith(overlay.label)]
-            # Largest reductions should be applied first
-            sorted_customized = sorted(customized, key=lambda k: -Overlay.channels[k].size)
-            sorted_reductions = sorted(Overlay.channels.options(),
-                                       key=lambda k: -Overlay.channels[k].size)
-            # Collapse the customized channel before the other definitions
-            for key in sorted_customized + sorted_reductions:
-                channel = Overlay.channels[key]
-                if channel.mode is None: continue
-                collapse_fn = channel.operation
-                fn = collapse_fn.instance(**channel.opts)
-                self._collapse(overlay, channel.pattern, fn, key)
-        return vmap
+        customized = [k for k in Layers.channels.keys()
+                      if overlay.label and k.startswith(overlay.label)]
+        # Largest reductions should be applied first
+        sorted_customized = sorted(customized, key=lambda k: -Layers.channels[k].size)
+        sorted_reductions = sorted(Layers.channels.options(),
+                                   key=lambda k: -Layers.channels[k].size)
+        # Collapse the customized channel before the other definitions
+        for key in sorted_customized + sorted_reductions:
+            channel = Layers.channels[key]
+            if channel.mode is None: continue
+            collapse_fn = channel.operation
+            fn = collapse_fn.instance(**channel.opts)
+            self._collapse(overlay, channel.pattern, fn, key)
+        return overlay
 
 
     def _adjust_legend(self):
@@ -902,15 +911,14 @@ class OverlayPlot(Plot):
                                    type=view.__class__.__name__)
 
 
-    def __call__(self, axis=None, lbrt=None, **kwargs):
-
+    def __call__(self, axis=None, lbrt=None):
+        key = self._keys[-1]
         self.ax = self._init_axis(axis)
-        maps = self._map.split_overlays()
-
+        overlay = self._collapse_channels(self._map.last)
         style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(maps, lambda s: s.style))
+                            in groupby(overlay, lambda s: s.style))
 
-        for zorder, vmap in enumerate(maps):
+        for zorder, vmap in enumerate(overlay):
             cyclic_index, _ = next(style_groups[vmap.style])
             plotopts = View.options.plotting(vmap).opts
 
@@ -918,27 +926,19 @@ class OverlayPlot(Plot):
                 self.rescale = plotopts.get('rescale_individually', False)
                 lbrt = self._map.last.lbrt if self.rescale else self._map.lbrt
 
-            plotype = Plot.defaults[vmap.type]
-            plot = plotype(vmap,
-                           **dict(plotopts, size=self.size, all_keys=self._keys,
-                                  show_legend=self.show_legend, zorder=zorder, **kwargs))
-            plot.aspect = self.aspect
-
-            lbrt = None if vmap.type == Annotation else lbrt
-            plot(self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
-            self.plots.append(plot)
+            lbrt = None if type(vmap) == Annotation else lbrt
+            self.subplots[zorder](self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
 
         self._adjust_legend()
-        key = self._keys[-1]
-        title = self._format_title(key)
-        return self._finalize_axis(None, title=title)
+
+        return self._finalize_axis(None, title=self._format_title(key))
 
 
     def update_frame(self, n, lbrt=None):
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
         view = self._map.get(key, None)
-        for zorder, plot in enumerate(self.plots):
+        for zorder, plot in enumerate(self.subplots):
             if zorder == 0 and lbrt is None and view:
                 lbrt = view.lbrt if self.rescale else self._map.lbrt
             plot.update_frame(n, lbrt)
@@ -1087,5 +1087,5 @@ Plot.defaults.update({Grid: GridPlot,
                       GridLayout: LayoutPlot,
                       ViewTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
-                      Overlay: OverlayPlot,
+                      Layers: OverlayPlot,
                       Annotation: AnnotationPlot})

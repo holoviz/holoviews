@@ -335,7 +335,7 @@ class PlotOpts(Opts):
 class ChannelOpts(Opts):
     """
     A subclass of Opts designed to hold channel mode definitions that
-    control how particular labelled layer combinations in an Overlay
+    control how particular labelled layer combinations in an Layers
     are displayed.
     """
 

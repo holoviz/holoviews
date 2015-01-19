@@ -7,7 +7,7 @@ from matplotlib.collections import LineCollection
 
 import param
 
-from ..core import NdMapping, Map, View, Layer, Overlay
+from ..core import NdMapping, Map, View, Layer, Layers
 from ..view import Raster, HeatMap, Points, Matrix, Contours, VectorField
 from .viewplots import OverlayPlot, Plot, GridPlot
 
@@ -422,10 +422,10 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 vmap = self.grid.get((xkey, ykey), None)
                 pane = vmap.get(key, None) if vmap else None
                 if pane:
-                    if vmap.type == Overlay: pane = pane.last
+                    if vmap.type == Layers: pane = pane.last
                     data = pane.data if pane else None
                 else:
-                    pane = vmap.last.last if vmap.type == Overlay else vmap.last
+                    pane = vmap.last.last if vmap.type == Layers else vmap.last
                     data = pane.data
                 opts = View.options.style(pane).opts
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
@@ -455,7 +455,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             view = grid_values[i].get(key, None)
             if view:
                 plot.set_visible(True)
-                data = view.values()[0].data if isinstance(view, Overlay) else view.data
+                data = view.values()[0].data if isinstance(view, Layers) else view.data
                 plot.set_data(data)
             else:
                 plot.set_visible(False)

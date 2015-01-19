@@ -24,7 +24,7 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import NdMapping, View, ViewMap, GridLayout, AdjointLayout, Grid, Overlay, ViewTree
+from ..core import NdMapping, View, ViewMap, GridLayout, AdjointLayout, Grid, Layers, ViewTree
 from ..plotting import Plot, LayoutPlot
 from .magics import ViewMagic, ANIMATION_OPTS
 
@@ -275,7 +275,7 @@ class NdWidget(param.Parameterized):
         for i, v in enumerate(view):
             if isinstance(v, Grid): v = v.values()[0]
             if isinstance(v, AdjointLayout): v = v.main
-            if isinstance(v, Overlay): v = v.values()[0]
+            if isinstance(v, Layers): v = v.values()[0]
             if isinstance(v, View):
                 v = ViewMap([((0,), v)], index_dimensions=['Frame'])
 

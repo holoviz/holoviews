@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ViewOperation, Overlay
+from ..core import Dimension, ViewOperation, Layers
 from ..core.options import options
 from ..core.util import find_minmax
 from ..view import ItemTable, Matrix, VectorField, Contours, Histogram
@@ -50,8 +50,8 @@ class operator(ViewOperation):
 
     def _process(self, overlay, key=None):
 
-        if not isinstance(overlay, Overlay):
-            raise Exception("Operation requires an Overlay as input")
+        if not isinstance(overlay, Layers):
+            raise Exception("Operation requires an Layers as input")
 
         if self.p.unpack:
             new_data = self.p.operator(*[el.data for el in overlay])
@@ -80,7 +80,7 @@ class convolve(ViewOperation):
     def _process(self, view, key=None):
 
         if len(view) != 2:
-            raise Exception("Overlay of two layers required.")
+            raise Exception("Layers must contain at least to items.")
 
         [target, kernel] = view[0], view[1]
 
@@ -138,7 +138,7 @@ class contours(ViewOperation):
         if len(contours) == 1:
             return [(sheetview * contours[0])]
         else:
-            return [sheetview * Overlay(contours)]
+            return [sheetview * Layers(contours)]
 
 
 class histogram(ViewOperation):
@@ -230,7 +230,7 @@ class vectorfield(ViewOperation):
 
     def _process(self, view, key=None):
 
-        if isinstance(view, Overlay) and len(view) >= 2:
+        if isinstance(view, Layers) and len(view) >= 2:
             radians, lengths = view[0], view[1]
         else:
             radians, lengths = view, None
@@ -315,8 +315,8 @@ class roi_table(ViewOperation):
 
     def _process(self, view, key=None):
 
-        if not isinstance(view, Overlay) or len(view) != 2:
-            raise Exception("A Overlay of two SheetViews is required.")
+        if not isinstance(view, Layers) or len(view) != 2:
+            raise Exception("A Layers of two SheetViews is required.")
 
         mview, mask = view[0], view[1]
 

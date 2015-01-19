@@ -37,11 +37,11 @@ class Layer(Pane):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
 
-        self_layers = self.data.values() if isinstance(self, Overlay) else [self]
-        other_layers = other.data.values() if isinstance(other, Overlay) else [other]
+        self_layers = self.data.values() if isinstance(self, Layers) else [self]
+        other_layers = other.data.values() if isinstance(other, Layers) else [other]
         combined_layers = self_layers + other_layers
 
-        return Overlay(combined_layers)
+        return Layers(combined_layers)
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         from ..operation import histogram
@@ -110,17 +110,17 @@ class Layer(Pane):
 
 
 
-class Overlay(Pane, NdMapping):
+class Layers(Pane, NdMapping):
     """
-    An Overlay allows a group of Layers to be overlaid together. Layers can
+    An Layers allows a group of Layers to be overlaid together. Layers can
     be indexed out of an overlay and an overlay is an iterable that iterates
     over the contained layers.
     """
 
     index_dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
-      of dimensions the Overlay can be indexed by.""")
+      of dimensions the Layers can be indexed by.""")
 
-    value = param.String(default='Overlay')
+    value = param.String(default='Layers')
 
     channels = channels
     _deep_indexable = True
@@ -201,14 +201,14 @@ class Overlay(Pane, NdMapping):
 
     def add(self, layer):
         """
-        Overlay a single layer on top of the existing overlay.
+        Layers a single layer on top of the existing overlay.
         """
         self[len(self)] = layer
 
     @property
     def layer_types(self):
         """
-        The type of Layers stored in the Overlay.
+        The type of Layers stored in the Layers.
         """
         if len(self) == 0:
             return None
@@ -248,14 +248,14 @@ class Overlay(Pane, NdMapping):
         if isinstance(other, ViewMap):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
-        elif isinstance(other, Overlay):
+        elif isinstance(other, Layers):
             overlays = self.values() + other.values()
         elif isinstance(other, (View)):
             overlays = self.values() + [other]
         else:
             raise TypeError('Can only create an overlay of holoviews.')
 
-        return Overlay(overlays)
+        return Layers(overlays)
 
 
     def hist(self, index=None, adjoin=True, **kwargs):
@@ -430,7 +430,7 @@ class Grid(NdMapping):
         """
         The type of layers stored in the Grid.
         """
-        if self.type == Overlay:
+        if self.type == Layers:
             return self.values()[0].layer_types
         else:
             return (self.type,)
@@ -575,7 +575,7 @@ class ViewMap(Map):
         """
         The type of layers stored in the ViewMap.
         """
-        if self.type == Overlay:
+        if self.type == Layers:
             return self.last.layer_types
         else:
             return (self.type)
@@ -583,19 +583,19 @@ class ViewMap(Map):
 
     @property
     def xlabel(self):
-        if not issubclass(self.type, (Layer, Overlay)): return None
+        if not issubclass(self.type, (Layer, Layers)): return None
         return self.last.xlabel
 
 
     @property
     def ylabel(self):
-        if not issubclass(self.type, (Layer, Overlay)): return None
+        if not issubclass(self.type, (Layer, Layers)): return None
         return self.last.ylabel
 
 
     @property
     def xlim(self):
-        if not issubclass(self.type, (Layer, Overlay)): return None
+        if not issubclass(self.type, (Layer, Layers)): return None
         xlim = self.last.xlim
         for data in self.values():
             xlim = find_minmax(xlim, data.xlim) if data.xlim and xlim else xlim
@@ -604,7 +604,7 @@ class ViewMap(Map):
 
     @property
     def ylim(self):
-        if not issubclass(self.type, (Layer, Overlay)): return None
+        if not issubclass(self.type, (Layer, Layers)): return None
         ylim = self.last.ylim
         for data in self.values():
             ylim = find_minmax(ylim, data.ylim) if data.ylim and ylim else ylim
@@ -629,11 +629,11 @@ class ViewMap(Map):
             split_map = dict(default=self)
             new_map = dict()
         else:
-            split_map = self.split_dimensions(dimensions, Overlay)
+            split_map = self.split_dimensions(dimensions, Layers)
             new_map = self.clone(index_dimensions=split_map.index_dimensions)
 
         for outer, vmap in split_map.items():
-            new_map[outer] = Overlay(vmap, index_dimensions=vmap.index_dimensions)
+            new_map[outer] = Layers(vmap, index_dimensions=vmap.index_dimensions)
 
         if self.ndims == 1:
             return list(new_map.values())[0]
@@ -676,7 +676,7 @@ class ViewMap(Map):
         Given a Map of Overlays of N layers, split out the layers into
         N separate Maps.
         """
-        if self.type is not Overlay:
+        if self.type is not Layers:
             return self.clone(self.items())
 
         maps = []
@@ -771,7 +771,7 @@ class ViewMap(Map):
 
 
     def __lshift__(self, other):
-        if isinstance(other, (View, Overlay, ViewMap, Grid)):
+        if isinstance(other, (View, Layers, ViewMap, Grid)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
@@ -874,7 +874,7 @@ class ViewMap(Map):
                                 individually=individually, num_bins=num_bins,
                                 style_prefix=style_prefix, **kwargs)
 
-        if adjoin and issubclass(self.type, Overlay):
+        if adjoin and issubclass(self.type, Layers):
             layout = (self << histmap)
             layout.main_layer = kwargs['index']
             return layout

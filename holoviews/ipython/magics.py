@@ -9,7 +9,7 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import Map, View, Overlay, AdjointLayout, GridLayout, Grid, ViewTree
+from ..core import Map, View, Layers, AdjointLayout, GridLayout, Grid, ViewTree
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
@@ -215,10 +215,10 @@ class ChannelMagic(Magics):
     def channels(self, line, cell=None):
         """
         The %%channels cell magic allows channel definitions to be
-        defined on the displayed Overlay.
+        defined on the displayed Layers.
 
         For instance, if you have three Matrix Views (R,G and B)
-        together in a Overlay with labels 'R_Channel',
+        together in a Layers with labels 'R_Channel',
         'G_Channel', 'B_Channel' respectively, you can display this
         object as an RGB image using:
 
@@ -242,10 +242,10 @@ class ChannelMagic(Magics):
         if isinstance(obj, (AdjointLayout, Grid, GridLayout)):
             for subview in obj:
                 cls._set_overlay_labels(subview, label)
-        elif isinstance(obj, Map) and issubclass(obj.type, Overlay):
+        elif isinstance(obj, Map) and issubclass(obj.type, Layers):
             for overlay in obj:
                 overlay.label = label
-        elif isinstance(obj, Overlay):
+        elif isinstance(obj, Layers):
             obj.label = label
 
 
@@ -253,7 +253,7 @@ class ChannelMagic(Magics):
     def _set_channels(cls, obj, custom_channels, prefix):
         cls._set_overlay_labels(obj, prefix)
         for name, (pattern, params) in custom_channels.items():
-            Overlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
+            Layers.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
                                                         **params)
 
 
@@ -362,13 +362,13 @@ class OptsMagic(Magics):
         values as keys for the the associated view type.
         """
         group = {}
-        if isinstance(obj, (Overlay, AdjointLayout, Grid, GridLayout, ViewTree)):
+        if isinstance(obj, (Layers, AdjointLayout, Grid, GridLayout, ViewTree)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
-            if isinstance(obj, (AdjointLayout, Overlay)):
+            if isinstance(obj, (AdjointLayout, Layers)):
                 return group
 
-        if isinstance(obj, Map) and not issubclass(obj.type, Overlay):
+        if isinstance(obj, Map) and not issubclass(obj.type, Layers):
             key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
