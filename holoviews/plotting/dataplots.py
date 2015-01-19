@@ -223,18 +223,21 @@ class TablePlot(Plot):
         numeric data types.""")
 
     max_value_len = param.Integer(default=20, doc="""
-         The maximum allowable string length of a value shown in any
-         table cell. Any strings longer than this length will be
-         truncated.""")
+        The maximum allowable string length of a value shown in any
+        table cell. Any strings longer than this length will be
+        truncated.""")
 
-    max_font_size = param.Integer(default=20, doc="""
-       The largest allowable font size for the text in each table
-       cell.""")
+    max_font_size = param.Integer(default=12, doc="""
+        The largest allowable font size for the text in each table
+        cell.""")
+
+    max_rows = param.Integer(default=15, doc="""
+        The maximum number of Table rows before the table is
+        summarized.""")
 
     font_types = param.Dict(default={'heading': FontProperties(weight='bold',
                                                                family='monospace')},
        doc="""The font style used for heading labels used for emphasis.""")
-
 
     style_opts = param.List(default=[], constant=True, doc="""
      TablePlot has specialized options which are controlled via plot
@@ -243,7 +246,7 @@ class TablePlot(Plot):
     # Disable computing plot bounds from data.
     apply_databounds = False
 
-    _view_type = ItemTable
+    _view_type = (ItemTable, Table)
 
     def pprint_value(self, value):
         """
@@ -275,13 +278,20 @@ class TablePlot(Plot):
         height = size_factor / tableview.rows
 
         # Mapping from the cell coordinates to the dictionary key.
-
-        for row in range(tableview.rows):
+        summarize = tableview.rows > self.max_rows
+        half_rows = self.max_rows/2
+        rows = min([self.max_rows, tableview.rows])
+        for row in range(rows):
+            adjusted_row = row
             for col in range(tableview.cols):
-                value = tableview.cell_value(row, col)
-                cell_text = self.pprint_value(value)
-
-                cellfont = self.font_types.get(tableview.cell_type(row,col), None)
+                if summarize and row == half_rows:
+                    cell_text = "..."
+                else:
+                    if summarize and row > half_rows:
+                        adjusted_row = (tableview.rows - self.max_rows + row)
+                    value = tableview.cell_value(adjusted_row, col)
+                    cell_text = self.pprint_value(value)
+                cellfont = self.font_types.get(tableview.cell_type(adjusted_row,col), None)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
                 table.add_cell(row, col, width, height, text=cell_text,  loc='center',
                                **font_kwargs)
