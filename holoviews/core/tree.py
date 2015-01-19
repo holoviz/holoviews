@@ -49,6 +49,18 @@ class AttrTree(object):
             self.set_path(path, item)
 
 
+    def __iter__(self):
+        return iter(self.data.values())
+
+
+    def __contains__(self, name):
+        return name in self.children or name in self.data
+
+
+    def __len__(self):
+        return len(self.data)
+
+
     def _valid_identifier(self, identifier):
         """
         Replace spaces with underscores and returns value after
@@ -61,8 +73,6 @@ class AttrTree(object):
             raise SyntaxError("Invalid Python identifier: %r" % identifier)
         return identifier
 
-    def __iter__(self):
-        return iter(self.data.values())
 
     @property
     def fixed(self):
@@ -255,12 +265,8 @@ class AttrTree(object):
         The repr of an AttrTree is an ASCII tree showing the structure
         of the tree and the types of leaves.
         """
-        if len(self.data) == 0:
+        if len(self) == 0:
             return "Dangling AttrTree node with no leaf items."
         return "%s of %s items:\n\n%s" % (self.__class__.__name__,
                                           len(self.data),
                                           self._draw_tree(self))
-
-
-    def __contains__(self, name):
-        return name in self.children or name in self.data
