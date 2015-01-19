@@ -26,9 +26,9 @@ class AttrTree(object):
             first.update(tree)
         return first
 
-    def __init__(self, label=None, parent=None, path_items=None):
+    def __init__(self, identifier=None, parent=None, path_items=None):
         self.__dict__['parent'] = parent
-        self.__dict__['label'] = label
+        self.__dict__['identifier'] = identifier
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
 
@@ -63,12 +63,12 @@ class AttrTree(object):
         (self.fixed, other.fixed) = (False, False)
         if self.parent is None:
             self.path_items.update(other.path_items)
-        for label in other.children:
-            item = other[label]
-            if label not in self:
-                self[label] = item
+        for identifier in other.children:
+            item = other[identifier]
+            if identifier not in self:
+                self[identifier] = item
             else:
-                self[label].update(item)
+                self[identifier].update(item)
         (self.fixed, other.fixed) = fixed_status
 
 
@@ -78,14 +78,16 @@ class AttrTree(object):
         a tuple of strings or a string in A.B.C format.
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
+
         if not all(p[0].isupper() for p in path):
             raise Exception("All paths elements must be capitalized.")
 
         if len(path) > 1:
             attrtree = self.__getattr__(path[0])
-            attrtree.set_path(path[1:], val)
+            clean_path = tuple(el.replace(' ', '_') for el in path[1:])
+            attrtree.set_path(clean_path, val)
         else:
-            self.__setattr__(path[0], val)
+            self.__setattr__(path[0].replace(' ', '_'), val)
 
 
     def filter(self, path_filters):
@@ -113,116 +115,116 @@ class AttrTree(object):
         """
         self.path_items[path] = val
         if self.parent is not None:
-            self.parent._propagate((self.label,)+path, val)
+            self.parent._propagate((self.identifier,)+path, val)
 
 
-    def __setitem__(self, label, val):
+    def __setitem__(self, identifier, val):
         """
-        Set a value at a child node with given label. If at a root
+        Set a value at a child node with given identifier. If at a root
         node, multi-level path specifications is allowed (i.e. 'A.B.C'
         format or tuple format) in which case the behaviour matches
         that of set_path.
         """
-        if isinstance(label, str) and '.' not in label:
-            self.__setattr__(label, val)
-        elif isinstance(label, str) and self.parent is None:
-            self.set_path(tuple(label.split('.')), val)
-        elif isinstance(label, tuple) and self.parent is None:
-            self.set_path(label, val)
+        if isinstance(identifier, str) and '.' not in identifier:
+            self.__setattr__(identifier, val)
+        elif isinstance(identifier, str) and self.parent is None:
+            self.set_path(tuple(identifier.split('.')), val)
+        elif isinstance(identifier, tuple) and self.parent is None:
+            self.set_path(identifier, val)
         else:
             raise Exception("Multi-level item setting only allowed from root node.")
 
 
-    def __getitem__(self, label):
+    def __getitem__(self, identifier):
         """
-        For a given non-root node, access a child element by label.
+        For a given non-root node, access a child element by identifier.
 
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
         """
         keyerror_msg = ''
-        split_label = (tuple(label.split('.'))
-                       if isinstance(label, str) else tuple(label))
+        split_label = (tuple(identifier.split('.'))
+                       if isinstance(identifier, str) else tuple(identifier))
         if len(split_label) == 1:
-            label = split_label[0]
-            if label in self.children:
-                return self.__dict__[label]
+            identifier = split_label[0]
+            if identifier in self.children:
+                return self.__dict__[identifier]
             else:
-                raise KeyError(label + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
+                raise KeyError(identifier + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
         path_item = self
-        for label in split_label:
-            path_item = path_item[label]
+        for identifier in split_label:
+            path_item = path_item[identifier]
         return path_item
 
 
-    def get(self, label, default=None):
-        return self.__dict__.get(label, default)
+    def get(self, identifier, default=None):
+        return self.__dict__.get(identifier, default)
 
 
     def keys(self):
         return self.children[:]
 
 
-    def pop(self, label, default=None):
-        if label in self.children:
-            item = self[label]
-            self.__delitem__(label)
+    def pop(self, identifier, default=None):
+        if identifier in self.children:
+            item = self[identifier]
+            self.__delitem__(identifier)
             return item
         else:
             return default
 
 
-    def __setattr__(self, label, val):
+    def __setattr__(self, identifier, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        if label[0].isupper() and self.fixed and shallow:
-            raise AttributeError(self._fixed_error % label)
+        if identifier[0].isupper() and self.fixed and shallow:
+            raise AttributeError(self._fixed_error % identifier)
 
-        super(AttrTree, self).__setattr__(label, val)
+        super(AttrTree, self).__setattr__(identifier, val)
 
-        if label in self.children: pass
-        elif label[0].isupper():
-            self.children.append(label)
-            self._propagate((label,), val)
+        if identifier in self.children: pass
+        elif identifier[0].isupper():
+            self.children.append(identifier)
+            self._propagate((identifier,), val)
 
 
-    def __getattr__(self, label):
+    def __getattr__(self, identifier):
         """
-        Access a label from the AttrTree or generate a new AttrTree
+        Access a identifier from the AttrTree or generate a new AttrTree
         with the chosen attribute path.
         """
         try:
-            return super(AttrTree, self).__getattr__(label)
+            return super(AttrTree, self).__getattr__(identifier)
         except AttributeError: pass
 
-        if label.startswith('_'):   raise AttributeError(str(label))
-        elif self.fixed==True:      raise AttributeError(self._fixed_error % label)
+        if identifier.startswith('_'):   raise AttributeError(str(identifier))
+        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
 
-        if label in self.children:
-            return self.__dict__[label]
+        if identifier in self.children:
+            return self.__dict__[identifier]
 
-        if label[0].isupper():
-            self.children.append(label)
-            child_tree = self.__class__(label=label, parent=self)
-            self.__dict__[label] = child_tree
+        if identifier[0].isupper():
+            self.children.append(identifier)
+            child_tree = self.__class__(identifier=identifier, parent=self)
+            self.__dict__[identifier] = child_tree
             return child_tree
         else:
-            raise AttributeError("%s: Custom paths elements must be capitalized." % label)
+            raise AttributeError("%s: Custom paths elements must be capitalized." % identifier)
 
 
-    def _draw_tree(self, node, prefix='', label=''):
+    def _draw_tree(self, node, prefix='', identifier=''):
         """
         Recursive function that builds up an ASCII tree given an
         AttrTree node.
         """
         children = node.children if isinstance(node, AttrTree) else []
         if isinstance(node, AttrTree):
-            label = '--+' if node.label is None else node.label
+            identifier = '--+' if node.identifier is None else node.identifier
         else:
-            label = label + ' : ' + str(type(node).__name__)
+            identifier = identifier + ' : ' + str(type(node).__name__)
 
         tree =  prefix[:-3] + '  +--' if prefix else prefix
-        tree += label + '\n'
+        tree += identifier + '\n'
         for index, child in enumerate(children):
             child_prefix = prefix + ('   ' if index+1 == len(children) else '  |')
             tree += self._draw_tree(node[child], child_prefix, child)
