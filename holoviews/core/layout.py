@@ -348,8 +348,7 @@ class ViewTree(AttrTree):
     def __add__(self, other):
         other = self.from_view(other)
         items = list(self.path_items.items()) + list(other.path_items.items())
-        relabelled_items = self._relabel(items)
-        return ViewTree(path_items=relabelled_items).display('all')
+        return ViewTree(path_items=self._relabel(items)).display('all')
 
 
 
