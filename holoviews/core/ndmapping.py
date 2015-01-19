@@ -15,9 +15,9 @@ from .dimension import Dimensioned, Dimension
 class NdIndexableMapping(Dimensioned):
     """
     An NdIndexableMapping is a type of mapping (like a dictionary or
-    array) that uses fixed-length multidimensional keys. The effect is
-    like an N-dimensional array, without requiring that the entire
-    multidimensional space be populated.
+    array) that uses fixed-length multidimensional keys. This behaves
+    like a sparse N-dimensional array that does not require a dense
+    sampling over the multidimensional space.
 
     If the underlying type of data for each (key,value) pair also
     supports indexing (such as a dictionary, array, or list), fully
@@ -505,8 +505,12 @@ class NdIndexableMapping(Dimensioned):
 class NdMapping(NdIndexableMapping):
     """
     NdMapping supports the same indexing semantics as
-    NdIndexableMapping but also supports filtering of items using
-    slicing ranges.
+    NdIndexableMapping but also supports slicing semantics.
+
+    Slicing semantics on an NdMapping is dependent on the ordering
+    semantics of the keys. As NdIndexableMapping sort the keys, a
+    slice on an NdMapping is effectively a way of filtering out the
+    keys that are outside the slice range.
     """
 
     value = param.String(default='NdMapping')
