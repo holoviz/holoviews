@@ -134,7 +134,6 @@ class Dimensioned(param.Parameterized):
                    'deep_dimensions']
 
     def __init__(self, **params):
-        self.data = None
         for group in self._dim_groups[0:2]:
             if group in params:
                 dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
