@@ -14,27 +14,29 @@ from .dimension import Dimensioned, Dimension
 
 class NdIndexableMapping(Dimensioned):
     """
-    An NdIndexableMapping is a type of mapping (like a dictionary or array)
-    that uses fixed-length multidimensional keys. The effect is like an
-    N-dimensional array, without requiring that the entire multidimensional
-    space be populated.
+    An NdIndexableMapping is a type of mapping (like a dictionary or
+    array) that uses fixed-length multidimensional keys. The effect is
+    like an N-dimensional array, without requiring that the entire
+    multidimensional space be populated.
 
-    If the underlying type of data for each (key,value) pair also supports
-    indexing (such as a dictionary, array, or list), fully qualified indexing
-    can be used from the top level, with the first N dimensions of the index
-    selecting a particular piece of data stored in the NdIndexableMapping
-    object, and the remaining dimensions used to index into the underlying data.
+    If the underlying type of data for each (key,value) pair also
+    supports indexing (such as a dictionary, array, or list), fully
+    qualified indexing can be used from the top level, with the first
+    N dimensions of the index selecting a particular piece of data
+    stored in the NdIndexableMapping object, and the remaining
+    dimensions used to index into the underlying data.
 
-    For instance, for an NdIndexableMapping x with dimensions "Year" and
-    "Month" and an underlying data type that is a 2D floating-point array
-    indexed by (r,c), a 2D array can be indexed with x[2000,3] and a single
-    floating-point number may be indexed as x[2000,3,1,9].
+    For instance, for an NdIndexableMapping x with dimensions "Year"
+    and "Month" and an underlying data type that is a 2D
+    floating-point array indexed by (r,c), a 2D array can be indexed
+    with x[2000,3] and a single floating-point number may be indexed
+    as x[2000,3,1,9].
 
-    In practice, this class is typically only used as an abstract base class,
-    because the NdMapping subclass extends it with a range of useful slicing
-    methods for selecting subsets of the data. Even so, keeping the slicing
-    support separate from the indexing and data storage methods helps make both
-    classes easier to understand.
+    In practice, this class is typically only used as an abstract base
+    class, because the NdMapping subclass extends it with a range of
+    useful slicing methods for selecting subsets of the data. Even so,
+    keeping the slicing support separate from the indexing and data
+    storage methods helps make both classes easier to understand.
     """
 
     index_dimensions = param.List(default=[Dimension("Default")], constant=True)
@@ -127,8 +129,8 @@ class NdIndexableMapping(Dimensioned):
 
     def _update_item(self, dim_vals, data):
         """
-        Subclasses default method to allow updating of nested data structures
-        rather than simply overriding them.
+        Subclasses default method to allow updating of nested data
+        structures rather than simply overriding them.
         """
         if dim_vals in self.data and hasattr(self.data[dim_vals], 'update'):
             self.data[dim_vals].update(data)
@@ -152,10 +154,10 @@ class NdIndexableMapping(Dimensioned):
         Create a new object with a re-ordered or reduced set of index
         dimensions.
 
-        Reducing the number of index dimensions will discard information
-        from the keys. All data values are accessible in the newly
-        created object as the new labels must be sufficient to address each
-        value uniquely.
+        Reducing the number of index dimensions will discard
+        information from the keys. All data values are accessible in
+        the newly created object as the new labels must be sufficient
+        to address each value uniquely.
         """
 
         indices = [self.get_dimension_index(el) for el in dimension_labels]
@@ -174,10 +176,10 @@ class NdIndexableMapping(Dimensioned):
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
-        Create a new object with an additional dimension along which items are
-        indexed. Requires the dimension name, the desired position in the
-        index_dimensions and a dimension value that applies to all existing
-        elements.
+        Create a new object with an additional dimension along which
+        items are indexed. Requires the dimension name, the desired
+        position in the index_dimensions and a dimension value that
+        applies to all existing elements.
         """
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
@@ -250,8 +252,8 @@ class NdIndexableMapping(Dimensioned):
 
     def _split_index(self, key):
         """
-        Splits key into map and data indices. If only map indices are supplied
-        the data is passed an index of None.
+        Splits key into map and data indices. If only map indices are
+        supplied the data is passed an index of None.
         """
         if not isinstance(key, tuple):
             key = (key,)
@@ -266,8 +268,8 @@ class NdIndexableMapping(Dimensioned):
 
     def __getitem__(self, key):
         """
-        Allows indexing in the indexed dimensions, passing any additional
-        indices to the data elements.
+        Allows indexing in the indexed dimensions, passing any
+        additional indices to the data elements.
         """
         if key in [Ellipsis, ()]:
             return self
@@ -277,8 +279,9 @@ class NdIndexableMapping(Dimensioned):
 
     def _dataslice(self, data, indices):
         """
-        Returns slice of data element if the item is deep indexable. Warns if
-        attempting to slice an object that has not been declared deep indexable.
+        Returns slice of data element if the item is deep
+        indexable. Warns if attempting to slice an object that has not
+        been declared deep indexable.
         """
         if getattr(data, '_deep_indexable', False):
             return data[indices]
@@ -330,8 +333,8 @@ class NdIndexableMapping(Dimensioned):
 
     def pprint_dimkey(self, key):
         """
-        Takes a key of the right length as input and returns a formatted string
-        of the dimension and value pairs.
+        Takes a key of the right length as input and returns a
+        formatted string of the dimension and value pairs.
         """
         key = key if isinstance(key, (tuple, list)) else (key,)
         return ', '.join(self.index_dimensions[i].pprint_value(v)
@@ -393,8 +396,9 @@ class NdIndexableMapping(Dimensioned):
     @property
     def info(self):
         """
-        Prints information about the Dimensioned object, including the number and type
-        of objects contained within it and information about its dimensions.
+        Prints information about the Dimensioned object, including the
+        number and type of objects contained within it and information
+        about its dimensions.
         """
         info_str = self.__class__.__name__ +\
                    " containing %d items of type %s\n" % (len(self.keys()),
@@ -500,17 +504,19 @@ class NdIndexableMapping(Dimensioned):
 
 class NdMapping(NdIndexableMapping):
     """
-    NdMapping supports the same indexing semantics as NdIndexableMapping but
-    also supports filtering of items using slicing ranges.
+    NdMapping supports the same indexing semantics as
+    NdIndexableMapping but also supports filtering of items using
+    slicing ranges.
     """
 
     value = param.String(default='NdMapping')
 
     def __getitem__(self, indexslice):
         """
-        Allows slicing operations along the map and data dimensions. If no data
-        slice is supplied it will return all data elements, otherwise it will
-        return the requested slice of the data.
+        Allows slicing operations along the map and data
+        dimensions. If no data slice is supplied it will return all
+        data elements, otherwise it will return the requested slice of
+        the data.
         """
         if indexslice in [Ellipsis, ()]:
             return self
@@ -549,8 +555,8 @@ class NdMapping(NdIndexableMapping):
 
     def _transform_indices(self, indices):
         """
-        Identity function here but subclasses can implement transforms of the
-        dimension indices from one coordinate system to another.
+        Identity function here but subclasses can implement transforms
+        of the dimension indices from one coordinate system to another.
         """
         return indices
 
