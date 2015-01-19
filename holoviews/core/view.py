@@ -67,13 +67,6 @@ class View(Dimensioned):
         raise NotImplementedError
 
 
-    def relabel(self, label):
-        """
-        Recreates the View with the supplied label.
-        """
-        return self.clone(self.data, label=label)
-
-
     @property
     def style(self):
         """

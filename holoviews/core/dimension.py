@@ -153,6 +153,12 @@ class Dimensioned(param.Parameterized):
         settings = dict(self.get_param_values(), **kwargs)
         return self.__class__(data, *args, **settings)
 
+
+    def relabel(self, label=None, value=None):
+        keywords = [('label',label), ('value',value)]
+        return self.clone(self.data,
+                          **{k:v for k,v in keywords if v is not None})
+
     @property
     def deep_dimensions(self):
         if self._deep_indexable:
