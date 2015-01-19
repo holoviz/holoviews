@@ -26,11 +26,11 @@ class AttrTree(object):
             first.update(tree)
         return first
 
-    def __init__(self, identifier=None, parent=None, path_items=None):
+    def __init__(self, identifier=None, parent=None, items=None):
         """
         identifier: A string identifier for the current node (if any)
         parent:     The parent node (if any)
-        path_items: Items as (path, value) pairs to construct
+        items:      Items as (path, value) pairs to construct
                     (sub)tree down to given leaf values.
 
         Note that the root node does not have a parent and does not
@@ -43,11 +43,11 @@ class AttrTree(object):
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
-        self.__dict__['path_items'] = OrderedDict()
-        if path_items:
-            path_items = OrderedDict(path_items)
-            for path, item in path_items.items():
-                self.set_path(path, item)
+        self.__dict__['data'] = OrderedDict()
+        items = [] if items is None else (items if isinstance(items, list) else items.items())
+        for path, item in items:
+            self.set_path(path, item)
+
 
     def _valid_identifier(self, identifier):
         """
@@ -62,7 +62,7 @@ class AttrTree(object):
         return identifier
 
     def __iter__(self):
-        return iter(self.path_items.values())
+        return iter(self.data.values())
 
     @property
     def fixed(self):
@@ -82,7 +82,7 @@ class AttrTree(object):
         fixed_status = (self.fixed, other.fixed)
         (self.fixed, other.fixed) = (False, False)
         if self.parent is None:
-            self.path_items.update(other.path_items)
+            self.data.update(other.data)
         for identifier in other.children:
             item = other[identifier]
             if identifier not in self:
@@ -121,7 +121,7 @@ class AttrTree(object):
 
         # Search for substring matches between paths and path filters
         new_attrtree = self.__class__()
-        for path, item in self.path_items.items():
+        for path, item in self.data.items():
             if any([all([subpath in path for subpath in pf]) for pf in path_filters]):
                 new_attrtree.set_path(path, item)
 
@@ -132,7 +132,7 @@ class AttrTree(object):
         """
         Propagate the value up to the root node.
         """
-        self.path_items[path] = val
+        self.data[path] = val
         if self.parent is not None:
             self.parent._propagate((self.identifier,)+path, val)
 
@@ -255,12 +255,12 @@ class AttrTree(object):
         The repr of an AttrTree is an ASCII tree showing the structure
         of the tree and the types of leaves.
         """
-        if len(self.path_items) == 0:
+        if len(self.data) == 0:
             return "Dangling AttrTree node with no leaf items."
         return "%s of %s items:\n\n%s" % (self.__class__.__name__,
-                                          len(self.path_items),
+                                          len(self.data),
                                           self._draw_tree(self))
 
 
     def __contains__(self, name):
-        return name in self.children or name in self.path_items
+        return name in self.children or name in self.data
