@@ -48,13 +48,6 @@ class Layer(Pane):
         return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
                          individually=individually, **kwargs)
 
-    def table(self):
-        from ..view import Table
-        index_values = [self.dimension_values(dim) for dim in self._cached_index_names]
-        values = [self.dimension_values(dim) for dim in [d.name for d in self.value_dimensions]]
-        return Table(zip(zip(*index_values), zip(*values)), index_dimensions=self.index_dimensions,
-                     label=self.label, value=self.value, value_dimensions=self.value_dimensions)
-
 
     ########################
     # Subclassable methods #
@@ -892,13 +885,6 @@ class ViewMap(Map):
             return layout
 
         return (self << histmap) if adjoin else histmap
-
-
-    def table(self):
-        from ..view import Table
-        keys = zip(*[self.dimension_values(dm) for dm in self._cached_index_names])
-        vals = self.dimension_values(self.value.name)
-        return Table(zip(keys, vals), **dict(self.get_param_values()))
 
 
     def normalize_elements(self, **kwargs):

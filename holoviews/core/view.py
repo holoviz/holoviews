@@ -102,6 +102,22 @@ class View(Dimensioned):
         self._style = val
 
 
+    def table(self, **kwargs):
+        """
+        This method transforms any View type into a Table
+        as long as it implements a dimension_values method.
+        """
+        from ..view import Table
+        keys = zip(*[self.dimension_values(dim.name)
+                 for dim in self.index_dimensions])
+        values = zip(*[self.dimension_values(dim.name)
+                       for dim in self.value_dimensions])
+        params = dict(index_dimensions=self.index_dimensions,
+                      value_dimensions=self.value_dimensions,
+                      label=self.label, value=self.value, **kwargs)
+        return Table(zip(keys, values), **params)
+
+
     def dframe(self):
         raise NotImplementedError
 
@@ -230,6 +246,23 @@ class Map(NdMapping):
         Views by specifying a list group_by dimensions.
         """
         raise NotImplementedError
+
+
+    def table(self, **kwargs):
+        """
+        Creates Table from all the elements in the Map.
+        """
+
+        table = None
+        for key, value in self.data.items():
+            value = value.table(**kwargs)
+            for idx, (dim, val) in enumerate(zip(self.index_dimensions, key)):
+                value = value.add_dimension(dim, idx, val)
+            if table is None:
+                table = value
+            else:
+                table.update(value)
+        return table
 
 
     def reduce(self, **reduce_map):
