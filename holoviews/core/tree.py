@@ -27,6 +27,15 @@ class AttrTree(object):
         return first
 
     def __init__(self, identifier=None, parent=None, path_items=None):
+        """
+        identifier: A string identifier for the current node (if any)
+        parent:     The parent node (if any)
+        path_items: Items as (path, value) pairs to construct
+                    (sub)tree down to given leaf values.
+
+        Note that the root node does not have a parent and does not
+        require an identifier.
+        """
         self.__dict__['parent'] = parent
         self.__dict__['identifier'] = identifier
         self.__dict__['children'] = []
