@@ -352,18 +352,18 @@ class ViewTree(AttrTree):
     @staticmethod
     def from_view(view):
         if isinstance(view, ViewTree): return view
-        return ViewTree(data=[((view.value, view.label if view.label else 'I'), view)])
+        return ViewTree(items=[((view.value, view.label if view.label else 'I'), view)])
 
 
     def group(self, name):
         new_items = [((name, path[-1]), item) for path, item in self.data.items()]
-        return ViewTree(data=self._relabel(new_items))
+        return ViewTree(items=self._relabel(new_items))
 
 
     def __add__(self, other):
         other = self.from_view(other)
         items = list(self.data.items()) + list(other.data.items())
-        return ViewTree(data=self._relabel(items)).display('all')
+        return ViewTree(items=self._relabel(items)).display('all')
 
 
 
