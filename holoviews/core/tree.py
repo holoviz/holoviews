@@ -191,8 +191,10 @@ class AttrTree(object):
 
 
     def keys(self):
-        return self.children[:]
+        return self.data.keys()
 
+    def items(self):
+        return self.data.items()
 
     def pop(self, identifier, default=None):
         if identifier in self.children:
