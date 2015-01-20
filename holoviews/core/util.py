@@ -28,3 +28,17 @@ def int_to_roman(input):
       result += nums[i] * count
       input -= ints[i] * count
    return result
+
+
+def valid_identifier(identifier):
+    """
+    Replace spaces with underscores and returns value after
+    checking validity.
+    """
+    if identifier is None: return
+    identifier = identifier.replace(' ', '_')
+    invalid_chars = any(not el.isalnum() and el!='_' for el in identifier)
+    valid_first_char = identifier[0].isalpha() or identifier[0]=='_'
+    if invalid_chars or not valid_first_char:
+        raise SyntaxError("Invalid Python identifier: %r" % identifier)
+    return identifier

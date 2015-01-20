@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from .util import valid_identifier
 from .view import View
 
 
@@ -37,7 +38,7 @@ class AttrTree(object):
         require an identifier.
         """
         self.__dict__['parent'] = parent
-        self.__dict__['identifier'] = self._valid_identifier(identifier)
+        self.__dict__['identifier'] = valid_identifier(identifier)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
 
@@ -49,18 +50,6 @@ class AttrTree(object):
             self.set_path(path, item)
 
 
-    def _valid_identifier(self, identifier):
-        """
-        Replace spaces with underscores and returns value after
-        checking validity.
-        """
-        if identifier is None: return
-        identifier = identifier.replace(' ', '_')
-        invalid_chars = any(not el.isalnum() and el!='_' for el in identifier)
-        valid_first_char = identifier[0].isalpha() or identifier[0]=='_'
-        if invalid_chars or not valid_first_char:
-            raise SyntaxError("Invalid Python identifier: %r" % identifier)
-        return identifier
 
 
     @property
@@ -176,7 +165,7 @@ class AttrTree(object):
 
 
     def __setattr__(self, identifier, val):
-        identifier = self._valid_identifier(identifier)
+        identifier = valid_identifier(identifier)
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
         if identifier[0].isupper() and self.fixed and shallow:
