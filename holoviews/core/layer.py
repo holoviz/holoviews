@@ -47,10 +47,10 @@ class Overlay(ViewTree, View):
         return ViewTree.from_view(self) + ViewTree.from_view(other)
 
     def __mul__(self, other):
-        if isinstance(other, LayerTree):
-            items = list(self.items.items()) + list(other.items.items())
+        if isinstance(other, Overlay):
+            items = list(self.data.items()) + list(other.data.items())
         elif isinstance(other, View):
-            items = list(self.items.items()) + [((other.value.name, other.label), other)]
+            items = list(self.data.items()) + [((other.value, other.label), other)]
         elif isinstance(other, Map):
             raise NotImplementedError
 
