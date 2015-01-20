@@ -794,23 +794,24 @@ class LayoutPlot(Plot):
         return max([len(v) for v in self.subplots.values()]+[1])
 
 
-class OverlayPlot(Plot):
+
+class LayersPlot(Plot):
     """
-    An OverlayPlot supports processing of channel operations on
-    Overlays across maps. SheetPlot and MatrixGridPlot are
-    examples of OverlayPlots.
+    LayersPlot supports processing of channel operations on Overlays
+    across maps. SheetPlot and MatrixGridPlot are examples of
+    LayersPlots.
     """
 
     style_opts = param.List(default=[], constant=True, doc="""
-     SheetPlot renders overlay layers which individually have style
-     options but SheetPlot itself does not.""")
+     LayersPlot renders layers which individually have style and plot
+     options but LayersPlot itself does not.""")
 
     _view_type = Layers
 
     _abstract = True
 
     def __init__(self, overlay, **params):
-        super(OverlayPlot, self).__init__(overlay, **params)
+        super(LayersPlot, self).__init__(overlay, **params)
         self.subplots = self._create_subplots()
 
 
