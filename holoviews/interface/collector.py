@@ -335,7 +335,7 @@ class Collect(object):
 
         if self.path not in attrtree:
             if not isinstance(val, NdMapping):
-                val = ViewMap([((time,), val)], index_dimensions=[Time])
+                val = ViewMap([((time,), val)], key_dimensions=[Time])
         else:
             current_val = attrtree.data[self.path]
             val = self._merge_views(current_val, val, time)
@@ -352,7 +352,7 @@ class Collect(object):
         if isinstance(val, View):
             current_val[time] = val
         elif (isinstance(current_val, Map) and 'Time' not in
-              [d.name for d in current_val.index_dimensions]):
+              [d.name for d in current_val.key_dimensions]):
             raise Exception("Time dimension is missing.")
         else:
             current_val.update(val)
@@ -449,7 +449,7 @@ class Collator(NdMapping):
         to be ignored can be supplied.
         """
         constant_dims = self.constant_dimensions
-        ndmapping = NdMapping(index_dimensions=self.index_dimensions)
+        ndmapping = NdMapping(key_dimensions=self.key_dimensions)
 
         progressbar = ProgressBar(label='Collation')
         num_elements = len(self)
@@ -482,7 +482,7 @@ class Collator(NdMapping):
         Return all constant dimensions.
         """
         dimensions = []
-        for dim in self.index_dimensions:
+        for dim in self.key_dimensions:
             low, high = self.range(dim.name)
             if (low is not None and low == high) or set([self.dimension_values(dim.name)]):
                 dimensions.append(dim)
@@ -505,7 +505,7 @@ class Collator(NdMapping):
                 dim_vals = [(dim, val) for dim, val in dims[::-1]
                             if dim not in self.drop]
                 for dim, val in dim_vals:
-                    if dim not in [d.name for d in v.index_dimensions]:
+                    if dim not in [d.name for d in v.key_dimensions]:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v

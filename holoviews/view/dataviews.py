@@ -15,7 +15,7 @@ class DataView(Layer):
     selection of subsets of the data.
     """
 
-    index_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
+    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
         Dimensions on Layers determine the number of indexable
         dimensions.""")
 
@@ -156,7 +156,7 @@ class Curve(DataView):
         Create map indexed by Curve x-axis with progressively expanding number
         of curve samples.
         """
-        vmap = ViewMap(None, index_dimensions=self.index_dimensions,
+        vmap = ViewMap(None, key_dimensions=self.key_dimensions,
                        title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
@@ -215,7 +215,7 @@ class Histogram(Layer):
     upper and lower bounds of their edges and the computed bin values.
     """
 
-    index_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
+    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
         Dimensions on Layers determine the number of indexable
         dimensions.""")
 

@@ -19,7 +19,7 @@ class Raster(Layer):
     representation.
     """
 
-    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
                                   bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
@@ -87,7 +87,7 @@ class Raster(Layer):
             table_data = OrderedDict()
             for c in samples:
                 table_data[c] = self.data[self._coord2matrix(c)]
-            return Table(table_data, index_dimensions=self.index_dimensions,
+            return Table(table_data, key_dimensions=self.key_dimensions,
                          label=self.label, value=self.value)
         else:
             dimension, sample_coord = sample_values.items()[0]
@@ -95,7 +95,7 @@ class Raster(Layer):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
-            other_dimension = [d for d in self.index_dimensions if
+            other_dimension = [d for d in self.key_dimensions if
                                d.name != dimension]
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(other_dimension[0].name)
@@ -108,7 +108,7 @@ class Raster(Layer):
             # Sample data
             x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, self.data[sample])
-            return Curve(data, index_dimensions=other_dimension,
+            return Curve(data, key_dimensions=other_dimension,
                          value=self.value, label=self.label)
 
 
@@ -129,10 +129,10 @@ class Raster(Layer):
             return reduced_view
         else:
             dimension, reduce_fn = dimreduce_map.items()[0]
-            other_dimension = [d for d in self.index_dimensions if d.name != dimension]
+            other_dimension = [d for d in self.key_dimensions if d.name != dimension]
             x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
-            return Curve(data, index_dimensions=other_dimension, label=label,
+            return Curve(data, key_dimensions=other_dimension, label=label,
                          title=self.title, value=self.value)
 
     @property
@@ -209,8 +209,8 @@ class HeatMap(Raster):
                       for group in self._dim_groups[:2]}
         if isinstance(data, NdMapping):
             self._data = data
-            if 'index_dimensions' not in params:
-                dimensions['index_dimensions'] = data.index_dimensions
+            if 'key_dimensions' not in params:
+                dimensions['key_dimensions'] = data.key_dimensions
             if 'value_dimensions' not in params:
                 dimensions['value_dimensions'] = data.value_dimensions
         elif isinstance(dict, OrderedDict, type(None)):
@@ -425,7 +425,7 @@ class Points(Layer):
     they should lie in the range [0,1].
     """
 
-    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
                                   bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")
@@ -449,8 +449,8 @@ class Points(Layer):
         elif isinstance(data, Table):
             table_dims = data.dimension_labels('all', True)
             arr = np.array(zip(*[data.dimension_values(dim) for dim in table_dims]))
-            if 'index_dimensions' not in params:
-                params['index_dimensions'] = data.index_dimensions
+            if 'key_dimensions' not in params:
+                params['key_dimensions'] = data.key_dimensions
             if 'value_dimensions' not in params:
                 params['value_dimensions'] = data.value_dimensions
         else:
@@ -537,7 +537,7 @@ class Contours(Layer):
     array corresponds to an X,Y coordinate.
     """
 
-    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
                                   constant=True, bounds=(2, 2), doc="""
         The label of the x- and y-dimension of the Matrix in form
         of a string or dimension object.""")

@@ -43,24 +43,24 @@ class NdIndexableMappingTest(ViewTestCase):
         NdIndexableMapping()
 
     def test_idxmapping_init_item_odict(self):
-        NdIndexableMapping(self.init_item_odict, index_dimensions=[self.dim1, self.dim2])
+        NdIndexableMapping(self.init_item_odict, key_dimensions=[self.dim1, self.dim2])
 
     def test_idxmapping_init_item_list(self):
-        NdIndexableMapping(self.init_item_list, index_dimensions=[self.dim1, self.dim2])
+        NdIndexableMapping(self.init_item_list, key_dimensions=[self.dim1, self.dim2])
 
     def test_idxmapping_init_dimstr(self):
-        NdIndexableMapping(self.init_item_odict, index_dimensions=self.dimension_labels)
+        NdIndexableMapping(self.init_item_odict, key_dimensions=self.dimension_labels)
 
     def test_idxmapping_init_dimensions(self):
-        NdIndexableMapping(self.init_item_odict, index_dimensions=[self.dim1, self.dim2])
+        NdIndexableMapping(self.init_item_odict, key_dimensions=[self.dim1, self.dim2])
 
     def test_idxmapping_dimension_labels(self):
-        idxmap = NdIndexableMapping(self.init_item_odict, index_dimensions=[self.dim1, 'floatdim'])
-        self.assertEqual([d.name for d in idxmap.index_dimensions], self.dimension_labels)
+        idxmap = NdIndexableMapping(self.init_item_odict, key_dimensions=[self.dim1, 'floatdim'])
+        self.assertEqual([d.name for d in idxmap.key_dimensions], self.dimension_labels)
 
     def test_idxmapping_ndims(self):
         dims = [self.dim1, self.dim2, 'strdim']
-        idxmap = NdIndexableMapping(index_dimensions=dims)
+        idxmap = NdIndexableMapping(key_dimensions=dims)
         self.assertEqual(idxmap.ndims, len(dims))
 
     def test_idxmapping_key_len_check(self):
@@ -75,12 +75,12 @@ class NdIndexableMappingTest(ViewTestCase):
         data2 = [(2, 'c'), (3, 'd')]
         data3 = [(2, 'e'), (3, 'f')]
 
-        ndmap1 = NdIndexableMapping(data1, index_dimensions=[self.dim1])
-        ndmap2 = NdIndexableMapping(data2, index_dimensions=[self.dim1])
-        ndmap3 = NdIndexableMapping(data3, index_dimensions=[self.dim1])
+        ndmap1 = NdIndexableMapping(data1, key_dimensions=[self.dim1])
+        ndmap2 = NdIndexableMapping(data2, key_dimensions=[self.dim1])
+        ndmap3 = NdIndexableMapping(data3, key_dimensions=[self.dim1])
 
         ndmap_list = [(0.5, ndmap1), (1.5, ndmap2)]
-        nested_ndmap = NdIndexableMapping(ndmap_list, index_dimensions=[self.dim2])
+        nested_ndmap = NdIndexableMapping(ndmap_list, key_dimensions=[self.dim2])
         nested_ndmap[(0.5,)].update(dict([(0, 'c'), (1, 'd')]))
         self.assertEquals(list(nested_ndmap[0.5].values()), ['c', 'd'])
 
@@ -89,23 +89,23 @@ class NdIndexableMappingTest(ViewTestCase):
 
     def test_idxmapping_reindex(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
-        ndmap = NdIndexableMapping(data, index_dimensions=[self.dim1, self.dim2])
+        ndmap = NdIndexableMapping(data, key_dimensions=[self.dim1, self.dim2])
 
         reduced_dims = ['intdim']
         reduced_ndmap = ndmap.reindex(reduced_dims)
 
-        self.assertEqual([d.name for d in reduced_ndmap.index_dimensions], reduced_dims)
+        self.assertEqual([d.name for d in reduced_ndmap.key_dimensions], reduced_dims)
 
     def test_idxmapping_add_dimension(self):
-        ndmap = NdIndexableMapping(self.init_items_1D_list, index_dimensions=[self.dim1])
+        ndmap = NdIndexableMapping(self.init_items_1D_list, key_dimensions=[self.dim1])
         ndmap2d = ndmap.add_dimension(self.dim2, 0, 0.5)
 
         self.assertEqual(list(ndmap2d.keys()), [(0.5, 1), (0.5, 5)])
-        self.assertEqual(ndmap2d.index_dimensions, [self.dim2, self.dim1])
+        self.assertEqual(ndmap2d.key_dimensions, [self.dim2, self.dim1])
 
     def test_idxmapping_apply_key_type(self):
         data = dict([(0.5, 'a'), (1.5, 'b')])
-        ndmap = NdIndexableMapping(data, index_dimensions=[self.dim1])
+        ndmap = NdIndexableMapping(data, key_dimensions=[self.dim1])
 
         self.assertEqual(list(ndmap.keys()), [0, 1])
 

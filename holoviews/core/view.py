@@ -98,10 +98,10 @@ class View(Dimensioned):
         """
         from ..view import Table
         keys = zip(*[self.dimension_values(dim.name)
-                 for dim in self.index_dimensions])
+                 for dim in self.key_dimensions])
         values = zip(*[self.dimension_values(dim.name)
                        for dim in self.value_dimensions])
-        params = dict(index_dimensions=self.index_dimensions,
+        params = dict(key_dimensions=self.key_dimensions,
                       value_dimensions=self.value_dimensions,
                       label=self.label, value=self.value, **kwargs)
         return Table(zip(keys, values), **params)
@@ -220,7 +220,7 @@ class Map(NdMapping):
         else:
             title_suffix = self.title_suffix
         dimension_labels = [dim.pprint_value(k) for dim, k in
-                            zip(self.index_dimensions, key)]
+                            zip(self.key_dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         dims = '\n '.join(g for g in groups if g)
@@ -245,7 +245,7 @@ class Map(NdMapping):
         table = None
         for key, value in self.data.items():
             value = value.table(**kwargs)
-            for idx, (dim, val) in enumerate(zip(self.index_dimensions, key)):
+            for idx, (dim, val) in enumerate(zip(self.key_dimensions, key)):
                 value = value.add_dimension(dim, idx, val)
             if table is None:
                 table = value

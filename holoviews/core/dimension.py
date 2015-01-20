@@ -91,7 +91,7 @@ class Dimensioned(param.Parameterized):
     Abstract baseclass implementing common methods for objects with
     associated dimensions. Dimensioned support three dimension groups:
 
-    * index_dimensions: The Dimensioned objects should implement
+    * key_dimensions: The Dimensioned objects should implement
                         indexing and slicing for these dimensions.
 
     * value_dimensions: These dimensions correspond to any data
@@ -110,7 +110,7 @@ class Dimensioned(param.Parameterized):
     values along the supplied dimension.
     """
 
-    index_dimensions = param.List(bounds=(0, None), constant=True, doc="""
+    key_dimensions = param.List(bounds=(0, None), constant=True, doc="""
        The dimensions the values are indexed by.""")
 
     label = param.String(default='', constant=True, doc="""
@@ -129,7 +129,7 @@ class Dimensioned(param.Parameterized):
 
     _deep_indexable = False
     _sorted = False
-    _dim_groups = ['index_dimensions',
+    _dim_groups = ['key_dimensions',
                    'value_dimensions',
                    'deep_dimensions']
 
@@ -140,9 +140,10 @@ class Dimensioned(param.Parameterized):
                               for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(**params)
-        self.ndims = len(self.index_dimensions)
-        self._cached_index_names = [d.name for d in self.index_dimensions]
+        self.ndims = len(self.key_dimensions)
+        self._cached_index_names = [d.name for d in self.key_dimensions]
         self._cached_value_names = [d.name for d in self.value_dimensions]
+        self._settings = None
 
 
     def clone(self, data=None, *args, **kwargs):

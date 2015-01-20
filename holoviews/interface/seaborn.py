@@ -29,7 +29,7 @@ class TimeSeries(Layer):
     supplied.
     """
 
-    index_dimensions = param.List(default=[Dimension('x')],
+    key_dimensions = param.List(default=[Dimension('x')],
                                   bounds=(1,1))
 
     value = param.String(default='TimeSeries')
@@ -85,7 +85,7 @@ class Bivariate(DataView):
     and y-data.
     """
 
-    index_dimensions = param.List(default=[Dimension('x'), Dimension('y')])
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')])
 
     value_dimensions = param.List(default=[], bounds=(0,0))
 
@@ -101,7 +101,7 @@ class Distribution(DataView):
     list. Internally it uses seaborn to make all the conversions.
     """
 
-    index_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
+    key_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
 
     value = param.String(default='Distribution')
 
@@ -172,10 +172,10 @@ class DFrame(PandasDFrame):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(index_dimensions=vm_dims)
+        vmap = ViewMap(key_dimensions=vm_dims)
         for map_key, group in map_groups:
             vmap[map_key] = Distribution(np.array(group[value_dim]),
-                                         index_dimensions=[self.get_dimension(value_dim)])
+                                         key_dimensions=[self.get_dimension(value_dim)])
         return vmap if map_dims else vmap.last
 
     def regression(self, *args, **kwargs):
@@ -184,7 +184,7 @@ class DFrame(PandasDFrame):
     def timeseries(self, value_dims, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
         curve_map = self.table(value_dims, dimensions, reduce_fn=reduce_fn,
                                map_dims=ts_dims+map_dims, **dict(view_type=Curve, **kwargs))
-        return TimeSeries(curve_map.overlay(ts_dims), index_dimensions=[self.get_dimension(dimensions[0])],
+        return TimeSeries(curve_map.overlay(ts_dims), key_dimensions=[self.get_dimension(dimensions[0])],
                           value_dimensions=[self.get_dimension(dim) for dim in value_dims+ts_dims])
 
     @property

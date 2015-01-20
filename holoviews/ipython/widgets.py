@@ -277,10 +277,10 @@ class NdWidget(param.Parameterized):
             if isinstance(v, AdjointLayout): v = v.main
             if isinstance(v, Layers): v = v.values()[0]
             if isinstance(v, View):
-                v = ViewMap([((0,), v)], index_dimensions=['Frame'])
+                v = ViewMap([((0,), v)], key_dimensions=['Frame'])
 
             keys_list.append(list(v.data.keys()))
-            if i == 0: dimensions = v.index_dimensions
+            if i == 0: dimensions = v.key_dimensions
 
         # Check if all elements in the Grid have common dimensions
         if all(x == keys_list[0] for x in keys_list):
@@ -292,7 +292,7 @@ class NdWidget(param.Parameterized):
 
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, 0) for k in self._keys],
-                                  index_dimensions=self.dimensions)
+                                  key_dimensions=self.dimensions)
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
@@ -343,7 +343,7 @@ class IPySelectionWidget(NdWidget):
 
         self.pwidgets = {}
         self.dim_val = {}
-        for didx, dim in enumerate(self.mock_obj.index_dimensions):
+        for didx, dim in enumerate(self.mock_obj.key_dimensions):
             all_vals = [k[didx] for k in self._keys]
 
             # Initialize dimension value
@@ -576,7 +576,7 @@ class SelectionWidget(ScrubberWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
-        for idx, dim in enumerate(self.mock_obj.index_dimensions):
+        for idx, dim in enumerate(self.mock_obj.key_dimensions):
             dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
             if isnumeric(dim_vals[0]):
                 dim_vals = [round(v, 10) for v in dim_vals]

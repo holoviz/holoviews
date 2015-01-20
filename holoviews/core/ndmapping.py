@@ -39,7 +39,7 @@ class NdIndexableMapping(Dimensioned):
     storage methods helps make both classes easier to understand.
     """
 
-    index_dimensions = param.List(default=[Dimension("Default")], constant=True)
+    key_dimensions = param.List(default=[Dimension("Default")], constant=True)
 
     value = param.String(default='NdIndexableMapping')
 
@@ -54,9 +54,9 @@ class NdIndexableMapping(Dimensioned):
 
         self._next_ind = 0
         self._check_key_type = True
-        self._cached_index_types = [d.type for d in self.index_dimensions]
-        self._cached_index_values = {d.name:d.values for d in self.index_dimensions}
-        self._cached_categorical = any(d.values for d in self.index_dimensions)
+        self._cached_index_types = [d.type for d in self.key_dimensions]
+        self._cached_index_values = {d.name:d.values for d in self.key_dimensions}
+        self._cached_categorical = any(d.values for d in self.key_dimensions)
 
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
@@ -89,7 +89,7 @@ class NdIndexableMapping(Dimensioned):
         values.
         """
         sortkws = {}
-        dimensions = self.index_dimensions
+        dimensions = self.key_dimensions
         if self._cached_categorical:
             sortkws['key'] = lambda (k, v): tuple(dimensions[i].values.index(k[i])
                                                   if dimensions[i].values else k[i]
@@ -171,14 +171,14 @@ class NdIndexableMapping(Dimensioned):
         if len(set(keys)) != len(keys):
             raise Exception("Given dimension labels not sufficient to address all values uniquely")
 
-        return self.clone(reindexed_items, index_dimensions=dimensions)
+        return self.clone(reindexed_items, key_dimensions=dimensions)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
         Create a new object with an additional dimension along which
         items are indexed. Requires the dimension name, the desired
-        position in the index_dimensions and a dimension value that
+        position in the key_dimensions and a dimension value that
         applies to all existing elements.
         """
         if isinstance(dimension, str):
@@ -187,7 +187,7 @@ class NdIndexableMapping(Dimensioned):
         if dimension.name in self._cached_index_names:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.index_dimensions[:]
+        dimensions = self.key_dimensions[:]
         dimensions.insert(dim_pos, dimension)
 
         items = OrderedDict()
@@ -196,7 +196,7 @@ class NdIndexableMapping(Dimensioned):
             new_key.insert(dim_pos, dim_val)
             items[tuple(new_key)] = val
 
-        return self.clone(items, index_dimensions=dimensions, **kwargs)
+        return self.clone(items, key_dimensions=dimensions, **kwargs)
 
 
     def copy(self):
@@ -235,7 +235,7 @@ class NdIndexableMapping(Dimensioned):
         type to the supplied key.
         """
         typed_key = ()
-        for dim, key in zip(self.index_dimensions, keys):
+        for dim, key in zip(self.key_dimensions, keys):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -337,7 +337,7 @@ class NdIndexableMapping(Dimensioned):
         formatted string of the dimension and value pairs.
         """
         key = key if isinstance(key, (tuple, list)) else (key,)
-        return ', '.join(self.index_dimensions[i].pprint_value(v)
+        return ', '.join(self.key_dimensions[i].pprint_value(v)
                          for i, v in enumerate(key))
 
 
@@ -462,10 +462,10 @@ class NdIndexableMapping(Dimensioned):
         own_keys = self.data.keys()
 
         map_type = map_type if map_type else NdMapping
-        split_data = map_type(index_dimensions=first_dims)
+        split_data = map_type(key_dimensions=first_dims)
         split_data._check_key_type = False # Speed optimization
         for fk in first_keys:  # The first groups keys
-            split_data[fk] = self.clone(index_dimensions=second_dims)
+            split_data[fk] = self.clone(key_dimensions=second_dims)
             split_data[fk]._check_key_type = False # Speed optimization
             for sk in set(second_keys):  # The second groups keys
                 # Generate a candidate expanded key
@@ -488,9 +488,9 @@ class NdIndexableMapping(Dimensioned):
         """
 
         # Find dimension indices
-        first_dims = [d for d in self.index_dimensions if d.name not in dimensions]
+        first_dims = [d for d in self.key_dimensions if d.name not in dimensions]
         first_inds = [self.get_dimension_index(d.name) for d in first_dims]
-        second_dims = [d for d in self.index_dimensions if d.name in dimensions]
+        second_dims = [d for d in self.key_dimensions if d.name in dimensions]
         second_inds = [self.get_dimension_index(d.name) for d in second_dims]
 
         # Split the keys

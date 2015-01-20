@@ -41,45 +41,45 @@ class MapTestCase(MatrixOverlayTestCase):
     def setUp(self):
         super(MapTestCase, self).setUp()
         # Example 1D map
-        self.map1_1D = ViewMap(index_dimensions=['int'])
+        self.map1_1D = ViewMap(key_dimensions=['int'])
         self.map1_1D[0] = self.mat1
         self.map1_1D[1] = self.mat2
         # Changed keys...
-        self.map2_1D = ViewMap(index_dimensions=['int'])
+        self.map2_1D = ViewMap(key_dimensions=['int'])
         self.map2_1D[1] = self.mat1
         self.map2_1D[2] = self.mat2
         # Changed number of keys...
-        self.map3_1D = ViewMap(index_dimensions=['int'])
+        self.map3_1D = ViewMap(key_dimensions=['int'])
         self.map3_1D[1] = self.mat1
         self.map3_1D[2] = self.mat2
         self.map3_1D[3] = self.mat3
         # Changed values...
-        self.map4_1D = ViewMap(index_dimensions=['int'])
+        self.map4_1D = ViewMap(key_dimensions=['int'])
         self.map4_1D[0] = self.mat1
         self.map4_1D[1] = self.mat3
         # Changed bounds...
-        self.map5_1D = ViewMap(index_dimensions=['int'])
+        self.map5_1D = ViewMap(key_dimensions=['int'])
         self.map5_1D[0] = self.mat4
         self.map5_1D[1] = self.mat5
         # Example dimension label
-        self.map6_1D = ViewMap(index_dimensions=['int_v2'])
+        self.map6_1D = ViewMap(key_dimensions=['int_v2'])
         self.map6_1D[0] = self.mat1
         self.map6_1D[1] = self.mat2
         # A ViewMap of Overlays
-        self.map7_1D = ViewMap(index_dimensions=['int'])
+        self.map7_1D = ViewMap(key_dimensions=['int'])
         self.map7_1D[0] =  self.overlay1_depth2
         self.map7_1D[1] =  self.overlay2_depth2
         # A different ViewMap of Overlays
-        self.map8_1D = ViewMap(index_dimensions=['int'])
+        self.map8_1D = ViewMap(key_dimensions=['int'])
         self.map8_1D[0] =  self.overlay2_depth2
         self.map8_1D[1] =  self.overlay1_depth2
 
         # Example 2D map
-        self.map1_2D = ViewMap(index_dimensions=['int', Dimension('float')])
+        self.map1_2D = ViewMap(key_dimensions=['int', Dimension('float')])
         self.map1_2D[0, 0.5] = self.mat1
         self.map1_2D[1, 1.0] = self.mat2
         # Changed 2D keys...
-        self.map2_2D = ViewMap(index_dimensions=['int', Dimension('float')])
+        self.map2_2D = ViewMap(key_dimensions=['int', Dimension('float')])
         self.map2_2D[0, 1.0] = self.mat1
         self.map2_2D[1, 1.5] = self.mat2
 

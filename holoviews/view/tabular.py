@@ -18,7 +18,7 @@ class ItemTable(Layer):
     information (e.g type and units) to be associated per heading.
     """
 
-    index_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
+    key_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
        ItemTables hold an index Dimension for each value they contain, i.e.
        they are equivalent to the keys.""")
 
@@ -46,7 +46,7 @@ class ItemTable(Layer):
 
         str_keys=dict((k.name if isinstance(k, Dimension)
                        else k ,v) for (k,v) in data.items())
-        params = dict(params, index_dimensions=data.keys())
+        params = dict(params, key_dimensions=data.keys())
         super(ItemTable, self).__init__(str_keys, **params)
 
 
@@ -167,11 +167,11 @@ class Table(Layer, NdMapping):
     def __setitem__(self, key, value):
         if isinstance(value, ItemTable):
             indices = []
-            if len(value.index_dimensions) != len(self.value_dimensions):
+            if len(value.key_dimensions) != len(self.value_dimensions):
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             for dim in self.value_dimensions:
-                idx = [d.name for d in value.index_dimensions].index(dim.name)
-                if hash(dim) != hash(value.index_dimensions[idx]):
+                idx = [d.name for d in value.key_dimensions].index(dim.name)
+                if hash(dim) != hash(value.key_dimensions[idx]):
                     raise Exception("Input ItemTables dimensions must match value dimensions.")
                 indices.append(idx)
             value = tuple(value.data.values()[i] for i in indices)
@@ -244,7 +244,7 @@ class Table(Layer, NdMapping):
         elif row == 0:
             if col >= ndims:
                 return str(self.value_dimensions[col - ndims])
-            return str(self.index_dimensions[col])
+            return str(self.key_dimensions[col])
         else:
             if col >= ndims:
                 row_values = self.values()[row-1]
@@ -285,7 +285,7 @@ class Table(Layer, NdMapping):
             split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
             if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.split_dimensions([dim])
-                reduced_table = self.clone(None, index_dimensions=split_dims)
+                reduced_table = self.clone(None, key_dimensions=split_dims)
                 for k, table in split_map.items():
                     if len(self.value_dimensions) > 1:
                         reduced = tuple(reduce_fn(table.dimension_values(vdim.name))
@@ -314,7 +314,7 @@ class Table(Layer, NdMapping):
         if len(dimensions) < self.ndims:
             return self.split_dimensions(split_dims, map_type=ViewMap)
         else:
-            vmap = ViewMap(index_dimensions=[self.get_dimension(d) for d in dimensions])
+            vmap = ViewMap(key_dimensions=[self.get_dimension(d) for d in dimensions])
             for k, v in self.items():
                 vmap[k] = ItemTable(dict(zip(self.value_dimensions, v)))
             return vmap

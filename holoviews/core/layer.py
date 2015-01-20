@@ -160,7 +160,7 @@ class Layers(Pane, NdMapping):
     over the contained layers.
     """
 
-    index_dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
+    key_dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
       of dimensions the Layers can be indexed by.""")
 
     value = param.String(default='Layers')
@@ -216,7 +216,7 @@ class Layers(Pane, NdMapping):
             labels = []
             for key in self.data.keys():
                 labels.append(','.join([dim.pprint_value(k) for dim, k in
-                                        zip(self.index_dimensions, key)]))
+                                        zip(self.key_dimensions, key)]))
             return labels
 
 
@@ -232,7 +232,7 @@ class Layers(Pane, NdMapping):
 
     def item_check(self, dim_vals, layer):
         if not isinstance(layer, Layer): pass
-        layer_dimensions = [d.name for d in layer.index_dimensions]
+        layer_dimensions = [d.name for d in layer.key_dimensions]
         if len(self):
             if layer_dimensions != self._layer_dimensions:
                 raise Exception("Layers must share common dimensions.")
@@ -352,7 +352,7 @@ class Grid(NdMapping):
     have to arbitrary dimensions, e.g. for 2D parameter spaces.
     """
 
-    index_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")], bounds=(2,2))
+    key_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")], bounds=(2,2))
 
     label = param.String(constant=True, doc="""
       A short label used to indicate what kind of data is contained
@@ -666,10 +666,10 @@ class ViewMap(Map):
             new_map = dict()
         else:
             split_map = self.split_dimensions(dimensions, Layers)
-            new_map = self.clone(index_dimensions=split_map.index_dimensions)
+            new_map = self.clone(key_dimensions=split_map.key_dimensions)
 
         for outer, vmap in split_map.items():
-            new_map[outer] = Layers(vmap, index_dimensions=vmap.index_dimensions)
+            new_map[outer] = Layers(vmap, key_dimensions=vmap.key_dimensions)
 
         if self.ndims == 1:
             return list(new_map.values())[0]
@@ -704,7 +704,7 @@ class ViewMap(Map):
                             vm.title = '\n'.join([vm.title, dim_labels])
             return GridLayout(split_map)
         else:
-            return Grid(split_map, index_dimensions=split_map.index_dimensions)
+            return Grid(split_map, key_dimensions=split_map.key_dimensions)
 
 
     def split_overlays(self):
@@ -744,11 +744,11 @@ class ViewMap(Map):
             # dimension labels for the new view
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
-            dimensions = self.index_dimensions
+            dimensions = self.key_dimensions
             if self_in_other and other_in_self: # superset of each other
                 super_keys = sorted(set(self.dimension_keys() + other.dimension_keys()))
             elif self_in_other: # self is superset
-                dimensions = other.index_dimensions
+                dimensions = other.key_dimensions
                 super_keys = other.dimension_keys()
             elif other_in_self: # self is superset
                 super_keys = self.dimension_keys()
@@ -772,7 +772,7 @@ class ViewMap(Map):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items, index_dimensions=dimensions)
+            return self.clone(items, key_dimensions=dimensions)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
             return self.clone(items)
@@ -900,7 +900,7 @@ class ViewMap(Map):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = ViewMap(index_dimensions=self.index_dimensions, title_suffix=self.title_suffix)
+        histmap = ViewMap(key_dimensions=self.key_dimensions, title_suffix=self.title_suffix)
 
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range

@@ -1034,7 +1034,7 @@ class AnnotationPlot(Plot):
 
     def _warn_invalid_intervals(self, vmap):
         "Check if the annotated intervals have appropriate keys"
-        dim_labels = [d.name for d in self._map.index_dimensions]
+        dim_labels = [d.name for d in self._map.key_dimensions]
 
         mismatch_set = set()
         for annotation in vmap.values():
@@ -1055,7 +1055,7 @@ class AnnotationPlot(Plot):
         Given an interval specification, determine whether the
         annotation should be shown or not.
         """
-        dim_labels = [d.name for d in self._map.index_dimensions]
+        dim_labels = [d.name for d in self._map.key_dimensions]
         if (interval is None) or dim_labels == ['Default']:
             return True
 

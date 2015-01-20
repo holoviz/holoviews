@@ -142,7 +142,7 @@ class AdjointLayout(Dimensioned):
     |___________|__|
     """
 
-    index_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
+    key_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
 
     value = param.String(default='AdjointLayout')
 

@@ -192,7 +192,7 @@ class histogram(ViewOperation):
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
 
-        hist_view = Histogram(hist, edges, index_dimensions=[view.get_dimension(selected_dim)],
+        hist_view = Histogram(hist, edges, key_dimensions=[view.get_dimension(selected_dim)],
                               label=view.label)
 
         # Set plot and style options

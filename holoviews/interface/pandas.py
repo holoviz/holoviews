@@ -64,23 +64,23 @@ class DataFrameView(Layer):
 
     value_dimensions = param.List(doc="DataFrameView has no value dimension.")
 
-    def __init__(self, data, index_dimensions=None, **params):
+    def __init__(self, data, key_dimensions=None, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame View type requires Pandas dataframe as data.')
-        if index_dimensions is None:
+        if key_dimensions is None:
             dims = list(data.columns)
         else:
             dims = ['' for i in range(len(data.columns))]
-            for dim in index_dimensions:
+            for dim in key_dimensions:
                 dim_name = dim.name if isinstance(dim, Dimension) else dim
                 if dim_name in data.columns:
                     dims[list(data.columns).index(dim_name)] = dim
 
         self._xlim = None
         self._ylim = None
-        View.__init__(self, data, index_dimensions=dims, **params)
+        View.__init__(self, data, key_dimensions=dims, **params)
         self.data.columns = self._cached_index_names
 
 
@@ -139,12 +139,12 @@ class DataFrameView(Layer):
                             % invalid_dims)
 
         index_dims = [self.get_dimension(d) for d in dimensions]
-        ndmapping = ndmapping_type(None, index_dimensions=index_dims)
+        ndmapping = ndmapping_type(None, key_dimensions=index_dims)
         view_dims = set(self._cached_index_names) - set(dimensions)
         view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
             ndmapping[k] = self.clone(v.drop(dimensions, axis=1),
-                                      index_dimensions=view_dims)
+                                      key_dimensions=view_dims)
         return ndmapping
 
 
@@ -165,11 +165,11 @@ class DataFrameView(Layer):
         return self._split_dimensions(dimensions, GridLayout)
 
 
-    def viewmap(self, index_dimensions=[]):
+    def viewmap(self, key_dimensions=[]):
         """
         Splits the supplied dimensions out into a ViewMap.
         """
-        return self._split_dimensions(index_dimensions, ViewMap)
+        return self._split_dimensions(key_dimensions, ViewMap)
 
     @property
     def xlabel(self):
@@ -241,7 +241,7 @@ class DFrame(DataFrameView):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(index_dimensions=vm_dims)
+        vmap = ViewMap(key_dimensions=vm_dims)
         vdims = [self.get_dimension(d) for d in view_dims]
         valdims = [self.get_dimension(d) for d in value_dims]
         for map_key, group in map_groups:
@@ -250,7 +250,7 @@ class DFrame(DataFrameView):
                 data = np.vstack(np.array(v[d]) for d in value_dims)
                 data = reduce_fn(data, axis=1) if reduce_fn else data[:, 0]
                 table_data[k] = data
-            view = Table(table_data, index_dimensions=vdims,
+            view = Table(table_data, key_dimensions=vdims,
                          value_dimensions=valdims, value=self.value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
         return vmap if map_dims else vmap.last
