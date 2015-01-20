@@ -316,13 +316,15 @@ class GridPlot(Plot):
         for k, vmap in self.grid.data.items():
             self.grid[k] = self._check_map(self.grid[k])
 
-        self.subplots = []
+        self.subaxes = []
         if grid.ndims == 1:
             self.rows, self.cols = (1, len(grid.keys()))
         else:
             x, y = list(zip(*list(grid.keys())))
             self.cols, self.rows = (len(set(x)), len(set(y)))
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
+        self.subplots = self._create_subplots()
+
         extra_opts = View.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
@@ -330,8 +332,28 @@ class GridPlot(Plot):
         self._keys = self.grid.all_keys
 
 
+    def _create_subplots(self):
+        subplots, subaxes = {}, {}
+        r, c = (0, 0)
+        for coord in self.grid.keys(full_grid=True):
+            view = self.grid.data.get(coord, None)
+            if view is not None:
+                vtype = view.type if isinstance(view, Map) else view.__class__
+                opts = View.options.plotting(view).opts
+                opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
+                            show_yaxis=self.show_yaxis, show_title=self.show_title)
+                subplot = Plot.defaults[vtype](view, all_keys=self._keys, **opts)
+                subplots[(r, c)] = subplot
+            if r != self.rows-1:
+                r += 1
+            else:
+                r = 0
+                c += 1
+        return subplots
+
+
     def __call__(self, axis=None):
-        ax = self._init_axis(axis)
+        ax = self._init_axis(None)
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
@@ -345,29 +367,10 @@ class GridPlot(Plot):
             except:
                 pass
 
-        self.subplots = []
-        self.subaxes = []
-        r, c = (0, 0)
-        for coord in self.grid.keys(full_grid=True):
-            view = self.grid.data.get(coord, None)
-            if view is not None:
-                subax = plt.subplot(self._gridspec[r, c])
-                vtype = view.type if isinstance(view, Map) else view.__class__
-                opts = View.options.plotting(view).opts
-                opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
-                            show_yaxis=self.show_yaxis, show_title=self.show_title)
-                subplot = Plot.defaults[vtype](view, all_keys=self._keys, **opts)
-                self.subplots.append(subplot)
-                self.subaxes.append(subax)
-                subplot(subax, **subplot_kwargs)
-            else:
-                self.subaxes.append(None)
-            if r != self.rows-1:
-                r += 1
-            else:
-                r = 0
-                c += 1
-
+        for (r, c), subplot in self.subplots.items():
+            subax = plt.subplot(self._gridspec[r, c])
+            self.subaxes[(r, c)] = subax
+            subplot(subax, **subplot_kwargs)
         self._grid_axis()
         self._adjust_subplots()
 
@@ -455,7 +458,7 @@ class GridPlot(Plot):
 
     def update_frame(self, n):
         key = self._keys[n]
-        for subplot in self.subplots:
+        for subplot in self.subplots.values():
             subplot.update_frame(n)
         self.handles['grid_axis'].set_title(self._format_title(key))
 
