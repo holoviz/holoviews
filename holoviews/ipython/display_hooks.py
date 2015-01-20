@@ -16,7 +16,7 @@ try:
 except:
     mpld3 = None
 
-from ..core import View, Map, AdjointLayout, GridLayout, Grid, ViewTree
+from ..core import View, Map, AdjointLayout, GridLayout, Grid, ViewTree, Overlay
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from ..view import Raster
 from . import magics
@@ -263,3 +263,4 @@ def set_display_hooks(ip):
     html_formatter.for_type(GridLayout, layout_display)
     html_formatter.for_type(Grid, grid_display)
     html_formatter.for_type(ViewTree, layout_display)
+    html_formatter.for_type(Overlay, view_display)

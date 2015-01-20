@@ -14,8 +14,8 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import Map, View, Layer, Layers, ViewMap, AdjointLayout, \
-    GridLayout, Grid, ViewTree
+from ..core import Map, View, Layer, Layers, Overlay, ViewMap, \
+    AdjointLayout, GridLayout, Grid, ViewTree
 from ..view import Annotation, Raster
 
 
@@ -946,6 +946,27 @@ class LayersPlot(Plot):
         self._finalize_axis(None)
 
 
+
+class OverlayPlot(LayersPlot):
+    """
+    OverlayPlot is very similar to LayersPlot but unlike LayersPlot
+    supports the overlaying of hetrogeneous types.
+    """
+
+    style_opts = param.List(default=[], constant=True, doc="""
+     OverlayPlot renders layers which individually have style and plot
+     options but OverlayPlot itself does not.""")
+
+    _view_type = Overlay
+
+    _abstract = True
+
+    def __init__(self, overlay, **params):
+        super(OverlayPlot, self).__init__(
+            Layers(overlay.values()), **params)
+
+
+
 class AnnotationPlot(Plot):
     """
     Draw the Annotation view on the supplied axis. Supports axis
@@ -1088,5 +1109,6 @@ Plot.defaults.update({Grid: GridPlot,
                       GridLayout: LayoutPlot,
                       ViewTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
-                      Layers: OverlayPlot,
+                      Layers: LayersPlot,
+                      Overlay:OverlayPlot,
                       Annotation: AnnotationPlot})
