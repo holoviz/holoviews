@@ -165,10 +165,6 @@ class AdjointLayout(Dimensioned):
         elif isinstance(views, list):
             self.data = dict(zip(self.layout_order, views))
 
-        if 'dimensions' in params:
-            params['dimensions'] = [d if isinstance(d, Dimension) else Dimension(d)
-                                    for d in params.pop('dimensions')]
-
         super(AdjointLayout, self).__init__(**params)
 
 
