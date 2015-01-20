@@ -287,20 +287,6 @@ class Layers(Pane, NdMapping):
         return l, b, r, t
 
 
-    def __mul__(self, other):
-        if isinstance(other, ViewMap):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items)
-        elif isinstance(other, Layers):
-            overlays = self.values() + other.values()
-        elif isinstance(other, (View)):
-            overlays = self.values() + [other]
-        else:
-            raise TypeError('Can only create an overlay of holoviews.')
-
-        return Layers(overlays)
-
-
     def hist(self, index=None, adjoin=True, **kwargs):
         valid_ind = isinstance(index, int) and (0 <= index < len(self))
         valid_label = index in [el.label for el in self]
