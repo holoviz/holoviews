@@ -132,7 +132,7 @@ class NdIndexableMapping(Dimensioned):
         Subclasses default method to allow updating of nested data
         structures rather than simply overriding them.
         """
-        if dim_vals in self.data and hasattr(self.data[dim_vals], 'update'):
+        if dim_vals in self.data and isinstance(self.data[dim_vals], (NdMapping, OrderedDict)):
             self.data[dim_vals].update(data)
         else:
             self.data[dim_vals] = data
