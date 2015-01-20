@@ -9,7 +9,7 @@ import param
 
 from ..core import NdMapping, Map, View, Layer, Layers
 from ..view import Raster, HeatMap, Points, Matrix, Contours, VectorField
-from .viewplots import OverlayPlot, Plot, GridPlot
+from .viewplots import LayersPlot, Plot, GridPlot
 
 
 class PointPlot(Plot):
@@ -373,7 +373,7 @@ class MatrixPlot(Plot):
 
 
 
-class MatrixGridPlot(GridPlot, OverlayPlot):
+class MatrixGridPlot(GridPlot, LayersPlot):
     """
     MatrixGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single

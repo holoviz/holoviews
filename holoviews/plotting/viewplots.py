@@ -976,25 +976,6 @@ class LayersPlot(Plot):
 
 
 
-class OverlayPlot(LayersPlot):
-    """
-    OverlayPlot is very similar to LayersPlot but unlike LayersPlot
-    supports the overlaying of hetrogeneous types.
-    """
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     OverlayPlot renders layers which individually have style and plot
-     options but OverlayPlot itself does not.""")
-
-    _view_type = Overlay
-
-    _abstract = True
-
-    def __init__(self, overlay, **params):
-        super(OverlayPlot, self).__init__(overlay, **params)
-
-
-
 class AnnotationPlot(Plot):
     """
     Draw the Annotation view on the supplied axis. Supports axis
@@ -1138,5 +1119,5 @@ Plot.defaults.update({Grid: GridPlot,
                       ViewTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
                       Layers: LayersPlot,
-                      Overlay:OverlayPlot,
+                      Overlay: LayersPlot,
                       Annotation: AnnotationPlot})
