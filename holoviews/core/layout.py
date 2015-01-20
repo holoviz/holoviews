@@ -351,7 +351,8 @@ class ViewTree(AttrTree):
 
     @staticmethod
     def from_view(view):
-        if isinstance(view, ViewTree): return view
+        # Return ViewTrees and Overlays directly
+        if isinstance(view, ViewTree) and not isinstance(view, View): return view
         return ViewTree(items=[((view.value, view.label if view.label else 'I'), view)])
 
 

@@ -22,6 +22,42 @@ from .util import find_minmax
 from .view import View, Map
 
 
+class Overlay(ViewTree, View):
+    """
+    An Overlay consists of multiple Views (potentially of
+    heterogeneous type) presented one on top each other with a
+    particular z-ordering.
+
+    Overlays along with Views constitute the only valid leaf types of
+    a ViewTree and in fact extend the ViewTree structure. Overlays are
+    constructed using the * operator (building an identical structure
+    to the + operator) and are the only objects that inherit both from
+    ViewTree and View.
+    """
+
+    def __init__(self, **params):
+        view_params = View.params().keys()
+        ViewTree.__init__(self,
+                          **{k:v for k,v in params.items() if k not in view_params})
+        View.__init__(self, self.data,
+                      **{k:v for k,v in params.items() if k in view_params})
+
+
+    def __add__(self, other):
+        return ViewTree.from_view(self) + ViewTree.from_view(other)
+
+    def __mul__(self, other):
+        if isinstance(other, LayerTree):
+            items = list(self.items.items()) + list(other.items.items())
+        elif isinstance(other, View):
+            items = list(self.items.items()) + [((other.value.name, other.label), other)]
+        elif isinstance(other, Map):
+            raise NotImplementedError
+
+        return Overlay(items=items).display('all')
+
+
+
 class Layer(Pane):
     """
     Layer is the baseclass for all 2D View types, with an x- and
@@ -37,11 +73,11 @@ class Layer(Pane):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
 
-        self_layers = self.data.values() if isinstance(self, Layers) else [self]
-        other_layers = other.data.values() if isinstance(other, Layers) else [other]
-        combined_layers = self_layers + other_layers
+        self_item = [((self.value, self.label), self)]
+        other_items = (other.items() if isinstance(other, Overlay)
+                       else [((other.value, other.label), other)])
+        return Overlay(items=self_item + other_items)
 
-        return Layers(combined_layers)
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         from ..operation import histogram
