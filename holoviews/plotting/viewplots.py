@@ -836,14 +836,15 @@ class LayersPlot(Plot):
     def _create_subplots(self):
         subplots = {}
 
-        overlay = self._collapse_channels(self._map.last)
+        collapsed = self._collapse_channels(self._map)
+        vmaps = collapsed.split_overlays()
         style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(overlay, lambda s: s.style))
+                            in groupby(vmaps, lambda s: s.style))
 
-        for zorder, vmap in enumerate(overlay):
+        for zorder, vmap in enumerate(vmaps):
             cyclic_index, _ = next(style_groups[vmap.style])
-            plotopts = View.options.plotting(vmap).opts
-            plotype = Plot.defaults[type(vmap)]
+            plotopts = View.options.plotting(vmap.style).opts
+            plotype = Plot.defaults[type(vmap.last)]
             subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
                                                     show_legend=self.show_legend, zorder=zorder,
                                                     aspect=self.aspect))
@@ -867,7 +868,10 @@ class LayersPlot(Plot):
             matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
             if matching and len(layer_labels)==len(pattern):
                 views = [el for el in overlay if el.label in layer_labels]
-                overlay_slice = Layers(views)
+                if isinstance(overlay, Overlay):
+                    views = np.product([Overlay.from_view(el) for el in overlay])
+                else:
+                    overlay_slice = overlay.clone(views)
                 collapsed_view = fn(overlay_slice)
                 if isinstance(overlay, ViewTree):
                     collapsed_overlay *= collapsed_view
@@ -881,26 +885,33 @@ class LayersPlot(Plot):
         return collapsed_overlay
 
 
-    def _collapse_channels(self, overlay):
+    def _collapse_channels(self, vmap):
         """
         Given a map of Overlays, apply all applicable channel
         reductions.
         """
+        if not issubclass(type(vmap.values()[0]), (Overlay, Layers)):
+            return vmap
+        elif not Layers.channels.keys(): # No potential channel reductions
+            return vmap
+
         # Apply all customized channel operations
-        customized = [k for k in Layers.channels.keys()
-                      if overlay.label and k.startswith(overlay.label)]
-        # Largest reductions should be applied first
-        sorted_customized = sorted(customized, key=lambda k: -Layers.channels[k].size)
-        sorted_reductions = sorted(Layers.channels.options(),
-                                   key=lambda k: -Layers.channels[k].size)
-        # Collapse the customized channel before the other definitions
-        for key in sorted_customized + sorted_reductions:
-            channel = Layers.channels[key]
-            if channel.mode is None: continue
-            collapse_fn = channel.operation
-            fn = collapse_fn.instance(**channel.opts)
-            self._collapse(overlay, channel.pattern, fn, key)
-        return overlay
+        collapsed_vmap = vmap.clone()
+        for key, overlay in vmap.items():
+            customized = [k for k in Layers.channels.keys()
+                          if overlay.label and k.startswith(overlay.label)]
+            # Largest reductions should be applied first
+            sorted_customized = sorted(customized, key=lambda k: -Layers.channels[k].size)
+            sorted_reductions = sorted(Layers.channels.options(),
+                                       key=lambda k: -Layers.channels[k].size)
+            # Collapse the customized channel before the other definitions
+            for key in sorted_customized + sorted_reductions:
+                channel = Layers.channels[key]
+                if channel.mode is None: continue
+                collapse_fn = channel.operation
+                fn = collapse_fn.instance(**channel.opts)
+                collapsed_vmap[k] = self._collapse(overlay, channel.pattern, fn, key)
+        return vmap
 
 
     def _adjust_legend(self):
@@ -957,7 +968,7 @@ class LayersPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
         view = self._map.get(key, None)
-        for zorder, plot in enumerate(self.subplots):
+        for zorder, plot in enumerate(self.subplots.values()):
             if zorder == 0 and lbrt is None and view:
                 lbrt = view.lbrt if self.rescale else self._map.lbrt
             plot.update_frame(n, lbrt)
@@ -980,8 +991,7 @@ class OverlayPlot(LayersPlot):
     _abstract = True
 
     def __init__(self, overlay, **params):
-        super(OverlayPlot, self).__init__(
-            Layers(overlay.values()), **params)
+        super(OverlayPlot, self).__init__(overlay, **params)
 
 
 
