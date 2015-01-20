@@ -294,6 +294,10 @@ class ViewTree(AttrTree):
 
 
     def __getitem__(self, key):
+        if isinstance(key, int):
+            if key < len(self):
+                return self.data.values()[key]
+            raise KeyError("Element out of range")
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
             row, col = key
             idx = row * self._cols + col
