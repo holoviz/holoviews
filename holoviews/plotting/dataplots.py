@@ -52,8 +52,6 @@ class CurvePlot(Plot):
         The style options for CurvePlot match those of matplotlib's
         LineCollection object.""")
 
-    _view_type = Curve
-
     def __init__(self, curves, **params):
         super(CurvePlot, self).__init__(curves, **params)
         val_dim = self._map.last.get_dimension(1)
@@ -173,8 +171,6 @@ class ScatterPlot(CurvePlot):
        The style options for ScatterPlot match those of matplotlib's
        PolyCollection object.""")
 
-    _view_type = Scatter
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         scatterview = self._map.last
         self.cyclic_index = cyclic_index
@@ -245,8 +241,6 @@ class TablePlot(Plot):
 
     # Disable computing plot bounds from data.
     apply_databounds = False
-
-    _view_type = (ItemTable, Table)
 
     def pprint_value(self, value):
         """
@@ -340,8 +334,6 @@ class HistogramPlot(Plot):
 
     show_grid = param.Boolean(default=False, doc="""
         Whether to overlay a grid on the axis.""")
-
-    _view_type = Histogram
 
     def __init__(self, histograms, **params):
         self.center = False

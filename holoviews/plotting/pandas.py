@@ -54,9 +54,6 @@ class DFrameViewPlot(Plot):
 
     apply_databounds = False
 
-    _view_type = DataFrameView
-
-
     def __init__(self, view, **params):
         super(DFrameViewPlot, self).__init__(view, **params)
         if self._map.last.plot_type and 'plot_type' not in params:

@@ -77,8 +77,6 @@ class Plot(param.Parameterized):
         style options object. Each subclass should override this
         parameter to list every option that works correctly.""")
 
-    _view_type = View
-
     # A mapping from View types to their corresponding plot types
     defaults = {}
 
@@ -824,8 +822,6 @@ class LayersPlot(Plot):
      LayersPlot renders layers which individually have style and plot
      options but LayersPlot itself does not.""")
 
-    _view_type = Layers
-
     _abstract = True
 
     def __init__(self, overlay, **params):
@@ -994,8 +990,6 @@ class AnnotationPlot(Plot):
      Box annotations, hlines and vlines and lines all accept
      matplotlib line style options. Arrow annotations also accept
      additional text options.""")
-
-    _view_type = Annotation
 
     def __init__(self, annotation, **params):
         self._annotation = annotation

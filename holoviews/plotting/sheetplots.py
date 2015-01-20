@@ -37,8 +37,6 @@ class PointPlot(Plot):
      The style options for PointPlot match those of matplotlib's
      scatter plot command.""")
 
-    _view_type = Points
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         points = self._map.last
 
@@ -130,8 +128,6 @@ class VectorFieldPlot(Plot):
        Whether to normalize vector magnitudes automatically. If False,
        it will be assumed that the lengths have already been correctly
        normalized.""")
-
-    _view_type = VectorField
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
@@ -246,8 +242,6 @@ class ContourPlot(Plot):
         The style options for ContourPlot match those of matplotlib's
         LineCollection class.""")
 
-    _view_type = Contours
-
     def __init__(self, *args, **params):
         self.aspect = 'equal'
         super(ContourPlot, self).__init__(*args, **params)
@@ -282,8 +276,6 @@ class MatrixPlot(Plot):
         The style options for MatrixPlot are a subset of those used
         by matplotlib's imshow command. If supplied, the clim option
         will be ignored as it is computed from the input View.""")
-
-    _view_type = (Raster, Layer)
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 

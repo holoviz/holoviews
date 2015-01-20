@@ -65,8 +65,6 @@ class RegressionPlot(FullRedrawPlot):
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
-    _view_type = Regression
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         self.cyclic_index = cyclic_index
 
@@ -106,8 +104,6 @@ class BivariatePlot(FullRedrawPlot):
                             constant=True, doc="""
        The style options for BivariatePlot match those of seaborns
        kdeplot.""")
-
-    _view_type = Bivariate
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         kdeview = self._map.last
@@ -166,8 +162,6 @@ class TimeSeriesPlot(FullRedrawPlot):
        The style options for TimeSeriesPlot match those of seaborns
        tsplot.""")
 
-    _view_type = TimeSeries
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         curveview = self._map.last
         self.cyclic_index = cyclic_index
@@ -210,8 +204,6 @@ class DistributionPlot(FullRedrawPlot):
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
-    _view_type = Distribution
-
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         distview = self._map.last
         self.style = View.options.style(distview)[cyclic_index]
@@ -236,8 +228,6 @@ class SNSFramePlot(DFrameViewPlot):
     types plot one dimension against another it uses the x and y
     parameters, which can be set on the SNSFrame.
     """
-
-    _view_type = SNSFrame
 
     plot_type = param.ObjectSelector(default='scatter_matrix',
                                      objects=['interact', 'regplot',
