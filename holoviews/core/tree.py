@@ -49,18 +49,6 @@ class AttrTree(object):
             self.set_path(path, item)
 
 
-    def __iter__(self):
-        return iter(self.data.values())
-
-
-    def __contains__(self, name):
-        return name in self.children or name in self.data
-
-
-    def __len__(self):
-        return len(self.data)
-
-
     def _valid_identifier(self, identifier):
         """
         Replace spaces with underscores and returns value after
@@ -187,25 +175,6 @@ class AttrTree(object):
         return path_item
 
 
-    def get(self, identifier, default=None):
-        return self.__dict__.get(identifier, default)
-
-
-    def keys(self):
-        return self.data.keys()
-
-    def items(self):
-        return self.data.items()
-
-    def pop(self, identifier, default=None):
-        if identifier in self.children:
-            item = self[identifier]
-            self.__delitem__(identifier)
-            return item
-        else:
-            return default
-
-
     def __setattr__(self, identifier, val):
         identifier = self._valid_identifier(identifier)
         # Getattr is skipped for root and first set of children
@@ -273,3 +242,39 @@ class AttrTree(object):
         return "%s of %s items:\n\n%s" % (self.__class__.__name__,
                                           len(self.data),
                                           self._draw_tree(self))
+
+    def __iter__(self):
+        return iter(self.data.values())
+
+
+    def __contains__(self, name):
+        return name in self.children or name in self.data
+
+
+    def __len__(self):
+        return len(self.data)
+
+
+    def get(self, identifier, default=None):
+        return self.__dict__.get(identifier, default)
+
+
+    def keys(self):
+        return self.data.keys()
+
+
+    def items(self):
+        return self.data.items()
+
+
+    def values(self):
+        return self.data.values()
+
+
+    def pop(self, identifier, default=None):
+        if identifier in self.children:
+            item = self[identifier]
+            self.__delitem__(identifier)
+            return item
+        else:
+            return default
