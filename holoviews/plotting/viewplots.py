@@ -507,12 +507,57 @@ class AdjointLayoutPlot(Plot):
         layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
         # Type may be set to 'Embedded Dual' by a call it grid_situate
         self.layout_type = layout_lens[len(self.layout)]
-        # Handles on subplots by position: 'main', 'top' or 'right'
-        self.subplots = {}
 
         # The supplied (axes, view) objects as indexed by position
         self.plot_axes = {} # Populated by call, used in adjust_positions
         super(AdjointLayoutPlot, self).__init__(**params)
+
+        # Handles on subplots by position: 'main', 'top' or 'right'
+        self.subplots = self._create_subplots()
+
+
+    def _create_subplots(self):
+        """
+        Plot all the views contained in the AdjointLayout Object using axes
+        appropriate to the layout configuration. All the axes are
+        supplied by LayoutPlot - the purpose of the call is to
+        invoke subplots with correct options and styles and hide any
+        empty axes as necessary.
+        """
+        subplots = {}
+        for pos in self.view_positions:
+            # Pos will be one of 'main', 'top' or 'right' or None
+            view = self.layout.get(pos, None)
+            # Customize plotopts depending on position.
+            plotopts = View.options.plotting(view).opts
+            # Options common for any subplot
+            subplot_opts = dict(show_title=False, layout=self.layout)
+            override_opts = {}
+
+            if pos == 'right':
+                right_opts = dict(orientation='vertical', show_xaxis=None, show_yaxis='left')
+                override_opts = dict(subplot_opts, **right_opts)
+            elif pos == 'top':
+                top_opts = dict(show_xaxis='bottom', show_yaxis=None)
+                override_opts = dict(subplot_opts, **top_opts)
+
+            # Override the plotopts as required
+            plotopts.update(override_opts)
+            vtype = view.type if isinstance(view, Map) else view.__class__
+            layer_types = (vtype,) if isinstance(view, View) else view.layer_types
+            if isinstance(view, Grid):
+                if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
+                    from .sheetplots import MatrixGridPlot
+                    plot_type = MatrixGridPlot
+                else:
+                    plot_type = GridPlot
+            else:
+                if pos == 'main':
+                    plot_type = Plot.defaults[vtype]
+                else:
+                    plot_type = Plot.sideplots[vtype]
+            subplots[pos] = plot_type(view, **plotopts)
+        return subplots
 
 
     @property
@@ -561,49 +606,19 @@ class AdjointLayoutPlot(Plot):
         for ax, pos in zip(subaxes, self.view_positions):
             # Pos will be one of 'main', 'top' or 'right' or None
             view = self.layout.get(pos, None)
+            subplot = self.subplots.get(pos, None)
             # Record the axis and view at this position
             self.plot_axes[pos] = (ax, view)
             # If no view object or empty position, disable the axis
-            if None in [view, pos]:
+            if None in [view, pos, subplot]:
                 ax.set_axis_off()
                 continue
-            # Customize plotopts depending on position.
-            plotopts = View.options.plotting(view).opts
-            # Options common for any subplot
-            subplot_opts = dict(show_title=False, layout=self.layout)
-            override_opts = {}
 
-            if pos == 'right':
-                right_opts = dict(orientation='vertical', show_xaxis=None, show_yaxis='left')
-                override_opts = dict(subplot_opts, **right_opts)
-            elif pos == 'top':
-                top_opts = dict(show_xaxis='bottom', show_yaxis=None)
-                override_opts = dict(subplot_opts, **top_opts)
-
-            # Override the plotopts as required
-            plotopts.update(override_opts)
             vtype = view.type if isinstance(view, Map) else view.__class__
-            layer_types = (vtype,) if isinstance(view, View) else view.layer_types
-            if isinstance(view, Grid):
-                if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
-                    from .sheetplots import MatrixGridPlot
-                    plot_type = MatrixGridPlot
-                else:
-                    plot_type = GridPlot
-            else:
-                if pos == 'main':
-                    plot_type = Plot.defaults[vtype]
-                else:
-                    plot_type = Plot.sideplots[vtype]
-            subplot = plot_type(view, **plotopts)
-
             # 'Main' views that should be displayed with square aspect
-            if pos == 'main' and issubclass(vtype, (Layer, Layers)):
+            if pos == 'main' and issubclass(vtype, (Layer, Layers, Overlay)):
                 subplot.aspect='square'
-
             subplot(ax)
-            # Save subplot handles and the axis/views pairs by position
-            self.subplots[pos] = subplot
 
 
     def adjust_positions(self):
