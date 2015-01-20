@@ -27,7 +27,7 @@ class AttrTree(object):
             first.update(tree)
         return first
 
-    def __init__(self, identifier=None, parent=None, items=None):
+    def __init__(self, items=None, identifier=None, parent=None):
         """
         identifier: A string identifier for the current node (if any)
         parent:     The parent node (if any)
@@ -45,12 +45,12 @@ class AttrTree(object):
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
         self.__dict__['data'] = OrderedDict()
+        self._process_items(items)
+
+    def _process_items(self, items):
         items = [] if items is None else (items if isinstance(items, list) else items.items())
         for path, item in items:
             self.set_path(path, item)
-
-
-
 
     @property
     def fixed(self):

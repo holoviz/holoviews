@@ -35,9 +35,9 @@ class Overlay(ViewTree, View):
     ViewTree and View.
     """
 
-    def __init__(self, **params):
+    def __init__(self, items=None, **params):
         view_params = View.params().keys()
-        ViewTree.__init__(self,
+        ViewTree.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
         View.__init__(self, self.data,
                       **{k:v for k,v in params.items() if k in view_params})
@@ -55,6 +55,13 @@ class Overlay(ViewTree, View):
             raise NotImplementedError
 
         return Overlay(items=items).display('all')
+
+
+
+
+    @property
+    def labels(self):
+        return [el.label for el in self]
 
 
 
@@ -705,7 +712,7 @@ class ViewMap(Map):
         Given a Map of Overlays of N layers, split out the layers into
         N separate Maps.
         """
-        if self.type is not Layers:
+        if self.type not in (Layers, Overlay):
             return self.clone(self.items())
 
         maps = []
