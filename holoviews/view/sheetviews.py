@@ -374,6 +374,15 @@ class Matrix(SheetCoordinateSystem, Raster):
         self._lbrt = lbrt
 
 
+    def range(self, dim):
+        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
+        if dim_idx in [0, 1]:
+            if dim_idx:
+                return self.ylim
+            return self.xlim
+        return super(Matrix, self).range(dim)
+
+
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
 
