@@ -24,16 +24,17 @@ class Raster(Layer):
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
 
+    lbrt = param.NumericTuple(default=(0, 0, 1, 1), doc="""
+        A spatial bounds for the Raster, specified as a tuple
+        of the form (left, bottom, right, top).""")
+
     value = param.String(default='Raster')
 
     value_dimensions = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
 
-    def __init__(self, data, lbrt, **params):
+    def __init__(self, data, **params):
         super(Raster, self).__init__(data, **params)
-        self.xlim = lbrt[0], lbrt[2]
-        self.ylim = lbrt[1], lbrt[3]
-
 
     def __getitem__(self, slc):
         raise NotImplementedError('Slicing Raster Views currently'
