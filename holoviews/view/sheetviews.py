@@ -198,18 +198,14 @@ class HeatMap(Raster):
     value = param.String(default='HeatMap')
 
     def __init__(self, data, **params):
-        self._data, dimensions = self._process_data(data, params)
-        self._style = None
-        self._xlim = None
-        self._ylim = None
-        Dimensioned.__init__(self, **dict(params, **dimensions))
+        self._data, array, dimensions = self._process_data(data, params)
+        super(HeatMap, self).__init__(array, **dict(params, **dimensions))
 
 
     def _process_data(self, data, params):
         dimensions = {group: params.get(group, getattr(self, group))
                       for group in self._dim_groups[:2]}
         if isinstance(data, NdMapping):
-            self._data = data
             if 'key_dimensions' not in params:
                 dimensions['key_dimensions'] = data.key_dimensions
             if 'value_dimensions' not in params:
@@ -218,7 +214,18 @@ class HeatMap(Raster):
             data = NdMapping(data, **dimensions)
         else:
             raise TypeError('HeatMap only accepts dict or NdMapping types.')
-        return data, dimensions
+
+        keys = data.keys()
+        dim1_keys = sorted(set(k[0] for k in keys))
+        dim2_keys = sorted(set(k[1] for k in keys))
+        grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
+                     for i2, d2 in enumerate(dim2_keys)]
+
+        array = np.zeros((len(dim2_keys), len(dim1_keys)))
+        for (i1, d1), (i2, d2) in grid_keys:
+            array[len(dim2_keys)-i2-1, i1] = data.get((d1, d2), np.NaN)
+
+        return data, array, dimensions
 
 
     def __getitem__(self, coords):
@@ -246,20 +253,6 @@ class HeatMap(Raster):
             return self._data.values()
         else:
             raise Exception("Dimension %s not found." % dim)
-
-
-    @property
-    def data(self):
-        dim1_keys, dim2_keys = self.dense_keys()
-        grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
-                     for i2, d2 in enumerate(dim2_keys)]
-
-        array = np.zeros((len(dim2_keys), len(dim1_keys)))
-        for (i1, d1), (i2, d2) in grid_keys:
-            array[len(dim2_keys)-i2-1, i1] = self._data.get((d1, d2), np.NaN)
-
-        return array
-
 
     @property
     def xlim(self):
