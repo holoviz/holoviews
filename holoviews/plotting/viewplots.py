@@ -15,14 +15,14 @@ import param
 
 from ..core import DataElement, UniformNdMapping, Element, HoloMap, CompositeOverlay,\
     NdOverlay, Overlay, AdjointLayout, GridLayout, AxisLayout, ViewTree
-from ..view import Annotation, Raster
+from ..element import Annotation, Raster
 
 
 class Plot(param.Parameterized):
     """
     A Plot object returns either a matplotlib figure object (when
     called or indexed) or a matplotlib animation object as
-    appropriate. Plots take view objects such as Matrix,
+    appropriate. Plots take element objects such as Matrix,
     Contours or Points as inputs and plots them in the
     appropriate format. As views may vary over time, all plots support
     animation via the anim() method.
@@ -46,7 +46,7 @@ class Plot(param.Parameterized):
         adjoined plots when appropriate.""")
 
     rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per view.""")
+        Whether to use redraw the axes per map or per element.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
@@ -76,10 +76,10 @@ class Plot(param.Parameterized):
         style options object. Each subclass should override this
         parameter to list every option that works correctly.""")
 
-    # A mapping from DimensionedData types to their corresponding plot types
+    # A mapping from DataElement types to their corresponding plot types
     defaults = {}
 
-    # A mapping from DimensionedData types to their corresponding side plot types
+    # A mapping from DataElement types to their corresponding side plot types
     sideplots = {}
 
     def __init__(self, view=None, zorder=0, all_keys=None, **params):
@@ -96,7 +96,7 @@ class Plot(param.Parameterized):
 
     def _check_map(self, view, element_type=Element):
         """
-        Helper method that ensures a given view is always returned as
+        Helper method that ensures a given element is always returned as
         an HoloMap object.
         """
         if not isinstance(view, HoloMap):
@@ -289,7 +289,7 @@ class Plot(param.Parameterized):
 
 class GridPlot(Plot):
     """
-    Plot a group of views in a grid layout based on a AxisLayout view
+    Plot a group of elements in a grid layout based on a AxisLayout element
     object.
     """
 
@@ -322,7 +322,7 @@ class GridPlot(Plot):
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots = self._create_subplots()
 
-        extra_opts = Element.options.plotting(self.grid).opts
+        extra_opts = DataElement.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(params, **extra_opts))
@@ -952,21 +952,18 @@ class LayersPlot(Plot):
         return self._finalize_axis(None, title=self._format_title(key))
 
 
-    def update_frame(self, n, lbrt=None):
+    def update_frame(self, n, ranges={}):
         n = n if n < len(self) else len(self) - 1
-        key = self._keys[n]
-        view = self._map.get(key, None)
+        ranges = ranges if ranges else self._get_range(n)
         for zorder, plot in enumerate(self.subplots.values()):
-            if zorder == 0 and lbrt is None and view:
-                lbrt = view.lbrt if self.rescale else self._map.lbrt
-            plot.update_frame(n, lbrt)
+            plot.update_frame(n, ranges)
         self._finalize_axis(None)
 
 
 
 class AnnotationPlot(Plot):
     """
-    Draw the Annotation view on the supplied axis. Supports axis
+    Draw the Annotation element on the supplied axis. Supports axis
     vlines, hlines, arrows (with or without labels), boxes and
     arbitrary polygonal lines. Note, unlike other Plot types,
     AnnotationPlot must always operate on a supplied axis as
@@ -1039,7 +1036,7 @@ class AnnotationPlot(Plot):
 
     def _draw_annotations(self, annotation, key):
         """
-        Draw the elements specified by the Annotation Element on the
+        Draw the elements specified by the Annotation DataElement on the
         axis, return a list of handles.
         """
         handles = []

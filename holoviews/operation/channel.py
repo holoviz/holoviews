@@ -6,8 +6,9 @@ import param
 
 from ..core.operation import ViewOperation
 from ..core.options import options, StyleOpts, ChannelOpts, Cycle
+from ..element import Matrix
 from ..styles import GrayNearest
-from ..view import Matrix
+
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)

@@ -7,7 +7,7 @@ import param
 from ..core import NdMapping
 from holoviews.core.element import HoloMap
 from ..core.operation import MapOperation
-from ..view import Table, Curve
+from ..element import Table, Curve
 
 
 class table_collate(MapOperation):

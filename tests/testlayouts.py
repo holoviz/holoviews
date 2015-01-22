@@ -3,7 +3,7 @@ from holoviews import AdjointLayout, GridLayout, AxisLayout, ViewTree, Element
 
 
 class CompositeTest(unittest.TestCase):
-    "For testing of basic composite view types"
+    "For testing of basic composite element types"
 
     def setUp(self):
         self.data1 ='An example of arbitrary data'

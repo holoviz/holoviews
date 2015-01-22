@@ -12,7 +12,7 @@ import param
 
 from ..core import Dimension, NdMapping, HoloMap, NdOverlay, Element, HoloMap
 from ..core.options import options, StyleOpts, Cycle
-from ..view import DataView, Scatter, Curve
+from ..element import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
 
 

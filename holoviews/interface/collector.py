@@ -10,8 +10,8 @@ import param
 
 from ..core import Dimension, DataElement, NdMapping, UniformNdMapping,\
  AxisLayout, AttrTree, HoloMap
+from ..element import Matrix
 from ..ipython.widgets import RunProgress, ProgressBar
-from ..view import Matrix
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
@@ -68,7 +68,7 @@ class ViewRef(Reference):
     possible to schedule tasks for processing data not yet present.
 
     ViewRefs compose with the * operator to specify Overlays and also
-    support slicing of the referenced view objects:
+    support slicing of the referenced elements:
 
     >>> ref = ViewRef('Example.Path1 * Example.Path2')
 

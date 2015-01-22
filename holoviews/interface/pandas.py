@@ -23,7 +23,7 @@ import param
 from ..core import Dimension, DataElement, NdMapping, NdOverlay, HoloMap,\
  GridLayout, AxisLayout, Element, HoloMap
 from ..core.options import options, PlotOpts
-from ..view import HeatMap, Table, Curve, Scatter, Bars, Points, VectorField
+from ..element import HeatMap, Table, Curve, Scatter, Bars, Points, VectorField
 
 
 class DataFrameView(Element):

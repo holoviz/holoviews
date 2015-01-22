@@ -8,7 +8,7 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 from ..core import DataElement, Element, CompositeOverlay, HoloMap
-from ..view import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table, Points
+from ..element import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table, Points
 from .viewplots import Plot
 
 

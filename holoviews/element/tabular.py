@@ -9,7 +9,7 @@ from ..core import Dimension, NdMapping, Element, HoloMap
 
 class ItemTable(Element):
     """
-    A tabular view type to allow convenient visualization of either a
+    A tabular element type to allow convenient visualization of either a
     standard Python dictionary or an OrderedDict. If an OrderedDict is
     used, the headings will be kept in the correct order. Tables store
     heterogeneous data with different labels.

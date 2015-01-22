@@ -5,14 +5,14 @@ import param
 from ..core import Dimension, ViewOperation, CompositeOverlay, NdOverlay
 from ..core.options import options
 from ..core.util import find_minmax
-from ..view import ItemTable, Matrix, VectorField, Contours, Histogram
+from ..element import ItemTable, Matrix, VectorField, Contours, Histogram
 
 
 class chain(ViewOperation):
     """
     Definining a viewoperation chain is an easy way to define a new
     ViewOperation from a series of existing ones. The single argument
-    is a callable that accepts an input view and returns a list of
+    is a callable that accepts an input element and returns a list of
     output views. To create the custom ViewOperation, you will need to
     supply this argument to a new instance of chain. For example:
 

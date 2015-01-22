@@ -18,8 +18,8 @@ except:
 
 from ..core import DataElement, Element, HoloMap, AdjointLayout, GridLayout,\
  AxisLayout, ViewTree, Overlay
+from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
-from ..view import Raster
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
@@ -121,7 +121,7 @@ def max_frame_warning(max_frames):
                      % max_frames)
 
 def process_view_magics(obj):
-    "Hook into %%opts and %%channels magics to process display view"
+    "Hook into %%opts and %%channels magics to process displayed element"
     invalid_styles = OptsMagic.set_view_options(obj)
     if invalid_styles: return invalid_styles
     invalid_channels = ChannelMagic.set_channels(obj)

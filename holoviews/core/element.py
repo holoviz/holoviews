@@ -122,7 +122,7 @@ class Element(DataElement, Composable, Overlayable):
     def style(self):
         """
         The name of the style that may be used to control display of
-        this view. If a style name is not set and but a label is
+        this element. If a style name is not set and but a label is
         assigned, then the closest existing style name is returned.
         """
         if self._style:
@@ -147,7 +147,7 @@ class Element(DataElement, Composable, Overlayable):
         This method transforms any DataElement type into a Table
         as long as it implements a dimension_values method.
         """
-        from ..view import Table
+        from ..element import Table
         keys = zip(*[self.dimension_values(dim.name)
                  for dim in self.key_dimensions])
         values = zip(*[self.dimension_values(dim.name)

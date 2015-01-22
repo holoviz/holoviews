@@ -33,7 +33,7 @@ class FullRedrawPlot(Plot):
         are also supported.""")
 
     rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per view.""")
+        Whether to use redraw the axes per map or per element.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Enables the axis grid.""")

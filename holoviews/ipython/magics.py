@@ -329,7 +329,7 @@ class OptsMagic(Magics):
     how holoviews are displayed. The %opts line magic updates or
     creates new options for either StyleOpts (i.e. matplotlib options)
     or in the PlotOpts (plot settings). The %%opts cell magic sets
-    custom display options associated on the displayed view object
+    custom display options associated on the displayed element object
     which will persist every time that object is displayed.
     """
     # Attributes set by the magic and read when display hooks run
@@ -356,11 +356,11 @@ class OptsMagic(Magics):
     @classmethod
     def collect(cls, obj, attr='style'):
         """
-        Given a composite view object, build a dictionary of either
+        Given a composite element object, build a dictionary of either
         the 'style' or 'label' attributes across all contained
         atoms. This method works across overlays, grid layouts and
         maps. The return is a dictionary with the collected string
-        values as keys for the the associated view type.
+        values as keys for the the associated element type.
         """
         group = {}
         if isinstance(obj, (CompositeOverlay, AdjointLayout, AxisLayout, GridLayout, ViewTree)):
@@ -399,9 +399,9 @@ class OptsMagic(Magics):
     @classmethod
     def _set_style_names(cls, obj, custom_name_map):
         """
-        Update the style names on a composite view to the custom style
+        Update the style names on a composite element to the custom style
         name for all matches. A match occurs when the basename of the
-        view.style is found in the supplied dictionary.
+        element.style is found in the supplied dictionary.
         """
         if isinstance(obj, (AdjointLayout, AxisLayout, GridLayout, ViewTree)):
             for subview in obj:
@@ -419,7 +419,7 @@ class OptsMagic(Magics):
     @classmethod
     def set_view_options(cls, obj):
         """
-        To be called by the display hook which supplies the view
+        To be called by the display hook which supplies the element
         object to be displayed. Any custom options are defined on the
         object as necessary and if there is an error, an HTML message
         is returned.
@@ -512,18 +512,18 @@ class OptsMagic(Magics):
         for name in sorted(available_styles):
             padding = '&nbsp;'*(max_len - len(name))
             s += fmt % (name, padding,
-                        cls.pprint_kws(DataElement.options.plotting(name)),
-                        cls.pprint_kws(DataElement.options.style(name)))
+                        cls.pprint_kws(Element.options.plotting(name)),
+                        cls.pprint_kws(Element.options.style(name)))
 
         if custom_styles:
-            s += '<br>Options that have been customized for the displayed view only:<br>'
+            s += '<br>Options that have been customized for the displayed element only:<br>'
             custom_names = [style_name.rsplit('>]_')[1] for style_name in custom_styles]
             max_len = max(len(s) for s in custom_names)
             for custom_name, custom_style  in sorted(zip(custom_names, custom_styles)):
                 padding = '&nbsp;'*(max_len - len(custom_name))
                 s += fmt % (custom_name, padding,
-                            cls.pprint_kws(DataElement.options.plotting(custom_style)),
-                            cls.pprint_kws(DataElement.options.style(custom_style)))
+                            cls.pprint_kws(Element.options.plotting(custom_style)),
+                            cls.pprint_kws(Element.options.style(custom_style)))
         return s
 
 
@@ -657,7 +657,7 @@ class OptsMagic(Magics):
     def labels(self, line, cell=None):
         """
         Simple magic to see the full list of defined labels for the
-        displayed view object.
+        displayed element object.
         """
         if line != '':
             raise Exception("%%labels magics accepts no arguments.")
@@ -669,7 +669,7 @@ class OptsMagic(Magics):
     @line_cell_magic
     def opts(self, line='', cell=None):
         """
-        Set custom display options unique to the displayed view. The
+        Set custom display options unique to the displayed element. The
         keyword-value pairs in the square brackets (if present) set
         the plot parameters. Keyword-value pairs outside the square
         brackets are matplotlib style options.

@@ -507,7 +507,7 @@ class AxisLayout(NdMapping):
     def style(self):
         """
         The name of the style that may be used to control display of
-        this view.
+        this element.
         """
         if self._style:
             return self._style

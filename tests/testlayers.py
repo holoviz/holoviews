@@ -5,7 +5,7 @@ import numpy as np
 from holoviews import NdOverlay, Element
 
 class CompositeTest(unittest.TestCase):
-    "For testing of basic composite view types"
+    "For testing of basic composite element types"
 
     def setUp(self):
         self.data1 = np.zeros((10, 2))

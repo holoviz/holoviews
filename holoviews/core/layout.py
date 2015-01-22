@@ -194,7 +194,7 @@ class GridLayout(UniformNdMapping):
     @property
     def grid_items(self):
         """
-        Compute a dict of {(row,column): view} elements from the
+        Compute a dict of {(row,column): element} elements from the
         current set of items and specified number of columns.
         """
         if list(self.keys()) == []:  return {}
@@ -206,7 +206,7 @@ class GridLayout(UniformNdMapping):
     @property
     def grid_keys(self):
         """
-        Compute a dict of {(row,column): view} elements from the
+        Compute a dict of {(row,column): element} elements from the
         current set of items and specified number of columns.
         """
         if list(self.keys()) == []:  return {}
@@ -246,7 +246,7 @@ class GridLayout(UniformNdMapping):
     def style(self):
         """
         The name of the style that may be used to control display of
-        this view.
+        this element.
         """
         if self._style:
             return self._style
@@ -341,8 +341,8 @@ class ViewTree(AttrTree):
     def _relabel(self, items):
         """
         Given a list of path items (list of tuples where each element
-        is a (path, view) pair), generate a new set of path items that
-        guarantees that no paths clash. This uses the view labels as
+        is a (path, element) pair), generate a new set of path items that
+        guarantees that no paths clash. This uses the element labels as
         appropriate and automatically generates roman numeral
         identifiers if necessary.
         """

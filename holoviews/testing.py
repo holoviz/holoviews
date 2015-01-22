@@ -7,9 +7,9 @@ from IPython.display import HTML, SVG
 
 from .core import Dimension, GridLayout, AdjointLayout, Overlay, NdOverlay, AxisLayout, HoloMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
+from .element import *
 from .interface.pandas import *
 from .interface.seaborn import *
-from .view import *
 
 
 class ViewTestCase(unittest.TestCase):

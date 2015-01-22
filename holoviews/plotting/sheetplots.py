@@ -8,8 +8,8 @@ from matplotlib.collections import LineCollection
 import param
 
 from ..core import CompositeOverlay, Element
-from ..view import Raster, HeatMap, Points, Matrix, Contours, VectorField
-from .viewplots import LayersPlot, Plot, GridPlot
+from ..element import Raster, HeatMap, Points, Matrix, Contours, VectorField
+from .viewplots import OverlayPlot, Plot, GridPlot
 
 
 class PointPlot(Plot):

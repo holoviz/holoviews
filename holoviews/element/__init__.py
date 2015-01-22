@@ -1,4 +1,4 @@
-from ..core import Element
+from ..core import Element, DataElement
 from .dataviews import * # pyflakes:ignore (API import)
 from .sheetviews import * # pyflakes:ignore (API import)
 from .tabular import * # pyflakes:ignore (API import)

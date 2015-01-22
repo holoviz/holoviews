@@ -15,15 +15,16 @@ from .layout import GridLayout
 
 class ViewOperation(param.ParameterizedFunction):
     """
-    A ViewOperation takes one or more views as inputs and processes
-    them, returning arbitrary new view objects as output. Individual
+    A ViewOperation takes one or more elements as inputs and processes
+    them, returning arbitrary new elements as output. Individual
     holoviews may be passed in directly while multiple holoviews must
-    be passed in as a UniformNdMapping of the appropriate type. A ViewOperation
-    may be used to implement simple dataview manipulations or perform
-    complex analysis.
+    be passed in as a UniformNdMapping of the appropriate type. A
+    ViewOperation may be used to implement simple dataview
+    manipulations or perform complex analysis.
 
     Internally, ViewOperations operate on the level of individual
-    holoviews, processing each layer on an input UniformNdMapping independently.
+    holoviews, processing each layer on an input UniformNdMapping
+    independently.
     """
 
     label = param.String(default='ViewOperation', doc="""
@@ -32,7 +33,7 @@ class ViewOperation(param.ParameterizedFunction):
 
     def _process(self, view, key=None):
         """
-        Process a single input view and output a list of views. When
+        Process a single input element and output a list of views. When
         multiple views are returned as a list, they will be returned
         to the user as a GridLayout. If a UniformNdMapping is passed into a
         ViewOperation, the individual layers are processed
@@ -46,7 +47,7 @@ class ViewOperation(param.ParameterizedFunction):
         """
         Helper method that return a list of views with labels ending
         with the given pattern and which have the specified type. This
-        may be useful to check is a single view satisfies some
+        may be useful to check if a single element satisfies some
         condition or to extract the appropriate views from an NdOverlay.
         """
         if isinstance(view, (NdOverlay, Overlay)):

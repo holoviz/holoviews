@@ -271,7 +271,7 @@ class DimensionedData(Dimensioned, LabelledData):
 
 class DataElement(DimensionedData):
     """
-    A view is a data structure for holding data, which may be plotted
+    A element is a data structure for holding data, which may be plotted
     using matplotlib. Views have an associated title and style
     name. All Views may be composed together into a GridLayout using
     the addition operator.
@@ -281,7 +281,7 @@ class DataElement(DimensionedData):
 
     title = param.String(default='{label} {value}', doc="""
         The title formatting string allows the title to be composed from
-        the view {label}, {value} quantity and view {type} but can also be set
+        the element {label}, {value} quantity and element {type} but can also be set
         to a simple string.""")
 
     value = param.String(default='DataElement')

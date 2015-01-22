@@ -25,7 +25,7 @@ class TestOptsMagic(ExtensionTestCase):
         super(TestOptsMagic, self).setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.core import BoundingBox, CompositeOverlay, Overlay")
-        self.cell("from holoviews.view import Matrix, Points")
+        self.cell("from holoviews.element import Matrix, Points")
 
         # Clear the options map
         self.options = OptionsGroup([Options('plotting', PlotOpts),
@@ -174,7 +174,7 @@ class TestChannelMagic(ExtensionTestCase):
         super(TestChannelMagic, self).setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.core import CompositeOverlay")
-        self.cell("from holoviews.view import Matrix")
+        self.cell("from holoviews.element import Matrix")
         self.channels = OptionsGroup([Options('definitions',
                                               ChannelOpts)])
         CompositeOverlay.channels = self.channels
