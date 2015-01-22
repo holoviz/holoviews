@@ -10,7 +10,7 @@ from .viewplots import * # pyflakes:ignore (API import)
 
 class PlotSaver(param.ParameterizedFunction):
     """
-    Parameterized function for saving the plot of a DataElement object to
+    Parameterized function for saving the plot of a ViewableElement object to
     disk either as a static figure or as an animation. Keywords that
     are not parameters are passed into the anim method of the
     appropriate plot for animations and into matplotlib.figure.savefig
@@ -51,7 +51,7 @@ class PlotSaver(param.ParameterizedFunction):
         file_format = ext[1:]
 
         plottype = Plot.defaults[type(view)]
-        plotopts = DataElement.options.plotting(view).opts
+        plotopts = ViewableElement.options.plotting(view).opts
         plot = plottype(view, **dict(plotopts, size=self.p.size))
 
         if len(plot) > 1 and ext in anim_exts:

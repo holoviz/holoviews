@@ -1,5 +1,5 @@
 import copy
-from itertools import groupby, product
+from itertools import product
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -8,7 +8,9 @@ from matplotlib.collections import LineCollection
 import param
 
 from ..core import CompositeOverlay, Element
-from ..element import Raster, HeatMap, Points, Matrix, Contours, VectorField
+from ..element.annotation import Contours
+from ..element.chart import Points, VectorField
+from ..element.raster import HeatMap, Matrix, Raster
 from .viewplots import OverlayPlot, Plot, GridPlot
 
 

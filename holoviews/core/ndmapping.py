@@ -9,7 +9,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, DimensionedData, DataElement
+from .dimension import Dimension, DimensionedData, ViewableElement
 
 
 class MultiDimensionalMapping(DimensionedData):
@@ -630,17 +630,17 @@ class UniformNdMapping(NdMapping):
     UniformNdMapping objects can be sliced, sampled, reduced, overlaid and split
     along its and its containing Views dimensions. Subclasses should
     implement the appropriate slicing, sampling and reduction methods
-    for their DataElement type.
+    for their ViewableElement type.
     """
 
     title_suffix = param.String(default='\n {dims}', doc="""
-       A string appended to the DataElement titles when they are added to the
+       A string appended to the ViewableElement titles when they are added to the
        UniformNdMapping. Default adds a new line with the formatted dimensions
        of the UniformNdMapping inserted using the {dims} formatting keyword.""")
 
     value = param.String(default='UniformNdMapping')
 
-    data_type = (DataElement, NdMapping)
+    data_type = (ViewableElement, NdMapping)
 
     _abstract = True
     _deep_indexable = True
@@ -684,14 +684,14 @@ class UniformNdMapping(NdMapping):
             data.style = self.style
 
         if self.type is not None and (type(data) != self.type):
-            raise AssertionError("%s must only contain one type of DataElement." %
+            raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
         super(UniformNdMapping, self)._item_check(dim_vals, data)
 
 
     def get_title(self, key, item, group_size=2):
         """
-        Resolves the title string on the DataElement being added to the UniformNdMapping,
+        Resolves the title string on the ViewableElement being added to the UniformNdMapping,
         adding the Maps title suffix.
         """
         if self.ndims == 1 and self.get_dimension('Default'):

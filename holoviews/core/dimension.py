@@ -269,11 +269,12 @@ class DimensionedData(Dimensioned, LabelledData):
                 return (None, None)
 
 
-class DataElement(DimensionedData):
+
+class ViewableElement(DimensionedData):
     """
     A element is a data structure for holding data, which may be plotted
     using matplotlib. Views have an associated title and style
-    name. All Views may be composed together into a GridLayout using
+    name. All Views may be composed together into a NdLayout using
     the addition operator.
     """
 
@@ -284,8 +285,8 @@ class DataElement(DimensionedData):
         the element {label}, {value} quantity and element {type} but can also be set
         to a simple string.""")
 
-    value = param.String(default='DataElement')
+    value = param.String(default='ViewableElement')
 
     def __init__(self, data, **params):
         self._style = params.pop('style', None)
-        super(DataElement, self).__init__(data, **params)
+        super(ViewableElement, self).__init__(data, **params)

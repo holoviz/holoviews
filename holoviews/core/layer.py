@@ -15,9 +15,9 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, DimensionedData, DataElement
+from .dimension import Dimension, DimensionedData, ViewableElement
 from .ndmapping import NdMapping
-from .layout import Composable, AdjointLayout, ViewTree
+from .layout import Composable, AdjointLayout, LayoutTree
 from .ndmapping import UniformNdMapping
 from .options import options, channels
 from .util import find_minmax
@@ -41,7 +41,7 @@ class Overlayable(object):
 
 
 
-class CompositeOverlay(DataElement, Composable):
+class CompositeOverlay(ViewableElement, Composable):
     """
     CompositeOverlay provides a common baseclass for Overlay classes.
     """
@@ -119,31 +119,33 @@ class CompositeOverlay(DataElement, Composable):
 
 
 
-class Overlay(ViewTree, CompositeOverlay, Composable):
+class Overlay(LayoutTree, CompositeOverlay, Composable):
     """
     An Overlay consists of multiple Views (potentially of
     heterogeneous type) presented one on top each other with a
     particular z-ordering.
 
     Overlays along with Views constitute the only valid leaf types of
-    a ViewTree and in fact extend the ViewTree structure. Overlays are
+    a LayoutTree and in fact extend the LayoutTree structure. Overlays are
     constructed using the * operator (building an identical structure
     to the + operator) and are the only objects that inherit both from
-    ViewTree and DataElement.
+    LayoutTree and ViewableElement.
     """
 
+    value = param.String(default='Overlay', constant=True)
+
     def __init__(self, items=None, **params):
-        view_params = DataElement.params().keys()
-        ViewTree.__init__(self, items,
+        view_params = ViewableElement.params().keys()
+        LayoutTree.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
-        DataElement.__init__(self, self.data,
+        ViewableElement.__init__(self, self.data,
                       **{k:v for k,v in params.items() if k in view_params})
 
 
     def __mul__(self, other):
         if isinstance(other, Overlay):
             items = list(self.data.items()) + list(other.data.items())
-        elif isinstance(other, DataElement):
+        elif isinstance(other, ViewableElement):
             label = other.label if other.label else 'I'
             items = list(self.data.items()) + [((other.value, label), other)]
         elif isinstance(other, UniformNdMapping):
@@ -197,7 +199,7 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
         self._xlim = None
         self._ylim = None
         data = self._process_layers(overlays)
-        DataElement.__init__(self, data, **params)
+        ViewableElement.__init__(self, data, **params)
         NdMapping.__init__(self, data, **params)
 
 
@@ -230,7 +232,7 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
 
 
     def item_check(self, dim_vals, layer):
-        if not isinstance(layer, DataElement): pass
+        if not isinstance(layer, ViewableElement): pass
         layer_dimensions = [d.name for d in layer.key_dimensions]
         if len(self):
             if layer_dimensions != self._layer_dimensions:
@@ -426,7 +428,7 @@ class AxisLayout(NdMapping):
 
 
     def __add__(self, obj):
-        return ViewTree.from_view(self) + ViewTree.from_view(obj)
+        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
 
 
     @property
@@ -532,7 +534,6 @@ class AxisLayout(NdMapping):
         for coords, vmap in self.items():
             map_frame = vmap.dframe()
             for coord, dim in zip(coords, self._cached_index_names)[::-1]:
-                if dim in map_frame: dim = 'Grid_' + dim
                 map_frame.insert(0, dim.replace(' ','_'), coord)
             dframes.append(map_frame)
         return pandas.concat(dframes)

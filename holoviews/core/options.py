@@ -116,7 +116,7 @@ class Options(object):
     For example supplying 'Example_View' as a style would match
     these styles (if they are defined):
 
-    'DataElement' : Opts(a=1, b=2)
+    'ViewableElement' : Opts(a=1, b=2)
     'Example_View': Opts(b=3)
 
     The resulting Opts object inherits a=1 from 'Options' and b=3
@@ -126,7 +126,7 @@ class Options(object):
     @classmethod
     def normalize_key(self, key):
         """
-        Given a key which may contain spaces, such as a view label,
+        Given a key which may contain spaces, such as a element label,
         convert it to a string suitable for attribute access.
         """
         return key.replace(' ', '')
@@ -201,7 +201,7 @@ class Options(object):
     def keys(self):
         """
         The list of all options in the OptionMap, including options
-        associated with individual view objects.
+        associated with individual element objects.
         """
         return sorted(self._items.keys())
 
@@ -321,14 +321,14 @@ class OptionsGroup(object):
 class StyleOpts(Opts):
     """
     A subclass of Opts designed to hold matplotlib options to set the
-    display Style of DataElement objects.
+    display Style of ViewableElement objects.
     """
 
 
 class PlotOpts(Opts):
     """
     A subclass of Opts designed to hold plotting options that set the
-    parameters of the Plot class that display DataElement objects.
+    parameters of the Plot class that display ViewableElement objects.
     """
 
 

@@ -24,7 +24,7 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import DataElement, NdMapping, CompositeOverlay, GridLayout, AdjointLayout, AxisLayout, ViewTree, HoloMap
+from ..core import ViewableElement, NdMapping, CompositeOverlay, NdLayout, AdjointLayout, AxisLayout, LayoutTree, HoloMap
 from ..plotting import Plot, LayoutPlot
 from .magics import ViewMagic, ANIMATION_OPTS
 
@@ -250,7 +250,7 @@ def get_plot_size():
 class NdWidget(param.Parameterized):
     """
     NdWidget is an abstract base class implementing a method to
-    find the dimensions and keys of any DataElement, AxisLayout or UniformNdMapping type.
+    find the dimensions and keys of any ViewableElement, AxisLayout or UniformNdMapping type.
     In the process it creates a mock_obj to hold the dimensions
     and keys.
     """
@@ -260,13 +260,13 @@ class NdWidget(param.Parameterized):
         Determine the dimensions and keys to be turned into widgets and
         initialize the plots.
         """
-        if isinstance(view, (GridLayout, ViewTree, AdjointLayout)):
-            shape = view.shape if isinstance(view, GridLayout) else (1, 1)
+        if isinstance(view, (NdLayout, LayoutTree, AdjointLayout)):
+            shape = view.shape if isinstance(view, NdLayout) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
             self.plot = LayoutPlot(view, **dict(size=grid_size))
         else:
-            opts = dict(DataElement.options.plotting(view).opts, size=get_plot_size())
+            opts = dict(ViewableElement.options.plotting(view).opts, size=get_plot_size())
             self.plot = Plot.defaults[view.type](view, **opts)
             view = [view]
 
@@ -276,7 +276,7 @@ class NdWidget(param.Parameterized):
             if isinstance(v, AxisLayout): v = v.values()[0]
             if isinstance(v, AdjointLayout): v = v.main
             if isinstance(v, CompositeOverlay): v = v.values()[0]
-            if isinstance(v, DataElement):
+            if isinstance(v, ViewableElement):
                 v = HoloMap([((0,), v)], key_dimensions=['Frame'])
 
             keys_list.append(list(v.data.keys()))
@@ -307,15 +307,15 @@ class NdWidget(param.Parameterized):
 
 class IPySelectionWidget(NdWidget):
     """
-    Interactive widget to select and view DataElement objects contained
+    Interactive widget to select and view ViewableElement objects contained
     in an NdMapping. ViewSelector creates Slider and Dropdown widgets
     for each dimension contained within the supplied object and
-    an image widget for the plotted DataElement. All widgets are dynamically
+    an image widget for the plotted ViewableElement. All widgets are dynamically
     updated to match the current selection.
     """
 
     cached = param.Boolean(default=True, doc="""
-        Whether to cache the DataElement plots when initializing the object.""")
+        Whether to cache the ViewableElement plots when initializing the object.""")
 
     css = param.Dict(default={'margin-left': 'auto',
                               'margin-right': 'auto'}, doc="""
@@ -380,7 +380,7 @@ class IPySelectionWidget(NdWidget):
         # Display widgets
         display(interactive_widget)
         display(self.image_widget)
-        return '' # Suppresses outputting DataElement repr when called through hook
+        return '' # Suppresses outputting ViewableElement repr when called through hook
 
 
     def _get_dim_vals(self, indices, idx):
@@ -397,7 +397,7 @@ class IPySelectionWidget(NdWidget):
     def update_widgets(self, **kwargs):
         """
         Callback method to process the new keys, find the closest matching
-        DataElement and update all the widgets.
+        ViewableElement and update all the widgets.
         """
 
         # Do nothing if dimension values are unchanged
@@ -542,10 +542,10 @@ class ScrubberWidget(NdWidget):
 
 class SelectionWidget(ScrubberWidget):
     """
-    Javascript based widget to select and view DataElement objects contained
+    Javascript based widget to select and view ViewableElement objects contained
     in an NdMapping. For each dimension in the NdMapping a slider or
     dropdown selection widget is created and can be used to select the
-    html output associated with the selected DataElement type. Supports
+    html output associated with the selected ViewableElement type. Supports
     selection of any holoviews static output type including png, svg
     and mpld3 output. Unlike the IPSelectionWidget, this widget type
     is exportable to a static html.

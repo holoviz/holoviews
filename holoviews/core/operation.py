@@ -7,10 +7,10 @@ processed data.
 
 import param
 
-from .dimension import DataElement
+from .dimension import ViewableElement
 from .element import Element, HoloMap
 from .layer import NdOverlay, AxisLayout, Overlay
-from .layout import GridLayout
+from .layout import NdLayout
 
 
 class ViewOperation(param.ParameterizedFunction):
@@ -35,10 +35,10 @@ class ViewOperation(param.ParameterizedFunction):
         """
         Process a single input element and output a list of views. When
         multiple views are returned as a list, they will be returned
-        to the user as a GridLayout. If a UniformNdMapping is passed into a
+        to the user as a NdLayout. If a UniformNdMapping is passed into a
         ViewOperation, the individual layers are processed
         sequentially and the dimension keys are passed along with
-        the DataElement.
+        the ViewableElement.
         """
         raise NotImplementedError
 
@@ -61,10 +61,10 @@ class ViewOperation(param.ParameterizedFunction):
     def __call__(self, view, **params):
         self.p = param.ParamOverrides(self, params)
 
-        if isinstance(view, DataElement):
+        if isinstance(view, ViewableElement):
             views = self._process(view)
             if len(views) > 1:
-                return GridLayout(views)
+                return NdLayout(views)
             else:
                 return views[0]
 
@@ -72,7 +72,7 @@ class ViewOperation(param.ParameterizedFunction):
             grids = []
             for pos, cell in view.items():
                 val = self(cell, **params)
-                maps = val.values() if isinstance(val, GridLayout) else [val]
+                maps = val.values() if isinstance(val, NdLayout) else [val]
                 # Initialize the list of data or coordinate grids
                 if grids == []:
                     grids = [AxisLayout(None, label=view.label) for vmap in maps]
@@ -81,7 +81,7 @@ class ViewOperation(param.ParameterizedFunction):
                     grids[ind][pos] = vmap
 
             if len(grids) == 1: return grids[0]
-            else:               return GridLayout(grids)
+            else:               return NdLayout(grids)
 
 
         elif isinstance(view, HoloMap):
@@ -92,7 +92,7 @@ class ViewOperation(param.ParameterizedFunction):
                     maps[ind][k] = v
 
             if len(maps) == 1:  return maps[0]
-            else:               return GridLayout(maps)
+            else:               return NdLayout(maps)
 
 
 class MapOperation(param.ParameterizedFunction):
@@ -117,13 +117,13 @@ class MapOperation(param.ParameterizedFunction):
         if len(maps) == 1:
             return maps[0]
         else:
-            return GridLayout(maps)
+            return NdLayout(maps)
 
 
     def _process(self, view):
         """
         Process a single input HoloMap and output a list of views or
         maps. When multiple values are returned they are returned to
-        the user as a GridLayout.
+        the user as a NdLayout.
         """
         raise NotImplementedError

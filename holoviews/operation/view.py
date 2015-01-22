@@ -5,7 +5,9 @@ import param
 from ..core import Dimension, ViewOperation, CompositeOverlay, NdOverlay
 from ..core.options import options
 from ..core.util import find_minmax
-from ..element import ItemTable, Matrix, VectorField, Contours, Histogram
+from ..element.chart import Histogram, VectorField
+from ..element.annotation import Contours
+from ..element.raster import Matrix
 
 
 class chain(ViewOperation):
@@ -151,13 +153,13 @@ class histogram(ViewOperation):
     """
 
     adjoin = param.Boolean(default=True, doc="""
-      Whether to adjoin the histogram to the DataElement.""")
+      Whether to adjoin the histogram to the ViewableElement.""")
 
     bin_range = param.NumericTuple(default=(0, 0), doc="""
       Specifies the range within which to compute the bins.""")
 
     dimension = param.String(default=None, doc="""
-      Along which dimension of the DataElement to compute the histogram.""")
+      Along which dimension of the ViewableElement to compute the histogram.""")
 
     normed = param.Boolean(default=True, doc="""
       Whether the histogram frequencies are normalized.""")

@@ -16,8 +16,8 @@ try:
 except:
     mpld3 = None
 
-from ..core import DataElement, Element, HoloMap, AdjointLayout, GridLayout,\
- AxisLayout, ViewTree, Overlay
+from ..core import ViewableElement, Element, HoloMap, AdjointLayout, NdLayout,\
+ AxisLayout, LayoutTree, Overlay
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from . import magics
@@ -182,8 +182,8 @@ def map_display(vmap, size=256):
 
 @display_hook
 def layout_display(layout, size=256):
-    if isinstance(layout, AdjointLayout): layout = GridLayout([layout])
-    if not isinstance(layout, (ViewTree, GridLayout)): return None
+    if isinstance(layout, AdjointLayout): layout = NdLayout([layout])
+    if not isinstance(layout, (LayoutTree, NdLayout)): return None
     shape = layout.shape
     magic_info = process_view_magics(layout)
     if magic_info: return magic_info
@@ -193,7 +193,7 @@ def layout_display(layout, size=256):
     opts = dict(Element.options.plotting(layout).opts, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
 
-    if isinstance(layout, ViewTree):
+    if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in layout.data.keys()]))
             if branches > ViewMagic.MAX_BRANCHES:
@@ -246,7 +246,7 @@ def grid_display(grid, size=256):
 
 @display_hook
 def view_display(view, size=256):
-    if not isinstance(view, DataElement): return None
+    if not isinstance(view, ViewableElement): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
     opts = dict(Element.options.plotting(view).opts, size=get_plot_size())
@@ -261,7 +261,7 @@ def set_display_hooks(ip):
     html_formatter.for_type(Element, view_display)
     html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
-    html_formatter.for_type(GridLayout, layout_display)
+    html_formatter.for_type(NdLayout, layout_display)
     html_formatter.for_type(AxisLayout, grid_display)
-    html_formatter.for_type(ViewTree, layout_display)
+    html_formatter.for_type(LayoutTree, layout_display)
     html_formatter.for_type(Overlay, view_display)

@@ -174,7 +174,7 @@ class cmap2rgb(ViewOperation):
 class split(ViewOperation):
     """
     Given Matrix in RGBA mode, return the R,G,B and A channels as
-    a GridLayout.
+    a NdLayout.
     """
 
     label = param.String(default='Channel', doc="""

@@ -10,13 +10,13 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, HoloMap, NdOverlay, Element, HoloMap
+from ..core import Dimension, NdMapping, Element2D, HoloMap
 from ..core.options import options, StyleOpts, Cycle
-from ..element import DataView, Scatter, Curve
+from ..element import Chart, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
 
 
-class TimeSeries(Element):
+class TimeSeries(Element2D):
     """
     TimeSeries is a container for any set of curves, which the
     seaborn interface combines into a confidence interval, error
@@ -77,7 +77,7 @@ class TimeSeries(Element):
                                   'implemented.')
 
 
-class Bivariate(DataView):
+class Bivariate(Chart):
     """
     Bivariate Views are containers for two dimensional data,
     which is to be visualized as a kernel density estimate. The
@@ -93,7 +93,7 @@ class Bivariate(DataView):
 
 
 
-class Distribution(DataView):
+class Distribution(Chart):
     """
     Distribution Views provide a container for data to be
     visualized as a one-dimensional distribution. The data should

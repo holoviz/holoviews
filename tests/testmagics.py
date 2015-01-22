@@ -1,7 +1,7 @@
-from holoviews.core import DataElement
+from holoviews.core import ViewableElement
 from holoviews.testing import IPTestCase
 
-from holoviews import ipython, CompositeOverlay, DataElement
+from holoviews import ipython, CompositeOverlay, ViewableElement
 from holoviews.core.options import OptionsGroup, Options
 from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts
 
@@ -30,12 +30,12 @@ class TestOptsMagic(ExtensionTestCase):
         # Clear the options map
         self.options = OptionsGroup([Options('plotting', PlotOpts),
                                      Options('style', StyleOpts)])
-        DataElement.options = self.options
+        ViewableElement.options = self.options
         self.options.Matrix = StyleOpts()
 
     def tearDown(self):
         del self.options
-        DataElement.options  = None
+        ViewableElement.options  = None
         super(TestOptsMagic, self).tearDown()
 
     #============================#

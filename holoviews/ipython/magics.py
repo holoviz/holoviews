@@ -10,7 +10,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import NdOverlay, Element, HoloMap,\
-    AdjointLayout, GridLayout, AxisLayout, ViewTree, CompositeOverlay
+    AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
@@ -240,7 +240,7 @@ class ChannelMagic(Magics):
         """
         Labels on Overlays are used to index channel definitions.
         """
-        if isinstance(obj, (AdjointLayout, AxisLayout, GridLayout)):
+        if isinstance(obj, (AdjointLayout, AxisLayout, NdLayout)):
             for subview in obj:
                 cls._set_overlay_labels(subview, label)
         elif isinstance(obj, HoloMap) and issubclass(obj.type, NdOverlay):
@@ -254,8 +254,8 @@ class ChannelMagic(Magics):
     def _set_channels(cls, obj, custom_channels, prefix):
         cls._set_overlay_labels(obj, prefix)
         for name, (pattern, params) in custom_channels.items():
-            Overlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
-                                                        **params)
+            CompositeOverlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
+                                                                         **params)
 
 
     @classmethod
@@ -363,7 +363,7 @@ class OptsMagic(Magics):
         values as keys for the the associated element type.
         """
         group = {}
-        if isinstance(obj, (CompositeOverlay, AdjointLayout, AxisLayout, GridLayout, ViewTree)):
+        if isinstance(obj, (CompositeOverlay, AdjointLayout, AxisLayout, NdLayout, LayoutTree)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
             if isinstance(obj, (AdjointLayout, NdOverlay)):
@@ -403,7 +403,7 @@ class OptsMagic(Magics):
         name for all matches. A match occurs when the basename of the
         element.style is found in the supplied dictionary.
         """
-        if isinstance(obj, (AdjointLayout, AxisLayout, GridLayout, ViewTree)):
+        if isinstance(obj, (AdjointLayout, AxisLayout, NdLayout, LayoutTree)):
             for subview in obj:
                 cls._set_style_names(subview, custom_name_map)
             if isinstance(obj, AdjointLayout):

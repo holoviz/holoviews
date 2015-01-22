@@ -4,47 +4,47 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, Element, HoloMap
+from ..core import Dimension, NdMapping, Element2D, HoloMap
 from .tabular import ItemTable, Table
 
 
-class DataView(Element):
+class Chart(Element2D):
     """
-    The data held within an Array is a numpy array of shape (n, 2).
-    Element objects are sliceable along the X dimension allowing easy
+    The data held within an Array is a numpy array of shape (n, m).
+    Element2D objects are sliceable along the X dimension allowing easy
     selection of subsets of the data.
     """
 
-    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
-        Dimensions on Elements determine the number of indexable
+    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
+        Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
-    value = param.String(default='DataView')
+    value = param.String(default='Chart')
 
-    value_dimensions = param.List(default=[Dimension('y')], bounds=(1,1), doc="""
-        Dimensions on Elements determine the number of indexable
+    value_dimensions = param.List(default=[Dimension('y')], bounds=(1,3), doc="""
+        Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
 
     def __init__(self, data, **params):
         settings = {}
-        if isinstance(data, DataView):
+        if isinstance(data, Chart):
             settings = dict(data.get_param_values())
             data = data.data
         elif isinstance(data, NdMapping) or (isinstance(data, list) and data
-                                           and isinstance(data[0], Element)):
+                                           and isinstance(data[0], Element2D)):
             data, settings = self._process_map(data)
         data = list(data)
         if len(data) and not isinstance(data, np.ndarray):
             data = np.array(data)
         settings.update(params)
-        super(DataView, self).__init__(data, **settings)
+        super(Chart, self).__init__(data, **settings)
 
 
     def _process_map(self, ndmap):
         """
-        Base class to process an NdMapping to be collapsed into a DataView.
-        Should return the data and parameters of the new DataView.
+        Base class to process an NdMapping to be collapsed into a Chart.
+        Should return the data and parameters of the new Chart.
         """
         if isinstance(ndmap, Table):
             if ndmap.ndims == 1:
@@ -73,7 +73,7 @@ class DataView(Element):
     def __getitem__(self, slc):
         """
         Implements slicing or indexing of the data by the data x-value.
-        If a single element is indexed reduces the Element to a single
+        If a single element is indexed reduces the Element2D to a single
         Scatter object.
         """
         if slc is ():
@@ -95,7 +95,7 @@ class DataView(Element):
 
     def sample(self, samples=[]):
         """
-        Allows sampling of Element objects using the default
+        Allows sampling of Element2D objects using the default
         syntax of providing a map of dimensions and sample pairs.
         """
         sample_data = OrderedDict()
@@ -106,7 +106,7 @@ class DataView(Element):
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Allows collapsing of Element objects using the supplied map of
+        Allows collapsing of Element2D objects using the supplied map of
         dimensions and reduce functions.
         """
         reduced_data = OrderedDict()
@@ -132,20 +132,19 @@ class DataView(Element):
 
 
 
-class Scatter(DataView):
+class Scatter(Chart):
     """
-    Scatter is a simple 1D DataElement, which gets displayed as a number of
+    Scatter is a simple 1D ViewableElement2D, which gets displayed as a number of
     disconnected points.
     """
 
     value = param.String(default='Scatter')
 
-    pass
 
 
-class Curve(DataView):
+class Curve(Chart):
     """
-    Curve is a simple 1D DataElement of points and therefore assumes the data is
+    Curve is a simple 1D ViewableElement2D of points and therefore assumes the data is
     ordered.
     """
 
@@ -167,9 +166,9 @@ class Curve(DataView):
         return vmap
 
 
-class Bars(DataView):
+class Bars(Chart):
     """
-    A bar is a simple 1D DataElement of bars, which assumes that the data is
+    A bar is a simple 1D ViewableElement2D of bars, which assumes that the data is
     sorted by x-value and there are no gaps in the bars.
     """
 
@@ -209,14 +208,15 @@ class Bars(DataView):
                              'match the number of bars in length.')
 
 
-class Histogram(Element):
+
+class Histogram(Element2D):
     """
     Histogram contains a number of bins, which are defined by the
     upper and lower bounds of their edges and the computed bin values.
     """
 
     key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
-        Dimensions on Elements determine the number of indexable
+        Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
     value = param.String(default='Histogram')
@@ -237,7 +237,7 @@ class Histogram(Element):
         """
         settings = {}
         (value, edges) = values if isinstance(values, tuple) else (values, edges)
-        if isinstance(values, Element):
+        if isinstance(values, Element2D):
             values = values.data[:, 0]
             edges = values.data[:, 1]
             settings = dict(values.get_param_values())
@@ -280,3 +280,128 @@ class Histogram(Element):
 
     def reduce(self, **dimreduce_map):
         raise NotImplementedError('Reduction of Histogram not implemented.')
+
+
+
+class Points(Chart):
+    """
+    Allows sets of points to be positioned over a sheet coordinate
+    system. Each points may optionally be associated with a chosen
+    numeric value.
+
+    The input data can be a Nx2 or Nx3 Numpy array where the first two
+    columns corresponds to the X,Y coordinates in sheet coordinates,
+    within the declared bounding region. For Nx3 arrays, the third
+    column corresponds to the magnitude values of the points. Any
+    additional columns will be ignored (use VectorFields instead).
+
+    The input data may be also be passed as a tuple of elements that
+    may be numpy arrays or values that can be cast to arrays. When
+    such a tuple is supplied, the elements are joined column-wise into
+    a single array, allowing the magnitudes to be easily supplied
+    separately.
+
+    Note that if magnitudes are to be rendered correctly by default,
+    they should lie in the range [0,1].
+    """
+
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+                                  bounds=(2, 2), constant=True, doc="""
+        The label of the x- and y-dimension of the Matrix in form
+        of a string or dimension object.""")
+
+    value = param.String(default='Points')
+
+    value_dimensions = param.List(default=[Dimension('Magnitude')],
+                                  bounds=(1, 2))
+
+    _null_value = np.array([[], []]).T # For when data is None
+    _min_dims = 2                      # Minimum number of columns
+
+    def __init__(self, data, **params):
+        if isinstance(data, tuple):
+            arrays = [np.array(d) for d in data]
+            if not all(len(arr)==len(arrays[0]) for arr in arrays):
+                raise Exception("All input arrays must have the same length.")
+
+            arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
+                                              else (len(arr), 1)) for arr in arrays))
+        elif isinstance(data, Table):
+            table_dims = data.dimension_labels('all', True)
+            arr = np.array(zip(*[data.dimension_values(dim) for dim in table_dims]))
+            if 'key_dimensions' not in params:
+                params['key_dimensions'] = data.key_dimensions
+            if 'value_dimensions' not in params:
+                params['value_dimensions'] = data.value_dimensions
+        else:
+            arr = np.array(data)
+
+        data = self._null_value if (data is None) or (len(arr) == 0) else arr
+        if data.shape[1] <self._min_dims:
+            raise Exception("%s requires a minimum of %s columns."
+                            % (self.__class__.__name__, self._min_dims))
+
+        super(Points, self).__init__(data, **params)
+
+
+    def __getitem__(self, keys):
+        pass
+
+
+    def __len__(self):
+        return self.data.shape[0]
+
+
+    def __iter__(self):
+        i = 0
+        while i < len(self):
+            yield tuple(self.data[i, ...])
+            i += 1
+
+
+    def dimension_values(self, dim):
+        if dim in [d.name for d in self.dimensions]:
+            dim_index = self.get_dimension_index(dim)
+            if dim_index < self.data.shape[1]:
+                return self.data[:, dim_index]
+            else:
+                return [np.NaN] * len(self)
+        else:
+            raise Exception("Dimension %s not found in %s." %
+                            (dim, self.__class__.__name__))
+
+
+
+class VectorField(Points):
+    """
+    A VectorField contains is a collection of vectors where each
+    vector has an associated position in sheet coordinates.
+
+    The constructor of VectorField is the same as the constructor of
+    Points: the input data can be an NxM Numpy array where the first
+    two columns corresponds to the X,Y coordinates in sheet
+    coordinates, within the declared bounding region. As with Points,
+    the input can be a tuple of array objects or of objects that can
+    be cast to arrays (the tuple elements are joined column-wise).
+
+    The third column maps to the vector angle which must be specified
+    in radians.
+
+    The visualization of any additional columns is decided by the
+    plotting code. For instance, the fourth and fifth columns could
+    correspond to arrow length and colour map value. All that is
+    assumed is that these additional dimension are normalized between
+    0.0 and 1.0 for the default visualization to work well.
+
+    The only restriction is that the final data array is NxM where
+    M>3. In other words, the vector must have a dimensionality of 2 or
+    higher.
+    """
+
+    value = param.String(default='VectorField')
+
+    value_dimensions = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
+                                           Dimension('Magnitude')], bounds=(2, 2))
+
+    _null_value = np.array([[], [], [], []]).T # For when data is None
+    _min_dims = 3                              # Minimum number of columns

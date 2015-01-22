@@ -1,18 +1,18 @@
 from collections import OrderedDict
-
-import param
 import numpy as np
 
-from ..core import Dimension, NdMapping, Element
+import param
+
+from ..core import Dimension, NdMapping, Element2D
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from .dataviews import Curve
+from .chart import Curve
 from .tabular import Table
 
 
-class Raster(Element):
+class Raster(Element2D):
     """
-    Raster is a basic 2D atomic DataElement type.
+    Raster is a basic 2D atomic ViewableElement type.
 
     Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
     3D arrays, each depth layer is interpreted as a channel of the 2D
@@ -118,7 +118,7 @@ class Raster(Element):
         Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
-        the result DataElement label.
+        the result ViewableElement label.
         """
         label = ' '.join([label_prefix, self.label])
         if len(dimreduce_map) == self.ndims:
@@ -183,10 +183,9 @@ class Raster(Element):
             raise Exception("Dimension not found.")
 
 
-
 class HeatMap(Raster):
     """
-    HeatMap is an atomic DataElement element used to visualize two dimensional
+    HeatMap is an atomic ViewableElement element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
     upsampling them to a dense representation, which can be visualized.
 
@@ -304,7 +303,7 @@ class Matrix(SheetCoordinateSystem, Raster):
         xdensity = xdensity if xdensity else dim1/(r-l)
         ydensity = ydensity if ydensity else dim2/(t-b)
 
-        Element.__init__(self, data, **params)
+        Element2D.__init__(self, data, **params)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._lbrt = self.bounds.lbrt()
         self.key_dimensions[0].range = (l, r)
@@ -396,195 +395,3 @@ class Matrix(SheetCoordinateSystem, Raster):
             data = np.dstack([Slice(roi_bounds, self).submatrix(
                 self.data[:, :, i]) for i in range(self.depth)])
         return Matrix(data, roi_bounds, style=self.style, value=self.value)
-
-
-
-class Points(Element):
-    """
-    Allows sets of points to be positioned over a sheet coordinate
-    system. Each points may optionally be associated with a chosen
-    numeric value.
-
-    The input data can be a Nx2 or Nx3 Numpy array where the first two
-    columns corresponds to the X,Y coordinates in sheet coordinates,
-    within the declared bounding region. For Nx3 arrays, the third
-    column corresponds to the magnitude values of the points. Any
-    additional columns will be ignored (use VectorFields instead).
-
-    The input data may be also be passed as a tuple of elements that
-    may be numpy arrays or values that can be cast to arrays. When
-    such a tuple is supplied, the elements are joined column-wise into
-    a single array, allowing the magnitudes to be easily supplied
-    separately.
-
-    Note that if magnitudes are to be rendered correctly by default,
-    they should lie in the range [0,1].
-    """
-
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                  bounds=(2, 2), constant=True, doc="""
-        The label of the x- and y-dimension of the Matrix in form
-        of a string or dimension object.""")
-
-    value = param.String(default='Points')
-
-    value_dimensions = param.List(default=[Dimension('Magnitude')],
-                                  bounds=(1, 2))
-
-    _null_value = np.array([[], []]).T # For when data is None
-    _min_dims = 2                      # Minimum number of columns
-
-    def __init__(self, data, **params):
-        if isinstance(data, tuple):
-            arrays = [np.array(d) for d in data]
-            if not all(len(arr)==len(arrays[0]) for arr in arrays):
-                raise Exception("All input arrays must have the same length.")
-
-            arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
-                                              else (len(arr), 1)) for arr in arrays))
-        elif isinstance(data, Table):
-            table_dims = data.dimension_labels('all', True)
-            arr = np.array(zip(*[data.dimension_values(dim) for dim in table_dims]))
-            if 'key_dimensions' not in params:
-                params['key_dimensions'] = data.key_dimensions
-            if 'value_dimensions' not in params:
-                params['value_dimensions'] = data.value_dimensions
-        else:
-            arr = np.array(data)
-
-        data = self._null_value if (data is None) or (len(arr) == 0) else arr
-        if data.shape[1] <self._min_dims:
-            raise Exception("%s requires a minimum of %s columns."
-                            % (self.__class__.__name__, self._min_dims))
-
-        super(Points, self).__init__(data, **params)
-
-
-    def __getitem__(self, keys):
-        pass
-
-
-    def __len__(self):
-        return self.data.shape[0]
-
-
-    def __iter__(self):
-        i = 0
-        while i < len(self):
-            yield tuple(self.data[i, ...])
-            i += 1
-
-
-    def dimension_values(self, dim):
-        if dim in [d.name for d in self.dimensions]:
-            dim_index = self.get_dimension_index(dim)
-            if dim_index < self.data.shape[1]:
-                return self.data[:, dim_index]
-            else:
-                return [np.NaN] * len(self)
-        else:
-            raise Exception("Dimension %s not found in %s." %
-                            (dim, self.__class__.__name__))
-
-
-
-class VectorField(Points):
-    """
-    A VectorField contains is a collection of vectors where each
-    vector has an associated position in sheet coordinates.
-
-    The constructor of VectorField is the same as the constructor of
-    Points: the input data can be an NxM Numpy array where the first
-    two columns corresponds to the X,Y coordinates in sheet
-    coordinates, within the declared bounding region. As with Points,
-    the input can be a tuple of array objects or of objects that can
-    be cast to arrays (the tuple elements are joined column-wise).
-
-    The third column maps to the vector angle which must be specified
-    in radians.
-
-    The visualization of any additional columns is decided by the
-    plotting code. For instance, the fourth and fifth columns could
-    correspond to arrow length and colour map value. All that is
-    assumed is that these additional dimension are normalized between
-    0.0 and 1.0 for the default visualization to work well.
-
-    The only restriction is that the final data array is NxM where
-    M>3. In other words, the vector must have a dimensionality of 2 or
-    higher.
-    """
-
-    value = param.String(default='VectorField')
-
-    value_dimensions = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
-                                           Dimension('Magnitude')], bounds=(2, 2))
-
-    _null_value = np.array([[], [], [], []]).T # For when data is None
-    _min_dims = 3                              # Minimum number of columns
-
-
-class Contours(Element):
-    """
-    Allows sets of contour lines to be defined over a
-    SheetCoordinateSystem.
-
-    The input data is a list of Nx2 numpy arrays where each array
-    corresponds to a contour in the group. Each point in the numpy
-    array corresponds to an X,Y coordinate.
-    """
-
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                  constant=True, bounds=(2, 2), doc="""
-        The label of the x- and y-dimension of the Matrix in form
-        of a string or dimension object.""")
-
-    level = param.Number(default=None, doc="""
-        Optional level associated with the set of Contours.""")
-
-    value_dimension = param.List(default=[], doc="""
-        Contours optionally accept a value dimension, corresponding
-        to the supplied values.""", bounds=(0,1))
-
-    value = param.String(default='Contours')
-
-    def __init__(self, data, **params):
-        data = [] if data is None else data
-        super(Contours, self).__init__(data, **params)
-        if self.level and not len(self.value_dimensions):
-            self.value_dimensions = [Dimension('Level')]
-
-    def resize(self, bounds):
-        return Contours(self.contours, bounds, style=self.style)
-
-
-    def __len__(self):
-        return len(self.data)
-
-    @property
-    def xlim(self):
-        if self._xlim: return self._xlim
-        elif len(self):
-            xmin = min(min(c[:, 0]) for c in self.data)
-            xmax = max(max(c[:, 0]) for c in self.data)
-            return xmin, xmax
-        else:
-            return None
-
-    @property
-    def ylim(self):
-        if self._ylim: return self._ylim
-        elif len(self):
-            ymin = min(min(c[:, 0]) for c in self.data)
-            ymax = max(max(c[:, 0]) for c in self.data)
-            return ymin, ymax
-        else:
-            return None
-
-    def dimension_values(self, dimension):
-        dim_idx = self.get_dimension_index(dimension)
-        if dim_idx >= len(self.dimensions):
-            raise KeyError('Dimension %s not found' % str(dimension))
-        values = []
-        for contour in self.data:
-            values.append(contour[:, dim_idx])
-        return np.concatenate(values)

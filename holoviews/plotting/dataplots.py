@@ -7,8 +7,8 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
 import param
-from ..core import DataElement, Element, CompositeOverlay, HoloMap
-from ..element import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table, Points
+from ..core import ViewableElement, Element, CompositeOverlay, HoloMap
+from ..element import Scatter, Curve, Histogram, Bars, ItemTable, Table, Points, Raster
 from .viewplots import Plot
 
 
@@ -516,7 +516,7 @@ class SideHistogramPlot(HistogramPlot):
     def _update_plot(self, key, bars, lims):
         """
         Process the bars and draw the offset line as necessary. If a
-        color map is set in the style of the 'main' DataElement object, color
+        color map is set in the style of the 'main' ViewableElement object, color
         the bars appropriately, respecting the required normalization
         settings.
         """
@@ -534,7 +534,7 @@ class SideHistogramPlot(HistogramPlot):
                     range_item = range_item[key]
             else:
                 range_item = main[key] if individually else main
-        elif isinstance(main, DataElement):
+        elif isinstance(main, ViewableElement):
             range_item = main
         main_range = range_item.range(hist_dim)
 

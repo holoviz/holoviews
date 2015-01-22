@@ -6,7 +6,7 @@ import numpy as np
 
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
-from holoviews.element import Matrix
+from holoviews import Matrix
 from holoviews.testing import ViewTestCase
 
 class MatrixTestCase(ViewTestCase):

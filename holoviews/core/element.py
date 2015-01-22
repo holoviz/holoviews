@@ -3,17 +3,17 @@ import numpy as np
 
 import param
 
-from .dimension import DataElement
-from .layout import Composable, ViewTree, AdjointLayout, GridLayout
+from .dimension import ViewableElement
+from .layout import Composable, LayoutTree, AdjointLayout, NdLayout
 from .layer import Overlayable, NdOverlay, Overlay, CompositeOverlay, AxisLayout
 from .ndmapping import UniformNdMapping
 from .options import options
 from .util import find_minmax
 
 
-class Element(DataElement, Composable, Overlayable):
+class Element(ViewableElement, Composable, Overlayable):
     """
-    Element is the baseclass for all 2D DataElement types, with an x- and
+    Element is the baseclass for all ViewableElement types, with an x- and
     y-dimension. Subclasses should define the data storage in the
     constructor, as well as methods and properties, which define how
     the data maps onto the x- and y- and value dimensions.
@@ -33,58 +33,8 @@ class Element(DataElement, Composable, Overlayable):
     # Subclassable methods #
     ########################
 
-    def __init__(self, data, lbrt=None, **params):
-        self._xlim = (lbrt[0], lbrt[2]) if lbrt else None
-        self._ylim = (lbrt[1], lbrt[3]) if lbrt else None
+    def __init__(self, data, **params):
         super(Element, self).__init__(data, **params)
-
-    @property
-    def xlabel(self):
-        return self.get_dimension(0).pprint_label
-
-    @property
-    def ylabel(self):
-        return self.get_dimension(1).pprint_label
-
-    @property
-    def xlim(self):
-        if self._xlim:
-            return self._xlim
-        else:
-            return self.range(0)
-
-    @xlim.setter
-    def xlim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._xlim = limits
-        else:
-            raise ValueError('xlim needs to be a length two tuple or None.')
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        else:
-            return self.range(1)
-
-    @ylim.setter
-    def ylim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._ylim = limits
-        else:
-            raise ValueError('xlim needs to be a length two tuple or None.')
-
-    @property
-    def lbrt(self):
-        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
-        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
-        return l, b, r, t
-
-
-    @lbrt.setter
-    def lbrt(self, lbrt):
-        l, b, r, t = lbrt
-        self.xlim, self.ylim = (l, r), (b, t)
 
 
     def closest(self, coords):
@@ -101,8 +51,8 @@ class Element(DataElement, Composable, Overlayable):
     def sample(self, **samples):
         """
         Base class signature to demonstrate API for sampling Views.
-        To sample a DataElement kwargs, where the keyword matches a Dimension
-        in the DataElement and the value matches a corresponding entry in the
+        To sample a ViewableElement kwargs, where the keyword matches a Dimension
+        in the ViewableElement and the value matches a corresponding entry in the
         data.
         """
         raise NotImplementedError
@@ -144,7 +94,7 @@ class Element(DataElement, Composable, Overlayable):
 
     def table(self, **kwargs):
         """
-        This method transforms any DataElement type into a Table
+        This method transforms any ViewableElement type into a Table
         as long as it implements a dimension_values method.
         """
         from ..element import Table
@@ -177,7 +127,7 @@ class Element(DataElement, Composable, Overlayable):
     def __setstate__(self, d):
         """
         When unpickled, restore the saved style and plotting options
-        to DataElement.options.
+        to ViewableElement.options.
         """
         for name, match in d.pop('style_objects').items():
             for style in match:
@@ -190,6 +140,111 @@ class Element(DataElement, Composable, Overlayable):
         return "%s(%r, %s)" % (self.__class__.__name__, self.data, params)
 
 
+
+class Element2D(Element):
+
+    def __init__(self, data, extent=None, **params):
+        self._xlim = (extent[0], extent[2]) if extent else None
+        self._ylim = (extent[1], extent[3]) if extent else None
+        super(Element2D, self).__init__(data, **params)
+
+    @property
+    def xlabel(self):
+        return self.get_dimension(0).pprint_label
+
+    @property
+    def ylabel(self):
+        return self.get_dimension(1).pprint_label
+
+    @property
+    def xlim(self):
+        if self._xlim:
+            return self._xlim
+        else:
+            return self.range(0)
+
+    @xlim.setter
+    def xlim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._xlim = limits
+        else:
+            raise ValueError('xlim needs to be a length two tuple or None.')
+
+    @property
+    def ylim(self):
+        if self._ylim:
+            return self._ylim
+        else:
+            return self.range(1)
+
+    @ylim.setter
+    def ylim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._ylim = limits
+        else:
+            raise ValueError('xlim needs to be a length two tuple or None.')
+
+    @property
+    def extent(self):
+        """"
+        For Element2D the extent is the 4-tuple (left, bottom, right, top).
+        """
+        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
+        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
+        return l, b, r, t
+
+
+    @extent.setter
+    def extent(self, extent):
+        l, b, r, t = extent
+        self.xlim, self.ylim = (l, r), (b, t)
+
+
+class Element3D(Element2D):
+
+
+    def __init__(self, data, extent=None, **params):
+        self._xlim = (extent[0], extent[3]) if extent else None
+        self._ylim = (extent[1], extent[4]) if extent else None
+        self._zlim = (extent[2], extent[5]) if extent else None
+        super(Element2D, super).__init__(data, **params)
+
+    @property
+    def extent(self):
+        """"
+        For Element3D the extent is the 6-tuple (left, bottom, -z, right, top, +z) using
+        a right-handed Cartesian coordinate-system.
+        """
+        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
+        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
+        zminus, zplus = self.zlim if self.zlim else (np.NaN, np.NaN)
+        return l, b, zminus, r, t, zplus
+
+    @extent.setter
+    def extent(self, extent):
+        l, b, zminus, r, t, zplus = extent
+        self.xlim, self.ylim, self.zlim = (l, r), (b, t), (zminus, zplus)
+
+    @property
+    def zlim(self):
+        if self._zlim:
+            return self._zlim
+        else:
+            return self.range(2)
+
+    @zlim.setter
+    def zlim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._zlim = limits
+        else:
+            raise ValueError('zlim needs to be a length two tuple or None.')
+
+    @property
+    def zlabel(self):
+        return self.get_dimension(2).pprint_label
+
+
+
 class HoloMap(UniformNdMapping):
     """
     A HoloMap can hold any number of DataLayers indexed by a list of
@@ -199,7 +254,7 @@ class HoloMap(UniformNdMapping):
 
     value = param.String(default='HoloMap')
 
-    data_type = DataElement
+    data_type = ViewableElement
 
     @property
     def layer_types(self):
@@ -293,7 +348,7 @@ class HoloMap(UniformNdMapping):
                     for vm in vmap:
                         if dim_labels and dim_labels not in vm.title:
                             vm.title = '\n'.join([vm.title, dim_labels])
-            return GridLayout(split_map)
+            return NdLayout(split_map)
         else:
             return AxisLayout(split_map, key_dimensions=split_map.key_dimensions)
 
@@ -321,11 +376,12 @@ class HoloMap(UniformNdMapping):
         """
         The mul (*) operator implements overlaying of different Views.
         This method tries to intelligently overlay Maps with differing
-        keys. If the UniformNdMapping is mulled with a simple DataElement each element in
-        the UniformNdMapping is overlaid with the DataElement. If the element the UniformNdMapping is
-        mulled with is another UniformNdMapping it will try to match up the
-        dimensions, making sure that items with completely different
-        dimensions aren't overlaid.
+        keys. If the UniformNdMapping is mulled with a simple
+        ViewableElement each element in the UniformNdMapping is
+        overlaid with the ViewableElement. If the element the
+        UniformNdMapping is mulled with is another UniformNdMapping it
+        will try to match up the dimensions, making sure that items
+        with completely different dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
             self_set = set(self._cached_index_names)
@@ -374,8 +430,9 @@ class HoloMap(UniformNdMapping):
 
     def dframe(self):
         """
-        Gets a dframe for each DataElement in the UniformNdMapping, appends the dimensions
-        of the UniformNdMapping as series and concatenates the dframes.
+        Gets a dframe for each ViewableElement in the
+        UniformNdMapping, appends the dimensions of the
+        UniformNdMapping as series and concatenates the dframes.
         """
         import pandas
         dframes = []
@@ -394,11 +451,11 @@ class HoloMap(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return ViewTree.from_view(self) + ViewTree.from_view(obj)
+        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
 
 
     def __lshift__(self, other):
-        if isinstance(other, (DataElement, UniformNdMapping)):
+        if isinstance(other, (ViewableElement, UniformNdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
@@ -453,7 +510,7 @@ class HoloMap(UniformNdMapping):
         """
         Reduce each Matrix in the UniformNdMapping using a function supplied
         via the kwargs, where the keyword has to match a particular
-        dimension in the DataElement.
+        dimension in the ViewableElement.
         """
         reduced_items = [(k, v.reduce(label_prefix=label_prefix, **reduce_map))
                          for k, v in self.items()]
@@ -519,3 +576,4 @@ class HoloMap(UniformNdMapping):
         norm_factor = data_max-data_min
         return self.map(lambda x, _: x.normalize(min=min, max=max,
                                                  norm_factor=norm_factor))
+

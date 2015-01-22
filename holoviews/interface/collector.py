@@ -8,9 +8,9 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, DataElement, NdMapping, UniformNdMapping,\
+from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
  AxisLayout, AttrTree, HoloMap
-from ..element import Matrix
+from ..element.raster import Matrix
 from ..ipython.widgets import RunProgress, ProgressBar
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
@@ -139,12 +139,12 @@ class ViewRef(Reference):
 
     @property
     def resolved_type(self):
-        return (DataElement, UniformNdMapping, AxisLayout)
+        return (ViewableElement, UniformNdMapping, AxisLayout)
 
 
     def _resolve_ref(self, ref, attrtree):
         """
-        Get the DataElement referred to by a single reference tuple if the
+        Get the ViewableElement referred to by a single reference tuple if the
         data exists, otherwise raise AttributeError.
         """
         obj = attrtree
@@ -159,7 +159,7 @@ class ViewRef(Reference):
 
     def resolve(self, attrtree):
         """
-        Resolve the current ViewRef object into the appropriate DataElement
+        Resolve the current ViewRef object into the appropriate ViewableElement
         object (if available).
         """
         overlaid_view = None
@@ -178,7 +178,7 @@ class ViewRef(Reference):
 
     def __getitem__(self, index):
         """
-        Slice the referenced DataView.
+        Slice the referenced Chart.
         """
         if len(self.slices) == 1:
             self.slices[0] = index
@@ -244,7 +244,7 @@ class Collect(object):
     """
     An Collect takes an object and corresponding hook and when
     called with an AttrTree, updates it with the output of the hook
-    (given the object). The output of the hook should be a DataElement or an
+    (given the object). The output of the hook should be a ViewableElement or an
     AttrTree.
 
     The input object may be a picklable object (e.g. a
@@ -305,7 +305,7 @@ class Collect(object):
 
     def _get_result(self, attrtree, time, times):
         """
-        Method returning a DataElement or AttrTree to be merged into the
+        Method returning a ViewableElement or AttrTree to be merged into the
         attrtree (via the specified hook) in the call.
         """
         resolvable = hasattr(self.obj, 'resolve')
@@ -350,7 +350,7 @@ class Collect(object):
         Helper for merging views together. For instance, this method
         will add a Matrix to a HoloMap or merge two ViewMaps.
         """
-        if isinstance(val, DataElement):
+        if isinstance(val, ViewableElement):
             current_val[time] = val
         elif (isinstance(current_val, UniformNdMapping) and 'Time' not in
               [d.name for d in current_val.key_dimensions]):
@@ -541,7 +541,7 @@ class Collector(AttrTree):
     ViewRef) and passes the resolved output to the given analysisfn
     ViewOperation.
 
-    >>> Collector.for_type(str, lambda x: DataElement(x, name=x))
+    >>> Collector.for_type(str, lambda x: ViewableElement(x, name=x))
     >>> Collector.interval_hook = param.Dynamic.time_fn.advance
 
     >>> c = Collector()
@@ -559,7 +559,7 @@ class Collector(AttrTree):
     Collected the data for 5 time values
 
     >>> data.Target.Path.last                 #doctest: +ELLIPSIS
-    DataElement('example string'...)
+    ViewableElement('example string'...)
     """
 
     # A callable that advances by the specified time before the next
@@ -614,7 +614,7 @@ class Collector(AttrTree):
     def ref(self):
         """
         A convenient property to easily generate ViewRef object (via
-        attribute access). Used to define DataElement references for analysis
+        attribute access). Used to define ViewableElement references for analysis
         or for setting a path for an Collect on the Collector.
         """
         return ViewRef()

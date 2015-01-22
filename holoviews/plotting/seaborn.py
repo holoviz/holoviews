@@ -77,7 +77,7 @@ class RegressionPlot(FullRedrawPlot):
     def _update_plot(self, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
                     ax=self.ax, label=view.label,
-                    **DataElement.options.style(view)[self.cyclic_index])
+                    **Element.options.style(view)[self.cyclic_index])
 
 
 

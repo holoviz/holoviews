@@ -1,5 +1,6 @@
 import copy
 from itertools import groupby, product
+from collections import defaultdict
 
 import numpy as np
 
@@ -13,9 +14,11 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import DataElement, UniformNdMapping, Element, HoloMap, CompositeOverlay,\
-    NdOverlay, Overlay, AdjointLayout, GridLayout, AxisLayout, ViewTree
-from ..element import Annotation, Raster
+from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
+    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
+from ..core.util import find_minmax
+from ..element.annotation import Annotation
+from ..element.raster import Raster
 
 
 class Plot(param.Parameterized):
@@ -76,10 +79,10 @@ class Plot(param.Parameterized):
         style options object. Each subclass should override this
         parameter to list every option that works correctly.""")
 
-    # A mapping from DataElement types to their corresponding plot types
+    # A mapping from ViewableElement types to their corresponding plot types
     defaults = {}
 
-    # A mapping from DataElement types to their corresponding side plot types
+    # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
 
     def __init__(self, view=None, zorder=0, all_keys=None, **params):
@@ -322,7 +325,7 @@ class GridPlot(Plot):
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots = self._create_subplots()
 
-        extra_opts = DataElement.options.plotting(self.grid).opts
+        extra_opts = ViewableElement.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(params, **extra_opts))
@@ -473,7 +476,7 @@ class AdjointLayoutPlot(Plot):
 
     Initially, a LayoutPlot computes an appropriate layout based for
     the number of Views in the AdjointLayout object it has been given, but
-    when embedded in a GridLayout, it can recompute the layout to
+    when embedded in a NdLayout, it can recompute the layout to
     match the number of rows and columns as part of a larger grid.
     """
 
@@ -499,7 +502,7 @@ class AdjointLayoutPlot(Plot):
 
 
     def __init__(self, layout, **params):
-        # The AdjointLayout DataElement object
+        # The AdjointLayout ViewableElement object
         self.layout = layout
         layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
         # Type may be set to 'Embedded Dual' by a call it grid_situate
@@ -541,7 +544,7 @@ class AdjointLayoutPlot(Plot):
             # Override the plotopts as required
             plotopts.update(override_opts)
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
-            layer_types = (vtype,) if isinstance(view, DataElement) else view.layer_types
+            layer_types = (vtype,) if isinstance(view, ViewableElement) else view.layer_types
             if isinstance(view, AxisLayout):
                 if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
                     from .sheetplots import MatrixGridPlot
@@ -613,7 +616,7 @@ class AdjointLayoutPlot(Plot):
 
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             # 'Main' views that should be displayed with square aspect
-            if pos == 'main' and issubclass(vtype, DataElement):
+            if pos == 'main' and issubclass(vtype, ViewableElement):
                 subplot.aspect='square'
             subplot(ax)
 
@@ -644,7 +647,7 @@ class AdjointLayoutPlot(Plot):
     def grid_situate(self, current_idx, layout_type, subgrid_width):
         """
         Situate the current LayoutPlot in a LayoutPlot. The
-        GridLayout specifies a layout_type into which the LayoutPlot
+        NdLayout specifies a layout_type into which the LayoutPlot
         must be embedded. This enclosing layout is guaranteed to have
         enough cells to display all the views.
 
@@ -654,7 +657,7 @@ class AdjointLayoutPlot(Plot):
         will also return a list of gridspec indices associated with
         the all the required layout axes.
         """
-        # Set the layout configuration as situated in a GridLayout
+        # Set the layout configuration as situated in a NdLayout
         self.layout_type = layout_type
 
         if layout_type == 'Single':
@@ -674,7 +677,7 @@ class AdjointLayoutPlot(Plot):
                               bottom_idx, bottom_idx+1]
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, ranges={}):
         for pos, subplot in self.subplots.items():
             if subplot is not None:
                 subplot.update_frame(n)
@@ -687,7 +690,7 @@ class AdjointLayoutPlot(Plot):
 
 class LayoutPlot(Plot):
     """
-    A LayoutPlot accepts either a ViewTree or a GridLayout and
+    A LayoutPlot accepts either a LayoutTree or a NdLayout and
     displays the elements in a cartesian grid in scanline order.
     """
 
@@ -704,8 +707,8 @@ class LayoutPlot(Plot):
       Default value is set conservatively to avoid overlap of subplots.""")
 
     def __init__(self, layout, **params):
-        if not isinstance(layout, (GridLayout, ViewTree)):
-            raise Exception("LayoutPlot only accepts ViewTree objects.")
+        if not isinstance(layout, (NdLayout, LayoutTree)):
+            raise Exception("LayoutPlot only accepts LayoutTree objects.")
 
         self.layout = layout
         self.subplots = {}
@@ -849,7 +852,7 @@ class OverlayPlot(Plot):
     def _collapse(self, overlay, pattern, fn, style_key):
         """
         Given an overlay object collapse the channels according to
-        pattern using the supplied function. Any collapsed DataElement is
+        pattern using the supplied function. Any collapsed ViewableElement is
         then given the supplied style key.
         """
         pattern = [el.strip() for el in pattern.rsplit('*')]
@@ -864,10 +867,9 @@ class OverlayPlot(Plot):
                 views = [el for el in overlay if el.label in layer_labels]
                 if isinstance(overlay, Overlay):
                     views = np.product([Overlay.from_view(el) for el in overlay])
-                else:
-                    overlay_slice = overlay.clone(views)
+                overlay_slice = overlay.clone(views)
                 collapsed_view = fn(overlay_slice)
-                if isinstance(overlay, ViewTree):
+                if isinstance(overlay, LayoutTree):
                     collapsed_overlay *= collapsed_view
                 else:
                     collapsed_overlay[key] = collapsed_view
@@ -875,7 +877,10 @@ class OverlayPlot(Plot):
             elif skip:
                 skip = 0 if skip <= 0 else (skip - 1)
             else:
-                collapsed_overlay[key] = overlay[key]
+                if isinstance(overlay, LayoutTree):
+                    collapsed_overlay *= overlay[key]
+                else:
+                    collapsed_overlay[key] = overlay[key]
         return collapsed_overlay
 
 
@@ -1035,7 +1040,7 @@ class AnnotationPlot(Plot):
 
     def _draw_annotations(self, annotation, key):
         """
-        Draw the elements specified by the Annotation DataElement on the
+        Draw the elements specified by the Annotation ViewableElement on the
         axis, return a list of handles.
         """
         handles = []
@@ -1097,8 +1102,8 @@ class AnnotationPlot(Plot):
 
 
 Plot.defaults.update({AxisLayout: GridPlot,
-                      GridLayout: LayoutPlot,
-                      ViewTree: LayoutPlot,
+                      NdLayout: LayoutPlot,
+                      LayoutTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
                       NdOverlay: OverlayPlot,
                       Overlay: OverlayPlot,

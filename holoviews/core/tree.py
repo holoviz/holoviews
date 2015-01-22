@@ -8,7 +8,7 @@ class AttrTree(object):
     An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined
     together using the update method or merge classmethod. Here is an
-    example of adding a DataElement to an AttrTree and accessing it:
+    example of adding a ViewableElement to an AttrTree and accessing it:
 
     >>> t = AttrTree()
     >>> t.Example.Path = 1

@@ -1,28 +1,30 @@
 import unittest
 from unittest import SkipTest
 
-import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import Dimension, GridLayout, AdjointLayout, Overlay, NdOverlay, AxisLayout, HoloMap
-from .core.options import ChannelOpts, PlotOpts, StyleOpts
+from .core import AdjointLayout, Overlay
+from .core.options import ChannelOpts
 from .element import *
+from holoviews import Matrix
+from holoviews.element.annotation import Annotation, Contours
+from holoviews.element.raster import Raster
 from .interface.pandas import *
 from .interface.seaborn import *
 
 
 class ViewTestCase(unittest.TestCase):
     """
-    The class implements comparisons between DataElement objects for the
+    The class implements comparisons between ViewableElement objects for the
     purposes of testing. The most important attribute that needs to be
     compared is the data attribute as this contains the raw data held
-    by the DataElement object.
+    by the ViewableElement object.
     """
     def __init__(self, *args, **kwargs):
         super(ViewTestCase, self).__init__(*args, **kwargs)
         # General view classes
-        self.addTypeEqualityFunc(GridLayout,    self.compare_gridlayout)
+        self.addTypeEqualityFunc(NdLayout,    self.compare_gridlayout)
         self.addTypeEqualityFunc(AdjointLayout, self.compare_layouts)
         self.addTypeEqualityFunc(NdOverlay,     self.compare_layers)
         self.addTypeEqualityFunc(Overlay,       self.compare_layers)
