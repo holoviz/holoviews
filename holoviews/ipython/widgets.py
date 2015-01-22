@@ -24,7 +24,7 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import NdMapping, DataElement, Layers, HoloMap, GridLayout, AdjointLayout, AxisLayout, ViewTree
+from ..core import DataElement, NdMapping, CompositeOverlay, GridLayout, AdjointLayout, AxisLayout, ViewTree, HoloMap
 from ..plotting import Plot, LayoutPlot
 from .magics import ViewMagic, ANIMATION_OPTS
 
@@ -275,7 +275,7 @@ class NdWidget(param.Parameterized):
         for i, v in enumerate(view):
             if isinstance(v, AxisLayout): v = v.values()[0]
             if isinstance(v, AdjointLayout): v = v.main
-            if isinstance(v, Layers): v = v.values()[0]
+            if isinstance(v, CompositeOverlay): v = v.values()[0]
             if isinstance(v, DataElement):
                 v = HoloMap([((0,), v)], key_dimensions=['Frame'])
 

@@ -1,7 +1,6 @@
 from collections import OrderedDict
 
 from .util import valid_identifier
-from .view import DataElement
 
 
 class AttrTree(object):
@@ -12,9 +11,9 @@ class AttrTree(object):
     example of adding a DataElement to an AttrTree and accessing it:
 
     >>> t = AttrTree()
-    >>> t.Example.Path = DataElement('data1')
+    >>> t.Example.Path = 1
     >>> t.Example.Path                             #doctest: +ELLIPSIS
-    DataElement('data1', ...)
+    1
     """
 
     @classmethod

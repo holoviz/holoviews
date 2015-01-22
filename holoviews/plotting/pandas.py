@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ..core import DataElement
+from ..core import Element
 from ..interface.pandas import DFrame, DataFrameView, pd
 from .viewplots import Plot
 
@@ -65,7 +65,7 @@ class DFrameViewPlot(Plot):
         self._validate(dfview, axis)
 
         self.ax = self._init_axis(axis)
-        self.style = self._process_style(DataElement.options.style(dfview)[cyclic_index])
+        self.style = self._process_style(Element.options.style(dfview)[cyclic_index])
 
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():

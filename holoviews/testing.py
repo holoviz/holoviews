@@ -28,9 +28,9 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(Overlay,       self.compare_layers)
         self.addTypeEqualityFunc(Annotation,    self.compare_annotations)
         self.addTypeEqualityFunc(AxisLayout,    self.compare_grids)
+        self.addTypeEqualityFunc(HoloMap,       self.compare_viewmap)
 
         # DataLayers
-        self.addTypeEqualityFunc(HoloMap,      self.compare_viewmap)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
         self.addTypeEqualityFunc(Raster,       self.compare_raster)
@@ -127,7 +127,7 @@ class ViewTestCase(unittest.TestCase):
 
     def compare_layers(self, view1, view2, msg):
         if len(view1) != len(view2):
-            raise self.failureException("Layers have different lengths.")
+            raise self.failureException("CompositeOverlay have different lengths.")
 
         for (layer1, layer2) in zip(view1, view2):
             self.assertEqual(layer1, layer2)

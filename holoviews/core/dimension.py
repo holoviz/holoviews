@@ -267,3 +267,25 @@ class DimensionedData(Dimensioned, LabelledData):
                 return (dim_vals[0], dim_vals[-1])
             else:
                 return (None, None)
+
+
+class DataElement(DimensionedData):
+    """
+    A view is a data structure for holding data, which may be plotted
+    using matplotlib. Views have an associated title and style
+    name. All Views may be composed together into a GridLayout using
+    the addition operator.
+    """
+
+    __abstract = True
+
+    title = param.String(default='{label} {value}', doc="""
+        The title formatting string allows the title to be composed from
+        the view {label}, {value} quantity and view {type} but can also be set
+        to a simple string.""")
+
+    value = param.String(default='DataElement')
+
+    def __init__(self, data, **params):
+        self._style = params.pop('style', None)
+        super(DataElement, self).__init__(data, **params)

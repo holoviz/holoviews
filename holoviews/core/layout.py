@@ -11,12 +11,11 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned, DimensionedData
-from .ndmapping import NdMapping
+from .dimension import Dimension, Dimensioned, DimensionedData, DataElement
+from .ndmapping import NdMapping, UniformNdMapping
 from .options import options
 from .tree import AttrTree
 from .util import int_to_roman
-from .view import DataElement, UniformNdMapping
 
 
 class Composable(object):

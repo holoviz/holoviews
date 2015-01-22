@@ -1,7 +1,7 @@
 from holoviews.core import DataElement
 from holoviews.testing import IPTestCase
 
-from holoviews import ipython, Layers
+from holoviews import ipython, CompositeOverlay, DataElement
 from holoviews.core.options import OptionsGroup, Options
 from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts
 
@@ -24,7 +24,7 @@ class TestOptsMagic(ExtensionTestCase):
     def setUp(self):
         super(TestOptsMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.core import BoundingBox, Layers, Overlay")
+        self.cell("from holoviews.core import BoundingBox, CompositeOverlay, Overlay")
         self.cell("from holoviews.view import Matrix, Points")
 
         # Clear the options map
@@ -173,11 +173,11 @@ class TestChannelMagic(ExtensionTestCase):
     def setUp(self):
         super(TestChannelMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.core import Layers")
+        self.cell("from holoviews.core import CompositeOverlay")
         self.cell("from holoviews.view import Matrix")
         self.channels = OptionsGroup([Options('definitions',
                                               ChannelOpts)])
-        Layers.channels = self.channels
+        CompositeOverlay.channels = self.channels
 
 
     def tearDown(self):
@@ -193,9 +193,9 @@ class TestChannelMagic(ExtensionTestCase):
         self.cell_magic('channels', definition, 'overlay')
 
         expected_key = 'Custom[<RGBTest>]_RGBA'
-        self.assertEqual(Layers.channels.keys(), [expected_key])
-        self.assertEqual(Layers.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
-        self.assertEqual(Layers.channels[expected_key].mode, 'RGBA')
+        self.assertEqual(CompositeOverlay.channels.keys(), [expected_key])
+        self.assertEqual(CompositeOverlay.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
+        self.assertEqual(CompositeOverlay.channels[expected_key].mode, 'RGBA')
 
 
     def test_HCS_channeldef(self):
@@ -207,10 +207,10 @@ class TestChannelMagic(ExtensionTestCase):
         self.cell_magic('channels', definition, 'overlay')
 
         expected_key = 'Custom[<HCSTest>]_HCS'
-        self.assertEqual(Layers.channels.keys(), [expected_key])
-        self.assertEqual(Layers.channels[expected_key].pattern, 'H_Channel * C_Channel * S_Channel')
-        self.assertEqual(Layers.channels[expected_key].mode, 'HCS')
-        self.assertEqual(Layers.channels[expected_key].opts, {'S_multiplier':2.5})
+        self.assertEqual(CompositeOverlay.channels.keys(), [expected_key])
+        self.assertEqual(CompositeOverlay.channels[expected_key].pattern, 'H_Channel * C_Channel * S_Channel')
+        self.assertEqual(CompositeOverlay.channels[expected_key].mode, 'HCS')
+        self.assertEqual(CompositeOverlay.channels[expected_key].opts, {'S_multiplier':2.5})
 
 if __name__ == "__main__":
     import sys

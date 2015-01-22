@@ -9,8 +9,8 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import HoloMap, DataElement, NdOverlay,\
-    AdjointLayout, GridLayout, AxisLayout, ViewTree, Layers
+from ..core import NdOverlay, Element, HoloMap,\
+    AdjointLayout, GridLayout, AxisLayout, ViewTree, CompositeOverlay
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
@@ -363,13 +363,13 @@ class OptsMagic(Magics):
         values as keys for the the associated view type.
         """
         group = {}
-        if isinstance(obj, (Layers, AdjointLayout, AxisLayout, GridLayout, ViewTree)):
+        if isinstance(obj, (CompositeOverlay, AdjointLayout, AxisLayout, GridLayout, ViewTree)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
             if isinstance(obj, (AdjointLayout, NdOverlay)):
                 return group
 
-        if isinstance(obj, HoloMap) and not issubclass(obj.type, Layers):
+        if isinstance(obj, HoloMap) and not issubclass(obj.type, CompositeOverlay):
             key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
@@ -576,23 +576,23 @@ class OptsMagic(Magics):
         """
         lens, strs = [0,0,0], []
         for name, (plot_kws, style_kws) in kwarg_map.items():
-            plot_update = name in DataElement.options.plotting
+            plot_update = name in Element.options.plotting
             if plot_update and plot_kws:
-                DataElement.options[prefix+name] = DataElement.options.plotting[name](**plot_kws)
+                Element.options[prefix+name] = Element.options.plotting[name](**plot_kws)
             elif plot_kws:
-                DataElement.options[prefix+name] = PlotOpts(**plot_kws)
+                Element.options[prefix+name] = PlotOpts(**plot_kws)
 
-            style_update = name in DataElement.options.style
+            style_update = name in Element.options.style
             if style_update and style_kws:
-                DataElement.options[prefix+name] = DataElement.options.style[name](**style_kws)
+                Element.options[prefix+name] = Element.options.style[name](**style_kws)
             elif style_kws:
-                DataElement.options[prefix+name] = StyleOpts(**style_kws)
+                Element.options[prefix+name] = StyleOpts(**style_kws)
 
             if verbose:
-                plotstr = ('[%s]' % cls.pprint_kws(DataElement.options.plotting[name])
-                           if name in DataElement.options.plotting else '')
-                stylestr = (cls.pprint_kws(DataElement.options.style[name])
-                            if name in DataElement.options.style else '')
+                plotstr = ('[%s]' % cls.pprint_kws(Element.options.plotting[name])
+                           if name in Element.options.plotting else '')
+                stylestr = (cls.pprint_kws(Element.options.style[name])
+                            if name in Element.options.style else '')
                 strs.append((name+':', plotstr, stylestr))
                 lens = [max(len(name)+1, lens[0]),
                         max(len(plotstr), lens[1]),
@@ -621,7 +621,7 @@ class OptsMagic(Magics):
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             return [el+'=' for el in cls.all_params]
         else:
-            return [el+'=' for el in cls.all_styles] + DataElement.options.options()
+            return [el+'=' for el in cls.all_styles] + Element.options.options()
 
 
     def _line_magic(self, line):
@@ -642,11 +642,11 @@ class OptsMagic(Magics):
         kwarg_map = self._parse_keywords(str(line))
 
         if not kwarg_map:
-            info = (len(DataElement.options.style.keys()),
-                    len([k for k in DataElement.options.style.keys() if k.startswith('Custom')]))
+            info = (len(Element.options.style.keys()),
+                    len([k for k in Element.options.style.keys() if k.startswith('Custom')]))
             print("There are %d style options defined (%d custom object styles)." % info)
-            info = (len(DataElement.options.plotting.keys()),
-                    len([k for k in DataElement.options.plotting.keys() if k.startswith('Custom')]))
+            info = (len(Element.options.plotting.keys()),
+                    len([k for k in Element.options.plotting.keys() if k.startswith('Custom')]))
             print("There are %d plot options defined (%d custom object plot settings)." % info)
             return
 

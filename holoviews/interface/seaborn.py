@@ -10,7 +10,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, HoloMap, Element, NdOverlay
+from ..core import Dimension, NdMapping, HoloMap, NdOverlay, Element, HoloMap
 from ..core.options import options, StyleOpts, Cycle
 from ..view import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame

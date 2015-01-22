@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from holoviews.core import Element
+from holoviews.core.element import Element
 from holoviews.core.options import OptionsGroup, Options
 from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
 from holoviews.testing import ViewTestCase

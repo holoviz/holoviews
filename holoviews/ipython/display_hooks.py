@@ -16,8 +16,8 @@ try:
 except:
     mpld3 = None
 
-from ..core import DataElement, UniformNdMapping, HoloMap, \
-    AdjointLayout, GridLayout, AxisLayout, ViewTree, Overlay
+from ..core import DataElement, Element, HoloMap, AdjointLayout, GridLayout,\
+ AxisLayout, ViewTree, Overlay
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from ..view import Raster
 from . import magics
@@ -163,7 +163,7 @@ def map_display(vmap, size=256):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_view_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(DataElement.options.plotting(vmap).opts, size=get_plot_size())
+    opts = dict(Element.options.plotting(vmap).opts, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
@@ -190,7 +190,7 @@ def layout_display(layout, size=256):
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(DataElement.options.plotting(layout).opts, size=grid_size)
+    opts = dict(Element.options.plotting(layout).opts, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
 
     if isinstance(layout, ViewTree):
@@ -249,7 +249,7 @@ def view_display(view, size=256):
     if not isinstance(view, DataElement): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
-    opts = dict(DataElement.options.plotting(view).opts, size=get_plot_size())
+    opts = dict(Element.options.plotting(view).opts, size=get_plot_size())
     fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 
@@ -258,7 +258,7 @@ render_anim = HTML_video
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
-    html_formatter.for_type(DataElement, view_display)
+    html_formatter.for_type(Element, view_display)
     html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(GridLayout, layout_display)

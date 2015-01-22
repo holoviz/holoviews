@@ -9,7 +9,7 @@ except:
 
 import param
 
-from ..core import DataElement
+from ..core import Element
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
 from .viewplots import Plot
@@ -107,7 +107,7 @@ class BivariatePlot(FullRedrawPlot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         kdeview = self._map.last
-        self.style = DataElement.options.style(kdeview)[cyclic_index]
+        self.style = Element.options.style(kdeview)[cyclic_index]
 
         # Create xticks and reorder data if cyclic
         if lbrt is None:
@@ -169,7 +169,7 @@ class TimeSeriesPlot(FullRedrawPlot):
         if lbrt is None:
             lbrt = None if self.rescale_individually else\
                    self._map.lbrt
-        self.style = DataElement.options.style(curveview)[self.cyclic_index]
+        self.style = Element.options.style(curveview)[self.cyclic_index]
 
         self.ax = self._init_axis(axis)
 
@@ -206,7 +206,7 @@ class DistributionPlot(FullRedrawPlot):
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
         distview = self._map.last
-        self.style = DataElement.options.style(distview)[cyclic_index]
+        self.style = Element.options.style(distview)[cyclic_index]
         self.ax = self._init_axis(axis)
 
         self._update_plot(distview)
@@ -286,7 +286,7 @@ class SNSFramePlot(DFrameViewPlot):
             self.ax = self._init_axis(axis)
 
         # Process styles
-        self.style = self._process_style(DataElement.options.style(dfview)[cyclic_index])
+        self.style = self._process_style(Element.options.style(dfview)[cyclic_index])
 
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():

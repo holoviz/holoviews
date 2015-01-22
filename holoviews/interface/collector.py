@@ -8,7 +8,8 @@ import numpy as np
 
 import param
 
-from ..core import UniformNdMapping, NdMapping, Dimension, AxisLayout, DataElement, HoloMap, AttrTree
+from ..core import Dimension, DataElement, NdMapping, UniformNdMapping,\
+ AxisLayout, AttrTree, HoloMap
 from ..ipython.widgets import RunProgress, ProgressBar
 from ..view import Matrix
 

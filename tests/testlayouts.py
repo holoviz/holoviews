@@ -1,6 +1,5 @@
 import unittest
-from holoviews import Element, AdjointLayout, GridLayout, AxisLayout, ViewTree
-
+from holoviews import AdjointLayout, GridLayout, AxisLayout, ViewTree, Element
 
 
 class CompositeTest(unittest.TestCase):

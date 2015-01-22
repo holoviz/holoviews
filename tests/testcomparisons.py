@@ -4,7 +4,8 @@ Test cases for ViewTestCase which implements view comparison.
 import numpy as np
 
 
-from holoviews.core import BoundingBox, Dimension, HoloMap
+from holoviews.core import BoundingBox, Dimension
+from holoviews.core.element import HoloMap
 from holoviews.testing import ViewTestCase
 from holoviews.view import Matrix
 

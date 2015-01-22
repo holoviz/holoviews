@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ViewOperation, Layers, NdOverlay
+from ..core import Dimension, ViewOperation, CompositeOverlay, NdOverlay
 from ..core.options import options
 from ..core.util import find_minmax
 from ..view import ItemTable, Matrix, VectorField, Contours, Histogram
@@ -50,8 +50,8 @@ class operator(ViewOperation):
 
     def _process(self, overlay, key=None):
 
-        if not isinstance(overlay, Layers):
-            raise Exception("Operation requires an Layers as input")
+        if not isinstance(overlay, CompositeOverlay):
+            raise Exception("Operation requires an CompositeOverlay as input")
 
         if self.p.unpack:
             new_data = self.p.operator(*[el.data for el in overlay])
@@ -80,7 +80,7 @@ class convolve(ViewOperation):
     def _process(self, view, key=None):
 
         if len(view) != 2:
-            raise Exception("Layers must contain at least to items.")
+            raise Exception("CompositeOverlay must contain at least to items.")
 
         [target, kernel] = view[0], view[1]
 
@@ -131,7 +131,7 @@ class contours(ViewOperation):
         for level, cset in zip(self.p.levels, contour_set.collections):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
-            contours[level] = Contours(lines, label=sheetview.label + ' ' + self.p.label))
+            contours[level] = Contours(lines, label=sheetview.label + ' ' + self.p.label)
 
         plt.close(figure_handle)
 
@@ -230,7 +230,7 @@ class vectorfield(ViewOperation):
 
     def _process(self, view, key=None):
 
-        if isinstance(view, Layers) and len(view) >= 2:
+        if isinstance(view, CompositeOverlay) and len(view) >= 2:
             radians, lengths = view[0], view[1]
         else:
             radians, lengths = view, None
@@ -315,8 +315,8 @@ class roi_table(ViewOperation):
 
     def _process(self, view, key=None):
 
-        if not isinstance(view, Layers) or len(view) != 2:
-            raise Exception("A Layers object of two Matrix elements is required.")
+        if not isinstance(view, CompositeOverlay) or len(view) != 2:
+            raise Exception("A CompositeOverlay object of two Matrix elements is required.")
 
         mview, mask = view[0], view[1]
 

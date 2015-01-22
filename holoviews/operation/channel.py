@@ -109,7 +109,7 @@ class HCS(ViewOperation):
 
 class colorize(ViewOperation):
     """
-    Given a Layers object consisting of a grayscale colormap and a
+    Given a CompositeOverlay object consisting of a grayscale colormap and a
     second Sheetview with some specified colour map, use the second
     layer to colorize the data of the first layer.
 

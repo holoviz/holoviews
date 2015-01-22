@@ -7,9 +7,10 @@ processed data.
 
 import param
 
-from .layer import Element, NdOverlay, AxisLayout, Overlay, HoloMap
+from .dimension import DataElement
+from .element import Element, HoloMap
+from .layer import NdOverlay, AxisLayout, Overlay
 from .layout import GridLayout
-from .view import DataElement, UniformNdMapping
 
 
 class ViewOperation(param.ParameterizedFunction):

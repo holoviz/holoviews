@@ -11,11 +11,10 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.path import Path
 import matplotlib.patches as patches
 
-
 import param
 
-from ..core import UniformNdMapping, DataElement, Layers, NdOverlay, Overlay, HoloMap, \
-    AdjointLayout, GridLayout, AxisLayout, ViewTree
+from ..core import DataElement, UniformNdMapping, Element, HoloMap, CompositeOverlay,\
+    NdOverlay, Overlay, AdjointLayout, GridLayout, AxisLayout, ViewTree
 from ..view import Annotation, Raster
 
 
@@ -77,10 +76,10 @@ class Plot(param.Parameterized):
         style options object. Each subclass should override this
         parameter to list every option that works correctly.""")
 
-    # A mapping from DataElement types to their corresponding plot types
+    # A mapping from DimensionedData types to their corresponding plot types
     defaults = {}
 
-    # A mapping from DataElement types to their corresponding side plot types
+    # A mapping from DimensionedData types to their corresponding side plot types
     sideplots = {}
 
     def __init__(self, view=None, zorder=0, all_keys=None, **params):
@@ -95,7 +94,7 @@ class Plot(param.Parameterized):
         self.handles = {}
 
 
-    def _check_map(self, view, element_type=DataElement):
+    def _check_map(self, view, element_type=Element):
         """
         Helper method that ensures a given view is always returned as
         an HoloMap object.
@@ -323,7 +322,7 @@ class GridPlot(Plot):
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots = self._create_subplots()
 
-        extra_opts = DataElement.options.plotting(self.grid).opts
+        extra_opts = Element.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(params, **extra_opts))
@@ -337,7 +336,7 @@ class GridPlot(Plot):
             view = self.grid.data.get(coord, None)
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = DataElement.options.plotting(view).opts
+                opts = Element.options.plotting(view).opts
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title)
                 subplot = Plot.defaults[vtype](view, **opts)
@@ -527,7 +526,7 @@ class AdjointLayoutPlot(Plot):
             # Pos will be one of 'main', 'top' or 'right' or None
             view = self.layout.get(pos, None)
             # Customize plotopts depending on position.
-            plotopts = DataElement.options.plotting(view).opts
+            plotopts = Element.options.plotting(view).opts
             # Options common for any subplot
             subplot_opts = dict(show_title=False, layout=self.layout)
             override_opts = {}
@@ -788,7 +787,7 @@ class LayoutPlot(Plot):
             layout_plot = self.subplots.get((r, c), None)
             subaxes = [plt.subplot(self.gs[ind]) for ind in self.grid_indices[(r, c)]]
 
-            rcopts = DataElement.options.style(self.layout).opts
+            rcopts = Element.options.style(self.layout).opts
             with matplotlib.rc_context(rcopts):
                 layout_plot(subaxes)
         plt.draw()
@@ -839,7 +838,7 @@ class LayersPlot(Plot):
 
         for zorder, vmap in enumerate(vmaps):
             cyclic_index, _ = next(style_groups[vmap.style])
-            plotopts = DataElement.options.plotting(vmap.style).opts
+            plotopts = Element.options.plotting(vmap.style).opts
             plotype = Plot.defaults[type(vmap.last)]
             subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
                                                     show_legend=self.show_legend, zorder=zorder,
@@ -886,23 +885,23 @@ class LayersPlot(Plot):
         Given a map of Overlays, apply all applicable channel
         reductions.
         """
-        if not issubclass(vmap.type, Layers):
+        if not issubclass(vmap.type, CompositeOverlay):
             return vmap
-        elif not Layers.channels.keys(): # No potential channel reductions
+        elif not CompositeOverlay.channels.keys(): # No potential channel reductions
             return vmap
 
         # Apply all customized channel operations
         collapsed_vmap = vmap.clone()
         for key, overlay in vmap.items():
-            customized = [k for k in Layers.channels.keys()
+            customized = [k for k in CompositeOverlay.channels.keys()
                           if overlay.label and k.startswith(overlay.label)]
             # Largest reductions should be applied first
-            sorted_customized = sorted(customized, key=lambda k: -Layers.channels[k].size)
-            sorted_reductions = sorted(Layers.channels.options(),
-                                       key=lambda k: -Layers.channels[k].size)
+            sorted_customized = sorted(customized, key=lambda k: -CompositeOverlay.channels[k].size)
+            sorted_reductions = sorted(CompositeOverlay.channels.options(),
+                                       key=lambda k: -CompositeOverlay.channels[k].size)
             # Collapse the customized channel before the other definitions
             for key in sorted_customized + sorted_reductions:
-                channel = Layers.channels[key]
+                channel = CompositeOverlay.channels[key]
                 if channel.mode is None: continue
                 collapse_fn = channel.operation
                 fn = collapse_fn.instance(**channel.opts)
@@ -1040,11 +1039,11 @@ class AnnotationPlot(Plot):
 
     def _draw_annotations(self, annotation, key):
         """
-        Draw the elements specified by the Annotation DataElement on the
+        Draw the elements specified by the Annotation Element on the
         axis, return a list of handles.
         """
         handles = []
-        opts = DataElement.options.style(annotation).opts
+        opts = Element.options.style(annotation).opts
         color = opts.get('color', 'k')
 
         for spec in annotation.data:

@@ -4,7 +4,8 @@ import numpy as np
 
 import param
 
-from ..core import HoloMap, NdMapping
+from ..core import NdMapping
+from holoviews.core.element import HoloMap
 from ..core.operation import MapOperation
 from ..view import Table, Curve
 

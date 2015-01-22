@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, Element, NdMapping, HoloMap
+from ..core import Dimension, NdMapping, Element, HoloMap
 
 
 class ItemTable(Element):
