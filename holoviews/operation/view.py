@@ -197,7 +197,7 @@ class histogram(ViewOperation):
 
         # Set plot and style options
         style_prefix = self.p.style_prefix if self.p.style_prefix else \
-            'Custom[<' + self.name + '>]_'
+            'Custom[<' + view.name + '>]_'
         opts_name = style_prefix + hist_view.label.replace(' ', '_')
         hist_view.style = opts_name
         options[opts_name] = options.plotting(view)(
