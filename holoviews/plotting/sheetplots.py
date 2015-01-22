@@ -365,7 +365,7 @@ class MatrixPlot(Plot):
 
 
 
-class MatrixGridPlot(GridPlot, LayersPlot):
+class MatrixGridPlot(GridPlot, OverlayPlot):
     """
     MatrixGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single

@@ -810,21 +810,20 @@ class LayoutPlot(Plot):
 
 
 
-class LayersPlot(Plot):
+class OverlayPlot(Plot):
     """
-    LayersPlot supports processing of channel operations on Overlays
-    across maps. SheetPlot and MatrixGridPlot are examples of
-    LayersPlots.
+    OverlayPlot supports processing of channel operations on Overlays
+    across maps.
     """
 
     style_opts = param.List(default=[], constant=True, doc="""
-     LayersPlot renders layers which individually have style and plot
-     options but LayersPlot itself does not.""")
+     OverlayPlot renders layers which individually have style and plot
+     options but OverlayPlot itself does not.""")
 
     _abstract = True
 
     def __init__(self, overlay, **params):
-        super(LayersPlot, self).__init__(overlay, **params)
+        super(OverlayPlot, self).__init__(overlay, **params)
         self.subplots = self._create_subplots()
 
 
@@ -1101,6 +1100,6 @@ Plot.defaults.update({AxisLayout: GridPlot,
                       GridLayout: LayoutPlot,
                       ViewTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
-                      NdOverlay: LayersPlot,
-                      Overlay: LayersPlot,
+                      NdOverlay: OverlayPlot,
+                      Overlay: OverlayPlot,
                       Annotation: AnnotationPlot})
