@@ -8,9 +8,9 @@ processed data.
 import param
 
 from .dimension import ViewableElement
-from .element import Element, HoloMap
+from .element import Element, HoloMap, AxisLayout
 from .layout import NdLayout
-from .overlay import NdOverlay, AxisLayout, Overlay
+from .overlay import NdOverlay, Overlay
 
 
 class ElementOperation(param.ParameterizedFunction):
