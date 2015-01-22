@@ -7,7 +7,7 @@ processed data.
 
 import param
 
-from .layer import Layer, Layers, Grid
+from .layer import Layer, Layers, Grid, Overlay
 from .layout import GridLayout
 from .view import View, Map
 
@@ -48,7 +48,7 @@ class ViewOperation(param.ParameterizedFunction):
         may be useful to check is a single view satisfies some
         condition or to extract the appropriate views from an Layers.
         """
-        if isinstance(view, Layers):
+        if isinstance(view, (Layers, Overlay)):
             matches = [v for v in view if v.label.endswith(pattern)]
         elif isinstance(view, Layer):
             matches = [view] if view.label.endswith(pattern) else []
