@@ -12,9 +12,9 @@ import param
 from .dimension import Dimension, DimensionedData
 
 
-class NdIndexableMapping(DimensionedData):
+class MultiDimensionalMapping(DimensionedData):
     """
-    An NdIndexableMapping is a type of mapping (like a dictionary or
+    An MultiDimensionalMapping is a type of mapping (like a dictionary or
     array) that uses fixed-length multidimensional keys. This behaves
     like a sparse N-dimensional array that does not require a dense
     sampling over the multidimensional space.
@@ -23,10 +23,10 @@ class NdIndexableMapping(DimensionedData):
     supports indexing (such as a dictionary, array, or list), fully
     qualified indexing can be used from the top level, with the first
     N dimensions of the index selecting a particular piece of data
-    stored in the NdIndexableMapping object, and the remaining
+    stored in the MultiDimensionalMapping object, and the remaining
     dimensions used to index into the underlying data.
 
-    For instance, for an NdIndexableMapping x with dimensions "Year"
+    For instance, for an MultiDimensionalMapping x with dimensions "Year"
     and "Month" and an underlying data type that is a 2D
     floating-point array indexed by (r,c), a 2D array can be indexed
     with x[2000,3] and a single floating-point number may be indexed
@@ -41,7 +41,7 @@ class NdIndexableMapping(DimensionedData):
 
     key_dimensions = param.List(default=[Dimension("Default")], constant=True)
 
-    value = param.String(default='NdIndexableMapping')
+    value = param.String(default='MultiDimensionalMapping')
 
     data_type = None
 
@@ -49,8 +49,7 @@ class NdIndexableMapping(DimensionedData):
     _sorted = True
 
     def __init__(self, initial_items=None, **params):
-        self.data = OrderedDict()
-        super(NdIndexableMapping, self).__init__(**params)
+        super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
 
         self._next_ind = 0
         self._check_key_type = True
@@ -381,7 +380,7 @@ class NdIndexableMapping(DimensionedData):
 
     def map(self, map_fn, **kwargs):
         """
-        Map a function across the NdIndexableMapping.
+        Map a function across the MultiDimensionalMapping.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
         if isinstance(mapped_items[0][1], tuple):
@@ -502,13 +501,13 @@ class NdIndexableMapping(DimensionedData):
 
 
 
-class NdMapping(NdIndexableMapping):
+class NdMapping(MultiDimensionalMapping):
     """
     NdMapping supports the same indexing semantics as
-    NdIndexableMapping but also supports slicing semantics.
+    MultiDimensionalMapping but also supports slicing semantics.
 
     Slicing semantics on an NdMapping is dependent on the ordering
-    semantics of the keys. As NdIndexableMapping sort the keys, a
+    semantics of the keys. As MultiDimensionalMapping sort the keys, a
     slice on an NdMapping is effectively a way of filtering out the
     keys that are outside the slice range.
     """
