@@ -18,5 +18,5 @@ from .core.tree import *                      # pyflakes:ignore (API import)
 
 from .interface import *                           # pyflakes:ignore (API import)
 from .operation import ViewOperation, MapOperation # pyflakes:ignore (API import)
-from .view import *                                # pyflakes:ignore (API import)
+from .element import *                                # pyflakes:ignore (API import)
 
