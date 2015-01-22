@@ -116,7 +116,7 @@ class Options(object):
     For example supplying 'Example_View' as a style would match
     these styles (if they are defined):
 
-    'View' : Opts(a=1, b=2)
+    'DataElement' : Opts(a=1, b=2)
     'Example_View': Opts(b=3)
 
     The resulting Opts object inherits a=1 from 'Options' and b=3
@@ -321,21 +321,21 @@ class OptionsGroup(object):
 class StyleOpts(Opts):
     """
     A subclass of Opts designed to hold matplotlib options to set the
-    display Style of View objects.
+    display Style of DataElement objects.
     """
 
 
 class PlotOpts(Opts):
     """
     A subclass of Opts designed to hold plotting options that set the
-    parameters of the Plot class that display View objects.
+    parameters of the Plot class that display DataElement objects.
     """
 
 
 class ChannelOpts(Opts):
     """
     A subclass of Opts designed to hold channel mode definitions that
-    control how particular labelled layer combinations in an Layers
+    control how particular labelled layer combinations in an Overlay
     are displayed.
     """
 

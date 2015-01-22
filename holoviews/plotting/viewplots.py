@@ -14,8 +14,8 @@ import matplotlib.patches as patches
 
 import param
 
-from ..core import Map, View, Layer, Layers, Overlay, ViewMap, \
-    AdjointLayout, GridLayout, Grid, ViewTree
+from ..core import UniformNdMapping, DataElement, Layers, NdOverlay, Overlay, HoloMap, \
+    AdjointLayout, GridLayout, AxisLayout, ViewTree
 from ..view import Annotation, Raster
 
 
@@ -77,10 +77,10 @@ class Plot(param.Parameterized):
         style options object. Each subclass should override this
         parameter to list every option that works correctly.""")
 
-    # A mapping from View types to their corresponding plot types
+    # A mapping from DataElement types to their corresponding plot types
     defaults = {}
 
-    # A mapping from View types to their corresponding side plot types
+    # A mapping from DataElement types to their corresponding side plot types
     sideplots = {}
 
     def __init__(self, view=None, zorder=0, all_keys=None, **params):
@@ -95,13 +95,13 @@ class Plot(param.Parameterized):
         self.handles = {}
 
 
-    def _check_map(self, view, element_type=View):
+    def _check_map(self, view, element_type=DataElement):
         """
         Helper method that ensures a given view is always returned as
-        an ViewMap object.
+        an HoloMap object.
         """
-        if not isinstance(view, ViewMap):
-            vmap = ViewMap(initial_items=(0, view))
+        if not isinstance(view, HoloMap):
+            vmap = HoloMap(initial_items=(0, view))
         else:
             vmap = view
 
@@ -290,12 +290,12 @@ class Plot(param.Parameterized):
 
 class GridPlot(Plot):
     """
-    Plot a group of views in a grid layout based on a Grid view
+    Plot a group of views in a grid layout based on a AxisLayout view
     object.
     """
 
     joint_axes = param.Boolean(default=True, doc="""
-        Share axes between all elements in the Grid.""")
+        Share axes between all elements in the AxisLayout.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
@@ -307,8 +307,8 @@ class GridPlot(Plot):
         style options but GridPlot itself does not.""")
 
     def __init__(self, grid, **params):
-        if not isinstance(grid, Grid):
-            raise Exception("GridPlot only accepts Grid.")
+        if not isinstance(grid, AxisLayout):
+            raise Exception("GridPlot only accepts AxisLayout.")
 
         self.grid = copy.deepcopy(grid)
         for k, vmap in self.grid.data.items():
@@ -323,7 +323,7 @@ class GridPlot(Plot):
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots = self._create_subplots()
 
-        extra_opts = View.options.plotting(self.grid).opts
+        extra_opts = DataElement.options.plotting(self.grid).opts
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(params, **extra_opts))
@@ -336,11 +336,11 @@ class GridPlot(Plot):
         for coord in self.grid.keys(full_grid=True):
             view = self.grid.data.get(coord, None)
             if view is not None:
-                vtype = view.type if isinstance(view, Map) else view.__class__
-                opts = View.options.plotting(view).opts
+                vtype = view.type if isinstance(view, HoloMap) else view.__class__
+                opts = DataElement.options.plotting(view).opts
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title)
-                subplot = Plot.defaults[vtype](view, all_keys=self._keys, **opts)
+                subplot = Plot.defaults[vtype](view, **opts)
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
                 r += 1
@@ -500,7 +500,7 @@ class AdjointLayoutPlot(Plot):
 
 
     def __init__(self, layout, **params):
-        # The AdjointLayout View object
+        # The AdjointLayout DataElement object
         self.layout = layout
         layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
         # Type may be set to 'Embedded Dual' by a call it grid_situate
@@ -527,7 +527,7 @@ class AdjointLayoutPlot(Plot):
             # Pos will be one of 'main', 'top' or 'right' or None
             view = self.layout.get(pos, None)
             # Customize plotopts depending on position.
-            plotopts = View.options.plotting(view).opts
+            plotopts = DataElement.options.plotting(view).opts
             # Options common for any subplot
             subplot_opts = dict(show_title=False, layout=self.layout)
             override_opts = {}
@@ -541,9 +541,9 @@ class AdjointLayoutPlot(Plot):
 
             # Override the plotopts as required
             plotopts.update(override_opts)
-            vtype = view.type if isinstance(view, Map) else view.__class__
-            layer_types = (vtype,) if isinstance(view, View) else view.layer_types
-            if isinstance(view, Grid):
+            vtype = view.type if isinstance(view, HoloMap) else view.__class__
+            layer_types = (vtype,) if isinstance(view, DataElement) else view.layer_types
+            if isinstance(view, AxisLayout):
                 if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
                     from .sheetplots import MatrixGridPlot
                     plot_type = MatrixGridPlot
@@ -612,9 +612,9 @@ class AdjointLayoutPlot(Plot):
                 ax.set_axis_off()
                 continue
 
-            vtype = view.type if isinstance(view, Map) else view.__class__
+            vtype = view.type if isinstance(view, HoloMap) else view.__class__
             # 'Main' views that should be displayed with square aspect
-            if pos == 'main' and issubclass(vtype, (Layer, Layers, Overlay)):
+            if pos == 'main' and issubclass(vtype, DataElement):
                 subplot.aspect='square'
             subplot(ax)
 
@@ -682,8 +682,8 @@ class AdjointLayoutPlot(Plot):
 
 
     def __len__(self):
-        return max([len(v) if isinstance(v, Map) else len(v.all_keys)
-                    for v in self.layout if isinstance(v, (Map, Grid))]+[1])
+        return max([len(v) if isinstance(v, UniformNdMapping) else len(v.all_keys)
+                    for v in self.layout if isinstance(v, (UniformNdMapping, AxisLayout))]+[1])
 
 
 class LayoutPlot(Plot):
@@ -720,7 +720,7 @@ class LayoutPlot(Plot):
     def _compute_gridspecs(self):
         """
         Computes the tallest and widest cell for each row and column
-        by examining the Layouts in the Grid. The GridSpec is then
+        by examining the Layouts in the AxisLayout. The GridSpec is then
         instantiated and the LayoutPlots are configured with the
         appropriate embedded layout_types. The first element of the
         returned tuple is a dictionary of all the LayoutPlots indexed
@@ -788,7 +788,7 @@ class LayoutPlot(Plot):
             layout_plot = self.subplots.get((r, c), None)
             subaxes = [plt.subplot(self.gs[ind]) for ind in self.grid_indices[(r, c)]]
 
-            rcopts = View.options.style(self.layout).opts
+            rcopts = DataElement.options.style(self.layout).opts
             with matplotlib.rc_context(rcopts):
                 layout_plot(subaxes)
         plt.draw()
@@ -839,7 +839,7 @@ class LayersPlot(Plot):
 
         for zorder, vmap in enumerate(vmaps):
             cyclic_index, _ = next(style_groups[vmap.style])
-            plotopts = View.options.plotting(vmap.style).opts
+            plotopts = DataElement.options.plotting(vmap.style).opts
             plotype = Plot.defaults[type(vmap.last)]
             subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
                                                     show_legend=self.show_legend, zorder=zorder,
@@ -851,7 +851,7 @@ class LayersPlot(Plot):
     def _collapse(self, overlay, pattern, fn, style_key):
         """
         Given an overlay object collapse the channels according to
-        pattern using the supplied function. Any collapsed View is
+        pattern using the supplied function. Any collapsed DataElement is
         then given the supplied style key.
         """
         pattern = [el.strip() for el in pattern.rsplit('*')]
@@ -886,7 +886,7 @@ class LayersPlot(Plot):
         Given a map of Overlays, apply all applicable channel
         reductions.
         """
-        if not issubclass(type(vmap.values()[0]), (Overlay, Layers)):
+        if not issubclass(vmap.type, Layers):
             return vmap
         elif not Layers.channels.keys(): # No potential channel reductions
             return vmap
@@ -937,23 +937,16 @@ class LayersPlot(Plot):
                                    type=view.__class__.__name__)
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, axis=None, cyclic_index=0, ranges={}):
         key = self._keys[-1]
         self.ax = self._init_axis(axis)
-        overlay = self._collapse_channels(self._map.last)
+        overlay = self._collapse_channels(HoloMap([((0,), self._map.last)])).last
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(overlay, lambda s: s.style))
 
         for zorder, vmap in enumerate(overlay):
-            cyclic_index, _ = next(style_groups[vmap.style])
-            plotopts = View.options.plotting(vmap).opts
-
-            if zorder == 0:
-                self.rescale = plotopts.get('rescale_individually', False)
-                lbrt = self._map.last.lbrt if self.rescale else self._map.lbrt
-
-            lbrt = None if type(vmap) == Annotation else lbrt
-            self.subplots[zorder](self.ax, cyclic_index=cyclic_index, lbrt=lbrt)
+            new_index, _ = next(style_groups[vmap.style])
+            self.subplots[zorder](self.ax, cyclic_index=cyclic_index+new_index, ranges=ranges)
 
         self._adjust_legend()
 
@@ -1047,11 +1040,11 @@ class AnnotationPlot(Plot):
 
     def _draw_annotations(self, annotation, key):
         """
-        Draw the elements specified by the Annotation View on the
+        Draw the elements specified by the Annotation DataElement on the
         axis, return a list of handles.
         """
         handles = []
-        opts = View.options.style(annotation).opts
+        opts = DataElement.options.style(annotation).opts
         color = opts.get('color', 'k')
 
         for spec in annotation.data:
@@ -1108,10 +1101,10 @@ class AnnotationPlot(Plot):
         self.handles['annotations'] = self._draw_annotations(annotation, key)
 
 
-Plot.defaults.update({Grid: GridPlot,
+Plot.defaults.update({AxisLayout: GridPlot,
                       GridLayout: LayoutPlot,
                       ViewTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
-                      Layers: LayersPlot,
+                      NdOverlay: LayersPlot,
                       Overlay: LayersPlot,
                       Annotation: AnnotationPlot})

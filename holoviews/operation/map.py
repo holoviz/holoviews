@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core import ViewMap, NdMapping
+from ..core import HoloMap, NdMapping
 from ..core.operation import MapOperation
 from ..view import Table, Curve
 
@@ -29,8 +29,8 @@ class table_collate(MapOperation):
             outer_dims = ['Label']
             entry_keys = table.data.keys()
 
-        # Generate a ViewMap for every entry in the table
-        map_fn = lambda: ViewMap(**dict(vmap.get_param_values(), key_dimensions=new_dimensions))
+        # Generate a HoloMap for every entry in the table
+        map_fn = lambda: HoloMap(**dict(vmap.get_param_values(), key_dimensions=new_dimensions))
         entries = [(entry, map_fn() if new_dimensions else None) for entry in entry_keys]
         maps = NdMapping(entries, key_dimensions=outer_dims)
         for new_key, collate_map in nested_map.items():
@@ -64,7 +64,7 @@ class table_collate(MapOperation):
                     maps[label] = curve
 
         # If there are multiple table entries, generate grid
-        maps = ViewMap(maps.items(), **dict(maps.get_param_values()))
+        maps = HoloMap(maps.items(), **dict(maps.get_param_values()))
         if isinstance(table, Table):
             if len(maps) > 1:
                 grid = maps.grid([d.name for d in maps.key_dimensions])

@@ -1,17 +1,17 @@
 import unittest
 
-from holoviews.core import BoundingBox, View
+from holoviews.core import BoundingBox, DataElement
 from holoviews.view import Annotation
 
 
 class ViewTest(unittest.TestCase):
 
     def test_view(self):
-        View('An example of arbitrary data')
+        DataElement('An example of arbitrary data')
 
     def test_constant_label(self):
         label = 'label'
-        view = View('An example of arbitrary data', label=label)
+        view = DataElement('An example of arbitrary data', label=label)
         self.assertEqual(view.label, label)
         try:
             view.label = 'another label'

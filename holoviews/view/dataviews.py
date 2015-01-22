@@ -4,25 +4,25 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, Layer, ViewMap
+from ..core import Dimension, NdMapping, Element, HoloMap
 from .tabular import ItemTable, Table
 
 
-class DataView(Layer):
+class DataView(Element):
     """
     The data held within an Array is a numpy array of shape (n, 2).
-    Layer objects are sliceable along the X dimension allowing easy
+    Element objects are sliceable along the X dimension allowing easy
     selection of subsets of the data.
     """
 
     key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
-        Dimensions on Layers determine the number of indexable
+        Dimensions on Elements determine the number of indexable
         dimensions.""")
 
     value = param.String(default='DataView')
 
     value_dimensions = param.List(default=[Dimension('y')], bounds=(1,1), doc="""
-        Dimensions on Layers determine the number of indexable
+        Dimensions on Elements determine the number of indexable
         dimensions.""")
 
 
@@ -32,7 +32,7 @@ class DataView(Layer):
             settings = dict(data.get_param_values())
             data = data.data
         elif isinstance(data, NdMapping) or (isinstance(data, list) and data
-                                           and isinstance(data[0], Layer)):
+                                           and isinstance(data[0], Element)):
             data, settings = self._process_map(data)
         data = list(data)
         if len(data) and not isinstance(data, np.ndarray):
@@ -73,7 +73,7 @@ class DataView(Layer):
     def __getitem__(self, slc):
         """
         Implements slicing or indexing of the data by the data x-value.
-        If a single element is indexed reduces the Layer to a single
+        If a single element is indexed reduces the Element to a single
         Scatter object.
         """
         if slc is ():
@@ -95,7 +95,7 @@ class DataView(Layer):
 
     def sample(self, samples=[]):
         """
-        Allows sampling of Layer objects using the default
+        Allows sampling of Element objects using the default
         syntax of providing a map of dimensions and sample pairs.
         """
         sample_data = OrderedDict()
@@ -106,7 +106,7 @@ class DataView(Layer):
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Allows collapsing of Layer objects using the supplied map of
+        Allows collapsing of Element objects using the supplied map of
         dimensions and reduce functions.
         """
         reduced_data = OrderedDict()
@@ -134,7 +134,7 @@ class DataView(Layer):
 
 class Scatter(DataView):
     """
-    Scatter is a simple 1D View, which gets displayed as a number of
+    Scatter is a simple 1D DataElement, which gets displayed as a number of
     disconnected points.
     """
 
@@ -145,7 +145,7 @@ class Scatter(DataView):
 
 class Curve(DataView):
     """
-    Curve is a simple 1D View of points and therefore assumes the data is
+    Curve is a simple 1D DataElement of points and therefore assumes the data is
     ordered.
     """
 
@@ -156,7 +156,7 @@ class Curve(DataView):
         Create map indexed by Curve x-axis with progressively expanding number
         of curve samples.
         """
-        vmap = ViewMap(None, key_dimensions=self.key_dimensions,
+        vmap = HoloMap(None, key_dimensions=self.key_dimensions,
                        title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
@@ -169,7 +169,7 @@ class Curve(DataView):
 
 class Bars(DataView):
     """
-    A bar is a simple 1D View of bars, which assumes that the data is
+    A bar is a simple 1D DataElement of bars, which assumes that the data is
     sorted by x-value and there are no gaps in the bars.
     """
 
@@ -209,14 +209,14 @@ class Bars(DataView):
                              'match the number of bars in length.')
 
 
-class Histogram(Layer):
+class Histogram(Element):
     """
     Histogram contains a number of bins, which are defined by the
     upper and lower bounds of their edges and the computed bin values.
     """
 
     key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
-        Dimensions on Layers determine the number of indexable
+        Dimensions on Elements determine the number of indexable
         dimensions.""")
 
     value = param.String(default='Histogram')
@@ -237,7 +237,7 @@ class Histogram(Layer):
         """
         settings = {}
         (value, edges) = values if isinstance(values, tuple) else (values, edges)
-        if isinstance(values, Layer):
+        if isinstance(values, Element):
             values = values.data[:, 0]
             edges = values.data[:, 1]
             settings = dict(values.get_param_values())

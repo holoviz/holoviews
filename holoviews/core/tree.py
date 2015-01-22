@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from .util import valid_identifier
-from .view import View
+from .view import DataElement
 
 
 class AttrTree(object):
@@ -9,12 +9,12 @@ class AttrTree(object):
     An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined
     together using the update method or merge classmethod. Here is an
-    example of adding a View to an AttrTree and accessing it:
+    example of adding a DataElement to an AttrTree and accessing it:
 
     >>> t = AttrTree()
-    >>> t.Example.Path = View('data1')
+    >>> t.Example.Path = DataElement('data1')
     >>> t.Example.Path                             #doctest: +ELLIPSIS
-    View('data1', ...)
+    DataElement('data1', ...)
     """
 
     @classmethod

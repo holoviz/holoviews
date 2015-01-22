@@ -11,7 +11,7 @@ from .options import options
 from .ndmapping import NdMapping
 
 
-class View(DimensionedData):
+class DataElement(DimensionedData):
     """
     A view is a data structure for holding data, which may be plotted
     using matplotlib. Views have an associated title and style
@@ -26,142 +26,40 @@ class View(DimensionedData):
         the view {label}, {value} quantity and view {type} but can also be set
         to a simple string.""")
 
-    value = param.String(default='View')
+    value = param.String(default='DataElement')
 
     options = options
 
     def __init__(self, data, **params):
         self._style = params.pop('style', None)
-        super(View, self).__init__(data, **params)
-
-
-    def closest(self, coords):
-        """
-        Class method that returns the exact keys for a given list of
-        coordinates. The supplied bounds defines the extent within
-        which the samples are drawn and the optional shape argument is
-        the shape of the numpy array (typically the shape of the .data
-        attribute) when applicable.
-        """
-        return coords
-
-
-    def sample(self, **samples):
-        """
-        Base class signature to demonstrate API for sampling Views.
-        To sample a View kwargs, where the keyword matches a Dimension
-        in the View and the value matches a corresponding entry in the
-        data.
-        """
-        raise NotImplementedError
-
-
-    def reduce(self, label_prefix='', **reduce_map):
-        """
-        Base class signature to demonstrate API for reducing Views,
-        using some reduce function, e.g. np.mean. Signature is the
-        same as sample, however a label_prefix may be provided to
-        describe the reduction operation.
-        """
-        raise NotImplementedError
-
-
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this view. If a style name is not set and but a label is
-        assigned, then the closest existing style name is returned.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        if self.label:
-            style_str = '_'.join([self.label, class_name])
-            matches = self.options.fuzzy_match_keys(style_str)
-            return matches[0] if matches else class_name
-        else:
-            return class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
-
-
-    def table(self, **kwargs):
-        """
-        This method transforms any View type into a Table
-        as long as it implements a dimension_values method.
-        """
-        from ..view import Table
-        keys = zip(*[self.dimension_values(dim.name)
-                 for dim in self.key_dimensions])
-        values = zip(*[self.dimension_values(dim.name)
-                       for dim in self.value_dimensions])
-        params = dict(key_dimensions=self.key_dimensions,
-                      value_dimensions=self.value_dimensions,
-                      label=self.label, value=self.value, **kwargs)
-        return Table(zip(keys, values), **params)
-
-
-    def dframe(self):
-        raise NotImplementedError
-
-
-    def __getstate__(self):
-        """
-        When pickling, make sure to save the relevant style and
-        plotting options as well.
-        """
-        obj_dict = self.__dict__.copy()
-        obj_dict['style_objects'] = {}
-        for match in self.options.fuzzy_match_keys(self.style):
-            obj_dict['style_objects'][match] = self.options[match]
-        return obj_dict
-
-
-    def __setstate__(self, d):
-        """
-        When unpickled, restore the saved style and plotting options
-        to View.options.
-        """
-        for name, match in d.pop('style_objects').items():
-            for style in match:
-                self.options[name] = style
-        self.__dict__.update(d)
-
-
-    def __repr__(self):
-        params = ', '.join('%s=%r' % (k,v) for (k,v) in self.get_param_values())
-        return "%s(%r, %s)" % (self.__class__.__name__, self.data, params)
+        super(DataElement, self).__init__(data, **params)
 
 
 
-class Map(NdMapping):
+
+class UniformNdMapping(NdMapping):
     """
-    A Map is a map of Views over a number of specified dimensions. The
+    A UniformNdMapping is a map of Views over a number of specified dimensions. The
     dimension may be a spatial dimension (i.e., a ZStack), time
     (specifying a frame sequence) or any other combination of
-    Dimensions.  Map also adds handling of styles, appending the
+    Dimensions.  UniformNdMapping also adds handling of styles, appending the
     Dimension keys and values to titles and a number of methods to
     manipulate the Dimensions.
 
-    Map objects can be sliced, sampled, reduced, overlaid and split
+    UniformNdMapping objects can be sliced, sampled, reduced, overlaid and split
     along its and its containing Views dimensions. Subclasses should
     implement the appropriate slicing, sampling and reduction methods
-    for their View type.
+    for their DataElement type.
     """
 
     title_suffix = param.String(default='\n {dims}', doc="""
-       A string appended to the View titles when they are added to the
-       Map. Default adds a new line with the formatted dimensions
-       of the Map inserted using the {dims} formatting keyword.""")
+       A string appended to the DataElement titles when they are added to the
+       UniformNdMapping. Default adds a new line with the formatted dimensions
+       of the UniformNdMapping inserted using the {dims} formatting keyword.""")
 
-    value = param.String(default='Map')
+    value = param.String(default='UniformNdMapping')
 
-    data_type = (View, NdMapping)
+    data_type = (DataElement, NdMapping)
 
     _abstract = True
     _deep_indexable = True
@@ -194,6 +92,7 @@ class Map(NdMapping):
         for val in self.values():
             val.style = style_name
 
+
     @property
     def empty_element(self):
         return self._type(None)
@@ -204,14 +103,14 @@ class Map(NdMapping):
             data.style = self.style
 
         if self.type is not None and (type(data) != self.type):
-            raise AssertionError("%s must only contain one type of View." %
+            raise AssertionError("%s must only contain one type of DataElement." %
                                  self.__class__.__name__)
-        super(Map, self)._item_check(dim_vals, data)
+        super(UniformNdMapping, self)._item_check(dim_vals, data)
 
 
     def get_title(self, key, item, group_size=2):
         """
-        Resolves the title string on the View being added to the Map,
+        Resolves the title string on the DataElement being added to the UniformNdMapping,
         adding the Maps title suffix.
         """
         if self.ndims == 1 and self.get_dimension('Default'):
@@ -227,18 +126,9 @@ class Map(NdMapping):
         return item.title + title_suffix
 
 
-    def sample(self, dimsample_map, new_axis=None):
-        """
-        Base class implements signature for sampling View dimensions
-        and optionally overlaying the resulting reduced dimensionality
-        Views by specifying a list group_by dimensions.
-        """
-        raise NotImplementedError
-
-
     def table(self, **kwargs):
         """
-        Creates Table from all the elements in the Map.
+        Creates Table from all the elements in the UniformNdMapping.
         """
 
         table = None
@@ -251,15 +141,6 @@ class Map(NdMapping):
             else:
                 table.update(value)
         return table
-
-
-    def reduce(self, **reduce_map):
-        """
-        Base class implements signature for reducing dimensions,
-        subclasses with Views of fixed dimensionality can then
-        appropriately implement reducing the correct view types.
-        """
-        raise NotImplementedError
 
 
 __all__ = list(set([_k for _k, _v in locals().items()

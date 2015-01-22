@@ -7,7 +7,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
 import param
-from ..core import Map, View, Layers
+from ..core import HoloMap, DataElement, Layers
 from ..view import Raster, Scatter, Curve, Histogram, Bars, ItemTable, Table, Points
 from .viewplots import Plot
 
@@ -139,7 +139,7 @@ class CurvePlot(Plot):
         # Create line segments and apply style
         line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
                                     zorder=self.zorder, label=curveview.label,
-                                    **View.options.style(curveview)[cyclic_index])[0]
+                                    **DataElement.options.style(curveview)[cyclic_index])[0]
 
         self.handles['line_segment'] = line_segment
 
@@ -180,7 +180,7 @@ class ScatterPlot(CurvePlot):
         # Create line segments and apply style
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
                                 zorder=self.zorder, label=scatterview.label,
-                                **View.options.style(scatterview)[cyclic_index])
+                                **DataElement.options.style(scatterview)[cyclic_index])
 
         self.handles['paths'] = paths
 
@@ -196,7 +196,7 @@ class ScatterPlot(CurvePlot):
 
         paths = self.ax.scatter(view.data[:, 0], view.data[:, 1],
                                 zorder=self.zorder, label=view.label,
-                                **View.options.style(view)[self.cyclic_index])
+                                **DataElement.options.style(view)[self.cyclic_index])
 
         self.handles['paths'] = paths
 
@@ -368,7 +368,7 @@ class HistogramPlot(Plot):
             self.plotfn = self.ax.bar
 
         # Plot bars and make any adjustments
-        style = View.options.style(hist)[cyclic_index]
+        style = DataElement.options.style(hist)[cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self._keys[-1], bars, lims) # Indexing top
 
@@ -516,25 +516,25 @@ class SideHistogramPlot(HistogramPlot):
     def _update_plot(self, key, bars, lims):
         """
         Process the bars and draw the offset line as necessary. If a
-        color map is set in the style of the 'main' View object, color
+        color map is set in the style of the 'main' DataElement object, color
         the bars appropriately, respecting the required normalization
         settings.
         """
         hist = self._map[key]
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
-        individually = View.options.plotting(main).opts.get('normalize_individually', False)
+        individually = DataElement.options.plotting(main).opts.get('normalize_individually', False)
 
         hist_dim = hist.get_dimension(0).name
         range_item = main
-        if isinstance(main, Map):
+        if isinstance(main, HoloMap):
             if issubclass(main.type, Layers):
                 range_item = main.split_overlays()[0]
                 if individually:
                     range_item = range_item[key]
             else:
                 range_item = main[key] if individually else main
-        elif isinstance(main, View):
+        elif isinstance(main, DataElement):
             range_item = main
         main_range = range_item.range(hist_dim)
 
@@ -546,16 +546,16 @@ class SideHistogramPlot(HistogramPlot):
             self._update_separator(lims, offset)
 
 
-        # If .main is an Layers or a Map of Overlays get the correct style
-        if isinstance(main, Map):
+        # If .main is an NdOverlay or a HoloMap of Overlays get the correct style
+        if isinstance(main, HoloMap):
             main = main.last
         if isinstance(main, Layers):
             main = main.values()[0]
         style = main.style
 
         if isinstance(main, (Raster, Points)):
-            cmap = cm.get_cmap(View.options.style(style).opts['cmap']) if self.offset else None
-            main_range = View.options.style(style).opts.get('clims', main_range) if self.offset else None
+            cmap = cm.get_cmap(DataElement.options.style(style).opts['cmap']) if self.offset else None
+            main_range = DataElement.options.style(style).opts.get('clims', main_range) if self.offset else None
         else:
             cmap = None
 

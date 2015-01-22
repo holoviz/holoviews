@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import Dimension, GridLayout, AdjointLayout, Layers, Grid, ViewMap
+from .core import Dimension, GridLayout, AdjointLayout, Overlay, NdOverlay, AxisLayout, HoloMap
 from .core.options import ChannelOpts, PlotOpts, StyleOpts
 from .interface.pandas import *
 from .interface.seaborn import *
@@ -14,22 +14,23 @@ from .view import *
 
 class ViewTestCase(unittest.TestCase):
     """
-    The class implements comparisons between View objects for the
+    The class implements comparisons between DataElement objects for the
     purposes of testing. The most important attribute that needs to be
     compared is the data attribute as this contains the raw data held
-    by the View object.
+    by the DataElement object.
     """
     def __init__(self, *args, **kwargs):
         super(ViewTestCase, self).__init__(*args, **kwargs)
         # General view classes
         self.addTypeEqualityFunc(GridLayout,    self.compare_gridlayout)
         self.addTypeEqualityFunc(AdjointLayout, self.compare_layouts)
-        self.addTypeEqualityFunc(Layers,        self.compare_layers)
+        self.addTypeEqualityFunc(NdOverlay,     self.compare_layers)
+        self.addTypeEqualityFunc(Overlay,       self.compare_layers)
         self.addTypeEqualityFunc(Annotation,    self.compare_annotations)
-        self.addTypeEqualityFunc(Grid,          self.compare_grids)
+        self.addTypeEqualityFunc(AxisLayout,    self.compare_grids)
 
         # DataLayers
-        self.addTypeEqualityFunc(ViewMap,      self.compare_viewmap)
+        self.addTypeEqualityFunc(HoloMap,      self.compare_viewmap)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
         self.addTypeEqualityFunc(Raster,       self.compare_raster)
@@ -302,7 +303,7 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_grids(self, view1, view2, msg):
-        self._compare_grids(view1, view2, 'Grid')
+        self._compare_grids(view1, view2, 'AxisLayout')
 
     #=========#
     # Options #

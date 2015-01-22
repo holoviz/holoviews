@@ -3,16 +3,16 @@ from collections import OrderedDict
 import param
 import numpy as np
 
-from ..core import Dimension, NdMapping, Layer
+from ..core import Dimension, NdMapping, Element
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .dataviews import Curve
 from .tabular import Table
 
 
-class Raster(Layer):
+class Raster(Element):
     """
-    Raster is a basic 2D atomic View type.
+    Raster is a basic 2D atomic DataElement type.
 
     Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
     3D arrays, each depth layer is interpreted as a channel of the 2D
@@ -118,7 +118,7 @@ class Raster(Layer):
         Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
-        the result View label.
+        the result DataElement label.
         """
         label = ' '.join([label_prefix, self.label])
         if len(dimreduce_map) == self.ndims:
@@ -186,7 +186,7 @@ class Raster(Layer):
 
 class HeatMap(Raster):
     """
-    HeatMap is an atomic View element used to visualize two dimensional
+    HeatMap is an atomic DataElement element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
     upsampling them to a dense representation, which can be visualized.
 
@@ -304,9 +304,11 @@ class Matrix(SheetCoordinateSystem, Raster):
         xdensity = xdensity if xdensity else dim1/(r-l)
         ydensity = ydensity if ydensity else dim2/(t-b)
 
-        Layer.__init__(self, data, **params)
+        Element.__init__(self, data, **params)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._lbrt = self.bounds.lbrt()
+        self.key_dimensions[0].range = (l, r)
+        self.key_dimensions[1].range = (b, t)
 
 
     def closest(self, coords):
@@ -397,7 +399,7 @@ class Matrix(SheetCoordinateSystem, Raster):
 
 
 
-class Points(Layer):
+class Points(Element):
     """
     Allows sets of points to be positioned over a sheet coordinate
     system. Each points may optionally be associated with a chosen
@@ -521,7 +523,7 @@ class VectorField(Points):
     _min_dims = 3                              # Minimum number of columns
 
 
-class Contours(Layer):
+class Contours(Element):
     """
     Allows sets of contour lines to be defined over a
     SheetCoordinateSystem.

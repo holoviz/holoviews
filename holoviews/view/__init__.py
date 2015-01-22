@@ -1,13 +1,13 @@
-from ..core.view import View
+from ..core.view import DataElement
 
 from .dataviews import * # pyflakes:ignore (API import)
 from .sheetviews import * # pyflakes:ignore (API import)
 from .tabular import * # pyflakes:ignore (API import)
 
 
-class Annotation(Layer):
+class Annotation(Element):
     """
-    An annotation is a type of View that is displayed on the top of an
+    An annotation is a type of DataElement that is displayed on the top of an
     overlay. Annotations elements do not depend on the details of the
     data displayed and are generally for the convenience of the user
     (e.g. to draw attention to specific areas of the figure using
@@ -16,7 +16,7 @@ class Annotation(Layer):
     All annotations have an optional interval argument that indicates
     which map elements they apply to. For instance, this allows
     annotations for a specific time interval when overlaid over a
-    ViewMap or ViewMap with a 'Time' dimension. The interval
+    HoloMap or HoloMap with a 'Time' dimension. The interval
     argument is a dictionary of dimension keys and tuples containing
     (start, end) values. A value of None, indicates an unspecified
     constraint.
@@ -144,11 +144,11 @@ class Annotation(Layer):
 
 
     def __mul__(self, other):
-        raise Exception("An annotation can only be overlaid over a different View type.")
+        raise Exception("An annotation can only be overlaid over a different DataElement type.")
 
 
 def public(obj):
     if not isinstance(obj, type): return False
-    return issubclass(obj, View)
+    return issubclass(obj, DataElement)
 
 __all__ = list(set([_k for _k, _v in locals().items() if public(_v)]))

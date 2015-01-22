@@ -8,7 +8,7 @@ import numpy as np
 
 import param
 
-from ..core import Map, NdMapping, Dimension, Grid, View, ViewMap, AttrTree
+from ..core import UniformNdMapping, NdMapping, Dimension, AxisLayout, DataElement, HoloMap, AttrTree
 from ..ipython.widgets import RunProgress, ProgressBar
 from ..view import Matrix
 
@@ -138,12 +138,12 @@ class ViewRef(Reference):
 
     @property
     def resolved_type(self):
-        return (View, Map, Grid)
+        return (DataElement, UniformNdMapping, AxisLayout)
 
 
     def _resolve_ref(self, ref, attrtree):
         """
-        Get the View referred to by a single reference tuple if the
+        Get the DataElement referred to by a single reference tuple if the
         data exists, otherwise raise AttributeError.
         """
         obj = attrtree
@@ -158,7 +158,7 @@ class ViewRef(Reference):
 
     def resolve(self, attrtree):
         """
-        Resolve the current ViewRef object into the appropriate View
+        Resolve the current ViewRef object into the appropriate DataElement
         object (if available).
         """
         overlaid_view = None
@@ -243,7 +243,7 @@ class Collect(object):
     """
     An Collect takes an object and corresponding hook and when
     called with an AttrTree, updates it with the output of the hook
-    (given the object). The output of the hook should be a View or an
+    (given the object). The output of the hook should be a DataElement or an
     AttrTree.
 
     The input object may be a picklable object (e.g. a
@@ -304,7 +304,7 @@ class Collect(object):
 
     def _get_result(self, attrtree, time, times):
         """
-        Method returning a View or AttrTree to be merged into the
+        Method returning a DataElement or AttrTree to be merged into the
         attrtree (via the specified hook) in the call.
         """
         resolvable = hasattr(self.obj, 'resolve')
@@ -334,8 +334,8 @@ class Collect(object):
                 raise Exception("Return value is not a AttrTree and mode is 'merge'.")
 
         if self.path not in attrtree:
-            if not isinstance(val, NdMapping):
-                val = ViewMap([((time,), val)], key_dimensions=[Time])
+            if not isinstance(val, UniformNdMapping):
+                val = HoloMap([((time,), val)], key_dimensions=[Time])
         else:
             current_val = attrtree.data[self.path]
             val = self._merge_views(current_val, val, time)
@@ -347,11 +347,11 @@ class Collect(object):
     def _merge_views(self, current_val, val, time):
         """
         Helper for merging views together. For instance, this method
-        will add a Matrix to a ViewMap or merge two ViewMaps.
+        will add a Matrix to a HoloMap or merge two ViewMaps.
         """
-        if isinstance(val, View):
+        if isinstance(val, DataElement):
             current_val[time] = val
-        elif (isinstance(current_val, Map) and 'Time' not in
+        elif (isinstance(current_val, UniformNdMapping) and 'Time' not in
               [d.name for d in current_val.key_dimensions]):
             raise Exception("Time dimension is missing.")
         else:
@@ -431,7 +431,7 @@ class Collator(NdMapping):
     Collator is an NdMapping holding AttrTree objects and
     provides methods to filter and merge them via the call
     method. Collation inserts the Collator dimensions on
-    each Map type contained within the AttrTree objects.
+    each UniformNdMapping type contained within the AttrTree objects.
     """
 
     drop = param.List(default=[], doc="""
@@ -493,7 +493,7 @@ class Collator(NdMapping):
         """
         Recursively descend through an AttrTree and NdMapping objects
         in order to add the supplied dimension values to all contained
-        Map objects.
+        UniformNdMapping objects.
         """
         if isinstance(item, AttrTree):
             item.fixed = False
@@ -501,7 +501,7 @@ class Collator(NdMapping):
         new_item = item.clone({}) if isinstance(item, NdMapping) else item
         for k in item.keys():
             v = item[k]
-            if isinstance(v, Map):
+            if isinstance(v, UniformNdMapping):
                 dim_vals = [(dim, val) for dim, val in dims[::-1]
                             if dim not in self.drop]
                 for dim, val in dim_vals:
@@ -540,7 +540,7 @@ class Collector(AttrTree):
     ViewRef) and passes the resolved output to the given analysisfn
     ViewOperation.
 
-    >>> Collector.for_type(str, lambda x: View(x, name=x))
+    >>> Collector.for_type(str, lambda x: DataElement(x, name=x))
     >>> Collector.interval_hook = param.Dynamic.time_fn.advance
 
     >>> c = Collector()
@@ -550,7 +550,7 @@ class Collector(AttrTree):
     >>> data = c(times=[1,2,3,4,5])
     >>> isinstance(data, AttrTree)
     True
-    >>> isinstance(data.Target.Path, Map)
+    >>> isinstance(data.Target.Path, UniformNdMapping)
     True
 
     >>> times = data.Target.Path.keys()
@@ -558,7 +558,7 @@ class Collector(AttrTree):
     Collected the data for 5 time values
 
     >>> data.Target.Path.last                 #doctest: +ELLIPSIS
-    View('example string'...)
+    DataElement('example string'...)
     """
 
     # A callable that advances by the specified time before the next
@@ -570,7 +570,7 @@ class Collector(AttrTree):
 
     # A callable that returns the time where the time may be the
     # simulation time or wall-clock time. The time values are
-    # recorded by the Map keys
+    # recorded by the UniformNdMapping keys
     time_fn = param.Dynamic.time_fn
 
     type_hooks = {}
@@ -613,7 +613,7 @@ class Collector(AttrTree):
     def ref(self):
         """
         A convenient property to easily generate ViewRef object (via
-        attribute access). Used to define View references for analysis
+        attribute access). Used to define DataElement references for analysis
         or for setting a path for an Collect on the Collector.
         """
         return ViewRef()

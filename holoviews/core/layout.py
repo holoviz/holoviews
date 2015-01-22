@@ -16,23 +16,21 @@ from .ndmapping import NdMapping
 from .options import options
 from .tree import AttrTree
 from .util import int_to_roman
-from .view import View, Map
+from .view import DataElement, UniformNdMapping
 
 
-class Pane(View):
+class Composable(object):
     """
-    Pane extends the View type with the add and left shift operators
+    Pane extends the DataElement type with the add and left shift operators
     which allow the Pane to be embedded within Layouts and GridLayouts.
     """
-
-    value = param.String(default='Pane')
 
     def __add__(self, obj):
         return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
 
     def __lshift__(self, other):
-        if isinstance(other, (View, NdMapping)):
+        if isinstance(other, (DataElement, NdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data.values()+[self])
@@ -40,98 +38,13 @@ class Pane(View):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-class GridLayout(NdMapping):
-    """
-    A GridLayout is an NdMapping, which unlike a ViewMap lays
-    the individual elements out in a Grid.
-    """
-
-    value = param.String(default='GridLayout')
-
-    def __init__(self, initial_items, **params):
-        self._max_cols = 4
-        self._style = None
-        if isinstance(initial_items, list):
-            initial_items = [(idx, item) for idx, item in enumerate(initial_items)]
-        elif isinstance(initial_items, NdMapping):
-            params = dict(initial_items.get_param_values(), **params)
-        super(GridLayout, self).__init__(initial_items=initial_items, **params)
-
-
-    @property
-    def shape(self):
-        num = len(self.keys())
-        if num <= self._max_cols:
-            return (1, num)
-        nrows = num // self._max_cols
-        last_row_cols = num % self._max_cols
-        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
-
-
-    @property
-    def grid_items(self):
-        """
-        Compute a dict of {(row,column): view} elements from the
-        current set of items and specified number of columns.
-        """
-        if list(self.keys()) == []:  return {}
-        cols = self._max_cols
-        return {(idx // cols, idx % cols): item
-                for idx, item in enumerate(self)}
-
-
-    def cols(self, n):
-        self._max_cols = n
-        return self
-
-
-    def __add__(self, obj):
-        return ViewTree.from_view(self) + ViewTree.from_view(obj)
-
-
-    @property
-    def last(self):
-        """
-        Returns another GridLayout constituted of the last views of the
-        individual elements (if they are maps).
-        """
-        last_items = []
-        for (k, v) in self.items():
-            if isinstance(v, NdMapping):
-                item = (k, v.clone((v.last_key, v.last)))
-            elif isinstance(v, AdjointLayout):
-                item = (k, v.last)
-            else:
-                item = (k, v)
-            last_items.append(item)
-        return self.clone(last_items)
-
-
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this view.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        matches = options.fuzzy_match_keys(class_name)
-        return matches[0] if matches else class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
-
 
 class AdjointLayout(DimensionedData):
     """
     A AdjointLayout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a
     Matrix annotated with a luminance histogram. AdjointLayout accepts a
-    list of three View elements, which are laid out as follows with
+    list of three DataElement elements, which are laid out as follows with
     the names 'main', 'top' and 'right':
      ___________ __
     |____ 3_____|__|
@@ -248,9 +161,87 @@ class AdjointLayout(DimensionedData):
         return ViewTree.from_view(self) + ViewTree.from_view(obj)
 
 
+
+class GridLayout(UniformNdMapping):
+    """
+    A GridLayout is an NdMapping, which unlike a HoloMap lays
+    the individual elements out in a AxisLayout.
+    """
+
+    value = param.String(default='GridLayout')
+
+    data_type = (DataElement, AdjointLayout, UniformNdMapping)
+
+    def __init__(self, initial_items, **params):
+        self._max_cols = 4
+        self._style = None
+        if isinstance(initial_items, list):
+            initial_items = [(idx, item) for idx, item in enumerate(initial_items)]
+        elif isinstance(initial_items, NdMapping):
+            params = dict(initial_items.get_param_values(), **params)
+        super(GridLayout, self).__init__(initial_items=initial_items, **params)
+
+
+    @property
+    def shape(self):
+        num = len(self.keys())
+        if num <= self._max_cols:
+            return (1, num)
+        nrows = num // self._max_cols
+        last_row_cols = num % self._max_cols
+        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
+
+
+    def cols(self, n):
+        self._max_cols = n
+        return self
+
+
+    def __add__(self, obj):
+        return ViewTree.from_view(self) + ViewTree.from_view(obj)
+
+
+    @property
+    def last(self):
+        """
+        Returns another GridLayout constituted of the last views of the
+        individual elements (if they are maps).
+        """
+        last_items = []
+        for (k, v) in self.items():
+            if isinstance(v, NdMapping):
+                item = (k, v.clone((v.last_key, v.last)))
+            elif isinstance(v, AdjointLayout):
+                item = (k, v.last)
+            else:
+                item = (k, v)
+            last_items.append(item)
+        return self.clone(last_items)
+
+
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view.
+        """
+        if self._style:
+            return self._style
+
+        class_name = self.__class__.__name__
+        matches = options.fuzzy_match_keys(class_name)
+        return matches[0] if matches else class_name
+
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
+
+
 class ViewTree(AttrTree):
     """
-    A ViewTree is an AttrTree with View objects as leaf values. Unlike
+    A ViewTree is an AttrTree with DataElement objects as leaf values. Unlike
     AttrTree, a ViewTree supports a rich display, displaying leaf
     items in a grid style layout. In addition to the usual AttrTree
     indexing, ViewTree supports indexing of items by their row and
@@ -352,7 +343,7 @@ class ViewTree(AttrTree):
     @staticmethod
     def from_view(view):
         # Return ViewTrees and Overlays directly
-        if isinstance(view, ViewTree) and not isinstance(view, View): return view
+        if isinstance(view, ViewTree) and not isinstance(view, DataElement): return view
         return ViewTree(items=[((view.value, view.label if view.label else 'I'), view)])
 
 

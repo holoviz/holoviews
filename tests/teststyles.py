@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-from holoviews.core import View
+from holoviews.core import Element
 from holoviews.core.options import OptionsGroup, Options
 from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
 from holoviews.testing import ViewTestCase
@@ -244,12 +244,12 @@ class TestOptionGroup(ViewTestCase):
     def test_option_fuzzy_match_view(self):
         optgroup = OptionsGroup([Options('plotting', PlotOpts),
                                  Options('style', StyleOpts)])
-        View.options = optgroup
-        v = View(None, label='Test')
+        Element.options = optgroup
+        v = Element(None, label='Test')
         optgroup.Test_View = self.s1
         self.assertEqual(v.label, 'Test')
-        self.assertEqual(v.style, 'Test_View')
-        self.assertEqual(v.options.fuzzy_match_keys('Test_View'), ['Test_View'])
+        self.assertEqual(v.style, 'Test_Element')
+        self.assertEqual(v.options.fuzzy_match_keys('Test_Element'), ['Test_Element'])
 
 
 

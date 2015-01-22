@@ -16,7 +16,8 @@ try:
 except:
     mpld3 = None
 
-from ..core import View, Map, AdjointLayout, GridLayout, Grid, ViewTree, Overlay
+from ..core import DataElement, UniformNdMapping, HoloMap, \
+    AdjointLayout, GridLayout, AxisLayout, ViewTree, Overlay
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from ..view import Raster
 from . import magics
@@ -159,10 +160,10 @@ def widget_display(view):
 
 @display_hook
 def map_display(vmap, size=256):
-    if not isinstance(vmap, Map): return None
+    if not isinstance(vmap, HoloMap): return None
     magic_info = process_view_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(View.options.plotting(vmap).opts, size=get_plot_size())
+    opts = dict(DataElement.options.plotting(vmap).opts, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
@@ -189,7 +190,7 @@ def layout_display(layout, size=256):
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(View.options.plotting(layout).opts, size=grid_size)
+    opts = dict(DataElement.options.plotting(layout).opts, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
 
     if isinstance(layout, ViewTree):
@@ -212,10 +213,10 @@ def layout_display(layout, size=256):
 
 @display_hook
 def grid_display(grid, size=256):
-    if not isinstance(grid, Grid): return None
+    if not isinstance(grid, AxisLayout): return None
 
     max_dim = max(grid.shape)
-    # Reduce plot size as Grid gets larger
+    # Reduce plot size as AxisLayout gets larger
     shape_factor = 1. / max_dim
     # Expand small grids to a sensible viewing size
     expand_factor = 1 + (max_dim - 1) * 0.1
@@ -245,10 +246,10 @@ def grid_display(grid, size=256):
 
 @display_hook
 def view_display(view, size=256):
-    if not isinstance(view, View): return None
+    if not isinstance(view, DataElement): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
-    opts = dict(View.options.plotting(view).opts, size=get_plot_size())
+    opts = dict(DataElement.options.plotting(view).opts, size=get_plot_size())
     fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 
@@ -257,10 +258,10 @@ render_anim = HTML_video
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
-    html_formatter.for_type(View, view_display)
-    html_formatter.for_type(Map, map_display)
+    html_formatter.for_type(DataElement, view_display)
+    html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(GridLayout, layout_display)
-    html_formatter.for_type(Grid, grid_display)
+    html_formatter.for_type(AxisLayout, grid_display)
     html_formatter.for_type(ViewTree, layout_display)
     html_formatter.for_type(Overlay, view_display)

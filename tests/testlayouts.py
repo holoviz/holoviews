@@ -1,5 +1,5 @@
 import unittest
-from holoviews import Pane, AdjointLayout, GridLayout, Grid, ViewTree
+from holoviews import Element, AdjointLayout, GridLayout, AxisLayout, ViewTree
 
 
 
@@ -11,9 +11,9 @@ class CompositeTest(unittest.TestCase):
         self.data2 = 'Another example...'
         self.data3 = 'A third example.'
 
-        self.view1 = Pane(self.data1, label='View1')
-        self.view2 = Pane(self.data2, label='View2')
-        self.view3 = Pane(self.data3, label='View3')
+        self.view1 = Element(self.data1, label='View1')
+        self.view2 = Element(self.data2, label='View2')
+        self.view3 = Element(self.data3, label='View3')
 
     def test_add_operator(self):
         self.assertEqual(type(self.view1 + self.view2), ViewTree)
@@ -58,5 +58,5 @@ class GridTest(CompositeTest):
     def test_grid_init(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [(0,0), (0,1), (1,0), (1,1)]
-        grid = Grid(zip(keys, vals))
+        grid = AxisLayout(zip(keys, vals))
         self.assertEqual(grid.shape, (2,2))

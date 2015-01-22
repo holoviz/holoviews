@@ -10,13 +10,13 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, ViewMap, Layer, Layers
+from ..core import Dimension, NdMapping, HoloMap, Element, NdOverlay
 from ..core.options import options, StyleOpts, Cycle
 from ..view import DataView, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
 
 
-class TimeSeries(Layer):
+class TimeSeries(Element):
     """
     TimeSeries is a container for any set of curves, which the
     seaborn interface combines into a confidence interval, error
@@ -25,7 +25,7 @@ class TimeSeries(Layer):
     The curves should be supplied as an NxM dimensional array,
     x-values may also be supplied and must be of length N or M.
 
-    Alternatively a Map or Layers of Curve objects may be
+    Alternatively a UniformNdMapping or NdOverlay of Curve objects may be
     supplied.
     """
 
@@ -172,7 +172,7 @@ class DFrame(PandasDFrame):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(key_dimensions=vm_dims)
+        vmap = HoloMap(key_dimensions=vm_dims)
         for map_key, group in map_groups:
             vmap[map_key] = Distribution(np.array(group[value_dim]),
                                          key_dimensions=[self.get_dimension(value_dim)])

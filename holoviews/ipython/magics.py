@@ -9,7 +9,8 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import Map, View, Layers, AdjointLayout, GridLayout, Grid, ViewTree
+from ..core import HoloMap, DataElement, NdOverlay,\
+    AdjointLayout, GridLayout, AxisLayout, ViewTree, Layers
 from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
@@ -215,10 +216,10 @@ class ChannelMagic(Magics):
     def channels(self, line, cell=None):
         """
         The %%channels cell magic allows channel definitions to be
-        defined on the displayed Layers.
+        defined on the displayed Overlay.
 
         For instance, if you have three Matrix Views (R,G and B)
-        together in a Layers with labels 'R_Channel',
+        together in a Overlay with labels 'R_Channel',
         'G_Channel', 'B_Channel' respectively, you can display this
         object as an RGB image using:
 
@@ -239,21 +240,21 @@ class ChannelMagic(Magics):
         """
         Labels on Overlays are used to index channel definitions.
         """
-        if isinstance(obj, (AdjointLayout, Grid, GridLayout)):
+        if isinstance(obj, (AdjointLayout, AxisLayout, GridLayout)):
             for subview in obj:
                 cls._set_overlay_labels(subview, label)
-        elif isinstance(obj, Map) and issubclass(obj.type, Layers):
+        elif isinstance(obj, HoloMap) and issubclass(obj.type, NdOverlay):
             for overlay in obj:
-                overlay.label = label
-        elif isinstance(obj, Layers):
-            obj.label = label
+                overlay.relabel(label)
+        elif isinstance(obj, NdOverlay):
+            obj.relabel(label)
 
 
     @classmethod
     def _set_channels(cls, obj, custom_channels, prefix):
         cls._set_overlay_labels(obj, prefix)
         for name, (pattern, params) in custom_channels.items():
-            Layers.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
+            Overlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
                                                         **params)
 
 
@@ -362,18 +363,18 @@ class OptsMagic(Magics):
         values as keys for the the associated view type.
         """
         group = {}
-        if isinstance(obj, (Layers, AdjointLayout, Grid, GridLayout, ViewTree)):
+        if isinstance(obj, (Layers, AdjointLayout, AxisLayout, GridLayout, ViewTree)):
             for subview in obj:
                 group.update(cls.collect(subview, attr))
-            if isinstance(obj, (AdjointLayout, Layers)):
+            if isinstance(obj, (AdjointLayout, NdOverlay)):
                 return group
 
-        if isinstance(obj, Map) and not issubclass(obj.type, Layers):
+        if isinstance(obj, HoloMap) and not issubclass(obj.type, Layers):
             key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
             values = set(el for els in key_lists for el in els)
             for val in values:
                 group.update({val:obj.type})
-        elif isinstance(obj, Map):
+        elif isinstance(obj, HoloMap):
             for subview in obj.last:
                 group.update(cls.collect(subview, attr))
         else:
@@ -402,7 +403,7 @@ class OptsMagic(Magics):
         name for all matches. A match occurs when the basename of the
         view.style is found in the supplied dictionary.
         """
-        if isinstance(obj, (AdjointLayout, Grid, GridLayout, ViewTree)):
+        if isinstance(obj, (AdjointLayout, AxisLayout, GridLayout, ViewTree)):
             for subview in obj:
                 cls._set_style_names(subview, custom_name_map)
             if isinstance(obj, AdjointLayout):
@@ -511,8 +512,8 @@ class OptsMagic(Magics):
         for name in sorted(available_styles):
             padding = '&nbsp;'*(max_len - len(name))
             s += fmt % (name, padding,
-                        cls.pprint_kws(View.options.plotting(name)),
-                        cls.pprint_kws(View.options.style(name)))
+                        cls.pprint_kws(DataElement.options.plotting(name)),
+                        cls.pprint_kws(DataElement.options.style(name)))
 
         if custom_styles:
             s += '<br>Options that have been customized for the displayed view only:<br>'
@@ -521,8 +522,8 @@ class OptsMagic(Magics):
             for custom_name, custom_style  in sorted(zip(custom_names, custom_styles)):
                 padding = '&nbsp;'*(max_len - len(custom_name))
                 s += fmt % (custom_name, padding,
-                            cls.pprint_kws(View.options.plotting(custom_style)),
-                            cls.pprint_kws(View.options.style(custom_style)))
+                            cls.pprint_kws(DataElement.options.plotting(custom_style)),
+                            cls.pprint_kws(DataElement.options.style(custom_style)))
         return s
 
 
@@ -575,23 +576,23 @@ class OptsMagic(Magics):
         """
         lens, strs = [0,0,0], []
         for name, (plot_kws, style_kws) in kwarg_map.items():
-            plot_update = name in View.options.plotting
+            plot_update = name in DataElement.options.plotting
             if plot_update and plot_kws:
-                View.options[prefix+name] = View.options.plotting[name](**plot_kws)
+                DataElement.options[prefix+name] = DataElement.options.plotting[name](**plot_kws)
             elif plot_kws:
-                View.options[prefix+name] = PlotOpts(**plot_kws)
+                DataElement.options[prefix+name] = PlotOpts(**plot_kws)
 
-            style_update = name in View.options.style
+            style_update = name in DataElement.options.style
             if style_update and style_kws:
-                View.options[prefix+name] = View.options.style[name](**style_kws)
+                DataElement.options[prefix+name] = DataElement.options.style[name](**style_kws)
             elif style_kws:
-                View.options[prefix+name] = StyleOpts(**style_kws)
+                DataElement.options[prefix+name] = StyleOpts(**style_kws)
 
             if verbose:
-                plotstr = ('[%s]' % cls.pprint_kws(View.options.plotting[name])
-                           if name in View.options.plotting else '')
-                stylestr = (cls.pprint_kws(View.options.style[name])
-                            if name in View.options.style else '')
+                plotstr = ('[%s]' % cls.pprint_kws(DataElement.options.plotting[name])
+                           if name in DataElement.options.plotting else '')
+                stylestr = (cls.pprint_kws(DataElement.options.style[name])
+                            if name in DataElement.options.style else '')
                 strs.append((name+':', plotstr, stylestr))
                 lens = [max(len(name)+1, lens[0]),
                         max(len(plotstr), lens[1]),
@@ -620,7 +621,7 @@ class OptsMagic(Magics):
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             return [el+'=' for el in cls.all_params]
         else:
-            return [el+'=' for el in cls.all_styles] + View.options.options()
+            return [el+'=' for el in cls.all_styles] + DataElement.options.options()
 
 
     def _line_magic(self, line):
@@ -641,11 +642,11 @@ class OptsMagic(Magics):
         kwarg_map = self._parse_keywords(str(line))
 
         if not kwarg_map:
-            info = (len(View.options.style.keys()),
-                    len([k for k in View.options.style.keys() if k.startswith('Custom')]))
+            info = (len(DataElement.options.style.keys()),
+                    len([k for k in DataElement.options.style.keys() if k.startswith('Custom')]))
             print("There are %d style options defined (%d custom object styles)." % info)
-            info = (len(View.options.plotting.keys()),
-                    len([k for k in View.options.plotting.keys() if k.startswith('Custom')]))
+            info = (len(DataElement.options.plotting.keys()),
+                    len([k for k in DataElement.options.plotting.keys() if k.startswith('Custom')]))
             print("There are %d plot options defined (%d custom object plot settings)." % info)
             return
 

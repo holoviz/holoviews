@@ -7,7 +7,7 @@ from matplotlib.collections import LineCollection
 
 import param
 
-from ..core import NdMapping, Map, View, Layer, Layers
+from ..core import DataElement, Layers
 from ..view import Raster, HeatMap, Points, Matrix, Contours, VectorField
 from .viewplots import LayersPlot, Plot, GridPlot
 
@@ -47,7 +47,7 @@ class PointPlot(Plot):
         ys = points.data[:, 1] if len(points.data) else []
         cs = points.data[:, 2] if values else None
 
-        kwargs = View.options.style(points)[cyclic_index]
+        kwargs = DataElement.options.style(points)[cyclic_index]
         if values and self.scaling_factor > 1:
             kwargs['s'] = self._compute_size(cs, kwargs)
         scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
@@ -74,7 +74,7 @@ class PointPlot(Plot):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
-            opts = View.options.style(view)[0]
+            opts = DataElement.options.style(view)[0]
             values = view.data[:,2]
             scatter.set_array(values)
             if self.scaling_factor > 1:
@@ -181,7 +181,7 @@ class VectorFieldPlot(Plot):
         self.ax = self._init_axis(axis)
 
         colorized = self.color_dim is not None
-        kwargs = View.options.style(vfield)[cyclic_index]
+        kwargs = DataElement.options.style(vfield)[cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 
@@ -252,7 +252,7 @@ class ContourPlot(Plot):
         self.ax = self._init_axis(axis)
 
         line_segments = LineCollection(lines.data, zorder=self.zorder,
-                                       **View.options.style(lines)[cyclic_index])
+                                       **DataElement.options.style(lines)[cyclic_index])
         self.handles['line_segments'] = line_segments
         self.ax.add_collection(line_segments)
 
@@ -275,7 +275,7 @@ class MatrixPlot(Plot):
                             constant=True, doc="""
         The style options for MatrixPlot are a subset of those used
         by matplotlib's imshow command. If supplied, the clim option
-        will be ignored as it is computed from the input View.""")
+        will be ignored as it is computed from the input DataElement.""")
 
     def __call__(self, axis=None, cyclic_index=0, lbrt=None):
 
@@ -286,7 +286,7 @@ class MatrixPlot(Plot):
             else self._map.last.lbrt
         xticks, yticks = self._compute_ticks(view)
 
-        opts = View.options.style(view)[cyclic_index]
+        opts = DataElement.options.style(view)[cyclic_index]
         data = view.data
         clims = opts.pop('clims', None)
         if view.depth != 1:
@@ -414,12 +414,12 @@ class MatrixGridPlot(GridPlot, LayersPlot):
                 vmap = self.grid.get((xkey, ykey), None)
                 pane = vmap.get(key, None) if vmap else None
                 if pane:
-                    if vmap.type == Layers: pane = pane.last
+                    if issubclass(vmap.type, Layers): pane = pane.last
                     data = pane.data if pane else None
                 else:
-                    pane = vmap.last.last if vmap.type == Layers else vmap.last
+                    pane = vmap.last.last if issubclass(vmap.type, Layers) else vmap.last
                     data = pane.data
-                opts = View.options.style(pane).opts
+                opts = DataElement.options.style(pane).opts
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
                 if key not in vmap:
                     plot.set_visible(False)

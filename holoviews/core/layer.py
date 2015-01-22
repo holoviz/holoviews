@@ -16,13 +16,91 @@ import param
 
 from .dimension import Dimension, DimensionedData
 from .ndmapping import NdMapping
-from .layout import Pane, GridLayout, AdjointLayout, ViewTree
+from .layout import Composable, GridLayout, AdjointLayout, ViewTree
 from .options import options, channels
 from .util import find_minmax
-from .view import View, Map
+from .view import DataElement, UniformNdMapping
 
 
-class Overlay(ViewTree, View):
+class Layers(DataElement, Composable):
+    """
+    Layers provides a common baseclass for Overlay classes.
+    """
+
+    channels = channels
+
+    @property
+    def labels(self):
+        return [el.label for el in self]
+
+    @property
+    def legend(self):
+        if self._cached_index_names == ['Element']:
+            labels = self.labels
+            if len(set(labels)) == len(labels):
+                return labels
+            else:
+                return None
+        else:
+            labels = []
+            for key in self.data.keys():
+                labels.append(','.join([dim.pprint_value(k) for dim, k in
+                                        zip(self.key_dimensions, key)]))
+            return labels
+
+    @property
+    def style(self):
+        return [el.style for el in self][0]
+
+    @style.setter
+    def style(self, styles):
+        for layer, style in zip(self, styles):
+            layer.style = style
+
+
+    def hist(self, index=None, adjoin=True, **kwargs):
+        valid_ind = isinstance(index, int) and (0 <= index < len(self))
+        valid_label = index in [el.label for el in self]
+        if index is None or not any([valid_ind, valid_label]):
+            raise TypeError("Please supply a suitable index for the histogram data")
+
+        hist = self[index].hist(adjoin=False, **kwargs)
+        if adjoin:
+            layout = self << hist
+            layout.main_layer = index
+            return layout
+        else:
+            return hist
+
+
+    def __getstate__(self):
+        """
+        When pickling, make sure to save the relevant channel
+        definitions.
+        """
+        obj_dict = self.__dict__.copy()
+        channels = dict((k, self.channels[k]) for k in self.channels.keys())
+        obj_dict['channel_definitions'] = channels
+        return obj_dict
+
+
+    def __setstate__(self, d):
+        """
+        When unpickled, restore the saved channel definitions.
+        """
+
+        if 'channel_definitions' not in d:
+            self.__dict__.update(d)
+            return
+
+        unpickled_channels = d.pop('channel_definitions')
+        for key, defs in unpickled_channels.items():
+            self.channels[key] = defs
+        self.__dict__.update(d)
+
+
+
+class Overlay(ViewTree, Layers, Composable):
     """
     An Overlay consists of multiple Views (potentially of
     heterogeneous type) presented one on top each other with a
@@ -32,33 +110,27 @@ class Overlay(ViewTree, View):
     a ViewTree and in fact extend the ViewTree structure. Overlays are
     constructed using the * operator (building an identical structure
     to the + operator) and are the only objects that inherit both from
-    ViewTree and View.
+    ViewTree and DataElement.
     """
 
     def __init__(self, items=None, **params):
-        view_params = View.params().keys()
+        view_params = DataElement.params().keys()
         ViewTree.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
-        View.__init__(self, self.data,
+        DataElement.__init__(self, self.data,
                       **{k:v for k,v in params.items() if k in view_params})
 
-
-    def __add__(self, other):
-        return ViewTree.from_view(self) + ViewTree.from_view(other)
 
     def __mul__(self, other):
         if isinstance(other, Overlay):
             items = list(self.data.items()) + list(other.data.items())
-        elif isinstance(other, View):
-            items = list(self.data.items()) + [((other.value, other.label), other)]
-        elif isinstance(other, Map):
+        elif isinstance(other, DataElement):
+            label = other.label if other.label else 'I'
+            items = list(self.data.items()) + [((other.value, label), other)]
+        elif isinstance(other, UniformNdMapping):
             raise NotImplementedError
 
         return Overlay(items=items).display('all')
-
-    @property
-    def labels(self):
-        return [el.label for el in self]
 
 
     def dimension_values(self, dimension):
@@ -80,29 +152,41 @@ class Overlay(ViewTree, View):
                     dimension_names.append(dim.name)
         return dimensions
 
+    @property
+    def ranges(self):
+        ranges = {}
+        for el in self:
+            ranges[el.settings] = {dim.name: el.range(dim.name) for dim in el.dimensions}
 
 
 
-class Layer(Pane):
+class Overlayable(object):
     """
-    Layer is the baseclass for all 2D View types, with an x- and
+    Overlayable provides a mix-in class to support the
+    mul operation for overlaying multiple elements.
+    """
+
+    def __mul__(self, other):
+        if isinstance(other, HoloMap):
+            items = [(k, self * v) for (k, v) in other.items()]
+            return other.clone(items)
+
+        self_item = [((self.value, self.label if self.label else 'I'), self)]
+        other_items = (other.items() if isinstance(other, Overlay)
+                       else [((other.value, other.label if other.label else 'I'), other)])
+        return Overlay(items=self_item + other_items)
+
+
+
+class Element(DataElement, Composable, Overlayable):
+    """
+    Element is the baseclass for all 2D DataElement types, with an x- and
     y-dimension. Subclasses should define the data storage in the
     constructor, as well as methods and properties, which define how
     the data maps onto the x- and y- and value dimensions.
     """
 
-    value = param.String(default='Layer')
-
-    def __mul__(self, other):
-        if isinstance(other, ViewMap):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items)
-
-        self_item = [((self.value, self.label), self)]
-        other_items = (other.items() if isinstance(other, Overlay)
-                       else [((other.value, other.label), other)])
-        return Overlay(items=self_item + other_items)
-
+    value = param.String(default='Element')
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         from ..operation import histogram
@@ -114,12 +198,10 @@ class Layer(Pane):
     # Subclassable methods #
     ########################
 
-
-    def __init__(self, data, **params):
-        lbrt = params.pop('lbrt', None)
+    def __init__(self, data, lbrt=None, **params):
         self._xlim = (lbrt[0], lbrt[2]) if lbrt else None
         self._ylim = (lbrt[1], lbrt[3]) if lbrt else None
-        super(Layer, self).__init__(data, **params)
+        super(Element, self).__init__(data, **params)
 
     @property
     def xlabel(self):
@@ -170,27 +252,129 @@ class Layer(Pane):
         self.xlim, self.ylim = (l, r), (b, t)
 
 
+    def closest(self, coords):
+        """
+        Class method that returns the exact keys for a given list of
+        coordinates. The supplied bounds defines the extent within
+        which the samples are drawn and the optional shape argument is
+        the shape of the numpy array (typically the shape of the .data
+        attribute) when applicable.
+        """
+        return coords
 
-class Layers(Pane, NdMapping):
+
+    def sample(self, **samples):
+        """
+        Base class signature to demonstrate API for sampling Views.
+        To sample a DataElement kwargs, where the keyword matches a Dimension
+        in the DataElement and the value matches a corresponding entry in the
+        data.
+        """
+        raise NotImplementedError
+
+
+    def reduce(self, label_prefix='', **reduce_map):
+        """
+        Base class signature to demonstrate API for reducing Views,
+        using some reduce function, e.g. np.mean. Signature is the
+        same as sample, however a label_prefix may be provided to
+        describe the reduction operation.
+        """
+        raise NotImplementedError
+
+
+    @property
+    def style(self):
+        """
+        The name of the style that may be used to control display of
+        this view. If a style name is not set and but a label is
+        assigned, then the closest existing style name is returned.
+        """
+        if self._style:
+            return self._style
+
+        class_name = self.__class__.__name__
+        if self.label:
+            style_str = '_'.join([self.label, class_name])
+            matches = self.options.fuzzy_match_keys(style_str)
+            return matches[0] if matches else class_name
+        else:
+            return class_name
+
+
+    @style.setter
+    def style(self, val):
+        self._style = val
+
+
+    def table(self, **kwargs):
+        """
+        This method transforms any DataElement type into a Table
+        as long as it implements a dimension_values method.
+        """
+        from ..view import Table
+        keys = zip(*[self.dimension_values(dim.name)
+                 for dim in self.key_dimensions])
+        values = zip(*[self.dimension_values(dim.name)
+                       for dim in self.value_dimensions])
+        params = dict(key_dimensions=self.key_dimensions,
+                      value_dimensions=self.value_dimensions,
+                      label=self.label, value=self.value, **kwargs)
+        return Table(zip(keys, values), **params)
+
+
+    def dframe(self):
+        raise NotImplementedError
+
+
+    def __getstate__(self):
+        """
+        When pickling, make sure to save the relevant style and
+        plotting options as well.
+        """
+        obj_dict = self.__dict__.copy()
+        obj_dict['style_objects'] = {}
+        for match in self.options.fuzzy_match_keys(self.style):
+            obj_dict['style_objects'][match] = self.options[match]
+        return obj_dict
+
+
+    def __setstate__(self, d):
+        """
+        When unpickled, restore the saved style and plotting options
+        to DataElement.options.
+        """
+        for name, match in d.pop('style_objects').items():
+            for style in match:
+                self.options[name] = style
+        self.__dict__.update(d)
+
+
+    def __repr__(self):
+        params = ', '.join('%s=%r' % (k,v) for (k,v) in self.get_param_values())
+        return "%s(%r, %s)" % (self.__class__.__name__, self.data, params)
+
+
+
+class NdOverlay(Layers, NdMapping, Overlayable):
     """
-    An Layers allows a group of Layers to be overlaid together. Layers can
+    An NdOverlay allows a group of NdOverlay to be overlaid together. NdOverlay can
     be indexed out of an overlay and an overlay is an iterable that iterates
     over the contained layers.
     """
 
-    key_dimensions = param.List(default=[Dimension('Layer')], constant=True, doc="""List
-      of dimensions the Layers can be indexed by.""")
+    key_dimensions = param.List(default=[Dimension('Element')], constant=True, doc="""List
+      of dimensions the NdOverlay can be indexed by.""")
 
-    value = param.String(default='Layers')
+    value = param.String(default='NdOverlay')
 
-    channels = channels
     _deep_indexable = True
 
     def __init__(self, overlays, **params):
         self._xlim = None
         self._ylim = None
         data = self._process_layers(overlays)
-        Pane.__init__(self, data, **params)
+        DataElement.__init__(self, data, **params)
         NdMapping.__init__(self, data, **params)
 
 
@@ -202,7 +386,7 @@ class Layers(Pane, NdMapping):
         """
         Set a collection of layers to be overlaid with each other.
         """
-        if isinstance(layers, (ViewMap)):
+        if isinstance(layers, (HoloMap)):
             return layers.data
         elif isinstance(layers, (dict, OrderedDict)):
             return layers
@@ -222,38 +406,12 @@ class Layers(Pane, NdMapping):
         return [el.label for el in self]
 
 
-    @property
-    def legend(self):
-        if self._cached_index_names == ['Layer']:
-            labels = self.labels
-            if len(set(labels)) == len(labels):
-                return labels
-            else:
-                return None
-        else:
-            labels = []
-            for key in self.data.keys():
-                labels.append(','.join([dim.pprint_value(k) for dim, k in
-                                        zip(self.key_dimensions, key)]))
-            return labels
-
-
-    @property
-    def style(self):
-        return [el.style for el in self]
-
-    @style.setter
-    def style(self, styles):
-        for layer, style in zip(self, styles):
-            layer.style = style
-
-
     def item_check(self, dim_vals, layer):
-        if not isinstance(layer, Layer): pass
+        if not isinstance(layer, Element): pass
         layer_dimensions = [d.name for d in layer.key_dimensions]
         if len(self):
             if layer_dimensions != self._layer_dimensions:
-                raise Exception("Layers must share common dimensions.")
+                raise Exception("NdOverlay must share common dimensions.")
         else:
             self._layer_dimensions = layer_dimensions
             self.value = layer.value
@@ -262,14 +420,14 @@ class Layers(Pane, NdMapping):
 
     def add(self, layer):
         """
-        Layers a single layer on top of the existing overlay.
+        NdOverlay a single layer on top of the existing overlay.
         """
         self[len(self)] = layer
 
     @property
     def layer_types(self):
         """
-        The type of Layers stored in the Layers.
+        The type of NdOverlay stored in the NdOverlay.
         """
         if len(self) == 0:
             return None
@@ -305,49 +463,8 @@ class Layers(Pane, NdMapping):
         return l, b, r, t
 
 
-    def hist(self, index=None, adjoin=True, **kwargs):
-        valid_ind = isinstance(index, int) and (0 <= index < len(self))
-        valid_label = index in [el.label for el in self]
-        if index is None or not any([valid_ind, valid_label]):
-            raise TypeError("Please supply a suitable index for the histogram data")
 
-        hist = self[index].hist(adjoin=False, **kwargs)
-        if adjoin:
-            layout = self << hist
-            layout.main_layer = index
-            return layout
-        else:
-            return hist
-
-
-    def __getstate__(self):
-        """
-        When pickling, make sure to save the relevant channel
-        definitions.
-        """
-        obj_dict = self.__dict__.copy()
-        channels = dict((k, self.channels[k]) for k in self.channels.keys())
-        obj_dict['channel_definitions'] = channels
-        return obj_dict
-
-
-    def __setstate__(self, d):
-        """
-        When unpickled, restore the saved channel definitions.
-        """
-
-        if 'channel_definitions' not in d:
-            self.__dict__.update(d)
-            return
-
-        unpickled_channels = d.pop('channel_definitions')
-        for key, defs in unpickled_channels.items():
-            self.channels[key] = defs
-        self.__dict__.update(d)
-
-
-
-class Grid(NdMapping):
+class AxisLayout(NdMapping):
     """
     Grids are distinct from GridLayouts as they ensure all contained elements
     to be of the same type. Unlike GridLayouts, which have integer keys,
@@ -360,15 +477,15 @@ class Grid(NdMapping):
 
     label = param.String(constant=True, doc="""
       A short label used to indicate what kind of data is contained
-      within the Grid.""")
+      within the AxisLayout.""")
 
     title = param.String(default="{label} {value}", doc="""
-      The title formatting string for the Grid object""")
+      The title formatting string for the AxisLayout object""")
 
-    value = param.String(default='Grid')
+    value = param.String(default='AxisLayout')
 
     def __init__(self, initial_items=None, **params):
-        super(Grid, self).__init__(initial_items, **params)
+        super(AxisLayout, self).__init__(initial_items, **params)
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
         self._style = None
@@ -376,16 +493,16 @@ class Grid(NdMapping):
 
 
     def __mul__(self, other):
-        if isinstance(other, Grid):
+        if isinstance(other, AxisLayout):
             if set(self.keys()) != set(other.keys()):
                 raise KeyError("Can only overlay two ParameterGrids if their keys match")
             zipped = zip(self.keys(), self.values(), other.values())
             overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
             return self.clone(overlayed_items)
-        elif isinstance(other, ViewMap) and len(other) == 1:
+        elif isinstance(other, HoloMap) and len(other) == 1:
             view = other.last
-        elif isinstance(other, ViewMap) and len(other) != 1:
-            raise Exception("Can only overlay with ViewMap of length 1")
+        elif isinstance(other, HoloMap) and len(other) != 1:
+            raise Exception("Can only overlay with HoloMap of length 1")
         else:
             view = other
 
@@ -427,11 +544,11 @@ class Grid(NdMapping):
 
     def keys(self, full_grid=False):
         """
-        Returns a complete set of keys on a Grid, even when Grid isn't fully
+        Returns a complete set of keys on a AxisLayout, even when AxisLayout isn't fully
         populated. This makes it easier to identify missing elements in the
-        Grid.
+        AxisLayout.
         """
-        keys = super(Grid, self).keys()
+        keys = super(AxisLayout, self).keys()
         if self.ndims == 1 or not full_grid:
             return keys
         dim1_keys = sorted(set(k[0] for k in keys))
@@ -442,7 +559,7 @@ class Grid(NdMapping):
     @property
     def last(self):
         """
-        The last of a Grid is another Grid
+        The last of a AxisLayout is another AxisLayout
         constituted of the last of the individual elements. To access
         the elements by their X,Y position, either index the position
         directly or use the items() method.
@@ -456,21 +573,21 @@ class Grid(NdMapping):
     @property
     def type(self):
         """
-        The type of elements stored in the Grid.
+        The type of elements stored in the AxisLayout.
         """
         if self._type is None:
             if not len(self) == 0:
                 item = self.values()[0]
-                self._type = item.type if isinstance(item, ViewMap) else item.__class__
+                self._type = item.type if isinstance(item, HoloMap) else item.__class__
         return self._type
 
 
     @property
     def layer_types(self):
         """
-        The type of layers stored in the Grid.
+        The type of layers stored in the AxisLayout.
         """
-        if self.type == Layers:
+        if self.type == NdOverlay:
             return self.values()[0].layer_types
         else:
             return (self.type,)
@@ -498,7 +615,7 @@ class Grid(NdMapping):
         for v in self.values():
             if isinstance(v, AdjointLayout):
                 v = v.main
-            if isinstance(v, ViewMap):
+            if isinstance(v, HoloMap):
                 keys_list.append(list(v.data.keys()))
         return sorted(set(itertools.chain(*keys_list)))
 
@@ -506,7 +623,7 @@ class Grid(NdMapping):
     @property
     def common_keys(self):
         """
-        Returns a list of common keys. If all elements in the Grid share
+        Returns a list of common keys. If all elements in the AxisLayout share
         keys it will return the full set common of keys, otherwise returns
         None.
         """
@@ -514,7 +631,7 @@ class Grid(NdMapping):
         for v in self.values():
             if isinstance(v, AdjointLayout):
                 v = v.main
-            if isinstance(v, ViewMap):
+            if isinstance(v, HoloMap):
                 keys_list.append(list(v.data.keys()))
         if all(x == keys_list[0] for x in keys_list):
             return keys_list[0]
@@ -584,8 +701,8 @@ class Grid(NdMapping):
 
     def dframe(self):
         """
-        Gets a Pandas dframe from each of the items in the Grid, appends the
-        Grid coordinates and concatenates all the dframes.
+        Gets a Pandas dframe from each of the items in the AxisLayout, appends the
+        AxisLayout coordinates and concatenates all the dframes.
         """
         import pandas
         dframes = []
@@ -599,23 +716,23 @@ class Grid(NdMapping):
 
 
 
-class ViewMap(Map):
+class HoloMap(UniformNdMapping):
     """
-    A ViewMap can hold any number of DataLayers indexed by a list of
+    A HoloMap can hold any number of DataLayers indexed by a list of
     dimension values. It also has a number of properties, which can find
     the x- and y-dimension limits and labels.
     """
 
-    value = param.String(default='ViewMap')
+    value = param.String(default='HoloMap')
 
-    data_type = (View, Map)
+    data_type = DataElement
 
     @property
     def layer_types(self):
         """
-        The type of layers stored in the ViewMap.
+        The type of layers stored in the HoloMap.
         """
-        if self.type == Layers:
+        if self.type == NdOverlay:
             return self.last.layer_types
         else:
             return (self.type)
@@ -623,19 +740,16 @@ class ViewMap(Map):
 
     @property
     def xlabel(self):
-        if not issubclass(self.type, (Layer, Layers)): return None
         return self.last.xlabel
 
 
     @property
     def ylabel(self):
-        if not issubclass(self.type, (Layer, Layers)): return None
         return self.last.ylabel
 
 
     @property
     def xlim(self):
-        if not issubclass(self.type, (Layer, Layers)): return None
         xlim = self.last.xlim
         for data in self.values():
             xlim = find_minmax(xlim, data.xlim) if data.xlim and xlim else xlim
@@ -644,7 +758,6 @@ class ViewMap(Map):
 
     @property
     def ylim(self):
-        if not issubclass(self.type, (Layer, Layers)): return None
         ylim = self.last.ylim
         for data in self.values():
             ylim = find_minmax(ylim, data.ylim) if data.ylim and ylim else ylim
@@ -662,18 +775,18 @@ class ViewMap(Map):
 
     def overlay(self, dimensions):
         """
-        Splits the Map along a specified number of dimensions and
+        Splits the UniformNdMapping along a specified number of dimensions and
         overlays items in the split out Maps.
         """
         if self.ndims == 1:
             split_map = dict(default=self)
             new_map = dict()
         else:
-            split_map = self.split_dimensions(dimensions, Layers)
+            split_map = self.split_dimensions(dimensions, NdOverlay)
             new_map = self.clone(key_dimensions=split_map.key_dimensions)
 
         for outer, vmap in split_map.items():
-            new_map[outer] = Layers(vmap, key_dimensions=vmap.key_dimensions)
+            new_map[outer] = NdOverlay(vmap, key_dimensions=vmap.key_dimensions)
 
         if self.ndims == 1:
             return list(new_map.values())[0]
@@ -683,8 +796,8 @@ class ViewMap(Map):
 
     def grid(self, dimensions, layout=False, set_title=True):
         """
-        Grid takes a list of one or two dimensions, and lays out the containing
-        Views along these axes in a Grid.
+        AxisLayout takes a list of one or two dimensions, and lays out the containing
+        Views along these axes in a AxisLayout.
         """
         if len(dimensions) > 2:
             raise ValueError('At most two dimensions can be laid out in a grid.')
@@ -696,27 +809,27 @@ class ViewMap(Map):
             split_map = self.split_dimensions(split_dims)
             split_map = split_map.reindex(dimensions)
         else:
-            raise ValueError('ViewMap does not have supplied dimensions.')
+            raise ValueError('HoloMap does not have supplied dimensions.')
 
         if layout:
             if set_title:
                 for keys, vmap in split_map.data.items():
                     dim_labels = split_map.pprint_dimkey(keys)
-                    if not isinstance(vmap, ViewMap): vmap = [vmap]
+                    if not isinstance(vmap, HoloMap): vmap = [vmap]
                     for vm in vmap:
                         if dim_labels and dim_labels not in vm.title:
                             vm.title = '\n'.join([vm.title, dim_labels])
             return GridLayout(split_map)
         else:
-            return Grid(split_map, key_dimensions=split_map.key_dimensions)
+            return AxisLayout(split_map, key_dimensions=split_map.key_dimensions)
 
 
     def split_overlays(self):
         """
-        Given a Map of Overlays of N layers, split out the layers into
+        Given a UniformNdMapping of Overlays of N layers, split out the layers into
         N separate Maps.
         """
-        if self.type not in (Layers, Overlay):
+        if not issubclass(self.type, Layers):
             return self.clone(self.items())
 
         maps = []
@@ -734,9 +847,9 @@ class ViewMap(Map):
         """
         The mul (*) operator implements overlaying of different Views.
         This method tries to intelligently overlay Maps with differing
-        keys. If the Map is mulled with a simple View each element in
-        the Map is overlaid with the View. If the element the Map is
-        mulled with is another Map it will try to match up the
+        keys. If the UniformNdMapping is mulled with a simple DataElement each element in
+        the UniformNdMapping is overlaid with the DataElement. If the element the UniformNdMapping is
+        mulled with is another UniformNdMapping it will try to match up the
         dimensions, making sure that items with completely different
         dimensions aren't overlaid.
         """
@@ -787,8 +900,8 @@ class ViewMap(Map):
 
     def dframe(self):
         """
-        Gets a dframe for each View in the Map, appends the dimensions
-        of the Map as series and concatenates the dframes.
+        Gets a dframe for each DataElement in the UniformNdMapping, appends the dimensions
+        of the UniformNdMapping as series and concatenates the dframes.
         """
         import pandas
         dframes = []
@@ -811,7 +924,7 @@ class ViewMap(Map):
 
 
     def __lshift__(self, other):
-        if isinstance(other, (View, Layers, ViewMap, Grid)):
+        if isinstance(other, (DataElement, UniformNdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
@@ -821,7 +934,7 @@ class ViewMap(Map):
 
     def sample(self, samples, bounds=None, **sample_values):
         """
-        Sample each Layer in the Map by passing either a list of
+        Sample each Element in the UniformNdMapping by passing either a list of
         samples or a tuple specifying the number of regularly spaced
         samples per dimension. Alternatively, a single sample may be
         requested using dimension-value pairs. Optionally, the bounds
@@ -864,9 +977,9 @@ class ViewMap(Map):
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Reduce each Matrix in the Map using a function supplied
+        Reduce each Matrix in the UniformNdMapping using a function supplied
         via the kwargs, where the keyword has to match a particular
-        dimension in the View.
+        dimension in the DataElement.
         """
         reduced_items = [(k, v.reduce(label_prefix=label_prefix, **reduce_map))
                          for k, v in self.items()]
@@ -878,7 +991,7 @@ class ViewMap(Map):
         Collate splits out the specified dimension and joins the
         samples in each of the split out Maps into Curves. If there
         are multiple entries in the ItemTable it will lay them out
-        into a Grid.
+        into a AxisLayout.
         """
         from ..operation import table_collate
         return table_collate(self, collation_dim=collate_dim)
@@ -886,7 +999,7 @@ class ViewMap(Map):
 
     def map(self, map_fn, **kwargs):
         """
-        Map a function across the ViewMap, using the bounds of first
+        UniformNdMapping a function across the HoloMap, using the bounds of first
         mapped item.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
@@ -904,7 +1017,7 @@ class ViewMap(Map):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = ViewMap(key_dimensions=self.key_dimensions, title_suffix=self.title_suffix)
+        histmap = HoloMap(key_dimensions=self.key_dimensions, title_suffix=self.title_suffix)
 
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
@@ -914,7 +1027,7 @@ class ViewMap(Map):
                                 individually=individually, num_bins=num_bins,
                                 style_prefix=style_prefix, **kwargs)
 
-        if adjoin and issubclass(self.type, Layers):
+        if adjoin and issubclass(self.type, (NdOverlay, Overlay)):
             layout = (self << histmap)
             layout.main_layer = kwargs['index']
             return layout

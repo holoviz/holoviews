@@ -20,12 +20,12 @@ except:
 
 import param
 
-from ..core import Dimension, NdMapping, View, Layer, Layers, ViewMap, GridLayout, Grid
+from ..core import Dimension, NdMapping, DataElement, Element, NdOverlay, HoloMap, GridLayout, AxisLayout
 from ..core.options import options, PlotOpts
 from ..view import HeatMap, Table, Curve, Scatter, Bars, Points, VectorField
 
 
-class DataFrameView(Layer):
+class DataFrameView(Element):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -51,7 +51,7 @@ class DataFrameView(Layer):
                                               'autocorrelation_plot',
                                               None],
                                      doc="""Selects which Pandas plot type to use,
-                                            when visualizing the View.""")
+                                            when visualizing the DataElement.""")
 
     x = param.String(doc="""Dimension to visualize along the x-axis.""")
 
@@ -68,7 +68,7 @@ class DataFrameView(Layer):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
-            raise Exception('DataFrame View type requires Pandas dataframe as data.')
+            raise Exception('DataFrame DataElement type requires Pandas dataframe as data.')
         if key_dimensions is None:
             dims = list(data.columns)
         else:
@@ -80,7 +80,7 @@ class DataFrameView(Layer):
 
         self._xlim = None
         self._ylim = None
-        View.__init__(self, data, key_dimensions=dims, **params)
+        DataElement.__init__(self, data, key_dimensions=dims, **params)
         self.data.columns = self._cached_index_names
 
 
@@ -149,7 +149,7 @@ class DataFrameView(Layer):
 
 
     def overlay(self, dimensions):
-        return self._split_dimensions(dimensions, Layers)
+        return self._split_dimensions(dimensions, NdOverlay)
 
 
     def layout(self, dimensions=[], cols=4):
@@ -158,7 +158,7 @@ class DataFrameView(Layer):
 
     def grid(self, dimensions):
         """
-        Splits the supplied the dimensions out into a Grid.
+        Splits the supplied the dimensions out into a AxisLayout.
         """
         if len(dimensions) > 2:
             raise Exception('Grids hold a maximum of two dimensions.')
@@ -167,9 +167,9 @@ class DataFrameView(Layer):
 
     def viewmap(self, key_dimensions=[]):
         """
-        Splits the supplied dimensions out into a ViewMap.
+        Splits the supplied dimensions out into a HoloMap.
         """
-        return self._split_dimensions(key_dimensions, ViewMap)
+        return self._split_dimensions(key_dimensions, HoloMap)
 
     @property
     def xlabel(self):
@@ -204,10 +204,10 @@ class DataFrameView(Layer):
 class DFrame(DataFrameView):
     """
     DFrame is a DataFrameView type, which additionally provides
-    methods to convert Pandas DataFrames to different View types,
+    methods to convert Pandas DataFrames to different DataElement types,
     currently including Tables and HeatMaps.
 
-    The View conversion methods all share a common signature:
+    The DataElement conversion methods all share a common signature:
 
       * The value dimension (string).
       * The index dimensions (list of strings).
@@ -241,7 +241,7 @@ class DFrame(DataFrameView):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(key_dimensions=vm_dims)
+        vmap = HoloMap(key_dimensions=vm_dims)
         vdims = [self.get_dimension(d) for d in view_dims]
         valdims = [self.get_dimension(d) for d in value_dims]
         for map_key, group in map_groups:

@@ -4,10 +4,10 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, Layer, NdMapping, ViewMap
+from ..core import Dimension, Element, NdMapping, HoloMap
 
 
-class ItemTable(Layer):
+class ItemTable(Element):
     """
     A tabular view type to allow convenient visualization of either a
     standard Python dictionary or an OrderedDict. If an OrderedDict is
@@ -120,7 +120,7 @@ class ItemTable(Layer):
 
 
 
-class Table(Layer, NdMapping):
+class Table(Element, NdMapping):
     """
     A Table is an NdMapping that is rendered in tabular form. In
     addition to the usual multi-dimensional keys of NdMappings
@@ -312,9 +312,9 @@ class Table(Layer, NdMapping):
         split_dims = [dim for dim in self._cached_index_names
                       if dim not in dimensions]
         if len(dimensions) < self.ndims:
-            return self.split_dimensions(split_dims, map_type=ViewMap)
+            return self.split_dimensions(split_dims, map_type=HoloMap)
         else:
-            vmap = ViewMap(key_dimensions=[self.get_dimension(d) for d in dimensions])
+            vmap = HoloMap(key_dimensions=[self.get_dimension(d) for d in dimensions])
             for k, v in self.items():
                 vmap[k] = ItemTable(dict(zip(self.value_dimensions, v)))
             return vmap
