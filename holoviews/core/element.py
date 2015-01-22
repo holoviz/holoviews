@@ -5,9 +5,9 @@ import param
 
 from .dimension import ViewableElement
 from .layout import Composable, LayoutTree, AdjointLayout, NdLayout
-from .layer import Overlayable, NdOverlay, Overlay, CompositeOverlay, AxisLayout
 from .ndmapping import UniformNdMapping
 from .options import options
+from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay, AxisLayout
 from .util import find_minmax
 
 

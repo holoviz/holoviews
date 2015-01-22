@@ -9,8 +9,8 @@ import param
 
 from .dimension import ViewableElement
 from .element import Element, HoloMap
-from .layer import NdOverlay, AxisLayout, Overlay
 from .layout import NdLayout
+from .overlay import NdOverlay, AxisLayout, Overlay
 
 
 class ElementOperation(param.ParameterizedFunction):
