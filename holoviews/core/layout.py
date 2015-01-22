@@ -161,11 +161,11 @@ class AdjointLayout(DimensionedData):
             if wrong_pos:
                 raise Exception('Wrong AdjointLayout positions provided.')
             else:
-                self.data = views
+                data = views
         elif isinstance(views, list):
-            self.data = dict(zip(self.layout_order, views))
+            data = dict(zip(self.layout_order, views))
 
-        super(AdjointLayout, self).__init__(**params)
+        super(AdjointLayout, self).__init__(data, **params)
 
 
     def __len__(self):
@@ -293,7 +293,7 @@ class ViewTree(AttrTree):
         if isinstance(key, int):
             if key < len(self):
                 return self.data.values()[key]
-            raise KeyError("Element out of range")
+            raise KeyError("Element out of range.")
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
             row, col = key
             idx = row * self._cols + col
