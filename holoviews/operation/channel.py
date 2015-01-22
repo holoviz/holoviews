@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core.operation import ViewOperation
+from ..core.operation import ElementOperation
 from ..core.options import options, StyleOpts, ChannelOpts, Cycle
 from ..element import Matrix
 from ..styles import GrayNearest
@@ -14,7 +14,7 @@ rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
 
-class RGBA(ViewOperation):
+class RGBA(ElementOperation):
     """
     Accepts an overlay containing either 3 or 4 layers. The first
     three layers are the R,G, B channels and the last layer (if given)
@@ -46,7 +46,7 @@ class RGBA(ViewOperation):
                        roi_bounds=overlay[0].roi_bounds, value=self.p.label)]
 
 
-class alpha_overlay(ViewOperation):
+class alpha_overlay(ElementOperation):
     """
     Accepts an overlay of a Matrix defined with a cmap and converts
     it to an RGBA Matrix. The alpha channel of the result is
@@ -64,7 +64,7 @@ class alpha_overlay(ViewOperation):
                        value_dimensions=overlay[0].value_dimensions)]
 
 
-class HCS(ViewOperation):
+class HCS(ElementOperation):
     """
     Hue-Confidence-Strength plot.
 
@@ -108,7 +108,7 @@ class HCS(ViewOperation):
                        label=hue.label, value=self.p.label)]
 
 
-class colorize(ViewOperation):
+class colorize(ElementOperation):
     """
     Given a CompositeOverlay object consisting of a grayscale colormap and a
     second Sheetview with some specified colour map, use the second
@@ -141,7 +141,7 @@ class colorize(ViewOperation):
                         label=hcs.label, value=self.p.label)]
 
 
-class cmap2rgb(ViewOperation):
+class cmap2rgb(ElementOperation):
     """
     Convert Matrix Views using colormaps to RGBA mode. The colormap of
     the style is used, if available. Otherwise, the colormap may be
@@ -171,7 +171,7 @@ class cmap2rgb(ViewOperation):
         return [sheetview.clone(cmap(sheetview.data), value=self.p.label)]
 
 
-class split(ViewOperation):
+class split(ElementOperation):
     """
     Given Matrix in RGBA mode, return the R,G,B and A channels as
     a NdLayout.

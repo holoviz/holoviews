@@ -13,13 +13,13 @@ from .layer import NdOverlay, AxisLayout, Overlay
 from .layout import NdLayout
 
 
-class ViewOperation(param.ParameterizedFunction):
+class ElementOperation(param.ParameterizedFunction):
     """
-    A ViewOperation takes one or more elements as inputs and processes
+    A ElementOperation takes one or more elements as inputs and processes
     them, returning arbitrary new elements as output. Individual
     holoviews may be passed in directly while multiple holoviews must
     be passed in as a UniformNdMapping of the appropriate type. A
-    ViewOperation may be used to implement simple dataview
+    ElementOperation may be used to implement simple dataview
     manipulations or perform complex analysis.
 
     Internally, ViewOperations operate on the level of individual
@@ -27,16 +27,16 @@ class ViewOperation(param.ParameterizedFunction):
     independently.
     """
 
-    label = param.String(default='ViewOperation', doc="""
-        The label to identify the output of the ViewOperation. By
-        default this will match the name of the ViewOperation itself.""")
+    label = param.String(default='ElementOperation', doc="""
+        The label to identify the output of the ElementOperation. By
+        default this will match the name of the ElementOperation itself.""")
 
     def _process(self, view, key=None):
         """
         Process a single input element and output a list of views. When
         multiple views are returned as a list, they will be returned
         to the user as a NdLayout. If a UniformNdMapping is passed into a
-        ViewOperation, the individual layers are processed
+        ElementOperation, the individual layers are processed
         sequentially and the dimension keys are passed along with
         the ViewableElement.
         """

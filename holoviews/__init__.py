@@ -16,7 +16,7 @@ from .core.element import *                   # pyflakes:ignore (API import)
 from .core.sheetcoords import *               # pyflakes:ignore (API import)
 from .core.tree import *                      # pyflakes:ignore (API import)
 
-from .interface import *                           # pyflakes:ignore (API import)
-from .operation import ViewOperation, MapOperation # pyflakes:ignore (API import)
+from .interface import *                              # pyflakes:ignore (API import)
+from .operation import ElementOperation, MapOperation # pyflakes:ignore (API import)
 from .element import *                                # pyflakes:ignore (API import)
 

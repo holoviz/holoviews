@@ -11,7 +11,7 @@ from . import options          # pyflakes:ignore (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False
-    baseclasses = [Dimension, Dimensioned, ViewOperation, BoundingBox,
+    baseclasses = [Dimension, Dimensioned, ElementOperation, BoundingBox,
                    SheetCoordinateSystem, AttrTree]
     return any([issubclass(obj, bc) for bc in baseclasses])
 

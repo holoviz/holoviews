@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ViewOperation, CompositeOverlay, NdOverlay
+from ..core import Dimension, ElementOperation, CompositeOverlay, NdOverlay
 from ..core.options import options
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField
@@ -10,17 +10,17 @@ from ..element.annotation import Contours
 from ..element.raster import Matrix
 
 
-class chain(ViewOperation):
+class chain(ElementOperation):
     """
     Definining a viewoperation chain is an easy way to define a new
-    ViewOperation from a series of existing ones. The single argument
+    ElementOperation from a series of existing ones. The single argument
     is a callable that accepts an input element and returns a list of
-    output views. To create the custom ViewOperation, you will need to
+    output views. To create the custom ElementOperation, you will need to
     supply this argument to a new instance of chain. For example:
 
     chain.instance(chain=lambda x: [cmap2rgb(operator(x).N, cmap='jet')])
 
-    This is now a ViewOperation that sums the data in the input
+    This is now a ElementOperation that sums the data in the input
     overlay and turns it into an RGB Matrix with the 'jet'
     colormap.
     """
@@ -31,7 +31,7 @@ class chain(ViewOperation):
         return self.p.chain(view)
 
 
-class operator(ViewOperation):
+class operator(ElementOperation):
     """
     Applies any arbitrary operator on the data (currently only
     supports Matrix views) and returns the result.
@@ -64,7 +64,7 @@ class operator(ViewOperation):
                             roi_bounds=overlay[0].roi_bounds)]
 
 
-class convolve(ViewOperation):
+class convolve(ElementOperation):
     """
     Apply a convolution to an overlay using the top layer as the
     kernel used to convolve the bottom layer. Both input Matrix
@@ -105,7 +105,7 @@ class convolve(ViewOperation):
         return [Matrix(convolved, bounds=target.bounds)]
 
 
-class contours(ViewOperation):
+class contours(ElementOperation):
     """
     Given a Matrix with a single channel, annotate it with contour
     lines for a given set of contour levels.
@@ -143,7 +143,7 @@ class contours(ViewOperation):
             return [sheetview * contours]
 
 
-class histogram(ViewOperation):
+class histogram(ElementOperation):
     """
     Returns a Histogram of the Raster data, binned into
     num_bins over the bin_range (if specified).
@@ -208,7 +208,7 @@ class histogram(ViewOperation):
 
 
 
-class vectorfield(ViewOperation):
+class vectorfield(ElementOperation):
     """
     Given a Matrix with a single channel, convert it to a
     VectorField object at a given spatial sampling interval. The
@@ -258,7 +258,7 @@ class vectorfield(ViewOperation):
                             value_dimensions=value_dimensions)]
 
 
-class threshold(ViewOperation):
+class threshold(ElementOperation):
     """
     Threshold a given Matrix at a given level into the specified
     low and high values.  """
@@ -289,7 +289,7 @@ class threshold(ViewOperation):
         return [view.clone(thresholded, value=self.p.label + ' ' + view.value)]
 
 
-class roi_table(ViewOperation):
+class roi_table(ElementOperation):
     """
     Compute a table of information from a Matrix within the
     indicated region-of-interest (ROI). The function applied must
