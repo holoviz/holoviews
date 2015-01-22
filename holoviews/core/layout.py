@@ -191,6 +191,30 @@ class GridLayout(UniformNdMapping):
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
+    @property
+    def grid_items(self):
+        """
+        Compute a dict of {(row,column): view} elements from the
+        current set of items and specified number of columns.
+        """
+        if list(self.keys()) == []:  return {}
+        cols = self._max_cols
+        return {(idx // cols, idx % cols): item
+                for idx, item in enumerate(self)}
+
+
+    @property
+    def grid_keys(self):
+        """
+        Compute a dict of {(row,column): view} elements from the
+        current set of items and specified number of columns.
+        """
+        if list(self.keys()) == []:  return {}
+        cols = self._max_cols
+        return {(idx // cols, idx % cols): key
+                for idx, key in enumerate(self.keys())}
+
+
     def cols(self, n):
         self._max_cols = n
         return self
