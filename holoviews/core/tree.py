@@ -202,6 +202,10 @@ class AttrTree(object):
             raise AttributeError("%s: Custom paths elements must be capitalized." % identifier)
 
 
+    def _node_repr(self, node):
+        return '--+' if node.identifier is None else node.identifier
+
+
     def _draw_tree(self, node, prefix='', identifier=''):
         """
         Recursive function that builds up an ASCII tree given an
@@ -209,7 +213,7 @@ class AttrTree(object):
         """
         children = node.children if isinstance(node, AttrTree) else []
         if isinstance(node, AttrTree):
-            identifier = '--+' if node.identifier is None else node.identifier
+            identifier = self._node_repr(node)
         else:
             identifier = identifier + ' : ' + str(type(node).__name__)
 
