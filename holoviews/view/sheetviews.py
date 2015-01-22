@@ -3,7 +3,7 @@ from collections import OrderedDict
 import param
 import numpy as np
 
-from ..core import Dimension, Dimensioned, NdMapping, Layer
+from ..core import Dimension, NdMapping, Layer
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .dataviews import Curve

@@ -9,10 +9,10 @@ import numpy as np
 
 import param
 
-from .dimension import Dimensioned, Dimension
+from .dimension import Dimension, DimensionedData
 
 
-class NdIndexableMapping(Dimensioned):
+class NdIndexableMapping(DimensionedData):
     """
     An NdIndexableMapping is a type of mapping (like a dictionary or
     array) that uses fixed-length multidimensional keys. This behaves

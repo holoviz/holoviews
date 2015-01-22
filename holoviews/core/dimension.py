@@ -86,6 +86,30 @@ class Dimension(param.Parameterized):
 
 
 
+class LabelledData(param.Parameterized):
+
+    label = param.String(default='', constant=True, doc="""
+       Optional label describing the data, e.g. where or how it
+       was measured.""")
+
+    value = param.String(default='LabelledData', constant=True, doc="""
+       A string describing what the data of the object contain.
+       By default this should mirror the class name.""")
+
+
+    def clone(self, data=None, *args, **kwargs):
+        """
+        Returns a clone with matching parameter values containing the
+        specified args and kwargs (empty by default).
+        """
+        settings = dict(self.get_param_values(), **kwargs)
+        return self.__class__(data, *args, **settings)
+
+
+    def relabel(self, label=None, value=None):
+        keywords = [('label',label), ('value',value)]
+        return self.clone(self.data,
+                          **{k:v for k,v in keywords if v is not None})
 class Dimensioned(param.Parameterized):
     """
     Abstract baseclass implementing common methods for objects with
@@ -113,14 +137,6 @@ class Dimensioned(param.Parameterized):
     key_dimensions = param.List(bounds=(0, None), constant=True, doc="""
        The dimensions the values are indexed by.""")
 
-    label = param.String(default='', constant=True, doc="""
-       Optional label describing the data, e.g. where or how it
-       was measured.""")
-
-    value = param.String(default='Dimensioned', constant=True, doc="""
-       A string describing what the data of the object contain.
-       By default this should mirror the class name.""")
-
     value_dimensions = param.List(bounds=(0, None), constant=True, doc="""
        The dimensions the values are indexed by. Subclasses should
        restrict bounds to appropriate number of dimensions.""")
@@ -128,7 +144,6 @@ class Dimensioned(param.Parameterized):
     __abstract = True
 
     _deep_indexable = False
-    _sorted = False
     _dim_groups = ['key_dimensions',
                    'value_dimensions',
                    'deep_dimensions']
@@ -145,20 +160,6 @@ class Dimensioned(param.Parameterized):
         self._cached_value_names = [d.name for d in self.value_dimensions]
         self._settings = None
 
-
-    def clone(self, data=None, *args, **kwargs):
-        """
-        Returns a clone with matching parameter values containing the
-        specified args and kwargs (empty by default).
-        """
-        settings = dict(self.get_param_values(), **kwargs)
-        return self.__class__(data, *args, **settings)
-
-
-    def relabel(self, label=None, value=None):
-        keywords = [('label',label), ('value',value)]
-        return self.clone(self.data,
-                          **{k:v for k,v in keywords if v is not None})
 
     @property
     def deep_dimensions(self):
@@ -182,34 +183,6 @@ class Dimensioned(param.Parameterized):
             return all_dims[dimension]
         else:
             return {dim.name: dim for dim in all_dims}.get(dimension, default)
-
-
-    def dimension_values(self, dimension):
-        """
-        Dimension values should return the values along the specified
-        dimension. This method has to be implemented appropriately
-        for each Dimensioned type.
-        """
-        raise NotImplementedError
-
-
-    def range(self, dim):
-        """
-        Range will return the range of values along the specified dimension.
-        """
-        dimension = self.get_dimension(dim)
-        if dimension.range != (None, None):
-            return dimension.range
-        dim_vals = self.dimension_values(dimension.name)
-        try:
-            return np.min(dim_vals), np.max(dim_vals)
-        except:
-            if dim in self.dimensions:
-                if not self._sorted:
-                    dim_vals = sorted(dim_vals)
-                return (dim_vals[0], dim_vals[-1])
-            else:
-                return (None, None)
 
 
     def get_dimension_index(self, dim):
@@ -242,3 +215,55 @@ class Dimensioned(param.Parameterized):
             return dim_vals[0]
         else:
             return None
+
+
+class DimensionedData(Dimensioned, LabelledData):
+    """
+    DimensionedData combines provides a wrapper around for labeled
+    and Dimensioned data.
+    """
+
+    value = param.String(default='DimensionedData', constant=True, doc="""
+       A string describing the data wrapped by the object.""")
+
+    _sorted = False
+
+    def __init__(self, data, **params):
+        self.data = data
+        super(DimensionedData, self).__init__(**params)
+
+
+    def __getitem__(self, key):
+        """
+        All subclasses of DimensionedData should implement indexing
+        and slicing along the specified index_dimensions.
+        """
+        raise NotImplementedError
+
+
+    def dimension_values(self, dimension):
+        """
+        Dimension values should return the values along the specified
+        dimension. This method has to be implemented appropriately
+        for each Dimensioned type.
+        """
+        raise NotImplementedError
+
+
+    def range(self, dim):
+        """
+        Range will return the range of values along the specified dimension.
+        """
+        dimension = self.get_dimension(dim)
+        if dimension.range != (None, None):
+            return dimension.range
+        dim_vals = self.dimension_values(dimension.name)
+        try:
+            return np.min(dim_vals), np.max(dim_vals)
+        except:
+            if dim in self.dimensions:
+                if not self._sorted:
+                    dim_vals = sorted(dim_vals)
+                return (dim_vals[0], dim_vals[-1])
+            else:
+                return (None, None)

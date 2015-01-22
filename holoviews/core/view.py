@@ -6,12 +6,12 @@ holds View objects as values.
 """
 
 import param
-from .dimension import Dimension, Dimensioned
+from .dimension import DimensionedData
 from .options import options
 from .ndmapping import NdMapping
 
 
-class View(Dimensioned):
+class View(DimensionedData):
     """
     A view is a data structure for holding data, which may be plotted
     using matplotlib. Views have an associated title and style
@@ -31,9 +31,8 @@ class View(Dimensioned):
     options = options
 
     def __init__(self, data, **params):
-        self.data = data
         self._style = params.pop('style', None)
-        super(View, self).__init__(**params)
+        super(View, self).__init__(data, **params)
 
 
     def closest(self, coords):
@@ -264,4 +263,4 @@ class Map(NdMapping):
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+                    if isinstance(_v, type) and issubclass(_v, DimensionedData)]))

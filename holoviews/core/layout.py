@@ -11,7 +11,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned
+from .dimension import Dimension, Dimensioned, DimensionedData
 from .ndmapping import NdMapping
 from .options import options
 from .tree import AttrTree
@@ -126,7 +126,7 @@ class GridLayout(NdMapping):
         self._style = val
 
 
-class AdjointLayout(Dimensioned):
+class AdjointLayout(DimensionedData):
     """
     A AdjointLayout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a

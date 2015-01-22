@@ -14,7 +14,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned
+from .dimension import Dimension, DimensionedData
 from .ndmapping import NdMapping
 from .layout import Pane, GridLayout, AdjointLayout, ViewTree
 from .options import options, channels
@@ -917,5 +917,5 @@ class ViewMap(Map):
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+                    if isinstance(_v, type) and issubclass(_v, DimensionedData)]))
 
