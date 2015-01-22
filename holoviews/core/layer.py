@@ -56,12 +56,30 @@ class Overlay(ViewTree, View):
 
         return Overlay(items=items).display('all')
 
-
-
-
     @property
     def labels(self):
         return [el.label for el in self]
+
+
+    def dimension_values(self, dimension):
+        values = []
+        for el in self:
+            if dimension in [dim.name for dim in el.dimensions]:
+                values.append(el.dimension_values(dimension))
+        return np.concatenate(values)
+
+
+    @property
+    def deep_dimensions(self):
+        dimensions = []
+        dimension_names = []
+        for el in self:
+            for dim in el.dimensions:
+                if dim.name not in dimension_names:
+                    dimensions.append(dim)
+                    dimension_names.append(dim.name)
+        return dimensions
+
 
 
 
