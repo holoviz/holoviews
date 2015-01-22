@@ -1,15 +1,13 @@
-
 from __future__ import unicode_literals
 
 import numpy as np
 from matplotlib import cm
-from matplotlib.font_manager import FontProperties
-from matplotlib.table import Table as mpl_Table
 
 import param
+
 from ..core import ViewableElement, Element, CompositeOverlay, HoloMap
-from ..element import Scatter, Curve, Histogram, Bars, ItemTable, Table, Points, Raster
-from .viewplots import Plot
+from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
+from .plot import Plot
 
 
 class CurvePlot(Plot):
@@ -199,117 +197,6 @@ class ScatterPlot(CurvePlot):
                                 **Element.options.style(view)[self.cyclic_index])
 
         self.handles['paths'] = paths
-
-
-
-
-class TablePlot(Plot):
-    """
-    A TablePlot can plot both TableViews and ViewMaps which display
-    as either a single static table or as an animated table
-    respectively.
-    """
-
-    border = param.Number(default=0.05, bounds=(0.0, 0.5), doc="""
-        The fraction of the plot that should be empty around the
-        edges.""")
-
-    float_precision = param.Integer(default=3, doc="""
-        The floating point precision to use when printing float
-        numeric data types.""")
-
-    max_value_len = param.Integer(default=20, doc="""
-        The maximum allowable string length of a value shown in any
-        table cell. Any strings longer than this length will be
-        truncated.""")
-
-    max_font_size = param.Integer(default=12, doc="""
-        The largest allowable font size for the text in each table
-        cell.""")
-
-    max_rows = param.Integer(default=15, doc="""
-        The maximum number of Table rows before the table is
-        summarized.""")
-
-    font_types = param.Dict(default={'heading': FontProperties(weight='bold',
-                                                               family='monospace')},
-       doc="""The font style used for heading labels used for emphasis.""")
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     TablePlot has specialized options which are controlled via plot
-     options instead of matplotlib options.""")
-
-    # Disable computing plot bounds from data.
-    apply_databounds = False
-
-    def pprint_value(self, value):
-        """
-        Generate the pretty printed representation of a value for
-        inclusion in a table cell.
-        """
-        if isinstance(value, float):
-            formatter = '{:.%df}' % self.float_precision
-            formatted = formatter.format(value)
-        else:
-            formatted = str(value)
-
-        if len(formatted) > self.max_value_len:
-            return formatted[:(self.max_value_len-3)]+'...'
-        else:
-            return formatted
-
-
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        tableview = self._map.last
-        self.ax = self._init_axis(axis)
-
-        self.ax.set_axis_off()
-        size_factor = (1.0 - 2*self.border)
-        table = mpl_Table(self.ax, bbox=[self.border, self.border,
-                                         size_factor, size_factor])
-
-        width = size_factor / tableview.cols
-        height = size_factor / tableview.rows
-
-        # Mapping from the cell coordinates to the dictionary key.
-        summarize = tableview.rows > self.max_rows
-        half_rows = self.max_rows/2
-        rows = min([self.max_rows, tableview.rows])
-        for row in range(rows):
-            adjusted_row = row
-            for col in range(tableview.cols):
-                if summarize and row == half_rows:
-                    cell_text = "..."
-                else:
-                    if summarize and row > half_rows:
-                        adjusted_row = (tableview.rows - self.max_rows + row)
-                    value = tableview.cell_value(adjusted_row, col)
-                    cell_text = self.pprint_value(value)
-                cellfont = self.font_types.get(tableview.cell_type(adjusted_row,col), None)
-                font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
-                table.add_cell(row, col, width, height, text=cell_text,  loc='center',
-                               **font_kwargs)
-
-        table.set_fontsize(self.max_font_size)
-        table.auto_set_font_size(True)
-        self.ax.add_table(table)
-
-        self.handles['table'] = table
-
-        return self._finalize_axis(self._keys[-1])
-
-
-    def update_handles(self, view, key, lbrt=None):
-        table = self.handles['table']
-
-        for coords, cell in table.get_celld().items():
-            value = view.cell_value(*coords)
-            cell.set_text_props(text=self.pprint_value(value))
-
-        # Resize fonts across table as necessary
-        table.set_fontsize(self.max_font_size)
-        table.auto_set_font_size(True)
-
 
 
 class HistogramPlot(Plot):
@@ -604,12 +491,234 @@ class SideHistogramPlot(HistogramPlot):
             else:
                 offset_line.set_ydata(offset)
 
+
+class PointPlot(Plot):
+    """
+    Note that the 'cmap', 'vmin' and 'vmax' style arguments control
+    how point magnitudes are rendered to different colors.
+    """
+
+    normalize_individually = param.Boolean(default=False, doc="""
+      Whether to normalize the colors used to represent magnitude for
+      each frame or across the map (when color is applicable).""")
+
+    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
+      If values are supplied the area of the points is computed relative
+      to the marker size. It is then multiplied by scaling_factor to the power
+      of the ratio between the smallest point and all other points.
+      For values of 1 scaling by the values is disabled, a factor of 2
+      allows for linear scaling of the area and a factor of 4 linear
+      scaling of the point width.""")
+
+    style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
+                                     'linewidth', 'marker', 's', 'visible',
+                                     'cmap', 'vmin', 'vmax'],
+                            constant=True, doc="""
+     The style options for PointPlot match those of matplotlib's
+     scatter plot command.""")
+
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+        points = self._map.last
+
+        self.ax = self._init_axis(axis)
+
+        values = points.data.shape[1]>=3
+        xs = points.data[:, 0] if len(points.data) else []
+        ys = points.data[:, 1] if len(points.data) else []
+        cs = points.data[:, 2] if values else None
+
+        kwargs = Element.options.style(points)[cyclic_index]
+        if values and self.scaling_factor > 1:
+            kwargs['s'] = self._compute_size(cs, kwargs)
+        scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
+                                      **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
+                                      if cs is not None else kwargs))
+
+        self.ax.add_collection(scatterplot)
+        self.handles['scatter'] = scatterplot
+
+        if cs is not None:
+            clims = points.range if self.normalize_individually else self._map.range
+            scatterplot.set_clim(clims)
+
+        return self._finalize_axis(self._keys[-1])
+
+    def _compute_size(self, sizes, opts):
+        ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
+        sizes = np.ma.array(sizes, mask=sizes<=0)
+        scaled_sizes = sizes / np.min(sizes.nonzero())
+        return (ms*self.scaling_factor**sizes)
+
+
+    def update_handles(self, view, key, lbrt=None):
+        scatter = self.handles['scatter']
+        scatter.set_offsets(view.data[:,0:2])
+        if view.data.shape[1]==3:
+            opts = Element.options.style(view)[0]
+            values = view.data[:,2]
+            scatter.set_array(values)
+            if self.scaling_factor > 1:
+                scatter.set_sizes(self._compute_size(values, opts))
+
+        if self.normalize_individually:
+            scatter.set_clim(view.range)
+
+
+class VectorFieldPlot(Plot):
+    """
+    Renders vector fields in sheet coordinates. The vectors are
+    expressed in polar coordinates and may be displayed according to
+    angle alone (with some common, arbitrary arrow length) or may be
+    true polar vectors.
+
+    Optionally, the arrows may be colored but this dimension is
+    redundant with either the specified angle or magnitudes. This
+    choice is made by setting the color_dim parameter.
+
+    Note that the 'cmap' style argument controls the color map used to
+    color the arrows. The length of the arrows is controlled by the
+    'scale' style option where a value of 1.0 is such that the largest
+    arrow shown is no bigger than the smallest sampling distance.
+    """
+
+    style_opts = param.List(default=['alpha', 'color', 'edgecolors',
+                                     'facecolors', 'linewidth',
+                                     'marker', 's', 'visible', 'cmap',
+                                     'scale', 'headlength',
+                                     'headaxislength', 'pivot'], constant=True, doc="""
+       The style options for PointPlot matching those of matplotlib's
+       quiver plot command.""")
+
+
+    color_dim = param.ObjectSelector(default=None,
+                                     objects=['angle', 'magnitude', None], doc="""
+       Which of the polar vector components is mapped to the color
+       dimension (if any)""")
+
+    normalize_individually = param.Boolean(default=False, doc="""
+        Whether to normalize the colors used as an extra dimension
+        per frame or across the map (when color is applicable).""")
+
+    arrow_heads = param.Boolean(default=True, doc="""
+       Whether or not to draw arrow heads. If arrowheads are enabled,
+       they may be customized with the 'headlength' and
+       'headaxislength' style options.""")
+
+    normalize_lengths = param.Boolean(default=True, doc="""
+       Whether to normalize vector magnitudes automatically. If False,
+       it will be assumed that the lengths have already been correctly
+       normalized.""")
+
+    def __init__(self, *args, **params):
+        super(VectorFieldPlot, self).__init__(*args, **params)
+        self._min_dist, self._max_magnitude = self._get_map_info(self._map)
+
+
+    def _get_map_info(self, vmap):
+        """
+        Get the minimum sample distance and maximum magnitude
+        """
+        if self.normalize_individually:
+            return None, None
+        dists, magnitudes  = [], []
+        for vfield in vmap:
+            dists.append(self._get_min_dist(vfield))
+
+            if vfield.data.shape[1]>=4:
+                magnitudes.append(max(vfield.data[:, 3]))
+        return min(dists), max(magnitudes) if magnitudes else None
+
+
+    def _get_info(self, vfield, input_scale):
+        xs = vfield.data[:, 0] if len(vfield.data) else []
+        ys = vfield.data[:, 1] if len(vfield.data) else []
+        radians = vfield.data[:, 2] if len(vfield.data) else []
+        magnitudes = vfield.data[:, 3] if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
+        colors = magnitudes if self.color_dim == 'magnitude' else radians
+
+        max_magnitude = self._max_magnitude if self._max_magnitude else max(magnitudes)
+        min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
+
+        if self.normalize_lengths and max_magnitude != 0:
+            magnitudes =  magnitudes / max_magnitude
+
+        return (xs, ys, list((radians / np.pi) * 180),
+                magnitudes, colors, input_scale / min_dist)
+
+
+    def _get_min_dist(self, vfield):
+        "Get the minimum sampling distance."
+        xys = np.array([complex(x,y) for x,y in zip(vfield.data[:,0],
+                                                    vfield.data[:,1])])
+        m, n = np.meshgrid(xys, xys)
+        distances = abs(m-n)
+        np.fill_diagonal(distances, np.inf)
+        return  distances.min()
+
+
+    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+        vfield = self._map.last
+        self.ax = self._init_axis(axis)
+
+        colorized = self.color_dim is not None
+        kwargs = Element.options.style(vfield)[cyclic_index]
+        input_scale = kwargs.pop('scale', 1.0)
+        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
+
+        args = (xs, ys, lens,  [0.0] * len(vfield.data))
+        args = args + (colors,) if colorized else args
+
+        if not self.arrow_heads:
+            kwargs['headlength'] = kwargs['headaxislength'] = 0
+
+        if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
+
+        quiver = self.ax.quiver(*args, zorder=self.zorder,
+                                units='x', scale_units='x',
+                                scale = scale,
+                                angles = angles ,
+                                **({k:v for k,v in kwargs.items() if k!='color'}
+                                if colorized else kwargs))
+
+
+        if self.color_dim == 'angle':
+            clims = vfield.get_dimension(2).range
+            quiver.set_clim(clims)
+        elif self.color_dim == 'magnitude':
+            magnitude_dim = vfield.get_dimension(3).name
+            clims = vfield.range(magnitude_dim) if self.normalize_individually else self._map.range(magnitude_dim)
+            quiver.set_clim(clims)
+
+        self.ax.add_collection(quiver)
+        self.handles['quiver'] = quiver
+        self.handles['input_scale'] = input_scale
+
+        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+
+
+
+    def update_handles(self, view, key, lbrt=None):
+        self.handles['quiver'].set_offsets(view.data[:,0:2])
+        input_scale = self.handles['input_scale']
+
+        xs, ys, angles, lens, colors, scale = self._get_info(view, input_scale)
+
+        # Set magnitudes, angles and colors if supplied.
+        quiver = self.handles['quiver']
+        quiver.U = lens
+        quiver.angles = angles
+        if self.color_dim is not None:
+            quiver.set_array(colors)
+
+        if self.normalize_individually and self.color_dim == 'magnitude':
+            quiver.set_clim(view.range)
+
+
 Plot.defaults.update({Curve: CurvePlot,
                       Scatter: ScatterPlot,
-                      ItemTable: TablePlot,
-                      Table: TablePlot,
                       Bars: HistogramPlot,
-                      Histogram: HistogramPlot})
-
+                      Histogram: HistogramPlot,
+                      Points: PointPlot,
+                      VectorField: VectorFieldPlot})
 
 Plot.sideplots.update({Histogram: SideHistogramPlot})

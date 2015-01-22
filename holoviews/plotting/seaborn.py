@@ -12,9 +12,8 @@ import param
 from ..core import Element
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
-from .viewplots import Plot
 from .pandas import DFrameViewPlot
-
+from .plot import Plot
 
 class FullRedrawPlot(Plot):
     """

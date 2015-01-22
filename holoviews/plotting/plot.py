@@ -1,22 +1,15 @@
 import copy
 from itertools import groupby, product
-from collections import defaultdict
 
 import numpy as np
-
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
-from matplotlib.collections import LineCollection
 from matplotlib.font_manager import FontProperties
-from matplotlib.path import Path
-import matplotlib.patches as patches
 
 import param
-
 from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
-from ..core.util import find_minmax
 from ..element.annotation import Annotation
 from ..element.raster import Raster
 
@@ -547,7 +540,7 @@ class AdjointLayoutPlot(Plot):
             layer_types = (vtype,) if isinstance(view, ViewableElement) else view.layer_types
             if isinstance(view, AxisLayout):
                 if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
-                    from .sheetplots import MatrixGridPlot
+                    from .raster import MatrixGridPlot
                     plot_type = MatrixGridPlot
                 else:
                     plot_type = GridPlot
@@ -964,147 +957,9 @@ class OverlayPlot(Plot):
         self._finalize_axis(None)
 
 
-
-class AnnotationPlot(Plot):
-    """
-    Draw the Annotation element on the supplied axis. Supports axis
-    vlines, hlines, arrows (with or without labels), boxes and
-    arbitrary polygonal lines. Note, unlike other Plot types,
-    AnnotationPlot must always operate on a supplied axis as
-    Annotations may only be used as part of Overlays.
-    """
-
-    style_opts = param.List(default=['alpha', 'color', 'edgecolors',
-                                     'facecolors', 'linewidth',
-                                     'linestyle', 'rotation', 'family',
-                                     'weight', 'fontsize', 'visible',
-                                     'edgecolor'],
-                            constant=True, doc="""
-     Box annotations, hlines and vlines and lines all accept
-     matplotlib line style options. Arrow annotations also accept
-     additional text options.""")
-
-    def __init__(self, annotation, **params):
-        self._annotation = annotation
-        super(AnnotationPlot, self).__init__(annotation, **params)
-        self._warn_invalid_intervals(self._map)
-        self.handles['annotations'] = []
-
-        line_only = ['linewidth', 'linestyle']
-        arrow_opts = [opt for opt in self.style_opts if opt not in line_only]
-        line_opts = line_only + ['color']
-        self.opt_filter = {'hline': line_opts, 'vline': line_opts,
-                           'line': line_opts,
-                           '<': arrow_opts, '^': arrow_opts,
-                           '>': arrow_opts, 'v': arrow_opts,
-                           'spline': line_opts + ['edgecolor']}
-
-
-    def _warn_invalid_intervals(self, vmap):
-        "Check if the annotated intervals have appropriate keys"
-        dim_labels = [d.name for d in self._map.key_dimensions]
-
-        mismatch_set = set()
-        for annotation in vmap.values():
-            for spec in annotation.data:
-                interval = spec[-1]
-                if interval is None or dim_labels == ['Default']:
-                    continue
-                mismatches = set(interval.keys()) - set(dim_labels)
-                mismatch_set = mismatch_set | mismatches
-
-        if mismatch_set:
-            mismatch_list= ', '.join('%r' % el for el in mismatch_set)
-            self.warning("Invalid annotation interval key(s) ignored: %r" % mismatch_list)
-
-
-    def _active_interval(self, key, interval):
-        """
-        Given an interval specification, determine whether the
-        annotation should be shown or not.
-        """
-        dim_labels = [d.name for d in self._map.key_dimensions]
-        if (interval is None) or dim_labels == ['Default']:
-            return True
-
-        key = key if isinstance(key, tuple) else (key,)
-        key_dict = dict(zip(dim_labels, key))
-        for key, (start, end) in interval.items():
-            if (start is not None) and key_dict.get(key, -float('inf')) <= start:
-                return False
-            if (end is not None) and key_dict.get(key, float('inf')) > end:
-                return False
-
-        return True
-
-
-    def _draw_annotations(self, annotation, key):
-        """
-        Draw the elements specified by the Annotation ViewableElement on the
-        axis, return a list of handles.
-        """
-        handles = []
-        opts = Element.options.style(annotation).opts
-        color = opts.get('color', 'k')
-
-        for spec in annotation.data:
-            mode, info, interval = spec[0], spec[1:-1], spec[-1]
-            opts = dict(el for el in opts.items()
-                        if el[0] in self.opt_filter[mode])
-
-            if not self._active_interval(key, interval):
-                continue
-            if mode == 'vline':
-                handles.append(self.ax.axvline(spec[1], **opts))
-                continue
-            elif mode == 'hline':
-                handles.append(self.ax.axhline(spec[1], **opts))
-                continue
-            elif mode == 'line':
-                line = LineCollection([np.array(info[0])], **opts)
-                self.ax.add_collection(line)
-                handles.append(line)
-                continue
-            elif mode == 'spline':
-                verts, codes = info
-                patch = patches.PathPatch(Path(verts, codes),
-                                          facecolor='none', **opts)
-                self.ax.add_patch(patch)
-                continue
-
-
-            text, xy, points, arrowstyle = info
-            arrowprops = dict(arrowstyle=arrowstyle, color=color)
-            if mode in ['v', '^']:
-                xytext = (0, points if mode=='v' else -points)
-            elif mode in ['>', '<']:
-                xytext = (points if mode=='<' else -points, 0)
-            arrow = self.ax.annotate(text, xy=xy, textcoords='offset points',
-                                     xytext=xytext, ha="center", va="center",
-                                     arrowprops=arrowprops, **opts)
-            handles.append(arrow)
-        return handles
-
-
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        self.ax = self._init_axis(axis)
-        handles = self._draw_annotations(self._map.last, list(self._map.keys())[-1])
-        self.handles['annotations'] = handles
-        return self._finalize_axis(self._keys[-1])
-
-
-    def update_handles(self, annotation, key, lbrt=None):
-        # Clear all existing annotations
-        for element in self.handles['annotations']:
-            element.remove()
-
-        self.handles['annotations'] = self._draw_annotations(annotation, key)
-
-
 Plot.defaults.update({AxisLayout: GridPlot,
                       NdLayout: LayoutPlot,
                       LayoutTree: LayoutPlot,
                       AdjointLayout: AdjointLayoutPlot,
                       NdOverlay: OverlayPlot,
-                      Overlay: OverlayPlot,
-                      Annotation: AnnotationPlot})
+                      Overlay: OverlayPlot})

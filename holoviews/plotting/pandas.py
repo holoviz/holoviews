@@ -6,7 +6,7 @@ import param
 
 from ..core import Element
 from ..interface.pandas import DFrame, DataFrameView, pd
-from .viewplots import Plot
+from .plot import Plot
 
 
 class DFrameViewPlot(Plot):
