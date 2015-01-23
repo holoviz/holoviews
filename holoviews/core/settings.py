@@ -163,11 +163,11 @@ class SettingsTree(AttrTree):
     of the tree supports a group of Settings objects and the leaf nodes
     inherit their keyword values from parent nodes up to the root.
 
-    Supports the ability to query the tree for the closest valid path,
-    returning either a node or the closest path as required. In
-    addition, the settings method computes a Settings object
-    containing the result of inheritance for a given group up to the
-    root of the tree.
+    Supports the ability to search the tree for the closest valid path
+    using the find method, or compute the appropriate Settings value
+    given an object and a mode. For a given node of the tree, the
+    settings method computes a Settings object containing the result
+    of inheritance for a given group up to the root of the tree.
     """
 
     def __init__(self, items=None, identifier=None, parent=None, groups=None):
@@ -212,10 +212,12 @@ class SettingsTree(AttrTree):
         super(SettingsTree, self).__setattr__(identifier, new_node)
 
 
-    def get_closest(self, path, mode='node'):
+    def find(self, path, mode='node'):
         """
-        Get the closest node or path to an the arbitrary path that is
-        supplied. The mode argument may be either 'node' or 'path'.
+        Find the closest node or path to an the arbitrary path that is
+        supplied down the tree from the given node. The mode argument
+        may be either 'node' or 'path' which determines the return
+        type.
         """
         path = path.split('.') if isinstance(path, str) else list(path)
         item = self
