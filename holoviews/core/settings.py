@@ -1,11 +1,30 @@
 """
-Options abstract away different classes of options (e.g. matplotlib
-specific styles and plot specific parameters) away from View and Map
-objects to allow these objects to share options by name.
+Settings and SettingsTrees allow different classes of settings
+(e.g. matplotlib specific styles and plot specific parameters) to be
+defined separately from the core data structures and away from
+visualization specific code.
 
-StyleOpts is an OptionMap that allows matplotlib style options to be
-defined, allowing customization of how individual View objects are
-displayed given the appropriate style name.
+There are three classes that form the settings system:
+
+Cycle:
+
+   Used to define infinite cycles over a finite set of elements, using
+   either an explicit list or the matplotlib rcParams. For instance, a
+   Cycle object can be used loop a set of display colors for multiple
+   curves on a single axis.
+
+Settings:
+
+   Containers of arbitrary keyword values, including optional keyword
+   validation, support for Cycle objects and inheritance.
+
+SettingsTree:
+
+   A subclass of AttrTree that is used to define the inheritance
+   relationships between a collection of Settings objects. Each node
+   of the tree supports a group of Settings objects and the leaf nodes
+   inherit their keyword values from parent nodes up to the root.
+
 """
 
 from .tree import AttrTree
@@ -13,10 +32,12 @@ from .tree import AttrTree
 
 class Cycle(object):
     """
-    A simple container class to allow specification of cyclic style
-    patterns. A typical use would be to cycle styles on a plot with
-    multiple curves. Takes either a list of elements or an rckey
-    string used to look up the elements in the matplotlib rcParams.g
+    A simple container class that specifies cyclic settings. A typical
+    example would be to cycle the curve colors in an Overlay composed
+    of an arbitrary number of curves.
+
+    A Cycles object accepts either a list of elements or an rckey
+    string used to look up the elements in the matplotlib rcParams.
     """
 
     def __init__(self, elements=[], rckey='axes.color_cycle'):
@@ -47,34 +68,51 @@ class Cycle(object):
 
 class Settings(object):
     """
-    A Settings object specified keyword options. In addition to the
-    functionality of a simple dictionary, Settings support cyclic indexing
-    if supplied with a Cycle object.
+    A Settings object holds a collection of keyword options. In
+    addition, Settings support (optional) keyword validation as well
+    as infinite indexing over the set of supplied cyclic values.
+
+    Settings support inheritance of setting values via the __call__
+    method. By calling a Settings object with additional keywords, you
+    can create a new Settings object inheriting the parent settings.
+
+    valid_keywords: Optional list of strings corresponding to the allowed keywords.
+    viewable_name:  The name of object that the settings apply to.
+    **kwargs:       The keyword items corresponding to the stored settings.
     """
 
     def __init__(self, valid_keywords=None, viewable_name=None, **kwargs):
-        self.viewable_name = viewable_name
         self.valid_keywords = sorted(valid_keywords) if valid_keywords else None
-        if self.valid_keywords is not None:
-            for kwarg in kwargs:
-                if kwarg not in valid_keywords:
-                    err_str_vals = (repr(kwarg), self.viewable_name, str(self.valid_keywords))
-                    raise KeyError("Invalid option %s, valid settings for %s are: %s" % err_str_vals)
-                
+        self.viewable_name = viewable_name
         self.kwargs = kwargs
+
+        for kwarg in kwargs:
+            if valid_keywords and kwarg not in valid_keywords:
+                raise KeyError("Invalid option %s, valid settings for %s are: %s"
+                               % (repr(kwarg), self.viewable_name, str(self.valid_keywords)))
+
         self._settings = self._expand_settings(kwargs)
 
 
     def __call__(self, valid_keywords=None, viewable_name=None, **kwargs):
-        new_style = dict(valid_keywords=self.valid_keywords if valid_keywords is None else valid_keywords,
-                         viewable_name=self.viewable_name if viewable_name is None else viewable_name, **kwargs)
-        return self.__class__(**dict(self.kwargs, new_style))
+        """
+        Create a new Settings object that inherits the parent settings.
+        """
+        valid_keywords=self.valid_keywords if valid_keywords is None else valid_keywords
+        viewable_name=self.viewable_name if viewable_name is None else viewable_name
+
+        inherited_style = dict(valid_keywords=valid_keywords,
+                               viewable_name=viewable_name, **kwargs)
+        return self.__class__(**dict(self.kwargs, inherited_style))
 
 
     def _expand_settings(self, kwargs):
         """
-        Expand out Cycle objects into multiple sets of keyword options.
-        """
+        Expand out Cycle objects into multiple sets of keyword values.
+
+        To elaborate, the full Cartesian product over the supplied
+        Cycle objects is expanded into a list, allowing infinite,
+        cyclic indexing in the __getitem__ method."""
         filter_static = dict((k,v) for (k,v) in kwargs.items() if not isinstance(v, Cycle))
         filter_cycles = [(k,v) for (k,v) in kwargs.items() if isinstance(v, Cycle)]
 
@@ -89,19 +127,21 @@ class Settings(object):
 
 
     def keys(self):
-        "The keyword names defined in the options."
+        "The keyword names across the supplied settings."
         return sorted(list(self.kwargs.keys()))
 
 
     def __getitem__(self, index):
         """
-        Cyclic indexing over any Cycle objects defined.
+        Infinite cyclic indexing of settings over the integers,
+        looping over the set of defined Cycle objects.
         """
         return dict(self._settings[index % len(self._settings)])
 
 
     @property
     def settings(self):
+        "Access of the settings keywords when no cycles are defined."
         if len(self._settings) == 1:
             return dict(self._settings[0])
         else:
@@ -115,6 +155,18 @@ class Settings(object):
 
 
 class SettingsTree(AttrTree):
+    """
+    A subclass of AttrTree that is used to define the inheritance
+    relationships between a collection of Settings objects. Each node
+    of the tree supports a group of Settings objects and the leaf nodes
+    inherit their keyword values from parent nodes up to the root.
+
+    get_closest: Returns either the path or node that is the closest
+                 match to a supplied path.
+
+    settings: Returns the inherited resulting Settings from a given
+              group.
+    """
 
     def __init__(self, items=None, identifier=None, parent=None, groups=None):
         if groups is None:
