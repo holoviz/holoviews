@@ -117,7 +117,7 @@ class CurvePlot(Plot):
         self.xvalues = x_values
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         curveview = self._map.last
 
         self.ax = self._init_axis(axis)
@@ -137,7 +137,7 @@ class CurvePlot(Plot):
         # Create line segments and apply style
         line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
                                     zorder=self.zorder, label=curveview.label,
-                                    **Element.options.style(curveview)[cyclic_index])[0]
+                                    **Element.options.style(curveview)[self.cyclic_index])[0]
 
         self.handles['line_segment'] = line_segment
 
@@ -169,16 +169,15 @@ class ScatterPlot(CurvePlot):
        The style options for ScatterPlot match those of matplotlib's
        PolyCollection object.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         scatterview = self._map.last
-        self.cyclic_index = cyclic_index
 
         self.ax = self._init_axis(axis)
 
         # Create line segments and apply style
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
                                 zorder=self.zorder, label=scatterview.label,
-                                **Element.options.style(scatterview)[cyclic_index])
+                                **Element.options.style(scatterview)[self.cyclic_index])
 
         self.handles['paths'] = paths
 
@@ -225,7 +224,6 @@ class HistogramPlot(Plot):
     def __init__(self, histograms, **params):
         self.center = False
         self.cyclic = False
-        self.cyclic_index = 0
 
         super(HistogramPlot, self).__init__(histograms, **params)
 
@@ -237,9 +235,8 @@ class HistogramPlot(Plot):
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         hist = self._map.last
-        self.cyclic_index = cyclic_index
 
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist, lbrt)
@@ -255,7 +252,7 @@ class HistogramPlot(Plot):
             self.plotfn = self.ax.bar
 
         # Plot bars and make any adjustments
-        style = Element.options.style(hist)[cyclic_index]
+        style = Element.options.style(hist)[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self._keys[-1], bars, lims) # Indexing top
 
@@ -517,7 +514,7 @@ class PointPlot(Plot):
      The style options for PointPlot match those of matplotlib's
      scatter plot command.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         points = self._map.last
 
         self.ax = self._init_axis(axis)
@@ -656,12 +653,12 @@ class VectorFieldPlot(Plot):
         return  distances.min()
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         vfield = self._map.last
         self.ax = self._init_axis(axis)
 
         colorized = self.color_dim is not None
-        kwargs = Element.options.style(vfield)[cyclic_index]
+        kwargs = Element.options.style(vfield)[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 

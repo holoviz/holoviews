@@ -131,7 +131,7 @@ class AnnotationPlot(Plot):
         return handles
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         self.ax = self._init_axis(axis)
         handles = self._draw_annotations(self._map.last, list(self._map.keys())[-1])
         self.handles['annotations'] = handles
@@ -164,7 +164,7 @@ class ContourPlot(Plot):
         self.ax = self._init_axis(axis)
 
         line_segments = LineCollection(lines.data, zorder=self.zorder,
-                                       **Element.options.style(lines)[cyclic_index])
+                                       **Element.options.style(lines)[self.cyclic_index])
         self.handles['line_segments'] = line_segments
         self.ax.add_collection(line_segments)
 

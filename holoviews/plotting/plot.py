@@ -78,12 +78,13 @@ class Plot(param.Parameterized):
     # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
 
-    def __init__(self, view=None, zorder=0, all_keys=None, **params):
+    def __init__(self, view=None, zorder=0, cyclic_index=0, all_keys=None, **params):
         if view is not None:
             self._map = self._check_map(view)
             self._keys = all_keys if all_keys else self._map.keys()
         super(Plot, self).__init__(**params)
         self.zorder = zorder
+        self.cyclic_index = cyclic_index
         self.ax = None
         self._create_fig = True
         # List of handles to matplotlib objects for animation update
@@ -837,7 +838,7 @@ class OverlayPlot(Plot):
             plotype = Plot.defaults[type(vmap.last)]
             subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
                                                     show_legend=self.show_legend, zorder=zorder,
-                                                    aspect=self.aspect))
+                                                    aspect=self.aspect, cyclic_index=cyclic_index))
 
         return subplots
 
@@ -933,27 +934,22 @@ class OverlayPlot(Plot):
                                    type=view.__class__.__name__)
 
 
-    def __call__(self, axis=None, cyclic_index=0, ranges={}):
+    def __call__(self, axis=None, ranges={}):
         key = self._keys[-1]
         self.ax = self._init_axis(axis)
         overlay = self._collapse_channels(HoloMap([((0,), self._map.last)])).last
-        style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(overlay, lambda s: s.style))
-
         for zorder, vmap in enumerate(overlay):
-            new_index, _ = next(style_groups[vmap.style])
-            self.subplots[zorder](self.ax, cyclic_index=cyclic_index+new_index, ranges=ranges)
+            self.subplots[zorder](self.ax)
 
         self._adjust_legend()
 
         return self._finalize_axis(None, title=self._format_title(key))
 
 
-    def update_frame(self, n, ranges={}):
+    def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
-        ranges = ranges if ranges else self._get_range(n)
         for zorder, plot in enumerate(self.subplots.values()):
-            plot.update_frame(n, ranges)
+            plot.update_frame(n)
         self._finalize_axis(None)
 
 

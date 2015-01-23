@@ -64,9 +64,7 @@ class RegressionPlot(FullRedrawPlot):
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        self.cyclic_index = cyclic_index
-
+    def __call__(self, axis=None, lbrt=None):
         self.ax = self._init_axis(axis)
 
         self._update_plot(self._map.last)
@@ -104,9 +102,9 @@ class BivariatePlot(FullRedrawPlot):
        The style options for BivariatePlot match those of seaborns
        kdeplot.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         kdeview = self._map.last
-        self.style = Element.options.style(kdeview)[cyclic_index]
+        self.style = Element.options.style(kdeview)[self.cyclic_index]
 
         # Create xticks and reorder data if cyclic
         if lbrt is None:
@@ -161,9 +159,8 @@ class TimeSeriesPlot(FullRedrawPlot):
        The style options for TimeSeriesPlot match those of seaborns
        tsplot.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         curveview = self._map.last
-        self.cyclic_index = cyclic_index
 
         if lbrt is None:
             lbrt = None if self.rescale_individually else\
@@ -203,9 +200,9 @@ class DistributionPlot(FullRedrawPlot):
        The style options for CurvePlot match those of matplotlib's
        LineCollection object.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         distview = self._map.last
-        self.style = Element.options.style(distview)[cyclic_index]
+        self.style = Element.options.style(distview)[self.cyclic_index]
         self.ax = self._init_axis(axis)
 
         self._update_plot(distview)
@@ -277,7 +274,7 @@ class SNSFramePlot(DFrameViewPlot):
             self._create_fig = False
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         dfview = self._map.last
         self._validate(dfview, axis)
 
@@ -285,7 +282,7 @@ class SNSFramePlot(DFrameViewPlot):
             self.ax = self._init_axis(axis)
 
         # Process styles
-        self.style = self._process_style(Element.options.style(dfview)[cyclic_index])
+        self.style = self._process_style(Element.options.style(dfview)[self.cyclic_index])
 
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():

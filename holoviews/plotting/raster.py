@@ -25,7 +25,7 @@ class MatrixPlot(Plot):
         by matplotlib's imshow command. If supplied, the clim option
         will be ignored as it is computed from the input Element.""")
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
 
         self.ax = self._init_axis(axis)
         view = self._map.last
@@ -34,7 +34,7 @@ class MatrixPlot(Plot):
             else self._map.last.lbrt
         xticks, yticks = self._compute_ticks(view)
 
-        opts = Element.options.style(view)[cyclic_index]
+        opts = Element.options.style(view)[self.cyclic_index]
         data = view.data
         clims = opts.pop('clims', None)
         if view.depth != 1:
