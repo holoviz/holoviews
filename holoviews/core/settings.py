@@ -76,32 +76,33 @@ class Settings(object):
     method. By calling a Settings object with additional keywords, you
     can create a new Settings object inheriting the parent settings.
 
-    valid_keywords: Optional list of strings corresponding to the allowed keywords.
-    viewable_name:  The name of object that the settings apply to.
-    **kwargs:       The keyword items corresponding to the stored settings.
+    allowed_keywords: Optional list of strings corresponding to the
+                      allowed keywords.
+    viewable_name:    The name of object that the settings apply to.
+    **kwargs:         The keyword items to be stored.
     """
 
-    def __init__(self, valid_keywords=None, viewable_name=None, **kwargs):
-        self.valid_keywords = sorted(valid_keywords) if valid_keywords else None
+    def __init__(self, allowed_keywords=None, viewable_name=None, **kwargs):
+        self.allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
         self.viewable_name = viewable_name
         self.kwargs = kwargs
 
         for kwarg in kwargs:
-            if valid_keywords and kwarg not in valid_keywords:
+            if allowed_keywords and kwarg not in allowed_keywords:
                 raise KeyError("Invalid option %s, valid settings for %s are: %s"
-                               % (repr(kwarg), self.viewable_name, str(self.valid_keywords)))
+                               % (repr(kwarg), self.viewable_name, str(self.allowed_keywords)))
 
         self._settings = self._expand_settings(kwargs)
 
 
-    def __call__(self, valid_keywords=None, viewable_name=None, **kwargs):
+    def __call__(self, allowed_keywords=None, viewable_name=None, **kwargs):
         """
         Create a new Settings object that inherits the parent settings.
         """
-        valid_keywords=self.valid_keywords if valid_keywords is None else valid_keywords
+        allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
         viewable_name=self.viewable_name if viewable_name is None else viewable_name
 
-        inherited_style = dict(valid_keywords=valid_keywords,
+        inherited_style = dict(allowed_keywords=allowed_keywords,
                                viewable_name=viewable_name, **kwargs)
         return self.__class__(**dict(self.kwargs, inherited_style))
 
@@ -184,7 +185,7 @@ class SettingsTree(AttrTree):
         """
         override_kwargs = settings.kwargs
         if not self.instantiated:
-            override_kwargs['valid_keywords'] = settings.valid_keywords
+            override_kwargs['allowed_keywords'] = settings.allowed_keywords
             override_kwargs['viewable_name'] = settings.viewable_name
 
         if group_name not in self.groups:
