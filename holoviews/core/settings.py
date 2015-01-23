@@ -84,15 +84,15 @@ class Settings(param.Parameterized):
     allowed_keywords = param.List(default=None, allow_None=True, doc="""
        Optional list of strings corresponding to the allowed keywords.""")
 
-    group = param.String(default=None, allow_None=True, doc="""
-       Optional specification of the settings group name. For
-       instance, group could be 'plot' or 'style'.""")
+    key = param.String(default=None, allow_None=True, doc="""
+       Optional specification of the settings key name. For
+       instance, key could be 'plot' or 'style'.""")
 
 
-    def __init__(self, allowed_keywords=None, group=None, **kwargs):
+    def __init__(self, allowed_keywords=None, key=None, **kwargs):
 
         allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        super(Settings, self).__init__(allowed_keywords=allowed_keywords, group=group)
+        super(Settings, self).__init__(allowed_keywords=allowed_keywords, key=key)
 
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
@@ -109,7 +109,7 @@ class Settings(param.Parameterized):
         """
         allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
         inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
-        return self.__class__(group=self.group, **dict(self.kwargs, **inherited_style))
+        return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
 
     def _expand_settings(self, kwargs):
