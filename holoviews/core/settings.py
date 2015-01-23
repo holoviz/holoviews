@@ -84,33 +84,27 @@ class Settings(param.Parameterized):
     allowed_keywords = param.List(default=None, allow_None=True, doc="""
        Optional list of strings corresponding to the allowed keywords.""")
 
-    viewable_name = param.String(default=None, allow_None=True, doc="""
-       The name of object that the settings apply to.""")
 
-    def __init__(self, allowed_keywords=None, viewable_name=None, **kwargs):
+    def __init__(self, allowed_keywords=None, **kwargs):
 
         allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        super(Settings, self).__init__(allowed_keywords=allowed_keywords,
-                                       viewable_name = viewable_name)
+        super(Settings, self).__init__(allowed_keywords=allowed_keywords)
 
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
-                raise KeyError("Invalid option %s, valid settings for %s are: %s"
-                               % (repr(kwarg), self.viewable_name, str(self.allowed_keywords)))
+                raise KeyError("Invalid option %s, valid settings are: %s"
+                               % (repr(kwarg), str(self.allowed_keywords)))
 
         self.kwargs = kwargs
         self._settings = self._expand_settings(kwargs)
 
 
-    def __call__(self, allowed_keywords=None, viewable_name=None, **kwargs):
+    def __call__(self, allowed_keywords=None, **kwargs):
         """
         Create a new Settings object that inherits the parent settings.
         """
         allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
-        viewable_name=self.viewable_name if viewable_name is None else viewable_name
-
-        inherited_style = dict(allowed_keywords=allowed_keywords,
-                               viewable_name=viewable_name, **kwargs)
+        inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
         return self.__class__(**dict(self.kwargs, inherited_style))
 
 
@@ -193,12 +187,17 @@ class SettingsTree(AttrTree):
         override_kwargs = settings.kwargs
         if not self._instantiated:
             override_kwargs['allowed_keywords'] = settings.allowed_keywords
-            override_kwargs['viewable_name'] = settings.viewable_name
 
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
-        return self.groups[group_name](**override_kwargs)
+        group_settings = self.groups[group_name]
+        try:
+            return group_settings(**override_kwargs)
+        except KeyError as e:
+            keyerror = e.strerror[0].lower() + e.strerror[1:]
+            raise KeyError("Invalid key for group %r on path %r; %s )"
+                           % (group_name, self.path, keyerror))
 
 
     def __setattr__(self, identifier, groups):
