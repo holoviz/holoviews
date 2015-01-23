@@ -165,19 +165,19 @@ class Raster(Element2D):
         """
         The set of samples available along a particular dimension.
         """
-        if dim in self._cached_index_names:
-            dim_index = self.get_dimension_index(dim)
-            l, b, r, t = self.lbrt
-            shape = self.data.shape[abs(dim_index-1)]
-            dim_min, dim_max = [(l, r), (b, t)][dim_index]
-            dim_len = self.data.shape[dim_index]
+        dim_idx = self.get_dimension_index(dim)
+        if dim_idx in [0, 1]:
+            l, r, b, t = self.xlim, self.ylim
+            shape = self.data.shape[abs(dim_idx-1)]
+            dim_min, dim_max = [(l, r), (b, t)][dim_idx]
+            dim_len = self.data.shape[dim_idx]
             half_unit = (dim_max - dim_min)/dim_len/2.
-            coord_fn = (lambda v: (0, v)) if dim_index else (lambda v: (v, 0))
+            coord_fn = (lambda v: (0, v)) if dim_idx else (lambda v: (v, 0))
             linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
-            coords = [self.closest(coord_fn(v))[dim_index]
+            coords = [self.closest(coord_fn(v))[dim_idx]
                       for v in linspace] * shape
-            return coords if dim_index else sorted(coords)
-        elif dim == self._cached_value_names[0]:
+            return coords if dim_idx else sorted(coords)
+        elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
         else:
             raise Exception("Dimension not found.")
