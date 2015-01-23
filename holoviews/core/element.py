@@ -638,7 +638,7 @@ class AxisLayout(UniformNdMapping):
             for dim in self._cached_index_names:
                 dim_type = self.get_dimension_type(dim)
                 if dim_type is not None or issubclass(dim_type, Number):
-                    dim_inds.append(self.get_dimension_index(dim)
+                    dim_inds.append(self.get_dimension_index(dim))
             str_keys = iter(key[i] for i in range(self.ndims)
                             if i not in dim_inds)
             num_keys = []
