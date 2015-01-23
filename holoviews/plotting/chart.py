@@ -540,11 +540,12 @@ class PointPlot(Plot):
 
         return self._finalize_axis(self._keys[-1])
 
+
     def _compute_size(self, sizes, opts):
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
         sizes = np.ma.array(sizes, mask=sizes<=0)
         scaled_sizes = sizes / np.min(sizes.nonzero())
-        return (ms*self.scaling_factor**sizes)
+        return (ms*self.scaling_factor**scaled_sizes)
 
 
     def update_handles(self, view, key, lbrt=None):
