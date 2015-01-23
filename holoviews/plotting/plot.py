@@ -41,6 +41,11 @@ class Plot(param.Parameterized):
         always be respected by all plots but should be respected by
         adjoined plots when appropriate.""")
 
+    projection = param.ObjectSelector(default=None,
+                                      objects=['3d', 'polar', None], doc="""
+        The projection of the plot axis, default of None is equivalent to
+        2D plot, 3D and polar plots are also supported.""")
+
     rescale_individually = param.Boolean(default=False, doc="""
         Whether to use redraw the axes per map or per element.""")
 
@@ -78,8 +83,6 @@ class Plot(param.Parameterized):
     # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
 
-    _3d = False
-
     def __init__(self, view=None, zorder=0, cyclic_index=0, all_keys=None, **params):
         if view is not None:
             self._map = self._check_map(view)
@@ -107,7 +110,7 @@ class Plot(param.Parameterized):
         if issubclass(vmap.type, CompositeOverlay):
             check = vmap.last.values()[0]
         if isinstance(check, Element3D):
-            self._3d = True
+            self.projection = '3d'
 
         return vmap
 
@@ -131,10 +134,7 @@ class Plot(param.Parameterized):
             fig = plt.figure()
             self.handles['fig'] = fig
             fig.set_size_inches(list(self.size))
-            ax_opts = {}
-            if self._3d:
-                ax_opts = dict(projection='3d')
-            axis = fig.add_subplot(111, **ax_opts)
+            axis = fig.add_subplot(111, projection=self.projection)
             axis.set_aspect('auto')
 
         return axis
@@ -666,21 +666,27 @@ class AdjointLayoutPlot(Plot):
         self.layout_type = layout_type
 
         if layout_type == 'Single':
-            return current_idx+1, [current_idx]
+            positions = ['main']
+            start, inds = current_idx+1, [current_idx]
         elif layout_type == 'Dual':
-            return current_idx+2, [current_idx, current_idx+1]
+            positions = ['main', 'right']
+            start, inds = current_idx+2, [current_idx, current_idx+1]
 
         bottom_idx = current_idx + subgrid_width
         if layout_type == 'Embedded Dual':
+            positions = [None, None, 'main', 'right']
             bottom = ((current_idx+1) % subgrid_width) == 0
             grid_idx = (bottom_idx if bottom else current_idx)+1
-            return grid_idx, [current_idx, bottom_idx]
+            start, inds = grid_idx, [current_idx, bottom_idx]
         elif layout_type == 'Triple':
+            positions = ['top', None, 'main', 'right']
             bottom = ((current_idx+2) % subgrid_width) == 0
             grid_idx = (bottom_idx if bottom else current_idx) + 2
-            return grid_idx, [current_idx, current_idx+1,
+            start, inds = grid_idx, [current_idx, current_idx+1,
                               bottom_idx, bottom_idx+1]
+        projs = [self.subplots.get(pos, Plot).projection for pos in positions]
 
+        return start, inds, projs
 
     def update_frame(self, n, ranges={}):
         for pos, subplot in self.subplots.items():
@@ -780,8 +786,8 @@ class LayoutPlot(Plot):
             elif (wsplits, hsplits) == (2,2):
                 layout_type = 'Triple'
 
-            gidx, gsinds = subplots[(r, c)].grid_situate(gidx, layout_type, cols)
-            grid_indices[(r, c)] = gsinds
+            gidx, gsinds, proj = subplots[(r, c)].grid_situate(gidx, layout_type, cols)
+            grid_indices[(r, c)] = (gsinds, proj)
 
         return subplots, grid_indices
 
@@ -793,7 +799,8 @@ class LayoutPlot(Plot):
 
         for (r, c) in self.coords:
             layout_plot = self.subplots.get((r, c), None)
-            subaxes = [plt.subplot(self.gs[ind]) for ind in self.grid_indices[(r, c)]]
+            subaxes = [plt.subplot(self.gs[ind], projection=proj)
+                       for ind, proj in zip(*self.grid_indices[(r, c)])]
 
             rcopts = Element.options.style(self.layout).opts
             with matplotlib.rc_context(rcopts):
@@ -959,7 +966,7 @@ class OverlayPlot(Plot):
 
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
-        if self._3d:
+        if self.projection == '3d':
             self.ax.clear()
 
         for zorder, plot in enumerate(self.subplots.values()):
