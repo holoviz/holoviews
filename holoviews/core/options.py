@@ -8,8 +8,7 @@ defined, allowing customization of how individual View objects are
 displayed given the appropriate style name.
 """
 
-
-from collections import OrderedDict
+from .tree import AttrTree
 
 
 class Cycle(object):
@@ -46,24 +45,33 @@ class Cycle(object):
 
 
 
-class Opts(object):
+class Settings(object):
     """
-    A Options object specified keyword options. In addition to the
-    functionality of a simple dictionary, Opts support cyclic indexing
+    A Settings object specified keyword options. In addition to the
+    functionality of a simple dictionary, Settings support cyclic indexing
     if supplied with a Cycle object.
     """
 
-    def __init__(self, **kwargs):
-        self.items = kwargs
-        self.options = self._expand_styles(kwargs)
+    def __init__(self, valid_keywords=None, viewable_name=None, **kwargs):
+        self.viewable_name = viewable_name
+        self.valid_keywords = sorted(valid_keywords) if valid_keywords else None
+        if self.valid_keywords is not None:
+            for kwarg in kwargs:
+                if kwarg not in valid_keywords:
+                    err_str_vals = (repr(kwarg), self.viewable_name, str(self.valid_keywords))
+                    raise KeyError("Invalid option %s, valid settings for %s are: %s" % err_str_vals)
+                
+        self.kwargs = kwargs
+        self._settings = self._expand_settings(kwargs)
 
 
-    def __call__(self, **kwargs):
-        new_style = dict(self.items, **kwargs)
-        return self.__class__(**new_style)
+    def __call__(self, valid_keywords=None, viewable_name=None, **kwargs):
+        new_style = dict(valid_keywords=self.valid_keywords if valid_keywords is None else valid_keywords,
+                         viewable_name=self.viewable_name if viewable_name is None else viewable_name, **kwargs)
+        return self.__class__(**dict(self.kwargs, new_style))
 
 
-    def _expand_styles(self, kwargs):
+    def _expand_settings(self, kwargs):
         """
         Expand out Cycle objects into multiple sets of keyword options.
         """
@@ -77,294 +85,115 @@ class Opts(object):
             raise Exception("Cycle objects supplied with different lengths")
 
         cyclic_tuples = list(zip(*[val.elements for val in filter_values]))
-        return [ dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
+        return [dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
 
 
     def keys(self):
         "The keyword names defined in the options."
-        return sorted(list(self.items.keys()))
+        return sorted(list(self.kwargs.keys()))
 
 
     def __getitem__(self, index):
         """
         Cyclic indexing over any Cycle objects defined.
         """
-        return dict(self.options[index % len(self.options)])
+        return dict(self._settings[index % len(self._settings)])
 
 
     @property
-    def opts(self):
-        if len(self.options) == 1:
-            return dict(self.options[0])
+    def settings(self):
+        if len(self._settings) == 1:
+            return dict(self._settings[0])
         else:
-            raise Exception("The opts property may only be used with non-cyclic styles")
+            raise Exception("The settings property may only be used with non-cyclic Settings.")
 
 
     def __repr__(self):
-        kws = ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items())
+        kws = ', '.join("%s=%r" % (k,v) for (k,v) in self.kwargs.items())
         return "%s(%s)" % (self.__class__.__name__,  kws)
 
 
 
-class Options(object):
-    """
-    A Option is a collection of Opts objects that allows convenient
-    attribute access and can compose styles through inheritance.
-    Options are inherited by finding all matches which end in the
-    same substring as the supplied style.
+class SettingsTree(AttrTree):
 
-    For example supplying 'Example_View' as a style would match
-    these styles (if they are defined):
+    def __init__(self, items=None, identifier=None, parent=None, groups=None):
+        if groups is None:
+            raise ValueError('Please supply groups dictionary')
+        self.__dict__['groups'] = groups
+        self.__dict__['instantiated'] = False
+        AttrTree.__init__(self, items, identifier, parent)
+        self.__dict__['instantiated'] = True
 
-    'ViewableElement' : Opts(a=1, b=2)
-    'Example_View': Opts(b=3)
-
-    The resulting Opts object inherits a=1 from 'Options' and b=3
-    from 'Example_Options'.
-    """
-
-    @classmethod
-    def normalize_key(self, key):
-        """
-        Given a key which may contain spaces, such as a element label,
-        convert it to a string suitable for attribute access.
-        """
-        return key.replace(' ', '')
-
-
-    def __init__(self, name, opt_type):
-        if not issubclass(opt_type, Opts):
-            raise Exception("The opt_type needs to be a subclass of Opts.")
-        self.name = name
-        self._settable = False
-        self.opt_type = opt_type
-        self.__dict__['_items'] = {}
-
-
-    def __call__(self, obj):
-
-        if isinstance(obj, str):
-            name = obj
-        elif isinstance(obj.style, list) or  (obj.style is None):
-            return self.opt_type()
-        else:
-            name = obj.style
-
-        matches = sorted((len(key), style) for key, style in self._items.items()
-                         if name.endswith(key))
-        if matches == []:
-            return self.opt_type()
-        else:
-            base_match = matches[0][1]
-            for _, match in matches[1:]:
-                base_match = base_match(**match.items)
-            return base_match
-
-
-    def options(self):
-        """
-        The full list of base Style objects in the Options, excluding
-        options customized per object.
-        """
-        return [k for k in self.keys() if not k.startswith('Custom')]
-
-
-    def __dir__(self):
-        """
-        Extend dir() to include base options in IPython tab completion.
-        """
-        default_dir = dir(type(self)) + list(self.__dict__)
-        return sorted(set(default_dir + self.options()))
-
-
-    def __getattr__(self, name):
-        """
-        Provide attribute access for the Opts in the Options.
-        """
-        keys = list(self.__dict__['_items'].keys())
-        if name in keys:
-            return self[name]
-        raise AttributeError(name)
-
-
-    def __getitem__(self, obj):
-        """
-        Get a style by name via dictionary style access.
-        """
-        return self._items.get(obj, self.opt_type())
-
-
-    def __repr__(self):
-        return "<OptionMap containing %d options>" % len(self._items)
-
-
-    def keys(self):
-        """
-        The list of all options in the OptionMap, including options
-        associated with individual element objects.
-        """
-        return sorted(self._items.keys())
-
-
-    def values(self):
-        """
-        All the Style objects in the OptionMap.
-        """
-        return list(self._items.values())
-
-
-    def __contains__(self, k):
-        return k in self.keys()
-
-
-    def set(self, key, value):
-        if not self._settable:
-            raise Exception("OptionMaps should be set via OptionGroup")
-        if not isinstance(value, Opts):
-            raise Exception('An OptionMap must only contain Opts.')
-        self._items[self.normalize_key(key)] = value
-
-
-
-class OptionsGroup(object):
-    """
-    An OptionsGroup coordinates the setting of OptionMaps to ensure
-    they share a common set of keys. While it is safe to access Opts
-    from OptionMaps directly, an OptionGroup object must be used to
-    set Options when there are multiple different types of Options
-    (plot options as distinct from style options for instance).
-
-    When setting Options, it is important to use the appropriate
-    subclass of Opts to disambiguate the OptionGroup to be set. For
-    instance, PlotOpts will set plotting options while StyleOpts are
-    designed for setting style options.
-    """
-
-
-    normalize_key = Options.normalize_key
-
-    def __init__(self, optmaps):
-
-        names = [o.name for o in optmaps]
-        if len(set(names)) != len(names):
-            raise Exception("OptionMap names must be unique")
-
-        for optmap in optmaps:
-            self.__dict__[optmap.name] = optmap
-
-        self.__dict__['_keys'] = set()
-        self.__dict__['_opttypes'] = OrderedDict((optmap.opt_type, optmap)
-                                                 for optmap in optmaps)
-
-
-    def __setattr__(self, k, v):
-        """
-        Attribute style addition of Style objects to the OptionMap.
-        """
-        self[k]= v
-
-
-    def fuzzy_match_keys(self, name):
-        name = Options.normalize_key(name)
-        reversed_matches = sorted((len(key), key) for key in self.keys()
-                                  if name.endswith(key))[::-1]
-        if reversed_matches:
-            lens, keys = list(zip(*reversed_matches))
-            return list(keys)
-        else:
-            return []
-
-
-    def __getattr__(self, k):
-        return self[k]
-
-
-    def __getitem__(self, key):
-        if key not in self._keys:
-            raise IndexError('Key not available in the OptionGroup')
-        retval = tuple(optmap[key] for optmap in self._opttypes.values())
-        return retval[0] if len(retval) == 1 else retval
-
-
-    def __setitem__(self, key, value):
-        if type(value) not in self._opttypes:
-            raise Exception("Options of type %s not applicable" % type(value))
-        optmap = self._opttypes[type(value)]
-        optmap._settable = True
-        optmap.set(key, value)
-        optmap._settable = False
-        self._keys.add(key)
-
-
-    def options(self):
-        """
-        The full list of option keys in the OptionGroup, excluding
-        options customized per object.
-        """
-        return sorted(k for k in self.keys() if not k.startswith('Custom'))
-
-
-    def keys(self):
-        return sorted(list(self._keys))
-
-
-    def __dir__(self):
-        """
-        Extend dir() to include base options in IPython tab completion.
-        """
-        default_dir = dir(type(self)) + list(self.__dict__)
-        names = [o.name for o in self._opttypes.values()]
-        return sorted(set(default_dir + list(self.keys()) + names))
-
-
-
-class StyleOpts(Opts):
-    """
-    A subclass of Opts designed to hold matplotlib options to set the
-    display Style of ViewableElement objects.
-    """
-
-
-class PlotOpts(Opts):
-    """
-    A subclass of Opts designed to hold plotting options that set the
-    parameters of the Plot class that display ViewableElement objects.
-    """
-
-
-class ChannelOpts(Opts):
-    """
-    A subclass of Opts designed to hold channel mode definitions that
-    control how particular labelled layer combinations in an Overlay
-    are displayed.
-    """
-
-    # This dictionary specifies the available channel processing
-    # operations. An channel operation is a ElementOperation that accept
-    # Sheet Overlays as input and process them to return a single
-    # RGB(A) Matrix.
-    operations={}
-
-    def __init__(self, mode=None, pattern='', **kwargs):
-        self.mode = mode
-        self.pattern = pattern
-        self.size = len(pattern.rsplit('*'))
-        self.options = self._expand_styles(kwargs)
-        self.items = kwargs
 
     @property
-    def operation(self):
-        """Get the channel operation from the set of operations"""
-        return self.operations[self.mode]
+    def path(self):
+        if self.parent:
+            return '.'.join([self.parent.path, str(self.identifier)])
+        else:
+            return 'root'
+
+
+    def _process_settings(self, opt_label, label, opts):
+        kwargs = {}
+        settings = opts.kwargs
+        if not self.instantiated:
+            settings['valid_keywords'] = opts.valid_keywords
+            settings['viewable_name'] = opts.viewable_name
+        current_node = self[label] if label in self.children else self
+        if current_node.groups.get(opt_label, None) is None:
+            if self.instantiated:
+                raise Exception("%s does not support %s." % ('.'.join([self.path, label]),
+                                                             opt_label))
+            else:
+                current_node = SettingsTree()
+        kwargs[opt_label] = current_node.groups[opt_label](**settings)
+        return kwargs
+
+
+    def __setattr__(self, label, val):
+        kwargs = {}
+        if isinstance(val, dict):
+            for opt_type, opts in val.items():
+                kwargs.update(self._process_groups(opt_type, label, opts))
+        if kwargs:
+            val = SettingsTree(None, identifier=label, parent=self, groups=kwargs)
+        else:
+            raise ValueError('SettingsTree only accepts a dictionary of Settings.')
+        super(SettingsTree, self).__setattr__(label, val)
+
+
+    def get_closest(self, path, mode='node'):
+        path = path.split('.') if isinstance(path, str) else list(path)
+        item = self
+
+        for idx, child in enumerate(path):
+            matching_children = [c for c in item.children if child.endswith(c)]
+            matching_children = sorted(matching_children, key=lambda x: len(x))
+            if matching_children:
+                item = item[matching_children[0]]
+            else:
+                continue
+        return item if mode == 'node' else item.path
+
+
+    def settings(self, key):
+        if self.groups.get(key, None) is None:
+            return None
+        if self.parent is None:
+            return self.groups[key]
+        return Settings(**dict(self.parent.settings(key),
+                               **self.groups[key].kwargs))
+
+
+    def _node_identifier(self, node):
+        if node.parent is None:
+            return '--+'
+        else:
+            opts = [node.settings(key) for key, item in node.groups.items()]
+            return "%s: " % str(node.identifier) + ', '.join([str(opt) for opt in opts if opts is not None])
+
 
     def __repr__(self):
-        return "%s(%s, %r%s)" % (self.__class__.__name__,
-                                 self.mode + ', ',
-                                 self.pattern + ', ' if self.items else '',
-                                 ', '.join("%s=%r" % (k,v) for (k,v) in self.items.items()))
-
-
-
-channels = OptionsGroup([Options('definitions', ChannelOpts)])
-options =  OptionsGroup([Options('plotting', PlotOpts),
-                         Options('style', StyleOpts)])
+        if len(self) == 0:
+            return self._node_identifier(self)
+        return super(SettingsTree, self).__repr__()
