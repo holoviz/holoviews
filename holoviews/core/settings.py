@@ -248,14 +248,14 @@ class SettingsTree(AttrTree):
         return item if mode == 'node' else item.path
 
 
-    def closest(self, obj, mode):
+    def closest(self, obj, group):
         """
         This method is designed to be called from the root of the
         tree. Given any LabelledData object, this method will return
         the most appropriate Settings object, including inheritance.
         """
         components = (obj.__class__.__name__, obj.value, obj.label)
-        return self.find(components)
+        return self.find(components).settings(group)
 
 
     def settings(self, group):
