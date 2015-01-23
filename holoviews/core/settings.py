@@ -27,34 +27,38 @@ SettingsTree:
 
 """
 
+import param
 from .tree import AttrTree
 
 
-class Cycle(object):
+class Cycle(param.Parameterized):
     """
     A simple container class that specifies cyclic settings. A typical
     example would be to cycle the curve colors in an Overlay composed
     of an arbitrary number of curves.
 
-    A Cycles object accepts either a list of elements or an rckey
-    string used to look up the elements in the matplotlib rcParams.
+    A Cycles object accepts either a list of items to cycle over or an
+    rckey string used to look up the elements in the matplotlib
+    rcParams dictionary.
     """
 
-    def __init__(self, elements=[], rckey='axes.color_cycle'):
-        self.rckey = rckey
-        if len(elements):
-            self._elements = elements
-        else:
-            self._elements = None
+    items = param.List(default=None, allow_None=True,  doc="""
+        If supplied, the explicit list of items to be cycled over.""")
 
+    rckey = param.String(default='axes.color_cycle', doc="""
+       If elements is None, this is the key in the matplotlib rcParams
+       to use to get the cycle elements""")
+
+    def __init__(self, **params):
+        super(Cycle, self).__init__(**params)
 
     @property
     def elements(self):
-        if self._elements is None:
+        if self.items is None:
             from matplotlib import rcParams
             return rcParams[self.rckey]
         else:
-            return self._elements
+            return self.items
 
 
     def __len__(self):
@@ -66,7 +70,7 @@ class Cycle(object):
 
 
 
-class Settings(object):
+class Settings(param.Parameterized):
     """
     A Settings object holds a collection of keyword options. In
     addition, Settings support (optional) keyword validation as well
@@ -75,23 +79,26 @@ class Settings(object):
     Settings support inheritance of setting values via the __call__
     method. By calling a Settings object with additional keywords, you
     can create a new Settings object inheriting the parent settings.
-
-    allowed_keywords: Optional list of strings corresponding to the
-                      allowed keywords.
-    viewable_name:    The name of object that the settings apply to.
-    **kwargs:         The keyword items to be stored.
     """
 
+    allowed_keywords = param.List(default=None, allow_None=True, doc="""
+       Optional list of strings corresponding to the allowed keywords.""")
+
+    viewable_name = param.String(default=None, allow_None=True, doc="""
+       The name of object that the settings apply to.""")
+
     def __init__(self, allowed_keywords=None, viewable_name=None, **kwargs):
-        self.allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        self.viewable_name = viewable_name
-        self.kwargs = kwargs
+
+        allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
+        super(Settings, self).__init__(allowed_keywords=allowed_keywords,
+                                       viewable_name = viewable_name)
 
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
                 raise KeyError("Invalid option %s, valid settings for %s are: %s"
                                % (repr(kwarg), self.viewable_name, str(self.allowed_keywords)))
 
+        self.kwargs = kwargs
         self._settings = self._expand_settings(kwargs)
 
 
@@ -162,11 +169,11 @@ class SettingsTree(AttrTree):
     of the tree supports a group of Settings objects and the leaf nodes
     inherit their keyword values from parent nodes up to the root.
 
-    get_closest: Returns either the path or node that is the closest
-                 match to a supplied path.
-
-    settings: Returns the inherited resulting Settings from a given
-              group.
+    Supports the ability to query the tree for the closest valid path,
+    returning either a node or the closest path as required. In
+    addition, the settings method computes a Settings object
+    containing the result of inheritance for a given group up to the
+    root of the tree.
     """
 
     def __init__(self, items=None, identifier=None, parent=None, groups=None):
@@ -224,7 +231,7 @@ class SettingsTree(AttrTree):
         return item if mode == 'node' else item.path
 
 
-    def settings(self, key):
+    def settings(self, group):
         """
         Using inheritance up to the root, get the complete Settings
         object for the given node and the specified group.
