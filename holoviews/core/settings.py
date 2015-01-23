@@ -207,6 +207,10 @@ class SettingsTree(AttrTree):
 
 
     def get_closest(self, path, mode='node'):
+        """
+        Get the closest node or path to an the arbitrary path that is
+        supplied. The mode argument may be either 'node' or 'path'.
+        """
         path = path.split('.') if isinstance(path, str) else list(path)
         item = self
 
@@ -221,12 +225,16 @@ class SettingsTree(AttrTree):
 
 
     def settings(self, key):
-        if self.groups.get(key, None) is None:
+        """
+        Using inheritance up to the root, get the complete Settings
+        object for the given node and the specified group.
+        """
+        if self.groups.get(group, None) is None:
             return None
         if self.parent is None:
-            return self.groups[key]
-        return Settings(**dict(self.parent.settings(key),
-                               **self.groups[key].kwargs))
+            return self.groups[group]
+        return Settings(**dict(self.parent.settings(group),
+                               **self.groups[group].kwargs))
 
 
     def _node_identifier(self, node):
