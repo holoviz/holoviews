@@ -177,35 +177,32 @@ class SettingsTree(AttrTree):
         self.__dict__['instantiated'] = True
 
 
-
-
-    def _process_settings(self, opt_label, label, opts):
-        kwargs = {}
-        settings = opts.kwargs
+    def _inherited_settings(self, group_name, settings):
+        """
+        Computes the inherited Settings object for the given group
+        name from the current node given a new set of settings.
+        """
+        override_kwargs = settings.kwargs
         if not self.instantiated:
-            settings['valid_keywords'] = opts.valid_keywords
-            settings['viewable_name'] = opts.viewable_name
-        current_node = self[label] if label in self.children else self
-        if current_node.groups.get(opt_label, None) is None:
-            if self.instantiated:
-                raise Exception("%s does not support %s." % ('.'.join([self.path, label]),
-                                                             opt_label))
-            else:
-                current_node = SettingsTree()
-        kwargs[opt_label] = current_node.groups[opt_label](**settings)
-        return kwargs
+            override_kwargs['valid_keywords'] = settings.valid_keywords
+            override_kwargs['viewable_name'] = settings.viewable_name
+
+        if group_name not in self.groups:
+            raise KeyError("Group %s not defined on SettingTree" % group_name)
+
+        return self.groups[group_name](**override_kwargs)
 
 
-    def __setattr__(self, label, val):
-        kwargs = {}
-        if isinstance(val, dict):
-            for opt_type, opts in val.items():
-                kwargs.update(self._process_groups(opt_type, label, opts))
-        if kwargs:
-            val = SettingsTree(None, identifier=label, parent=self, groups=kwargs)
+    def __setattr__(self, identifier, groups):
+        new_groups = {}
+        if isinstance(groups, dict):
+            for group_name, settings in groups.items():
+                new_groups[group_name] = self._inherited_settings(group_name, settings)
+        if new_groups:
+            new_node = SettingsTree(None, identifier=identifier, parent=self, groups=new_groups)
         else:
             raise ValueError('SettingsTree only accepts a dictionary of Settings.')
-        super(SettingsTree, self).__setattr__(label, val)
+        super(SettingsTree, self).__setattr__(identifier, new_node)
 
 
     def get_closest(self, path, mode='node'):
@@ -235,8 +232,8 @@ class SettingsTree(AttrTree):
         if node.parent is None:
             return '--+'
         else:
-            opts = [node.settings(key) for key, item in node.groups.items()]
-            return "%s: " % str(node.identifier) + ', '.join([str(opt) for opt in opts if opts is not None])
+            values = ', '.join([str(group) for group in node.groups.values()])
+            return "%s: %s" % (node.identifier, values)
 
 
     def __repr__(self):
