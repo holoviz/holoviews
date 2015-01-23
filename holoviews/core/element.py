@@ -206,10 +206,9 @@ class Element3D(Element2D):
 
 
     def __init__(self, data, extent=None, **params):
-        self._xlim = (extent[0], extent[3]) if extent else None
-        self._ylim = (extent[1], extent[4]) if extent else None
         self._zlim = (extent[2], extent[5]) if extent else None
-        super(Element3D, self).__init__(data, **params)
+        extent = (extent[0], extent[1], extent[3], extent[4])
+        super(Element3D, self).__init__(data, extent=extent, **params)
 
     @property
     def extent(self):
