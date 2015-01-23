@@ -2,6 +2,7 @@ import copy
 from itertools import groupby, product
 
 import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
@@ -9,8 +10,7 @@ from matplotlib.font_manager import FontProperties
 
 import param
 from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
-    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
-from ..element.annotation import Annotation
+    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, Element3D
 from ..element.raster import Raster
 
 
@@ -78,6 +78,8 @@ class Plot(param.Parameterized):
     # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
 
+    _3d = False
+
     def __init__(self, view=None, zorder=0, cyclic_index=0, all_keys=None, **params):
         if view is not None:
             self._map = self._check_map(view)
@@ -101,6 +103,12 @@ class Plot(param.Parameterized):
         else:
             vmap = view
 
+        check = vmap.last
+        if issubclass(vmap.type, CompositeOverlay):
+            check = vmap.last.values()[0]
+        if isinstance(check, Element3D):
+            self._3d = True
+
         return vmap
 
 
@@ -123,7 +131,10 @@ class Plot(param.Parameterized):
             fig = plt.figure()
             self.handles['fig'] = fig
             fig.set_size_inches(list(self.size))
-            axis = fig.add_subplot(111)
+            ax_opts = {}
+            if self._3d:
+                ax_opts = dict(projection='3d')
+            axis = fig.add_subplot(111, **ax_opts)
             axis.set_aspect('auto')
 
         return axis
@@ -948,6 +959,9 @@ class OverlayPlot(Plot):
 
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
+        if self._3d:
+            self.ax.clear()
+
         for zorder, plot in enumerate(self.subplots.values()):
             plot.update_frame(n)
         self._finalize_axis(None)
