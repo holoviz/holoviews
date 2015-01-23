@@ -125,12 +125,6 @@ class SettingsTree(AttrTree):
         self.__dict__['instantiated'] = True
 
 
-    @property
-    def path(self):
-        if self.parent:
-            return '.'.join([self.parent.path, str(self.identifier)])
-        else:
-            return 'root'
 
 
     def _process_settings(self, opt_label, label, opts):

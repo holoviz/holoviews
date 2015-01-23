@@ -49,6 +49,15 @@ class AttrTree(object):
             self.set_path(path, item)
 
     @property
+    def path(self):
+        "Returns the path up to the root for the current node."
+        if self.parent:
+            return '.'.join([self.parent.path, str(self.identifier)])
+        else:
+            return self.identifier if self.identifier else self.__class__.__name__
+
+
+    @property
     def fixed(self):
         "If fixed, no new paths can be created via attribute access"
         return self.__dict__['_fixed']
