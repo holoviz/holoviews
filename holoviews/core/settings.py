@@ -84,11 +84,15 @@ class Settings(param.Parameterized):
     allowed_keywords = param.List(default=None, allow_None=True, doc="""
        Optional list of strings corresponding to the allowed keywords.""")
 
+    group = param.String(default=None, allow_None=True, doc="""
+       Optional specification of the settings group name. For
+       instance, group could be 'plot' or 'style'.""")
 
-    def __init__(self, allowed_keywords=None, **kwargs):
+
+    def __init__(self, allowed_keywords=None, group=None, **kwargs):
 
         allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        super(Settings, self).__init__(allowed_keywords=allowed_keywords)
+        super(Settings, self).__init__(allowed_keywords=allowed_keywords, group=group)
 
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
@@ -105,7 +109,7 @@ class Settings(param.Parameterized):
         """
         allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
         inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
-        return self.__class__(**dict(self.kwargs, inherited_style))
+        return self.__class__(group=self.group, **dict(self.kwargs, **inherited_style))
 
 
     def _expand_settings(self, kwargs):
@@ -200,11 +204,18 @@ class SettingsTree(AttrTree):
                            % (group_name, self.path, keyerror))
 
 
-    def __setattr__(self, identifier, groups):
+    def __setattr__(self, identifier, val):
         new_groups = {}
-        if isinstance(groups, dict):
-            for group_name, settings in groups.items():
-                new_groups[group_name] = self._inherited_settings(group_name, settings)
+        if isinstance(val, dict):
+            group_items = val.items()
+        elif isinstance(val, Settings) and val.group is None:
+            raise AttributeError("Settings object needs to have a group name specified.")
+        elif isinstance(val, Settings):
+            group_items = [(val.group, val)]
+
+        for group_name, settings in group_items:
+            new_groups[group_name] = self._inherited_settings(group_name, settings)
+
         if new_groups:
             new_node = SettingsTree(None, identifier=identifier, parent=self, groups=new_groups)
         else:
