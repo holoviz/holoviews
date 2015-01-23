@@ -24,7 +24,8 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import ViewableElement, NdMapping, CompositeOverlay, NdLayout, AdjointLayout, AxisLayout, LayoutTree, HoloMap
+from ..core import ViewableElement, NdMapping, CompositeOverlay, NdLayout,\
+    AdjointLayout, AxisLayout, LayoutTree, HoloMap, Element
 from ..plotting import Plot, LayoutPlot
 from .magics import ViewMagic, ANIMATION_OPTS
 
@@ -266,7 +267,7 @@ class NdWidget(param.Parameterized):
                          shape[0]*get_plot_size()[0])
             self.plot = LayoutPlot(view, **dict(size=grid_size))
         else:
-            opts = dict(ViewableElement.options.plotting(view).opts, size=get_plot_size())
+            opts = dict(Element.options.plotting(view).opts, size=get_plot_size())
             self.plot = Plot.defaults[view.type](view, **opts)
             view = [view]
 
