@@ -861,7 +861,7 @@ class OverlayPlot(Plot):
         then given the supplied style key.
         """
         pattern = [el.strip() for el in pattern.rsplit('*')]
-        if len(pattern) > len(overlay): return
+        if len(pattern) > len(overlay): return overlay
 
         skip=0
         collapsed_overlay = overlay.clone(None)
