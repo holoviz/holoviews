@@ -60,12 +60,12 @@ class DFrameViewPlot(Plot):
             self.plot_type = self._map.last.plot_type
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
+    def __call__(self, axis=None, lbrt=None):
         dfview = self._map.last
         self._validate(dfview, axis)
 
         self.ax = self._init_axis(axis)
-        self.style = self._process_style(Element.options.style(dfview)[cyclic_index])
+        self.style = self._process_style(Element.options.style(dfview)[self.cyclic_index])
 
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
