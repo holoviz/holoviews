@@ -173,9 +173,9 @@ class SettingsTree(AttrTree):
         if groups is None:
             raise ValueError('Please supply groups dictionary')
         self.__dict__['groups'] = groups
-        self.__dict__['instantiated'] = False
+        self.__dict__['_instantiated'] = False
         AttrTree.__init__(self, items, identifier, parent)
-        self.__dict__['instantiated'] = True
+        self.__dict__['_instantiated'] = True
 
 
     def _inherited_settings(self, group_name, settings):
@@ -184,7 +184,7 @@ class SettingsTree(AttrTree):
         name from the current node given a new set of settings.
         """
         override_kwargs = settings.kwargs
-        if not self.instantiated:
+        if not self._instantiated:
             override_kwargs['allowed_keywords'] = settings.allowed_keywords
             override_kwargs['viewable_name'] = settings.viewable_name
 
