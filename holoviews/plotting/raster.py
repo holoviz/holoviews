@@ -137,8 +137,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
     def __init__(self, grid, **params):
         self.layout = params.pop('layout', None)
-        self.grid = copy.deepcopy(grid)
-        for k, vmap in self.grid.data.items():
+        self.grid = grid.clone()
+        for k, vmap in grid.data.items():
             self.grid[k] = self._check_map(self.grid[k])
         Plot.__init__(self, **params)
         self._keys = self.grid.all_keys
