@@ -207,14 +207,19 @@ class SettingsTree(AttrTree):
     def __setattr__(self, identifier, val):
         new_groups = {}
         if isinstance(val, dict):
-            group_items = val.items()
+            group_items = val
         elif isinstance(val, Settings) and val.group is None:
             raise AttributeError("Settings object needs to have a group name specified.")
         elif isinstance(val, Settings):
-            group_items = [(val.group, val)]
+            group_items = {val.group: val}
 
-        for group_name, settings in group_items:
-            new_groups[group_name] = self._inherited_settings(group_name, settings)
+        current_node = self[identifier] if identifier in self.children else self
+        for group_name in current_node.groups:
+            settings = group_items.get(group_name, False)
+            if settings:
+                new_groups[group_name] = self._inherited_settings(group_name, settings)
+            else:
+                new_groups[group_name] = current_node.groups[group_name]
 
         if new_groups:
             new_node = SettingsTree(None, identifier=identifier, parent=self, groups=new_groups)
