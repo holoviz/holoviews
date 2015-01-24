@@ -421,7 +421,7 @@ class MultiDimensionalMapping(Dimensioned):
         return len(self.data)
 
 
-    def sort_key(self, unordered):
+    def _sort_key(self, unordered):
         """
         Given an unordered list of (dimension, value) pairs returns
         the sorted key.
@@ -457,7 +457,7 @@ class MultiDimensionalMapping(Dimensioned):
             for sk in set(second_keys):  # The second groups keys
                 # Generate a candidate expanded key
                 unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
-                sorted_key = self.sort_key(unordered_dimkeys)
+                sorted_key = self._sort_key(unordered_dimkeys)
                 if sorted_key in own_keys:  # If the expanded key actually exists...
                     split_data[fk][sk] = self[sorted_key]
             split_data[fk]._check_key_type = True # Speed optimization
