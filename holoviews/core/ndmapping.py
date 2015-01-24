@@ -82,18 +82,15 @@ class MultiDimensionalMapping(Dimensioned):
             raise KeyError('Key has to match number of dimensions.')
 
 
-    def _resort(self):
+    def _update_item(self, dim_vals, data):
         """
-        Sorts data by key or index in pre-defined index in Dimension
-        values.
+        Subclasses default method to allow updating of nested data
+        structures rather than simply overriding them.
         """
-        sortkws = {}
-        dimensions = self.key_dimensions
-        if self._cached_categorical:
-            sortkws['key'] = lambda (k, v): tuple(dimensions[i].values.index(k[i])
-                                                  if dimensions[i].values else k[i]
-                                                  for i in range(self.ndims))
-        self.data = OrderedDict(sorted(self.data.items(), **sortkws))
+        if dim_vals in self.data and isinstance(self.data[dim_vals], (NdMapping, OrderedDict)):
+            self.data[dim_vals].update(data)
+        else:
+            self.data[dim_vals] = data
 
 
     def _add_item(self, dim_vals, data, sort=True):
@@ -126,51 +123,156 @@ class MultiDimensionalMapping(Dimensioned):
             self._resort()
 
 
-    def _update_item(self, dim_vals, data):
+    def _apply_key_type(self, keys):
         """
-        Subclasses default method to allow updating of nested data
-        structures rather than simply overriding them.
+        If a key type is set in the dim_info dictionary, this method applies the
+        type to the supplied key.
         """
-        if dim_vals in self.data and isinstance(self.data[dim_vals], (NdMapping, OrderedDict)):
-            self.data[dim_vals].update(data)
+        typed_key = ()
+        for dim, key in zip(self.key_dimensions, keys):
+            key_type = dim.type
+            if key_type is None:
+                typed_key += (key,)
+            elif isinstance(key, slice):
+                sl_vals = [key.start, key.stop, key.step]
+                typed_key += (slice(*[key_type(el) if el is not None else None
+                                      for el in sl_vals]),)
+            elif key is Ellipsis:
+                typed_key += (key,)
+            else:
+                typed_key += (key_type(key),)
+        return typed_key
+
+
+    def _split_index(self, key):
+        """
+        Splits key into map and data indices. If only map indices are
+        supplied the data is passed an index of None.
+        """
+        if not isinstance(key, tuple):
+            key = (key,)
+        map_slice = key[:self.ndims]
+        if self._check_key_type:
+            map_slice = self._apply_key_type(map_slice)
+        if len(key) == self.ndims:
+            return map_slice, ()
         else:
-            self.data[dim_vals] = data
+            return map_slice, key[self.ndims:]
 
 
-    def update(self, other):
+    def _dataslice(self, data, indices):
         """
-        Updates the NdMapping with another NdMapping or OrderedDict
-        instance, checking that they are indexed along the same number
-        of dimensions.
+        Returns slice of data element if the item is deep
+        indexable. Warns if attempting to slice an object that has not
+        been declared deep indexable.
         """
-        for key, data in other.items():
-            self._add_item(key, data, sort=False)
-        self._resort()
+        if getattr(data, '_deep_indexable', False):
+            return data[indices]
+        elif len(indices) > 0:
+            self.warning('Cannot index into data element, extra data'
+                         ' indices ignored.')
+        return data
 
 
-    def reindex(self, dimension_labels):
+
+
+    def dimension_keys(self):
         """
-        Create a new object with a re-ordered or reduced set of index
-        dimensions.
+        Returns the list of keys together with the dimension labels.
+        """
+        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
+                for k in self.keys()]
 
-        Reducing the number of index dimensions will discard
-        information from the keys. All data values are accessible in
-        the newly created object as the new labels must be sufficient
-        to address each value uniquely.
+
+    def pprint_dimkey(self, key):
+        """
+        Takes a key of the right length as input and returns a
+        formatted string of the dimension and value pairs.
+        """
+        key = key if isinstance(key, (tuple, list)) else (key,)
+        return ', '.join(self.key_dimensions[i].pprint_value(v)
+                         for i, v in enumerate(key))
+
+
+    def _split_dim_keys(self, dimensions):
+        """
+        Split the NdMappings keys into two groups given a list of
+        dimensions to split out.
         """
 
-        indices = [self.get_dimension_index(el) for el in dimension_labels]
+        # Find dimension indices
+        first_dims = [d for d in self.key_dimensions if d.name not in dimensions]
+        first_inds = [self.get_dimension_index(d.name) for d in first_dims]
+        second_dims = [d for d in self.key_dimensions if d.name in dimensions]
+        second_inds = [self.get_dimension_index(d.name) for d in second_dims]
 
-        keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
-        reindexed_items = OrderedDict(
-            (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set(self._cached_index_names).difference(dimension_labels)
-        dimensions = [self.get_dimension(d) for d in dimension_labels if d not in reduced_dims]
+        # Split the keys
+        keys = list(self.data.keys())
+        first_keys, second_keys = zip(*[(tuple(k[fi] for fi in first_inds),
+                                        tuple(k[si] for si in second_inds))
+                                        for k in keys])
+        return first_dims, first_keys, second_dims, second_keys
 
-        if len(set(keys)) != len(keys):
-            raise Exception("Given dimension labels not sufficient to address all values uniquely")
 
-        return self.clone(reindexed_items, key_dimensions=dimensions)
+    def _resort(self):
+        """
+        Sorts data by key or index in pre-defined index in Dimension
+        values.
+        """
+        sortkws = {}
+        dimensions = self.key_dimensions
+        if self._cached_categorical:
+            sortkws['key'] = lambda (k, v): tuple(dimensions[i].values.index(k[i])
+                                                  if dimensions[i].values else k[i]
+                                                  for i in range(self.ndims))
+        self.data = OrderedDict(sorted(self.data.items(), **sortkws))
+
+
+    def _sort_key(self, unordered):
+        """
+        Given an unordered list of (dimension, value) pairs returns
+        the sorted key.
+        """
+        dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
+        return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
+
+
+    def split_dimensions(self, dimensions, map_type=None):
+        """
+        Split the dimensions in the NdMapping across two NdMappings,
+        where the inner mapping is of the same type as the original
+        Map.
+        """
+        inner_dims = [d for d in dimensions if d in self._cached_index_names]
+        deep_dims = [d for d in dimensions
+                     if d in [d.name for d in self.deep_dimensions]]
+        if self.ndims == 1:
+            self.warning('Cannot split Map with only one dimension.')
+            return self
+        if len(deep_dims):
+            raise Exception('NdMapping does not support splitting of deep dimensions.')
+        first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
+        self._check_key_type = False # Speed optimization
+        own_keys = self.data.keys()
+
+        map_type = map_type if map_type else NdMapping
+        split_data = map_type(key_dimensions=first_dims)
+        split_data._check_key_type = False # Speed optimization
+        for fk in first_keys:  # The first groups keys
+            split_data[fk] = self.clone(key_dimensions=second_dims)
+            split_data[fk]._check_key_type = False # Speed optimization
+            for sk in set(second_keys):  # The second groups keys
+                # Generate a candidate expanded key
+                unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
+                sorted_key = self._sort_key(unordered_dimkeys)
+                if sorted_key in own_keys:  # If the expanded key actually exists...
+                    split_data[fk][sk] = self[sorted_key]
+            split_data[fk]._check_key_type = True # Speed optimization
+        split_data._check_key_type = True # Speed optimization
+
+        self._check_key_type = True # Re-enable checks
+
+        return split_data
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
@@ -225,74 +327,30 @@ class MultiDimensionalMapping(Dimensioned):
         return values
 
 
-    def _apply_key_type(self, keys):
+    def reindex(self, dimension_labels):
         """
-        If a key type is set in the dim_info dictionary, this method applies the
-        type to the supplied key.
+        Create a new object with a re-ordered or reduced set of index
+        dimensions.
+
+        Reducing the number of index dimensions will discard
+        information from the keys. All data values are accessible in
+        the newly created object as the new labels must be sufficient
+        to address each value uniquely.
         """
-        typed_key = ()
-        for dim, key in zip(self.key_dimensions, keys):
-            key_type = dim.type
-            if key_type is None:
-                typed_key += (key,)
-            elif isinstance(key, slice):
-                sl_vals = [key.start, key.stop, key.step]
-                typed_key += (slice(*[key_type(el) if el is not None else None
-                                      for el in sl_vals]),)
-            elif key is Ellipsis:
-                typed_key += (key,)
-            else:
-                typed_key += (key_type(key),)
-        return typed_key
 
+        indices = [self.get_dimension_index(el) for el in dimension_labels]
 
-    def _split_index(self, key):
-        """
-        Splits key into map and data indices. If only map indices are
-        supplied the data is passed an index of None.
-        """
-        if not isinstance(key, tuple):
-            key = (key,)
-        map_slice = key[:self.ndims]
-        if self._check_key_type:
-            map_slice = self._apply_key_type(map_slice)
-        if len(key) == self.ndims:
-            return map_slice, ()
-        else:
-            return map_slice, key[self.ndims:]
+        keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
+        reindexed_items = OrderedDict(
+            (k, v) for (k, v) in zip(keys, self.data.values()))
+        reduced_dims = set(self._cached_index_names).difference(dimension_labels)
+        dimensions = [self.get_dimension(d) for d in dimension_labels if d not in reduced_dims]
 
+        if len(set(keys)) != len(keys):
+            raise Exception("Given dimension labels not sufficient to address all values uniquely")
 
-    def __getitem__(self, key):
-        """
-        Allows indexing in the indexed dimensions, passing any
-        additional indices to the data elements.
-        """
-        if key in [Ellipsis, ()]:
-            return self
-        map_slice, data_slice = self._split_index(key)
-        return self._dataslice(self.data[map_slice], data_slice)
+        return self.clone(reindexed_items, key_dimensions=dimensions)
 
-
-    def _dataslice(self, data, indices):
-        """
-        Returns slice of data element if the item is deep
-        indexable. Warns if attempting to slice an object that has not
-        been declared deep indexable.
-        """
-        if getattr(data, '_deep_indexable', False):
-            return data[indices]
-        elif len(indices) > 0:
-            self.warning('Cannot index into data element, extra data'
-                         ' indices ignored.')
-        return data
-
-
-    def __setitem__(self, key, value):
-        self._add_item(key, value)
-
-
-    def __str__(self):
-        return repr(self)
 
     @property
     def last(self):
@@ -310,22 +368,79 @@ class MultiDimensionalMapping(Dimensioned):
         return list(self.keys())[-1] if len(self) else None
 
 
-    def dimension_keys(self):
+    @property
+    def info(self):
         """
-        Returns the list of keys together with the dimension labels.
+        Prints information about the Dimensioned object, including the
+        number and type of objects contained within it and information
+        about its dimensions.
         """
-        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
-                for k in self.keys()]
+        info_str = self.__class__.__name__ +\
+                   " containing %d items of type %s\n" % (len(self.keys()),
+                                                          type(self.values()[0]).__name__)
+        info_str += ('-' * (len(info_str)-1)) + "\n\n"
+        for group in self._dim_groups:
+            dimensions = getattr(self, group)
+            if dimensions:
+                info_str += '%s Dimensions: \n' % group.capitalize()
+            for d in dimensions:
+                dmin, dmax = self.range(d.name)
+                info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
+        print(info_str)
 
 
-    def pprint_dimkey(self, key):
+    def table(self, **kwargs):
         """
-        Takes a key of the right length as input and returns a
-        formatted string of the dimension and value pairs.
+        Creates a Table Element from all the data stored in the
+        UniformNdMapping.
         """
-        key = key if isinstance(key, (tuple, list)) else (key,)
-        return ', '.join(self.key_dimensions[i].pprint_value(v)
-                         for i, v in enumerate(key))
+
+        table = None
+        for key, value in self.data.items():
+            value = value.table(**kwargs)
+            for idx, (dim, val) in enumerate(zip(self.key_dimensions, key)):
+                value = value.add_dimension(dim, idx, val)
+            if table is None:
+                table = value
+            else:
+                table.update(value)
+        return table
+
+
+    def dframe(self):
+        try:
+            import pandas
+        except ImportError:
+            raise Exception("Cannot build a DataFrame without the pandas library.")
+        labels = self._cached_index_names + [self.value]
+        return pandas.DataFrame(
+            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
+
+
+    def map(self, map_fn, **kwargs):
+        """
+        Map a function across the MultiDimensionalMapping.
+        """
+        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
+        if isinstance(mapped_items[0][1], tuple):
+            split = [[(k, v) for v in val] for (k, val) in mapped_items]
+            item_groups = [list(el) for el in zip(*split)]
+        else:
+            item_groups = [mapped_items]
+        clones = tuple(self.clone(els, **kwargs)
+                       for (i, els) in enumerate(item_groups))
+        return clones if len(clones) > 1 else clones[0]
+
+
+    def update(self, other):
+        """
+        Updates the NdMapping with another NdMapping or OrderedDict
+        instance, checking that they are indexed along the same number
+        of dimensions.
+        """
+        for key, data in other.items():
+            self._add_item(key, data, sort=False)
+        self._resort()
 
 
     def keys(self):
@@ -355,49 +470,34 @@ class MultiDimensionalMapping(Dimensioned):
             return default
 
 
-    def map(self, map_fn, **kwargs):
-        """
-        Map a function across the MultiDimensionalMapping.
-        """
-        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
-        if isinstance(mapped_items[0][1], tuple):
-            split = [[(k, v) for v in val] for (k, val) in mapped_items]
-            item_groups = [list(el) for el in zip(*split)]
-        else:
-            item_groups = [mapped_items]
-        clones = tuple(self.clone(els, **kwargs)
-                       for (i, els) in enumerate(item_groups))
-        return clones if len(clones) > 1 else clones[0]
-
-    @property
-    def info(self):
-        """
-        Prints information about the Dimensioned object, including the
-        number and type of objects contained within it and information
-        about its dimensions.
-        """
-        info_str = self.__class__.__name__ +\
-                   " containing %d items of type %s\n" % (len(self.keys()),
-                                                          type(self.values()[0]).__name__)
-        info_str += ('-' * (len(info_str)-1)) + "\n\n"
-        for group in self._dim_groups:
-            dimensions = getattr(self, group)
-            if dimensions:
-                info_str += '%s Dimensions: \n' % group.capitalize()
-            for d in dimensions:
-                dmin, dmax = self.range(d.name)
-                info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
-        print(info_str)
-
-
     def pop(self, *args):
         if len(args) > 0 and not isinstance(args[0], tuple):
             args[0] = (args[0],)
         return self.data.pop(*args)
 
 
+    def __getitem__(self, key):
+        """
+        Allows indexing in the indexed dimensions, passing any
+        additional indices to the data elements.
+        """
+        if key in [Ellipsis, ()]:
+            return self
+        map_slice, data_slice = self._split_index(key)
+        return self._dataslice(self.data[map_slice], data_slice)
+
+
+    def __setitem__(self, key, value):
+        self._add_item(key, value)
+
+
+    def __str__(self):
+        return repr(self)
+
+
     def __iter__(self):
         return iter(self.values())
+
 
     def __contains__(self, key):
         if self.ndims == 1:
@@ -408,101 +508,6 @@ class MultiDimensionalMapping(Dimensioned):
 
     def __len__(self):
         return len(self.data)
-
-
-    def _sort_key(self, unordered):
-        """
-        Given an unordered list of (dimension, value) pairs returns
-        the sorted key.
-        """
-        dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
-        return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
-
-
-    def split_dimensions(self, dimensions, map_type=None):
-        """
-        Split the dimensions in the NdMapping across two NdMappings,
-        where the inner mapping is of the same type as the original
-        Map.
-        """
-        inner_dims = [d for d in dimensions if d in self._cached_index_names]
-        deep_dims = [d for d in dimensions
-                     if d in [d.name for d in self.deep_dimensions]]
-        if self.ndims == 1:
-            self.warning('Cannot split Map with only one dimension.')
-            return self
-        if len(deep_dims):
-            raise Exception('NdMapping does not support splitting of deep dimensions.')
-        first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
-        self._check_key_type = False # Speed optimization
-        own_keys = self.data.keys()
-
-        map_type = map_type if map_type else NdMapping
-        split_data = map_type(key_dimensions=first_dims)
-        split_data._check_key_type = False # Speed optimization
-        for fk in first_keys:  # The first groups keys
-            split_data[fk] = self.clone(key_dimensions=second_dims)
-            split_data[fk]._check_key_type = False # Speed optimization
-            for sk in set(second_keys):  # The second groups keys
-                # Generate a candidate expanded key
-                unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
-                sorted_key = self._sort_key(unordered_dimkeys)
-                if sorted_key in own_keys:  # If the expanded key actually exists...
-                    split_data[fk][sk] = self[sorted_key]
-            split_data[fk]._check_key_type = True # Speed optimization
-        split_data._check_key_type = True # Speed optimization
-
-        self._check_key_type = True # Re-enable checks
-
-        return split_data
-
-
-    def _split_dim_keys(self, dimensions):
-        """
-        Split the NdMappings keys into two groups given a list of
-        dimensions to split out.
-        """
-
-        # Find dimension indices
-        first_dims = [d for d in self.key_dimensions if d.name not in dimensions]
-        first_inds = [self.get_dimension_index(d.name) for d in first_dims]
-        second_dims = [d for d in self.key_dimensions if d.name in dimensions]
-        second_inds = [self.get_dimension_index(d.name) for d in second_dims]
-
-        # Split the keys
-        keys = list(self.data.keys())
-        first_keys, second_keys = zip(*[(tuple(k[fi] for fi in first_inds),
-                                        tuple(k[si] for si in second_inds))
-                                        for k in keys])
-        return first_dims, first_keys, second_dims, second_keys
-
-
-    def table(self, **kwargs):
-        """
-        Creates a Table Element from all the data stored in the
-        UniformNdMapping.
-        """
-
-        table = None
-        for key, value in self.data.items():
-            value = value.table(**kwargs)
-            for idx, (dim, val) in enumerate(zip(self.key_dimensions, key)):
-                value = value.add_dimension(dim, idx, val)
-            if table is None:
-                table = value
-            else:
-                table.update(value)
-        return table
-
-
-    def dframe(self):
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self._cached_index_names + [self.value]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
 
 
