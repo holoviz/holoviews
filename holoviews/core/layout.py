@@ -11,7 +11,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned, DimensionedData, ViewableElement
+from .dimension import Dimension, Dimensioned, DimensionedData, ViewableElement, LabelledData
 from .ndmapping import NdMapping, UniformNdMapping
 from .options import options
 from .tree import AttrTree
@@ -262,7 +262,7 @@ class NdLayout(UniformNdMapping):
 
 
 
-class LayoutTree(AttrTree):
+class LayoutTree(AttrTree, LabelledData):
     """
     A LayoutTree is an AttrTree with ViewableElement objects as leaf values. Unlike
     AttrTree, a LayoutTree supports a rich display, displaying leaf
@@ -278,6 +278,8 @@ class LayoutTree(AttrTree):
     available leaves. The detailed settings for the 'auto' policy may
     be set using the MAX_BRANCHES option of the %view magic.
     """
+
+    value = param.String(default='LayoutTree', constant=True)
 
     style = 'LayoutTree'
 
