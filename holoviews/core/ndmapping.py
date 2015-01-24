@@ -268,15 +268,14 @@ class MultiDimensionalMapping(Dimensioned):
         return self.clone(items, key_dimensions=dimensions, **kwargs)
 
 
-    def drop_dimension(self, dim, val):
+    def drop_dimension(self, dim):
         """
-        Drop dimension from the NdMapping using the supplied
-        dimension name and value.
+        Returns a new mapping with the named dimension
+        removed. Ensures that the dropped dimension is constant (owns
+        only a single key value) before dropping it.
         """
-        slices = [slice(None) for i in range(self.ndims)]
-        slices[self.get_dimension_index(dim)] = val
         dim_labels = [d for d in self._cached_index_names if d != dim]
-        return self[tuple(slices)].reindex(dim_labels)
+        return self.reindex(dim_labels)
 
 
     def dimension_values(self, dimension):
