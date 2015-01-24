@@ -39,12 +39,11 @@ class MultiDimensionalMapping(Dimensioned):
     storage methods helps make both classes easier to understand.
     """
 
-    key_dimensions = param.List(default=[Dimension("Default")], constant=True)
-
     value = param.String(default='MultiDimensionalMapping')
 
-    data_type = None
+    key_dimensions = param.List(default=[Dimension("Default")], constant=True)
 
+    data_type = None
     _deep_indexable = False
     _sorted = True
 
