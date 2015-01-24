@@ -52,10 +52,10 @@ class Dimension(param.Parameterized):
         be used to retain a categorical ordering.""")
 
     format_string = param.String(default="{name}: {val}{unit}", doc="""
-        Format string to specify how the Dimension is pretty
-        printed. Valid format keys include: 'name' (Dimension name),
-        'val' (a particular dimension value to be presented) and
-        'unit' (the unit string).""")
+        Format string to specify how pprint_value is generated. Valid
+        format keys include: 'name' (Dimension name), 'val' (a
+        particular dimension value to be presented) and 'unit' (the
+        unit string).""")
 
     def __init__(self, name, **params):
         """
@@ -125,15 +125,37 @@ class Dimension(param.Parameterized):
 
 
 class LabelledData(param.Parameterized):
+    """
+    LabelledData is a mix-in class designed to introduce the value and
+    label parameters (and corresponding methods) to any class
+    containing data.
 
-    label = param.String(default='', constant=True, doc="""
-       Optional label describing the data, e.g. where or how it
-       was measured.""")
+    Used together, value and label is designed to allow a simple and
+    flexible means of addressing data. For instance, if you are
+    collecting the heights of people in different demographics, you
+    could specify the values of your objects as 'Height' and then use
+    the label to specify the (sub)population.
+
+    In this scheme, one object may have the parameters set to
+    [value='Height', label='Children'] and another may use
+    [value='Height', label='Adults'].
+
+    Note: Another level of specification is implict in the type (i.e
+    class) of the LabelledData object. A full specification of a
+    LabelledData object is therefore given by the tuple
+    (<type>, <value>, label>). This additional level of specification is
+    used in the traverse method.
+    """
 
     value = param.String(default='LabelledData', constant=True, doc="""
-       A string describing what the data of the object contain.
+       A string describing the type of data contained by the object.
        By default this should mirror the class name.""")
 
+    label = param.String(default='', constant=True, doc="""
+       Optional label describing the data, typically reflecting where
+       or how it was measured. Together with the value parameter,
+       label should allow a specific measurement or dataset to be
+       referenced given the class type.""")
 
     def clone(self, data=None, *args, **kwargs):
         """
@@ -145,9 +167,50 @@ class LabelledData(param.Parameterized):
 
 
     def relabel(self, label=None, value=None):
+        """
+        Assign a new label and/or value to an existing LabelledData
+        object, creating a clone of the object with the new settings.
+        """
         keywords = [('label',label), ('value',value)]
         return self.clone(self.data,
                           **{k:v for k,v in keywords if v is not None})
+
+    def _matches(self, spec):
+        """
+        A specification string is of form {type}.{value}.{label} which
+        may be supplied in full or up to the first or second
+        period. This method returns a boolean that indicates if the
+        current object matches the specification.
+        """
+        specification = (self.__class__.__name__, self.value, self.label)
+        split_spec = tuple(spec.split('.'))
+        return specification[:len(split_spec)] == split_spec
+
+
+    def traverse(self, fn, specs=None):
+        """
+        Traverses any nested LabelledData object (i.e LabelledData
+        objects containing LabelledData objects), applying the
+        supplied function to each constituent element if the supplied
+        specification strings apply. The output of these function
+        calls are collected and returned in the accumulator list.
+
+        If specs is None, all constituent elements are
+        processed. Otherwise, specs is a list such that an elements is
+        processed if any of the contained string specification
+        matches.
+        """
+        accumulator = []
+        if specs is None or any(self._matches(self, spec) for spec in specs):
+            accumulator.append(fn(self))
+
+        try:
+            # Assumes composite objects are iterables
+            for el in self:
+                accumulator += el.traverse(fn, specs)
+        except:
+            pass
+        return accumulator
 
 
 
@@ -256,6 +319,7 @@ class Dimensioned(param.Parameterized):
             return dim_vals[0]
         else:
             return None
+
 
 
 class DimensionedData(Dimensioned, LabelledData):
