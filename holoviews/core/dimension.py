@@ -80,6 +80,7 @@ class Dimension(param.Parameterized):
 
     @property
     def pprint_label(self):
+        "The pretty-printed label string for the Dimension"
         unit = '' if self.unit is None else ' (%s)' % self.unit
         return self.name + unit
 
