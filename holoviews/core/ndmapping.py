@@ -174,16 +174,6 @@ class MultiDimensionalMapping(Dimensioned):
         return data
 
 
-
-
-    def dimension_keys(self):
-        """
-        Returns the list of keys together with the dimension labels.
-        """
-        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
-                for k in self.keys()]
-
-
     def pprint_dimkey(self, key):
         """
         Takes a key of the right length as input and returns a

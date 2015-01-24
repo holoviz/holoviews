@@ -343,6 +343,15 @@ class HoloMap(UniformNdMapping):
         return maps
 
 
+    def _dimension_keys(self):
+        """
+        Helper for __mul__ that returns the list of keys together with
+        the dimension labels.
+        """
+        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
+                for k in self.keys()]
+
+
     def __mul__(self, other):
         """
         The mul (*) operator implements overlaying of different Views.
@@ -364,12 +373,12 @@ class HoloMap(UniformNdMapping):
             other_in_self = other_set.issubset(self_set)
             dimensions = self.key_dimensions
             if self_in_other and other_in_self: # superset of each other
-                super_keys = sorted(set(self.dimension_keys() + other.dimension_keys()))
+                super_keys = sorted(set(self._dimension_keys() + other._dimension_keys()))
             elif self_in_other: # self is superset
                 dimensions = other.key_dimensions
-                super_keys = other.dimension_keys()
+                super_keys = other._dimension_keys()
             elif other_in_self: # self is superset
-                super_keys = self.dimension_keys()
+                super_keys = self._dimension_keys()
             else: # neither is superset
                 raise Exception('One set of keys needs to be a strict subset of the other.')
 
