@@ -208,10 +208,10 @@ class SettingsTree(AttrTree):
         new_groups = {}
         if isinstance(val, dict):
             group_items = val
-        elif isinstance(val, Settings) and val.group is None:
+        elif isinstance(val, Settings) and val.key is None:
             raise AttributeError("Settings object needs to have a group name specified.")
         elif isinstance(val, Settings):
-            group_items = {val.group: val}
+            group_items = {val.key: val}
 
         current_node = self[identifier] if identifier in self.children else self
         for group_name in current_node.groups:
@@ -253,6 +253,9 @@ class SettingsTree(AttrTree):
         This method is designed to be called from the root of the
         tree. Given any LabelledData object, this method will return
         the most appropriate Settings object, including inheritance.
+
+        In addition, closest supports custom settings by checking the
+        object
         """
         components = (obj.__class__.__name__, obj.value, obj.label)
         return self.find(components).settings(group)
