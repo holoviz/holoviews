@@ -209,17 +209,6 @@ class MultiDimensionalMapping(Dimensioned):
         return self[tuple(slices)].reindex(dim_labels)
 
 
-
-    def dframe(self):
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self._cached_index_names + [self.value]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
-
-
     def dimension_values(self, dimension):
         all_dims = [d.name for d in self.dimensions]
         if isinstance(dimension, int):
@@ -488,6 +477,35 @@ class MultiDimensionalMapping(Dimensioned):
         return first_dims, first_keys, second_dims, second_keys
 
 
+    def table(self, **kwargs):
+        """
+        Creates a Table Element from all the data stored in the
+        UniformNdMapping.
+        """
+
+        table = None
+        for key, value in self.data.items():
+            value = value.table(**kwargs)
+            for idx, (dim, val) in enumerate(zip(self.key_dimensions, key)):
+                value = value.add_dimension(dim, idx, val)
+            if table is None:
+                table = value
+            else:
+                table.update(value)
+        return table
+
+
+    def dframe(self):
+        try:
+            import pandas
+        except ImportError:
+            raise Exception("Cannot build a DataFrame without the pandas library.")
+        labels = self._cached_index_names + [self.value]
+        return pandas.DataFrame(
+            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
+
+
+
 
 class NdMapping(MultiDimensionalMapping):
     """
@@ -673,20 +691,3 @@ class UniformNdMapping(NdMapping):
         dims = '\n '.join(g for g in groups if g)
         title_suffix = title_suffix.format(dims=dims)
         return item.title + title_suffix
-
-
-    def table(self, **kwargs):
-        """
-        Creates Table from all the elements in the UniformNdMapping.
-        """
-
-        table = None
-        for key, value in self.data.items():
-            value = value.table(**kwargs)
-            for idx, (dim, val) in enumerate(zip(self.key_dimensions, key)):
-                value = value.add_dimension(dim, idx, val)
-            if table is None:
-                table = value
-            else:
-                table.update(value)
-        return table
