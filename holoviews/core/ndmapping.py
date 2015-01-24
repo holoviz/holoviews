@@ -198,6 +198,16 @@ class MultiDimensionalMapping(Dimensioned):
         return self.clone(items, key_dimensions=dimensions, **kwargs)
 
 
+    def drop_dimension(self, dim, val):
+        """
+        Drop dimension from the NdMapping using the supplied
+        dimension name and value.
+        """
+        slices = [slice(None) for i in range(self.ndims)]
+        slices[self.get_dimension_index(dim)] = val
+        dim_labels = [d for d in self._cached_index_names if d != dim]
+        return self[tuple(slices)].reindex(dim_labels)
+
 
 
     def dframe(self):
@@ -327,17 +337,6 @@ class MultiDimensionalMapping(Dimensioned):
         key = key if isinstance(key, (tuple, list)) else (key,)
         return ', '.join(self.key_dimensions[i].pprint_value(v)
                          for i, v in enumerate(key))
-
-
-    def drop_dimension(self, dim, val):
-        """
-        Drop dimension from the NdMapping using the supplied
-        dimension name and value.
-        """
-        slices = [slice(None) for i in range(self.ndims)]
-        slices[self.get_dimension_index(dim)] = val
-        dim_labels = [d for d in self._cached_index_names if d != dim]
-        return self[tuple(slices)].reindex(dim_labels)
 
 
     def keys(self):
