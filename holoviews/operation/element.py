@@ -7,6 +7,7 @@ from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField
 from ..element.annotation import Contours
 from ..element.raster import Matrix
+from ..element.tabular import ItemTable
 
 
 class chain(ElementOperation):
