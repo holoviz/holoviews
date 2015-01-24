@@ -114,13 +114,11 @@ class CurvePlot(Plot):
         self.xvalues = x_values
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, lbrt=None):
         curveview = self._map.last
 
-        self.ax = self._init_axis(axis)
-
         # Create xticks and reorder data if cyclic
-        xvals = curveview.data[:, 0]
+        xticks = None
         if self.autotick:
             xticks = None
         elif self.cyclic_range is not None:
@@ -164,11 +162,8 @@ class ScatterPlot(CurvePlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 's', 'visible']
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, lbrt=None):
         scatterview = self._map.last
-
-        self.ax = self._init_axis(axis)
-
         # Create line segments and apply style
         style = self.settings.closest(scatterview, 'style')[self.cyclic_index]
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
@@ -233,9 +228,6 @@ class HistogramPlot(Plot):
 
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist, lbrt)
-
-        # Process and apply axis settings
-        self.ax = self._init_axis(axis)
 
         if self.orientation == 'vertical':
             self.offset_linefn = self.ax.axvline
@@ -505,10 +497,8 @@ class PointPlot(Plot):
                   'linewidth', 'marker', 's', 'visible',
                   'cmap', 'vmin', 'vmax']
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, lbrt=None):
         points = self._map.last
-
-        self.ax = self._init_axis(axis)
 
         values = points.data.shape[1]>=3
         xs = points.data[:, 0] if len(points.data) else []
@@ -640,10 +630,8 @@ class VectorFieldPlot(Plot):
         return  distances.min()
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, lbrt=None):
         vfield = self._map.last
-        self.ax = self._init_axis(axis)
-
         colorized = self.color_dim is not None
         kwargs = self.settings.closest(vfield, 'style')[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)

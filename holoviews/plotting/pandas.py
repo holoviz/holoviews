@@ -60,11 +60,10 @@ class DFrameViewPlot(Plot):
             self.plot_type = self._map.last.plot_type
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self):
         dfview = self._map.last
-        self._validate(dfview, axis)
+        self._validate(dfview)
 
-        self.ax = self._init_axis(axis)
         style = self.settings.closest(dfview, 'style')[self.cyclic_index]
         self.style = self._process_style(style)
 
@@ -72,7 +71,7 @@ class DFrameViewPlot(Plot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def _process_style(self, styles):
@@ -90,8 +89,8 @@ class DFrameViewPlot(Plot):
         return styles
 
 
-    def _validate(self, dfview, axis):
-        composed = axis is not None
+    def _validate(self, dfview):
+        composed = self.ax is not None
 
         if composed and dfview.ndims > 1 and self.plot_type in ['hist']:
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)

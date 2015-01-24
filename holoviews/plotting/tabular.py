@@ -61,9 +61,8 @@ class TablePlot(Plot):
             return formatted
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, lbrt=None):
         tableview = self._map.last
-        self.ax = self._init_axis(axis)
 
         self.ax.set_axis_off()
         size_factor = (1.0 - 2*self.border)

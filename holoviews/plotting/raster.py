@@ -21,9 +21,7 @@ class MatrixPlot(Plot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin', 'clims']
 
-    def __call__(self, axis=None, lbrt=None):
-
-        self.ax = self._init_axis(axis)
+    def __call__(self):
         view = self._map.last
 
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
@@ -129,9 +127,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
     def __init__(self, grid, **params):
         self.layout = params.pop('layout', None)
-        self.grid = grid.clone()
-        for k, vmap in grid.data.items():
-            self.grid[k] = self._check_map(self.grid[k])
+        items = [(k, self._check_map(v)) for k, v in grid.data.items()]
+        self.grid = grid.clone(items)
         Plot.__init__(self, **params)
         self._keys = self.grid.all_keys
         xkeys, ykeys = zip(*self.grid.data.keys())
@@ -139,9 +136,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         self._ykeys = sorted(set(ykeys))
 
 
-    def __call__(self, axis=None):
+    def __call__(self):
         width, height, b_w, b_h, widths, heights = self._compute_borders()
-        self.ax = self._init_axis(axis)
 
         self.handles['projs'] = []
         key = self._keys[-1]
@@ -159,7 +155,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 else:
                     pane = vmap.last.last if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
-                opts = self.settings(pane, 'style').settings[self.cyclic_index]
+                opts = self.settings.closest(pane, 'style')[self.cyclic_index]
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
                 if key not in vmap:
                     plot.set_visible(False)

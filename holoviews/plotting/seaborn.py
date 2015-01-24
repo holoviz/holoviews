@@ -93,22 +93,14 @@ class BivariatePlot(FullRedrawPlot):
                   'ci', 'kind', 'bw', 'kernel', 'cumulative',
                   'shade', 'vertical', 'cmap']
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self):
         kdeview = self._map.last
         self.style = self.settings.closest(kdeview, 'style')[self.cyclic_index]
-
-        # Create xticks and reorder data if cyclic
-
-        if self.joint:
-            if axis is not None:
-                 raise Exception("Joint plots can't be animated or "
-                                 "laid out in a grid.")
-        else:
-            self.ax = self._init_axis(axis)
-
+        if self.joint and self.subplot:
+            raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(kdeview)
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def _update_plot(self, view):
@@ -143,13 +135,9 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'ci', 'n_boot', 'err_kws', 'err_palette',
                   'estimator', 'kwargs']
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, lbrt=None):
         curveview = self._map.last
-
         self.style = self.settings.closest(curveview, 'style')[self.cyclic_index]
-
-        self.ax = self._init_axis(axis)
-
         self._update_plot(curveview)
 
         return self._finalize_axis(self._keys[-1])
@@ -178,14 +166,12 @@ class DistributionPlot(FullRedrawPlot):
                   'hist_kws', 'kde_kws', 'rug_kws',
                   'fit_kws', 'color']
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self):
         distview = self._map.last
         self.style = self.settings.closest(distview, 'style')[self.cyclic_index]
-        self.ax = self._init_axis(axis)
-
         self._update_plot(distview)
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def _update_plot(self, view):
@@ -247,17 +233,15 @@ class SNSFramePlot(DFrameViewPlot):
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
     def __init__(self, view, **params):
-        super(SNSFramePlot, self).__init__(view, **params)
         if self.plot_type in ['pairgrid', 'pairplot', 'facetgrid']:
             self._create_fig = False
+        super(SNSFramePlot, self).__init__(view, **params)
+
 
 
     def __call__(self, axis=None, lbrt=None):
         dfview = self._map.last
-        self._validate(dfview, axis)
-
-        if self.plot_type not in ['pairplot']:
-            self.ax = self._init_axis(axis)
+        self._validate(dfview)
 
         # Process styles
         style = self.style = self.settings.closest(dfview, 'style')[self.cyclic_index]
@@ -277,12 +261,10 @@ class SNSFramePlot(DFrameViewPlot):
         return styles
 
 
-    def _validate(self, dfview, axis):
+    def _validate(self, dfview):
         super(SNSFramePlot, self)._validate(dfview, axis)
-
-        composed = axis is not None
         multi_dim = dfview.ndims > 1
-        if composed and multi_dim and self.plot_type == 'lmplot':
+        if self.subplot and multi_dim and self.plot_type == 'lmplot':
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)
 
