@@ -198,8 +198,6 @@ class MultiDimensionalMapping(Dimensioned):
         return self.clone(items, key_dimensions=dimensions, **kwargs)
 
 
-    def copy(self):
-        return self.clone(list(self.items()))
 
 
     def dframe(self):
@@ -296,15 +294,6 @@ class MultiDimensionalMapping(Dimensioned):
 
     def __str__(self):
         return repr(self)
-
-
-    def key_items(self, key):
-        """
-        Returns a dictionary of dimension and key values.
-        """
-        if not isinstance(key, (tuple, list)): key = (key,)
-        return dict(zip(self._cached_index_names, key))
-
 
     @property
     def last(self):
