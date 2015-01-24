@@ -18,12 +18,8 @@ class MatrixPlot(Plot):
     show_values = param.Boolean(default=True, doc="""
         Whether to annotate the values when displaying a HeatMap.""")
 
-    style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
-                                     'visible', 'filterrad', 'origin', 'clims'],
-                            constant=True, doc="""
-        The style options for MatrixPlot are a subset of those used
-        by matplotlib's imshow command. If supplied, the clim option
-        will be ignored as it is computed from the input Element.""")
+    style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
+                  'filterrad', 'origin', 'clims']
 
     def __call__(self, axis=None, lbrt=None):
 
@@ -128,12 +124,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
     show_title = param.Boolean(default=True)
 
-    style_opts = param.List(default=['alpha', 'cmap', 'interpolation',
-                                     'visible', 'filterrad', 'origin'],
-                            constant=True, doc="""
-       The style options for MatrixGridPlot match those of
-       matplotlib's imshow command.""")
-
+    style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
+                  'filterrad', 'origin']
 
     def __init__(self, grid, **params):
         self.layout = params.pop('layout', None)

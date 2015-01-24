@@ -73,10 +73,10 @@ class Plot(param.Parameterized):
     size = param.NumericTuple(default=(4, 4), doc="""
         The matplotlib figure size in inches.""")
 
-    style_opts = param.List(default=[], constant=True, doc="""
-        A list of matplotlib keyword arguments that may be supplied via a
-        style options object. Each subclass should override this
-        parameter to list every option that works correctly.""")
+    # A list of matplotlib keyword arguments that may be supplied via a
+    # style options object. Each subclass should override this
+    # parameter to list every option that works correctly.
+    style_opts = []
 
     # A mapping from ViewableElement types to their corresponding plot types
     defaults = {}
@@ -324,10 +324,6 @@ class GridPlot(Plot):
         Legends add to much clutter in a grid and are disabled by default.""")
 
     show_title = param.Boolean(default=False)
-
-    style_opts = param.List(default=[], constant=True, doc="""
-        GridPlot renders groups of DataLayers which individually have
-        style options but GridPlot itself does not.""")
 
     def __init__(self, grid, **params):
         if not isinstance(grid, AxisLayout):
@@ -722,10 +718,6 @@ class LayoutPlot(Plot):
     displays the elements in a cartesian grid in scanline order.
     """
 
-    style_opts = param.List(default=[], constant=True, doc="""
-      LayoutPlot renders a group of views which individually have
-      style options but LayoutPlot itself does not.""")
-
     horizontal_spacing = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
@@ -847,12 +839,6 @@ class OverlayPlot(Plot):
     OverlayPlot supports processing of channel operations on Overlays
     across maps.
     """
-
-    style_opts = param.List(default=[], constant=True, doc="""
-     OverlayPlot renders layers which individually have style and plot
-     options but OverlayPlot itself does not.""")
-
-    _abstract = True
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)

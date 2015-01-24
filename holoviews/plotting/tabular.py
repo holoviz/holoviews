@@ -39,9 +39,7 @@ class TablePlot(Plot):
                                                                family='monospace')},
        doc="""The font style used for heading labels used for emphasis.""")
 
-    style_opts = param.List(default=[], constant=True, doc="""
-     TablePlot has specialized options which are controlled via plot
-     options instead of matplotlib options.""")
+    style_opts = ['alpha', 'sketch_params']
 
     # Disable computing plot bounds from data.
     apply_databounds = False

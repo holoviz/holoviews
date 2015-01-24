@@ -53,16 +53,11 @@ class RegressionPlot(FullRedrawPlot):
     to the replot function can be supplied via the opts magic.
     """
 
-    style_opts = param.List(default=['x_estimator', 'x_bins', 'x_ci',
-                                     'scatter', 'fit_reg', 'color',
-                                     'n_boot', 'order', 'logistic',
-                                     'lowess', 'robust', 'truncate',
-                                     'scatter_kws', 'line_kws', 'ci',
-                                     'dropna', 'x_jitter', 'y_jitter',
-                                     'x_partial', 'y_partial'],
-                            constant=True, doc="""
-       The style options for CurvePlot match those of matplotlib's
-       LineCollection object.""")
+    style_opts = ['x_estimator', 'x_bins', 'x_ci', 'scatter',
+                  'fit_reg', 'color', 'n_boot', 'order',
+                  'logistic', 'lowess', 'robust', 'truncate',
+                  'scatter_kws', 'line_kws', 'ci', 'dropna',
+                  'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
     def __call__(self, axis=None, lbrt=None):
         self.ax = self._init_axis(axis)
@@ -94,17 +89,13 @@ class BivariatePlot(FullRedrawPlot):
         distributions along each axis. Does not animate or compose
         when enabled.""")
 
-    style_opts = param.List(default=['color', 'alpha', 'err_style',
-                                     'interpolate', 'ci', 'kind',
-                                     'bw', 'kernel', 'cumulative',
-                                     'shade', 'vertical', 'cmap'],
-                            constant=True, doc="""
-       The style options for BivariatePlot match those of seaborns
-       kdeplot.""")
+    style_opts = ['color', 'alpha', 'err_style', 'interpolate',
+                  'ci', 'kind', 'bw', 'kernel', 'cumulative',
+                  'shade', 'vertical', 'cmap']
 
     def __call__(self, axis=None, lbrt=None):
         kdeview = self._map.last
-        self.style = Element.options.style(kdeview)[self.cyclic_index]
+        self.style = self.settings.closest(kdeview, 'style')[self.cyclic_index]
 
         # Create xticks and reorder data if cyclic
         if lbrt is None:
@@ -151,13 +142,9 @@ class TimeSeriesPlot(FullRedrawPlot):
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
-    style_opts = param.List(default=['color', 'alpha', 'err_style',
-                                     'interpolate', 'ci', 'n_boot',
-                                     'err_kws', 'err_palette',
-                                     'estimator', 'kwargs'],
-                            constant=True, doc="""
-       The style options for TimeSeriesPlot match those of seaborns
-       tsplot.""")
+    style_opts = ['color', 'alpha', 'err_style', 'interpolate',
+                  'ci', 'n_boot', 'err_kws', 'err_palette',
+                  'estimator', 'kwargs']
 
     def __call__(self, axis=None, lbrt=None):
         curveview = self._map.last
@@ -193,12 +180,9 @@ class DistributionPlot(FullRedrawPlot):
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")
 
-    style_opts = param.List(default=['bins', 'hist', 'kde', 'rug',
-                                     'fit', 'hist_kws', 'kde_kws',
-                                     'rug_kws', 'fit_kws', 'color'],
-                            constant=True, doc="""
-       The style options for CurvePlot match those of matplotlib's
-       LineCollection object.""")
+    style_opts = ['bins', 'hist', 'kde', 'rug', 'fit',
+                  'hist_kws', 'kde_kws', 'rug_kws',
+                  'fit_kws', 'color']
 
     def __call__(self, axis=None, lbrt=None):
         distview = self._map.last

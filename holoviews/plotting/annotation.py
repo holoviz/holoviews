@@ -19,15 +19,9 @@ class AnnotationPlot(Plot):
     Annotations may only be used as part of Overlays.
     """
 
-    style_opts = param.List(default=['alpha', 'color', 'edgecolors',
-                                     'facecolors', 'linewidth',
-                                     'linestyle', 'rotation', 'family',
-                                     'weight', 'fontsize', 'visible',
-                                     'edgecolor'],
-                            constant=True, doc="""
-     Box annotations, hlines and vlines and lines all accept
-     matplotlib line style options. Arrow annotations also accept
-     additional text options.""")
+    style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
+                  'linewidth', 'linestyle', 'rotation', 'family',
+                  'weight', 'fontsize', 'visible', 'edgecolor']
 
     def __init__(self, annotation, **params):
         self._annotation = annotation
@@ -148,11 +142,7 @@ class AnnotationPlot(Plot):
 
 class ContourPlot(Plot):
 
-    style_opts = param.List(default=['alpha', 'color', 'linestyle',
-                                     'linewidth', 'visible'],
-                            constant=True, doc="""
-        The style options for ContourPlot match those of matplotlib's
-        LineCollection class.""")
+    style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 
     def __init__(self, *args, **params):
         self.aspect = 'equal'

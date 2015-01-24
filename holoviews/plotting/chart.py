@@ -45,10 +45,7 @@ class CurvePlot(Plot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = param.List(default=['alpha', 'color', 'visible'],
-                            constant=True, doc="""
-        The style options for CurvePlot match those of matplotlib's
-        LineCollection object.""")
+    style_opts = ['alpha', 'color', 'visible', 'linewidth']
 
     def __init__(self, curves, **params):
         super(CurvePlot, self).__init__(curves, **params)
@@ -164,11 +161,8 @@ class ScatterPlot(CurvePlot):
     x value to make the plots easier to interpret.
     """
 
-    style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
-                                     'linewidth', 'marker', 's', 'visible'],
-                            constant=True, doc="""
-       The style options for ScatterPlot match those of matplotlib's
-       PolyCollection object.""")
+    style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
+                  'linewidth', 'marker', 's', 'visible']
 
     def __call__(self, axis=None, lbrt=None):
         scatterview = self._map.last
@@ -207,13 +201,6 @@ class HistogramPlot(Plot):
     animation.
     """
 
-    style_opts = param.List(default=['alpha', 'color', 'align',
-                                     'visible', 'edgecolor', 'log',
-                                     'ecolor', 'capsize', 'error_kw',
-                                     'hatch'], constant=True, doc="""
-     The style options for HistogramPlot match those of
-     matplotlib's bar command.""")
-
     num_ticks = param.Integer(default=5, doc="""
         If colorbar is enabled the number of labels will be overwritten.""")
 
@@ -222,6 +209,10 @@ class HistogramPlot(Plot):
 
     show_grid = param.Boolean(default=False, doc="""
         Whether to overlay a grid on the axis.""")
+
+    style_opts = ['alpha', 'color', 'align', 'visible',
+                  'edgecolor', 'log', 'ecolor', 'capsize',
+                  'error_kw', 'hatch', 'fc', 'ec']
 
     def __init__(self, histograms, **params):
         self.center = False
@@ -510,12 +501,9 @@ class PointPlot(Plot):
       allows for linear scaling of the area and a factor of 4 linear
       scaling of the point width.""")
 
-    style_opts = param.List(default=['alpha', 'color', 'edgecolors', 'facecolors',
-                                     'linewidth', 'marker', 's', 'visible',
-                                     'cmap', 'vmin', 'vmax'],
-                            constant=True, doc="""
-     The style options for PointPlot match those of matplotlib's
-     scatter plot command.""")
+    style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
+                  'linewidth', 'marker', 's', 'visible',
+                  'cmap', 'vmin', 'vmax']
 
     def __call__(self, axis=None, lbrt=None):
         points = self._map.last
@@ -582,15 +570,6 @@ class VectorFieldPlot(Plot):
     arrow shown is no bigger than the smallest sampling distance.
     """
 
-    style_opts = param.List(default=['alpha', 'color', 'edgecolors',
-                                     'facecolors', 'linewidth',
-                                     'marker', 's', 'visible', 'cmap',
-                                     'scale', 'headlength',
-                                     'headaxislength', 'pivot'], constant=True, doc="""
-       The style options for PointPlot matching those of matplotlib's
-       quiver plot command.""")
-
-
     color_dim = param.ObjectSelector(default=None,
                                      objects=['angle', 'magnitude', None], doc="""
        Which of the polar vector components is mapped to the color
@@ -609,6 +588,10 @@ class VectorFieldPlot(Plot):
        Whether to normalize vector magnitudes automatically. If False,
        it will be assumed that the lengths have already been correctly
        normalized.""")
+
+    style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
+                  'linewidth', 'marker', 's', 'visible', 'cmap',
+                  'scale', 'headlength', 'headaxislength', 'pivot']
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
