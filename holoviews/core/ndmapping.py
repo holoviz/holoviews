@@ -170,10 +170,11 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _split_dim_keys(self, dimensions):
         """
-        Split the NdMappings keys into two groups given a list of
-        dimensions to split out.
+        Split the dimensions and keys of the mapping into two groups
+        based on the supplied list of dimensions. Returns a 4-tuple
+        consisting of the omitted dimensions and keys, followed by
+        the matching dimensions and keys.
         """
-
         # Find dimension indices
         first_dims = [d for d in self.key_dimensions if d.name not in dimensions]
         first_inds = [self.get_dimension_index(d.name) for d in first_dims]
