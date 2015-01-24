@@ -128,7 +128,8 @@ class LabelledData(param.Parameterized):
     """
     LabelledData is a mix-in class designed to introduce the value and
     label parameters (and corresponding methods) to any class
-    containing data.
+    containing data. This class assumes that the core data contents
+    will be held in the attribute called 'data'.
 
     Used together, value and label is designed to allow a simple and
     flexible means of addressing data. For instance, if you are
