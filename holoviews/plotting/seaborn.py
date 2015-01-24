@@ -98,9 +98,6 @@ class BivariatePlot(FullRedrawPlot):
         self.style = self.settings.closest(kdeview, 'style')[self.cyclic_index]
 
         # Create xticks and reorder data if cyclic
-        if lbrt is None:
-            lbrt = kdeview.lbrt if self.rescale_individually else\
-                   self._map.lbrt
 
         if self.joint:
             if axis is not None:
@@ -149,16 +146,13 @@ class TimeSeriesPlot(FullRedrawPlot):
     def __call__(self, axis=None, lbrt=None):
         curveview = self._map.last
 
-        if lbrt is None:
-            lbrt = None if self.rescale_individually else\
-                   self._map.lbrt
         self.style = self.settings.closest(curveview, 'style')[self.cyclic_index]
 
         self.ax = self._init_axis(axis)
 
         self._update_plot(curveview)
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def _update_plot(self, view):
