@@ -2,6 +2,7 @@ import os
 
 import param
 
+from ..core.settings import Cycle, Settings
 from . import seaborn # pyflakes:ignore (API import)
 from . import pandas # pyflakes:ignore (API import)
 from .annotation import * # pyflakes:ignore (API import)
@@ -70,6 +71,22 @@ class PlotSaver(param.ParameterizedFunction):
             plot().savefig(filename=self.p.filename, format=file_format,
                            **self.p.extra_keywords())
 
+
+Plot.register_settings()
+Plot.settings.Contours = Settings(key='style', color='k')
+Plot.settings.Matrix = Settings(key='style', cmap='gray', interpolation='nearest')
+Plot.settings.Raster = Settings(key='style', cmap='jet', interpolation='nearest')
+Plot.settings.HeatMap = Settings(key='style', cmap='jet', interpolation='nearest')
+Plot.settings.GridLayout = Settings(key='style', **{'font.size': 10, 'axes.labelsize': 'small',
+                                                 'axes.titlesize': 'small'})
+# Color cycles can be removed once default style set and test data updated
+Plot.settings.Curve = Settings(key='style', color=Cycle(), linewidth=2)
+Plot.settings.Scatter = Settings(key='style', color=Cycle(), linewidth=2)
+Plot.settings.Histogram = Settings(key='style', ec='k', fc='w')
+Plot.settings.Points = Settings(key='style', color='r', marker='x')
+
+# Defining the most common style options for holoviews
+GrayNearest = Settings(key='style', cmap='gray', interpolation='nearest')
 
 def public(obj):
     if not isinstance(obj, type): return False
