@@ -432,10 +432,10 @@ class MultiDimensionalMapping(Dimensioned):
             return default
 
 
-    def pop(self, *args):
-        if len(args) > 0 and not isinstance(args[0], tuple):
-            args[0] = (args[0],)
-        return self.data.pop(*args)
+    def pop(self, key, default=None):
+        "Standard pop semantics for all mapping types"
+        if not isinstance(key, tuple): key = (key,)
+        return self.data.pop(key, default)
 
 
     def __getitem__(self, key):
