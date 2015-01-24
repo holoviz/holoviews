@@ -219,34 +219,60 @@ class LabelledData(param.Parameterized):
 
 class Dimensioned(param.Parameterized):
     """
-    Abstract baseclass implementing common methods for objects with
-    associated dimensions. Dimensioned support three dimension groups:
+    Dimensioned is a base class that allows the contents of a class to
+    be associated with dimensions. The contents that may be associated
+    with dimensions are partitioned into one of three types
 
-    * key_dimensions: The Dimensioned objects should implement
-                        indexing and slicing for these dimensions.
+    * key_dimensions: These are the dimensions that can be indexed via
+                      the __getitem__ method. Dimension objects
+                      supporting key dimensions must support indexing
+                      over these dimensions and may also support
+                      slicing. This list ordering of dimensions
+                      describes the positional components of each
+                      multi-dimensional indexing operation.
 
-    * value_dimensions: These dimensions correspond to any data
-                        held on the Dimensioned object.
+                      For instance, if the key dimension names are
+                      'weight' followed by 'height' for Dimensioned
+                      object 'obj', then obj[80,175] indexes a weight
+                      of 80 and height of 175.
 
-    * deep_dimensions:  These are dynamically computed and
-                        correspond to any dimensions on items
-                        held on this object. Objects that support
-                        this should enable the _deep_indexable
-                        flag.
+    * value_dimensions: These dimensions correspond to any data held
+                        on the Dimensioned object not in the key
+                        dimensions. Indexing by value dimension is
+                        supported by dimension name (when there are
+                        multiple possible value dimensions) ; no
+                        slicing semantics is supported and all the
+                        data associated with that dimension will be
+                        returned at once.
 
-    Dimensioned also provides convenient methods to find the
-    range and type of values along a particular Dimension.
-    For ranges to work appropriately subclasses should define
-    dimension_values methods, which return an array of all the
-    values along the supplied dimension.
+    * deep_dimensions: These are dynamically computed dimensions that
+                       belong to other Dimensioned objects that are
+                       nested in the data. Objects that support this
+                       should enable the _deep_indexable flag. Note
+                       that the nested Dimensioned objects are not
+                       described by value_dimensions.
+
+    Dimensioned class support generalized methods for finding the
+    range and type of values along a particular Dimension. The range
+    method relies on the appropriate implementation of the
+    dimension_values methods on subclasses.
+
+    The index of an arbitrary dimension is its positional index in the
+    list of all dimensions, starting with the key dimensions, followed
+    by the value dimensions and ending with the deep dimensions.
     """
 
     key_dimensions = param.List(bounds=(0, None), constant=True, doc="""
-       The dimensions the values are indexed by.""")
+       The list of dimensions that may be used in indexing (and
+       potential slicing) semantics. The order of the dimensions
+       listed here determines the semantics of each component of a
+       multi-dimensional indexing operation.""")
 
     value_dimensions = param.List(bounds=(0, None), constant=True, doc="""
-       The dimensions the values are indexed by. Subclasses should
-       restrict bounds to appropriate number of dimensions.""")
+       The list of dimensions used to describe the components of the
+       data. If multiple value dimensions are supplied, a particular
+       value dimension may be indexed by name after the key
+       dimensions.""")
 
     __abstract = True
 
@@ -270,6 +296,7 @@ class Dimensioned(param.Parameterized):
 
     @property
     def deep_dimensions(self):
+        "The list of deep dimensions"
         if self._deep_indexable:
             return self.values()[0].dimensions
         else:
@@ -277,14 +304,13 @@ class Dimensioned(param.Parameterized):
 
     @property
     def dimensions(self):
+        "Returns all the defined dimensions including deep dimensions"
         return [dim for group in self._dim_groups
                 for dim in getattr(self, group)]
 
 
     def get_dimension(self, dimension, default=None):
-        """
-        Allows querying for a Dimension by name or index.
-        """
+        "Access a Dimension object by name or index."
         all_dims = self.dimensions
         if isinstance(dimension, int):
             return all_dims[dimension]
@@ -294,7 +320,7 @@ class Dimensioned(param.Parameterized):
 
     def get_dimension_index(self, dim):
         """
-        Returns the tuple index of the requested dimension.
+        Returns the index of the requested dimension.
         """
         if isinstance(dim, int):
             if dim < len(self.dimensions):
