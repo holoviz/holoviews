@@ -163,7 +163,7 @@ def map_display(vmap, size=256):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_view_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(Element.options.plotting(vmap).opts, size=get_plot_size())
+    opts = dict(Plot.settings.closest(vmap.last, 'plot').settings, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
@@ -190,7 +190,7 @@ def layout_display(layout, size=256):
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(Element.options.plotting(layout).opts, size=grid_size)
+    opts = dict(Plot.settings.closest(layout, 'plot').settings, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
 
     if isinstance(layout, LayoutTree):
@@ -249,7 +249,7 @@ def view_display(view, size=256):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
-    opts = dict(Element.options.plotting(view).opts, size=get_plot_size())
+    opts = dict(Plot.settings.closest(view, 'plot').settings, size=get_plot_size())
     fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 

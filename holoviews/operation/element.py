@@ -3,7 +3,6 @@ import numpy as np
 import param
 
 from ..core import Dimension, ElementOperation, CompositeOverlay, NdOverlay
-from ..core.options import options
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField
 from ..element.annotation import Contours
@@ -197,13 +196,6 @@ class histogram(ElementOperation):
         hist_view = Histogram(hist, edges, key_dimensions=[view.get_dimension(selected_dim)],
                               label=view.label)
 
-        # Set plot and style options
-        style_prefix = self.p.style_prefix if self.p.style_prefix else \
-            'Custom[<' + view.name + '>]_'
-        opts_name = style_prefix + hist_view.label.replace(' ', '_')
-        hist_view.style = opts_name
-        options[opts_name] = options.plotting(view)(
-            **dict(rescale_individually=self.p.individually))
         return [(view << hist_view) if self.p.adjoin else hist_view]
 
 

@@ -74,7 +74,7 @@ class RegressionPlot(FullRedrawPlot):
     def _update_plot(self, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
                     ax=self.ax, label=view.label,
-                    **Element.options.style(view)[self.cyclic_index])
+                    **self.settings.closest(view, 'style')[self.cyclic_index])
 
 
 
@@ -165,7 +165,7 @@ class TimeSeriesPlot(FullRedrawPlot):
         if lbrt is None:
             lbrt = None if self.rescale_individually else\
                    self._map.lbrt
-        self.style = Element.options.style(curveview)[self.cyclic_index]
+        self.style = self.settings.closest(curveview, 'style')[self.cyclic_index]
 
         self.ax = self._init_axis(axis)
 
@@ -202,7 +202,7 @@ class DistributionPlot(FullRedrawPlot):
 
     def __call__(self, axis=None, lbrt=None):
         distview = self._map.last
-        self.style = Element.options.style(distview)[self.cyclic_index]
+        self.style = self.settings.closest(distview, 'style')[self.cyclic_index]
         self.ax = self._init_axis(axis)
 
         self._update_plot(distview)
@@ -282,7 +282,8 @@ class SNSFramePlot(DFrameViewPlot):
             self.ax = self._init_axis(axis)
 
         # Process styles
-        self.style = self._process_style(Element.options.style(dfview)[self.cyclic_index])
+        style = self.style = self.settings.closest(dfview, 'style')[self.cyclic_index]
+        self.style = self._process_style(style)
 
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():

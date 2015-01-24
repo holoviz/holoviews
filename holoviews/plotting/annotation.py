@@ -89,7 +89,7 @@ class AnnotationPlot(Plot):
         axis, return a list of handles.
         """
         handles = []
-        opts = Element.options.style(annotation).opts
+        opts = self.settings.closest(annotation, 'style').settings
         color = opts.get('color', 'k')
 
         for spec in annotation.data:
@@ -163,8 +163,8 @@ class ContourPlot(Plot):
         lines = self._map.last
         self.ax = self._init_axis(axis)
 
-        line_segments = LineCollection(lines.data, zorder=self.zorder,
-                                       **Element.options.style(lines)[self.cyclic_index])
+        style = self.settings.closest(lines, 'style')[self.cyclic_index]
+        line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
         self.ax.add_collection(line_segments)
 

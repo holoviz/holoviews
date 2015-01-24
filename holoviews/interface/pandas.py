@@ -22,7 +22,6 @@ import param
 
 from ..core import Dimension, ViewableElement, NdMapping, NdOverlay,\
  NdLayout, AxisLayout, Element, HoloMap
-from ..core.options import options, PlotOpts
 from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap
 
 
@@ -255,6 +254,3 @@ class DFrame(DataFrameView):
                          value_dimensions=valdims, value=self.value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
         return vmap if map_dims else vmap.last
-
-
-options.DFrameView = PlotOpts()

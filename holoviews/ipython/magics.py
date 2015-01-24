@@ -11,11 +11,10 @@ except:
 
 from ..core import NdOverlay, Element, HoloMap,\
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
-from ..core.options import PlotOpts, StyleOpts, ChannelOpts
 from ..plotting import Plot
 
 
-channel_ops = ChannelOpts.operations
+#channel_ops = ChannelOpts.operations
 
 #========#
 # Magics #
@@ -697,8 +696,8 @@ class OptsMagic(Magics):
 def load_magics(ip):
 
     ip.register_magics(ViewMagic)
-    ip.register_magics(OptsMagic)
-    ip.register_magics(ChannelMagic)
+    #ip.register_magics(OptsMagic)
+    #ip.register_magics(ChannelMagic)
 
     # Configuring tab completion
     ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')

@@ -16,7 +16,6 @@ from .dimension import Dimension, DimensionedData, ViewableElement
 from .ndmapping import NdMapping
 from .layout import Composable, LayoutTree
 from .ndmapping import UniformNdMapping
-from .options import channels
 
 
 class Overlayable(object):
@@ -41,8 +40,6 @@ class CompositeOverlay(ViewableElement, Composable):
     """
     CompositeOverlay provides a common baseclass for Overlay classes.
     """
-
-    channels = channels
 
     @property
     def labels(self):

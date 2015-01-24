@@ -11,9 +11,8 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned, DimensionedData, ViewableElement, LabelledData
+from .dimension import LabelledData, Dimension, Dimensioned, DimensionedData, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
-from .options import options
 from .tree import AttrTree
 from .util import int_to_roman
 
@@ -240,25 +239,6 @@ class NdLayout(UniformNdMapping):
                 item = (k, v)
             last_items.append(item)
         return self.clone(last_items)
-
-
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this element.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        matches = options.fuzzy_match_keys(class_name)
-        return matches[0] if matches else class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
 
 
 

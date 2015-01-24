@@ -11,7 +11,6 @@ import numpy as np
 import param
 
 from ..core import Dimension, NdMapping, Element2D, HoloMap
-from ..core.options import options, StyleOpts, Cycle
 from ..element import Chart, Scatter, Curve
 from .pandas import DFrame as PandasDFrame
 
@@ -200,10 +199,3 @@ class DFrame(PandasDFrame):
             return min(ydata), max(ydata)
         else:
             return None
-
-
-
-options.TimeSeries = StyleOpts(color=Cycle())
-options.Bivariate = StyleOpts(cmap=Cycle(['Blues', 'Oranges', 'PuBu']))
-options.Distribution = StyleOpts(color=Cycle())
-options.Regression = StyleOpts(color=Cycle())

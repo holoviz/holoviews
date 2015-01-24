@@ -34,7 +34,7 @@ class MatrixPlot(Plot):
             else self._map.last.lbrt
         xticks, yticks = self._compute_ticks(view)
 
-        opts = Element.options.style(view)[self.cyclic_index]
+        opts = self.settings.closest(view, 'style')[self.cyclic_index]
         data = view.data
         clims = opts.pop('clims', None)
         if view.depth != 1:
@@ -167,7 +167,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 else:
                     pane = vmap.last.last if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
-                opts = Element.options.style(pane).opts
+                opts = self.settings(pane, 'style').settings[self.cyclic_index]
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
                 if key not in vmap:
                     plot.set_visible(False)

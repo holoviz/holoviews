@@ -8,7 +8,6 @@ import param
 from .dimension import Dimension, ViewableElement
 from .layout import Composable, LayoutTree, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping
-from .options import options
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .util import find_minmax
 
@@ -22,8 +21,6 @@ class Element(ViewableElement, Composable, Overlayable):
     """
 
     value = param.String(default='Element')
-
-    options = options
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         from ..operation import histogram
@@ -70,30 +67,6 @@ class Element(ViewableElement, Composable, Overlayable):
         raise NotImplementedError
 
 
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this element. If a style name is not set and but a label is
-        assigned, then the closest existing style name is returned.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        if self.label:
-            style_str = '_'.join([self.label, class_name])
-            matches = self.options.fuzzy_match_keys(style_str)
-            return matches[0] if matches else class_name
-        else:
-            return class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
-
-
     def table(self, **kwargs):
         """
         This method transforms any ViewableElement type into a Table
@@ -120,9 +93,6 @@ class Element(ViewableElement, Composable, Overlayable):
         plotting options as well.
         """
         obj_dict = self.__dict__.copy()
-        obj_dict['style_objects'] = {}
-        for match in self.options.fuzzy_match_keys(self.style):
-            obj_dict['style_objects'][match] = self.options[match]
         return obj_dict
 
 
@@ -131,9 +101,6 @@ class Element(ViewableElement, Composable, Overlayable):
         When unpickled, restore the saved style and plotting options
         to ViewableElement.options.
         """
-        for name, match in d.pop('style_objects').items():
-            for style in match:
-                self.options[name] = style
         self.__dict__.update(d)
 
 
@@ -802,25 +769,6 @@ class AxisLayout(UniformNdMapping):
             grid_dimensions.append((0, 1))
         xdim, ydim = grid_dimensions
         return (xdim[0], ydim[0], xdim[1], ydim[1])
-
-
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this element.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        matches = options.fuzzy_match_keys(class_name)
-        return matches[0] if matches else class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
 
 
     def dframe(self):

@@ -11,6 +11,7 @@ from matplotlib.font_manager import FontProperties
 import param
 from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, Element3D
+from ..core.settings import Settings, SettingsTree
 from ..element.raster import Raster
 
 
@@ -94,6 +95,21 @@ class Plot(param.Parameterized):
         self._create_fig = True
         # List of handles to matplotlib objects for animation update
         self.handles = {}
+
+
+    @classmethod
+    def register_settings(cls):
+        path_items = {}
+        for view_class, plot in Plot.defaults.items():
+            name = view_class.__name__
+            plot_params = plot.params()
+            style_opts = plot.style_opts
+            opt_groups = {'plot': Settings(allowed_keywords=plot_params.keys())}
+            if style_opts:
+                opt_groups.update({'style': Settings(allowed_keywords=style_opts)})
+            path_items[name] = opt_groups
+        cls.settings = SettingsTree(sorted(path_items.items()),
+                                    groups={'style': Settings(), 'plot': Settings()})
 
 
     def _check_map(self, view, element_type=Element):
@@ -330,7 +346,8 @@ class GridPlot(Plot):
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots = self._create_subplots()
 
-        extra_opts = ViewableElement.options.plotting(self.grid).opts
+
+        extra_opts = self.settings.closest(self.grid, 'plot').settings
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(params, **extra_opts))
@@ -344,7 +361,7 @@ class GridPlot(Plot):
             view = self.grid.data.get(coord, None)
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = Element.options.plotting(view).opts
+                opts = self.settings.closest(view, 'plot').settings
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title)
                 subplot = Plot.defaults[vtype](view, **opts)
@@ -534,7 +551,7 @@ class AdjointLayoutPlot(Plot):
             # Pos will be one of 'main', 'top' or 'right' or None
             view = self.layout.get(pos, None)
             # Customize plotopts depending on position.
-            plotopts = Element.options.plotting(view).opts
+            plotopts = self.settings.closest(view, 'plot').settings
             # Options common for any subplot
             subplot_opts = dict(show_title=False, layout=self.layout)
             override_opts = {}
@@ -797,12 +814,12 @@ class LayoutPlot(Plot):
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
 
+        rcopts = self.settings.closest(self.layout, 'style').settings
         for (r, c) in self.coords:
             layout_plot = self.subplots.get((r, c), None)
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
                        for ind, proj in zip(*self.grid_indices[(r, c)])]
 
-            rcopts = Element.options.style(self.layout).opts
             with matplotlib.rc_context(rcopts):
                 layout_plot(subaxes)
         plt.draw()
@@ -852,7 +869,7 @@ class OverlayPlot(Plot):
 
         for zorder, vmap in enumerate(vmaps):
             cyclic_index, _ = next(style_groups[vmap.style])
-            plotopts = Element.options.plotting(vmap.style).opts
+            plotopts = self.settings.closest(vmap.last, 'plot').settings
             plotype = Plot.defaults[type(vmap.last)]
             subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
                                                     show_legend=self.show_legend, zorder=zorder,

@@ -6,7 +6,6 @@ from .operation import *       # pyflakes:ignore (API import)
 from .overlay import *         # pyflakes:ignore (API import)
 from .sheetcoords import *     # pyflakes:ignore (API import)
 from .tree import *            # pyflakes:ignore (API import)
-from . import options          # pyflakes:ignore (API import)
 
 
 def public(obj):

@@ -1,6 +1,6 @@
 from ..core.operation import ElementOperation, MapOperation
 
-from .channel import * # pyflakes:ignore (API import)
+#from .channel import * # pyflakes:ignore (API import)
 from .element import * # pyflakes:ignore (API import)
 from .map import * # pyflakes:ignore (API import)
 

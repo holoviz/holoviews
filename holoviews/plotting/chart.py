@@ -135,9 +135,10 @@ class CurvePlot(Plot):
             xticks = self._reduce_ticks(xvals)
 
         # Create line segments and apply style
+        style = self.settings.closest(curveview, 'style')[self.cyclic_index]
         line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
                                     zorder=self.zorder, label=curveview.label,
-                                    **Element.options.style(curveview)[self.cyclic_index])[0]
+                                    **style)[0]
 
         self.handles['line_segment'] = line_segment
 
@@ -175,9 +176,10 @@ class ScatterPlot(CurvePlot):
         self.ax = self._init_axis(axis)
 
         # Create line segments and apply style
+        style = self.settings.closest(scatterview, 'style')[self.cyclic_index]
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
                                 zorder=self.zorder, label=scatterview.label,
-                                **Element.options.style(scatterview)[self.cyclic_index])
+                                **style)
 
         self.handles['paths'] = paths
 
@@ -191,9 +193,9 @@ class ScatterPlot(CurvePlot):
     def update_handles(self, view, key, lbrt=None):
         self.handles['paths'].remove()
 
+        style = self.settings.closest(view, 'style')[self.cyclic_index]
         paths = self.ax.scatter(view.data[:, 0], view.data[:, 1],
-                                zorder=self.zorder, label=view.label,
-                                **Element.options.style(view)[self.cyclic_index])
+                                zorder=self.zorder, label=view.label, **style)
 
         self.handles['paths'] = paths
 
@@ -252,7 +254,7 @@ class HistogramPlot(Plot):
             self.plotfn = self.ax.bar
 
         # Plot bars and make any adjustments
-        style = Element.options.style(hist)[self.cyclic_index]
+        style = self.settings.closest(hist, 'style')[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self._keys[-1], bars, lims) # Indexing top
 
@@ -407,7 +409,8 @@ class SideHistogramPlot(HistogramPlot):
         hist = self._map[key]
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
-        individually = Element.options.plotting(main).opts.get('normalize_individually', False)
+        plot_settings = self.settings.closest(main, 'plot').settings
+        individually = plot_settings.get('normalize_individually', False)
 
         hist_dim = hist.get_dimension(0).name
         range_item = main
@@ -435,11 +438,11 @@ class SideHistogramPlot(HistogramPlot):
             main = main.last
         if isinstance(main, CompositeOverlay):
             main = main.values()[0]
-        style = main.style
 
         if isinstance(main, (Raster, Points)):
-            cmap = cm.get_cmap(Element.options.style(style).opts['cmap']) if self.offset else None
-            main_range = Element.options.style(style).opts.get('clims', main_range) if self.offset else None
+            style = self.settings.closest(main, 'style')[self.cyclic_index]
+            cmap = cm.get_cmap(style.get('cmap')) if self.offset else None
+            main_range = style.get('clims', main_range) if self.offset else None
         else:
             cmap = None
 
@@ -524,12 +527,12 @@ class PointPlot(Plot):
         ys = points.data[:, 1] if len(points.data) else []
         cs = points.data[:, 2] if values else None
 
-        kwargs = Element.options.style(points)[cyclic_index]
+        style = self.settings.closest(points, 'style')[self.cyclic_index]
         if values and self.scaling_factor > 1:
-            kwargs['s'] = self._compute_size(cs, kwargs)
+            style['s'] = self._compute_size(cs, style)
         scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
-                                      **({k:v for k,v in dict(kwargs, c=cs).items() if k!='color'}
-                                      if cs is not None else kwargs))
+                                      **({k:v for k,v in dict(style, c=cs).items() if k!='color'}
+                                      if cs is not None else style))
 
         self.ax.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
@@ -552,8 +555,8 @@ class PointPlot(Plot):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
-            opts = Element.options.style(view)[0]
-            values = view.data[:,2]
+            opts = self.settings.closest(view, 'style')[0]
+            values = view.data[:, 2]
             scatter.set_array(values)
             if self.scaling_factor > 1:
                 scatter.set_sizes(self._compute_size(values, opts))
@@ -659,7 +662,7 @@ class VectorFieldPlot(Plot):
         self.ax = self._init_axis(axis)
 
         colorized = self.color_dim is not None
-        kwargs = Element.options.style(vfield)[self.cyclic_index]
+        kwargs = self.settings.closest(vfield, 'style')[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 
