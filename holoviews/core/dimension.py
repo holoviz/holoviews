@@ -303,7 +303,7 @@ class Dimensioned(LabelledData):
     @property
     def deep_dimensions(self):
         "The list of deep dimensions"
-        if self._deep_indexable:
+        if self._deep_indexable and len(self):
             return self.values()[0].dimensions
         else:
             return []
