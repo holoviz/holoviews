@@ -30,8 +30,7 @@ class Dimension(param.Parameterized):
 
     name = param.String(doc="""
         Optional name associated with the Dimension. For instance,
-        'Height' or 'Weight'. Note that the first character of the
-        name is typically capitalized.""")
+        'height' or 'weight'.""")
 
     range = param.Tuple(default=(None, None), doc="""
         Specifies the minimum and maximum allowed values for a
@@ -150,13 +149,15 @@ class LabelledData(param.Parameterized):
 
     value = param.String(default='LabelledData', constant=True, doc="""
        A string describing the type of data contained by the object.
-       By default this should mirror the class name.""")
+       By default this should mirror the class name. The first letter
+       of a value name should always be capitalized.""")
 
     label = param.String(default='', constant=True, doc="""
        Optional label describing the data, typically reflecting where
        or how it was measured. Together with the value parameter,
        label should allow a specific measurement or dataset to be
-       referenced given the class type.""")
+       referenced given the class type. Note that the first letter of
+       a label should always be capitalized.""")
 
 
     def clone(self, data=None, *args, **overrides):
