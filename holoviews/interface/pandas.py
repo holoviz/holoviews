@@ -132,28 +132,28 @@ class DataFrameView(Element):
         return self.data.copy()
 
 
-    def _split_dimensions(self, dimensions, ndmapping_type=NdMapping):
+    def groupby(self, dimensions, container_type=NdMapping):
         invalid_dims = list(set(dimensions) - set(self._cached_index_names))
         if invalid_dims:
             raise Exception('Following dimensions could not be found %s.'
                             % invalid_dims)
 
         index_dims = [self.get_dimension(d) for d in dimensions]
-        ndmapping = ndmapping_type(None, key_dimensions=index_dims)
+        mapping = container_type(None, key_dimensions=index_dims)
         view_dims = set(self._cached_index_names) - set(dimensions)
         view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
-            ndmapping[k] = self.clone(v.drop(dimensions, axis=1),
+            mapping[k] = self.clone(v.drop(dimensions, axis=1),
                                       key_dimensions=view_dims)
-        return ndmapping
+        return mapping
 
 
     def overlay(self, dimensions):
-        return self._split_dimensions(dimensions, NdOverlay)
+        return self.groupby(dimensions, NdOverlay)
 
 
     def layout(self, dimensions=[], cols=4):
-        return self._split_dimensions(dimensions, NdLayout).cols(4)
+        return self.groupby(dimensions, NdLayout).cols(4)
 
 
     def grid(self, dimensions):
@@ -162,14 +162,14 @@ class DataFrameView(Element):
         """
         if len(dimensions) > 2:
             raise Exception('Grids hold a maximum of two dimensions.')
-        return self._split_dimensions(dimensions, AxisLayout)
+        return self.groupby(dimensions, AxisLayout)
 
 
     def viewmap(self, key_dimensions=[]):
         """
         Splits the supplied dimensions out into a HoloMap.
         """
-        return self._split_dimensions(key_dimensions, HoloMap)
+        return self.groupby(key_dimensions, HoloMap)
 
     @property
     def xlabel(self):

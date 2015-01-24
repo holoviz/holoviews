@@ -203,20 +203,12 @@ class MultiDimensionalMapping(Dimensioned):
         self.data = OrderedDict(sorted(self.data.items(), **sortkws))
 
 
-    def _sort_key(self, unordered):
+    def groupby(self, dimensions, container_type=None):
         """
-        Given an unordered list of (dimension, value) pairs returns
-        the sorted key.
-        """
-        dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
-        return tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
-
-
-    def split_dimensions(self, dimensions, map_type=None):
-        """
-        Split the dimensions in the NdMapping across two NdMappings,
-        where the inner mapping is of the same type as the original
-        Map.
+        Splits the mapping into groups by key dimension which are then
+        returned together in a mapping of class container_type. The
+        individual groups are of the same type as the original map
+        type.
         """
         inner_dims = [d for d in dimensions if d in self._cached_index_names]
         deep_dims = [d for d in dimensions
@@ -230,23 +222,25 @@ class MultiDimensionalMapping(Dimensioned):
         self._check_key_type = False # Speed optimization
         own_keys = self.data.keys()
 
-        map_type = map_type if map_type else NdMapping
-        split_data = map_type(key_dimensions=first_dims)
+        container_type = container_type if container_type else NdMapping
+        split_data = container_type(key_dimensions=first_dims)
         split_data._check_key_type = False # Speed optimization
+        dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
+
         for fk in first_keys:  # The first groups keys
             split_data[fk] = self.clone(key_dimensions=second_dims)
             split_data[fk]._check_key_type = False # Speed optimization
             for sk in set(second_keys):  # The second groups keys
                 # Generate a candidate expanded key
-                unordered_dimkeys = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
-                sorted_key = self._sort_key(unordered_dimkeys)
+                unordered = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
+                # Sort back into key dimensions ordering
+                sorted_key = tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
                 if sorted_key in own_keys:  # If the expanded key actually exists...
                     split_data[fk][sk] = self[sorted_key]
             split_data[fk]._check_key_type = True # Speed optimization
         split_data._check_key_type = True # Speed optimization
 
         self._check_key_type = True # Re-enable checks
-
         return split_data
 
 

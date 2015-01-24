@@ -284,7 +284,7 @@ class Table(Element, NdMapping):
         for dim, reduce_fn in reduce_map.items():
             split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
             if len(split_dims) and reduced_table.ndims > 1:
-                split_map = reduced_table.split_dimensions([dim])
+                split_map = reduced_table.groupby([dim])
                 reduced_table = self.clone(None, key_dimensions=split_dims)
                 for k, table in split_map.items():
                     if len(self.value_dimensions) > 1:
@@ -312,7 +312,7 @@ class Table(Element, NdMapping):
         split_dims = [dim for dim in self._cached_index_names
                       if dim not in dimensions]
         if len(dimensions) < self.ndims:
-            return self.split_dimensions(split_dims, map_type=HoloMap)
+            return self.groupby(split_dims, container_type=HoloMap)
         else:
             vmap = HoloMap(key_dimensions=[self.get_dimension(d) for d in dimensions])
             for k, v in self.items():

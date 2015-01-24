@@ -17,7 +17,7 @@ class table_collate(MapOperation):
     def _process(self, vmap):
         collate_dim = self.p.collation_dim
         new_dimensions = [d for d in vmap.key_dimensions if d.name != collate_dim]
-        nested_map = vmap.split_dimensions([collate_dim]) if new_dimensions else {(): vmap}
+        nested_map = vmap.groupby([collate_dim]) if new_dimensions else {(): vmap}
         collate_dim = vmap.get_dimension(collate_dim)
 
         table = vmap.last
