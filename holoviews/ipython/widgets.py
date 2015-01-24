@@ -267,7 +267,8 @@ class NdWidget(param.Parameterized):
                          shape[0]*get_plot_size()[0])
             self.plot = LayoutPlot(view, **dict(size=grid_size))
         else:
-            opts = dict(Element.options.plotting(view).opts, size=get_plot_size())
+            opts = dict(Plot.settings.closest(view, 'plot').settings,
+                        size=get_plot_size())
             self.plot = Plot.defaults[view.type](view, **opts)
             view = [view]
 
