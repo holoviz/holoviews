@@ -10,31 +10,56 @@ import param
 
 
 class Dimension(param.Parameterized):
+    """
+    A Dimension objects are used to specify some important general
+    features that may be associated with a collection of values.
+
+    For instance, a Dimension may specify that a set of numeric values
+    actually correspond to 'Height' (dimension name), in units of
+    meters, and that allowed values must be floats greater than zero.
+
+    In addition, Dimensions can be declared as cyclic, support
+    categorical data using a finite set of allowed, ordered values and
+    support a custom, pretty-printed representation.
+    """
 
     cyclic = param.Boolean(default=False, doc="""
-        Whether the range of this feature is cyclic (wraps around at the high
-        end).""")
+        Whether the range of this feature is cyclic such that the
+        maximum allowed value (defined by the range parameter) is
+        continuous with the minimum allowed value.""")
 
-    name = param.String(default="", doc="Name of the Dimension.")
+    name = param.String(default="", doc="""
+        Optional name associated with the Dimension. For instance,
+        'Height' or 'Weight'. Note that the first character of the
+        name is typically capitalized.""")
 
     range = param.Tuple(default=(None, None), doc="""
-        Lower and upper values for a Dimension.""")
+        Specifies the minimum and maximum allowed values for a
+        Dimension. None is used to represent an unlimited bound.""")
 
     type = param.Parameter(default=None, doc="""
-        Type associated with Dimension values.""")
+        Optional type associated with the Dimension values. The type
+        may be an inbuilt constructor (such as int, str, float) or a
+        custom class object.""")
 
-    unit = param.String(default=None, doc="Unit string associated with"
-                                          "the Dimension.")
+    unit = param.String(default=None, doc="""
+        Optional unit string associated with the Dimension. For
+        instance, the string 'm' may be used represent units of meters
+        and 's' to represent units of seconds.""")
 
     values = param.List(default=[], doc="""
-        Values may optionally be specified to specify valid
-        dimension values and/or retain a categorical ordering.""")
+        Optional set of allowed values for the dimension that can also
+        be used to retain a categorical ordering.""")
 
-    format_string = param.String(default="{name}: {val}{unit}")
+    format_string = param.String(default="{name}: {val}{unit}", doc="""
+        Format string to specify how the Dimension is pretty
+        printed. Valid format keys include: 'name' (Dimension name),
+        'val' (a particular dimension value to be presented) and
+        'unit' (the unit string).""")
 
     def __init__(self, name, **params):
         """
-        Initializes the Dimension object with a name.
+        Initializes the Dimension object with the given name.
         """
         if isinstance(name, Dimension):
             existing_params = dict(name.get_param_values())
@@ -44,6 +69,10 @@ class Dimension(param.Parameterized):
 
 
     def __call__(self, name=None, **params):
+        """
+        Derive a new Dimension that inherits existing parameters
+        except for the supplied, explicit overrides
+        """
         settings = dict(self.get_param_values(onlychanged=True), **params)
         if name is not None: settings['name'] = name
         return self.__class__(**settings)
@@ -57,10 +86,10 @@ class Dimension(param.Parameterized):
 
     def pprint_value(self, value, rounding=2):
         """
-        Pretty prints the dimension name and value with the format_string
-        parameter and if supplied adds the unit string parameter.
+        Pretty prints the dimension name and value using the
+        format_string parameter, including the unit string (if
+        set). Numeric types are printed to the stated rounding level.
         """
-
         unit = '' if self.unit is None else ' ' + self.unit
         try: # Try formatting numeric types as floats with rounding
             val = round(float(value), rounding)
@@ -71,14 +100,22 @@ class Dimension(param.Parameterized):
                                          val=val, unit=unit)
 
     def __hash__(self):
+        """
+        The hash allows two Dimension objects to be compared; if the
+        hashes are equal, all the parameters of the Dimensions are
+        also equal.
+        """
         return sum([hash(value) for name, value in self.get_param_values()])
+
 
     def __str__(self):
         return self.pprint_label
 
+
     def __eq__(self, other):
         "Dimensions are sorted alphanumerically by name"
         return self.name == other.name if isinstance(other, Dimension) else other
+
 
     def __lt__(self, other):
         "Dimensions are sorted alphanumerically by name"
