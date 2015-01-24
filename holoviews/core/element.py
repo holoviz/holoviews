@@ -579,7 +579,6 @@ class AxisLayout(UniformNdMapping):
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
         self._style = None
-        self._type = None
 
 
     def __mul__(self, other):
@@ -661,18 +660,6 @@ class AxisLayout(UniformNdMapping):
         last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
                       for (k, v) in self.items()]
         return self.clone(last_items)
-
-
-    @property
-    def type(self):
-        """
-        The type of elements stored in the AxisLayout.
-        """
-        if self._type is None:
-            if not len(self) == 0:
-                item = self.values()[0]
-                self._type = item.type if isinstance(item, UniformNdMapping) else item.__class__
-        return self._type
 
 
     @property

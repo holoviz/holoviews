@@ -623,16 +623,19 @@ class UniformNdMapping(NdMapping):
 
     _abstract = True
     _deep_indexable = True
-    _type = None
-    _style = None
+
+    def __init__(self, initial_items=None, **params):
+        self._type = None
+        super(UniformNdMapping, self).__init__(initial_items, **params)
+
 
     @property
     def type(self):
         """
         The type of elements stored in the map.
         """
-        if self._type is None:
-            self._type = None if len(self) == 0 else self.values()[0].__class__
+        if self._type is None and len(self):
+            self._type = self.values()[0].__class__
         return self._type
 
 
