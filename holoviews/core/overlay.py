@@ -12,7 +12,7 @@ from collections import OrderedDict
 import numpy as np
 
 import param
-from .dimension import Dimension, DimensionedData, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping
 from .layout import Composable, LayoutTree
 from .ndmapping import UniformNdMapping
@@ -282,4 +282,4 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, DimensionedData,)])) + ['Overlayable']
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)])) + ['Overlayable']

@@ -11,7 +11,7 @@ import numpy as np
 
 import param
 
-from .dimension import LabelledData, Dimension, Dimensioned, DimensionedData, ViewableElement
+from .dimension import LabelledData, Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
@@ -37,7 +37,7 @@ class Composable(object):
 
 
 
-class AdjointLayout(DimensionedData):
+class AdjointLayout(Dimensioned):
     """
     A AdjointLayout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a

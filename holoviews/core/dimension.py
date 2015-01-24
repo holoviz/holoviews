@@ -217,11 +217,11 @@ class LabelledData(param.Parameterized):
 
 
 
-class Dimensioned(param.Parameterized):
+class Dimensioned(LabelledData):
     """
-    Dimensioned is a base class that allows the contents of a class to
-    be associated with dimensions. The contents that may be associated
-    with dimensions are partitioned into one of three types
+    Dimensioned is a base class that allows the data contents of a
+    class to be associated with dimensions. The contents associated
+    with dimensions may be partitioned into one of three types
 
     * key_dimensions: These are the dimensions that can be indexed via
                       the __getitem__ method. Dimension objects
@@ -240,17 +240,18 @@ class Dimensioned(param.Parameterized):
                         on the Dimensioned object not in the key
                         dimensions. Indexing by value dimension is
                         supported by dimension name (when there are
-                        multiple possible value dimensions) ; no
+                        multiple possible value dimensions); no
                         slicing semantics is supported and all the
                         data associated with that dimension will be
-                        returned at once.
+                        returned at once. Note that it is not possible
+                        to mix value_dimensions and deep_dimensions.
 
     * deep_dimensions: These are dynamically computed dimensions that
                        belong to other Dimensioned objects that are
                        nested in the data. Objects that support this
                        should enable the _deep_indexable flag. Note
-                       that the nested Dimensioned objects are not
-                       described by value_dimensions.
+                       that it is not possible to mix value_dimensions
+                       and deep_dimensions.
 
     Dimensioned class support generalized methods for finding the
     range and type of values along a particular Dimension. The range
@@ -274,20 +275,25 @@ class Dimensioned(param.Parameterized):
        value dimension may be indexed by name after the key
        dimensions.""")
 
-    __abstract = True
+    value = param.String(default='Dimensioned', constant=True, doc="""
+       A string describing the data wrapped by the object.""")
 
+
+    __abstract = True
+    _sorted = False
     _deep_indexable = False
     _dim_groups = ['key_dimensions',
                    'value_dimensions',
                    'deep_dimensions']
 
-    def __init__(self, **params):
+    def __init__(self, data, **params):
         for group in self._dim_groups[0:2]:
             if group in params:
                 dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
                               for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(**params)
+        self.data = data
         self.ndims = len(self.key_dimensions)
         self._cached_index_names = [d.name for d in self.key_dimensions]
         self._cached_value_names = [d.name for d in self.value_dimensions]
@@ -349,44 +355,31 @@ class Dimensioned(param.Parameterized):
         else:
             return None
 
-
-
-class DimensionedData(Dimensioned, LabelledData):
-    """
-    DimensionedData combines provides a wrapper around for labeled
-    and Dimensioned data.
-    """
-
-    value = param.String(default='DimensionedData', constant=True, doc="""
-       A string describing the data wrapped by the object.""")
-
-    _sorted = False
-
-    def __init__(self, data, **params):
-        self.data = data
-        super(DimensionedData, self).__init__(**params)
-
-
     def __getitem__(self, key):
         """
-        All subclasses of DimensionedData should implement indexing
-        and slicing along the specified index_dimensions.
+        Multi-dimensional indexing semantics is determined by the list
+        of key_dimensions. For instance, the first indexing component
+        will index the first key dimension.
+
+        After the key dimensions are given, *either* a value dimension
+        name may follow (if there are multiple value dimensions) *or*
+        deep dimensions may then be listed (for applicable deep
+        dimensions).
         """
         raise NotImplementedError
 
 
     def dimension_values(self, dimension):
         """
-        Dimension values should return the values along the specified
-        dimension. This method has to be implemented appropriately
-        for each Dimensioned type.
+        Returns the values along the specified dimension. This method
+        must be implemented for all Dimensioned type.
         """
         raise NotImplementedError
 
 
     def range(self, dim):
         """
-        Range will return the range of values along the specified dimension.
+        Returns the range of values along the specified dimension.
         """
         dimension = self.get_dimension(dim)
         if dimension.range != (None, None):
@@ -404,7 +397,7 @@ class DimensionedData(Dimensioned, LabelledData):
 
 
 
-class ViewableElement(DimensionedData):
+class ViewableElement(Dimensioned):
     """
     A ViewableElement is a dimensioned datastructure that may be
     associated with a corresponding atomic visualization. An atomic

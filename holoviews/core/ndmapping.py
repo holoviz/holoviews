@@ -9,10 +9,10 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, DimensionedData, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement
 
 
-class MultiDimensionalMapping(DimensionedData):
+class MultiDimensionalMapping(Dimensioned):
     """
     An MultiDimensionalMapping is a type of mapping (like a dictionary or
     array) that uses fixed-length multidimensional keys. This behaves
