@@ -68,12 +68,12 @@ class Dimension(param.Parameterized):
         super(Dimension, self).__init__(**dict(existing_params, **params))
 
 
-    def __call__(self, name=None, **params):
+    def __call__(self, name=None, **overrides):
         """
         Derive a new Dimension that inherits existing parameters
         except for the supplied, explicit overrides
         """
-        settings = dict(self.get_param_values(onlychanged=True), **params)
+        settings = dict(self.get_param_values(onlychanged=True), **overrides)
         if name is not None: settings['name'] = name
         return self.__class__(**settings)
 
