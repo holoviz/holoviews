@@ -395,10 +395,15 @@ class MultiDimensionalMapping(Dimensioned):
 
     def update(self, other):
         """
-        Updates the NdMapping with another NdMapping or OrderedDict
-        instance, checking that they are indexed along the same number
-        of dimensions.
+        Updates the current mapping with some other mapping or
+        OrderedDict instance, making sure that they are indexed along
+        the same set of dimensions. The order of key_dimensions
+        remains unchanged after the update.
         """
+        if isinstance(other, NdMapping):
+            if self.key_dimensions != other.key_dimensions:
+                raise KeyError("Cannot update with NdMapping that has"
+                               " a different set of key dimensions.")
         for key, data in other.items():
             self._add_item(key, data, sort=False)
         self._resort()
