@@ -653,25 +653,8 @@ class UniformNdMapping(NdMapping):
         The type of elements stored in the map.
         """
         if self._type is None:
-            self._type = None if len(self) == 0 else self.last.__class__
+            self._type = None if len(self) == 0 else self.values()[0].__class__
         return self._type
-
-
-    @property
-    def style(self):
-        """
-        The style of elements stored in the map.
-        """
-        if self._style is None:
-            self._style = None if len(self) == 0 else self.last.style
-        return self._style
-
-
-    @style.setter
-    def style(self, style_name):
-        self._style = style_name
-        for val in self.values():
-            val.style = style_name
 
 
     @property
@@ -680,9 +663,6 @@ class UniformNdMapping(NdMapping):
 
 
     def _item_check(self, dim_vals, data):
-        if self.style is not None and self.style != data.style:
-            data.style = self.style
-
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
