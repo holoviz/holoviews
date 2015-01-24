@@ -294,7 +294,7 @@ class HoloMap(UniformNdMapping):
             return new_map
 
 
-    def grid(self, dimensions, layout=False, set_title=True):
+    def grid(self, dimensions, layout=False):
         """
         AxisLayout takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a AxisLayout.
@@ -312,13 +312,6 @@ class HoloMap(UniformNdMapping):
             raise ValueError('HoloMap does not have supplied dimensions.')
 
         if layout:
-            if set_title:
-                for keys, vmap in split_map.data.items():
-                    dim_labels = split_map.pprint_dimkey(keys)
-                    if not isinstance(vmap, HoloMap): vmap = [vmap]
-                    for vm in vmap:
-                        if dim_labels and dim_labels not in vm.title:
-                            vm.title = '\n'.join([vm.title, dim_labels])
             return NdLayout(split_map)
         else:
             return AxisLayout(split_map, key_dimensions=split_map.key_dimensions)

@@ -174,16 +174,6 @@ class MultiDimensionalMapping(Dimensioned):
         return data
 
 
-    def pprint_dimkey(self, key):
-        """
-        Takes a key of the right length as input and returns a
-        formatted string of the dimension and value pairs.
-        """
-        key = key if isinstance(key, (tuple, list)) else (key,)
-        return ', '.join(self.key_dimensions[i].pprint_value(v)
-                         for i, v in enumerate(key))
-
-
     def _split_dim_keys(self, dimensions):
         """
         Split the NdMappings keys into two groups given a list of
