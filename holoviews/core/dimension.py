@@ -110,6 +110,9 @@ class LabelledData(param.Parameterized):
         keywords = [('label',label), ('value',value)]
         return self.clone(self.data,
                           **{k:v for k,v in keywords if v is not None})
+
+
+
 class Dimensioned(param.Parameterized):
     """
     Abstract baseclass implementing common methods for objects with
