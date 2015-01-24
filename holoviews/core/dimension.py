@@ -157,12 +157,13 @@ class LabelledData(param.Parameterized):
        label should allow a specific measurement or dataset to be
        referenced given the class type.""")
 
-    def clone(self, data=None, *args, **kwargs):
+
+    def clone(self, data=None, *args, **overrides):
         """
-        Returns a clone with matching parameter values containing the
-        specified args and kwargs (empty by default).
+        Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs (empty by default).
         """
-        settings = dict(self.get_param_values(), **kwargs)
+        settings = dict(self.get_param_values(), **overrides)
         return self.__class__(data, *args, **settings)
 
 
