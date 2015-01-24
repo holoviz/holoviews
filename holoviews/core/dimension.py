@@ -28,7 +28,7 @@ class Dimension(param.Parameterized):
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
 
-    name = param.String(default="", doc="""
+    name = param.String(doc="""
         Optional name associated with the Dimension. For instance,
         'Height' or 'Weight'. Note that the first character of the
         name is typically capitalized.""")
