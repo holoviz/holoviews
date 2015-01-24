@@ -14,23 +14,22 @@ from .dimension import Dimension, Dimensioned, ViewableElement
 
 class MultiDimensionalMapping(Dimensioned):
     """
-    An MultiDimensionalMapping is a type of mapping (like a dictionary or
-    array) that uses fixed-length multidimensional keys. This behaves
-    like a sparse N-dimensional array that does not require a dense
-    sampling over the multidimensional space.
+    An MultiDimensionalMapping is a Dimensioned mapping (like a
+    dictionary or array) that uses fixed-length multidimensional
+    keys. This behaves like a sparse N-dimensional array that does not
+    require a dense sampling over the multidimensional space.
 
-    If the underlying type of data for each (key,value) pair also
-    supports indexing (such as a dictionary, array, or list), fully
-    qualified indexing can be used from the top level, with the first
-    N dimensions of the index selecting a particular piece of data
-    stored in the MultiDimensionalMapping object, and the remaining
-    dimensions used to index into the underlying data.
+    If the underlying value for each (key,value) pair also supports
+    indexing (such as a dictionary, array, or list), fully qualified
+    (deep) indexing may be used from the top level, with the first N
+    dimensions of the index selecting a particular Dimensioned object
+    and the remaining dimensions indexing into that object.
 
-    For instance, for an MultiDimensionalMapping x with dimensions "Year"
-    and "Month" and an underlying data type that is a 2D
-    floating-point array indexed by (r,c), a 2D array can be indexed
-    with x[2000,3] and a single floating-point number may be indexed
-    as x[2000,3,1,9].
+    For instance, for a MultiDimensionalMapping with dimensions "Year"
+    and "Month" and underlying values that are 2D floating-point
+    arrays indexed by (r,c), a 2D array may be indexed with x[2000,3]
+    and a single floating-point number may be indexed as
+    x[2000,3,1,9].
 
     In practice, this class is typically only used as an abstract base
     class, because the NdMapping subclass extends it with a range of
@@ -43,7 +42,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     key_dimensions = param.List(default=[Dimension("Default")], constant=True)
 
-    data_type = None
+    data_type = None          # Optional type checking of elements
     _deep_indexable = False
     _sorted = True
 
@@ -64,9 +63,9 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _item_check(self, dim_vals, data):
         """
-        Applies checks to individual data elements before they are inserted
-        ensuring that they are of a certain type. Can be subclassed to implement
-        further element restrictions.
+        Applies optional checks to individual data elements before
+        they are inserted ensuring that they are of a certain
+        type. Subclassed may implement further element restrictions.
         """
         if self.data_type is not None and not isinstance(data, self.data_type):
             if isinstance(self.data_type, tuple):
@@ -83,8 +82,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _add_item(self, dim_vals, data, sort=True):
         """
-        Adds item to the data, applying dimension types and
-        ensuring key conforms to Dimension type and values.
+        Adds item to the data, applying dimension types and ensuring
+        key conforms to Dimension type and values.
         """
         if not isinstance(dim_vals, tuple):
             dim_vals = (dim_vals,)
@@ -120,8 +119,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _apply_key_type(self, keys):
         """
-        If a key type is set in the dim_info dictionary, this method applies the
-        type to the supplied key.
+        If a type is specified by the corresponding key dimension,
+        this method applies the type to the supplied key.
         """
         typed_key = ()
         for dim, key in zip(self.key_dimensions, keys):
@@ -141,8 +140,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _split_index(self, key):
         """
-        Splits key into map and data indices. If only map indices are
-        supplied the data is passed an index of None.
+        Partitions key into key and deep dimension groups. If only key
+        indices are supplied, the data is indexed with an empty tuple.
         """
         if not isinstance(key, tuple):
             key = (key,)
@@ -191,8 +190,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _resort(self):
         """
-        Sorts data by key or index in pre-defined index in Dimension
-        values.
+        Sorts data by key using usual Python tuple sorting semantics
+        or sorts in categorical order for any categorical Dimensions.
         """
         sortkws = {}
         dimensions = self.key_dimensions
@@ -207,8 +206,7 @@ class MultiDimensionalMapping(Dimensioned):
         """
         Splits the mapping into groups by key dimension which are then
         returned together in a mapping of class container_type. The
-        individual groups are of the same type as the original map
-        type.
+        individual groups are of the same type as the original map.
         """
         inner_dims = [d for d in dimensions if d in self._cached_index_names]
         deep_dims = [d for d in dimensions
@@ -246,10 +244,11 @@ class MultiDimensionalMapping(Dimensioned):
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
-        Create a new object with an additional dimension along which
-        items are indexed. Requires the dimension name, the desired
-        position in the key_dimensions and a dimension value that
-        applies to all existing elements.
+        Create a new object with an additional key dimensions along
+        which items are indexed. Requires the dimension name, the
+        desired position in the key_dimensions and a key value that
+        will be used across the dimension. This is particularly useful
+        for merging several mappings together.
         """
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
@@ -281,6 +280,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dimension_values(self, dimension):
+        "Returns the values along the specified dimension."
         all_dims = [d.name for d in self.dimensions]
         if isinstance(dimension, int):
             dimension = all_dims[dimension]
@@ -298,15 +298,14 @@ class MultiDimensionalMapping(Dimensioned):
 
     def reindex(self, dimension_labels):
         """
-        Create a new object with a re-ordered or reduced set of index
+        Create a new object with a re-ordered or reduced set of key
         dimensions.
 
-        Reducing the number of index dimensions will discard
-        information from the keys. All data values are accessible in
-        the newly created object as the new labels must be sufficient
-        to address each value uniquely.
+        Reducing the number of key dimensions will discard information
+        from the keys. All data values are accessible in the newly
+        created object as the new labels must be sufficient to address
+        each value uniquely.
         """
-
         indices = [self.get_dimension_index(el) for el in dimension_labels]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
@@ -323,17 +322,13 @@ class MultiDimensionalMapping(Dimensioned):
 
     @property
     def last(self):
-        """"
-        Returns the item highest data item along the map dimensions.
-        """
+        "Returns the item highest data item along the map dimensions."
         return list(self.data.values())[-1] if len(self) else None
 
 
     @property
     def last_key(self):
-        """"
-        Returns the last key.
-        """
+        "Returns the last key value."
         return list(self.keys())[-1] if len(self) else None
 
 
@@ -359,10 +354,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def table(self, **kwargs):
-        """
-        Creates a Table Element from all the data stored in the
-        UniformNdMapping.
-        """
+        "Creates a table from the stored keys and data."
 
         table = None
         for key, value in self.data.items():
@@ -377,6 +369,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dframe(self):
+        "Creates a pandas DataFrame from the stored keys and data."
         try:
             import pandas
         except ImportError:
@@ -388,7 +381,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def map(self, map_fn, **kwargs):
         """
-        Map a function across the MultiDimensionalMapping.
+        Transform every element across the mapping with a function.
         """
         mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
         if isinstance(mapped_items[0][1], tuple):
@@ -413,9 +406,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def keys(self):
-        """
-        Returns indices for all data elements.
-        """
+        " Returns the keys of all the elements."
         if self.ndims == 1:
             return [k[0] for k in self.data.keys()]
         else:
@@ -423,14 +414,17 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def values(self):
+        " Returns the values of all the elements."
         return list(self.data.values())
 
 
     def items(self):
+        "Returns all elements as a list in (key,value) format."
         return list(zip(list(self.keys()), list(self.values())))
 
 
     def get(self, key, default=None):
+        "Standard get semantics for all mapping types"
         try:
             if key is None:
                 return None
@@ -447,8 +441,9 @@ class MultiDimensionalMapping(Dimensioned):
 
     def __getitem__(self, key):
         """
-        Allows indexing in the indexed dimensions, passing any
-        additional indices to the data elements.
+        Allows multi-dimensional indexing in the order of the
+        specified key dimensions, passing any additional indices to
+        the data elements.
         """
         if key in [Ellipsis, ()]:
             return self
@@ -473,7 +468,6 @@ class MultiDimensionalMapping(Dimensioned):
             return key in self.data.keys()
         else:
             return key in self.keys()
-
 
     def __len__(self):
         return len(self.data)
@@ -651,8 +645,8 @@ class UniformNdMapping(NdMapping):
 
     def get_title(self, key, item, group_size=2):
         """
-        Resolves the title string on the ViewableElement being added to the UniformNdMapping,
-        adding the Maps title suffix.
+        Resolves the title string on the ViewableElement being added
+        to the UniformNdMapping, adding the Maps title suffix.
         """
         if self.ndims == 1 and self.get_dimension('Default'):
             title_suffix = ''
