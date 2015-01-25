@@ -158,6 +158,9 @@ class Settings(param.Parameterized):
         kws = ', '.join("%s=%r" % (k,v) for (k,v) in self.kwargs.items())
         return "%s(%s)" % (self.__class__.__name__,  kws)
 
+    def __str__(self):
+        return repr(self)
+
 
 
 class SettingsTree(AttrTree):
