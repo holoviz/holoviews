@@ -275,7 +275,7 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
             raise ValueError('ylim needs to be a length two tuple or None.')
 
     @property
-    def lbrt(self):
+    def extents(self):
         l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
         b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
         return l, b, r, t

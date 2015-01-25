@@ -25,10 +25,6 @@ class ItemTable(Element):
     value_dimensions = param.List(default=[], bounds=(0, 0), doc="""
        ItemTables should have only index Dimensions.""")
 
-    xlabel, ylabel = None, None
-    xlim, ylim = None, None
-    lbrt = None, None, None, None
-
     @property
     def rows(self):
         return self.ndims
@@ -149,10 +145,6 @@ class Table(Element, NdMapping):
 
         Note: String values may be supplied in the constructor which
         will then be promoted to Dimension objects.""")
-
-    xlabel, ylabel = None, None
-    xlim, ylim = None, None
-    lbrt = None, None, None, None
 
     _deep_indexable = False
 

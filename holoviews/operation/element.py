@@ -125,7 +125,7 @@ class contours(ElementOperation):
         from matplotlib import pyplot as plt
 
         figure_handle = plt.figure()
-        (l, b, r, t) = sheetview.lbrt
+        (l, b, r, t) = sheetview.extents
         contour_set = plt.contour(sheetview.data, extent=(l, r, t, b),
                                   levels=self.p.levels)
 

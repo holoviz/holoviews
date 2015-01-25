@@ -131,7 +131,7 @@ class ContourPlot(Plot):
         self.handles['line_segments'] = line_segments
         self.ax.add_collection(line_segments)
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def update_handles(self, view, key, lbrt=None):

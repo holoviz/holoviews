@@ -24,17 +24,13 @@ class Raster(Element2D):
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
 
-    lbrt = param.NumericTuple(default=(0, 0, 1, 1), doc="""
-        A spatial bounds for the Raster, specified as a tuple
-        of the form (left, bottom, right, top).""")
-
     value = param.String(default='Raster')
 
     value_dimensions = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
 
-    def __init__(self, data, **params):
-        super(Raster, self).__init__(data, **params)
+    def __init__(self, data, extents=(0, 0, 1, 1), **params):
+        super(Raster, self).__init__(data, extents=extents, **params)
 
     def __getitem__(self, slc):
         raise NotImplementedError('Slicing Raster Views currently'
@@ -60,7 +56,7 @@ class Raster(Element2D):
 
     def _coord2matrix(self, coord):
         xd, yd = self.data.shape
-        l, b, r, t = self.lbrt
+        l, b, r, t = self.extents
         xvals = np.linspace(l, r, xd)
         yvals = np.linspace(b, t, yd)
         xidx = np.argmin(np.abs(xvals-coord[0]))
@@ -303,9 +299,8 @@ class Matrix(SheetCoordinateSystem, Raster):
         xdensity = xdensity if xdensity else dim1/(r-l)
         ydensity = ydensity if ydensity else dim2/(t-b)
 
-        Element2D.__init__(self, data, **params)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
-        self._lbrt = self.bounds.lbrt()
+        Element2D.__init__(self, data, extents=self.lbrt, **params)
         self.key_dimensions[0].range = (l, r)
         self.key_dimensions[1].range = (b, t)
 
@@ -355,18 +350,6 @@ class Matrix(SheetCoordinateSystem, Raster):
     def ylim(self):
         _, b, _, t = self.bounds.lbrt()
         return (b, t)
-
-
-    @property
-    def lbrt(self):
-        if hasattr(self, '_lbrt'):
-            return self._lbrt
-        else:
-            return self.bounds.lbrt()
-
-    @lbrt.setter
-    def lbrt(self, lbrt):
-        self._lbrt = lbrt
 
 
     def range(self, dim):

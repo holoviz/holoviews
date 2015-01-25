@@ -21,11 +21,11 @@ class MatrixPlot(Plot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin', 'clims']
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         view = self._map.last
 
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
-            else self._map.last.lbrt
+            else self._map.last.extents
         xticks, yticks = self._compute_ticks(view)
 
         opts = self.settings.closest(view, 'style')[self.cyclic_index]
@@ -54,7 +54,7 @@ class MatrixPlot(Plot):
             if self.show_values:
                 self._annotate_values(view)
 
-        return self._finalize_axis(self._keys[-1], lbrt=(l, b, r, t),
+        return self._finalize_axis(self._keys[-1], extents=(l, b, r, t),
                                    xticks=xticks, yticks=yticks)
 
 
@@ -95,7 +95,7 @@ class MatrixPlot(Plot):
 
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         im = self.handles.get('im', None)
         im.set_data(view.data)
 
@@ -136,7 +136,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         self._ykeys = sorted(set(ykeys))
 
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         width, height, b_w, b_h, widths, heights = self._compute_borders()
 
         self.handles['projs'] = []
@@ -167,7 +167,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             x += w + b_w
             xticks.append(x-b_w-w/2.)
 
-        return self._finalize_axis(key, lbrt=(0, 0, width, height),
+        return self._finalize_axis(key, extents=(0, 0, width, height),
                                    title=self._format_title(key),
                                    xticks=(xticks, self._process_ticklabels(self._xkeys)),
                                    yticks=(yticks, self._process_ticklabels(self._ykeys)),
@@ -192,10 +192,10 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
 
     def _compute_borders(self):
-        width_lbrts = [self.grid[xkey, :].lbrt for xkey in self._xkeys]
-        height_lbrts = [self.grid[:, ykey].lbrt for ykey in self._ykeys]
-        widths = [lbrt[2]-lbrt[0] for lbrt in width_lbrts]
-        heights = [lbrt[3]-lbrt[1] for lbrt in height_lbrts]
+        width_extents = [self.grid[xkey, :].extents for xkey in self._xkeys]
+        height_extents = [self.grid[:, ykey].extents for ykey in self._ykeys]
+        widths = [extent[2]-extent[0] for extent in width_extents]
+        heights = [extent[3]-extent[1] for extent in height_extents]
         width, height = np.sum(widths), np.sum(heights)
         border_width = (width/10.)/(len(widths)+1)
         border_height = (height/10.)/(len(heights)+1)

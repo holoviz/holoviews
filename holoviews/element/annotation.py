@@ -16,20 +16,16 @@ class Annotation(Element2D):
     overlaid on top of any other data. In such instances (by default)
     they will be displayed using the unit axis limits (0.0-1.0 in both
     directions) unless an explicit 'extents' parameter is
-    supplied. The extent of the bottom Annotation in the Overlay is
+    supplied. The extents of the bottom Annotation in the Overlay is
     used when multiple Annotations are displayed together.
     """
 
     value = param.String(default='Annotation')
 
-    xlim, ylim = None, None
     xlabel, ylabel = "", ""
 
     def __init__(self, data, **params):
-        extent = params.get('extent', None)
         super(Annotation, self).__init__(data, **params)
-        if extent:
-            self.extent = extent
 
 
 

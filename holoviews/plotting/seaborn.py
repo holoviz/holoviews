@@ -39,7 +39,7 @@ class FullRedrawPlot(Plot):
 
     _abstract = True
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         if self.zorder == 0 and self.ax: self.ax.cla()
         self._update_plot(view)
 
@@ -59,11 +59,9 @@ class RegressionPlot(FullRedrawPlot):
                   'scatter_kws', 'line_kws', 'ci', 'dropna',
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
-    def __call__(self, axis=None, lbrt=None):
-        self.ax = self._init_axis(axis)
-
+    def __call__(self, ranges=None):
         self._update_plot(self._map.last)
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def _update_plot(self, view):
@@ -93,7 +91,7 @@ class BivariatePlot(FullRedrawPlot):
                   'ci', 'kind', 'bw', 'kernel', 'cumulative',
                   'shade', 'vertical', 'cmap']
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         kdeview = self._map.last
         self.style = self.settings.closest(kdeview, 'style')[self.cyclic_index]
         if self.joint and self.subplot:
@@ -135,7 +133,7 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'ci', 'n_boot', 'err_kws', 'err_palette',
                   'estimator', 'kwargs']
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         curveview = self._map.last
         self.style = self.settings.closest(curveview, 'style')[self.cyclic_index]
         self._update_plot(curveview)
@@ -166,7 +164,7 @@ class DistributionPlot(FullRedrawPlot):
                   'hist_kws', 'kde_kws', 'rug_kws',
                   'fit_kws', 'color']
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         distview = self._map.last
         self.style = self.settings.closest(distview, 'style')[self.cyclic_index]
         self._update_plot(distview)
@@ -239,7 +237,7 @@ class SNSFramePlot(DFrameViewPlot):
 
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, ranges=None):
         dfview = self._map.last
         self._validate(dfview)
 
@@ -251,7 +249,7 @@ class SNSFramePlot(DFrameViewPlot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def _process_style(self, styles):
@@ -262,20 +260,20 @@ class SNSFramePlot(DFrameViewPlot):
 
 
     def _validate(self, dfview):
-        super(SNSFramePlot, self)._validate(dfview, axis)
+        super(SNSFramePlot, self)._validate(dfview)
         multi_dim = dfview.ndims > 1
         if self.subplot and multi_dim and self.plot_type == 'lmplot':
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)
 
-    def update_frame(self, n, lbrt=None):
+    def update_frame(self, n):
         key = self._keys[n]
         view = self._map.get(key, None)
         if self.ax:
             self.ax.set_visible(view is not None)
-        axis_kwargs = self.update_handles(view, key, lbrt) if view is not None else {}
+        axis_kwargs = self.update_handles(view, key) if view is not None else {}
         if self.ax:
-            self._finalize_axis(key, **dict({'lbrt': lbrt}, **(axis_kwargs if axis_kwargs else {})))
+            self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 
 
     def _update_plot(self, view):

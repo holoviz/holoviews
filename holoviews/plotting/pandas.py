@@ -60,7 +60,7 @@ class DFrameViewPlot(Plot):
             self.plot_type = self._map.last.plot_type
 
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         dfview = self._map.last
         self._validate(dfview)
 
@@ -108,7 +108,7 @@ class DFrameViewPlot(Plot):
             getattr(view.data, self.plot_type)(ax=self.ax, **self.style)
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         """
         Update the plot for an animation.
         """

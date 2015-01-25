@@ -1,5 +1,6 @@
 import copy
-from itertools import groupby, product
+from itertools import product, groupby
+from collections import defaultdict, OrderedDict
 
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
@@ -173,7 +174,7 @@ class Plot(param.Parameterized):
         return axis
 
 
-    def _finalize_axis(self, key, title=None, lbrt=None, xticks=None, yticks=None,
+    def _finalize_axis(self, key, title=None, extents=None, xticks=None, yticks=None,
                        xlabel=None, ylabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
@@ -193,8 +194,8 @@ class Plot(param.Parameterized):
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
-                if lbrt is None and self.apply_databounds:
-                    lbrt = view.lbrt if self.rescale_individually else self._map.lbrt
+                if extents is None and self.apply_databounds:
+                    extents = view.extents if self.rescale_individually else self._map.extents
 
             if self.show_grid:
                 axis.get_xaxis().grid(True)
@@ -231,8 +232,8 @@ class Plot(param.Parameterized):
                 axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
                 axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
 
-            if lbrt and self.apply_databounds:
-                (l, b, r, t) = [coord if np.isreal(coord) else np.NaN for coord in lbrt]
+            if extents and self.apply_databounds:
+                (l, b, r, t) = [coord if np.isreal(coord) else np.NaN for coord in extents]
                 if not np.NaN in (l, r): axis.set_xlim((l, r))
                 if b == t: t += 1. # Arbitrary y-extent if zero range
                 if not np.NaN in (b, t): axis.set_ylim((b, t))
@@ -293,7 +294,7 @@ class Plot(param.Parameterized):
         return anim
 
 
-    def update_frame(self, n, lbrt=None):
+    def update_frame(self, n):
         """
         Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
@@ -306,11 +307,11 @@ class Plot(param.Parameterized):
         key = self._keys[n]
         view = self._map.get(key, None)
         self.ax.set_visible(view is not None)
-        axis_kwargs = self.update_handles(view, key, lbrt) if view is not None else {}
-        self._finalize_axis(key, **dict({'lbrt': lbrt}, **(axis_kwargs if axis_kwargs else {})))
+        axis_kwargs = self.update_handles(view, key) if view is not None else {}
+        self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         """
         Update the elements of the plot.
         """
@@ -324,7 +325,7 @@ class Plot(param.Parameterized):
         return len(self._keys)
 
 
-    def __call__(self, ax=False, zorder=0):
+    def __call__(self, ranges=None):
         """
         Return a matplotlib figure.
         """
@@ -397,14 +398,14 @@ class GridPlot(Plot):
         return subplots, subaxes
 
 
-    def __call__(self):
-        # Get the lbrt of the grid elements (not the whole grid)
+    def __call__(self, ranges=None):
+        # Get the extent of the grid elements (not the whole grid)
         subplot_kwargs = dict()
         if self.joint_axes:
             try:
                 l, r = self.grid.xlim
                 b, t = self.grid.ylim
-                subplot_kwargs = dict(lbrt=(l, b, r, t))
+                #subplot_kwargs = dict(extent=(l, b, r, t))
             except:
                 pass
 
@@ -554,7 +555,7 @@ class AdjointLayoutPlot(Plot):
         super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
 
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -576,7 +577,7 @@ class AdjointLayoutPlot(Plot):
             # 'Main' views that should be displayed with square aspect
             if pos == 'main' and issubclass(vtype, ViewableElement):
                 subplot.aspect='square'
-            subplot()
+            subplot(ranges=ranges)
         self.drawn = True
 
 
@@ -824,7 +825,7 @@ class LayoutPlot(Plot):
         return subplots
 
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         self.ax.get_xaxis().set_visible(False)
         self.ax.get_yaxis().set_visible(False)
 
@@ -975,7 +976,7 @@ class OverlayPlot(Plot):
                                    type=view.__class__.__name__)
 
 
-    def __call__(self, ranges={}):
+    def __call__(self, ranges=None):
         key = self._keys[-1]
         #overlay = self._collapse_channels(HoloMap([((0,), self._map.last)])).last
         for zorder, vmap in enumerate(self._map.last):

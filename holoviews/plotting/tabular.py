@@ -61,7 +61,7 @@ class TablePlot(Plot):
             return formatted
 
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         tableview = self._map.last
 
         self.ax.set_axis_off()
@@ -100,7 +100,7 @@ class TablePlot(Plot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         table = self.handles['table']
 
         for coords, cell in table.get_celld().items():

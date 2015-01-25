@@ -114,7 +114,7 @@ class CurvePlot(Plot):
         self.xvalues = x_values
 
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         curveview = self._map.last
 
         # Create xticks and reorder data if cyclic
@@ -135,10 +135,10 @@ class CurvePlot(Plot):
 
         self.handles['line_segment'] = line_segment
 
-        return self._finalize_axis(self._keys[-1], xticks=xticks, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1], xticks=xticks)
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         if self.cyclic_range is not None:
             self._cyclic_curves(view)
         self.handles['line_segment'].set_xdata(view.data[:, 0])
@@ -160,7 +160,7 @@ class ScatterPlot(CurvePlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 's', 'visible']
 
-    def __call__(self):
+    def __call__(self, ranges=None):
         scatterview = self._map.last
         # Create line segments and apply style
         style = self.settings.closest(scatterview, 'style')[self.cyclic_index]
@@ -173,7 +173,7 @@ class ScatterPlot(CurvePlot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         self.handles['paths'].remove()
 
         style = self.settings.closest(view, 'style')[self.cyclic_index]
@@ -217,11 +217,11 @@ class HistogramPlot(Plot):
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
-    def __call__(self, axis=None, lbrt=None):
+    def __call__(self, ranges=None):
         hist = self._map.last
 
         # Get plot ranges and values
-        edges, hvals, widths, lims = self._process_hist(hist, lbrt)
+        edges, hvals, widths, lims = self._process_hist(hist)
 
         if self.orientation == 'vertical':
             self.offset_linefn = self.ax.axvline
@@ -241,7 +241,7 @@ class HistogramPlot(Plot):
         return self._finalize_axis(self._keys[-1], **ax_settings)
 
 
-    def _process_hist(self, hist, lbrt=None):
+    def _process_hist(self, hist):
         """
         Get data from histogram, including bin_ranges and values.
         """
@@ -249,11 +249,12 @@ class HistogramPlot(Plot):
         edges = hist.edges[:-1]
         hist_vals = np.array(hist.values)
         widths = [hist._width] * len(hist) if getattr(hist, '_width', None) else np.diff(hist.edges)
-        if lbrt is None:
+        extents = None
+        if extents is None:
             xlims = hist.xlim if self.rescale_individually else self._map.xlim
             ylims = hist.ylim
         else:
-            l, b, r, t = lbrt
+            l, b, r, t = extents
             xlims = (l, r)
             ylims = (b, t)
         lims = xlims + ylims
@@ -290,7 +291,7 @@ class HistogramPlot(Plot):
         """
         axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
         x0, x1, y0, y1 = lims
-        axis_settings['lbrt'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+        axis_settings['extents'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
         return axis_settings
 
@@ -320,12 +321,12 @@ class HistogramPlot(Plot):
                 bar.set_width(width)
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         """
         Update the plot for an animation.
         """
         # Process values, axes and style
-        edges, hvals, widths, lims = self._process_hist(view, lbrt)
+        edges, hvals, widths, lims = self._process_hist(view)
 
         ticks = self._compute_ticks(view, edges, widths, lims)
         ax_settings = self._process_axsettings(view, lims, ticks)
@@ -353,11 +354,11 @@ class SideHistogramPlot(HistogramPlot):
         self.layout = params.pop('layout', None)
         super(SideHistogramPlot, self).__init__(*args, **params)
 
-    def _process_hist(self, hist, lbrt):
+    def _process_hist(self, hist):
         """
         Subclassed to offset histogram by defined amount.
         """
-        edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist, lbrt)
+        edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist)
         offset = self.offset * lims[3]
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
@@ -491,13 +492,14 @@ class PointPlot(Plot):
                   'linewidth', 'marker', 's', 'visible',
                   'cmap', 'vmin', 'vmax']
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         points = self._map.last
 
         values = points.data.shape[1]>=3
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        cs = points.data[:, 2] if values else None
+        #cs = points.data[:, 2] if values else None
+        cs=None
 
         style = self.settings.closest(points, 'style')[self.cyclic_index]
         if values and self.scaling_factor > 1:
@@ -523,7 +525,7 @@ class PointPlot(Plot):
         return (ms*self.scaling_factor**scaled_sizes)
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
@@ -624,7 +626,7 @@ class VectorFieldPlot(Plot):
         return  distances.min()
 
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         vfield = self._map.last
         colorized = self.color_dim is not None
         kwargs = self.settings.closest(vfield, 'style')[self.cyclic_index]
@@ -659,11 +661,11 @@ class VectorFieldPlot(Plot):
         self.handles['quiver'] = quiver
         self.handles['input_scale'] = input_scale
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key):
         self.handles['quiver'].set_offsets(view.data[:,0:2])
         input_scale = self.handles['input_scale']
 

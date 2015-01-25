@@ -112,9 +112,9 @@ class Element(ViewableElement, Composable, Overlayable):
 
 class Element2D(Element):
 
-    def __init__(self, data, extent=None, **params):
-        self._xlim = (extent[0], extent[2]) if extent else None
-        self._ylim = (extent[1], extent[3]) if extent else None
+    def __init__(self, data, extents=None, **params):
+        self._xlim = None if extents is None else (extents[0], extents[2])
+        self._ylim = None if extents is None else (extents[1], extents[3])
         super(Element2D, self).__init__(data, **params)
 
     @property
@@ -154,36 +154,36 @@ class Element2D(Element):
             raise ValueError('xlim needs to be a length two tuple or None.')
 
     @property
-    def extent(self):
+    def extents(self):
         """"
-        For Element2D the extent is the 4-tuple (left, bottom, right, top).
+        For Element2D the extents is the 4-tuple (left, bottom, right, top).
         """
         l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
         b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
         return l, b, r, t
 
 
-    @extent.setter
-    def extent(self, extent):
-        l, b, r, t = extent
+    @extents.setter
+    def extents(self, extents):
+        l, b, r, t = extents
         self.xlim, self.ylim = (l, r), (b, t)
 
 
 class Element3D(Element2D):
 
 
-    def __init__(self, data, extent=None, **params):
-        if extent is not None:
-            self._zlim = (extent[2], extent[5])
-            extent = (extent[0], extent[1], extent[3], extent[4])
+    def __init__(self, data, extents=None, **params):
+        if extents is not None:
+            self._zlim = (extents[2], extents[5])
+            extent = (extents[0], extents[1], extents[3], extents[4])
         else:
             self._zlim = None
-        super(Element3D, self).__init__(data, extent=extent, **params)
+        super(Element3D, self).__init__(data, extents=extents, **params)
 
     @property
-    def extent(self):
+    def extents(self):
         """"
-        For Element3D the extent is the 6-tuple (left, bottom, -z, right, top, +z) using
+        For Element3D the extents is the 6-tuple (left, bottom, -z, right, top, +z) using
         a right-handed Cartesian coordinate-system.
         """
         l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
@@ -191,9 +191,9 @@ class Element3D(Element2D):
         zminus, zplus = self.zlim if self.zlim else (np.NaN, np.NaN)
         return l, b, zminus, r, t, zplus
 
-    @extent.setter
-    def extent(self, extent):
-        l, b, zminus, r, t, zplus = extent
+    @extents.setter
+    def extents(self, extents):
+        l, b, zminus, r, t, zplus = extents
         self.xlim, self.ylim, self.zlim = (l, r), (b, t), (zminus, zplus)
 
     @property
@@ -265,7 +265,7 @@ class HoloMap(UniformNdMapping):
 
 
     @property
-    def lbrt(self):
+    def extents(self):
         if self.xlim is None: return np.NaN, np.NaN, np.NaN, np.NaN
         l, r = self.xlim
         b, t = self.ylim
@@ -459,7 +459,7 @@ class HoloMap(UniformNdMapping):
                 linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
             elif dims == 2:
                 (rows, cols) = samples
-                (l,b,r,t) = self.last.lbrt if bounds is None else bounds
+                (l,b,r,t) = self.last.extents if bounds is None else bounds
 
                 xedges = np.linspace(l, r, cols+1)
                 yedges = np.linspace(b, t, rows+1)
@@ -743,7 +743,7 @@ class AxisLayout(UniformNdMapping):
         return ylim
 
     @property
-    def lbrt(self):
+    def extents(self):
         if self.xlim is None: return np.NaN, np.NaN, np.NaN, np.NaN
         l, r = self.xlim
         b, t = self.ylim
