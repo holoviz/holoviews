@@ -495,7 +495,7 @@ class NdMapping(MultiDimensionalMapping):
 
     def __getitem__(self, indexslice):
         """
-        Allows slicing operations along the map and data
+        Allows slicing operations along the key and data
         dimensions. If no data slice is supplied it will return all
         data elements, otherwise it will return the requested slice of
         the data.
