@@ -360,25 +360,23 @@ class GridPlot(Plot):
         else:
             x, y = list(zip(*list(grid.keys())))
             self.cols, self.rows = (len(set(x)), len(set(y)))
-        self._gridspec = gridspec.GridSpec(self.rows, self.cols)
-        self.subplots, self.subaxes = self._create_subplots()
 
         extra_opts = self.settings.closest(self.grid, 'plot').settings
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False,
                                        **dict(params, **extra_opts))
+        self._gridspec = gridspec.GridSpec(self.rows, self.cols)
+        self.subplots, self.subaxes = self._create_subplots()
         self._keys = self.grid.all_keys
 
 
     def _create_subplots(self):
-        subplots, subaxes = {}, {}
+        subplots, subaxes = OrderedDict(), OrderedDict()
         r, c = (0, 0)
         for coord in self.grid.keys(full_grid=True):
             # Create axes
             subax = plt.subplot(self._gridspec[r, c])
             subaxes[(r, c)] = subax
-            self.ax.get_xaxis().set_visible(False)
-            self.ax.get_yaxis().set_visible(False)
 
             # Create subplot
             view = self.grid.data.get(coord, None)
@@ -486,7 +484,7 @@ class GridPlot(Plot):
         ax_h = (h - ((h/10.) if self.rows > 1 else 0)) / self.rows
 
         r, c = (0, 0)
-        for ax in self.subaxes:
+        for ax in self.subaxes.values():
             xpos = l + (c*ax_w) + (c * b_w)
             ypos = b + (r*ax_h) + (r * b_h)
             if r != self.rows-1:
