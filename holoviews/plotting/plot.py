@@ -848,12 +848,10 @@ class OverlayPlot(Plot):
 
         #collapsed = self._collapse_channels(self._map)
         vmaps = self._map.split_overlays()
-        #style_groups = dict((k, enumerate(list(v))) for k,v
-        #                    in groupby(vmaps, lambda s: s.style))
-
-        cyclic_index= 0
+        style_groups = dict((k, enumerate(list(v))) for k,v
+                            in groupby(vmaps, lambda s: (s.last.value)))
         for zorder, vmap in enumerate(vmaps):
-            #cyclic_index, _ = next(style_groups[vmap.style])
+            cyclic_index, _ = next(style_groups[(vmap.last.value)])
             plotopts = self.settings.closest(vmap.last, 'plot').settings
             plotype = Plot.defaults[type(vmap.last)]
             subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
