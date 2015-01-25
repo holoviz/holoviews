@@ -118,9 +118,9 @@ class Plot(param.Parameterized):
         path_items = {}
         for view_class, plot in Plot.defaults.items():
             name = view_class.__name__
-            plot_params = plot.params()
+            plot_opts = [k for k in plot.params().keys() if k not in ['name']]
             style_opts = plot.style_opts
-            opt_groups = {'plot': Settings(allowed_keywords=plot_params.keys())}
+            opt_groups = {'plot': Settings(allowed_keywords=plot_opts)}
             if style_opts:
                 opt_groups.update({'style': Settings(allowed_keywords=style_opts)})
             path_items[name] = opt_groups
