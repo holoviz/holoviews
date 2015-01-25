@@ -278,7 +278,7 @@ class SettingsTree(AttrTree):
         if node.parent is None:
             return '--+'
         else:
-            values = ', '.join([str(group) for group in node.groups.values()])
+            values = ', '.join([repr(group) for group in node.groups.values()])
             return "%s: %s" % (node.identifier, values)
 
 
