@@ -126,8 +126,6 @@ class CurvePlot(Plot):
                 self.peak_argmax = np.argmax(curveview.data[:, 1])
             self._cyclic_curves(curveview)
             xticks = self._cyclic_reduce_ticks(self.xvalues)
-        else:
-            xticks = self._reduce_ticks(xvals)
 
         # Create line segments and apply style
         style = self.settings.closest(curveview, 'style')[self.cyclic_index]
@@ -162,7 +160,7 @@ class ScatterPlot(CurvePlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 's', 'visible']
 
-    def __call__(self, lbrt=None):
+    def __call__(self):
         scatterview = self._map.last
         # Create line segments and apply style
         style = self.settings.closest(scatterview, 'style')[self.cyclic_index]
@@ -172,11 +170,7 @@ class ScatterPlot(CurvePlot):
 
         self.handles['paths'] = paths
 
-        # Create xticks and reorder data if cyclic
-        xvals = scatterview.data[:, 0]
-        xticks = self._reduce_ticks(xvals)
-
-        return self._finalize_axis(self._keys[-1], xticks=xticks, lbrt=lbrt)
+        return self._finalize_axis(self._keys[-1])
 
 
     def update_handles(self, view, key, lbrt=None):
