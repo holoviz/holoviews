@@ -49,8 +49,8 @@ class Cycle(param.Parameterized):
        If elements is None, this is the key in the matplotlib rcParams
        to use to get the cycle elements""")
 
-    def __init__(self, **params):
-        super(Cycle, self).__init__(**params)
+    def __init__(self, items=None, **params):
+        super(Cycle, self).__init__(items=items, **params)
 
     @property
     def elements(self):
