@@ -91,11 +91,12 @@ class Plot(param.Parameterized):
     sideplots = {}
 
     def __init__(self, view=None, figure=None, axis=None, zorder=0,
-                 cyclic_index=0, all_keys=None, **params):
+                 cyclic_index=0, all_keys=None, subplots=None, **params):
         if view is not None:
             self._map = self._check_map(view)
             self._keys = all_keys if all_keys else self._map.keys()
         super(Plot, self).__init__(**params)
+        self.subplots = subplots
         self.subplot = figure is not None
         self.zorder = zorder
         self.cyclic_index = cyclic_index
@@ -538,8 +539,7 @@ class AdjointLayoutPlot(Plot):
 
         # The supplied (axes, view) objects as indexed by position
         self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions)}
-        self.subplots = subplots
-        super(AdjointLayoutPlot, self).__init__(**params)
+        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
 
 
     def __call__(self):
