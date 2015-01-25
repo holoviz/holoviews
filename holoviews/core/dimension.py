@@ -160,6 +160,18 @@ class LabelledData(param.Parameterized):
        a label should always be capitalized.""")
 
 
+    def __init__(self, data, **params):
+        """
+        All LabelledData subclasses must supply data to the
+        constructor, which will be held on the .data attribute.
+        This class also has an id instance attribute, which
+        may be set to associate some custom options with the object.
+        """
+        self.data = data
+        self.id = None
+        super(LabelledData, self).__init__(**params)
+
+
     def clone(self, data=None, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
@@ -292,8 +304,7 @@ class Dimensioned(LabelledData):
                 dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
                               for d in params.pop(group)]
                 params[group] = dimensions
-        super(Dimensioned, self).__init__(**params)
-        self.data = data
+        super(Dimensioned, self).__init__(data, **params)
         self.ndims = len(self.key_dimensions)
         self._cached_index_names = [d.name for d in self.key_dimensions]
         self._cached_value_names = [d.name for d in self.value_dimensions]
@@ -415,6 +426,3 @@ class ViewableElement(Dimensioned):
         the title may be set to a simple string.""")
 
     value = param.String(default='ViewableElement')
-
-    def __init__(self, data, **params):
-        super(ViewableElement, self).__init__(data, **params)
