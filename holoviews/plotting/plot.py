@@ -101,6 +101,7 @@ class Plot(param.Parameterized):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self._create_fig = True
+        self.drawn = False
         # List of handles to matplotlib objects for animation update
         self.handles = {} if figure is None else {'fig': figure}
         self.ax = self._init_axis(axis)
@@ -247,6 +248,8 @@ class Plot(param.Parameterized):
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
 
+        self.drawn = True
+
         if self.subplot:
             return axis
         else:
@@ -262,7 +265,7 @@ class Plot(param.Parameterized):
         """
         if frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
-        if self.handles.get('fig') is None: self.handles['fig'] = self()
+        if not self.drawn: self.handles['fig'] = self()
         self.update_frame(frame)
         return self.handles['fig']
 
@@ -402,6 +405,7 @@ class GridPlot(Plot):
         self._grid_axis()
         self._adjust_subplots()
 
+        self.drawn = True
         if self.subplot: return self.ax
         plt.close(self.handles['fig'])
         return self.handles['fig']
@@ -565,6 +569,7 @@ class AdjointLayoutPlot(Plot):
             if pos == 'main' and issubclass(vtype, ViewableElement):
                 subplot.aspect='square'
             subplot()
+        self.drawn = True
 
 
     def adjust_positions(self):
@@ -825,6 +830,7 @@ class LayoutPlot(Plot):
         for (r, c) in self.coords:
             self.subplots.get((r, c), None).adjust_positions()
 
+        self.drawn = True
         if self.subplot: return self.ax
         plt.close(self.handles['fig'])
         return self.handles['fig']
