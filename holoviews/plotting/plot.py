@@ -36,6 +36,12 @@ class Plot(param.Parameterized):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
+    figure_bounds = param.NumericTuple(default=(0.15, 0.15, 0.85, 0.85),
+                                       doc="""
+        The bounds of the figure as a 4-tuple of the form
+        (left, bottom, right, top), defining the size of the border
+        around the subplots.""")
+
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
@@ -151,6 +157,8 @@ class Plot(param.Parameterized):
         if not self.subplot and self._create_fig:
             fig = plt.figure()
             self.handles['fig'] = fig
+            l, b, r, t = self.figure_bounds
+            fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
             fig.set_size_inches(list(self.size))
             axis = fig.add_subplot(111, projection=self.projection)
             axis.set_aspect('auto')
