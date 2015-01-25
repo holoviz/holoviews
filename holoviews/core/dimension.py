@@ -204,7 +204,7 @@ class LabelledData(param.Parameterized):
         matches.
         """
         accumulator = []
-        if specs is None or any(self._matches(self, spec) for spec in specs):
+        if specs is None or any(self._matches(spec) for spec in specs):
             accumulator.append(fn(self))
 
         try:
