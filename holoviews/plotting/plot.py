@@ -42,6 +42,11 @@ class Plot(param.Parameterized):
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
+    finalize_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing an axis.
+        The hook is passed the full set of plot handles and the
+        displayed object.""")
+
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
@@ -247,6 +252,9 @@ class Plot(param.Parameterized):
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
+
+        for hook in self.finalize_hooks:
+            hook(self.subplots, self.handles, view)
 
         self.drawn = True
 
