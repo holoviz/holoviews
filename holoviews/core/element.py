@@ -282,7 +282,7 @@ class HoloMap(UniformNdMapping):
             split_map = dict(default=self)
             new_map = dict()
         else:
-            split_map = self.split_dimensions(dimensions, NdOverlay)
+            split_map = self.groupby(dimensions, NdOverlay)
             new_map = self.clone(key_dimensions=split_map.key_dimensions)
 
         for outer, vmap in split_map.items():
