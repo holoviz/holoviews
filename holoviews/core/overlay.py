@@ -188,7 +188,7 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
 
     _deep_indexable = True
 
-    def __init__(self, overlays, **params):
+    def __init__(self, overlays=None, **params):
         self._xlim = None
         self._ylim = None
         data = self._process_layers(overlays)
