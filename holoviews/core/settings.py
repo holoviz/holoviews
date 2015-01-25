@@ -186,7 +186,7 @@ class SettingsTree(AttrTree):
         self.__dict__['_instantiated'] = True
 
 
-    def _inherited_settings(self, group_name, settings):
+    def _inherited_settings(self, identifier, group_name, settings):
         """
         Computes the inherited Settings object for the given group
         name from the current node given a new set of settings.
@@ -194,6 +194,8 @@ class SettingsTree(AttrTree):
         override_kwargs = settings.kwargs
         if not self._instantiated:
             override_kwargs['allowed_keywords'] = settings.allowed_keywords
+        elif identifier in self.children:
+            override_kwargs['allowed_keywords'] = self[identifier][group_name].allowed_keywords
 
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
@@ -205,6 +207,12 @@ class SettingsTree(AttrTree):
             keyerror = e.strerror[0].lower() + e.strerror[1:]
             raise KeyError("Invalid key for group %r on path %r; %s )"
                            % (group_name, self.path, keyerror))
+
+
+    def __getitem__(self, item):
+        if item in self.groups:
+            return self.groups[item]
+        return super(SettingsTree, self).__getitem__(item)
 
 
     def __setattr__(self, identifier, val):
@@ -220,7 +228,7 @@ class SettingsTree(AttrTree):
         for group_name in current_node.groups:
             settings = group_items.get(group_name, False)
             if settings:
-                new_groups[group_name] = self._inherited_settings(group_name, settings)
+                new_groups[group_name] = self._inherited_settings(identifier, group_name, settings)
             else:
                 new_groups[group_name] = current_node.groups[group_name]
 
