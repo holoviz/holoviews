@@ -6,128 +6,25 @@ import numpy as np
 import param
 
 from ..core import Element
-from ..element import Annotation, Contours
+from ..element import Annotation, Contours, VLine, HLine, Arrow, Spline, Text
 from .plot import Plot
 
 
 class AnnotationPlot(Plot):
     """
-    Draw the Annotation element on the supplied axis. Supports axis
-    vlines, hlines, arrows (with or without labels), boxes and
-    arbitrary polygonal lines. Note, unlike other Plot types,
-    AnnotationPlot must always operate on a supplied axis as
-    Annotations may only be used as part of Overlays.
+    AnnotationPlot handles the display of all annotation elements.
     """
-
-    style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
-                  'linewidth', 'linestyle', 'rotation', 'family',
-                  'weight', 'fontsize', 'visible', 'edgecolor']
 
     def __init__(self, annotation, **params):
         self._annotation = annotation
         super(AnnotationPlot, self).__init__(annotation, **params)
-        self._warn_invalid_intervals(self._map)
         self.handles['annotations'] = []
 
-        line_only = ['linewidth', 'linestyle']
-        arrow_opts = [opt for opt in self.style_opts if opt not in line_only]
-        line_opts = line_only + ['color']
-        self.opt_filter = {'hline': line_opts, 'vline': line_opts,
-                           'line': line_opts,
-                           '<': arrow_opts, '^': arrow_opts,
-                           '>': arrow_opts, 'v': arrow_opts,
-                           'spline': line_opts + ['edgecolor']}
-
-
-    def _warn_invalid_intervals(self, vmap):
-        "Check if the annotated intervals have appropriate keys"
-        dim_labels = [d.name for d in self._map.key_dimensions]
-
-        mismatch_set = set()
-        for annotation in vmap.values():
-            for spec in annotation.data:
-                interval = spec[-1]
-                if interval is None or dim_labels == ['Default']:
-                    continue
-                mismatches = set(interval.keys()) - set(dim_labels)
-                mismatch_set = mismatch_set | mismatches
-
-        if mismatch_set:
-            mismatch_list= ', '.join('%r' % el for el in mismatch_set)
-            self.warning("Invalid annotation interval key(s) ignored: %r" % mismatch_list)
-
-
-    def _active_interval(self, key, interval):
-        """
-        Given an interval specification, determine whether the
-        annotation should be shown or not.
-        """
-        dim_labels = [d.name for d in self._map.key_dimensions]
-        if (interval is None) or dim_labels == ['Default']:
-            return True
-
-        key = key if isinstance(key, tuple) else (key,)
-        key_dict = dict(zip(dim_labels, key))
-        for key, (start, end) in interval.items():
-            if (start is not None) and key_dict.get(key, -float('inf')) <= start:
-                return False
-            if (end is not None) and key_dict.get(key, float('inf')) > end:
-                return False
-
-        return True
-
-
-    def _draw_annotations(self, annotation, key):
-        """
-        Draw the elements specified by the Annotation ViewableElement on the
-        axis, return a list of handles.
-        """
-        handles = []
-        opts = self.settings.closest(annotation, 'style').settings
-        color = opts.get('color', 'k')
-
-        for spec in annotation.data:
-            mode, info, interval = spec[0], spec[1:-1], spec[-1]
-            opts = dict(el for el in opts.items()
-                        if el[0] in self.opt_filter[mode])
-
-            if not self._active_interval(key, interval):
-                continue
-            if mode == 'vline':
-                handles.append(self.ax.axvline(spec[1], **opts))
-                continue
-            elif mode == 'hline':
-                handles.append(self.ax.axhline(spec[1], **opts))
-                continue
-            elif mode == 'line':
-                line = LineCollection([np.array(info[0])], **opts)
-                self.ax.add_collection(line)
-                handles.append(line)
-                continue
-            elif mode == 'spline':
-                verts, codes = info
-                patch = patches.PathPatch(Path(verts, codes),
-                                          facecolor='none', **opts)
-                self.ax.add_patch(patch)
-                continue
-
-
-            text, xy, points, arrowstyle = info
-            arrowprops = dict(arrowstyle=arrowstyle, color=color)
-            if mode in ['v', '^']:
-                xytext = (0, points if mode=='v' else -points)
-            elif mode in ['>', '<']:
-                xytext = (points if mode=='<' else -points, 0)
-            arrow = self.ax.annotate(text, xy=xy, textcoords='offset points',
-                                     xytext=xytext, ha="center", va="center",
-                                     arrowprops=arrowprops, **opts)
-            handles.append(arrow)
-        return handles
-
-
     def __call__(self, lbrt=None):
-        handles = self._draw_annotations(self._map.last, list(self._map.keys())[-1])
-        self.handles['annotations'] = handles
+        annotation = self._map.last
+        opts = self.settings.closest(annotation, 'style')[self.cyclic_index]
+        handle = self.draw_annotation(annotation, annotation.data, opts)
+        self.handles['annotations'].append(handle)
         return self._finalize_axis(self._keys[-1])
 
 
@@ -136,7 +33,85 @@ class AnnotationPlot(Plot):
         for element in self.handles['annotations']:
             element.remove()
 
-        self.handles['annotations'] = self._draw_annotations(annotation, key)
+        opts = self.settings.closest(annotation, 'style')[self.cyclic_index]
+        self.draw_annotation(annotation, annotation.data, opts)
+
+
+
+class VLinePlot(AnnotationPlot):
+    "Draw a vertical line on the axis"
+
+    def __init__(self, annotation, **params):
+        super(VLinePlot, self).__init__(annotation, **params)
+
+    def draw_annotation(self, annotation, position, opts):
+        return self.ax.axvline(position, **opts)
+
+
+
+class HLinePlot(AnnotationPlot):
+    "Draw a horizontal line on the axis"
+
+    def __init__(self, annotation, **params):
+        super(HLinePlot, self).__init__(annotation, **params)
+
+    def draw_annotation(self, annotation, position, opts):
+        "Draw a horizontal line on the axis"
+        return self.ax.axhline(position, **opts)
+
+
+
+class ArrowPlot(AnnotationPlot):
+    "Draw an arrow using the information supplied to the Arrow annotation"
+
+    def __init__(self, annotation, **params):
+        super(ArrowPlot, self).__init__(annotation, **params)
+
+    def draw_annotation(self, annotation, data, opts):
+        direction, text, xy, points, arrowstyle = data
+        arrowprops = {'arrowstyle':arrowstyle}
+        if 'color' in opts:
+            arrowprops['color'] = opts['color']
+        if direction in ['v', '^']:
+            xytext = (0, points if direction=='v' else -points)
+        elif direction in ['>', '<']:
+            xytext = (points if direction=='<' else -points, 0)
+        return self.ax.annotate(text, xy=xy, textcoords='offset points',
+                                xytext=xytext, ha="center", va="center",
+                                arrowprops=arrowprops, **opts)
+
+
+
+class SplinePlot(AnnotationPlot):
+    "Draw the supplied Spline annotation (see Spline docstring)"
+
+    def __init__(self, annotation, **params):
+        super(SplinePlot, self).__init__(annotation, **params)
+
+    def draw_annotation(self, annotation, data, opts):
+        verts, codes = data
+        patch = patches.PathPatch(Path(verts, codes),
+                                  facecolor='none', edgecolor='b', **opts)
+        self.ax.add_patch(patch)
+        return patch
+
+
+
+class TextPlot(AnnotationPlot):
+    "Draw the Text annotation object"
+
+    def __init__(self, annotation, **params):
+        super(TextPlot, self).__init__(annotation, **params)
+
+    def draw_annotation(self, annotation, data, opts):
+        (x,y, text, fontsize,
+         horizontalalignment, verticalalignment, rotation) = data
+        return self.ax.text(x,y, text,
+                            horizontalalignment = horizontalalignment,
+                            verticalalignment = verticalalignment,
+                            rotation=rotation,
+                            fontsize=fontsize, **opts)
+
 
 
 class ContourPlot(Plot):
@@ -164,5 +139,13 @@ class ContourPlot(Plot):
 
 
 
-Plot.defaults.update({Annotation: AnnotationPlot,
-                      Contours: ContourPlot})
+Plot.defaults.update({
+    Contours: ContourPlot,
+
+    VLine:VLinePlot,
+    HLine:HLinePlot,
+    Arrow:ArrowPlot,
+    Spline:SplinePlot,
+
+    Text:TextPlot
+})
