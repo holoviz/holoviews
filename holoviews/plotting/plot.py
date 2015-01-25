@@ -178,8 +178,8 @@ class Plot(param.Parameterized):
 
         axis = self.ax
 
-        if self.zorder == 0 and axis is not None and key is not None:
-            view = self._map.get(key, None) if hasattr(self, '_map') else None
+        view = self._map.get(key, None) if hasattr(self, '_map') else None
+        if self.zorder == 0 and key is not None and not isinstance(view, CompositeOverlay):
             if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
@@ -969,17 +969,18 @@ class OverlayPlot(Plot):
 
         self._adjust_legend()
 
-        return self._finalize_axis(None, title=self._format_title(key))
+        return self._finalize_axis(key, title=self._format_title(key))
 
 
     def update_frame(self, n):
         n = n if n < len(self) else len(self) - 1
+        key = self._keys[n]
         if self.projection == '3d':
             self.ax.clear()
 
         for zorder, plot in enumerate(self.subplots.values()):
             plot.update_frame(n)
-        self._finalize_axis(None)
+        self._finalize_axis(key)
 
 
 Plot.defaults.update({AxisLayout: GridPlot,
