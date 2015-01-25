@@ -417,5 +417,4 @@ class ViewableElement(Dimensioned):
     value = param.String(default='ViewableElement')
 
     def __init__(self, data, **params):
-        self._style = params.pop('style', None)
         super(ViewableElement, self).__init__(data, **params)
