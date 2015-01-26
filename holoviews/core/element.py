@@ -306,7 +306,7 @@ class HoloMap(UniformNdMapping):
             split_map = self
         elif all(d in self._cached_index_names for d in dimensions):
             split_dims = [d for d in self._cached_index_names if d not in dimensions]
-            split_map = self.split_dimensions(split_dims)
+            split_map = self.groupby(split_dims)
             split_map = split_map.reindex(dimensions)
         else:
             raise ValueError('HoloMap does not have supplied dimensions.')
