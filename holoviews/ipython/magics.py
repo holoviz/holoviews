@@ -13,7 +13,7 @@ from ..core import NdOverlay, Element, HoloMap,\
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
 from ..plotting import Plot
 
-
+from collections import OrderedDict
 #========#
 # Magics #
 #========#
@@ -50,19 +50,20 @@ class ViewMagic(Magics):
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
                'max_branches': (0, float('inf')),
-               'size'        : (0, 100)}
+               'size'        : (0, 100),
+               'charwidth'   : (0, float('inf'))}
 
+    defaults = OrderedDict([('backend'     , 'mpl'),
+                            ('fig'         , 'png'),
+                            ('holomap'     , 'auto'),
+                            ('widgets'     , 'embed'),
+                            ('fps'         , 20),
+                            ('max_frames'  , 500),
+                            ('max_branches', 2),
+                            ('size'        , 100),
+                            ('charwidth'   , 80)])
 
-    defaults = {'backend'     : 'mpl',
-                'fig'         : 'png',
-                'holomap'     : 'auto',
-                'widgets'     : 'embed',
-                'fps'         : 20,
-                'max_frames'  : 500,
-                'max_branches': 2,
-                'size'        : 100}
-
-    settings = dict(**defaults)
+    settings = OrderedDict(defaults.items())
 
     # <format name> : (animation writer, mime_type,  anim_kwargs, extra_args, tag)
     ANIMATION_OPTS = {
@@ -79,7 +80,6 @@ class ViewMagic(Magics):
 
 
     def __init__(self, *args, **kwargs):
-        self.pprint_width = 30  # Maximum width for pretty printing
         super(ViewMagic, self).__init__(*args, **kwargs)
         self.view.__func__.__doc__ = self._generate_docstring()
 
@@ -109,11 +109,14 @@ class ViewMagic(Magics):
                   % cls.defaults['max_branches'])
         size =   ("size         : The percentage size of displayed output (default %r)"
                   % cls.defaults['size'])
-        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size]
+        chars =  ("charwidth    : The max character width view magic options display (default %r)"
+                  % cls.defaults['charwidth'])
+
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, chars]
         return '\n'.join(intro + descriptions)
 
 
-    def _extract_keywords(self, line, items = {}):
+    def _extract_keywords(self, line, items):
         """
         Given the keyword string, parse a dictionary of options.
         """
@@ -162,10 +165,10 @@ class ViewMagic(Magics):
         return settings
 
 
-    def get_settings(self, line, settings={}):
+    def get_settings(self, line, settings):
         "Given a keyword specification line, validated and compute settings"
-        items = self._extract_keywords(line, {})
-        for keyword in self.options:
+        items = self._extract_keywords(line, OrderedDict())
+        for keyword in self.defaults:
             if keyword in items:
                 value = items[keyword]
                 allowed = self.options[keyword]
@@ -207,9 +210,9 @@ class ViewMagic(Magics):
         """
         elements = ["%view"]
         lines, current, count = [], '', 0
-        for k,v in sorted(ViewMagic.settings.items()):
+        for k,v in ViewMagic.settings.items():
             keyword = '%s=%r' % (k,v)
-            if len(current) + len(keyword) > self.pprint_width:
+            if len(current) + len(keyword) > self.settings['charwidth']:
                 print ('%view' if count==0 else '      ')  + current
                 count += 1
                 current = keyword
@@ -226,9 +229,9 @@ class ViewMagic(Magics):
             self.pprint()
             return
 
-        restore_copy = dict(**self.settings)
+        restore_copy = OrderedDict(self.settings.items())
         try:
-            settings = self.get_settings(line)
+            settings = self.get_settings(line, OrderedDict())
             ViewMagic.settings = settings
             # Inform writer of chosen fps
             if settings['holomap'] in ['gif', 'scrubber']:
