@@ -121,7 +121,7 @@ def max_frame_warning(max_frames):
                      "[Total item frames exceeds max_frames on ViewMagic (%d)]"
                      % max_frames)
 
-def process_view_magics(obj):
+def process_cell_magics(obj):
     "Hook into %%opts and %%channels magics to process displayed element"
     invalid_options = OptsMagic.set_view_options(obj)
     if invalid_options: return invalid_options
@@ -180,7 +180,7 @@ def widget_display(view,  widget_format, widget_mode):
 @display_hook
 def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
     if not isinstance(vmap, HoloMap): return None
-    magic_info = process_view_magics(vmap)
+    magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
     opts = dict(Plot.settings.closest(vmap.last, 'plot').settings, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
@@ -203,7 +203,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
     if isinstance(layout, AdjointLayout): layout = NdLayout([layout])
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     shape = layout.shape
-    magic_info = process_view_magics(layout)
+    magic_info = process_cell_magics(layout)
     if magic_info: return magic_info
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
@@ -240,7 +240,7 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
     grid_size = (scale_factor * grid.shape[0] * get_plot_size()[0],
                  scale_factor * grid.shape[1] * get_plot_size()[1])
 
-    magic_info = process_view_magics(grid)
+    magic_info = process_cell_magics(grid)
     if magic_info: return magic_info
     layer_types = grid.layer_types
     if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
@@ -262,7 +262,7 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
 @display_hook
 def view_display(view, size=256, **kwargs):
     if not isinstance(view, ViewableElement): return None
-    magic_info = process_view_magics(view)
+    magic_info = process_cell_magics(view)
     if magic_info: return magic_info
     opts = dict(Plot.settings.closest(view, 'plot').settings, size=get_plot_size())
     fig = Plot.defaults[view.__class__](view, **opts)()
