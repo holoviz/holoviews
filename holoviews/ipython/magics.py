@@ -16,6 +16,7 @@ from ..core.settings import SettingsTree, Settings, SettingsError
 from ..plotting import Plot
 
 from collections import OrderedDict
+from IPython.display import display, HTML
 #========#
 # Magics #
 #========#
@@ -452,12 +453,10 @@ class OptsMagic(Magics):
 
 
     @classmethod
-    def custom_tree(cls, spec):
+    def customize_tree(cls, spec, settings):
         """
         Returns a customized copy of the Plot.settings SettingTree object.
         """
-        settings = SettingsTree(items=Plot.settings.data.items(),
-                                groups=Plot.settings.groups)
         for key in sorted(spec.keys()):
             try:
                 settings[str(key)] = spec[key]
@@ -470,7 +469,9 @@ class OptsMagic(Magics):
     def register_custom_spec(cls, spec, obj):
         ids = Plot.custom_settings.keys()
         max_id = max(ids) if len(ids)>0 else -1
-        custom_tree = cls.custom_tree(spec)
+        settings = SettingsTree(items=Plot.settings.data.items(),
+                                groups=Plot.settings.groups)
+        custom_tree = cls.customize_tree(spec, settings)
         if custom_tree is not None:
             Plot.custom_settings[max_id+1] = custom_tree
             cls.next_id = max_id+1
@@ -488,7 +489,9 @@ class OptsMagic(Magics):
         if cell:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            raise NotImplementedError("Line magic to be implemented shortly")
+            retval = self.customize_tree(spec, Plot.settings)
+            if retval is None:
+                display(HTML(OptsMagic.error_message))
         OptsMagic.error_message = None
 
 
