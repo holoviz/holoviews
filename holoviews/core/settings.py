@@ -223,6 +223,8 @@ class SettingsTree(AttrTree):
             raise AttributeError("Settings object needs to have a group name specified.")
         elif isinstance(val, Settings):
             group_items = {val.key: val}
+        elif isinstance(val, SettingsTree):
+            group_items = val.groups
 
         current_node = self[identifier] if identifier in self.children else self
         for group_name in current_node.groups:
@@ -237,6 +239,10 @@ class SettingsTree(AttrTree):
         else:
             raise ValueError('SettingsTree only accepts a dictionary of Settings.')
         super(SettingsTree, self).__setattr__(identifier, new_node)
+
+        if isinstance(val, SettingsTree):
+            for subtree in val:
+                self[identifier].__setattr__(subtree.identifier, subtree)
 
 
     def find(self, path, mode='node'):
