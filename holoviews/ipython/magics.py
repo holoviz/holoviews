@@ -81,6 +81,7 @@ class ViewMagic(Magics):
     def __init__(self, *args, **kwargs):
         self.pprint_width = 30  # Maximum width for pretty printing
         super(ViewMagic, self).__init__(*args, **kwargs)
+        self.view.__func__.__doc__ = self._generate_docstring()
 
 
     @classmethod
@@ -90,6 +91,26 @@ class ViewMagic(Magics):
             raise AssertionError("Registering format in list %s not in known formats %s"
                                  % (supported_formats, cls.optional_formats))
         cls.options['holomap'] = cls.inbuilt_formats + supported_formats
+
+
+    @classmethod
+    def _generate_docstring(cls):
+        intro = ["Magic for setting holoview display options.",
+                 "Arguments are supplied as a series of keywords in any order:", '']
+        backend = "backend      : The backend used by holoviews %r"  % cls.options['backend']
+        fig =     "fig          : The static figure format %r" % cls.options['fig']
+        holomap = "holomap      : The display type for holomaps %r" % cls.options['holomap']
+        widgets = "widgets      : The widget mode for widgets %r" % cls.options['widgets']
+        fps =    ("fps          : The frames per second for animations (default %r)"
+                  % cls.defaults['widgets'])
+        frames=  ("max_frames   : The max number of frames rendered (default %r)"
+                  % cls.defaults['max_frames'])
+        branches=("max_branches : The max number of LayoutTree branches rendered (default %r)"
+                  % cls.defaults['max_branches'])
+        size =   ("size         : The percentage size of displayed output (default %r)"
+                  % cls.defaults['size'])
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size]
+        return '\n'.join(intro + descriptions)
 
 
     def _extract_keywords(self, line, items = {}):
@@ -198,16 +219,11 @@ class ViewMagic(Magics):
             print ('%view' if count==0 else '      ')  + current
 
 
-    def print_usage_info(self):
-        print "The view magic is called with space separated keywords."
-        print "Tab completion is available for these keywords:\n\t%s" % self.options.keys()
-
-
     @line_cell_magic
     def view(self, line, cell=None):
-        "Magic for setting holoview display options"
         if line.strip() == '':
-            self.print_usage_info()
+            print "For help with the %view magic, call %view?\n"
+            self.pprint()
             return
 
         restore_copy = dict(**self.settings)
@@ -220,7 +236,7 @@ class ViewMagic(Magics):
             success = True
         except Exception as e:
             print 'SyntaxError: %s\n' % str(e)
-            print "For more information call the %view magic without arguments."
+            print "For help with the %view magic, call %view?\n"
             return
 
         if cell is None:
