@@ -396,6 +396,22 @@ class Dimensioned(LabelledData):
         raise NotImplementedError
 
 
+    def select(self, **kwargs):
+        """
+        Allows slicing or indexing into the Dimensioned object
+        by supplying the dimension and index/slice as key
+        value pairs.
+        """
+        deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
+                           and (kw not in self._cached_index_names)])
+        selection_depth = len(self.dimensions('key')) if deep_select else self.ndims
+        selection = [slice(None) for i in range(selection_depth)]
+        for dim, val in kwargs.items():
+            if isinstance(val, tuple): val = slice(*val)
+            selection[self.get_dimension_index(dim)] = val
+        return self.__getitem__(tuple(selection))
+
+
     def dimension_values(self, dimension):
         """
         Returns the values along the specified dimension. This method

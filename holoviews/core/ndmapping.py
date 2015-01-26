@@ -521,20 +521,6 @@ class NdMapping(MultiDimensionalMapping):
             return self.clone(items)
 
 
-    def select(self, **kwargs):
-        """
-        Allows selecting slices or indices into the NdMapping using
-        keyword arguments matching the names of the dimensions.
-        """
-        deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
-                           and (kw not in self._cached_index_names)])
-        selection_depth = len(self.dimensions('key')) if deep_select else self.ndims
-        selection = [slice(None) for i in range(selection_depth)]
-        for dim, val in kwargs.items():
-            selection[self.get_dimension_index(dim)] = val
-        return self.__getitem__(tuple(selection))
-
-
     def _transform_indices(self, indices):
         """
         Identity function here but subclasses can implement transforms
