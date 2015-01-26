@@ -18,15 +18,17 @@ message = """Welcome to the holoviews IPython extension! (http://ioam.github.io/
 message += '\nAvailable magics: %s' % ', '.join(all_line_magics + all_cell_magics)
 
 
-def select_format(format_priority):
-    for fmt in format_priority:
+def supported_formats(optional_formats):
+    "Optional formats that are actually supported"
+    supported = []
+    for fmt in optional_formats:
         try:
             anim = animation.FuncAnimation(plt.figure(),
                                            lambda x: x, frames=[0,1])
-            animate(anim, *magics.ANIMATION_OPTS[fmt])
-            return fmt
+            animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
+            supported.append(fmt)
         except: pass
-    return format_priority[-1]
+    return supported
 
 
 def update_matplotlib_rc():
@@ -56,6 +58,8 @@ def load_ipython_extension(ip, verbose=True):
         param_ext.load_ipython_extension(ip, verbose=False)
 
         load_magics(ip)
+        valid_formats = supported_formats(ViewMagic.optional_formats)
+        ViewMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
         update_matplotlib_rc()
         set_style('default')

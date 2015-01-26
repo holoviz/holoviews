@@ -38,14 +38,20 @@ class ViewMagic(Magics):
     applicable settings are available on the settings attribute.
     """
 
+    # Formats that are always available
+    inbuilt_formats= ['widgets', 'scrubber']
+    # Codec or system-dependent format options
+    optional_formats = ['webm','h264', 'gif']
+
     options = {'backend'     : ['mpl','d3'],
                'fig'         : ['svg', 'png'],
-               'holomap'     : ['widgets', 'scrubber', 'webm','h264', 'gif'],
+               'holomap'     : inbuilt_formats,
                'widgets'     : ['embed', 'live', 'cached'],
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
                'max_branches': (0, float('inf')),
                'size'        : (0, 100)}
+
 
     defaults = {'backend'     : 'mpl',
                 'fig'         : 'png',
@@ -75,6 +81,15 @@ class ViewMagic(Magics):
     def __init__(self, *args, **kwargs):
         self.pprint_width = 30  # Maximum width for pretty printing
         super(ViewMagic, self).__init__(*args, **kwargs)
+
+
+    @classmethod
+    def register_supported_formats(cls, supported_formats):
+        "Extend available holomap formats with supported format list"
+        if not all(el in cls.optional_formats for el in supported_formats):
+            raise AssertionError("Registering format in list %s not in known formats %s"
+                                 % (supported_formats, cls.optional_formats))
+        cls.options['holomap'] = cls.inbuilt_formats + supported_formats
 
 
     def _extract_keywords(self, line, items = {}):
