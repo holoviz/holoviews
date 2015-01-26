@@ -39,7 +39,7 @@ class ViewMagic(Magics):
     """
 
     # Formats that are always available
-    inbuilt_formats= ['widgets', 'scrubber']
+    inbuilt_formats= ['auto', 'widgets', 'scrubber']
     # Codec or system-dependent format options
     optional_formats = ['webm','h264', 'gif']
 
@@ -55,7 +55,7 @@ class ViewMagic(Magics):
 
     defaults = {'backend'     : 'mpl',
                 'fig'         : 'png',
-                'holomap'     : 'widgets',
+                'holomap'     : 'auto',
                 'widgets'     : 'embed',
                 'fps'         : 20,
                 'max_frames'  : 500,

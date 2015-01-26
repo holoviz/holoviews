@@ -133,11 +133,15 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
+            widget_mode = ViewMagic.settings['widgets']
+            map_format  = ViewMagic.settings['holomap']
+            # If widget_mode is None, widgets are not being used
+            widget_mode = (widget_mode if map_format in ViewMagic.inbuilt_formats else None)
             return fn(view,
                       max_frames=ViewMagic.settings['max_frames'],
                       max_branches = ViewMagic.settings['max_branches'],
-                      map_format = ViewMagic.settings['holomap'],
-                      widget_mode = ViewMagic.settings['widgets'],
+                      map_format = map_format,
+                      widget_mode = widget_mode,
                       **kwargs)
         except:
             if ENABLE_TRACEBACKS:
@@ -157,8 +161,14 @@ def animation_display(anim, map_format, **kwargs):
     return animate(anim, *ViewMagic.ANIMATION_OPTS[map_format])
 
 
-def widget_display(view,  map_format, widget_mode):
-    if map_format == 'scrubber':
+def widget_display(view,  widget_format, widget_mode):
+    assert widget_mode is not None, "Mistaken call to widget_display method"
+
+    if widget_format == 'auto':
+        dims = view.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        widget_format = 'scrubber' if len(dims) == 1 else 'widgets'
+
+    if widget_format == 'scrubber':
         return ScrubberWidget(view)()
     if widget_mode == 'embed':
         return SelectionWidget(view)()
@@ -182,7 +192,7 @@ def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
     elif len(mapplot) == 1:
         fig = mapplot()
         return figure_display(fig)
-    elif map_format=='widgets' or map_format == 'scrubber':
+    elif widget_mode is not None:
         return widget_display(vmap, map_format, widget_mode)
 
     return render(mapplot)
@@ -212,7 +222,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
     if len(layoutplot) == 1:
         fig = layoutplot()
         return figure_display(fig)
-    elif isinstance(map_format, tuple) or map_format == 'scrubber':
+    elif widget_mode is not None:
         return widget_display(layoutplot, map_format, widget_mode)
 
     return render(layoutplot)
@@ -244,7 +254,7 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)
-    elif map_format=='widgets' or map_format == 'scrubber':
+    elif widget_mode is not None:
         return widget_display(grid, map_format, widget_mode)
 
     return render(gridplot)
