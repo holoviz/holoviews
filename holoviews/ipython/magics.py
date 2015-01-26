@@ -20,24 +20,13 @@ from ..plotting import Plot
 # Magics #
 #========#
 
-GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
-VIDEO_TAG = """<center><video controls style='max-width:100%'>
- <source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
- Your browser does not support the video tag.
-</video><center/>"""
 
-# 'format name':(animation writer, mime_type,  anim_kwargs, extra_args, tag)
-ANIMATION_OPTS = {
-    'webm': ('ffmpeg', 'webm', {},
-             ['-vcodec', 'libvpx', '-b', '1000k'],
-             VIDEO_TAG),
-    'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
-             ['-pix_fmt', 'yuv420p'],
-             VIDEO_TAG),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, [],
-            GIF_TAG),
-    'scrubber': ('html', None, {'fps': 5}, None, None)
-}
+GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
+VIDEO_TAG = """
+<center><video controls style='max-width:100%'>
+<source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
+Your browser does not support the video tag.
+</video><center/>"""
 
 
 # Set to True to automatically run notebooks.
@@ -55,154 +44,186 @@ html_red = '#980f00'
 html_blue = '#00008e'
 
 
+
 @magics_class
 class ViewMagic(Magics):
     """
     Magic to allow easy control over the display of holoviews. The
-    figure and animation output formats, the animation frame rate and
-    figure size can all be controlled.
-
-    Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
+    applicable settings are available on the settings attribute.
     """
 
-    anim_formats = ['webm','h264','gif','scrubber','widgets']
-    fig_formats = ['svg', 'png', 'mpld3']
+    options = {'backend'     : ['mpl','d3'],
+               'fig'         : ['svg', 'png'],
+               'holomap'     : ['widgets', 'scrubber', 'webm','h264', 'gif'],
+               'widgets'     : ['embed', 'live', 'cached'],
+               'fps'         : (0, float('inf')),
+               'max_frames'  : (0, float('inf')),
+               'max_branches': (0, float('inf')),
+               'size'        : (0, 100)}
 
-    PERCENTAGE_SIZE = 100
-    FPS = 20
-    FIGURE_FORMAT = 'png'
-    VIDEO_FORMAT = 'webm'
+    defaults = {'backend'     : 'mpl',
+                'fig'         : 'png',
+                'holomap'     : 'widgets',
+                'widgets'     : 'embed',
+                'fps'         : 20,
+                'max_frames'  : 500,
+                'max_branches': 2,
+                'size'        : 100}
 
-    MAX_FRAMES = 500
-    MAX_BRANCHES = 2
+    settings = dict(**defaults)
+
+    # <format name> : (animation writer, mime_type,  anim_kwargs, extra_args, tag)
+    ANIMATION_OPTS = {
+        'webm': ('ffmpeg', 'webm', {},
+                 ['-vcodec', 'libvpx', '-b', '1000k'],
+                 VIDEO_TAG),
+        'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+                 ['-pix_fmt', 'yuv420p'],
+                 VIDEO_TAG),
+        'gif': ('imagemagick', 'gif', {'fps': 10}, [],
+                GIF_TAG),
+        'scrubber': ('html', None, {'fps': 5}, None, None)
+    }
 
 
     def __init__(self, *args, **kwargs):
+        self.pprint_width = 30  # Maximum width for pretty printing
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|widgets[:embedded|cached|live]|scrubber] [<percent size>] [MAX_FRAMES=<N>] [MAX_BRANCHES=<N>]"
-        self.usage_info += " (Arguments may be in any order)"
+
+
+    def _extract_keywords(self, line, items = {}):
+        """
+        Given the keyword string, parse a dictionary of options.
+        """
+        unprocessed = list(reversed(line.split('=')))
+        while unprocessed:
+            chunk = unprocessed.pop()
+            key = None
+            if chunk.strip() in self.options:
+                key = chunk.strip()
+            else:
+                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
+            # The next chunk may end in a subsequent keyword
+            value = unprocessed.pop().strip()
+            if len(unprocessed) != 0:
+                # Check if a new keyword has begun
+                for option in self.options:
+                    if value.endswith(option):
+                        value = value[:-len(option)].strip()
+                        unprocessed.append(option)
+                        break
+                else:
+                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
+            keyword = '%s=%s' % (key, value)
+            try:
+                items.update(eval('dict(%s)' % keyword))
+            except:
+                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
+        return items
+
+
+    def _validate(self, settings):
+        "Validation of edge cases and incompatible settings"
+        if settings['backend'] == 'd3':
+            try:      import mpld3 # pyflakes:ignore (Testing optional import)
+            except:
+                raise ValueError("Cannot use d3 backend without mpld3. "
+                                 "Please select a different backend")
+            allowed = ['scrubber', 'widget']
+            if settings['holomap'] not in d3_allowed:
+                raise ValueError("The D3 backend only supports holomap options %r" % allowed)
+        return settings
+
+
+    def get_settings(self, line, settings={}):
+        "Given a keyword specification line, validated and compute settings"
+        items = self._extract_keywords(line, {})
+        for keyword in self.options:
+            if keyword in items:
+                value = items[keyword]
+                allowed = self.options[keyword]
+                if isinstance(allowed, list) and value not in allowed:
+                    raise ValueError("Value %r for key %r not one of %s"
+                                     % (value, keyword, allowed))
+                elif isinstance(allowed, tuple):
+                    if not (allowed[0] <= value <= allowed[1]):
+                        raise ValueError("Value %r for key %r not between %s and %s"
+                                         % (keyword,value)+allowed)
+                settings[keyword] = value
+            else:
+                settings[keyword] = self.defaults[keyword]
+        return self._validate(settings)
+
 
     @classmethod
     def option_completer(cls, k,v):
-        return cls.anim_formats + cls.fig_formats + ['MAX_FRAMES=', 'MAX_BRANCHES=']
+        raw_line = v.text_until_cursor
+        line = raw_line.replace('%view','')
+        values=[]
 
-    def _set_animation_options(self, anim_spec):
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
+        cls.LINE = tokens
+        for token in tokens:
+            if token.strip() in cls.options:
+                completion_key = token.strip()
+                break
+        values = [repr(el) for el in cls.options.get(completion_key, [])
+                  if not isinstance(el, tuple)]
+        return values + [el+'=' for el in cls.options.keys()]
+
+
+    def pprint(self):
         """
-        Parse the animation format and fps from the specification string.
+        Pretty print the current view settings with a maximum width of
+        self.pprint_width.
         """
-        format_choice, opt_str = ((anim_spec, None) if (':' not in anim_spec)
-                                  else anim_spec.rsplit(':'))
-        if format_choice not in self.anim_formats:
-            print("Valid animations types: %s" % ', '.join(self.anim_formats))
-            return False
-        elif format_choice == 'widgets':
-            if opt_str not in ['embedded', 'cached', 'live', None]:
-                print("Valid widget modes are embedded, cached and live.")
-                return False
+        elements = ["%view"]
+        lines, current, count = [], '', 0
+        for k,v in sorted(ViewMagic.settings.items()):
+            keyword = '%s=%r' % (k,v)
+            if len(current) + len(keyword) > self.pprint_width:
+                print ('%view' if count==0 else '      ')  + current
+                count += 1
+                current = keyword
             else:
-                ViewMagic.VIDEO_FORMAT = (format_choice, opt_str if opt_str else 'embedded')
-                return True
-        elif opt_str is None:
-            ViewMagic.VIDEO_FORMAT = format_choice
-            return True
-
-        try:
-            fps = int(opt_str)
-        except:
-            print("Invalid frame rate: '%s'" %  opt_str)
-            return False
-
-        global ANIMATION_OPTS
-        ViewMagic.VIDEO_FORMAT, ViewMagic.FPS = format_choice, fps
-        if format_choice in ['gif', 'scrubber']:
-            ANIMATION_OPTS[format_choice][2]['fps'] = fps
-        return True
-
-
-    def _set_size(self, size_spec):
-        try:     size = int(size_spec)
-        except:  size = None
-
-        if (size is None) or (size < 0):
-            print("Percentage size must be an integer larger than zero.")
-            return False
+                current += ' '+ keyword
         else:
-            ViewMagic.PERCENTAGE_SIZE = size
-            return True
+            print ('%view' if count==0 else '      ')  + current
 
 
-    def _parse_settings(self, opts):
-        fig_fmt = [f in opts for f in self.fig_formats]
-        if all(fig_fmt):
-            success = False
-            print("Please select either png, svg or mpld3 for static output")
-        elif True in fig_fmt:
-            figure_format = self.fig_formats[fig_fmt.index(True)]
-            if figure_format == 'mpld3':
-                try:
-                    import mpld3 # pyflakes:ignore (Testing optional import)
-                except:
-                    print("mpld3 could not be imported, falling back to "
-                          "previous display backend.")
-                    figure_format = ViewMagic.FIGURE_FORMAT
-                print("Warning: mpld3 backend is still in development.")
-            ViewMagic.FIGURE_FORMAT = figure_format
-            opts.remove(figure_format)
-        elif len(opts) == 0: success = True
+    def print_usage_info(self):
+        print "The view magic is called with space separated keywords."
+        print "Tab completion is available for these keywords:\n\t%s" % self.options.keys()
 
-        if not len(opts) or len(opts) > 2:
-            success = not len(opts)
-        elif len(opts) == 1:
-            success = (self._set_animation_options(opts[0].lower())
-                       if opts[0][0].isalpha() else self._set_size(opts[0]))
-        elif sum(el[0].isalpha() for el in opts) in [0,2]:
-            success = False
-        else:
-            (anim, size) = (opts if opts[0][0].isalpha()
-                            else (opts[1], opts[0]))
-            anim_success = self._set_animation_options(anim.lower())
-            size_success = self._set_size(size)
-            success =  anim_success and size_success
-
-        return success
 
     @line_cell_magic
     def view(self, line, cell=None):
-        start_opts = [ViewMagic.FIGURE_FORMAT,  ViewMagic.VIDEO_FORMAT,
-                      ViewMagic.PERCENTAGE_SIZE,  ViewMagic.FPS]
+        "Magic for setting holoview display options"
+        if line.strip() == '':
+            self.print_usage_info()
+            return
 
-        opts = line.split()
-        filtered = [opt for opt in opts if '=' not in opt]
-        success = self._parse_settings(filtered)
-        for keyword in [opt for opt in opts if '=' in opt]:
-            try:
-                success = True
-                item = eval('dict(%s)' % keyword)
-                if item.keys()[0]=='MAX_FRAMES':
-                    ViewMagic.MAX_FRAMES = item.values()[0]
-                elif item.keys()[0]=='MAX_BRANCHES':
-                    ViewMagic.MAX_BRANCHES = item.values()[0]
-                else:
-                    success=False
-            except:
-                success = False
-            if not success:
-                print("Could not set keyword option: %s" % keyword)
+        restore_copy = dict(**self.settings)
+        try:
+            settings = self.get_settings(line)
+            ViewMagic.settings = settings
+            # Inform writer of chosen fps
+            if settings['holomap'] in ['gif', 'scrubber']:
+                self.ANIMATION_OPTS[settings['holomap']][2]['fps'] = settings['fps']
+            success = True
+        except Exception as e:
+            print 'SyntaxError: %s\n' % str(e)
+            print "For more information call the %view magic without arguments."
+            return
 
-
-        if cell is None and success:
-            if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
-                msg = "Display %s widget" % ViewMagic.VIDEO_FORMAT[1]
-            else:
-                msg = "Displaying %s animation [%s FPS]" % (ViewMagic.VIDEO_FORMAT.upper(), ViewMagic.FPS)
-            info = (msg, ViewMagic.FIGURE_FORMAT.upper(), ViewMagic.PERCENTAGE_SIZE)
-            print("%s and %s figures [%d%% size]" % info)
-        elif cell and success:
-            self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            [ViewMagic.FIGURE_FORMAT,  ViewMagic.VIDEO_FORMAT,
-             ViewMagic.PERCENTAGE_SIZE,  ViewMagic.FPS] = start_opts
+        if cell is None:
+            self.pprint()
         else:
-            print(self.usage_info)
+            self.shell.run_cell(cell, store_history=STORE_HISTORY)
+            self.settings = restore_copy
+
 
 
 
