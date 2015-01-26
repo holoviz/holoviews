@@ -33,7 +33,7 @@ ENABLE_TRACEBACKS=True
 
 
 def get_plot_size():
-    factor = ViewMagic.PERCENTAGE_SIZE / 100.0
+    factor = ViewMagic.settings['size'] / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
 
@@ -52,14 +52,15 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
 
 
 def HTML_video(plot):
-    anim = plot.anim(fps=ViewMagic.FPS)
+    anim = plot.anim(fps=ViewMagic.settings['fps'])
     writers = animation.writers.avail
-    for fmt in [ViewMagic.VIDEO_FORMAT] + list(magics.ANIMATION_OPTS.keys()):
-        if magics.ANIMATION_OPTS[fmt][0] in writers:
+    current_format = ViewMagic.settings['holomap']
+    for fmt in [current_format] + list(ViewMagic.ANIMATION_OPTS.keys()):
+        if ViewMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
-                return animate(anim, *magics.ANIMATION_OPTS[fmt])
+                return animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
             except: pass
-    msg = "<b>Could not generate %s animation</b>" % ViewMagic.VIDEO_FORMAT
+    msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
         msg = "<b>Python 3 Matplotlib animation support broken &lt;= 1.3</b>"
     raise Exception(msg)
@@ -80,16 +81,16 @@ def last_frame(plot):
 
 
 def figure_display(fig, size=None, message=None, max_width='100%'):
+    figure_format = ViewMagic.settings['fig']
     if size is not None:
         inches = size / float(fig.dpi)
         fig.set_size_inches(inches, inches)
-
-    if ViewMagic.FIGURE_FORMAT.lower() == 'mpld3' and mpld3:
+    if figure_format == 'mpld3' and mpld3:
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        figdata = print_figure(fig, ViewMagic.FIGURE_FORMAT)
-        if ViewMagic.FIGURE_FORMAT.lower()=='svg':
+        figdata = print_figure(fig, figure_format)
+        if figure_format=='svg':
             mime_type = 'svg+xml'
             figdata = figdata.encode("utf-8")
         else:
@@ -117,7 +118,7 @@ def sanitized_repr(obj):
 def max_frame_warning(max_frames):
     sys.stderr.write("Skipping matplotlib display to avoid "
                      "lengthy animation render times\n"
-                     "[Total item frames exceeds ViewMagic.MAX_FRAMES (%d)]"
+                     "[Total item frames exceeds max_frames on ViewMagic (%d)]"
                      % max_frames)
 
 def process_view_magics(obj):
@@ -145,13 +146,13 @@ def render(plot):
 
 @display_hook
 def animation_display(anim):
-    return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.VIDEO_FORMAT])
+    return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.settings['holomap']])
 
 def widget_display(view):
-    if ViewMagic.VIDEO_FORMAT == 'scrubber':
+    if ViewMagic.settings['holomap'] == 'scrubber':
         return ScrubberWidget(view)()
-    mode = ViewMagic.VIDEO_FORMAT[1]
-    if mode == 'embedded':
+    mode = ViewMagic.settings['widgets']
+    if mode == 'embed':
         return SelectionWidget(view)()
     elif mode == 'cached':
         return IPySelectionWidget(view, cached=True)()
@@ -165,16 +166,17 @@ def map_display(vmap, size=256):
     if magic_info: return magic_info
     opts = dict(Plot.settings.closest(vmap.last, 'plot').settings, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
+    max_frames = ViewMagic.settings['max_frames']
+    video_format = ViewMagic.settings['holomap']
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
-    elif len(mapplot) > ViewMagic.MAX_FRAMES:
-        max_frame_warning(ViewMagic.MAX_FRAMES)
+    elif len(mapplot) > max_frames:
+        max_frame_warning(max_frames)
         return sanitized_repr(vmap)
     elif len(mapplot) == 1:
         fig = mapplot()
         return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
+    elif video_format=='widgets' or video_format == 'scrubber':
         return widget_display(vmap)
 
     return render(mapplot)
@@ -192,21 +194,22 @@ def layout_display(layout, size=256):
 
     opts = dict(Plot.settings.closest(layout, 'plot').settings, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
-
+    max_frames   = ViewMagic.settings['max_frames']
+    max_branches = ViewMagic.settings['max_branches']
+    video_format = ViewMagic.settings['holomap']
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in layout.data.keys()]))
-            if branches > ViewMagic.MAX_BRANCHES:
+            if branches > max_branches:
                 return '<tt>'+ sanitized_repr(layout) + '</tt>'
-            elif len(layout.data) * len(layoutplot) > ViewMagic.MAX_FRAMES:
-                max_frame_warning(ViewMagic.MAX_FRAMES)
+            elif len(layout.data) * len(layoutplot) > max_frames:
+                max_frame_warning(max_frames)
                 return '<tt>'+ sanitized_repr(layout) + '</tt>'
 
     if len(layoutplot) == 1:
         fig = layoutplot()
         return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
+    elif isinstance(video_format, tuple) or video_format == 'scrubber':
         return widget_display(layoutplot)
 
     return render(layoutplot)
@@ -214,6 +217,10 @@ def layout_display(layout, size=256):
 @display_hook
 def grid_display(grid, size=256):
     if not isinstance(grid, AxisLayout): return None
+
+    max_frames   = ViewMagic.settings['max_frames']
+    max_branches = ViewMagic.settings['max_branches']
+    video_format = ViewMagic.settings['holomap']
 
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
@@ -232,14 +239,13 @@ def grid_display(grid, size=256):
     else:
         plot_type = GridPlot
     gridplot = plot_type(grid, size=grid_size)
-    if len(gridplot) > ViewMagic.MAX_FRAMES:
-        max_frame_warning(ViewMagic.MAX_FRAMES)
+    if len(gridplot) > max_frames:
+        max_frame_warning(max_frames)
         return sanitized_repr(grid)
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
+    elif video_format=='widgets' or video_format == 'scrubber':
         return widget_display(grid)
 
     return render(gridplot)

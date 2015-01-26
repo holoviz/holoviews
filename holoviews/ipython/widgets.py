@@ -27,7 +27,7 @@ import param
 from ..core import ViewableElement, NdMapping, CompositeOverlay, NdLayout,\
     AdjointLayout, AxisLayout, LayoutTree, HoloMap, Element
 from ..plotting import Plot, LayoutPlot
-from .magics import ViewMagic, ANIMATION_OPTS
+from .magics import ViewMagic
 
 
 class ProgressBar(param.Parameterized):
@@ -243,7 +243,7 @@ def isnumeric(val):
 
 
 def get_plot_size():
-    factor = ViewMagic.PERCENTAGE_SIZE / 100.0
+    factor = ViewMagic.settings['size'] / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
 
@@ -298,7 +298,7 @@ class NdWidget(param.Parameterized):
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
-        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+        if ViewMagic.settings['backend'] == 'mpld3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_html(fig)
@@ -363,7 +363,8 @@ class IPySelectionWidget(NdWidget):
 
     def __call__(self):
         # Initalize image widget
-        if ViewMagic.FIGURE_FORMAT in ['mpld3', 'svg']:
+        if (ViewMagic.settings['backend'] == 'mpld3'
+            or ViewMagic.settings['fig'] =='svg'):
             self.image_widget = widgets.HTMLWidget()
         else:
             self.image_widget = widgets.ImageWidget()
@@ -484,7 +485,7 @@ class ScrubberWidget(NdWidget):
 
 
     def get_frames(self, id):
-        use_mpld3 = ViewMagic.FIGURE_FORMAT == 'mpld3'
+        use_mpld3 = ViewMagic.settings['backend'] == 'mpld3'
         frames = {idx: frame if use_mpld3 or self.export_json else
                   str(frame) for idx, frame in enumerate(self.frames.values())}
         encoder = {}
@@ -516,7 +517,7 @@ class ScrubberWidget(NdWidget):
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
-        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+        if ViewMagic.settings['backend'] == 'mpld3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
@@ -530,13 +531,13 @@ class ScrubberWidget(NdWidget):
         frames = self.get_frames(id)
 
         data = {'id': id, 'Nframes': len(self.plot),
-                'interval': int(1000. / ANIMATION_OPTS['scrubber'][2]['fps']),
+                'interval': int(1000. / ViewMagic.ANIMATION_OPTS['scrubber'][2]['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
                 'server': self.server_url,
                 'mpld3_url': self.mpld3_url,
                 'd3_url': self.d3_url[:-3],
-                'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
+                'mpld3': str(ViewMagic.settings['backend'] == 'mpld3').lower()}
 
         return self.render_html(data)
 
@@ -619,7 +620,7 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
-                'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
+                'mpld3': str(ViewMagic.settings['backend'] == 'mpld3').lower()}
 
         return self.render_html(data)
 
