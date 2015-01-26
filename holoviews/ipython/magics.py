@@ -364,6 +364,49 @@ class ChannelMagic(Magics):
             return list(channel_ops.keys())
 
 
+class OptsCompleter(object):
+    """
+    Implements the TAB-completer for the %%opts magic.
+    """
+    _completions = {} # Contains valid plot and style keywords per Element
+
+    @classmethod
+    def setup_completer(cls):
+        "Get the dictionary of valid completions"
+        if len(cls._completions) != 0: return cls._completions
+        for element in Plot.settings.children:
+            settings = Plot.settings[element]
+            plotkws = settings['plot'].allowed_keywords
+            stylekws = settings['style'].allowed_keywords
+            cls._completions[element] = (plotkws, stylekws if stylekws else [])
+        return cls._completions
+
+
+    @classmethod
+    def option_completer(cls, k,v):
+        "Tab completion hook for the %%opts cell magic."
+        completions = cls.setup_completer()
+        line = v.text_until_cursor
+        # Find the last element class mentioned
+        completion_key = None
+        for token in [t for t in reversed(line.replace('.', ' ').split())]:
+            if token in completions:
+                completion_key = token
+                break
+
+        if not completion_key:
+            return completions.keys()
+
+        if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
+            kws = completions[completion_key][0]
+            return [kw+'=' for kw in kws]
+
+        style_completions = [kw+'=' for kw in completions[completion_key][1]]
+        if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
+            return style_completions
+        return style_completions + completions.keys()
+
+
 # ANSI color codes for the IPython pager
 red   = '\x1b[1;31m%s\x1b[0m'
 blue  = '\x1b[1;34m%s\x1b[0m'
@@ -403,3 +446,7 @@ def load_magics(ip):
 
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
+
+    OptsCompleter.setup_completer()
+    ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%%opts')
+    ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%opts')
