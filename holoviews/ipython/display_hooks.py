@@ -146,7 +146,7 @@ def render(plot):
 
 @display_hook
 def animation_display(anim):
-    return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.settings['holomap']])
+    return animate(anim, *ViewMagic.ANIMATION_OPTS[ViewMagic.settings['holomap']])
 
 def widget_display(view):
     if ViewMagic.settings['holomap'] == 'scrubber':
