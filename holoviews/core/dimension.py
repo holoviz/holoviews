@@ -202,7 +202,7 @@ class LabelledData(param.Parameterized):
         return specification[:len(split_spec)] == split_spec
 
 
-    def traverse(self, fn, specs=None):
+    def traverse(self, fn, specs=None, full_breadth=True):
         """
         Traverses any nested LabelledData object (i.e LabelledData
         objects containing LabelledData objects), applying the
@@ -222,7 +222,8 @@ class LabelledData(param.Parameterized):
         try:
             # Assumes composite objects are iterables
             for el in self:
-                accumulator += el.traverse(fn, specs)
+                accumulator += el.traverse(fn, specs, full_breadth)
+                if not full_breadth: break
         except:
             pass
         return accumulator
