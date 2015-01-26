@@ -287,7 +287,7 @@ class SettingsTree(AttrTree):
             return None
         if self.parent is None:
             return self.groups[group]
-        return Settings(**dict(self.parent.settings(group),
+        return Settings(**dict(self.parent.settings(group).kwargs,
                                **self.groups[group].kwargs))
 
 
