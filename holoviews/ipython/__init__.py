@@ -44,10 +44,6 @@ def update_matplotlib_rc():
     matplotlib.rcParams.update(rc)
 
 
-ViewMagic.settings['holomap'] = select_format(['webm','h264','gif'])
-# HTML_video output by default, but may be set to first_frame,
-# middle_frame or last_frame (e.g. for testing purposes)
-
 _loaded = False
 def load_ipython_extension(ip, verbose=True):
 

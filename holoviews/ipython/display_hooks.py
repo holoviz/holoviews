@@ -258,6 +258,9 @@ def view_display(view, size=256, **kwargs):
     fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 
+
+# HTML_video output by default, but may be set to first_frame,
+# middle_frame or last_frame (e.g. for testing purposes)
 render_anim = HTML_video
 
 def set_display_hooks(ip):
