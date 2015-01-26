@@ -325,15 +325,16 @@ class HoloMap(UniformNdMapping):
         if not issubclass(self.type, CompositeOverlay):
             return self.clone(self.items())
 
-        maps = []
         item_maps = defaultdict(list)
         for k, overlay in self.items():
-            for i, el in enumerate(overlay):
-                item_maps[i].append((k, el))
+            for key, el in overlay.items():
+                item_maps[k].append((k, el))
 
+        maps, keys = [], []
         for k in sorted(item_maps.keys()):
             maps.append(self.clone(item_maps[k]))
-        return maps
+            keys.append(k)
+        return keys, maps
 
 
     def _dimension_keys(self):

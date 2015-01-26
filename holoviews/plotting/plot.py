@@ -868,17 +868,19 @@ class OverlayPlot(Plot):
         subplots = {}
 
         #collapsed = self._collapse_channels(self._map)
-        vmaps = self._map.split_overlays()
+        keys, vmaps = self._map.split_overlays()
         style_groups = dict((k, enumerate(list(v))) for k,v
                             in groupby(vmaps, lambda s: (s.last.value)))
-        for zorder, vmap in enumerate(vmaps):
+        for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
             cyclic_index, _ = next(style_groups[(vmap.last.value)])
             plotopts = self.settings.closest(vmap.last, 'plot').settings
+            if issubclass(vmap.type, NdOverlay):
+                plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
+            plotopts = dict(all_keys=self._keys, axis=self.ax,
+                            cyclic_index=cyclic_index, figure=self.handles['fig'],
+                            zorder=zorder,**plotopts)
             plotype = Plot.defaults[type(vmap.last)]
-            subplots[zorder] = plotype(vmap, **dict(plotopts, size=self.size, all_keys=self._keys,
-                                                    show_legend=self.show_legend, zorder=zorder,
-                                                    aspect=self.aspect, cyclic_index=cyclic_index,
-                                                    figure=self.handles['fig'], axis=self.ax))
+            subplots[key] = plotype(vmap, **plotopts)
 
         return subplots
 
