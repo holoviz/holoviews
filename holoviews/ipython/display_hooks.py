@@ -167,7 +167,7 @@ def map_display(vmap, size=256):
     opts = dict(Plot.settings.closest(vmap.last, 'plot').settings, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     max_frames = ViewMagic.settings['max_frames']
-    video_format = ViewMagic.settings['holomap']
+    map_format = ViewMagic.settings['holomap']
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
     elif len(mapplot) > max_frames:
@@ -176,7 +176,7 @@ def map_display(vmap, size=256):
     elif len(mapplot) == 1:
         fig = mapplot()
         return figure_display(fig)
-    elif video_format=='widgets' or video_format == 'scrubber':
+    elif map_format=='widgets' or map_format == 'scrubber':
         return widget_display(vmap)
 
     return render(mapplot)
@@ -196,7 +196,7 @@ def layout_display(layout, size=256):
     layoutplot = LayoutPlot(layout, **opts)
     max_frames   = ViewMagic.settings['max_frames']
     max_branches = ViewMagic.settings['max_branches']
-    video_format = ViewMagic.settings['holomap']
+    map_format = ViewMagic.settings['holomap']
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in layout.data.keys()]))
@@ -209,7 +209,7 @@ def layout_display(layout, size=256):
     if len(layoutplot) == 1:
         fig = layoutplot()
         return figure_display(fig)
-    elif isinstance(video_format, tuple) or video_format == 'scrubber':
+    elif isinstance(map_format, tuple) or map_format == 'scrubber':
         return widget_display(layoutplot)
 
     return render(layoutplot)
@@ -220,7 +220,7 @@ def grid_display(grid, size=256):
 
     max_frames   = ViewMagic.settings['max_frames']
     max_branches = ViewMagic.settings['max_branches']
-    video_format = ViewMagic.settings['holomap']
+    map_format = ViewMagic.settings['holomap']
 
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
@@ -245,7 +245,7 @@ def grid_display(grid, size=256):
     if len(gridplot) == 1:
         fig = gridplot()
         return figure_display(fig)
-    elif video_format=='widgets' or video_format == 'scrubber':
+    elif map_format=='widgets' or map_format == 'scrubber':
         return widget_display(grid)
 
     return render(gridplot)
