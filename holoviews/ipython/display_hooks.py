@@ -128,6 +128,7 @@ def process_view_magics(obj):
     invalid_channels = ChannelMagic.set_channels(obj)
     if invalid_channels: return invalid_channels
 
+
 def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
@@ -143,11 +144,13 @@ def display_hook(fn):
                 traceback.print_exc()
     return wrapped
 
+
 def render(plot):
     try:
         return render_anim(plot)
     except Exception as e:
         return str(e)+'<br/>'+figure_display(plot())
+
 
 @display_hook
 def animation_display(anim, map_format, **kwargs):

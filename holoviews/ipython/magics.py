@@ -14,8 +14,6 @@ from ..core import NdOverlay, Element, HoloMap,\
 from ..plotting import Plot
 
 
-#channel_ops = ChannelOpts.operations
-
 #========#
 # Magics #
 #========#
@@ -31,18 +29,6 @@ Your browser does not support the video tag.
 
 # Set to True to automatically run notebooks.
 STORE_HISTORY = False
-
-
-# ANSI color codes for the IPython pager
-red   = '\x1b[1;31m%s\x1b[0m'
-blue  = '\x1b[1;34m%s\x1b[0m'
-green = '\x1b[1;32m%s\x1b[0m'
-cyan = '\x1b[1;36m%s\x1b[0m'
-
-# Corresponding HTML color codes
-html_red = '#980f00'
-html_blue = '#00008e'
-
 
 
 @magics_class
@@ -164,7 +150,6 @@ class ViewMagic(Magics):
     def option_completer(cls, k,v):
         raw_line = v.text_until_cursor
         line = raw_line.replace('%view','')
-        values=[]
 
         # Find the last element class mentioned
         completion_key = None
@@ -345,6 +330,18 @@ class ChannelMagic(Magics):
                 return list(channel_ops[op_name].params().keys())
         else:
             return list(channel_ops.keys())
+
+
+# ANSI color codes for the IPython pager
+red   = '\x1b[1;31m%s\x1b[0m'
+blue  = '\x1b[1;34m%s\x1b[0m'
+green = '\x1b[1;32m%s\x1b[0m'
+cyan = '\x1b[1;36m%s\x1b[0m'
+
+# Corresponding HTML color codes
+html_red = '#980f00'
+html_blue = '#00008e'
+
 
 
 @magics_class
