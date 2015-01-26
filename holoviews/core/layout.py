@@ -111,17 +111,7 @@ class AdjointLayout(Dimensioned):
 
     @property
     def deep_dimensions(self):
-        return self.main.dimensions
-
-    @property
-    def style(self):
-        return [el.style for el in self]
-
-
-    @style.setter
-    def style(self, styles):
-        for layer, style in zip(self, styles):
-            layer.style = style
+        return self.main.dimensions()
 
 
     def __lshift__(self, other):

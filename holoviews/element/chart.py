@@ -127,7 +127,7 @@ class Chart(Element2D):
 
     def dframe(self):
         import pandas as pd
-        columns = [d.name for d in self.dimensions]
+        columns = [d.name for d in self.dimensions()]
         return pd.DataFrame(self.data, columns=columns)
 
 
@@ -360,7 +360,7 @@ class Points(Chart):
 
 
     def dimension_values(self, dim):
-        if dim in [d.name for d in self.dimensions]:
+        if dim in [d.name for d in self.dimensions()]:
             dim_index = self.get_dimension_index(dim)
             if dim_index < self.data.shape[1]:
                 return self.data[:, dim_index]

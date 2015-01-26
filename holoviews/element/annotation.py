@@ -176,7 +176,7 @@ class Contours(Element2D):
 
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
-        if dim_idx >= len(self.dimensions):
+        if dim_idx >= len(self.dimensions()):
             raise KeyError('Dimension %s not found' % str(dimension))
         values = []
         for contour in self.data:

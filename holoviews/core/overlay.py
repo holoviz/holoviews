@@ -150,7 +150,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
     def dimension_values(self, dimension):
         values = []
         for el in self:
-            if dimension in [dim.name for dim in el.dimensions]:
+            if dimension in [dim.name for dim in el.dimensions()]:
                 values.append(el.dimension_values(dimension))
         return np.concatenate(values)
 
@@ -160,7 +160,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
         dimensions = []
         dimension_names = []
         for el in self:
-            for dim in el.dimensions:
+            for dim in el.dimensions():
                 if dim.name not in dimension_names:
                     dimensions.append(dim)
                     dimension_names.append(dim.name)
@@ -170,7 +170,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
     def ranges(self):
         ranges = {}
         for el in self:
-            ranges[el.settings] = {dim.name: el.range(dim.name) for dim in el.dimensions}
+            ranges[el.settings] = {dim.name: el.range(dim.name) for dim in el.dimensions()}
 
 
 

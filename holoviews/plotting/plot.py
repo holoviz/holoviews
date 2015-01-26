@@ -437,7 +437,7 @@ class GridPlot(Plot):
 
         # Set labels and titles
         key = self._keys[-1]
-        grid_axis.set_xlabel(str(self.grid.dimensions[0]))
+        grid_axis.set_xlabel(str(self.grid.key_dimensions[0]))
         grid_axis.set_title(self._format_title(key))
 
         # Compute and set x- and y-ticks
@@ -448,7 +448,7 @@ class GridPlot(Plot):
             grid_axis.get_yaxis().set_visible(False)
         else:
             dim1_keys, dim2_keys = zip(*keys)
-            grid_axis.set_ylabel(str(self.grid.dimensions[1]))
+            grid_axis.set_ylabel(str(self.grid.key_dimensions[1]))
             grid_axis.set_aspect(float(self.rows)/self.cols)
         plot_width = 1.0 / self.cols
         xticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]

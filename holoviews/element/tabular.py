@@ -86,7 +86,7 @@ class ItemTable(Element):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return str(self.dimensions[row])
+            return str(self.dimensions()[row])
         else:
             heading = self._cached_index_names[row]
             return self.data[heading]
@@ -332,7 +332,7 @@ class Table(Element, NdMapping):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = [d.name for d in self.dimensions]
+        labels = [d.name for d in self.dimensions()]
         return pandas.DataFrame(
             [dict(zip(labels, k+ (v if isinstance(v, tuple) else (v,))))
              for (k, v) in self.data.items()])

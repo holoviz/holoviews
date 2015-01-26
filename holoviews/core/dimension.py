@@ -315,20 +315,35 @@ class Dimensioned(LabelledData):
     def deep_dimensions(self):
         "The list of deep dimensions"
         if self._deep_indexable and len(self):
-            return self.values()[0].dimensions
+            return self.values()[0].dimensions()
         else:
             return []
 
-    @property
-    def dimensions(self):
-        "Returns all the defined dimensions including deep dimensions"
-        return [dim for group in self._dim_groups
-                for dim in getattr(self, group)]
+
+    def dimensions(self, selection='all'):
+        """
+        Provides convenient access to Dimensions on nested
+        Dimensioned objects. Dimensions can be selected
+        by their type, i.e. 'key' or 'value' dimensions.
+        By default 'all' dimensions are returned.
+        """
+        if selection == 'all':
+            return [dim for group in self._dim_groups
+                    for dim in getattr(self, group)]
+        elif selection == 'key':
+            key_traversal = self.traverse(lambda x: x.key_dimensions, full_breadth=False)
+            return [dim for keydims in key_traversal for dim in keydims]
+        elif selection == 'value':
+            key_traversal = self.traverse(lambda x: x.value_dimensions)
+            return [dim for keydims in key_traversal for dim in keydims]
+        else:
+            raise KeyError("Invalid selection %r, valid selections include"
+                           "'all', 'value' and 'key' dimensions" % repr(selection))
 
 
     def get_dimension(self, dimension, default=None):
         "Access a Dimension object by name or index."
-        all_dims = self.dimensions
+        all_dims = self.dimensions()
         if isinstance(dimension, int):
             return all_dims[dimension]
         else:
@@ -340,12 +355,12 @@ class Dimensioned(LabelledData):
         Returns the index of the requested dimension.
         """
         if isinstance(dim, int):
-            if dim < len(self.dimensions):
+            if dim < len(self.dimensions()):
                 return dim
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            return [d.name for d in self.dimensions].index(dim)
+            return [d.name for d in self.dimensions()].index(dim)
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))

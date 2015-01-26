@@ -281,7 +281,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def dimension_values(self, dimension):
         "Returns the values along the specified dimension."
-        all_dims = [d.name for d in self.dimensions]
+        all_dims = [d.name for d in self.dimensions()]
         if isinstance(dimension, int):
             dimension = all_dims[dimension]
 
@@ -289,7 +289,7 @@ class MultiDimensionalMapping(Dimensioned):
             values = [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
         elif dimension in all_dims:
             values = [el.dimension_values(dimension) for el in self
-                      if dimension in el.dimensions]
+                      if dimension in el.dimensions()]
             values = np.concatenate(values)
         else:
             raise Exception('Dimension %s not found.' % dimension)
@@ -528,7 +528,7 @@ class NdMapping(MultiDimensionalMapping):
         """
         deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
                            and (kw not in self._cached_index_names)])
-        selection_depth = len(self.dimensions) if deep_select else self.ndims
+        selection_depth = len(self.dimensions('key')) if deep_select else self.ndims
         selection = [slice(None) for i in range(selection_depth)]
         for dim, val in kwargs.items():
             selection[self.get_dimension_index(dim)] = val
