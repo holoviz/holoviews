@@ -132,6 +132,11 @@ class ViewMagic(Magics):
             allowed = ['scrubber', 'widget']
             if settings['holomap'] not in d3_allowed:
                 raise ValueError("The D3 backend only supports holomap options %r" % allowed)
+
+        if (settings['holomap']=='widgets'
+            and settings['widgets']!='embed'
+            and settings['fig']=='svg'):
+            raise ValueError("SVG mode not supported by widgets unless in embed mode")
         return settings
 
 
