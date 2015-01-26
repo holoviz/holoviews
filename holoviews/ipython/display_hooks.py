@@ -123,7 +123,7 @@ def max_frame_warning(max_frames):
 
 def process_cell_magics(obj):
     "Hook into %%opts and %%channels magics to process displayed element"
-    invalid_options = OptsMagic.set_view_options(obj)
+    invalid_options = OptsMagic.process_view(obj)
     if invalid_options: return invalid_options
     invalid_channels = ChannelMagic.set_channels(obj)
     if invalid_channels: return invalid_channels

@@ -376,6 +376,22 @@ html_blue = '#00008e'
 
 
 
+@magics_class
+class OptsMagic(Magics):
+
+    @classmethod
+    def process_view(cls, obj):
+        """
+        To be called by the display hook which supplies the element to
+        be displayed. Any customisation of the object can then occur
+        before final display. If there is any error, a HTML message
+        may be returned. If None is returned, display will proceed as
+        normal.
+        """
+        return None
+
+
+
 def load_magics(ip):
 
     ip.register_magics(ViewMagic)
