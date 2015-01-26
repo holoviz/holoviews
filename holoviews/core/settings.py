@@ -31,6 +31,33 @@ import param
 from .tree import AttrTree
 
 
+class SettingsError(Exception):
+    """
+    Custom exception raised when there is an attempt to apply invalid
+    settings. Stores the necessary information to construct a more
+    readable message for the user if caught and processed
+    appropriately.
+    """
+    def __init__(self, invalid_keyword, allowed_keywords,
+                 group_name=None, path=None):
+        super(SettingsError, self).__init__(self.message(invalid_keyword,
+                                                         allowed_keywords,
+                                                         group_name, path))
+        self.invalid_keyword = invalid_keyword
+        self.allowed_keywords = allowed_keywords
+        self.group_name =group_name
+        self.path = path
+
+
+    def message(self, invalid_keyword, allowed_keywords, group_name, path):
+        msg = ("Invalid option %s, valid settings are: %s"
+               % (repr(invalid_keyword), str(allowed_keywords)))
+        if path and group_name:
+            msg = ("Invalid key for group %r on path %r;\n"
+                    % (group_name, path)) + msg
+        return msg
+
+
 class Cycle(param.Parameterized):
     """
     A simple container class that specifies cyclic settings. A typical
@@ -96,9 +123,7 @@ class Settings(param.Parameterized):
 
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
-                raise KeyError("Invalid option %s, valid settings are: %s"
-                               % (repr(kwarg), str(self.allowed_keywords)))
-
+                raise SettingsError(kwarg, allowed_keywords)
         self.kwargs = kwargs
         self._settings = self._expand_settings(kwargs)
 
@@ -203,10 +228,11 @@ class SettingsTree(AttrTree):
         group_settings = self.groups[group_name]
         try:
             return group_settings(**override_kwargs)
-        except KeyError as e:
-            keyerror = e.strerror[0].lower() + e.strerror[1:]
-            raise KeyError("Invalid key for group %r on path %r; %s )"
-                           % (group_name, self.path, keyerror))
+        except SettingsError as e:
+            raise SettingsError(e.invalid_keyword,
+                                e.allowed_keywords,
+                                group_name=group_name,
+                                path = self.path)
 
 
     def __getitem__(self, item):
