@@ -132,7 +132,12 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            return fn(view, **kwargs)
+            return fn(view,
+                      max_frames=ViewMagic.settings['max_frames'],
+                      max_branches = ViewMagic.settings['max_branches'],
+                      map_format = ViewMagic.settings['holomap'],
+                      widget_mode = ViewMagic.settings['widgets'],
+                      **kwargs)
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
@@ -145,29 +150,27 @@ def render(plot):
         return str(e)+'<br/>'+figure_display(plot())
 
 @display_hook
-def animation_display(anim):
-    return animate(anim, *ViewMagic.ANIMATION_OPTS[ViewMagic.settings['holomap']])
+def animation_display(anim, map_format, **kwargs):
+    return animate(anim, *ViewMagic.ANIMATION_OPTS[map_format])
 
-def widget_display(view):
-    if ViewMagic.settings['holomap'] == 'scrubber':
+
+def widget_display(view,  map_format, widget_mode):
+    if map_format == 'scrubber':
         return ScrubberWidget(view)()
-    mode = ViewMagic.settings['widgets']
-    if mode == 'embed':
+    if widget_mode == 'embed':
         return SelectionWidget(view)()
-    elif mode == 'cached':
+    elif widget_mode == 'cached':
         return IPySelectionWidget(view, cached=True)()
     else:
         return IPySelectionWidget(view, cached=False)()
 
 @display_hook
-def map_display(vmap, size=256):
+def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_view_magics(vmap)
     if magic_info: return magic_info
     opts = dict(Plot.settings.closest(vmap.last, 'plot').settings, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
-    max_frames = ViewMagic.settings['max_frames']
-    map_format = ViewMagic.settings['holomap']
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
     elif len(mapplot) > max_frames:
@@ -177,13 +180,13 @@ def map_display(vmap, size=256):
         fig = mapplot()
         return figure_display(fig)
     elif map_format=='widgets' or map_format == 'scrubber':
-        return widget_display(vmap)
+        return widget_display(vmap, map_format, widget_mode)
 
     return render(mapplot)
 
 
 @display_hook
-def layout_display(layout, size=256):
+def layout_display(layout, map_format, max_frames, max_branches, widget_mode, size=256, **kwargs):
     if isinstance(layout, AdjointLayout): layout = NdLayout([layout])
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     shape = layout.shape
@@ -194,9 +197,6 @@ def layout_display(layout, size=256):
 
     opts = dict(Plot.settings.closest(layout, 'plot').settings, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
-    max_frames   = ViewMagic.settings['max_frames']
-    max_branches = ViewMagic.settings['max_branches']
-    map_format = ViewMagic.settings['holomap']
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in layout.data.keys()]))
@@ -210,18 +210,14 @@ def layout_display(layout, size=256):
         fig = layoutplot()
         return figure_display(fig)
     elif isinstance(map_format, tuple) or map_format == 'scrubber':
-        return widget_display(layoutplot)
+        return widget_display(layoutplot, map_format, widget_mode)
 
     return render(layoutplot)
 
+
 @display_hook
-def grid_display(grid, size=256):
+def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=256, **kwargs):
     if not isinstance(grid, AxisLayout): return None
-
-    max_frames   = ViewMagic.settings['max_frames']
-    max_branches = ViewMagic.settings['max_branches']
-    map_format = ViewMagic.settings['holomap']
-
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
     shape_factor = 1. / max_dim
@@ -246,12 +242,12 @@ def grid_display(grid, size=256):
         fig = gridplot()
         return figure_display(fig)
     elif map_format=='widgets' or map_format == 'scrubber':
-        return widget_display(grid)
+        return widget_display(grid, map_format, widget_mode)
 
     return render(gridplot)
 
 @display_hook
-def view_display(view, size=256):
+def view_display(view, size=256, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_view_magics(view)
     if magic_info: return magic_info
