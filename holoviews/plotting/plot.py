@@ -96,6 +96,12 @@ class Plot(param.Parameterized):
     # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
 
+    # Once register_settings is called, this SettingTree is populated
+    settings = SettingsTree(groups={'plot':Settings(), 'style':Settings()})
+
+    # A dictionary of custom SettingsTree by custom id
+    custom_settings = {}
+
     def __init__(self, view=None, figure=None, axis=None, zorder=0,
                  cyclic_index=0, all_keys=None, subplots=None, **params):
         if view is not None:
@@ -111,6 +117,16 @@ class Plot(param.Parameterized):
         # List of handles to matplotlib objects for animation update
         self.handles = {} if figure is None else {'fig': figure}
         self.ax = self._init_axis(axis)
+
+
+    @classmethod
+    def lookup_options(cls, obj, group):
+        if obj.id is None:
+            return cls.settings.closest(obj, group)
+        elif obj.id in cls.custom_settings:
+            return cls.custom_settings[obj.id].closest(obj, group)
+        else:
+            raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
 
     @classmethod
