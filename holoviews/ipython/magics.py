@@ -11,6 +11,8 @@ except:
 
 from ..core import NdOverlay, Element, HoloMap,\
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
+
+from ..core.settings import SettingsTree, Settings, SettingsError
 from ..plotting import Plot
 
 from collections import OrderedDict
@@ -422,6 +424,9 @@ html_blue = '#00008e'
 @magics_class
 class OptsMagic(Magics):
 
+    error_message = None
+    next_id = None
+
     @classmethod
     def process_view(cls, obj):
         """
@@ -431,13 +436,66 @@ class OptsMagic(Magics):
         may be returned. If None is returned, display will proceed as
         normal.
         """
+        if cls.error_message:
+            return cls.error_message
+        if cls.next_id is not None:
+            assert cls.next_id in Plot.custom_settings, 'RealityError'
+            obj.traverse(lambda o: setattr(o, 'id', cls.next_id))
+            cls.next_id = None
         return None
 
+
+    @classmethod
+    def _format_settings_error(cls, err):
+        info = (err.invalid_keyword, err.group_name, ', '.join(err.allowed_keywords))
+        return "Keyword <b>%r</b> not one of following %s options:<br><br><b>%s</b>" % info
+
+
+    @classmethod
+    def custom_tree(cls, spec):
+        """
+        Returns a customized copy of the Plot.settings SettingTree object.
+        """
+        settings = SettingsTree(items=Plot.settings.data.items(),
+                                groups=Plot.settings.groups)
+        for key in sorted(spec.keys()):
+            try:
+                settings[str(key)] = spec[key]
+            except SettingsError as e:
+                cls.error_message = cls._format_settings_error(e)
+                return None
+        return settings
+
+    @classmethod
+    def register_custom_spec(cls, spec, obj):
+        ids = Plot.custom_settings.keys()
+        max_id = max(ids) if len(ids)>0 else -1
+        custom_tree = cls.custom_tree(spec)
+        if custom_tree is not None:
+            Plot.custom_settings[max_id+1] = custom_tree
+            cls.next_id = max_id+1
+        else:
+            cls.next_id = None
+
+
+    @line_cell_magic
+    def opts(self, line='', cell=None):
+        from holoviews.ipython.parser import OptsSpec
+        get_object = None
+        spec = OptsSpec.parse(line)
+
+        self.register_custom_spec(spec, None)
+        if cell:
+            self.shell.run_cell(cell, store_history=STORE_HISTORY)
+        else:
+            raise NotImplementedError("Line magic to be implemented shortly")
+        OptsMagic.error_message = None
 
 
 def load_magics(ip):
 
     ip.register_magics(ViewMagic)
+    ip.register_magics(OptsMagic)
     #ip.register_magics(ChannelMagic)
 
     # Configuring tab completion
