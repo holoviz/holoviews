@@ -225,8 +225,8 @@ class ViewMagic(Magics):
     @line_cell_magic
     def view(self, line, cell=None):
         if line.strip() == '':
-            print "For help with the %view magic, call %view?\n"
             self.pprint()
+            print "\nFor help with the %view magic, call %view?"
             return
 
         restore_copy = OrderedDict(self.settings.items())
@@ -242,9 +242,7 @@ class ViewMagic(Magics):
             print "For help with the %view magic, call %view?\n"
             return
 
-        if cell is None:
-            self.pprint()
-        else:
+        if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             self.settings = restore_copy
 
