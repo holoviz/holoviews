@@ -162,7 +162,7 @@ class LabelledData(param.Parameterized):
 
     _deep_indexable = False
 
-    def __init__(self, data, **params):
+    def __init__(self, data, id=None, **params):
         """
         All LabelledData subclasses must supply data to the
         constructor, which will be held on the .data attribute.
@@ -170,7 +170,7 @@ class LabelledData(param.Parameterized):
         may be set to associate some custom options with the object.
         """
         self.data = data
-        self.id = None
+        self.id = id
         super(LabelledData, self).__init__(**params)
 
 
