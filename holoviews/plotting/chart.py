@@ -2,15 +2,25 @@ from __future__ import unicode_literals
 
 import numpy as np
 from matplotlib import cm
+from matplotlib import pyplot as plt
 
 import param
 
-from ..core import ViewableElement, Element, CompositeOverlay, HoloMap
+from ..core import ViewableElement, CompositeOverlay, HoloMap
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
-from .plot import Plot
+from .plot import Plot, ElementPlot
 
 
-class CurvePlot(Plot):
+class Chart1DPlot(ElementPlot):
+
+    def get_extents(self, view, ranges):
+        l, b, r, t = view.extents if self.rescale_individually else self._map.extents
+        ydim = view.value_dimensions[0].name
+        b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
+        return l, b, r, t
+
+
+class CurvePlot(Chart1DPlot):
     """
     CurvePlot can plot Curve and ViewMaps of Curve, which can be
     displayed as a single frame or animation. Axes, titles and legends
@@ -146,7 +156,7 @@ class CurvePlot(Plot):
 
 
 
-class ScatterPlot(CurvePlot):
+class ScatterPlot(Chart1DPlot):
     """
     ScatterPlot can plot Scatter and ViewMaps of Scatter, which can
     be displayed as a single frame or animation. Axes, titles and
@@ -183,7 +193,7 @@ class ScatterPlot(CurvePlot):
         self.handles['paths'] = paths
 
 
-class HistogramPlot(Plot):
+class HistogramPlot(Chart1DPlot):
     """
     HistogramPlot can plot DataHistograms and ViewMaps of
     DataHistograms, which can be displayed as a single frame or
@@ -470,7 +480,7 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(Plot):
+class PointPlot(ElementPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
@@ -539,7 +549,7 @@ class PointPlot(Plot):
             scatter.set_clim(view.range)
 
 
-class VectorFieldPlot(Plot):
+class VectorFieldPlot(ElementPlot):
     """
     Renders vector fields in sheet coordinates. The vectors are
     expressed in polar coordinates and may be displayed according to

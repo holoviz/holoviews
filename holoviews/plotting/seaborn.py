@@ -9,13 +9,13 @@ except:
 
 import param
 
-from ..core import Element
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
 from .pandas import DFrameViewPlot
-from .plot import Plot
+from .plot import Plot, ElementPlot
 
-class FullRedrawPlot(Plot):
+
+class FullRedrawPlot(ElementPlot):
     """
     FullRedrawPlot provides an abstract baseclass, defining an
     update_frame method, which completely wipes the axis and

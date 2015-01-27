@@ -4,12 +4,11 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ..core import Element
 from ..interface.pandas import DFrame, DataFrameView, pd
-from .plot import Plot
+from .plot import Plot, ElementPlot
 
 
-class DFrameViewPlot(Plot):
+class DFrameViewPlot(ElementPlot):
     """
     DFramePlot provides a wrapper around Pandas dataframe plots.  It
     takes a single DataFrameView or DFrameMap as input and plots it

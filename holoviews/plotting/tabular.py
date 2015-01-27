@@ -4,10 +4,10 @@ from matplotlib.table import Table as mpl_Table
 import param
 
 from ..element import ItemTable, Table
-from .plot import Plot
+from .plot import Plot, ElementPlot
 
 
-class TablePlot(Plot):
+class TablePlot(ElementPlot):
     """
     A TablePlot can plot both TableViews and ViewMaps which display
     as either a single static table or as an animated table
@@ -100,7 +100,7 @@ class TablePlot(Plot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         table = self.handles['table']
 
         for coords, cell in table.get_celld().items():

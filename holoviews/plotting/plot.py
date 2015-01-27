@@ -26,9 +26,6 @@ class Plot(param.Parameterized):
     animation via the anim() method.
     """
 
-    apply_databounds = param.Boolean(default=True, doc="""
-        Whether to compute the plot bounds from the data itself.""")
-
     aspect = param.Parameter(default=None, doc="""
         The aspect ratio mode of the plot. By default, a plot may
         select its own appropriate aspect ratio but sometimes it may
@@ -48,39 +45,17 @@ class Plot(param.Parameterized):
         The hook is passed the full set of plot handles and the
         displayed object.""")
 
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'], doc="""
-        The orientation of the plot. Note that this parameter may not
-        always be respected by all plots but should be respected by
-        adjoined plots when appropriate.""")
 
     projection = param.ObjectSelector(default=None,
                                       objects=['3d', 'polar', None], doc="""
         The projection of the plot axis, default of None is equivalent to
         2D plot, 3D and polar plots are also supported.""")
 
-    rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per element.""")
-
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
-    show_grid = param.Boolean(default=False, doc="""
-        Whether to show a Cartesian grid on the plot.""")
-
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
-
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
-
-    show_xaxis = param.ObjectSelector(default='bottom',
-                                      objects=['top', 'bottom', None], doc="""
-        Whether and where to display the xaxis.""")
-
-    show_yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', None], doc="""
-        Whether and where to display the yaxis.""")
 
     size = param.NumericTuple(default=(4, 4), doc="""
         The matplotlib figure size in inches.""")
@@ -97,25 +72,24 @@ class Plot(param.Parameterized):
     sideplots = {}
 
     # Once register_settings is called, this SettingTree is populated
-    settings = SettingsTree(groups={'plot':Settings(), 'style':Settings()})
+    settings = SettingsTree(groups={'plot': Settings(), 'style': Settings()})
 
     # A dictionary of custom SettingsTree by custom id
     custom_settings = {}
 
-    def __init__(self, view=None, figure=None, axis=None, zorder=0,
-                 cyclic_index=0, all_keys=None, subplots=None, **params):
-        if view is not None:
-            self._map = self._check_map(view)
-            self._keys = all_keys if all_keys else self._map.keys()
-        super(Plot, self).__init__(**params)
+
+    def __init__(self, figure=None, axis=None, dimensions=None,
+                 subplots=None, keys=None, **params):
         self.subplots = subplots
         self.subplot = figure is not None
-        self.zorder = zorder
-        self.cyclic_index = cyclic_index
         self._create_fig = True
         self.drawn = False
+        self.dimensions = dimensions
+        self._keys = keys
+        self.ranges = None
         # List of handles to matplotlib objects for animation update
         self.handles = {} if figure is None else {'fig': figure}
+        super(Plot, self).__init__(**params)
         self.ax = self._init_axis(axis)
 
 
@@ -173,6 +147,21 @@ class Plot(param.Parameterized):
                                    type=view.__class__.__name__)
 
 
+    def _finalize_axis(self, key):
+        """
+        General method to finalize the axis and plot.
+        """
+
+        self.drawn = True
+        if self.subplot:
+            return self.ax
+        else:
+            plt.draw()
+            fig = self.handles['fig']
+            plt.close(fig)
+            return fig
+
+
     def _init_axis(self, axis):
         """
         Return an axis which may need to be initialized from
@@ -190,7 +179,89 @@ class Plot(param.Parameterized):
         return axis
 
 
-    def _finalize_axis(self, key, title=None, extents=None, xticks=None, yticks=None,
+    def __getitem__(self, frame):
+        """
+        Get the matplotlib figure at the given frame number.
+        """
+        if frame > len(self):
+            self.warning("Showing last frame available: %d" % len(self))
+        if not self.drawn: self.handles['fig'] = self()
+        self.update_frame(frame)
+        return self.handles['fig']
+
+
+    def anim(self, start=0, stop=None, fps=30):
+        """
+        Method to return an Matplotlib animation. The start and stop
+        frames may be specified as well as the fps.
+        """
+
+        frames = list(range(len(self)))[slice(start, stop, 1)]
+
+        figure = self()
+        anim = animation.FuncAnimation(figure, self.update_frame,
+                                       frames=frames,
+                                       interval = 1000.0/fps)
+        # Close the figure handle
+        plt.close(figure)
+        return anim
+
+    def __len__(self):
+        """
+        Returns the total number of available frames.
+        """
+        return len(self._keys)
+
+
+    def __call__(self, ranges=None):
+        """
+        Return a matplotlib figure.
+        """
+        raise NotImplementedError
+
+
+    def update_frame(self, n, ranges=None):
+        """
+        Updates the current frame of the plot.
+        """
+        raise NotImplementedError
+
+
+
+class ElementPlot(Plot):
+
+    apply_databounds = param.Boolean(default=True, doc="""
+        Whether to compute the plot bounds from the data itself.""")
+
+    orientation = param.ObjectSelector(default='horizontal',
+                                       objects=['horizontal', 'vertical'], doc="""
+        The orientation of the plot. Note that this parameter may not
+        always be respected by all plots but should be respected by
+        adjoined plots when appropriate.""")
+
+    rescale_individually = param.Boolean(default=False, doc="""
+        Whether to use redraw the axes per map or per element.""")
+
+    show_grid = param.Boolean(default=False, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
+    show_xaxis = param.ObjectSelector(default='bottom',
+                                      objects=['top', 'bottom', None], doc="""
+        Whether and where to display the xaxis.""")
+
+    show_yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', None], doc="""
+        Whether and where to display the yaxis.""")
+
+
+    def __init__(self, element, keys=None, cyclic_index=0, zorder=0, **params):
+        self._map = self._check_map(element)
+        self.cyclic_index = cyclic_index
+        self.zorder = zorder
+        keys = keys if keys else self._map.keys()
+        super(ElementPlot, self).__init__(keys=keys, **params)
+
+    def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
                        xlabel=None, ylabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
@@ -202,16 +273,20 @@ class Plot(param.Parameterized):
 
         axis = self.ax
 
-        view = self._map.get(key, None) if hasattr(self, '_map') else None
-        if self.zorder == 0 and key is not None and not isinstance(view, CompositeOverlay):
+        view = self._map.get(key, None)
+        if self.zorder == 0 and key is not None:
             if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
-                if extents is None and self.apply_databounds:
-                    extents = view.extents if self.rescale_individually else self._map.extents
+                if self.apply_databounds:
+                    extents = self.get_extents(view, ranges)
+                    l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+                    if not np.NaN in (l, r): axis.set_xlim((l, r))
+                    if b == t: t += 1. # Arbitrary y-extent if zero range
+                    if not np.NaN in (b, t): axis.set_ylim((b, t))
 
             if self.show_grid:
                 axis.get_xaxis().grid(True)
@@ -248,12 +323,6 @@ class Plot(param.Parameterized):
                 axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
                 axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
 
-            if extents and self.apply_databounds:
-                (l, b, r, t) = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                if not np.NaN in (l, r): axis.set_xlim((l, r))
-                if b == t: t += 1. # Arbitrary y-extent if zero range
-                if not np.NaN in (b, t): axis.set_ylim((b, t))
-
             if self.aspect == 'square':
                 axis.set_aspect((1./axis.get_data_ratio()))
             elif self.aspect not in [None, 'square']:
@@ -273,44 +342,20 @@ class Plot(param.Parameterized):
         for hook in self.finalize_hooks:
             hook(self.subplots, self.handles, view)
 
-        self.drawn = True
-
-        if self.subplot:
-            return axis
-        else:
-            plt.draw()
-            fig = self.handles['fig']
-            plt.close(fig)
-            return fig
+        return super(ElementPlot, self)._finalize_axis(key)
 
 
-    def __getitem__(self, frame):
-        """
-        Get the matplotlib figure at the given frame number.
-        """
-        if frame > len(self):
-            self.warning("Showing last frame available: %d" % len(self))
-        if not self.drawn: self.handles['fig'] = self()
-        self.update_frame(frame)
-        return self.handles['fig']
+    def match_range(self, element, ranges):
+        match_tuple = ()
+        match = ranges.get((), {})
+        for spec in [type(element).__name__, element.value, element.label]:
+            match_tuple += (spec,)
+            if match_tuple in ranges:
+                match = ranges[match_tuple]
+        return match
 
 
-    def anim(self, start=0, stop=None, fps=30):
-        """
-        Method to return an Matplotlib animation. The start and stop
-        frames may be specified as well as the fps.
-        """
-        figure = self()
-        frames = list(range(len(self)))[slice(start, stop, 1)]
-        anim = animation.FuncAnimation(figure, self.update_frame,
-                                       frames=frames,
-                                       interval = 1000.0/fps)
-        # Close the figure handle
-        plt.close(figure)
-        return anim
-
-
-    def update_frame(self, n):
+    def update_frame(self, n, ranges=None):
         """
         Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
@@ -323,27 +368,15 @@ class Plot(param.Parameterized):
         key = self._keys[n]
         view = self._map.get(key, None)
         self.ax.set_visible(view is not None)
-        axis_kwargs = self.update_handles(view, key) if view is not None else {}
-        self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
+        ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
+        ranges = self.match_range(view, ranges)
+        axis_kwargs = self.update_handles(view, key, ranges) if view is not None else {}
+        self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         """
         Update the elements of the plot.
-        """
-        raise NotImplementedError
-
-
-    def __len__(self):
-        """
-        Returns the total number of available frames.
-        """
-        return len(self._keys)
-
-
-    def __call__(self, ranges=None):
-        """
-        Return a matplotlib figure.
         """
         raise NotImplementedError
 
@@ -835,33 +868,32 @@ class LayoutPlot(Plot):
                 else:
                     plot_type = Plot.sideplots[vtype]
 
-            subplots[pos] = plot_type(view, axis=ax, **plotopts)
+            subplots[pos] = plot_type(view, axis=ax, keys=self._keys, **plotopts)
         return subplots
 
 
-    def __call__(self, ranges=None):
+    def __call__(self):
         self.ax.get_xaxis().set_visible(False)
         self.ax.get_yaxis().set_visible(False)
 
+        ranges = self.compute_ranges(self.layout, -1, None, [0, 1])
         rcopts = self.settings.closest(self.layout, 'style').settings
         for subplot in self.subplots.values():
             with matplotlib.rc_context(rcopts):
-                subplot()
+                subplot(ranges=ranges)
         plt.draw()
 
         # Adjusts the AdjointLayout subplot positions
         for (r, c) in self.coords:
             self.subplots.get((r, c), None).adjust_positions()
 
-        self.drawn = True
-        if self.subplot: return self.ax
-        plt.close(self.handles['fig'])
-        return self.handles['fig']
+        return self._finalize_axis(None)
 
 
     def update_frame(self, n):
+        ranges = self.compute_ranges(self.layout, n, None, [0, 1])
         for subplot in self.subplots.values():
-            subplot.update_frame(n)
+            subplot.update_frame(n, ranges=ranges)
 
 
     def __len__(self):
@@ -869,11 +901,14 @@ class LayoutPlot(Plot):
 
 
 
-class OverlayPlot(Plot):
+class OverlayPlot(ElementPlot):
     """
     OverlayPlot supports processing of channel operations on Overlays
     across maps.
     """
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)
@@ -881,7 +916,7 @@ class OverlayPlot(Plot):
 
 
     def _create_subplots(self):
-        subplots = {}
+        subplots = OrderedDict()
 
         #collapsed = self._collapse_channels(self._map)
         keys, vmaps = self._map.split_overlays()
@@ -892,9 +927,9 @@ class OverlayPlot(Plot):
             plotopts = self.settings.closest(vmap.last, 'plot').settings
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
-            plotopts = dict(all_keys=self._keys, axis=self.ax,
+            plotopts = dict(keys=self._keys, axis=self.ax,
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
-                            zorder=zorder,**plotopts)
+                            zorder=zorder, **plotopts)
             plotype = Plot.defaults[type(vmap.last)]
             subplots[key] = plotype(vmap, **plotopts)
 
@@ -993,25 +1028,23 @@ class OverlayPlot(Plot):
 
 
     def __call__(self, ranges=None):
-        key = self._keys[-1]
-        #overlay = self._collapse_channels(HoloMap([((0,), self._map.last)])).last
-        for zorder, vmap in enumerate(self._map.last):
-            self.subplots[zorder]()
-
+        for plot in self.subplots.values():
+            plot(ranges=ranges)
         self._adjust_legend()
 
-        return self._finalize_axis(key, title=self._format_title(key))
+        key = self._keys[-1]
+        return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, ranges=None):
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
         if self.projection == '3d':
             self.ax.clear()
 
-        for zorder, plot in enumerate(self.subplots.values()):
-            plot.update_frame(n)
-        self._finalize_axis(key)
+        for plot in self.subplots.values():
+            plot.update_frame(n, ranges)
+        self._finalize_axis(key, ranges)
 
 
 Plot.defaults.update({AxisLayout: GridPlot,

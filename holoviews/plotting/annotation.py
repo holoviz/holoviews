@@ -1,16 +1,12 @@
 from matplotlib import patches as patches
 from matplotlib.collections import LineCollection
 from matplotlib.path import Path
-import numpy as np
 
-import param
-
-from ..core import Element
-from ..element import Annotation, Contours, VLine, HLine, Arrow, Spline, Text
-from .plot import Plot
+from ..element import Contours, VLine, HLine, Arrow, Spline, Text
+from .plot import Plot, ElementPlot
 
 
-class AnnotationPlot(Plot):
+class AnnotationPlot(ElementPlot):
     """
     AnnotationPlot handles the display of all annotation elements.
     """
@@ -114,7 +110,7 @@ class TextPlot(AnnotationPlot):
 
 
 
-class ContourPlot(Plot):
+class ContourPlot(ElementPlot):
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 

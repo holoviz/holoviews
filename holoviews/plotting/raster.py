@@ -8,10 +8,10 @@ import param
 
 from ..core import CompositeOverlay, Element
 from ..element.raster import HeatMap, Matrix, Raster
-from .plot import Plot, OverlayPlot, GridPlot
+from .plot import Plot, ElementPlot, OverlayPlot, GridPlot
 
 
-class MatrixPlot(Plot):
+class MatrixPlot(ElementPlot):
 
     normalize_individually = param.Boolean(default=False)
 
