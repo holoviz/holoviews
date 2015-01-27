@@ -433,7 +433,7 @@ class Dimensioned(LabelledData):
         try:
             return np.min(dim_vals), np.max(dim_vals)
         except:
-            if dim in self.dimensions:
+            if dim in self.dimensions() and len(dim_vals):
                 if not self._sorted:
                     dim_vals = sorted(dim_vals)
                 return (dim_vals[0], dim_vals[-1])
