@@ -8,6 +8,8 @@ import numpy as np
 
 import param
 
+from ..core.util import valid_identifier
+
 
 class Dimension(param.Parameterized):
     """
@@ -200,8 +202,11 @@ class LabelledData(param.Parameterized):
         current object matches the specification.
         """
         specification = (self.__class__.__name__, self.value, self.label)
+        identifier_specification = tuple(valid_identifier(ident) for ident in specification)
         split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
-        return specification[:len(split_spec)] == split_spec
+        identifier_match = identifier_specification[:len(split_spec)] == split_spec
+        unescaped_match = specification[:len(split_spec)] == split_spec
+        return identifier_match or unescaped_match
 
 
     def traverse(self, fn, specs=None, full_breadth=True):
