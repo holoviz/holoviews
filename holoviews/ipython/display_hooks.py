@@ -201,7 +201,7 @@ def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
 
 @display_hook
 def layout_display(layout, map_format, max_frames, max_branches, widget_mode, size=256, **kwargs):
-    if isinstance(layout, AdjointLayout): layout = NdLayout([layout])
+    if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     shape = layout.shape
     magic_info = process_cell_magics(layout)
