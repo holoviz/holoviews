@@ -171,10 +171,14 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
 
     def dimension_values(self, dimension):
         values = []
+        found = False
         for el in self:
             if dimension in [dim.name for dim in el.dimensions()]:
                 values.append(el.dimension_values(dimension))
-        return np.concatenate(values)
+                found = True
+        if not found:
+            raise KeyError("Dimension %s was not found." % dimension)
+        return np.concatenate(values) if len(values) else []
 
 
     @property
@@ -187,12 +191,6 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
                     dimensions.append(dim)
                     dimension_names.append(dim.name)
         return dimensions
-
-    @property
-    def ranges(self):
-        ranges = {}
-        for el in self:
-            ranges[el.settings] = {dim.name: el.range(dim.name) for dim in el.dimensions()}
 
 
 
