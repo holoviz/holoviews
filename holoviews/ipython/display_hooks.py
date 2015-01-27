@@ -183,7 +183,7 @@ def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(Plot.options.closest(vmap.last, 'plot').options, size=get_plot_size())
+    opts = dict(Plot.lookup_options(vmap.last, 'plot').options, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
@@ -209,7 +209,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(Plot.options.closest(layout, 'plot').options, size=grid_size)
+    opts = dict(Plot.lookup_options(layout, 'plot').options, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
@@ -248,7 +248,8 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot
-    gridplot = plot_type(grid, size=grid_size)
+    opts = dict(size=get_plot_size(), **Plot.lookup_options(grid, 'plot').options)
+    gridplot = plot_type(grid, **dict(size=grid_size, **opts))
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
         return sanitized_repr(grid)
@@ -265,7 +266,7 @@ def view_display(view, size=256, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
-    opts = dict(Plot.options.closest(view, 'plot').options, size=get_plot_size())
+    opts = dict(size=get_plot_size(), **Plot.lookup_options(view, 'plot').options)
     fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 
