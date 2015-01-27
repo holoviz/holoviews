@@ -194,6 +194,7 @@ class AttrTree(object):
 
         if identifier.startswith('_'):   raise AttributeError(str(identifier))
         elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
+        identifier = valid_identifier(identifier)
 
         if identifier in self.children:
             return self.__dict__[identifier]
