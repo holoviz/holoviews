@@ -198,7 +198,7 @@ class LabelledData(param.Parameterized):
         current object matches the specification.
         """
         specification = (self.__class__.__name__, self.value, self.label)
-        split_spec = tuple(spec.split('.'))
+        split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
         return specification[:len(split_spec)] == split_spec
 
 
