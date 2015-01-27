@@ -270,27 +270,12 @@ class NdWidget(param.Parameterized):
             opts = dict(Plot.settings.closest(view, 'plot').settings,
                         size=get_plot_size())
             self.plot = Plot.defaults[view.type](view, **opts)
-            view = [view]
 
-        keys_list = []
-        dimensions = []
-        for i, v in enumerate(view):
-            if isinstance(v, AxisLayout): v = v.values()[0]
-            if isinstance(v, AdjointLayout): v = v.main
-            if isinstance(v, CompositeOverlay): v = v.values()[0]
-            if isinstance(v, ViewableElement):
-                v = HoloMap([((0,), v)], key_dimensions=['Frame'])
-
-            keys_list.append(list(v.data.keys()))
-            if i == 0: dimensions = v.key_dimensions
-
-        # Check if all elements in the AxisLayout have common dimensions
-        if all(x == keys_list[0] for x in keys_list):
-            self._keys = keys_list[0]
-            self.dimensions = dimensions
-        else:
-            self._keys = [(k,) for k in range(len(view))]
-            self.dimensions = ['Frame']
+        key_dimvals = view.traverse(lambda x: (tuple(x.key_dimensions), x.keys()), ('HoloMap',))
+        dimensions_list, keys_list = zip(*key_dimvals)
+        self.dimensions = dimensions_list[np.argmax([len(keys) for keys in keys_list])]
+        keys_lists = [keys_list[idx] for idx, dims in enumerate(dimensions_list) if dims == self.dimensions]
+        self._keys = set(key for keys in keys_lists for key in keys)
 
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, 0) for k in self._keys],
@@ -620,6 +605,7 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
+                'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
                 'mpld3': str(ViewMagic.settings['backend'] == 'mpld3').lower()}
 
         return self.render_html(data)

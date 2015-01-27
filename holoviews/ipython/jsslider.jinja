@@ -1,6 +1,6 @@
 <script language="javascript">
     /* Define the NDSlider class */
-    function NDSlider(frames, id, slider_ids, keyMap, dim_vals, load_json, mpld3){
+    function NDSlider(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mpld3){
         this.frames = frames;
         this.fig_id = "fig_" + id;
         this.img_id = "_anim_img" + id;
@@ -10,6 +10,7 @@
         this.current_vals = dim_vals;
         this.load_json = load_json;
         this.mpld3 = mpld3;
+        this.notFound = notFound;
 
         this.set_frame(this.current_vals[0], 0);
     }
@@ -32,7 +33,9 @@
         }
         key += ")";
         this.current_frame = this.keyMap[key];
-		if(this.load_json) {
+        if(this.current_frame == undefined) {
+            $("#" + this.img_id).html(this.notFound);
+        } else if(this.load_json) {
             var data_url = "{{ server }}/" + this.fig_id + "/" + this.current_frame;
 		    if(this.mpld3) {
                 d3.select("#"+this.img_id).selectAll("*").remove();
@@ -48,7 +51,7 @@
             }
 		}else {
 		    if(this.mpld3) {
-                d3.select("#"+this.img_id).selectAll("*").remove();
+                d3.select("#" + this.img_id).selectAll("*").remove();
                 mpld3.draw_figure(this.img_id, this.frames[this.current_frame]);
             }else {
                 $("#" + this.img_id).html(this.frames[this.current_frame]);
@@ -57,25 +60,27 @@
     }
 </script>
 
-<div class="animation">
-    <div style="display: inline-block; vertical-align:middle; width:59%;">
+<div class="animation row-fluid" style="display: table">
+    <div class="span8" style="display: table-cell; vertical-align: middle; float:None">
         <div id="_anim_img{{ id }}" align="center"></div>
     </div>
-    <div style="display: inline-block; vertical-align:middle; margin: 0 auto; width: 39%;">
+    <div class="span4" style="display: table-cell; vertical-align: middle; float:None">
         {% for widget_data in widgets %}
         {% if widget_data['type'] == 'slider' %}
-        <div style="width: 90%; margin: auto auto;">
-            <div>
-                <div style="display: inline-block; vertical-align:middle; margin: 0 auto; width: 40%;">
-                    {{ widget_data['dim'] }}:
-                </div>
-                <div style="display: inline-block; vertical-align:middle; margin: auto 0; width:50%;">
-                    <input type="text" id="textInput{{ id }}_{{ widget_data['dim'] }}" value="">
-                    </input>
+        <div>
+            <div class="row">
+                <label class="span4" for="textInput{{ id }}_{{ widget_data['dim'] }}">
+                    <strong>{{ widget_data['dim'] }}:</strong>
+                </label>
+                <div class="span8">
+                    <input type="text" class="form-control"  style="width:100%" id="textInput{{ id }}_{{ widget_data['dim'] }}" value="">
                 </div>
             </div>
-            </br>
-            <div id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" style="width:95%; margin: auto auto;"></div>
+            <div class="row">
+                <div class="offset4">
+                    <div id="_anim_widget{{ id }}_{{ widget_data['dim'] }}"></div>
+                </div>
+            </div>
         </div>
         </br>
         </br>
@@ -137,15 +142,14 @@
             });
         </script>
         {% elif widget_data['type']=='dropdown' %}
-        <div>
-            <span>
-                {{ widget_data['dim'] }}:
-            </span>
-
-            <span>
-                <select name="select-choice-min" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" data-native-menu="false">
+        <div class="row">
+            <label class="span4" for="textInput{{ id }}_{{ widget_data['dim'] }}">
+                <strong>{{ widget_data['dim'] }}:</strong>
+            </label>
+            <div class="span8">
+                <select name="select-choice-min" style="width:100%" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" data-native-menu="false">
                 </select>
-            </span>
+            </div>
         </div>
         </br>
         </br>
@@ -184,10 +188,12 @@
         var frame_data = {{ frames | safe }};
         var dim_vals = {{ init_dim_vals }};
         var keyMap = {{ key_data }};
+        var notFound = "{{ notFound }}";
 
     	function create_widget() {
             setTimeout(function() {
-	            anim{{ id }} = new NDSlider(frame_data, "{{ id }}", widget_ids, keyMap, dim_vals, {{ load_json }}, {{ mpld3 }});
+	            anim{{ id }} = new NDSlider(frame_data, "{{ id }}", widget_ids,
+                        keyMap, dim_vals, notFound, {{ load_json }}, {{ mpld3 }});
 	        }, 0);
 	    }
 
