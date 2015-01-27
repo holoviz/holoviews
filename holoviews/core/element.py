@@ -328,7 +328,7 @@ class HoloMap(UniformNdMapping):
         item_maps = defaultdict(list)
         for k, overlay in self.items():
             for key, el in overlay.items():
-                item_maps[k].append((k, el))
+                item_maps[key].append((k, el))
 
         maps, keys = [], []
         for k in sorted(item_maps.keys()):
