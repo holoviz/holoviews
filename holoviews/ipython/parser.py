@@ -11,7 +11,7 @@ holoviews is being used in conjunction with matplotlib.
 
 import string
 # Should pass some explicit namespace to eval...
-from holoviews.core.settings import Settings, Cycle
+from holoviews.core.options import Options, Cycle
 from itertools import groupby
 import pyparsing as pp
 
@@ -80,8 +80,8 @@ class OptsSpec(Parser):
 
     Matrix [show_title=False] (interpolation='nearest') Curve color='r'
 
-    Would specify an OptionTree with Settings(show_title=False) plot
-    options for Matrix and style options Settings(color='r') for
+    Would specify an OptionTree with Options(show_title=False) plot
+    options for Matrix and style options Options(color='r') for
     Curve.
 
     The parser is fairly forgiving; commas between keywords are
@@ -116,7 +116,7 @@ class OptsSpec(Parser):
     def parse(cls, line):
         """
         Parse an options specification, returning a dictionary with
-        path keys and {'plot':<settings>, 'style':<settings>} values.
+        path keys and {'plot':<options>, 'style':<options>} values.
         """
         parses  = [p for p in cls.opts_spec.scanString(line)]
         if len(parses) != 1:
@@ -129,12 +129,12 @@ class OptsSpec(Parser):
 
         parse = {}
         for group in cls.opts_spec.parseString(line):
-            settings = {}
+            options = {}
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
-                settings['plot'] = Settings(**cls.todict(plotopts, 'brackets'))
+                options['plot'] = Options(**cls.todict(plotopts, 'brackets'))
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
-                settings['style'] = Settings(**cls.todict(styleopts, 'parens'))
-            parse[group['pathspec']] = settings
+                options['style'] = Options(**cls.todict(styleopts, 'parens'))
+            parse[group['pathspec']] = options
         return parse

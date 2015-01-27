@@ -2,7 +2,7 @@ import os
 
 import param
 
-from ..core.settings import Cycle, Settings
+from ..core.options import Cycle, Options
 from . import seaborn # pyflakes:ignore (API import)
 from . import pandas # pyflakes:ignore (API import)
 from .annotation import * # pyflakes:ignore (API import)
@@ -55,7 +55,7 @@ class PlotSaver(param.ParameterizedFunction):
         file_format = ext[1:]
 
         plottype = Plot.defaults[type(view)]
-        plotopts = self.lookup_options(view, 'plot').settings
+        plotopts = self.lookup_options(view, 'plot').options
         plot = plottype(view, **dict(plotopts, size=self.p.size))
 
         if len(plot) > 1 and ext in anim_exts:
@@ -72,21 +72,21 @@ class PlotSaver(param.ParameterizedFunction):
                            **self.p.extra_keywords())
 
 
-Plot.register_settings()
-Plot.settings.Contours = Settings(key='style', color='k')
-Plot.settings.Matrix = Settings(key='style', cmap='gray', interpolation='nearest')
-Plot.settings.Raster = Settings(key='style', cmap='jet', interpolation='nearest')
-Plot.settings.HeatMap = Settings(key='style', cmap='jet', interpolation='nearest')
-Plot.settings.GridLayout = Settings(key='style', **{'font.size': 10, 'axes.labelsize': 'small',
+Plot.register_options()
+Plot.options.Contours = Options(key='style', color='k')
+Plot.options.Matrix = Options(key='style', cmap='gray', interpolation='nearest')
+Plot.options.Raster = Options(key='style', cmap='jet', interpolation='nearest')
+Plot.options.HeatMap = Options(key='style', cmap='jet', interpolation='nearest')
+Plot.options.GridLayout = Options(key='style', **{'font.size': 10, 'axes.labelsize': 'small',
                                                  'axes.titlesize': 'small'})
 # Color cycles can be removed once default style set and test data updated
-Plot.settings.Curve = Settings(key='style', color=Cycle(), linewidth=2)
-Plot.settings.Scatter = Settings(key='style', color=Cycle(), linewidth=2)
-Plot.settings.Histogram = Settings(key='style', ec='k', fc='w')
-Plot.settings.Points = Settings(key='style', color='r', marker='x')
+Plot.options.Curve = Options(key='style', color=Cycle(), linewidth=2)
+Plot.options.Scatter = Options(key='style', color=Cycle(), linewidth=2)
+Plot.options.Histogram = Options(key='style', ec='k', fc='w')
+Plot.options.Points = Options(key='style', color='r', marker='x')
 
 # Defining the most common style options for holoviews
-GrayNearest = Settings(key='style', cmap='gray', interpolation='nearest')
+GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')
 
 def public(obj):
     if not isinstance(obj, type): return False

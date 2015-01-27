@@ -11,7 +11,7 @@ from matplotlib.font_manager import FontProperties
 import param
 from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, Element3D
-from ..core.settings import Settings, SettingsTree
+from ..core.options import Options, OptionTree
 from ..core.util import find_minmax
 from ..element.raster import Raster
 
@@ -79,11 +79,11 @@ class Plot(param.Parameterized):
     # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
 
-    # Once register_settings is called, this SettingTree is populated
-    settings = SettingsTree(groups={'plot': Settings(), 'style': Settings()})
+    # Once register_options is called, this OptionTree is populated
+    options = OptionTree(groups={'plot': Options(), 'style': Options()})
 
-    # A dictionary of custom SettingsTree by custom id
-    custom_settings = {}
+    # A dictionary of custom OptionTree by custom id
+    custom_options = {}
 
 
     def __init__(self, figure=None, axis=None, dimensions=None,
@@ -104,22 +104,21 @@ class Plot(param.Parameterized):
     @classmethod
     def lookup_options(cls, obj, group):
         if obj.id is None:
-            return cls.settings.closest(obj, group)
-        elif obj.id in cls.custom_settings:
-            return cls.custom_settings[obj.id].closest(obj, group)
+            return cls.options.closest(obj, group)
+        elif obj.id in cls.custom_options:
+            return cls.custom_options[obj.id].closest(obj, group)
         else:
             raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
 
     def compute_ranges(self, obj, key, ranges, norm_opt):
         """
-        Given an object, a specific key and the normalization
-        options this method will find the specified
-        normalization options on the appropriate SettingsTree,
-        group the elements according to the selected
-        normalization option (i.e. either per frame or over the
-        whole animation) and finally compute the dimension ranges
-        in each group. The new set of ranges is returned.
+        Given an object, a specific key and the normalization options
+        this method will find the specified normalization options on
+        the appropriate OptionTree, group the elements according to
+        the selected normalization option (i.e. either per frame or
+        over the whole animation) and finally compute the dimension
+        ranges in each group. The new set of ranges is returned.
         """
         if obj is None: return None
         # Get inherited ranges
@@ -168,9 +167,9 @@ class Plot(param.Parameterized):
 
     @classmethod
     def _get_norm_opts(cls, obj):
-        # Get all the normalization options out of the appropriate SettingsTree
-        optstree = cls.custom_settings.get(obj.id, Plot.settings)
-        return [(tuple(s.path.split('.')[1:]), s['plot'].settings.get('normalization'))
+        # Get all the normalization options out of the appropriate OptionTree
+        optstree = cls.custom_options.get(obj.id, Plot.options)
+        return [(tuple(s.path.split('.')[1:]), s['plot'].options.get('normalization'))
                      for s in optstree]
 
     @staticmethod
@@ -195,18 +194,18 @@ class Plot(param.Parameterized):
 
 
     @classmethod
-    def register_settings(cls):
+    def register_options(cls):
         path_items = {}
         for view_class, plot in Plot.defaults.items():
             name = view_class.__name__
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
             style_opts = plot.style_opts
-            opt_groups = {'plot': Settings(allowed_keywords=plot_opts)}
+            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
             if style_opts:
-                opt_groups.update({'style': Settings(allowed_keywords=style_opts)})
+                opt_groups.update({'style': Options(allowed_keywords=style_opts)})
             path_items[name] = opt_groups
-        cls.settings = SettingsTree(sorted(path_items.items()),
-                                    groups={'style': Settings(), 'plot': Settings()})
+        cls.options = OptionTree(sorted(path_items.items()),
+                                  groups={'style': Options(), 'plot': Options()})
 
 
     def _check_map(self, view, element_type=Element):
@@ -521,7 +520,7 @@ class GridPlot(Plot):
             x, y = list(zip(*list(grid.keys())))
             self.cols, self.rows = (len(set(x)), len(set(y)))
 
-        extra_opts = self.lookup_options(self.grid, 'plot').settings
+        extra_opts = self.lookup_options(self.grid, 'plot').options
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False, keys=self.grid.all_keys,
                                        **dict(params, **extra_opts))
@@ -550,7 +549,7 @@ class GridPlot(Plot):
             if view is not None:
                 grid_dimvals = dict(AxisLayout=zip(zip(self.grid.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = self.lookup_options(view, 'plot').settings
+                opts = self.lookup_options(view, 'plot').options
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title,
                             figure=self.handles['fig'], axis=subax,
@@ -914,7 +913,7 @@ class LayoutPlot(Plot):
 
             # Generate the AdjointLayoutsPlot which will coordinate
             # plotting of AdjointLayouts in the larger grid
-            plotopts = self.lookup_options(view, 'plot').settings
+            plotopts = self.lookup_options(view, 'plot').options
             layout_plot = AdjointLayoutPlot(view, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
@@ -978,7 +977,7 @@ class LayoutPlot(Plot):
             if view is None:
                 continue
             # Customize plotopts depending on position.
-            plotopts = self.lookup_options(view, 'plot').settings
+            plotopts = self.lookup_options(view, 'plot').options
             # Options common for any subplot
 
             override_opts = {}
@@ -1014,7 +1013,7 @@ class LayoutPlot(Plot):
         self.ax.get_yaxis().set_visible(False)
 
         ranges = self.compute_ranges(self.layout, -1, None, [0, 1])
-        rcopts = self.lookup_options(self.layout, 'style').settings
+        rcopts = self.lookup_options(self.layout, 'style').options
         for subplot in self.subplots.values():
             with matplotlib.rc_context(rcopts):
                 subplot(ranges=ranges)
@@ -1061,7 +1060,7 @@ class OverlayPlot(ElementPlot):
                             in groupby(vmaps, lambda s: (s.last.value)))
         for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
             cyclic_index, _ = next(style_groups[(vmap.last.value)])
-            plotopts = self.lookup_options(vmap.last, 'plot').settings
+            plotopts = self.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
             plotopts = dict(keys=self._keys, axis=self.ax,

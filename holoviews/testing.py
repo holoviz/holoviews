@@ -5,7 +5,7 @@ from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
 from .core import AdjointLayout, Overlay
-from .core.settings import Settings
+from .core.options import Options
 from .element import *
 from holoviews import Matrix
 from holoviews.element.annotation import Annotation, Contours
@@ -58,7 +58,7 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(TimeSeries,   self.compare_timeseries)
 
         # Option objects
-        self.addTypeEqualityFunc(Settings,     self.compare_settings)
+        self.addTypeEqualityFunc(Options,     self.compare_options)
         # Dimension objects
         self.addTypeEqualityFunc(Dimension,    self.compare_dims)
 
@@ -309,8 +309,8 @@ class ViewTestCase(unittest.TestCase):
     # Options #
     #=========#
 
-    def compare_settings(self, settings1, settings2, msg):
-        self.assertEqual(settings1.kwargs, settings2.kwargs)
+    def compare_options(self, options1, options2, msg):
+        self.assertEqual(options1.kwargs, options2.kwargs)
 
 
     def compare_channelopts(self, opt1, opt2, msg):

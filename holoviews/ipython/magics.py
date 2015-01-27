@@ -12,7 +12,7 @@ except:
 from ..core import NdOverlay, Element, HoloMap,\
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
 
-from ..core.settings import SettingsTree, Settings, SettingsError
+from ..core.options import OptionTree, Options, OptionError
 from ..plotting import Plot
 
 from collections import OrderedDict
@@ -38,7 +38,7 @@ STORE_HISTORY = False
 class ViewMagic(Magics):
     """
     Magic to allow easy control over the display of holoviews. The
-    applicable settings are available on the settings attribute.
+    applicable options are available on the options attribute.
     """
 
     # Formats that are always available
@@ -66,7 +66,7 @@ class ViewMagic(Magics):
                             ('size'        , 100),
                             ('charwidth'   , 80)])
 
-    settings = OrderedDict(defaults.items())
+    options = OrderedDict(defaults.items())
 
     # <format name> : (animation writer, mime_type,  anim_kwargs, extra_args, tag)
     ANIMATION_OPTS = {
@@ -150,26 +150,26 @@ class ViewMagic(Magics):
         return items
 
 
-    def _validate(self, settings):
-        "Validation of edge cases and incompatible settings"
-        if settings['backend'] == 'd3':
+    def _validate(self, options):
+        "Validation of edge cases and incompatible options"
+        if options['backend'] == 'd3':
             try:      import mpld3 # pyflakes:ignore (Testing optional import)
             except:
                 raise ValueError("Cannot use d3 backend without mpld3. "
                                  "Please select a different backend")
             allowed = ['scrubber', 'widget', 'auto']
-            if settings['holomap'] not in allowed:
+            if options['holomap'] not in allowed:
                 raise ValueError("The D3 backend only supports holomap options %r" % allowed)
 
-        if (settings['holomap']=='widgets'
-            and settings['widgets']!='embed'
-            and settings['fig']=='svg'):
+        if (options['holomap']=='widgets'
+            and options['widgets']!='embed'
+            and options['fig']=='svg'):
             raise ValueError("SVG mode not supported by widgets unless in embed mode")
-        return settings
+        return options
 
 
-    def get_settings(self, line, settings):
-        "Given a keyword specification line, validated and compute settings"
+    def get_options(self, line, options):
+        "Given a keyword specification line, validated and compute options"
         items = self._extract_keywords(line, OrderedDict())
         for keyword in self.defaults:
             if keyword in items:
@@ -182,10 +182,10 @@ class ViewMagic(Magics):
                     if not (allowed[0] <= value <= allowed[1]):
                         raise ValueError("Value %r for key %r not between %s and %s"
                                          % (keyword,value)+allowed)
-                settings[keyword] = value
+                options[keyword] = value
             else:
-                settings[keyword] = self.defaults[keyword]
-        return self._validate(settings)
+                options[keyword] = self.defaults[keyword]
+        return self._validate(options)
 
 
     @classmethod
@@ -208,14 +208,14 @@ class ViewMagic(Magics):
 
     def pprint(self):
         """
-        Pretty print the current view settings with a maximum width of
+        Pretty print the current view options with a maximum width of
         self.pprint_width.
         """
         elements = ["%view"]
         lines, current, count = [], '', 0
-        for k,v in ViewMagic.settings.items():
+        for k,v in ViewMagic.options.items():
             keyword = '%s=%r' % (k,v)
-            if len(current) + len(keyword) > self.settings['charwidth']:
+            if len(current) + len(keyword) > self.options['charwidth']:
                 print ('%view' if count==0 else '      ')  + current
                 count += 1
                 current = keyword
@@ -232,13 +232,13 @@ class ViewMagic(Magics):
             print "\nFor help with the %view magic, call %view?"
             return
 
-        restore_copy = OrderedDict(self.settings.items())
+        restore_copy = OrderedDict(self.options.items())
         try:
-            settings = self.get_settings(line, OrderedDict())
-            ViewMagic.settings = settings
+            options = self.get_options(line, OrderedDict())
+            ViewMagic.options = options
             # Inform writer of chosen fps
-            if settings['holomap'] in ['gif', 'scrubber']:
-                self.ANIMATION_OPTS[settings['holomap']][2]['fps'] = settings['fps']
+            if options['holomap'] in ['gif', 'scrubber']:
+                self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
             success = True
         except Exception as e:
             print 'SyntaxError: %s\n' % str(e)
@@ -247,7 +247,7 @@ class ViewMagic(Magics):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            self.settings = restore_copy
+            self.options = restore_copy
 
 
 
@@ -377,10 +377,10 @@ class OptsCompleter(object):
     def setup_completer(cls):
         "Get the dictionary of valid completions"
         if len(cls._completions) != 0: return cls._completions
-        for element in Plot.settings.children:
-            settings = Plot.settings[element]
-            plotkws = settings['plot'].allowed_keywords
-            stylekws = settings['style'].allowed_keywords
+        for element in Plot.options.children:
+            options = Plot.options[element]
+            plotkws = options['plot'].allowed_keywords
+            stylekws = options['style'].allowed_keywords
             cls._completions[element] = (plotkws, stylekws if stylekws else [])
         return cls._completions
 
@@ -440,40 +440,40 @@ class OptsMagic(Magics):
         if cls.error_message:
             return cls.error_message
         if cls.next_id is not None:
-            assert cls.next_id in Plot.custom_settings, 'RealityError'
+            assert cls.next_id in Plot.custom_options, 'RealityError'
             obj.traverse(lambda o: setattr(o, 'id', cls.next_id))
             cls.next_id = None
         return None
 
 
     @classmethod
-    def _format_settings_error(cls, err):
+    def _format_options_error(cls, err):
         info = (err.invalid_keyword, err.group_name, ', '.join(err.allowed_keywords))
         return "Keyword <b>%r</b> not one of following %s options:<br><br><b>%s</b>" % info
 
 
     @classmethod
-    def customize_tree(cls, spec, settings):
+    def customize_tree(cls, spec, options):
         """
-        Returns a customized copy of the Plot.settings SettingTree object.
+        Returns a customized copy of the Plot.options OptionsTree object.
         """
         for key in sorted(spec.keys()):
             try:
-                settings[str(key)] = spec[key]
-            except SettingsError as e:
-                cls.error_message = cls._format_settings_error(e)
+                options[str(key)] = spec[key]
+            except OptionError as e:
+                cls.error_message = cls._format_options_error(e)
                 return None
-        return settings
+        return options
 
     @classmethod
     def register_custom_spec(cls, spec, obj):
-        ids = Plot.custom_settings.keys()
+        ids = Plot.custom_options.keys()
         max_id = max(ids) if len(ids)>0 else -1
-        settings = SettingsTree(items=Plot.settings.data.items(),
-                                groups=Plot.settings.groups)
-        custom_tree = cls.customize_tree(spec, settings)
+        options = OptionTree(items=Plot.options.data.items(),
+                             groups=Plot.options.groups)
+        custom_tree = cls.customize_tree(spec, options)
         if custom_tree is not None:
-            Plot.custom_settings[max_id+1] = custom_tree
+            Plot.custom_options[max_id+1] = custom_tree
             cls.next_id = max_id+1
         else:
             cls.next_id = None
@@ -489,7 +489,7 @@ class OptsMagic(Magics):
         if cell:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            retval = self.customize_tree(spec, Plot.settings)
+            retval = self.customize_tree(spec, Plot.options)
             if retval is None:
                 display(HTML(OptsMagic.error_message))
         OptsMagic.error_message = None

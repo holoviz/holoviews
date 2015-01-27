@@ -1,10 +1,10 @@
 """
-Settings and SettingsTrees allow different classes of settings
+Options and OptionTrees allow different classes of options
 (e.g. matplotlib specific styles and plot specific parameters) to be
 defined separately from the core data structures and away from
 visualization specific code.
 
-There are three classes that form the settings system:
+There are three classes that form the options system:
 
 Cycle:
 
@@ -13,16 +13,16 @@ Cycle:
    Cycle object can be used loop a set of display colors for multiple
    curves on a single axis.
 
-Settings:
+Options:
 
    Containers of arbitrary keyword values, including optional keyword
    validation, support for Cycle objects and inheritance.
 
-SettingsTree:
+OptionTree:
 
    A subclass of AttrTree that is used to define the inheritance
-   relationships between a collection of Settings objects. Each node
-   of the tree supports a group of Settings objects and the leaf nodes
+   relationships between a collection of Options objects. Each node
+   of the tree supports a group of Options objects and the leaf nodes
    inherit their keyword values from parent nodes up to the root.
 
 """
@@ -31,18 +31,18 @@ import param
 from .tree import AttrTree
 
 
-class SettingsError(Exception):
+class OptionError(Exception):
     """
     Custom exception raised when there is an attempt to apply invalid
-    settings. Stores the necessary information to construct a more
+    options. Stores the necessary information to construct a more
     readable message for the user if caught and processed
     appropriately.
     """
     def __init__(self, invalid_keyword, allowed_keywords,
                  group_name=None, path=None):
-        super(SettingsError, self).__init__(self.message(invalid_keyword,
-                                                         allowed_keywords,
-                                                         group_name, path))
+        super(OptionError, self).__init__(self.message(invalid_keyword,
+                                                       allowed_keywords,
+                                                       group_name, path))
         self.invalid_keyword = invalid_keyword
         self.allowed_keywords = allowed_keywords
         self.group_name =group_name
@@ -50,7 +50,7 @@ class SettingsError(Exception):
 
 
     def message(self, invalid_keyword, allowed_keywords, group_name, path):
-        msg = ("Invalid option %s, valid settings are: %s"
+        msg = ("Invalid option %s, valid options are: %s"
                % (repr(invalid_keyword), str(allowed_keywords)))
         if path and group_name:
             msg = ("Invalid key for group %r on path %r;\n"
@@ -60,7 +60,7 @@ class SettingsError(Exception):
 
 class Cycle(param.Parameterized):
     """
-    A simple container class that specifies cyclic settings. A typical
+    A simple container class that specifies cyclic options. A typical
     example would be to cycle the curve colors in an Overlay composed
     of an arbitrary number of curves.
 
@@ -97,47 +97,47 @@ class Cycle(param.Parameterized):
 
 
 
-class Settings(param.Parameterized):
+class Options(param.Parameterized):
     """
-    A Settings object holds a collection of keyword options. In
-    addition, Settings support (optional) keyword validation as well
-    as infinite indexing over the set of supplied cyclic values.
+    An Options object holds a collection of keyword options. In
+    addition, Options support (optional) keyword validation as well as
+    infinite indexing over the set of supplied cyclic values.
 
-    Settings support inheritance of setting values via the __call__
-    method. By calling a Settings object with additional keywords, you
-    can create a new Settings object inheriting the parent settings.
+    Options support inheritance of setting values via the __call__
+    method. By calling an Options object with additional keywords, you
+    can create a new Options object inheriting the parent options.
     """
 
     allowed_keywords = param.List(default=None, allow_None=True, doc="""
        Optional list of strings corresponding to the allowed keywords.""")
 
     key = param.String(default=None, allow_None=True, doc="""
-       Optional specification of the settings key name. For
-       instance, key could be 'plot' or 'style'.""")
+       Optional specification of the options key name. For instance,
+       key could be 'plot' or 'style'.""")
 
 
     def __init__(self, allowed_keywords=None, key=None, **kwargs):
 
         allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        super(Settings, self).__init__(allowed_keywords=allowed_keywords, key=key)
+        super(Options, self).__init__(allowed_keywords=allowed_keywords, key=key)
 
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
-                raise SettingsError(kwarg, allowed_keywords)
+                raise OptionError(kwarg, allowed_keywords)
         self.kwargs = kwargs
-        self._settings = self._expand_settings(kwargs)
+        self._options = self._expand_options(kwargs)
 
 
     def __call__(self, allowed_keywords=None, **kwargs):
         """
-        Create a new Settings object that inherits the parent settings.
+        Create a new Options object that inherits the parent options.
         """
         allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
         inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
         return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
 
-    def _expand_settings(self, kwargs):
+    def _expand_options(self, kwargs):
         """
         Expand out Cycle objects into multiple sets of keyword values.
 
@@ -158,25 +158,25 @@ class Settings(param.Parameterized):
 
 
     def keys(self):
-        "The keyword names across the supplied settings."
+        "The keyword names across the supplied options."
         return sorted(list(self.kwargs.keys()))
 
 
     def __getitem__(self, index):
         """
-        Infinite cyclic indexing of settings over the integers,
+        Infinite cyclic indexing of options over the integers,
         looping over the set of defined Cycle objects.
         """
-        return dict(self._settings[index % len(self._settings)])
+        return dict(self._options[index % len(self._options)])
 
 
     @property
-    def settings(self):
-        "Access of the settings keywords when no cycles are defined."
-        if len(self._settings) == 1:
-            return dict(self._settings[0])
+    def options(self):
+        "Access of the options keywords when no cycles are defined."
+        if len(self._options) == 1:
+            return dict(self._options[0])
         else:
-            raise Exception("The settings property may only be used with non-cyclic Settings.")
+            raise Exception("The options property may only be used with non-cyclic Options.")
 
 
     def __repr__(self):
@@ -188,18 +188,18 @@ class Settings(param.Parameterized):
 
 
 
-class SettingsTree(AttrTree):
+class OptionTree(AttrTree):
     """
     A subclass of AttrTree that is used to define the inheritance
-    relationships between a collection of Settings objects. Each node
-    of the tree supports a group of Settings objects and the leaf nodes
+    relationships between a collection of Options objects. Each node
+    of the tree supports a group of Options objects and the leaf nodes
     inherit their keyword values from parent nodes up to the root.
 
     Supports the ability to search the tree for the closest valid path
-    using the find method, or compute the appropriate Settings value
+    using the find method, or compute the appropriate Options value
     given an object and a mode. For a given node of the tree, the
-    settings method computes a Settings object containing the result
-    of inheritance for a given group up to the root of the tree.
+    options method computes a Options object containing the result of
+    inheritance for a given group up to the root of the tree.
     """
 
     def __init__(self, items=None, identifier=None, parent=None, groups=None):
@@ -211,62 +211,62 @@ class SettingsTree(AttrTree):
         self.__dict__['_instantiated'] = True
 
 
-    def _inherited_settings(self, identifier, group_name, settings):
+    def _inherited_options(self, identifier, group_name, options):
         """
-        Computes the inherited Settings object for the given group
-        name from the current node given a new set of settings.
+        Computes the inherited Options object for the given group
+        name from the current node given a new set of options.
         """
-        override_kwargs = settings.kwargs
+        override_kwargs = options.kwargs
         if not self._instantiated:
-            override_kwargs['allowed_keywords'] = settings.allowed_keywords
+            override_kwargs['allowed_keywords'] = options.allowed_keywords
         elif identifier in self.children:
             override_kwargs['allowed_keywords'] = self[identifier][group_name].allowed_keywords
 
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
-        group_settings = self.groups[group_name]
+        group_options = self.groups[group_name]
         try:
-            return group_settings(**override_kwargs)
-        except SettingsError as e:
-            raise SettingsError(e.invalid_keyword,
-                                e.allowed_keywords,
-                                group_name=group_name,
-                                path = self.path)
+            return group_options(**override_kwargs)
+        except OptionError as e:
+            raise OptionError(e.invalid_keyword,
+                              e.allowed_keywords,
+                              group_name=group_name,
+                              path = self.path)
 
 
     def __getitem__(self, item):
         if item in self.groups:
             return self.groups[item]
-        return super(SettingsTree, self).__getitem__(item)
+        return super(OptionTree, self).__getitem__(item)
 
 
     def __setattr__(self, identifier, val):
         new_groups = {}
         if isinstance(val, dict):
             group_items = val
-        elif isinstance(val, Settings) and val.key is None:
-            raise AttributeError("Settings object needs to have a group name specified.")
-        elif isinstance(val, Settings):
+        elif isinstance(val, Options) and val.key is None:
+            raise AttributeError("Options object needs to have a group name specified.")
+        elif isinstance(val, Options):
             group_items = {val.key: val}
-        elif isinstance(val, SettingsTree):
+        elif isinstance(val, OptionTree):
             group_items = val.groups
 
         current_node = self[identifier] if identifier in self.children else self
         for group_name in current_node.groups:
-            settings = group_items.get(group_name, False)
-            if settings:
-                new_groups[group_name] = self._inherited_settings(identifier, group_name, settings)
+            options = group_items.get(group_name, False)
+            if options:
+                new_groups[group_name] = self._inherited_options(identifier, group_name, options)
             else:
                 new_groups[group_name] = current_node.groups[group_name]
 
         if new_groups:
-            new_node = SettingsTree(None, identifier=identifier, parent=self, groups=new_groups)
+            new_node = OptionTree(None, identifier=identifier, parent=self, groups=new_groups)
         else:
-            raise ValueError('SettingsTree only accepts a dictionary of Settings.')
-        super(SettingsTree, self).__setattr__(identifier, new_node)
+            raise ValueError('OptionTree only accepts a dictionary of Options.')
+        super(OptionTree, self).__setattr__(identifier, new_node)
 
-        if isinstance(val, SettingsTree):
+        if isinstance(val, OptionTree):
             for subtree in val:
                 self[identifier].__setattr__(subtree.identifier, subtree)
 
@@ -295,26 +295,26 @@ class SettingsTree(AttrTree):
         """
         This method is designed to be called from the root of the
         tree. Given any LabelledData object, this method will return
-        the most appropriate Settings object, including inheritance.
+        the most appropriate Options object, including inheritance.
 
-        In addition, closest supports custom settings by checking the
+        In addition, closest supports custom options by checking the
         object
         """
         components = (obj.__class__.__name__, obj.value, obj.label)
-        return self.find(components).settings(group)
+        return self.find(components).options(group)
 
 
-    def settings(self, group):
+    def options(self, group):
         """
-        Using inheritance up to the root, get the complete Settings
+        Using inheritance up to the root, get the complete Options
         object for the given node and the specified group.
         """
         if self.groups.get(group, None) is None:
             return None
         if self.parent is None:
             return self.groups[group]
-        return Settings(**dict(self.parent.settings(group).kwargs,
-                               **self.groups[group].kwargs))
+        return Options(**dict(self.parent.options(group).kwargs,
+                              **self.groups[group].kwargs))
 
 
     def _node_identifier(self, node):
@@ -328,4 +328,4 @@ class SettingsTree(AttrTree):
     def __repr__(self):
         if len(self) == 0:
             return self._node_identifier(self)
-        return super(SettingsTree, self).__repr__()
+        return super(OptionTree, self).__repr__()

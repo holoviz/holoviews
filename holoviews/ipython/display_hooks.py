@@ -33,7 +33,7 @@ ENABLE_TRACEBACKS=True
 
 
 def get_plot_size():
-    factor = ViewMagic.settings['size'] / 100.0
+    factor = ViewMagic.options['size'] / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
 
@@ -52,9 +52,9 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
 
 
 def HTML_video(plot):
-    anim = plot.anim(fps=ViewMagic.settings['fps'])
+    anim = plot.anim(fps=ViewMagic.options['fps'])
     writers = animation.writers.avail
-    current_format = ViewMagic.settings['holomap']
+    current_format = ViewMagic.options['holomap']
     for fmt in [current_format] + list(ViewMagic.ANIMATION_OPTS.keys()):
         if ViewMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
@@ -81,8 +81,8 @@ def last_frame(plot):
 
 
 def figure_display(fig, size=None, message=None, max_width='100%'):
-    figure_format = ViewMagic.settings['fig']
-    backend = ViewMagic.settings['backend']
+    figure_format = ViewMagic.options['fig']
+    backend = ViewMagic.options['backend']
     if size is not None:
         inches = size / float(fig.dpi)
         fig.set_size_inches(inches, inches)
@@ -134,13 +134,13 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            widget_mode = ViewMagic.settings['widgets']
-            map_format  = ViewMagic.settings['holomap']
+            widget_mode = ViewMagic.options['widgets']
+            map_format  = ViewMagic.options['holomap']
             # If widget_mode is None, widgets are not being used
             widget_mode = (widget_mode if map_format in ViewMagic.inbuilt_formats else None)
             return fn(view,
-                      max_frames=ViewMagic.settings['max_frames'],
-                      max_branches = ViewMagic.settings['max_branches'],
+                      max_frames=ViewMagic.options['max_frames'],
+                      max_branches = ViewMagic.options['max_branches'],
                       map_format = map_format,
                       widget_mode = widget_mode,
                       **kwargs)
@@ -183,7 +183,7 @@ def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(Plot.settings.closest(vmap.last, 'plot').settings, size=get_plot_size())
+    opts = dict(Plot.options.closest(vmap.last, 'plot').options, size=get_plot_size())
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
@@ -209,7 +209,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
     grid_size = (shape[1]*get_plot_size()[1],
                  shape[0]*get_plot_size()[0])
 
-    opts = dict(Plot.settings.closest(layout, 'plot').settings, size=grid_size)
+    opts = dict(Plot.options.closest(layout, 'plot').options, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
@@ -265,7 +265,7 @@ def view_display(view, size=256, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
-    opts = dict(Plot.settings.closest(view, 'plot').settings, size=get_plot_size())
+    opts = dict(Plot.options.closest(view, 'plot').options, size=get_plot_size())
     fig = Plot.defaults[view.__class__](view, **opts)()
     return figure_display(fig)
 

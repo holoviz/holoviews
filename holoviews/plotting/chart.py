@@ -403,8 +403,8 @@ class SideHistogramPlot(HistogramPlot):
         hist = self._map[key]
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
-        plot_settings = self.lookup_options(main, 'plot').settings
-        individually = plot_settings.get('normalize_individually', False)
+        plot_options = self.lookup_options(main, 'plot').options
+        individually = plot_options.get('normalize_individually', False)
 
         hist_dim = hist.get_dimension(0).name
         range_item = main
