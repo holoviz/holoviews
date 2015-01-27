@@ -116,7 +116,7 @@ class Raster(Element2D):
         Optionally a label_prefix can be provided to prepend to
         the result ViewableElement label.
         """
-        label = ' '.join([label_prefix, self.label])
+        label = ' '.join([label_prefix, self.label]) if label_prefix else self.label
         if len(dimreduce_map) == self.ndims:
             reduced_view = self
             for dim, reduce_fn in dimreduce_map.items():
@@ -163,7 +163,7 @@ class Raster(Element2D):
         """
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
-            l, r, b, t = self.xlim, self.ylim
+            (l, r), (b, t) = self.xlim, self.ylim
             shape = self.data.shape[abs(dim_idx-1)]
             dim_min, dim_max = [(l, r), (b, t)][dim_idx]
             dim_len = self.data.shape[dim_idx]
