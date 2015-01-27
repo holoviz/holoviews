@@ -223,7 +223,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
         fig = layoutplot()
         return figure_display(fig)
     elif widget_mode is not None:
-        return widget_display(layoutplot, map_format, widget_mode)
+        return widget_display(layout, map_format, widget_mode)
 
     return render(layoutplot)
 
