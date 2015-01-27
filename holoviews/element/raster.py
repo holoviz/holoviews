@@ -301,8 +301,6 @@ class Matrix(SheetCoordinateSystem, Raster):
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         Element2D.__init__(self, data, extents=self.lbrt, **params)
-        self.key_dimensions[0].range = (l, r)
-        self.key_dimensions[1].range = (b, t)
 
 
     def closest(self, coords):
