@@ -62,14 +62,34 @@ class CompositeOverlay(ViewableElement, Composable):
                                         zip(self.key_dimensions, key)]))
             return labels
 
-    @property
-    def style(self):
-        return [el.style for el in self][0]
 
-    @style.setter
-    def style(self, styles):
-        for layer, style in zip(self, styles):
-            layer.style = style
+    @property
+    def xlim(self):
+        return self.range([d.name for d in self.deep_dimensions][0])
+
+    @xlim.setter
+    def xlim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._xlim = limits
+        else:
+            raise ValueError('xlim needs to be a length two tuple or None.')
+
+    @property
+    def ylim(self):
+        return self.range([d.name for d in self.deep_dimensions][1])
+
+    @ylim.setter
+    def ylim(self, limits):
+        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
+            self._ylim = limits
+        else:
+            raise ValueError('ylim needs to be a length two tuple or None.')
+
+    @property
+    def extents(self):
+        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
+        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
+        return l, b, r, t
 
 
     def hist(self, index=None, adjoin=True, **kwargs):
@@ -253,34 +273,6 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
             return None
         else:
             return tuple(set(layer.__class__ for layer in self))
-
-    @property
-    def xlim(self):
-        return self.range([d.name for d in self.deep_dimensions][0])
-
-    @xlim.setter
-    def xlim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._xlim = limits
-        else:
-            raise ValueError('xlim needs to be a length two tuple or None.')
-
-    @property
-    def ylim(self):
-        return self.range([d.name for d in self.deep_dimensions][1])
-
-    @ylim.setter
-    def ylim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._ylim = limits
-        else:
-            raise ValueError('ylim needs to be a length two tuple or None.')
-
-    @property
-    def extents(self):
-        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
-        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
-        return l, b, r, t
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
