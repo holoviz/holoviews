@@ -257,7 +257,9 @@ class LayoutTree(AttrTree, LabelledData):
         self.__dict__['_display'] = 'auto'
         self.__dict__['_max_cols'] = 4
         self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())[0:4]
-        super(LayoutTree, self).__init__(*args, **kwargs)
+        params = {p: kwargs.pop(p) for p in self.params() if p in kwargs}
+        AttrTree.__init__(self, *args, **kwargs)
+        LabelledData.__init__(self, self.data, **params)
 
 
     def display(self, option):
