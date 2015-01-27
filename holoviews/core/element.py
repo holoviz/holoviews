@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import OrderedDict
 import itertools
 from numbers import Number
 import numpy as np
@@ -325,13 +325,16 @@ class HoloMap(UniformNdMapping):
         if not issubclass(self.type, CompositeOverlay):
             return self.clone(self.items())
 
-        item_maps = defaultdict(list)
+        item_maps = OrderedDict()
         for k, overlay in self.items():
             for key, el in overlay.items():
-                item_maps[key].append((k, el))
+                if key not in item_maps:
+                    item_maps[key] = [(k, el)]
+                else:
+                    item_maps[key].append((k, el))
 
         maps, keys = [], []
-        for k in sorted(item_maps.keys()):
+        for k in item_maps.keys():
             maps.append(self.clone(item_maps[k]))
             keys.append(k)
         return keys, maps
