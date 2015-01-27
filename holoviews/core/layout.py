@@ -253,6 +253,8 @@ class LayoutTree(AttrTree, LabelledData):
 
     style = 'LayoutTree'
 
+    _deep_indexable = True
+
     def __init__(self, *args, **kwargs):
         self.__dict__['_display'] = 'auto'
         self.__dict__['_max_cols'] = 4

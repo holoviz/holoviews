@@ -159,6 +159,7 @@ class LabelledData(param.Parameterized):
        referenced given the class type. Note that the first letter of
        a label should always be capitalized.""")
 
+    _deep_indexable = False
 
     def __init__(self, data, **params):
         """
@@ -221,9 +222,10 @@ class LabelledData(param.Parameterized):
 
         try:
             # Assumes composite objects are iterables
-            for el in self:
-                accumulator += el.traverse(fn, specs, full_breadth)
-                if not full_breadth: break
+            if self._deep_indexable:
+                for el in self:
+                    accumulator += el.traverse(fn, specs, full_breadth)
+                    if not full_breadth: break
         except:
             pass
         return accumulator
@@ -294,7 +296,6 @@ class Dimensioned(LabelledData):
 
     __abstract = True
     _sorted = False
-    _deep_indexable = False
     _dim_groups = ['key_dimensions',
                    'value_dimensions',
                    'deep_dimensions']

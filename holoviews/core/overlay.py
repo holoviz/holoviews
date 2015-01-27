@@ -41,6 +41,8 @@ class CompositeOverlay(ViewableElement, Composable):
     CompositeOverlay provides a common baseclass for Overlay classes.
     """
 
+    _deep_indexable = True
+
     @property
     def labels(self):
         return [el.label for el in self]
