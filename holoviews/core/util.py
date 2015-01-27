@@ -35,7 +35,7 @@ def valid_identifier(identifier):
     Replace spaces with underscores and returns value after
     checking validity.
     """
-    if identifier is None: return
+    if not identifier: return
     identifier = identifier.replace(' ', '_')
     invalid_chars = any(not el.isalnum() and el!='_' for el in identifier)
     valid_first_char = identifier[0].isalpha() or identifier[0]=='_'
