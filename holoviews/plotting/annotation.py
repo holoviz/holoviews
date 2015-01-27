@@ -16,7 +16,7 @@ class AnnotationPlot(ElementPlot):
         super(AnnotationPlot, self).__init__(annotation, **params)
         self.handles['annotations'] = []
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         annotation = self._map.last
         opts = self.settings.closest(annotation, 'style')[self.cyclic_index]
         handle = self.draw_annotation(annotation, annotation.data, opts)
@@ -24,7 +24,7 @@ class AnnotationPlot(ElementPlot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, annotation, key, lbrt=None):
+    def update_handles(self, annotation, key, ranges=None):
         # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()
@@ -119,7 +119,7 @@ class ContourPlot(ElementPlot):
         super(ContourPlot, self).__init__(*args, **params)
 
 
-    def __call__(self, lbrt=None):
+    def __call__(self, ranges=None):
         lines = self._map.last
 
         style = self.settings.closest(lines, 'style')[self.cyclic_index]
@@ -130,18 +130,15 @@ class ContourPlot(ElementPlot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, view, key, ranges=None):
         self.handles['line_segments'].set_paths(view.data)
-
 
 
 Plot.defaults.update({
     Contours: ContourPlot,
-
-    VLine:VLinePlot,
-    HLine:HLinePlot,
-    Arrow:ArrowPlot,
-    Spline:SplinePlot,
-
-    Text:TextPlot
+    VLine: VLinePlot,
+    HLine: HLinePlot,
+    Arrow: ArrowPlot,
+    Spline: SplinePlot,
+    Text: TextPlot
 })

@@ -39,7 +39,7 @@ class FullRedrawPlot(ElementPlot):
 
     _abstract = True
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         if self.zorder == 0 and self.ax: self.ax.cla()
         self._update_plot(view)
 
@@ -266,12 +266,12 @@ class SNSFramePlot(DFrameViewPlot):
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)
 
-    def update_frame(self, n):
+    def update_frame(self, n, ranges=None):
         key = self._keys[n]
         view = self._map.get(key, None)
         if self.ax:
             self.ax.set_visible(view is not None)
-        axis_kwargs = self.update_handles(view, key) if view is not None else {}
+        axis_kwargs = self.update_handles(view, key, ranges) if view is not None else {}
         if self.ax:
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 

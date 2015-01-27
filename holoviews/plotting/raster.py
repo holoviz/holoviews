@@ -24,6 +24,8 @@ class MatrixPlot(ElementPlot):
     def __call__(self, ranges=None):
         view = self._map.last
 
+        ranges = self.compute_ranges(self._map, self._keys[-1], ranges, [0, 1, 2, 3])
+        ranges = self.match_range(view, ranges)
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
             else self._map.last.extents
         xticks, yticks = self._compute_ticks(view)
@@ -44,7 +46,7 @@ class MatrixPlot(ElementPlot):
         im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
             val_dim = [d.name for d in view.value_dimensions][0]
-            clims = view.range(val_dim) if self.normalize_individually else self._map.range(val_dim)
+            clims = ranges[val_dim]
         im.set_clim(clims)
         self.handles['im'] = im
 
@@ -54,7 +56,7 @@ class MatrixPlot(ElementPlot):
             if self.show_values:
                 self._annotate_values(view)
 
-        return self._finalize_axis(self._keys[-1], extents=(l, b, r, t),
+        return self._finalize_axis(self._keys[-1], ranges=ranges,
                                    xticks=xticks, yticks=yticks)
 
 
@@ -94,16 +96,18 @@ class MatrixPlot(ElementPlot):
             annotation.remove()
 
 
-
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         im = self.handles.get('im', None)
         im.set_data(view.data)
+
+        ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
+        ranges = self.match_range(view, ranges)
 
         if isinstance(view, HeatMap) and self.show_values:
            self._annotate_values(view)
 
-        if self.normalize_individually:
-            im.set_clim(view.range)
+        val_dim = [d.name for d in view.value_dimensions][0]
+        im.set_clim(ranges[val_dim])
 
 
 
@@ -118,6 +122,8 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")
 
+    normalization = param.Integer(default=0)
+
     show_frame = param.Boolean(default=False)
 
     show_title = param.Boolean(default=True)
@@ -125,20 +131,36 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin']
 
-    def __init__(self, grid, **params):
+    def __init__(self, grid, ranges=None, **params):
         self.layout = params.pop('layout', None)
         items = [(k, self._check_map(v)) for k, v in grid.data.items()]
-        self.grid = grid.clone(items)
+        self.grid = grid.clone(items, id=grid.id)
         Plot.__init__(self, **params)
+        self.cyclic_index = 0
+        self.zorder = 0
         self._keys = self.grid.all_keys
+        self._map = {}
+        self.ranges = self.compute_ranges(self.grid, None, ranges, 0)
         xkeys, ykeys = zip(*self.grid.data.keys())
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
 
 
+    def _get_frame(self, key, obj):
+        if not isinstance(key, tuple): key = (key,)
+        key_dims = obj.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        return obj.select(**dict(zip([d.name for d in key_dims], key)))
+
+
+    def get_extent(self, view, ranges):
+        width, height, _, _, _, _ = self._compute_borders()
+        return (0, 0, width, height)
+
+
     def __call__(self, ranges=None):
         width, height, b_w, b_h, widths, heights = self._compute_borders()
 
+        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges, [0, 1])
         self.handles['projs'] = []
         key = self._keys[-1]
         x, y = b_w, b_h
@@ -155,8 +177,11 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 else:
                     pane = vmap.last.last if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
+                ranges = self.compute_ranges(vmap, self._keys[-1], ranges, [2, 3])
                 opts = self.settings.closest(pane, 'style')[self.cyclic_index]
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
+                valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
+                plot.set_clim(valrange)
                 if key not in vmap:
                     plot.set_visible(False)
                 self.handles['projs'].append(plot)
@@ -167,7 +192,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             x += w + b_w
             xticks.append(x-b_w-w/2.)
 
-        return self._finalize_axis(key, extents=(0, 0, width, height),
+        return self._finalize_axis(key, ranges=ranges,
                                    title=self._format_title(key),
                                    xticks=(xticks, self._process_ticklabels(self._xkeys)),
                                    yticks=(yticks, self._process_ticklabels(self._ykeys)),
@@ -175,10 +200,11 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                                    ylabel=str(self.grid.get_dimension(1)))
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, ranges=None):
         n = n  if n < len(self) else len(self) - 1
         key = self._keys[n]
         grid_values = self.grid.values()
+        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges, [0, 1])
         for i, plot in enumerate(self.handles['projs']):
             view = grid_values[i].get(key, None)
             if view:
@@ -188,7 +214,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             else:
                 plot.set_visible(False)
 
-        self._finalize_axis(key, title=self._format_title(key))
+        self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
     def _compute_borders(self):

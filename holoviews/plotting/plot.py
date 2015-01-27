@@ -1,6 +1,5 @@
-import copy
 from itertools import product, groupby
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict
 
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
@@ -13,6 +12,7 @@ import param
 from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, Element3D
 from ..core.settings import Settings, SettingsTree
+from ..core.util import find_minmax
 from ..element.raster import Raster
 
 
@@ -45,6 +45,14 @@ class Plot(param.Parameterized):
         The hook is passed the full set of plot handles and the
         displayed object.""")
 
+    normalization = param.Integer(default=0, bounds=(0, 1), doc="""
+        Normalization options defining how to normalize the values in
+        each plot. Valid options include:
+
+        0 - Normalize by group over all frames.
+        1 - Normalize by group for each frame individually.
+        2 - Normalize per element over all frames.
+        3 - Normalize per element for each frame""")
 
     projection = param.ObjectSelector(default=None,
                                       objects=['3d', 'polar', None], doc="""
@@ -103,6 +111,89 @@ class Plot(param.Parameterized):
             raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
 
+    def compute_ranges(self, obj, key, ranges, norm_opt):
+        """
+        Given an object, a specific key and the normalization
+        options this method will find the specified
+        normalization options on the appropriate SettingsTree,
+        group the elements according to the selected
+        normalization option (i.e. either per frame or over the
+        whole animation) and finally compute the dimension ranges
+        in each group. The new set of ranges is returned.
+        """
+        if obj is None: return None
+        # Get inherited ranges
+        ranges = dict((ranges if ranges else {}),
+                      **(self.ranges if self.ranges else {}))
+        # If only one norm option was requested then wrap it in a list
+        if not isinstance(norm_opt, list): norm_opt = [norm_opt]
+
+        # Get element identifiers from current object and resolve
+        # with selected normalization options
+        element_specs = self._get_element_specs(obj)
+        norm_opts = self._get_norm_opts(obj)
+        # Filter normalization options to those in the current object
+        filtered_opts = [(group, norm) for group, norm in norm_opts
+                         if norm is not None and
+                         any(group == spec[:i] for spec in element_specs
+                             for i in range(1, 4))]
+        norm_groups = [group for group, nopt in filtered_opts]
+
+        # Append default normalization for Elements with no normalization options
+        filtered_opts += [(spec, self.normalization) for spec in element_specs
+                          if not any(spec[:i] in norm_groups for i in range(1, 4))]
+
+        # Traverse displayed object if normalization applies
+        # at this level, and ranges for the group have not
+        # been supplied from a composite plot
+        return_fn = lambda x: x if isinstance(x, Element) else None
+        for group, nopt in filtered_opts:
+            if nopt not in norm_opt or group in ranges:
+                continue
+            elif nopt in [1, 3]: # Traverse frame
+                elements = self._get_frame(key, obj).traverse(return_fn, [group])
+            elif nopt in [0, 2]: # Traverse full animation
+                elements = obj.traverse(return_fn, [group])
+            self._compute_group_range(group, elements, ranges)
+        return ranges
+
+
+    @staticmethod
+    def _get_element_specs(obj):
+        # Find all the Element specs in the object
+        type_val_fn = lambda x: (type(x).__name__, x.value, x.label)\
+            if isinstance(x, Element) else None
+        return set([spec for spec in obj.traverse(type_val_fn) if spec is not None])
+
+
+    @classmethod
+    def _get_norm_opts(cls, obj):
+        # Get all the normalization options out of the appropriate SettingsTree
+        optstree = cls.custom_settings.get(obj.id, Plot.settings)
+        return [(tuple(s.path.split('.')[1:]), s['plot'].settings.get('normalization'))
+                     for s in optstree]
+
+    @staticmethod
+    def _compute_group_range(group, elements, ranges):
+        # Iterate over all elements in a normalization group
+        # and accumulate their ranges into the supplied dictionary.
+        elements = [el for el in elements if el is not None]
+        for el in elements:
+            for dim in el.dimensions():
+                dim_range = el.range(dim.name)
+                if group not in ranges: ranges[group] = OrderedDict()
+                if dim.name in ranges[group]:
+                    ranges[group][dim.name] = find_minmax(ranges[group][dim.name], dim_range)
+                else:
+                    ranges[group][dim.name] = dim_range
+
+
+    def _get_frame(self, key, obj):
+        if not isinstance(key, tuple): key = (key,)
+        key_dims = obj.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        return obj.select(**dict(zip([d.name for d in key_dims], key)))
+
+
     @classmethod
     def register_settings(cls):
         path_items = {}
@@ -124,7 +215,7 @@ class Plot(param.Parameterized):
         an HoloMap object.
         """
         if not isinstance(view, HoloMap):
-            vmap = HoloMap(initial_items=(0, view))
+            vmap = HoloMap(initial_items=(0, view), id=view.id)
         else:
             vmap = view
 
@@ -233,6 +324,15 @@ class ElementPlot(Plot):
     apply_databounds = param.Boolean(default=True, doc="""
         Whether to compute the plot bounds from the data itself.""")
 
+    normalization = param.Integer(default=2, bounds=(0, 3), doc="""
+        Normalization options defining how to normalize the values in
+        each plot. Valid options include:
+
+        0 - Normalize by group over all frames.
+        1 - Normalize by group for each frame individually.
+        2 - Normalize per element over all frames.
+        3 - Normalize per element for each frame""")
+
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
@@ -260,6 +360,19 @@ class ElementPlot(Plot):
         self.zorder = zorder
         keys = keys if keys else self._map.keys()
         super(ElementPlot, self).__init__(keys=keys, **params)
+
+
+    def _get_frame(self, key, obj):
+        return self._map[key]
+
+
+    def get_extents(self, view, ranges):
+        """
+        Gets the extents for the axes from the current View. The globally
+        computed ranges can optionally override the extents.
+        """
+        return view.extents if self.rescale_individually else self._map.extents
+
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
                        xlabel=None, ylabel=None):
@@ -396,13 +509,11 @@ class GridPlot(Plot):
 
     show_title = param.Boolean(default=False)
 
-    def __init__(self, grid, **params):
+    def __init__(self, grid, ranges=None, **params):
         if not isinstance(grid, AxisLayout):
             raise Exception("GridPlot only accepts AxisLayout.")
-
-        self.grid = copy.deepcopy(grid)
-        for k, vmap in self.grid.data.items():
-            self.grid[k] = self._check_map(self.grid[k])
+        items = [(k, self._check_map(v)) for k, v in grid.data.items()]
+        self.grid = grid.clone(items, id=grid.id)
 
         if grid.ndims == 1:
             self.rows, self.cols = (1, len(grid.keys()))
@@ -412,11 +523,18 @@ class GridPlot(Plot):
 
         extra_opts = self.settings.closest(self.grid, 'plot').settings
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
-                                       show_frame=False,
+                                       show_frame=False, keys=self.grid.all_keys,
                                        **dict(params, **extra_opts))
+        # Compute ranges gridwise
+        self.ranges = self.compute_ranges(self.grid, None, ranges, 0)
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots, self.subaxes = self._create_subplots()
-        self._keys = self.grid.all_keys
+
+
+    def _get_frame(self, key, obj):
+        if not isinstance(key, tuple): key = (key,)
+        key_dims = obj.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        return obj.select(**dict(zip([d.name for d in key_dims], key)))
 
 
     def _create_subplots(self):
@@ -430,11 +548,13 @@ class GridPlot(Plot):
             # Create subplot
             view = self.grid.data.get(coord, None)
             if view is not None:
+                grid_dimvals = dict(AxisLayout=zip(zip(self.grid.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.settings.closest(view, 'plot').settings
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title,
-                            figure=self.handles['fig'], axis=subax)
+                            figure=self.handles['fig'], axis=subax,
+                            dimensions=grid_dimvals)
                 subplot = Plot.defaults[vtype](view, **opts)
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
@@ -448,16 +568,10 @@ class GridPlot(Plot):
     def __call__(self, ranges=None):
         # Get the extent of the grid elements (not the whole grid)
         subplot_kwargs = dict()
-        if self.joint_axes:
-            try:
-                l, r = self.grid.xlim
-                b, t = self.grid.ylim
-                #subplot_kwargs = dict(extent=(l, b, r, t))
-            except:
-                pass
 
+        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges, [0, 1])
         for subplot in self.subplots.values():
-            subplot(**subplot_kwargs)
+            subplot(ranges=ranges, **subplot_kwargs)
         self._grid_axis()
         self._adjust_subplots()
 
@@ -545,15 +659,17 @@ class GridPlot(Plot):
                 ax.set_position([xpos, ypos, ax_w, ax_h])
 
 
-    def update_frame(self, n):
+    def update_frame(self, n, ranges=None):
         key = self._keys[n]
+        ranges = self.compute_ranges(self.grid, key, ranges, 1)
         for subplot in self.subplots.values():
-            subplot.update_frame(n)
+            subplot.update_frame(n, ranges)
         self.handles['grid_axis'].set_title(self._format_title(key))
 
 
     def __len__(self):
         return max([len(self._keys), 1])
+
 
 
 class AdjointLayoutPlot(Plot):
@@ -651,10 +767,10 @@ class AdjointLayoutPlot(Plot):
                              bbox.width, bbox.height * self.subplot_size])
 
 
-    def update_frame(self, n, ranges={}):
+    def update_frame(self, n, ranges=None):
         for pos, subplot in self.subplots.items():
             if subplot is not None:
-                subplot.update_frame(n)
+                subplot.update_frame(n, ranges)
 
 
     def __len__(self):
@@ -685,12 +801,33 @@ class LayoutPlot(Plot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
+        keys = None
+        if isinstance(layout, NdLayout):
+            keys = layout.traverse(lambda x: x.keys(), ('HoloMap',),
+                                   full_breadth=False)[0]
 
-        super(LayoutPlot, self).__init__(**params)
-        self.ax, self.subplots, self.subaxes = self._compute_gridspecs()
+        super(LayoutPlot, self).__init__(keys=keys, **params)
+        self.ax, self.subplots, self.subaxes = self._compute_gridspec()
 
 
-    def _compute_gridspecs(self):
+    def _get_frame(self, n, obj):
+        """
+        Creates a clone of the Layout with the nth-frame for each
+        Element.
+        """
+        layout_frame = obj.clone()
+        nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
+                                  x.data.keys()[max([n, len(x)-1])])
+        for path, item in obj.items():
+            dim_keys = item.traverse(nthkey_fn, ('HoloMap',))
+            if dim_keys:
+                layout_frame[path] = item.select(**dict(dim_keys[0]))
+            else:
+                layout_frame[path] = item
+        return layout_frame
+
+
+    def _compute_gridspec(self):
         """
         Computes the tallest and widest cell for each row and column
         by examining the Layouts in the AxisLayout. The GridSpec is then

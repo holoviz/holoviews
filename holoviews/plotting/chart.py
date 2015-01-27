@@ -126,6 +126,10 @@ class CurvePlot(Chart1DPlot):
 
     def __call__(self, ranges=None):
         curveview = self._map.last
+        key = self._keys[-1]
+
+        ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
+        ranges = self.match_range(curveview, ranges)
 
         # Create xticks and reorder data if cyclic
         xticks = None
@@ -145,10 +149,10 @@ class CurvePlot(Chart1DPlot):
 
         self.handles['line_segment'] = line_segment
 
-        return self._finalize_axis(self._keys[-1], xticks=xticks)
+        return self._finalize_axis(self._keys[-1], ranges=ranges, xticks=xticks)
 
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         if self.cyclic_range is not None:
             self._cyclic_curves(view)
         self.handles['line_segment'].set_xdata(view.data[:, 0])
@@ -183,7 +187,7 @@ class ScatterPlot(Chart1DPlot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         self.handles['paths'].remove()
 
         style = self.settings.closest(view, 'style')[self.cyclic_index]
@@ -294,15 +298,17 @@ class HistogramPlot(Chart1DPlot):
         return [xvals, labels]
 
 
+    def get_extents(self, view, ranges):
+        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(view, ranges)
+        return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+
+
     def _process_axsettings(self, hist, lims, ticks):
         """
         Get axis settings options including ticks, x- and y-labels
         and limits.
         """
         axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
-        x0, x1, y0, y1 = lims
-        axis_settings['extents'] = (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
-
         return axis_settings
 
 
@@ -331,7 +337,7 @@ class HistogramPlot(Chart1DPlot):
                 bar.set_width(width)
 
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         """
         Update the plot for an animation.
         """
@@ -535,7 +541,7 @@ class PointPlot(ElementPlot):
         return (ms*self.scaling_factor**scaled_sizes)
 
 
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
@@ -674,8 +680,7 @@ class VectorFieldPlot(ElementPlot):
         return self._finalize_axis(self._keys[-1])
 
 
-
-    def update_handles(self, view, key):
+    def update_handles(self, view, key, ranges=None):
         self.handles['quiver'].set_offsets(view.data[:,0:2])
         input_scale = self.handles['input_scale']
 
