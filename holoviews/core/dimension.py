@@ -105,7 +105,8 @@ class Dimension(param.Parameterized):
         hashes are equal, all the parameters of the Dimensions are
         also equal.
         """
-        return sum([hash(value) for name, value in self.get_param_values()])
+        return sum([hash(value) for name, value in self.get_param_values()
+                    if not isinstance(value, list)])
 
 
     def __str__(self):
