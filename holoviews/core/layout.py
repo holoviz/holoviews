@@ -277,6 +277,11 @@ class LayoutTree(AttrTree, LabelledData):
         return self
 
 
+    def select(self, **selections):
+        return self.clone([(path, item.select(**selections))
+                            for path, item in self.items()])
+
+
     def __getitem__(self, key):
         if isinstance(key, int):
             if key < len(self):
