@@ -232,7 +232,7 @@ class NdLayout(UniformNdMapping):
 
 
 
-class LayoutTree(AttrTree, LabelledData):
+class LayoutTree(AttrTree, Dimensioned):
     """
     A LayoutTree is an AttrTree with ViewableElement objects as leaf values. Unlike
     AttrTree, a LayoutTree supports a rich display, displaying leaf
@@ -261,7 +261,7 @@ class LayoutTree(AttrTree, LabelledData):
         self.__dict__['name'] = 'ViewTree_' + str(uuid.uuid4())[0:4]
         params = {p: kwargs.pop(p) for p in self.params() if p in kwargs}
         AttrTree.__init__(self, *args, **kwargs)
-        LabelledData.__init__(self, self.data, **params)
+        Dimensioned.__init__(self, self.data, **params)
 
 
     def display(self, option):
