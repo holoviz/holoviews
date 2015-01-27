@@ -67,7 +67,7 @@ class RegressionPlot(FullRedrawPlot):
     def _update_plot(self, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
                     ax=self.ax, label=view.label,
-                    **self.settings.closest(view, 'style')[self.cyclic_index])
+                    **self.lookup_options(view, 'style')[self.cyclic_index])
 
 
 
@@ -93,7 +93,7 @@ class BivariatePlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         kdeview = self._map.last
-        self.style = self.settings.closest(kdeview, 'style')[self.cyclic_index]
+        self.style = self.lookup_options(kdeview, 'style')[self.cyclic_index]
         if self.joint and self.subplot:
             raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(kdeview)
@@ -135,7 +135,7 @@ class TimeSeriesPlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         curveview = self._map.last
-        self.style = self.settings.closest(curveview, 'style')[self.cyclic_index]
+        self.style = self.lookup_options(curveview, 'style')[self.cyclic_index]
         self._update_plot(curveview)
 
         return self._finalize_axis(self._keys[-1])
@@ -166,7 +166,7 @@ class DistributionPlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         distview = self._map.last
-        self.style = self.settings.closest(distview, 'style')[self.cyclic_index]
+        self.style = self.lookup_options(distview, 'style')[self.cyclic_index]
         self._update_plot(distview)
 
         return self._finalize_axis(self._keys[-1])
@@ -242,7 +242,7 @@ class SNSFramePlot(DFrameViewPlot):
         self._validate(dfview)
 
         # Process styles
-        style = self.style = self.settings.closest(dfview, 'style')[self.cyclic_index]
+        style = self.style = self.lookup_options(dfview, 'style')[self.cyclic_index]
         self.style = self._process_style(style)
 
         self._update_plot(dfview)

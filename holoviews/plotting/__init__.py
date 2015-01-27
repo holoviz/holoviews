@@ -55,7 +55,7 @@ class PlotSaver(param.ParameterizedFunction):
         file_format = ext[1:]
 
         plottype = Plot.defaults[type(view)]
-        plotopts = self.settings.closest(view, 'plot').settings
+        plotopts = self.lookup_options(view, 'plot').settings
         plot = plottype(view, **dict(plotopts, size=self.p.size))
 
         if len(plot) > 1 and ext in anim_exts:

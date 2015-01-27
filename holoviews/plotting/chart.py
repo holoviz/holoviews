@@ -142,7 +142,7 @@ class CurvePlot(Chart1DPlot):
             xticks = self._cyclic_reduce_ticks(self.xvalues)
 
         # Create line segments and apply style
-        style = self.settings.closest(curveview, 'style')[self.cyclic_index]
+        style = self.lookup_options(curveview, 'style')[self.cyclic_index]
         line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
                                     zorder=self.zorder, label=curveview.label,
                                     **style)[0]
@@ -177,7 +177,7 @@ class ScatterPlot(Chart1DPlot):
     def __call__(self, ranges=None):
         scatterview = self._map.last
         # Create line segments and apply style
-        style = self.settings.closest(scatterview, 'style')[self.cyclic_index]
+        style = self.lookup_options(scatterview, 'style')[self.cyclic_index]
         paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
                                 zorder=self.zorder, label=scatterview.label,
                                 **style)
@@ -190,7 +190,7 @@ class ScatterPlot(Chart1DPlot):
     def update_handles(self, view, key, ranges=None):
         self.handles['paths'].remove()
 
-        style = self.settings.closest(view, 'style')[self.cyclic_index]
+        style = self.lookup_options(view, 'style')[self.cyclic_index]
         paths = self.ax.scatter(view.data[:, 0], view.data[:, 1],
                                 zorder=self.zorder, label=view.label, **style)
 
@@ -245,7 +245,7 @@ class HistogramPlot(Chart1DPlot):
             self.plotfn = self.ax.bar
 
         # Plot bars and make any adjustments
-        style = self.settings.closest(hist, 'style')[self.cyclic_index]
+        style = self.lookup_options(hist, 'style')[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self._keys[-1], bars, lims) # Indexing top
 
@@ -403,7 +403,7 @@ class SideHistogramPlot(HistogramPlot):
         hist = self._map[key]
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
-        plot_settings = self.settings.closest(main, 'plot').settings
+        plot_settings = self.lookup_options(main, 'plot').settings
         individually = plot_settings.get('normalize_individually', False)
 
         hist_dim = hist.get_dimension(0).name
@@ -434,7 +434,7 @@ class SideHistogramPlot(HistogramPlot):
             main = main.values()[0]
 
         if isinstance(main, (Raster, Points)):
-            style = self.settings.closest(main, 'style')[self.cyclic_index]
+            style = self.lookup_options(main, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap')) if self.offset else None
             main_range = style.get('clims', main_range) if self.offset else None
         else:
@@ -517,7 +517,7 @@ class PointPlot(ElementPlot):
         #cs = points.data[:, 2] if values else None
         cs=None
 
-        style = self.settings.closest(points, 'style')[self.cyclic_index]
+        style = self.lookup_options(points, 'style')[self.cyclic_index]
         if values and self.scaling_factor > 1:
             style['s'] = self._compute_size(cs, style)
         scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
@@ -545,7 +545,7 @@ class PointPlot(ElementPlot):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
-            opts = self.settings.closest(view, 'style')[0]
+            opts = self.lookup_options(view, 'style')[0]
             values = view.data[:, 2]
             scatter.set_array(values)
             if self.scaling_factor > 1:
@@ -645,7 +645,7 @@ class VectorFieldPlot(ElementPlot):
     def __call__(self, ranges=None):
         vfield = self._map.last
         colorized = self.color_dim is not None
-        kwargs = self.settings.closest(vfield, 'style')[self.cyclic_index]
+        kwargs = self.lookup_options(vfield, 'style')[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 

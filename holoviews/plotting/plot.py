@@ -521,7 +521,7 @@ class GridPlot(Plot):
             x, y = list(zip(*list(grid.keys())))
             self.cols, self.rows = (len(set(x)), len(set(y)))
 
-        extra_opts = self.settings.closest(self.grid, 'plot').settings
+        extra_opts = self.lookup_options(self.grid, 'plot').settings
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
                                        show_frame=False, keys=self.grid.all_keys,
                                        **dict(params, **extra_opts))
@@ -550,7 +550,7 @@ class GridPlot(Plot):
             if view is not None:
                 grid_dimvals = dict(AxisLayout=zip(zip(self.grid.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = self.settings.closest(view, 'plot').settings
+                opts = self.lookup_options(view, 'plot').settings
                 opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
                             show_yaxis=self.show_yaxis, show_title=self.show_title,
                             figure=self.handles['fig'], axis=subax,
@@ -914,7 +914,7 @@ class LayoutPlot(Plot):
 
             # Generate the AdjointLayoutsPlot which will coordinate
             # plotting of AdjointLayouts in the larger grid
-            plotopts = self.settings.closest(view, 'plot').settings
+            plotopts = self.lookup_options(view, 'plot').settings
             layout_plot = AdjointLayoutPlot(view, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
@@ -978,7 +978,7 @@ class LayoutPlot(Plot):
             if view is None:
                 continue
             # Customize plotopts depending on position.
-            plotopts = self.settings.closest(view, 'plot').settings
+            plotopts = self.lookup_options(view, 'plot').settings
             # Options common for any subplot
 
             override_opts = {}
@@ -1014,7 +1014,7 @@ class LayoutPlot(Plot):
         self.ax.get_yaxis().set_visible(False)
 
         ranges = self.compute_ranges(self.layout, -1, None, [0, 1])
-        rcopts = self.settings.closest(self.layout, 'style').settings
+        rcopts = self.lookup_options(self.layout, 'style').settings
         for subplot in self.subplots.values():
             with matplotlib.rc_context(rcopts):
                 subplot(ranges=ranges)
@@ -1061,7 +1061,7 @@ class OverlayPlot(ElementPlot):
                             in groupby(vmaps, lambda s: (s.last.value)))
         for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
             cyclic_index, _ = next(style_groups[(vmap.last.value)])
-            plotopts = self.settings.closest(vmap.last, 'plot').settings
+            plotopts = self.lookup_options(vmap.last, 'plot').settings
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
             plotopts = dict(keys=self._keys, axis=self.ax,

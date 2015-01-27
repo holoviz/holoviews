@@ -30,7 +30,7 @@ class MatrixPlot(ElementPlot):
             else self._map.last.extents
         xticks, yticks = self._compute_ticks(view)
 
-        opts = self.settings.closest(view, 'style')[self.cyclic_index]
+        opts = self.lookup_options(view, 'style')[self.cyclic_index]
         data = view.data
         clims = opts.pop('clims', None)
         if view.depth != 1:
@@ -178,7 +178,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                     pane = vmap.last.last if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
                 ranges = self.compute_ranges(vmap, self._keys[-1], ranges, [2, 3])
-                opts = self.settings.closest(pane, 'style')[self.cyclic_index]
+                opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
                 valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
                 plot.set_clim(valrange)

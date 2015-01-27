@@ -63,7 +63,7 @@ class DFrameViewPlot(ElementPlot):
         dfview = self._map.last
         self._validate(dfview)
 
-        style = self.settings.closest(dfview, 'style')[self.cyclic_index]
+        style = self.lookup_options(dfview, 'style')[self.cyclic_index]
         self.style = self._process_style(style)
 
         self._update_plot(dfview)

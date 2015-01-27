@@ -18,7 +18,7 @@ class AnnotationPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         annotation = self._map.last
-        opts = self.settings.closest(annotation, 'style')[self.cyclic_index]
+        opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
         handle = self.draw_annotation(annotation, annotation.data, opts)
         self.handles['annotations'].append(handle)
         return self._finalize_axis(self._keys[-1])
@@ -29,7 +29,7 @@ class AnnotationPlot(ElementPlot):
         for element in self.handles['annotations']:
             element.remove()
 
-        opts = self.settings.closest(annotation, 'style')[self.cyclic_index]
+        opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
         self.draw_annotation(annotation, annotation.data, opts)
 
 
@@ -122,7 +122,7 @@ class ContourPlot(ElementPlot):
     def __call__(self, ranges=None):
         lines = self._map.last
 
-        style = self.settings.closest(lines, 'style')[self.cyclic_index]
+        style = self.lookup_options(lines, 'style')[self.cyclic_index]
         line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
         self.ax.add_collection(line_segments)
