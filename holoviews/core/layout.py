@@ -321,8 +321,8 @@ class LayoutTree(AttrTree, LabelledData):
         last_row_cols = num % self._max_cols
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
-
-    def _relabel(self, items):
+    @staticmethod
+    def relabel_items(items):
         """
         Given a list of path items (list of tuples where each element
         is a (path, element) pair), generate a new set of path items that
@@ -338,7 +338,7 @@ class LayoutTree(AttrTree, LabelledData):
                 relabelled_items.append((path, group[0][1]))
                 continue
             for idx, (path, item) in enumerate(group):
-                if len(path) == 2 and not item.label:
+                if len(path) == 2:
                     numeral = int_to_roman(idx+1)
                     new_path = (path[0], numeral) if not item.label else path + (numeral,)
                 else:
@@ -356,13 +356,13 @@ class LayoutTree(AttrTree, LabelledData):
 
     def group(self, name):
         new_items = [((name, path[-1]), item) for path, item in self.data.items()]
-        return LayoutTree(items=self._relabel(new_items))
+        return LayoutTree(items=self.relabel_items(new_items))
 
 
     def __add__(self, other):
         other = self.from_view(other)
         items = list(self.data.items()) + list(other.data.items())
-        return LayoutTree(items=self._relabel(items)).display('all')
+        return LayoutTree(items=self.relabel_items(items)).display('all')
 
 
 
