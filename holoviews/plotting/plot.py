@@ -12,7 +12,7 @@ import param
 from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, Element3D
 from ..core.options import Options, OptionTree
-from ..core.util import find_minmax
+from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
 
 
@@ -129,24 +129,13 @@ class Plot(param.Parameterized):
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
-        element_specs = self._get_element_specs(obj)
         norm_opts = self._get_norm_opts(obj)
-        # Filter normalization options to those in the current object
-        filtered_opts = [(group, norm) for group, norm in norm_opts
-                         if norm is not None and
-                         any(group == spec[:i] for spec in element_specs
-                             for i in range(1, 4))]
-        norm_groups = [group for group, nopt in filtered_opts]
-
-        # Append default normalization for Elements with no normalization options
-        filtered_opts += [(spec, self.normalization) for spec in element_specs
-                          if not any(spec[:i] in norm_groups for i in range(1, 4))]
 
         # Traverse displayed object if normalization applies
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
         return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, nopt in filtered_opts:
+        for group, nopt in norm_opts.items():
             if nopt not in norm_opt or group in ranges:
                 continue
             elif nopt in [1, 3]: # Traverse frame
@@ -157,20 +146,34 @@ class Plot(param.Parameterized):
         return ranges
 
 
-    @staticmethod
-    def _get_element_specs(obj):
-        # Find all the Element specs in the object
-        type_val_fn = lambda x: (type(x).__name__, x.value, x.label)\
-            if isinstance(x, Element) else None
-        return set([spec for spec in obj.traverse(type_val_fn) if spec is not None])
+    def _get_norm_opts(self, obj):
+        """
+        Gets the normalization options for a LabelledData object by
+        traversing the object for to find elements and their ids.
+        The id is then used to select the appropriate OptionsTree,
+        accumulating the normalization options into a dictionary.
+        Returns a dictionary of normalization options for each
+        element in the tree.
+        """
+        norm_opts = {}
+        type_val_fn = lambda x: (x.id, (type(x).__name__, valid_identifier(x.value),
+                                        valid_identifier(x.label)))\
+                                        if isinstance(x, Element) else None
+        element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
+                         if idspec is not None}
+        id_groups = sorted(groupby(element_specs, lambda x: x[0]))
+        for id, element_spec_group in id_groups:
+            group_specs = [el for _,el in element_spec_group]
+            optstree = self.custom_options.get(obj.id, Plot.options)
+            custom_opts = [(tuple(opts.path.split('.')[1:]), opts['plot'].options.get('normalization'))
+                           for opts in optstree]
+            norm_opts.update({path: nopt for path, nopt in custom_opts if nopt is not None and
+                              any(path == spec[:i] for spec in group_specs for i in range(1, 4))})
+        element_specs = [spec for eid, spec in element_specs]
+        norm_opts.update({spec: self.normalization for spec in element_specs
+                          if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
+        return norm_opts
 
-
-    @classmethod
-    def _get_norm_opts(cls, obj):
-        # Get all the normalization options out of the appropriate OptionTree
-        optstree = cls.custom_options.get(obj.id, Plot.options)
-        return [(tuple(s.path.split('.')[1:]), s['plot'].options.get('normalization'))
-                     for s in optstree]
 
     @staticmethod
     def _compute_group_range(group, elements, ranges):
@@ -460,7 +463,9 @@ class ElementPlot(Plot):
     def match_range(self, element, ranges):
         match_tuple = ()
         match = ranges.get((), {})
-        for spec in [type(element).__name__, element.value, element.label]:
+        for spec in [type(element).__name__,
+                     valid_identifier(element.value),
+                     valid_identifier(element.label)]:
             match_tuple += (spec,)
             if match_tuple in ranges:
                 match = ranges[match_tuple]
