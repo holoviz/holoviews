@@ -82,10 +82,11 @@ def last_frame(plot):
 
 def figure_display(fig, size=None, message=None, max_width='100%'):
     figure_format = ViewMagic.settings['fig']
+    backend = ViewMagic.settings['backend']
     if size is not None:
         inches = size / float(fig.dpi)
         fig.set_size_inches(inches, inches)
-    if figure_format == 'mpld3' and mpld3:
+    if backend == 'd3' and mpld3:
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:

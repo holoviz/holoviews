@@ -470,7 +470,7 @@ class ScrubberWidget(NdWidget):
 
 
     def get_frames(self, id):
-        use_mpld3 = ViewMagic.settings['backend'] == 'mpld3'
+        use_mpld3 = ViewMagic.settings['backend'] == 'd3'
         frames = {idx: frame if use_mpld3 or self.export_json else
                   str(frame) for idx, frame in enumerate(self.frames.values())}
         encoder = {}
@@ -502,7 +502,7 @@ class ScrubberWidget(NdWidget):
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
-        if ViewMagic.settings['backend'] == 'mpld3':
+        if ViewMagic.settings['backend'] == 'd3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
@@ -522,7 +522,7 @@ class ScrubberWidget(NdWidget):
                 'server': self.server_url,
                 'mpld3_url': self.mpld3_url,
                 'd3_url': self.d3_url[:-3],
-                'mpld3': str(ViewMagic.settings['backend'] == 'mpld3').lower()}
+                'mpld3': str(ViewMagic.settings['backend'] == 'd3').lower()}
 
         return self.render_html(data)
 
@@ -606,7 +606,7 @@ class SelectionWidget(ScrubberWidget):
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
                 'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
-                'mpld3': str(ViewMagic.settings['backend'] == 'mpld3').lower()}
+                'mpld3': str(ViewMagic.settings['backend'] == 'd3').lower()}
 
         return self.render_html(data)
 
