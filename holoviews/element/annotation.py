@@ -20,12 +20,20 @@ class Annotation(Element2D):
     used when multiple Annotations are displayed together.
     """
 
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+                                bounds=(2,2))
+
     value = param.String(default='Annotation')
 
     xlabel, ylabel = "", ""
 
     def __init__(self, data, **params):
         super(Annotation, self).__init__(data, **params)
+        self._xlim = (0, 1) if self._xlim is None else self._xlim
+        self._ylim = (0, 1) if self._ylim is None else self._ylim
+
+    def dimension_values(self, dimension):
+        return []
 
 
 
@@ -116,7 +124,6 @@ class Text(Annotation):
 
 
 
-
 class Contours(Element2D):
     """
     Allows sets of contour lines to be defined over a
@@ -182,4 +189,3 @@ class Contours(Element2D):
         for contour in self.data:
             values.append(contour[:, dim_idx])
         return np.concatenate(values)
-
