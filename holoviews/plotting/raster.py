@@ -103,9 +103,6 @@ class MatrixPlot(ElementPlot):
         im = self.handles.get('im', None)
         im.set_data(view.data)
 
-        ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
-        ranges = self.match_range(view, ranges)
-
         if isinstance(view, HeatMap) and self.show_values:
            self._annotate_values(view)
 
