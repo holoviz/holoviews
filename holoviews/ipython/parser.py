@@ -71,10 +71,11 @@ class OptsSpec(Parser):
     """
     An OptsSpec is a string specification that describes an
     OptionTree. It is a list of tree path specifications (using dotted
-    syntax) separated by keyword lists for either plotting options (in
-    square brackets) and/or style options (in parentheses). Both sets
-    of keywords lists are optional, by an styles keywords must follow
-    plotting keywords (if present).
+    syntax) separated by keyword lists for any of the normalization,
+    plotting options or style options (in braces, square brackets and
+    parentheses respectively). All these option sets are optional, but
+    the style options must follow the plotting options which must
+    follow the normalization options.
 
     For instance, the following string:
 
@@ -83,6 +84,15 @@ class OptsSpec(Parser):
     Would specify an OptionTree with Options(show_title=False) plot
     options for Matrix and style options Options(color='r') for
     Curve.
+
+    Note that the normalization options are just syntactic sugar for
+    the the normalization plotting option. In other words:
+
+    Matrix {-groupwise -mapwise}
+
+    Is equivalent to:
+
+    Matrix [normalization=3]
 
     The parser is fairly forgiving; commas between keywords are
     optional and additional spaces are often allowed. The only
@@ -100,16 +110,63 @@ class OptsSpec(Parser):
                                   ignoreExpr=None
                                   ).setResultsName("style_options")
 
+    norm_options = pp.nestedExpr(opener='{',
+                                 closer='}',
+                                 ignoreExpr=None
+                                 ).setResultsName("norm_options")
+
     pathspec = pp.Combine(
                           pp.Word(string.uppercase, exact=1)
                         + pp.Word(pp.alphas+'._')
                          ).setResultsName("pathspec")
 
     spec_group = pp.Group(pathspec
+                          + pp.Optional(norm_options)
                           + pp.Optional(plot_options)
                           + pp.Optional(style_options))
 
     opts_spec = pp.OneOrMore(spec_group)
+
+
+    @classmethod
+    def process_normalization(cls, parse_group):
+        """
+        Given a normalization parse group (i.e. the contents of the
+        braces), validate the option list and compute the appropriate
+        integer value for the normalization plotting option.
+        """
+        if ('norm_options' not in parse_group): return None
+        opts = parse_group['norm_options'][0].asList()
+        if opts == []: return None
+
+        options = ['+mapwise', '-mapwise', '+groupwise', '-groupwise']
+
+        for normopt in options:
+            if opts.count(normopt) > 1:
+                raise SyntaxError("Normalization specification must not"
+                                  " contain repeated %r" % normopt)
+
+        if not all(opt in options for opt in opts):
+            raise SyntaxError("Normalization option not one of %s"
+                              % ", ".join(options))
+        excluded = [('+mapwise', '-mapwise'), ('+groupwise', '-groupwise')]
+        for pair in excluded:
+            if all(exclude in opts for exclude in pair):
+                raise SyntaxError("Normalization specification cannot"
+                                  " contain both %s and %s" % (pair[0], pair[1]))
+
+        # If unspecified, default is +groupwise and +mapwise
+        if len(opts) == 1 and opts[0].endswith('mapwise'):
+            opts += ['+groupwise']
+        elif len(opts) == 1 and opts[0].endswith('groupwise'):
+            opts += ['+mapwise']
+
+        if '+groupwise' in opts:
+            normval = 0 if '+mapwise' in opts else 1
+        else:
+            normval = 2 if '+mapwise' in opts else 3
+        return normval
+
 
 
     @classmethod
@@ -124,15 +181,20 @@ class OptsSpec(Parser):
         else:
             (k,s,e) = parses[0]
             processed = line[:e]
-            if (processed != line):
+            if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
 
         parse = {}
         for group in cls.opts_spec.parseString(line):
             options = {}
+            normalization = cls.process_normalization(group)
+
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
-                options['plot'] = Options(**cls.todict(plotopts, 'brackets'))
+                option_kws = cls.todict(plotopts, 'brackets')
+                if normalization is not None:
+                    option_kws['normalization'] = normalization
+                options['plot'] = Options(**option_kws)
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
                 options['style'] = Options(**cls.todict(styleopts, 'parens'))
