@@ -85,6 +85,8 @@ class Plot(param.Parameterized):
     # A dictionary of custom OptionTree by custom id
     custom_options = {}
 
+    # A list of channel operations to apply
+    channel_ops = []
 
     def __init__(self, figure=None, axis=None, dimensions=None,
                  subplots=None, keys=None, **params):
