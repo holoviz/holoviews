@@ -73,17 +73,17 @@ class PlotSaver(param.ParameterizedFunction):
 
 
 Plot.register_options()
-Plot.options.Contours = Options(key='style', color='k')
-Plot.options.Matrix = Options(key='style', cmap='gray', interpolation='nearest')
-Plot.options.Raster = Options(key='style', cmap='jet', interpolation='nearest')
-Plot.options.HeatMap = Options(key='style', cmap='jet', interpolation='nearest')
-Plot.options.GridLayout = Options(key='style', **{'font.size': 10, 'axes.labelsize': 'small',
+Plot.options.Contours = Options('style', color='k')
+Plot.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
+Plot.options.Raster = Options('style', cmap='jet', interpolation='nearest')
+Plot.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
+Plot.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
                                                  'axes.titlesize': 'small'})
 # Color cycles can be removed once default style set and test data updated
-Plot.options.Curve = Options(key='style', color=Cycle(), linewidth=2)
-Plot.options.Scatter = Options(key='style', color=Cycle(), linewidth=2)
-Plot.options.Histogram = Options(key='style', ec='k', fc='w')
-Plot.options.Points = Options(key='style', color='r', marker='x')
+Plot.options.Curve = Options('style', color=Cycle(), linewidth=2)
+Plot.options.Scatter = Options('style', color=Cycle(), linewidth=2)
+Plot.options.Histogram = Options('style', ec='k', fc='w')
+Plot.options.Points = Options('style', color='r', marker='x')
 
 # Defining the most common style options for holoviews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')

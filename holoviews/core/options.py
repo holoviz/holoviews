@@ -116,7 +116,7 @@ class Options(param.Parameterized):
        key could be 'plot' or 'style'.""")
 
 
-    def __init__(self, allowed_keywords=None, key=None, **kwargs):
+    def __init__(self, key=None, allowed_keywords=None, **kwargs):
 
         allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
         super(Options, self).__init__(allowed_keywords=allowed_keywords, key=key)

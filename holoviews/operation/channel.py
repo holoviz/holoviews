@@ -195,7 +195,7 @@ ChannelOperation.register(alpha_overlay, False)
 Plot.options.Matrix.Red_Channel = GrayNearest
 Plot.options.Matrix.Green_Channel = GrayNearest
 Plot.options.Matrix.Blue_Channel = GrayNearest
-Plot.options.Contours.Level = Options(key='style', color=Cycle(['b', 'g', 'r']))
+Plot.options.Contours.Level = Options('style', color=Cycle(['b', 'g', 'r']))
 
-Plot.options.Matrix.RGB = Options(key='style', interpolation='nearest')
-Plot.options.Matrix.RGBA = Options(key='style',interpolation='nearest')
+Plot.options.Matrix.RGB = Options('style', interpolation='nearest')
+Plot.options.Matrix.RGBA = Options('style',interpolation='nearest')
