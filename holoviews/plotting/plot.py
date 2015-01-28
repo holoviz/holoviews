@@ -100,7 +100,7 @@ class Plot(param.Parameterized):
         # List of handles to matplotlib objects for animation update
         self.handles = {} if figure is None else {'fig': figure}
         super(Plot, self).__init__(**params)
-        self.ax = self._init_axis(axis)
+        self.handles['axis'] = self._init_axis(axis)
 
 
     @classmethod
@@ -313,7 +313,7 @@ class Plot(param.Parameterized):
 
         self.drawn = True
         if self.subplot:
-            return self.ax
+            return self.handles['axis']
         else:
             plt.draw()
             fig = self.handles['fig']
@@ -452,7 +452,7 @@ class ElementPlot(Plot):
         up and computes the appropriate title, axis labels and axis bounds.
         """
 
-        axis = self.ax
+        axis = self.handles['axis']
 
         view = self._map.get(key, None)
         if self.zorder == 0 and key is not None:
@@ -550,16 +550,18 @@ class ElementPlot(Plot):
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
         view = self._map.get(key, None)
-        self.ax.set_visible(view is not None)
+        axis = self.handles['axis']
+        axis.set_visible(view is not None)
         ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
         ranges = self.match_range(view, ranges)
-        axis_kwargs = self.update_handles(view, key, ranges) if view is not None else {}
+        axis_kwargs = self.update_handles(axis, view, key if view is not None else {})
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         """
         Update the elements of the plot.
+        :param axis:
         """
         raise NotImplementedError
 
@@ -646,7 +648,7 @@ class GridPlot(Plot):
         self._adjust_subplots()
 
         self.drawn = True
-        if self.subplot: return self.ax
+        if self.subplot: return self.handles['axis']
         plt.close(self.handles['fig'])
         return self.handles['fig']
 
@@ -877,7 +879,7 @@ class LayoutPlot(Plot):
                                    full_breadth=False)[0]
 
         super(LayoutPlot, self).__init__(keys=keys, **params)
-        self.ax, self.subplots, self.subaxes = self._compute_gridspec()
+        self.handles['axis'], self.subplots, self.subaxes = self._compute_gridspec()
 
 
     def _get_frame(self, n, obj):
@@ -1080,8 +1082,8 @@ class LayoutPlot(Plot):
 
 
     def __call__(self):
-        self.ax.get_xaxis().set_visible(False)
-        self.ax.get_yaxis().set_visible(False)
+        self.handles['axis'].get_xaxis().set_visible(False)
+        self.handles['axis'].get_yaxis().set_visible(False)
 
         ranges = self.compute_ranges(self.layout, -1, None, [0, 1])
         rcopts = self.lookup_options(self.layout, 'style').options
@@ -1134,7 +1136,7 @@ class OverlayPlot(ElementPlot):
             plotopts = self.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
-            plotopts = dict(keys=self._keys, axis=self.ax,
+            plotopts = dict(keys=self._keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=zorder, **plotopts)
             plotype = Plot.defaults[type(vmap.last)]
@@ -1143,17 +1145,17 @@ class OverlayPlot(ElementPlot):
         return subplots
 
 
-    def _adjust_legend(self):
+    def _adjust_legend(self, axis):
         # If legend enabled update handles and labels
-        if not self.ax or not self.ax.get_legend(): return
-        handles, _ = self.ax.get_legend_handles_labels()
+        if not axis or not axis.get_legend(): return
+        handles, _ = axis.get_legend_handles_labels()
         labels = self._map.last.legend
         if len(handles) and self.show_legend:
             fontP = FontProperties()
             fontP.set_size('medium')
-            leg = self.ax.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg = axis.legend(handles[::-1], labels[::-1], prop=fontP)
             leg.get_frame().set_alpha(1.0)
-        frame = self.ax.get_legend().get_frame()
+        frame = axis.get_legend().get_frame()
         frame.set_facecolor('1.0')
         frame.set_edgecolor('0.0')
         frame.set_linewidth('1.5')
@@ -1171,9 +1173,11 @@ class OverlayPlot(ElementPlot):
 
 
     def __call__(self, ranges=None):
+        axis = self.handles['axis']
+
         for plot in self.subplots.values():
             plot(ranges=ranges)
-        self._adjust_legend()
+        self._adjust_legend(axis)
 
         key = self._keys[-1]
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
@@ -1183,7 +1187,7 @@ class OverlayPlot(ElementPlot):
         n = n if n < len(self) else len(self) - 1
         key = self._keys[n]
         if self.projection == '3d':
-            self.ax.clear()
+            self.handles['axis'].clear()
 
         for plot in self.subplots.values():
             plot.update_frame(n, ranges)

@@ -23,9 +23,11 @@ class MatrixPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         view = self._map.last
+        axis = self.handles['axis']
 
         ranges = self.compute_ranges(self._map, self._keys[-1], ranges, [0, 1, 2, 3])
         ranges = self.match_range(view, ranges)
+
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
             else self._map.last.extents
         xticks, yticks = self._compute_ticks(view)
@@ -43,7 +45,7 @@ class MatrixPlot(ElementPlot):
             cmap.set_bad('w', 1.)
             opts['cmap'] = cmap
 
-        im = self.ax.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
+        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
             val_dim = [d.name for d in view.value_dimensions][0]
             clims = ranges[val_dim]
@@ -51,7 +53,7 @@ class MatrixPlot(ElementPlot):
         self.handles['im'] = im
 
         if isinstance(view, HeatMap):
-            self.ax.set_aspect(float(r - l)/(t-b))
+            self.handles['axis'].set_aspect(float(r - l)/(t-b))
             self.handles['annotations'] = {}
             if self.show_values:
                 self._annotate_values(view)
@@ -73,6 +75,7 @@ class MatrixPlot(ElementPlot):
 
 
     def _annotate_values(self, view):
+        axis = self.handles['axis']
         dim1_keys, dim2_keys = view.dense_keys()
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xstep, ystep = 1.0/num_x, 1.0/num_y
@@ -83,10 +86,10 @@ class MatrixPlot(ElementPlot):
         for plot_coord, coord in zip(plot_coords, coords):
             text = round(view._data.get(coord, np.NaN), 3)
             if plot_coord not in self.handles['annotations']:
-                annotation = self.ax.annotate(text, xy=plot_coord,
-                                              xycoords='axes fraction',
-                                              horizontalalignment='center',
-                                              verticalalignment='center')
+                annotation = axis.annotate(text, xy=plot_coord,
+                                           xycoords='axes fraction',
+                                           horizontalalignment='center',
+                                           verticalalignment='center')
                 self.handles['annotations'][plot_coord] = annotation
             else:
                 self.handles['annotations'][plot_coord].set_text(text)
@@ -96,7 +99,7 @@ class MatrixPlot(ElementPlot):
             annotation.remove()
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         im = self.handles.get('im', None)
         im.set_data(view.data)
 
@@ -179,7 +182,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                     data = pane.data
                 ranges = self.compute_ranges(vmap, self._keys[-1], ranges, [2, 3])
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
-                plot = self.ax.imshow(data, extent=(x,x+w, y, y+h), **opts)
+                plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
                 plot.set_clim(valrange)
                 if key not in vmap:

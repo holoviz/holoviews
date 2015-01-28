@@ -39,9 +39,10 @@ class FullRedrawPlot(ElementPlot):
 
     _abstract = True
 
-    def update_handles(self, view, key, ranges=None):
-        if self.zorder == 0 and self.ax: self.ax.cla()
-        self._update_plot(view)
+    def update_handles(self, axis, view, key, ranges=None):
+        if self.zorder == 0 and axis:
+            axis.cla()
+        self._update_plot(axis, view)
 
 
 
@@ -64,9 +65,9 @@ class RegressionPlot(FullRedrawPlot):
         return self._finalize_axis(self._keys[-1])
 
 
-    def _update_plot(self, view):
+    def _update_plot(self, axis, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=self.ax, label=view.label,
+                    ax=axis, label=view.label,
                     **self.lookup_options(view, 'style')[self.cyclic_index])
 
 
@@ -93,22 +94,23 @@ class BivariatePlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         kdeview = self._map.last
+        axis = self.handles['axis']
         self.style = self.lookup_options(kdeview, 'style')[self.cyclic_index]
         if self.joint and self.subplot:
             raise Exception("Joint plots can't be animated or laid out in a grid.")
-        self._update_plot(kdeview)
+        self._update_plot(axis, kdeview)
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def _update_plot(self, view):
+    def _update_plot(self, axis, view):
         if self.joint:
             self.style.pop('cmap')
             self.handles['fig'] = sns.jointplot(view.data[:,0],
                                                 view.data[:,1],
                                                 **self.style).fig
         else:
-            sns.kdeplot(view.data, ax=self.ax, label=view.label,
+            sns.kdeplot(view.data, ax=axis, label=view.label,
                         zorder=self.zorder, **self.style)
 
 
@@ -135,15 +137,15 @@ class TimeSeriesPlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         curveview = self._map.last
+        axis = self.handles['axis']
         self.style = self.lookup_options(curveview, 'style')[self.cyclic_index]
-        self._update_plot(curveview)
+        self._update_plot(axis, curveview)
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def _update_plot(self, view):
-        sns.tsplot(view.data, view.xdata, ax=self.ax,
-                   condition=view.label,
+    def _update_plot(self, axis, view):
+        sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
                    zorder=self.zorder, **self.style)
 
 
@@ -166,15 +168,15 @@ class DistributionPlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         distview = self._map.last
+        axis = self.handles['axis']
         self.style = self.lookup_options(distview, 'style')[self.cyclic_index]
-        self._update_plot(distview)
+        self._update_plot(axis, distview)
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def _update_plot(self, view):
-        sns.distplot(view.data, ax=self.ax, label=view.label,
-                     **self.style)
+    def _update_plot(self, axis, view):
+        sns.distplot(view.data, ax=axis, label=view.label, **self.style)
 
 
 
@@ -239,13 +241,14 @@ class SNSFramePlot(DFrameViewPlot):
 
     def __call__(self, ranges=None):
         dfview = self._map.last
+        axis = self.handles['axis']
         self._validate(dfview)
 
         # Process styles
         style = self.style = self.lookup_options(dfview, 'style')[self.cyclic_index]
         self.style = self._process_style(style)
 
-        self._update_plot(dfview)
+        self._update_plot(axis, dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
@@ -269,33 +272,34 @@ class SNSFramePlot(DFrameViewPlot):
     def update_frame(self, n, ranges=None):
         key = self._keys[n]
         view = self._map.get(key, None)
-        if self.ax:
-            self.ax.set_visible(view is not None)
-        axis_kwargs = self.update_handles(view, key, ranges) if view is not None else {}
-        if self.ax:
+        axis = self.handles['axis']
+        if axis:
+            axis.set_visible(view is not None)
+        axis_kwargs = self.update_handles(axis, view, key, ranges)
+        if axis:
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def _update_plot(self, view):
+    def _update_plot(self, axis, view):
         if self.plot_type == 'regplot':
             sns.regplot(x=view.x, y=view.y, data=view.data,
-                        ax=self.ax, **self.style)
+                        ax=axis, **self.style)
         elif self.plot_type == 'boxplot':
             self.style.pop('return_type', None)
             self.style.pop('figsize', None)
-            sns.boxplot(view.data[view.y], view.data[view.x], ax=self.ax,
+            sns.boxplot(view.data[view.y], view.data[view.x], ax=axis,
                         **self.style)
         elif self.plot_type == 'violinplot':
-            sns.violinplot(view.data[view.y], view.data[view.x], ax=self.ax,
+            sns.violinplot(view.data[view.y], view.data[view.x], ax=axis,
                            **self.style)
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
-                             data=view.data, ax=self.ax, **self.style)
+                             data=view.data, ax=axis, **self.style)
         elif self.plot_type == 'corrplot':
-            sns.corrplot(view.data, ax=self.ax, **self.style)
+            sns.corrplot(view.data, ax=axis, **self.style)
         elif self.plot_type == 'lmplot':
             sns.lmplot(x=view.x, y=view.y, data=view.data,
-                       ax=self.ax, **self.style)
+                       ax=axis, **self.style)
         elif self.plot_type in ['pairplot', 'pairgrid', 'facetgrid']:
             map_opts = [(k, self.style.pop(k)) for k in self.style.keys() if 'map' in k]
             if self.plot_type == 'pairplot':

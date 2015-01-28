@@ -63,11 +63,12 @@ class TablePlot(ElementPlot):
 
     def __call__(self, ranges=None):
         tableview = self._map.last
+        self.handles['axis']
 
-        self.ax.set_axis_off()
+        axis.set_axis_off()
         size_factor = (1.0 - 2*self.border)
-        table = mpl_Table(self.ax, bbox=[self.border, self.border,
-                                         size_factor, size_factor])
+        table = mpl_Table(axis, bbox=[self.border, self.border,
+                                      size_factor, size_factor])
 
         width = size_factor / tableview.cols
         height = size_factor / tableview.rows
@@ -93,14 +94,14 @@ class TablePlot(ElementPlot):
 
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
-        self.ax.add_table(table)
+        axis.add_table(table)
 
         self.handles['table'] = table
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         table = self.handles['table']
 
         for coords, cell in table.get_celld().items():

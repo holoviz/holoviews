@@ -18,13 +18,14 @@ class AnnotationPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         annotation = self._map.last
+        axis = self.handles['axis']
         opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
-        handle = self.draw_annotation(annotation, annotation.data, opts)
+        handle = self.draw_annotation(axis, annotation, annotation.data, opts)
         self.handles['annotations'].append(handle)
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, annotation, key, ranges=None):
+    def update_handles(self, axis, annotation, key, ranges=None):
         # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()
@@ -40,8 +41,8 @@ class VLinePlot(AnnotationPlot):
     def __init__(self, annotation, **params):
         super(VLinePlot, self).__init__(annotation, **params)
 
-    def draw_annotation(self, annotation, position, opts):
-        return self.ax.axvline(position, **opts)
+    def draw_annotation(self, axis, annotation, position, opts):
+        return axis.axvline(position, **opts)
 
 
 
@@ -53,7 +54,7 @@ class HLinePlot(AnnotationPlot):
 
     def draw_annotation(self, annotation, position, opts):
         "Draw a horizontal line on the axis"
-        return self.ax.axhline(position, **opts)
+        return self.handles['axis'].axhline(position, **opts)
 
 
 
@@ -63,7 +64,7 @@ class ArrowPlot(AnnotationPlot):
     def __init__(self, annotation, **params):
         super(ArrowPlot, self).__init__(annotation, **params)
 
-    def draw_annotation(self, annotation, data, opts):
+    def draw_annotation(self, axis, annotation, data, opts):
         direction, text, xy, points, arrowstyle = data
         arrowprops = {'arrowstyle':arrowstyle}
         if 'color' in opts:
@@ -72,9 +73,9 @@ class ArrowPlot(AnnotationPlot):
             xytext = (0, points if direction=='v' else -points)
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
-        return self.ax.annotate(text, xy=xy, textcoords='offset points',
-                                xytext=xytext, ha="center", va="center",
-                                arrowprops=arrowprops, **opts)
+        return axis.annotate(text, xy=xy, textcoords='offset points',
+                             xytext=xytext, ha="center", va="center",
+                             arrowprops=arrowprops, **opts)
 
 
 
@@ -84,11 +85,11 @@ class SplinePlot(AnnotationPlot):
     def __init__(self, annotation, **params):
         super(SplinePlot, self).__init__(annotation, **params)
 
-    def draw_annotation(self, annotation, data, opts):
+    def draw_annotation(self, axis, annotation, data, opts):
         verts, codes = data
         patch = patches.PathPatch(Path(verts, codes),
                                   facecolor='none', edgecolor='b', **opts)
-        self.ax.add_patch(patch)
+        axis.add_patch(patch)
         return patch
 
 
@@ -99,14 +100,13 @@ class TextPlot(AnnotationPlot):
     def __init__(self, annotation, **params):
         super(TextPlot, self).__init__(annotation, **params)
 
-    def draw_annotation(self, annotation, data, opts):
+    def draw_annotation(self, axis, annotation, data, opts):
         (x,y, text, fontsize,
          horizontalalignment, verticalalignment, rotation) = data
-        return self.ax.text(x,y, text,
-                            horizontalalignment = horizontalalignment,
-                            verticalalignment = verticalalignment,
-                            rotation=rotation,
-                            fontsize=fontsize, **opts)
+        return axis.text(x,y, text,
+                         horizontalalignment = horizontalalignment,
+                         verticalalignment = verticalalignment,
+                         rotation=rotation, fontsize=fontsize, **opts)
 
 
 
@@ -125,12 +125,12 @@ class ContourPlot(ElementPlot):
         style = self.lookup_options(lines, 'style')[self.cyclic_index]
         line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
-        self.ax.add_collection(line_segments)
+        self.handles['axis'].add_collection(line_segments)
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         self.handles['line_segments'].set_paths(view.data)
 
 

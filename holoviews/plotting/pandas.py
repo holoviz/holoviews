@@ -89,30 +89,32 @@ class DFrameViewPlot(ElementPlot):
 
 
     def _validate(self, dfview):
-        composed = self.ax is not None
+        composed = self.handles['axis'] is not None
 
         if composed and dfview.ndims > 1 and self.plot_type in ['hist']:
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 
     def _update_plot(self, view):
+        axis = self.handles['axis']
         if self.plot_type == 'scatter_matrix':
-            pd.scatter_matrix(view.data, ax=self.ax, **self.style)
+            pd.scatter_matrix(view.data, ax=axis, **self.style)
         elif self.plot_type == 'autocorrelation_plot':
-            pd.tools.plotting.autocorrelation_plot(view.data, ax=self.ax, **self.style)
+            pd.tools.plotting.autocorrelation_plot(view.data, ax=axis, **self.style)
         elif self.plot_type == 'plot':
             opts = dict({'x': view.x, 'y': view.y}, **self.style)
-            view.data.plot(ax=self.ax, **opts)
+            view.data.plot(ax=self.handles['axis'], **opts)
         else:
-            getattr(view.data, self.plot_type)(ax=self.ax, **self.style)
+            getattr(view.data, self.plot_type)(ax=axis, **self.style)
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         """
         Update the plot for an animation.
         """
         if not self.plot_type in ['hist', 'scatter_matrix']:
-            if self.zorder == 0 and self.ax: self.ax.cla()
+            if self.zorder == 0 and axis:
+                axis.cla()
         self._update_plot(view)
 
 

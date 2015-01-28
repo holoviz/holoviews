@@ -126,6 +126,7 @@ class CurvePlot(Chart1DPlot):
 
     def __call__(self, ranges=None):
         curveview = self._map.last
+        axis = self.handles['axis']
         key = self._keys[-1]
 
         ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
@@ -143,16 +144,16 @@ class CurvePlot(Chart1DPlot):
 
         # Create line segments and apply style
         style = self.lookup_options(curveview, 'style')[self.cyclic_index]
-        line_segment = self.ax.plot(curveview.data[:, 0], curveview.data[:, 1],
-                                    zorder=self.zorder, label=curveview.label,
-                                    **style)[0]
+        line_segment = axis.plot(curveview.data[:, 0], curveview.data[:, 1],
+                                 zorder=self.zorder, label=curveview.label,
+                                 **style)[0]
 
         self.handles['line_segment'] = line_segment
 
         return self._finalize_axis(self._keys[-1], ranges=ranges, xticks=xticks)
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         if self.cyclic_range is not None:
             self._cyclic_curves(view)
         self.handles['line_segment'].set_xdata(view.data[:, 0])
@@ -176,23 +177,24 @@ class ScatterPlot(Chart1DPlot):
 
     def __call__(self, ranges=None):
         scatterview = self._map.last
+        axis = self.handles['axis']
         # Create line segments and apply style
         style = self.lookup_options(scatterview, 'style')[self.cyclic_index]
-        paths = self.ax.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
-                                zorder=self.zorder, label=scatterview.label,
-                                **style)
+        paths = axis.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
+                             zorder=self.zorder, label=scatterview.label,
+                             **style)
 
         self.handles['paths'] = paths
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         self.handles['paths'].remove()
 
         style = self.lookup_options(view, 'style')[self.cyclic_index]
-        paths = self.ax.scatter(view.data[:, 0], view.data[:, 1],
-                                zorder=self.zorder, label=view.label, **style)
+        paths = axis.scatter(view.data[:, 0], view.data[:, 1],
+                             zorder=self.zorder, label=view.label, **style)
 
         self.handles['paths'] = paths
 
@@ -238,11 +240,11 @@ class HistogramPlot(Chart1DPlot):
         edges, hvals, widths, lims = self._process_hist(hist)
 
         if self.orientation == 'vertical':
-            self.offset_linefn = self.ax.axvline
-            self.plotfn = self.ax.barh
+            self.offset_linefn = self.handles['axis'].axvline
+            self.plotfn = self.handles['axis'].barh
         else:
-            self.offset_linefn = self.ax.axhline
-            self.plotfn = self.ax.bar
+            self.offset_linefn = self.handles['axis'].axhline
+            self.plotfn = self.handles['axis'].bar
 
         # Plot bars and make any adjustments
         style = self.lookup_options(hist, 'style')[self.cyclic_index]
@@ -337,9 +339,10 @@ class HistogramPlot(Chart1DPlot):
                 bar.set_width(width)
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         """
         Update the plot for an animation.
+        :param axis:
         """
         # Process values, axes and style
         edges, hvals, widths, lims = self._process_hist(view)
@@ -510,6 +513,7 @@ class PointPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         points = self._map.last
+        axis = self.handles['axis']
 
         values = points.data.shape[1]>=3
         xs = points.data[:, 0] if len(points.data) else []
@@ -520,11 +524,11 @@ class PointPlot(ElementPlot):
         style = self.lookup_options(points, 'style')[self.cyclic_index]
         if values and self.scaling_factor > 1:
             style['s'] = self._compute_size(cs, style)
-        scatterplot = self.ax.scatter(xs, ys, zorder=self.zorder,
-                                      **({k:v for k,v in dict(style, c=cs).items() if k!='color'}
+        scatterplot = axis.scatter(xs, ys, zorder=self.zorder,
+                                   **({k:v for k,v in dict(style, c=cs).items() if k!='color'}
                                       if cs is not None else style))
 
-        self.ax.add_collection(scatterplot)
+        axis.add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
 
         if cs is not None:
@@ -541,7 +545,7 @@ class PointPlot(ElementPlot):
         return (ms*self.scaling_factor**scaled_sizes)
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         scatter = self.handles['scatter']
         scatter.set_offsets(view.data[:,0:2])
         if view.data.shape[1]==3:
@@ -644,6 +648,8 @@ class VectorFieldPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         vfield = self._map.last
+        axis = self.handles['axis']
+
         colorized = self.color_dim is not None
         kwargs = self.lookup_options(vfield, 'style')[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
@@ -657,13 +663,10 @@ class VectorFieldPlot(ElementPlot):
 
         if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
-        quiver = self.ax.quiver(*args, zorder=self.zorder,
-                                units='x', scale_units='x',
-                                scale = scale,
-                                angles = angles ,
-                                **({k:v for k,v in kwargs.items() if k!='color'}
-                                if colorized else kwargs))
-
+        quiver = axis.quiver(*args, zorder=self.zorder, units='x',
+                              scale_units='x', scale = scale, angles = angles ,
+                              **({k:v for k,v in kwargs.items() if k!='color'}
+                                 if colorized else kwargs))
 
         if self.color_dim == 'angle':
             clims = vfield.get_dimension(2).range
@@ -673,14 +676,14 @@ class VectorFieldPlot(ElementPlot):
             clims = vfield.range(magnitude_dim) if self.normalize_individually else self._map.range(magnitude_dim)
             quiver.set_clim(clims)
 
-        self.ax.add_collection(quiver)
+        self.handles['axis'].add_collection(quiver)
         self.handles['quiver'] = quiver
         self.handles['input_scale'] = input_scale
 
         return self._finalize_axis(self._keys[-1])
 
 
-    def update_handles(self, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges=None):
         self.handles['quiver'].set_offsets(view.data[:,0:2])
         input_scale = self.handles['input_scale']
 
