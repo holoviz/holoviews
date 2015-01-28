@@ -415,6 +415,9 @@ class OptsCompleter(object):
             kws = completions[completion_key][0]
             return [kw+'=' for kw in kws]
 
+        if line.endswith('}') or (line.count('{') - line.count('}')) % 2:
+            return ['-groupwise', '-mapwise']
+
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
