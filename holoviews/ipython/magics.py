@@ -53,7 +53,7 @@ class ViewMagic(Magics):
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
                'max_branches': (0, float('inf')),
-               'size'        : (0, 100),
+               'size'        : (0, float('inf')),
                'charwidth'   : (0, float('inf'))}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
