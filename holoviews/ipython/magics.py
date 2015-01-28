@@ -157,7 +157,7 @@ class ViewMagic(Magics):
             except:
                 raise ValueError("Cannot use d3 backend without mpld3. "
                                  "Please select a different backend")
-            allowed = ['scrubber', 'widget', 'auto']
+            allowed = ['scrubber', 'widgets', 'auto']
             if options['holomap'] not in allowed:
                 raise ValueError("The D3 backend only supports holomap options %r" % allowed)
 
