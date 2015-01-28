@@ -164,9 +164,9 @@ class Plot(param.Parameterized):
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
                          if idspec is not None}
         id_groups = sorted(groupby(element_specs, lambda x: x[0]))
-        for id, element_spec_group in id_groups:
-            group_specs = [el for _,el in element_spec_group]
-            optstree = self.custom_options.get(obj.id, Plot.options)
+        for gid, element_spec_group in id_groups:
+            group_specs = [el for _, el in element_spec_group]
+            optstree = self.custom_options.get(gid, Plot.options)
             custom_opts = [(tuple(opts.path.split('.')[1:]), opts['plot'].options.get('normalization'))
                            for opts in optstree]
             norm_opts.update({path: nopt for path, nopt in custom_opts if nopt is not None and
