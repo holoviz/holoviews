@@ -160,24 +160,12 @@ class ChannelOperation(param.Parameterized):
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")
 
-    _operations = {}
-
-    @classmethod
-    def register(cls, operation, normalizable):
-        """
-        Register a valid ElementOperation as a possible
-        ChannelOperation. Applicable operations must process and
-        return Matrix elements.
-
-        The output of some operations cannot be normalized. For
-        instance, there is no sensible way to normalize the output of
-        operations returning RGB Matrices. In contrast, operations
-        returning Matrices containing (NxM) arrays may be normalized.
-        """
-        cls._operations[operation] = normalizable
-
+    operations = []
 
     def __init__(self, name, pattern, operation, **kwargs):
+        if not any (operation is op for op in self.operations):
+            raise ValueError("Operation %r not in allowed operations" % operation)
+
         self.kwargs = kwargs
         self._pattern_spec, labels = [], []
 
