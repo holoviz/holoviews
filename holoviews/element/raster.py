@@ -15,9 +15,9 @@ class Raster(Element2D):
     """
     Raster is a basic 2D atomic ViewableElement type.
 
-    Arrays with a shape of (X,Y) or (X,Y,Z) are valid. In the case of
-    3D arrays, each depth layer is interpreted as a channel of the 2D
-    representation.
+    Arrays with a shape of (N,M) are valid inputs for Raster wheras
+    subclasses of Raster (e.g. RGBA) may also accept 3D arrays
+    containing channel information.
     """
 
     key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
@@ -280,10 +280,6 @@ class Matrix(SheetCoordinateSystem, Raster):
     its bounds object. The input data may be a numpy.matrix object or
     a two-dimensional numpy array.
 
-    Numpy arrays with a shape of (X,Y,Z) are also valid. In this case
-    (3D arrays), each depth layer is interpreted as a channel of the
-    2D representation.
-
     Allows slicing operations of the data in sheet coordinates or direct
     access to the data, via the .data attribute.
     """
@@ -296,6 +292,11 @@ class Matrix(SheetCoordinateSystem, Raster):
         be stored as data.""")
 
     value = param.String(default='Matrix')
+
+    value_dimensions = param.List(default=[Dimension('Luminance')],
+                                  bounds=(1, 1), doc="""
+        The dimension description of the data held in the matrix.""")
+
 
     def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **params):
         bounds = bounds if bounds is not None else BoundingBox()
@@ -312,6 +313,12 @@ class Matrix(SheetCoordinateSystem, Raster):
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         Element2D.__init__(self, data, extents=self.lbrt, **params)
+
+        if len(self.data.shape) == 3:
+            if self.data.shape[2] != len(self.value_dimensions):
+                raise ValueError("Input array has shape %r but %d value dimensions defined"
+                                 % (self.data.shape, len(self.value_dimensions)))
+
 
 
     def closest(self, coords):
