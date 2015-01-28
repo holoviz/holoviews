@@ -206,7 +206,7 @@ class HeatMap(Raster):
                 dimensions['key_dimensions'] = data.key_dimensions
             if 'value_dimensions' not in params:
                 dimensions['value_dimensions'] = data.value_dimensions
-        elif isinstance(dict, OrderedDict, type(None)):
+        elif isinstance(data, (dict, OrderedDict, type(None))):
             data = NdMapping(data, **dimensions)
         else:
             raise TypeError('HeatMap only accepts dict or NdMapping types.')
