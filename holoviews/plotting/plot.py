@@ -554,7 +554,7 @@ class ElementPlot(Plot):
         axis.set_visible(view is not None)
         ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
         ranges = self.match_range(view, ranges)
-        axis_kwargs = self.update_handles(axis, view, key if view is not None else {})
+        axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
@@ -581,7 +581,7 @@ class GridPlot(Plot):
 
     show_title = param.Boolean(default=False)
 
-    def __init__(self, grid, ranges=None, **params):
+    def __init__(self, grid, ranges=None, keys=None, **params):
         if not isinstance(grid, AxisLayout):
             raise Exception("GridPlot only accepts AxisLayout.")
         items = [(k, self._check_map(v)) for k, v in grid.data.items()]
@@ -595,7 +595,8 @@ class GridPlot(Plot):
 
         extra_opts = self.lookup_options(self.grid, 'plot').options
         super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
-                                       show_frame=False, keys=self.grid.all_keys,
+                                       show_frame=False,
+                                       keys=keys if keys else self.grid.all_keys ,
                                        **dict(params, **extra_opts))
         # Compute ranges gridwise
         self.ranges = self.compute_ranges(self.grid, None, ranges, 0)
@@ -1077,7 +1078,7 @@ class LayoutPlot(Plot):
                 else:
                     plot_type = Plot.sideplots[vtype]
 
-            subplots[pos] = plot_type(view, axis=ax, keys=self._keys, **plotopts)
+            subplots[pos] = plot_type(view, axis=ax, **dict({'keys':self._keys}, **plotopts))
         return subplots
 
 
