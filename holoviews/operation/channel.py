@@ -13,7 +13,7 @@ rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
 
-class RGBA(ElementOperation):
+class toRGBA(ElementOperation):
     """
     Accepts an overlay containing either 3 or 4 layers. The first
     three layers are the R,G, B channels and the last layer (if given)
@@ -58,12 +58,12 @@ class alpha_overlay(ElementOperation):
 
     def _process(self, overlay, key=None):
         R,G,B,_ = split(cmap2rgb(overlay[0]))
-        return [Matrix(RGBA(R*G*B*overlay[1]).data, overlay[0].bounds,
+        return [Matrix(toRGBA(R*G*B*overlay[1]).data, overlay[0].bounds,
                        label=overlay[0].label, value=self.p.label,
                        value_dimensions=overlay[0].value_dimensions)]
 
 
-class HCS(ElementOperation):
+class toHCS(ElementOperation):
     """
     Hue-Confidence-Strength plot.
 
@@ -134,7 +134,7 @@ class colorize(ElementOperation):
          # Needs a general approach which works with any color map
          C = Matrix(np.ones(overlay[0].data.shape),
                        bounds=overlay[0].bounds)
-         hcs = HCS(overlay[1] * C * overlay[0].N)
+         hcs = toHCS(overlay[1] * C * overlay[0].N)
 
          return [Matrix(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
                         label=hcs.label, value=self.p.label)]
@@ -188,8 +188,8 @@ class split(ElementOperation):
                 for i in range(sheetview.depth)]
 
 
-ChannelOperation.register(RGBA, False)
-ChannelOperation.register(HCS, False)
+ChannelOperation.register(toRGBA, False)
+ChannelOperation.register(toHCS, False)
 ChannelOperation.register(alpha_overlay, False)
 
 Plot.options.Matrix.Red_Channel = GrayNearest
