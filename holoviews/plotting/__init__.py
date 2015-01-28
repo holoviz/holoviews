@@ -94,5 +94,5 @@ def public(obj):
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 
-_public = ["PlotSaver"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = ["PlotSaver", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public

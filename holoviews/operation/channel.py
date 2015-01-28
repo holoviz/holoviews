@@ -5,10 +5,9 @@ import numpy as np
 import param
 
 from ..core.operation import ElementOperation
-from ..core.options import options, StyleOpts, ChannelOpts, Cycle
+from ..core.options import Options, Cycle
 from ..element import Matrix
-from ..styles import GrayNearest
-
+from ..plotting import Plot, GrayNearest
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -189,15 +188,10 @@ class split(ElementOperation):
                 for i in range(sheetview.depth)]
 
 
-ChannelOpts.operations['RGBA'] = RGBA
-ChannelOpts.operations['HCS'] = HCS
-ChannelOpts.operations['alpha_overlay'] = alpha_overlay
+Plot.options.Matrix.Red_Channel = GrayNearest
+Plot.options.Matrix.Green_Channel = GrayNearest
+Plot.options.Matrix.Blue_Channel = GrayNearest
+Plot.options.Contours.Level = Options(key='style', color=Cycle(['b', 'g', 'r']))
 
-options.R_Channel_Matrix = GrayNearest
-options.G_Channel_Matrix = GrayNearest
-options.B_Channel_Matrix = GrayNearest
-options.A_Channel_Matrix = GrayNearest
-options.Level_Contours = StyleOpts(color=Cycle(['b', 'g', 'r']))
-
-options.RGB_Matrix = StyleOpts(interpolation='nearest')
-options.RGBA_Matrix = StyleOpts(interpolation='nearest')
+Plot.options.Matrix.RGB = Options(key='style', interpolation='nearest')
+Plot.options.Matrix.RGBA = Options(key='style',interpolation='nearest')
