@@ -1,3 +1,4 @@
+from itertools import product
 from collections import OrderedDict
 import numpy as np
 
@@ -248,6 +249,16 @@ class HeatMap(Raster):
             return self._data.values()
         else:
             raise Exception("Dimension %s not found." % dim)
+
+
+    def dframe(self, dense=False):
+        if dense:
+            keys1, keys2 = self.dense_keys()
+            dense_map = HeatMap({(k1, k2): self._data.get((k1, k2), np.NaN)
+                                 for k1, k2 in product(keys1, keys2)})
+            return dense_map.dframe()
+        return super(HeatMap, self).dframe()
+
 
     @property
     def xlim(self):
