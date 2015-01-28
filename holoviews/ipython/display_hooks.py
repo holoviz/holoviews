@@ -248,8 +248,8 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot
-    opts = dict(size=get_plot_size(), **Plot.lookup_options(grid, 'plot').options)
-    gridplot = plot_type(grid, **dict(size=grid_size, **opts))
+    opts = Plot.lookup_options(grid, 'plot').options
+    gridplot = plot_type(grid, **dict({'size': grid_size}, **opts))
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
         return sanitized_repr(grid)
