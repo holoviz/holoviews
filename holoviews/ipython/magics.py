@@ -445,8 +445,10 @@ class OptsMagic(Magics):
             return cls.error_message
         if cls.next_id is not None:
             assert cls.next_id in Plot.custom_options, 'RealityError'
-            obj.traverse(lambda o: setattr(o, 'id', cls.next_id))
+            obj.traverse(lambda o: setattr(o, 'id', cls.next_id),
+                         specs=cls.applied_keys)
             cls.next_id = None
+            cls.applied_keys = None
         return None
 
 
@@ -479,6 +481,7 @@ class OptsMagic(Magics):
         if custom_tree is not None:
             Plot.custom_options[max_id+1] = custom_tree
             cls.next_id = max_id+1
+            cls.applied_keys = spec.keys()
         else:
             cls.next_id = None
 
