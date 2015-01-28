@@ -46,7 +46,7 @@ class ViewMagic(Magics):
     # Codec or system-dependent format options
     optional_formats = ['webm','h264', 'gif']
 
-    options = {'backend'     : ['mpl','d3'],
+    allowed = {'backend'     : ['mpl','d3'],
                'fig'         : ['svg', 'png'],
                'holomap'     : inbuilt_formats,
                'widgets'     : ['embed', 'live', 'cached'],
@@ -93,17 +93,17 @@ class ViewMagic(Magics):
         if not all(el in cls.optional_formats for el in supported_formats):
             raise AssertionError("Registering format in list %s not in known formats %s"
                                  % (supported_formats, cls.optional_formats))
-        cls.options['holomap'] = cls.inbuilt_formats + supported_formats
+        cls.allowed['holomap'] = cls.inbuilt_formats + supported_formats
 
 
     @classmethod
     def _generate_docstring(cls):
         intro = ["Magic for setting holoview display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
-        backend = "backend      : The backend used by holoviews %r"  % cls.options['backend']
-        fig =     "fig          : The static figure format %r" % cls.options['fig']
-        holomap = "holomap      : The display type for holomaps %r" % cls.options['holomap']
-        widgets = "widgets      : The widget mode for widgets %r" % cls.options['widgets']
+        backend = "backend      : The backend used by holoviews %r"  % cls.allowed['backend']
+        fig =     "fig          : The static figure format %r" % cls.allowed['fig']
+        holomap = "holomap      : The display type for holomaps %r" % cls.allowed['holomap']
+        widgets = "widgets      : The widget mode for widgets %r" % cls.allowed['widgets']
         fps =    ("fps          : The frames per second for animations (default %r)"
                   % cls.defaults['widgets'])
         frames=  ("max_frames   : The max number of frames rendered (default %r)"
@@ -127,7 +127,7 @@ class ViewMagic(Magics):
         while unprocessed:
             chunk = unprocessed.pop()
             key = None
-            if chunk.strip() in self.options:
+            if chunk.strip() in self.allowed:
                 key = chunk.strip()
             else:
                 raise SyntaxError("Invalid keyword: %s" % chunk.strip())
@@ -135,7 +135,7 @@ class ViewMagic(Magics):
             value = unprocessed.pop().strip()
             if len(unprocessed) != 0:
                 # Check if a new keyword has begun
-                for option in self.options:
+                for option in self.allowed:
                     if value.endswith(option):
                         value = value[:-len(option)].strip()
                         unprocessed.append(option)
@@ -174,7 +174,7 @@ class ViewMagic(Magics):
         for keyword in self.defaults:
             if keyword in items:
                 value = items[keyword]
-                allowed = self.options[keyword]
+                allowed = self.allowed[keyword]
                 if isinstance(allowed, list) and value not in allowed:
                     raise ValueError("Value %r for key %r not one of %s"
                                      % (value, keyword, allowed))
@@ -196,14 +196,15 @@ class ViewMagic(Magics):
         # Find the last element class mentioned
         completion_key = None
         tokens = [t for els in reversed(line.split('=')) for t in els.split()]
-        cls.LINE = tokens
+
         for token in tokens:
-            if token.strip() in cls.options:
+            if token.strip() in cls.allowed:
                 completion_key = token.strip()
                 break
-        values = [repr(el) for el in cls.options.get(completion_key, [])
+        values = [repr(el) for el in cls.allowed.get(completion_key, [])
                   if not isinstance(el, tuple)]
-        return values + [el+'=' for el in cls.options.keys()]
+
+        return values + [el+'=' for el in cls.allowed.keys()]
 
 
     def pprint(self):
