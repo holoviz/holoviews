@@ -230,6 +230,70 @@ class Plot(param.Parameterized):
         return vmap
 
 
+    def _collapse(self, overlay, pattern, fn, style_key):
+        """
+        Given an overlay object collapse the channels according to
+        pattern using the supplied function. Any collapsed ViewableElement is
+        then given the supplied style key.
+        """
+        pattern = [el.strip() for el in pattern.rsplit('*')]
+        if len(pattern) > len(overlay): return overlay
+
+        skip=0
+        collapsed_overlay = overlay.clone(None)
+        for i, key in enumerate(overlay.keys()):
+            layer_labels = overlay.labels[i:len(pattern)+i]
+            matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
+            if matching and len(layer_labels)==len(pattern):
+                views = [el for el in overlay if el.label in layer_labels]
+                if isinstance(overlay, Overlay):
+                    views = np.product([Overlay.from_view(el) for el in overlay])
+                overlay_slice = overlay.clone(views)
+                collapsed_view = fn(overlay_slice)
+                if isinstance(overlay, LayoutTree):
+                    collapsed_overlay *= collapsed_view
+                else:
+                    collapsed_overlay[key] = collapsed_view
+                skip = len(views)-1
+            elif skip:
+                skip = 0 if skip <= 0 else (skip - 1)
+            else:
+                if isinstance(overlay, LayoutTree):
+                    collapsed_overlay *= overlay[key]
+                else:
+                    collapsed_overlay[key] = overlay[key]
+        return collapsed_overlay
+
+
+    def _collapse_channels(self, vmap):
+        """
+        Given a map of Overlays, apply all applicable channel
+        reductions.
+        """
+        if not issubclass(vmap.type, CompositeOverlay):
+            return vmap
+        elif not CompositeOverlay.channels.keys(): # No potential channel reductions
+            return vmap
+
+        # Apply all customized channel operations
+        collapsed_vmap = vmap.clone()
+        for key, overlay in vmap.items():
+            customized = [k for k in CompositeOverlay.channels.keys()
+                          if overlay.label and k.startswith(overlay.label)]
+            # Largest reductions should be applied first
+            sorted_customized = sorted(customized, key=lambda k: -CompositeOverlay.channels[k].size)
+            sorted_reductions = sorted(CompositeOverlay.channels.options(),
+                                       key=lambda k: -CompositeOverlay.channels[k].size)
+            # Collapse the customized channel before the other definitions
+            for key in sorted_customized + sorted_reductions:
+                channel = CompositeOverlay.channels[key]
+                if channel.mode is None: continue
+                collapse_fn = channel.operation
+                fn = collapse_fn.instance(**channel.opts)
+                collapsed_vmap[k] = self._collapse(overlay, channel.pattern, fn, key)
+        return vmap
+
+
     def _format_title(self, key):
         view = self._map.get(key, None)
         if view is None: return None
@@ -1075,70 +1139,6 @@ class OverlayPlot(ElementPlot):
             subplots[key] = plotype(vmap, **plotopts)
 
         return subplots
-
-
-    def _collapse(self, overlay, pattern, fn, style_key):
-        """
-        Given an overlay object collapse the channels according to
-        pattern using the supplied function. Any collapsed ViewableElement is
-        then given the supplied style key.
-        """
-        pattern = [el.strip() for el in pattern.rsplit('*')]
-        if len(pattern) > len(overlay): return overlay
-
-        skip=0
-        collapsed_overlay = overlay.clone(None)
-        for i, key in enumerate(overlay.keys()):
-            layer_labels = overlay.labels[i:len(pattern)+i]
-            matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
-            if matching and len(layer_labels)==len(pattern):
-                views = [el for el in overlay if el.label in layer_labels]
-                if isinstance(overlay, Overlay):
-                    views = np.product([Overlay.from_view(el) for el in overlay])
-                overlay_slice = overlay.clone(views)
-                collapsed_view = fn(overlay_slice)
-                if isinstance(overlay, LayoutTree):
-                    collapsed_overlay *= collapsed_view
-                else:
-                    collapsed_overlay[key] = collapsed_view
-                skip = len(views)-1
-            elif skip:
-                skip = 0 if skip <= 0 else (skip - 1)
-            else:
-                if isinstance(overlay, LayoutTree):
-                    collapsed_overlay *= overlay[key]
-                else:
-                    collapsed_overlay[key] = overlay[key]
-        return collapsed_overlay
-
-
-    def _collapse_channels(self, vmap):
-        """
-        Given a map of Overlays, apply all applicable channel
-        reductions.
-        """
-        if not issubclass(vmap.type, CompositeOverlay):
-            return vmap
-        elif not CompositeOverlay.channels.keys(): # No potential channel reductions
-            return vmap
-
-        # Apply all customized channel operations
-        collapsed_vmap = vmap.clone()
-        for key, overlay in vmap.items():
-            customized = [k for k in CompositeOverlay.channels.keys()
-                          if overlay.label and k.startswith(overlay.label)]
-            # Largest reductions should be applied first
-            sorted_customized = sorted(customized, key=lambda k: -CompositeOverlay.channels[k].size)
-            sorted_reductions = sorted(CompositeOverlay.channels.options(),
-                                       key=lambda k: -CompositeOverlay.channels[k].size)
-            # Collapse the customized channel before the other definitions
-            for key in sorted_customized + sorted_reductions:
-                channel = CompositeOverlay.channels[key]
-                if channel.mode is None: continue
-                collapse_fn = channel.operation
-                fn = collapse_fn.instance(**channel.opts)
-                collapsed_vmap[k] = self._collapse(overlay, channel.pattern, fn, key)
-        return vmap
 
 
     def _adjust_legend(self):
