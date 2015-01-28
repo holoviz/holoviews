@@ -233,14 +233,13 @@ class ViewMagic(Magics):
             print "\nFor help with the %view magic, call %view?"
             return
 
-        restore_copy = OrderedDict(self.options.items())
+        restore_copy = OrderedDict(ViewMagic.options.items())
         try:
             options = self.get_options(line, OrderedDict())
             ViewMagic.options = options
             # Inform writer of chosen fps
             if options['holomap'] in ['gif', 'scrubber']:
                 self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
-            success = True
         except Exception as e:
             print 'SyntaxError: %s\n' % str(e)
             print "For help with the %view magic, call %view?\n"
@@ -248,7 +247,7 @@ class ViewMagic(Magics):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            self.options = restore_copy
+            ViewMagic.options = restore_copy
 
 
 
