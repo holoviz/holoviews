@@ -481,9 +481,38 @@ class OptsMagic(Magics):
 
     @line_cell_magic
     def opts(self, line='', cell=None):
+        """
+        The opts line/cell magic with tab-completion.
+
+        %%opts [ [path] [normalization] [plotting options] [style options]]+
+
+        path:             A dotted type.value.label specification
+                          (e.g. Matrix.Grayscale.Photo)
+
+        normalization:    List of normalization options delimited by braces.
+                          One of | -groupwise | -mapwise | +groupwise | +mapwise |
+                          E.g. { -groupwise -mapwise }
+
+        plotting options: List of plotting option keywords delimited by
+                          square brackets. E.g. [show_title=False]
+
+        style options:    List of style option keywords delimited by
+                          parentheses. E.g. (lw=10 marker='+')
+
+        Note that commas between keywords are optional (not
+        recommended) and that keywords must end in '=' without a
+        separating space.
+
+        More information may be found in the class docstring of
+        ipython.parser.OptsSpec.
+        """
         from holoviews.ipython.parser import OptsSpec
         get_object = None
-        spec = OptsSpec.parse(line)
+        try:
+            spec = OptsSpec.parse(line)
+        except SyntaxError:
+            display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
+            return
 
         self.register_custom_spec(spec, None)
         if cell:
