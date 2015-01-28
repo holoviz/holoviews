@@ -180,8 +180,8 @@ class ViewMagic(Magics):
                                      % (value, keyword, allowed))
                 elif isinstance(allowed, tuple):
                     if not (allowed[0] <= value <= allowed[1]):
-                        raise ValueError("Value %r for key %r not between %s and %s"
-                                         % (keyword,value)+allowed)
+                        info = (keyword,value)+allowed
+                        raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
             else:
                 options[keyword] = self.defaults[keyword]
@@ -241,7 +241,7 @@ class ViewMagic(Magics):
             if options['holomap'] in ['gif', 'scrubber']:
                 self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
         except Exception as e:
-            print 'SyntaxError: %s\n' % str(e)
+            print 'Error: %s' % str(e)
             print "For help with the %view magic, call %view?\n"
             return
 
