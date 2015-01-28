@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ..core import CompositeOverlay, Element
-from ..element.raster import HeatMap, Matrix, Raster
+from ..element.raster import HeatMap, Matrix, Raster, RGBA
 from .plot import Plot, ElementPlot, OverlayPlot, GridPlot
 
 
@@ -237,5 +237,6 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
 Plot.defaults.update({Raster: MatrixPlot,
                       HeatMap: MatrixPlot,
-                      Matrix: MatrixPlot})
+                      Matrix: MatrixPlot,
+                      RGBA: MatrixPlot})
 
