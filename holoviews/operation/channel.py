@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core.operation import ElementOperation
+from ..core.operation import ElementOperation, ChannelOperation
 from ..core.options import Options, Cycle
 from ..element import Matrix
 from ..plotting import Plot, GrayNearest
@@ -187,6 +187,10 @@ class split(ElementOperation):
                                 value='RGBA'[i] + ' ' + self.p.label)
                 for i in range(sheetview.depth)]
 
+
+ChannelOperation.register(RGBA, False)
+ChannelOperation.register(HCS, False)
+ChannelOperation.register(alpha_overlay, False)
 
 Plot.options.Matrix.Red_Channel = GrayNearest
 Plot.options.Matrix.Green_Channel = GrayNearest
