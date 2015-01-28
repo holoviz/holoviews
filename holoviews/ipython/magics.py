@@ -34,6 +34,17 @@ Your browser does not support the video tag.
 STORE_HISTORY = False
 
 
+# ANSI color codes for the IPython pager
+red   = '\x1b[1;31m%s\x1b[0m'
+blue  = '\x1b[1;34m%s\x1b[0m'
+green = '\x1b[1;32m%s\x1b[0m'
+cyan = '\x1b[1;36m%s\x1b[0m'
+
+# Corresponding HTML color codes
+html_red = '#980f00'
+html_blue = '#00008e'
+
+
 @magics_class
 class ViewMagic(Magics):
     """
@@ -409,16 +420,6 @@ class OptsCompleter(object):
             return style_completions
         return style_completions + completions.keys()
 
-
-# ANSI color codes for the IPython pager
-red   = '\x1b[1;31m%s\x1b[0m'
-blue  = '\x1b[1;34m%s\x1b[0m'
-green = '\x1b[1;32m%s\x1b[0m'
-cyan = '\x1b[1;36m%s\x1b[0m'
-
-# Corresponding HTML color codes
-html_red = '#980f00'
-html_blue = '#00008e'
 
 
 
