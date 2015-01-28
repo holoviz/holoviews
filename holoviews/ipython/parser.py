@@ -186,15 +186,19 @@ class OptsSpec(Parser):
 
         parse = {}
         for group in cls.opts_spec.parseString(line):
-            options = {}
+            options, plot_options = {}, {}
+
             normalization = cls.process_normalization(group)
+            if normalization is not None:
+                plot_options['normalization'] = normalization
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
-                option_kws = cls.todict(plotopts, 'brackets')
-                if normalization is not None:
-                    option_kws['normalization'] = normalization
-                options['plot'] = Options(**option_kws)
+                plot_options = dict(plot_options,
+                                    **cls.todict(plotopts, 'brackets'))
+            if plot_options:
+                options['plot'] = Options(**plot_options)
+
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
                 options['style'] = Options(**cls.todict(styleopts, 'parens'))
