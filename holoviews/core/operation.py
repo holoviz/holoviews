@@ -127,3 +127,67 @@ class MapOperation(param.ParameterizedFunction):
         the user as a NdLayout.
         """
         raise NotImplementedError
+
+
+
+class ChannelOperation(param.Parameterized):
+    """
+    A ChannelOperation defines operations to be automatically applied
+    on display when certain types of Overlay are found. For instance,
+    this can be used to display three overlaid monochrome matrices as
+    an RGB image.
+
+    Note that currently only operations that process Matrix elements
+    are permitted.
+    """
+
+    name = param.String(doc="""
+       A unique identifier of a particular ChannelOperation definition.""")
+
+    operation = param.ClassSelector(class_=ElementOperation, is_instance=False, doc="""
+       The ElementOperation to apply when combining channels""")
+
+    pattern = param.String(doc="""
+       The overlay pattern to be processed. An overlay pattern is a
+       sequence of elements specified by dotted paths separated by * .
+
+       For instance the following pattern specifies three overlayed
+       matrices with values of 'RedChannel', 'GreenChannel' and
+       'BlueChannel' respectively:
+
+      'Matrix.RedChannel * Matrix.GreenChannel * Matrix.BlueChannel.
+
+      This pattern specification could then be associated with the RGB
+      operation that returns a single RGB matrix for display.""")
+
+
+    def __init__(self, name, pattern, operation, **kwargs):
+        self.kwargs = kwargs
+        self._pattern_spec, labels = [], []
+
+        for path in pattern.split('*'):
+            path_tuple = tuple(el.strip() for el in path.strip().split('.'))
+
+            if path_tuple[0] != 'Matrix':
+                raise KeyError("Only Matrix is currently supported in channel operation patterns")
+
+            self._pattern_spec.append(path_tuple)
+
+            if len(path_tuple) == 3:
+                labels.append(path_tuple[2])
+
+        if len(labels) > 1 and not all(l==labels[0] for l in labels):
+            raise KeyError("Mismatched labels not allowed in channel operation patterns")
+        elif len(labels) == 1:
+            self.label = labels[0]
+        else:
+            self.label = ''
+
+        super(ChannelOperation, self).__init__(name=name,
+                                               pattern=pattern,
+                                               operation=operation)
+
+
+    def __call__(self, overlay):
+        return self.operation(overlay, label=self.label, **self.kwargs)
+
