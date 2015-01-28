@@ -24,10 +24,10 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import ViewableElement, NdMapping, CompositeOverlay, NdLayout,\
-    AdjointLayout, AxisLayout, LayoutTree, HoloMap, Element
-from ..plotting import Plot, LayoutPlot
-from .magics import ViewMagic
+from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
+from ..element import Raster
+from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
+from .magics import ViewMagic, OptsMagic, ChannelMagic
 
 
 class ProgressBar(param.Parameterized):
@@ -242,6 +242,14 @@ def isnumeric(val):
         return False
 
 
+def process_cell_magics(obj):
+    "Hook into %%opts and %%channels magics to process displayed element"
+    invalid_options = OptsMagic.process_view(obj)
+    if invalid_options: return invalid_options
+    invalid_channels = ChannelMagic.set_channels(obj)
+    if invalid_channels: return invalid_channels
+
+
 def get_plot_size():
     factor = ViewMagic.options['size'] / 100.0
     return (Plot.size[0] * factor,
@@ -265,21 +273,41 @@ class NdWidget(param.Parameterized):
             shape = view.shape if isinstance(view, NdLayout) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
-            self.plot = LayoutPlot(view, **dict(size=grid_size))
+            plot = LayoutPlot(view, **dict(size=grid_size))
+        elif isinstance(view, AxisLayout):
+            max_dim = max(view.shape)
+            # Reduce plot size as AxisLayout gets larger
+            shape_factor = 1. / max_dim
+            # Expand small views to a sensible viewing size
+            expand_factor = 1 + (max_dim - 1) * 0.1
+            scale_factor = expand_factor * shape_factor
+            view_size = (scale_factor * view.shape[0] * get_plot_size()[0],
+                         scale_factor * view.shape[1] * get_plot_size()[1])
+
+            magic_info = process_cell_magics(view)
+            if magic_info: return magic_info
+            layer_types = view.layer_types
+            if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
+                plot_type = MatrixGridPlot
+            else:
+                plot_type = GridPlot
+            opts = Plot.lookup_options(view, 'plot').options
+            plot = plot_type(view, **dict({'size': view_size}, **opts))
         else:
             opts = dict(Plot.options.closest(view, 'plot').options,
                         size=get_plot_size())
-            self.plot = Plot.defaults[view.type](view, **opts)
+            plot = Plot.defaults[view.type](view, **opts)
 
         key_dimvals = view.traverse(lambda x: (tuple(x.key_dimensions), x.keys()), ('HoloMap',))
         dimensions_list, keys_list = zip(*key_dimvals)
-        self.dimensions = dimensions_list[np.argmax([len(keys) for keys in keys_list])]
-        keys_lists = [keys_list[idx] for idx, dims in enumerate(dimensions_list) if dims == self.dimensions]
-        self._keys = set(key for keys in keys_lists for key in keys)
+        dimensions = dimensions_list[np.argmax([len(keys) for keys in keys_list])]
+        keys_lists = [keys_list[idx] for idx, dims in enumerate(dimensions_list) if dims == dimensions]
+        keys = set(key for keys in keys_lists for key in keys)
 
         # Create mock NdMapping to hold the common dimensions and keys
-        self.mock_obj = NdMapping([(k, 0) for k in self._keys],
-                                  key_dimensions=self.dimensions)
+        mock_obj = NdMapping([(k, 0) for k in keys],
+                             key_dimensions=dimensions)
+        return plot, dimensions, keys, mock_obj
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
@@ -314,7 +342,7 @@ class IPySelectionWidget(NdWidget):
         if widgets is None:
             raise ImportError('ViewSelector requires IPython >= 2.0.')
 
-        self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
         self._initialize_widgets()
         self.refresh = True
 
@@ -464,7 +492,7 @@ class ScrubberWidget(NdWidget):
     def __init__(self, view, **params):
         super(ScrubberWidget, self).__init__(**params)
         self.view = view
-        self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
         self.frames = OrderedDict((idx, self._plot_figure(idx))
                                   for idx in range(len(self.plot)))
 
@@ -554,7 +582,7 @@ class SelectionWidget(ScrubberWidget):
     def __init__(self, view, **params):
         NdWidget.__init__(self, **params)
         self.view = view
-        self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
         self.frames = OrderedDict((k, self._plot_figure(idx))
                                   for idx, k in enumerate(self._keys))
 
