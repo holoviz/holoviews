@@ -13,27 +13,14 @@ from .layout import NdLayout, LayoutTree
 from .overlay import CompositeOverlay, NdOverlay, Overlay
 
 
-class ElementOperation(param.ParameterizedFunction):
+class Operation(param.ParameterizedFunction):
     """
-    An ElementOperation process an Element or HoloMap at the level of
-    individual elements or overlays. If a holomap is passed in as
-    input, a processed holomap is returned as output where the
-    individual elements have been transformed accordingly. An
-    ElementOperation may turn overlays in new elements or vice versa.
+    Base class for all Operation types.
     """
 
-    label = param.String(default='ElementOperation', doc="""
-        The label to identify the output of the ElementOperation. By
-        default this will match the name of the ElementOperation itself.""")
-
-    def _process(self, view, key=None):
-        """
-        Process a single input element and outputs new single element
-        or overlay. If a HoloMap is passed into a ElementOperation,
-        the individual components are processed sequentially with the
-        corresponding key passed as the optional key argument.
-        """
-        raise NotImplementedError
+    label = param.String(default='Operation', doc="""
+       The label to identify the output of the Operation. By default
+       this should match the operation name.""")
 
 
     def get_views(self, view, pattern, view_type=Element):
@@ -50,6 +37,25 @@ class ElementOperation(param.ParameterizedFunction):
 
         return [match for match in matches if isinstance(match, view_type)]
 
+
+
+class ElementOperation(Operation):
+    """
+    An ElementOperation process an Element or HoloMap at the level of
+    individual elements or overlays. If a holomap is passed in as
+    input, a processed holomap is returned as output where the
+    individual elements have been transformed accordingly. An
+    ElementOperation may turn overlays in new elements or vice versa.
+    """
+
+    def _process(self, view, key=None):
+        """
+        Process a single input element and outputs new single element
+        or overlay. If a HoloMap is passed into a ElementOperation,
+        the individual components are processed sequentially with the
+        corresponding key passed as the optional key argument.
+        """
+        raise NotImplementedError
 
     def __call__(self, view, **params):
         self.p = param.ParamOverrides(self, params)
