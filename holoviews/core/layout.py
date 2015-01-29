@@ -5,13 +5,14 @@ AdjointLayout allows one or two Views to be ajoined to a primary View
 to act as supplementary elements.
 """
 import uuid
+from collections import OrderedDict
 from itertools import groupby
 
 import numpy as np
 
 import param
 
-from .dimension import LabelledData, Dimension, Dimensioned, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
@@ -61,20 +62,22 @@ class AdjointLayout(Dimensioned):
 
     _deep_indexable = True
 
-    def __init__(self, views, **params):
+    def __init__(self, data, **params):
 
         self.main_layer = 0 # The index of the main layer if .main is an overlay
-        if len(views) > 3:
+        if data and len(data) > 3:
             raise Exception('AdjointLayout accepts no more than three elements.')
 
-        if isinstance(views, dict):
-            wrong_pos = [k for k in views if k not in self.layout_order]
+        if isinstance(data, dict):
+            wrong_pos = [k for k in data if k not in self.layout_order]
             if wrong_pos:
                 raise Exception('Wrong AdjointLayout positions provided.')
             else:
-                data = views
-        elif isinstance(views, list):
-            data = dict(zip(self.layout_order, views))
+                data = data
+        elif isinstance(data, list):
+            data = dict(zip(self.layout_order, data))
+        else:
+            data = OrderedDict()
 
         super(AdjointLayout, self).__init__(data, **params)
 
@@ -108,6 +111,15 @@ class AdjointLayout(Dimensioned):
         else:
             raise KeyError("Key {0} not found in AdjointLayout.".format(key))
 
+
+    def __setitem__(self, key, value):
+        if key in ['main', 'right', 'top']:
+            if isinstance(value, (ViewableElement, UniformNdMapping)):
+                self.data[key] = value
+            else:
+                raise ValueError('AdjointLayout only accepts Element types.')
+        else:
+            raise Exception('Position %s not valid in AdjointLayout.' % key)
 
     @property
     def deep_dimensions(self):
