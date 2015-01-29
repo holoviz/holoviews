@@ -338,11 +338,11 @@ class LayoutTree(AttrTree, Dimensioned):
                 relabelled_items.append((path, group[0][1]))
                 continue
             for idx, (path, item) in enumerate(group):
-                if len(path) == 2:
-                    numeral = int_to_roman(idx+1)
-                    new_path = (path[0], numeral) if not item.label else path + (numeral,)
+                numeral = int_to_roman(idx+1)
+                if len(path) == 2 and not item.label:
+                    new_path = (path[0], numeral)
                 else:
-                    new_path = path
+                    new_path = path + (numeral,)
                 relabelled_items.append((new_path, item))
         return relabelled_items
 
