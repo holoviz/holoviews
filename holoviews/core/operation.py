@@ -40,6 +40,7 @@ class Operation(param.ParameterizedFunction):
             return [element] if element.matches(pattern) else []
 
 
+
 class ElementOperation(Operation):
     """
     An ElementOperation process an Element or HoloMap at the level of
@@ -83,13 +84,12 @@ class MapOperation(param.ParameterizedFunction):
     A MapOperation takes a HoloMap containing elements or overlays and
     processes them at the HoloMap level, returning arbitrary new
     HoloMap objects as output. Unlike ElementOperation, MapOperations
-    have access to the keys and dimensions of the input map.
+    can compute over all the keys and dimensions of the input map.
     """
 
     value = param.String(default='MapOperation', doc="""
         The value string to identify the output of the MapOperation.
         By default this will match the MapOperation name.""")
-
 
     def __call__(self, vmap, **params):
         self.p = param.ParamOverrides(self, params)
@@ -97,26 +97,23 @@ class MapOperation(param.ParameterizedFunction):
         if not isinstance(vmap, HoloMap):
             raise Exception('MapOperation can only process Maps.')
 
-        maps = self._process(vmap)
-
-        if len(maps) == 1:
-            return maps[0]
-        else:
-            return NdLayout(maps)
+        return self._process(vmap)
 
 
     def _process(self, view):
         """
-        Process a single input HoloMap and output a list of views or
-        maps. When multiple values are returned they are returned to
-        the user as a NdLayout.
+        Process a single input HoloMap, returning a new HoloMap
+        instance.
         """
         raise NotImplementedError
+
 
 
 class LayoutOperation(param.ParameterizedFunction):
 
     pass
+
+
 
 class ChannelOperation(param.Parameterized):
     """
