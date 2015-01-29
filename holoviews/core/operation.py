@@ -30,9 +30,9 @@ class Operation(param.ParameterizedFunction):
         given path pattern of form {type}.{value}.{label}
         """
         if isinstance(element, (NdOverlay, Overlay)):
-            return [el for el in element if el._matches(pattern)]
+            return [el for el in element if el.matches(pattern)]
         elif isinstance(element, Element):
-            return [element] if element._matches(pattern) else []
+            return [element] if element.matches(pattern) else []
 
 
 

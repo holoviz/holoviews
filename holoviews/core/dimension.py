@@ -194,7 +194,7 @@ class LabelledData(param.Parameterized):
         return self.clone(self.data,
                           **{k:v for k,v in keywords if v is not None})
 
-    def _matches(self, spec):
+    def matches(self, spec):
         """
         A specification string is of form {type}.{value}.{label} which
         may be supplied in full or up to the first or second
@@ -223,7 +223,7 @@ class LabelledData(param.Parameterized):
         matches.
         """
         accumulator = []
-        if specs is None or any(self._matches(spec) for spec in specs):
+        if specs is None or any(self.matches(spec) for spec in specs):
             accumulator.append(fn(self))
 
         try:
