@@ -161,13 +161,14 @@ class ChannelOperation(param.Parameterized):
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")
 
+    kwargs = param.Dict(doc="""
+       Optional set of parameters to pass to the operation.""")
+
     operations = []
 
     def __init__(self, value, pattern, operation, **kwargs):
         if not any (operation is op for op in self.operations):
             raise ValueError("Operation %r not in allowed operations" % operation)
-
-        self.kwargs = kwargs
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -190,7 +191,8 @@ class ChannelOperation(param.Parameterized):
 
         super(ChannelOperation, self).__init__(value=value,
                                                pattern=pattern,
-                                               operation=operation)
+                                               operation=operation,
+                                               kwargs=kwargs)
 
 
     def __call__(self, overlay):
