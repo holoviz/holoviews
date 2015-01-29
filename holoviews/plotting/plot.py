@@ -429,7 +429,7 @@ class GridPlot(CompositePlot):
         view = self.layout.values()[0]
         key = key if isinstance(key, tuple) else (key,)
         if len(self) > 1:
-            title_format = view.get_title(key, layout)
+            title_format = view.get_title(key, self.layout)
         else:
             title_format = self.layout.title
         view = view.last
