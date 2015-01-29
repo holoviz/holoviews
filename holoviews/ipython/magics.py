@@ -265,120 +265,16 @@ class ViewMagic(Magics):
 
 
 
-
 @magics_class
 class ChannelMagic(Magics):
 
-    custom_channels = {}
-
-    @cell_magic
+    @line_cell_magic
     def channels(self, line, cell=None):
-        """
-        The %%channels cell magic allows channel definitions to be
-        defined on the displayed Overlay.
+        from holoviews.ipython.parser import ChannelSpec
 
-        For instance, if you have three Matrix Views (R,G and B)
-        together in a Overlay with labels 'R_Channel',
-        'G_Channel', 'B_Channel' respectively, you can display this
-        object as an RGB image using:
+        if line.strip() is not '':
+            Plot.channel_ops +=  ChannelSpec.parse(line.strip())
 
-        %%channels R_Channel * G_Channel * B_Channel => RGBA []
-        R * G * B
-
-        The available operators are defined in the modes dictionary of
-        ChannelOpts and additional arguments to the channel operator
-        are supplied via keywords in the square brackets.
-        """
-        ChannelMagic.custom_channels = self._parse_channels(str(line))
-        self.shell.run_cell(cell, store_history=STORE_HISTORY)
-        ChannelMagic.custom_channels = {}
-
-
-    @classmethod
-    def _set_overlay_labels(cls, obj, label):
-        """
-        Labels on Overlays are used to index channel definitions.
-        """
-        if isinstance(obj, (AdjointLayout, AxisLayout, NdLayout)):
-            for subview in obj:
-                cls._set_overlay_labels(subview, label)
-        elif isinstance(obj, HoloMap) and issubclass(obj.type, NdOverlay):
-            for overlay in obj:
-                overlay.relabel(label)
-        elif isinstance(obj, NdOverlay):
-            obj.relabel(label)
-
-
-    @classmethod
-    def _set_channels(cls, obj, custom_channels, prefix):
-        cls._set_overlay_labels(obj, prefix)
-        for name, (pattern, params) in custom_channels.items():
-            CompositeOverlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
-                                                                         **params)
-
-
-    @classmethod
-    def set_channels(cls, obj):
-        prefix = 'Custom[<' + obj.name + '>]'
-        if cls.custom_channels:
-            cls._set_channels(obj, cls.custom_channels, prefix)
-
-
-    def _parse_channels(self, line):
-        """
-        Parse the arguments to the magic, returning a dictionary of
-        {'channel op name' : ('pattern', kwargs).
-        """
-        tokens = line.split()
-        if tokens == []: return {}
-
-        channel_split = [(el+']') for el in line.rsplit(']') if el.strip()]
-        spec_split = [el.rsplit('=>') for el in channel_split]
-        channels = {}
-        for head, tail in spec_split:
-            head = head.strip()
-            op_match = [op for op in channel_ops if tail.strip().startswith(op)]
-            if len(op_match) != 1:
-                raise Exception("Unrecognized channel operation: ", tail.split()[0])
-            argument_str = tail.replace(op_match[0],'')
-            try:
-                eval_str = argument_str.replace('[','dict(').replace(']', ')')
-                args = eval(eval_str)
-            except:
-                raise Exception("Could not evaluate: %s" % argument_str)
-
-            op = op_match[0]
-            params = set(p for p in channel_ops[op].params().keys() if p!='name')
-
-            mismatch_keys = set(args.keys()) - params
-            if mismatch_keys:
-                raise Exception("Parameter(s) %r not accepted by %s operation"
-                                % (', '.join(mismatch_keys), op))
-            # As string.letters (Python 2) does not exist in Python 3
-            letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            valid_chars = letters + string.digits + '_* '
-            if not head.count('*') or any(l not in valid_chars for l in head):
-                raise Exception("Invalid characters in overlay pattern specification: %s" % head)
-
-            pattern =  ' * '.join(el.strip() for el in head.rsplit('*'))
-            channel_ops[op].instance(**args)
-            channels[op] =  (pattern, args)
-        return channels
-
-
-    @classmethod
-    def option_completer(cls, k,v):
-        """
-        Tab completion hook for the %opts and %%opts magic.
-        """
-        line = v.text_until_cursor
-        if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
-            line_tail = line[len('%%channels'):]
-            op_name = line_tail[::-1].rsplit('[')[1][::-1].strip().split()[-1]
-            if op_name in  channel_ops:
-                return list(channel_ops[op_name].params().keys())
-        else:
-            return list(channel_ops.keys())
 
 
 class OptsCompleter(object):
@@ -540,7 +436,7 @@ def load_magics(ip):
 
     ip.register_magics(ViewMagic)
     ip.register_magics(OptsMagic)
-    #ip.register_magics(ChannelMagic)
+    ip.register_magics(ChannelMagic)
 
     # Configuring tab completion
     ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
