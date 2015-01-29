@@ -278,7 +278,18 @@ class ChannelMagic(Magics):
 
     @classmethod
     def option_completer(cls, k,v):
-        return []
+        line = v.text_until_cursor
+        operation_openers = [op.__name__+'(' for op in ChannelOperation.operations]
+
+        op_declared = any(op in line for op in operation_openers)
+        if not op_declared:
+            return operation_openers
+        if op_declared and ')' not in line:
+            return [')']
+        elif line.split(')')[1].strip() and ('[' not in line):
+            return ['[']
+        elif '[' in line:
+            return [']']
 
 
 class OptsCompleter(object):
