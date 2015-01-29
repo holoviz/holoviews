@@ -17,6 +17,9 @@ from ..plotting import Plot
 
 from collections import OrderedDict
 from IPython.display import display, HTML
+
+from ..operation.channel import ChannelOperation
+
 #========#
 # Magics #
 #========#
@@ -408,8 +411,10 @@ class OptsCompleter(object):
                 completion_key = token
                 break
 
+        channel_op_values = [el.value for el in Plot.channel_ops]
+
         if not completion_key:
-            return completions.keys()
+            return completions.keys() + channel_op_values
 
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             kws = completions[completion_key][0]
@@ -421,7 +426,7 @@ class OptsCompleter(object):
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
-        return style_completions + completions.keys()
+        return style_completions + completions.keys() + channel_op_values
 
 
 
