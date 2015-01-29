@@ -18,9 +18,9 @@ class Operation(param.ParameterizedFunction):
     Base class for all Operation types.
     """
 
-    label = param.String(default='Operation', doc="""
-       The label to identify the output of the Operation. By default
-       this should match the operation name.""")
+    value = param.String(default='Operation', doc="""
+       The value string used to identify the output of the
+       Operation. By default this should match the operation name.""")
 
 
     def get_views(self, view, pattern, view_type=Element):
@@ -89,9 +89,9 @@ class MapOperation(param.ParameterizedFunction):
     have access to the keys and dimensions of the input map.
     """
 
-    label = param.String(default='MapOperation', doc="""
-        The label to identifiy the output of the MapOperation. By
-        default this will match the name of the MapOperation.""")
+    value = param.String(default='MapOperation', doc="""
+        The value string to identify the output of the MapOperation.
+        By default this will match the MapOperation name.""")
 
 
     def __call__(self, vmap, **params):
