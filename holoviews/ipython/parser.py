@@ -122,7 +122,7 @@ class OptsSpec(Parser):
 
 
     channelops = pp.MatchFirst(
-        [pp.Literal(el.value) for el in ChannelDefinition.channel_ops])
+        [pp.Literal(el.value) for el in ChannelDefinition.definitions])
 
     dotted_path = pp.Combine( pp.Word(string.uppercase, exact=1)
                               + pp.Word(pp.alphas+'._'))
@@ -256,7 +256,7 @@ class ChannelSpec(Parser):
         """
         Parse a list of channel specification, returning a ChannelDefinition
         """
-        channel_ops = []
+        definitions = []
         parses  = [p for p in cls.channel_spec.scanString(line)]
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
@@ -281,6 +281,6 @@ class ChannelSpec(Parser):
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets')
 
-            channel_op = ChannelDefinition(str(spec), operation, str(group['value']), **kwargs)
-            channel_ops.append(channel_op)
-        return channel_ops
+            definition = ChannelDefinition(str(spec), operation, str(group['value']), **kwargs)
+            definitions.append(definition)
+        return definitions

@@ -289,13 +289,13 @@ class ChannelMagic(Magics):
 
     @line_magic
     def channels(self, line):
-        defined_values = [op.value for op in ChannelDefinition.channel_ops]
+        defined_values = [op.value for op in ChannelDefinition.definitions]
         if line.strip():
             for definition in ChannelSpec.parse(line.strip()):
                 if definition.value in defined_values:
                     print("Channel definition ignored as value %r already defined" % definition.value)
 
-                ChannelDefinition.channel_ops.append(definition)
+                ChannelDefinition.definitions.append(definition)
         else:
             print "For help with the %channels magic, call %channels?\n"
 
@@ -346,10 +346,10 @@ class OptsCompleter(object):
                 completion_key = token
                 break
 
-        channel_op_values = [el.value for el in ChannelDefinition.channel_ops]
+        channel_definitions = [el.value for el in ChannelDefinition.definitions]
 
         if not completion_key:
-            return completions.keys() + channel_op_values
+            return completions.keys() + channel_definitions
 
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             kws = completions[completion_key][0]
@@ -361,7 +361,7 @@ class OptsCompleter(object):
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
-        return style_completions + completions.keys() + channel_op_values
+        return style_completions + completions.keys() + channel_definitions
 
 
 

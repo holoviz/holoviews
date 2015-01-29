@@ -366,7 +366,7 @@ class ChannelDefinition(param.Parameterized):
 
     operations = []
 
-    channel_ops = []
+    definitions = []
 
     def __init__(self, pattern, operation, value, **kwargs):
         if not any (operation is op for op in self.operations):
