@@ -141,8 +141,9 @@ class ChannelOperation(param.Parameterized):
     are permitted.
     """
 
-    name = param.String(doc="""
-       A unique identifier of a particular ChannelOperation definition.""")
+    value = param.String(doc="""
+       The value identifier for the output of this particular
+       ChannelOperation definition.""")
 
     operation = param.ClassSelector(class_=ElementOperation, is_instance=False, doc="""
        The ElementOperation to apply when combining channels""")
@@ -162,7 +163,7 @@ class ChannelOperation(param.Parameterized):
 
     operations = []
 
-    def __init__(self, name, pattern, operation, **kwargs):
+    def __init__(self, value, pattern, operation, **kwargs):
         if not any (operation is op for op in self.operations):
             raise ValueError("Operation %r not in allowed operations" % operation)
 
@@ -187,7 +188,7 @@ class ChannelOperation(param.Parameterized):
         else:
             self.label = ''
 
-        super(ChannelOperation, self).__init__(name=name,
+        super(ChannelOperation, self).__init__(value=value,
                                                pattern=pattern,
                                                operation=operation)
 
