@@ -48,7 +48,7 @@ class MatrixPlot(ElementPlot):
         im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
             val_dim = [d.name for d in view.value_dimensions][0]
-            clims = ranges[val_dim]
+            clims = ranges.get(val_dim)
         im.set_clim(clims)
         self.handles['im'] = im
 
@@ -107,7 +107,7 @@ class MatrixPlot(ElementPlot):
            self._annotate_values(view)
 
         val_dim = [d.name for d in view.value_dimensions][0]
-        im.set_clim(ranges[val_dim])
+        im.set_clim(ranges.get(val_dim))
 
 
 
