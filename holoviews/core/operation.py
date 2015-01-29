@@ -23,19 +23,16 @@ class Operation(param.ParameterizedFunction):
        Operation. By default this should match the operation name.""")
 
 
-    def get_views(self, view, pattern, view_type=Element):
+    @classmethod
+    def search_overlay(cls, element, pattern):
         """
-        Helper method that return a list of views with labels ending
-        with the given pattern and which have the specified type. This
-        may be useful to check if a single element satisfies some
-        condition or to extract the appropriate views from an NdOverlay.
+        Helper method that returns a list of elements that match the
+        given path pattern of form {type}.{value}.{label}
         """
-        if isinstance(view, (NdOverlay, Overlay)):
-            matches = [v for v in view if v.label.endswith(pattern)]
-        elif isinstance(view, Element):
-            matches = [view] if view.label.endswith(pattern) else []
-
-        return [match for match in matches if isinstance(match, view_type)]
+        if isinstance(element, (NdOverlay, Overlay)):
+            return [el for el in element if el._matches(pattern)]
+        elif isinstance(element, Element):
+            return [element] if element._matches(pattern) else []
 
 
 
