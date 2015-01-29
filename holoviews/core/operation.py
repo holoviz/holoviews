@@ -182,10 +182,6 @@ class ChannelOperation(param.Parameterized):
                                                kwargs=kwargs)
 
 
-    def __call__(self, overlay):
-        return self.operation(overlay, label=self.label, **self.kwargs)
-
-
     @classmethod
     def _collapse(cls, overlay, pattern, fn, style_key):
         """
