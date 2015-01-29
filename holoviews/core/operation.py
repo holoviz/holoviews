@@ -168,6 +168,8 @@ class ChannelOperation(param.Parameterized):
 
     operations = []
 
+    channel_ops = []
+
     def __init__(self, pattern, operation, value, **kwargs):
         if not any (operation is op for op in self.operations):
             raise ValueError("Operation %r not in allowed operations" % operation)

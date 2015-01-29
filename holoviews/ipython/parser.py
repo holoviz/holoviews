@@ -120,7 +120,7 @@ class OptsSpec(Parser):
 
 
     channelops = pp.MatchFirst(
-        [pp.Literal(el.value) for el in Plot.channel_ops])
+        [pp.Literal(el.value) for el in ChannelOperation.channel_ops])
 
     dotted_path = pp.Combine( pp.Word(string.uppercase, exact=1)
                               + pp.Word(pp.alphas+'._'))

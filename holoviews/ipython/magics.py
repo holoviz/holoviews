@@ -290,7 +290,7 @@ class ChannelMagic(Magics):
     @line_magic
     def channels(self, line):
         if line.strip():
-            Plot.channel_ops +=  ChannelSpec.parse(line.strip())
+            ChannelOperation.channel_ops += ChannelSpec.parse(line.strip())
         else:
             print "For help with the %channels magic, call %channels?\n"
 
@@ -341,7 +341,7 @@ class OptsCompleter(object):
                 completion_key = token
                 break
 
-        channel_op_values = [el.value for el in Plot.channel_ops]
+        channel_op_values = [el.value for el in ChannelOperation.channel_ops]
 
         if not completion_key:
             return completions.keys() + channel_op_values
