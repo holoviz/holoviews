@@ -268,12 +268,21 @@ class ViewMagic(Magics):
 @magics_class
 class ChannelMagic(Magics):
 
+
+    def __init__(self, *args, **kwargs):
+        from holoviews.ipython.parser import ChannelSpec
+        super(ChannelMagic, self).__init__(*args, **kwargs)
+        lines = ['The %channels line magic is used to define channel operations.']
+        self.channels.__func__.__doc__ = '\n'.join(lines + [ChannelSpec.__doc__])
+
+
     @line_magic
     def channels(self, line):
         from holoviews.ipython.parser import ChannelSpec
-
-        if line.strip() is not '':
+        if line.strip():
             Plot.channel_ops +=  ChannelSpec.parse(line.strip())
+        else:
+            print "For help with the %channels magic, call %channels?\n"
 
 
     @classmethod

@@ -217,12 +217,11 @@ class OptsSpec(Parser):
 
 class ChannelSpec(Parser):
     """
-    Parser used by the %channels line magic. Given a string of the
-    following form:
+    The syntax for defining a set of channel operations is as follows:
 
-    [ value op(spec) [settings] ]+
+    [ op(spec) [settings] value ]+
 
-    One or more ChannelOperations are returned. The components are:
+    The components are:
 
     value     : Value identifier with capitalized initial letter.
     op        : The name of the operation to apply.
