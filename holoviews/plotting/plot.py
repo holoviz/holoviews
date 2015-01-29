@@ -685,13 +685,12 @@ class LayoutPlot(CompositePlot):
         """
         self.handles['axis'] = self._init_axis(None)
         layout_items = layout.grid_items()
-        layout_keys = layout.grid_keys()
 
         layouts, grid_indices = {}, {}
         row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
-            view = layout_items.get((r, c), None)
+            _, view = layout_items.get((r, c), (None, None))
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
@@ -767,7 +766,7 @@ class LayoutPlot(CompositePlot):
             layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
-            layout_key = layout_keys.get((r, c))
+            layout_key, _ = layout_items.get((r, c), (None, None))
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
 
