@@ -377,13 +377,13 @@ class Matrix(SheetCoordinateSystem, Raster):
         return self.sheet2matrixidx(*coord)
 
 
-    def get_roi(self, roi_bounds):
+    def get_roi(self, bounds):
         if self.depth == 1:
-            data = Slice(roi_bounds, self).submatrix(self.data)
+            data = Slice(bounds, self).submatrix(self.data)
         else:
-            data = np.dstack([Slice(roi_bounds, self).submatrix(
+            data = np.dstack([Slice(bounds, self).submatrix(
                 self.data[:, :, i]) for i in range(self.depth)])
-        return Matrix(data, roi_bounds, style=self.style, value=self.value)
+        return Matrix(data, bounds, style=self.style, value=self.value)
 
 
 class RGBA(Matrix):
