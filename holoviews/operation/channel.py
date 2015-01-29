@@ -192,10 +192,7 @@ ChannelOperation.operations.append(toRGBA)
 ChannelOperation.operations.append(toHCS)
 ChannelOperation.operations.append(alpha_overlay)
 
-Plot.options.Matrix.Red_Channel = GrayNearest
-Plot.options.Matrix.Green_Channel = GrayNearest
-Plot.options.Matrix.Blue_Channel = GrayNearest
+Plot.options.RGBA.Red_Channel = GrayNearest
+Plot.options.RGBA.Green_Channel = GrayNearest
+Plot.options.RGBA.Blue_Channel = GrayNearest
 Plot.options.Contours.Level = Options('style', color=Cycle(['b', 'g', 'r']))
-
-Plot.options.Matrix.RGB = Options('style', interpolation='nearest')
-Plot.options.Matrix.RGBA = Options('style',interpolation='nearest')
