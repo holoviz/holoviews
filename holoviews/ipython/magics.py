@@ -25,6 +25,16 @@ from ..operation.channel import ChannelOperation
 #========#
 
 
+try:
+    import pyparsing
+except ImportError:
+    pyparsing = None
+else:
+    from holoviews.ipython.parser import ChannelSpec
+    from holoviews.ipython.parser import OptsSpec
+
+
+
 GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
 VIDEO_TAG = """
 <center><video controls style='max-width:100%'>
@@ -270,7 +280,6 @@ class ChannelMagic(Magics):
 
 
     def __init__(self, *args, **kwargs):
-        from holoviews.ipython.parser import ChannelSpec
         super(ChannelMagic, self).__init__(*args, **kwargs)
         lines = ['The %channels line magic is used to define channel operations.']
         self.channels.__func__.__doc__ = '\n'.join(lines + [ChannelSpec.__doc__])
@@ -278,7 +287,6 @@ class ChannelMagic(Magics):
 
     @line_magic
     def channels(self, line):
-        from holoviews.ipython.parser import ChannelSpec
         if line.strip():
             Plot.channel_ops +=  ChannelSpec.parse(line.strip())
         else:
@@ -438,7 +446,6 @@ class OptsMagic(Magics):
         More information may be found in the class docstring of
         ipython.parser.OptsSpec.
         """
-        from holoviews.ipython.parser import OptsSpec
         get_object = None
         try:
             spec = OptsSpec.parse(line)
@@ -457,10 +464,14 @@ class OptsMagic(Magics):
 
 
 def load_magics(ip):
-
     ip.register_magics(ViewMagic)
-    ip.register_magics(OptsMagic)
-    ip.register_magics(ChannelMagic)
+
+    if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
+    else: ip.register_magics(OptsMagic)
+
+    if pyparsing is None: print("%channels magic unavailable (pyparsing cannot be imported)")
+    else: ip.register_magics(ChannelMagic)
+
 
     # Configuring tab completion
     ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
