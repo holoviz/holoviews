@@ -3,6 +3,7 @@ from ..core.options import ChannelDefinition
 
 #from .channel import * # pyflakes:ignore (API import)
 from .element import * # pyflakes:ignore (API import)
+from ..element import Matrix, RGBA # pyflakes:ignore (API import)
 from .map import * # pyflakes:ignore (API import)
 
 
@@ -12,11 +13,11 @@ def public(obj):
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 
-# ChannelDefinition.operations.append(operator)
-# ChannelDefinition.operations.append(toRGBA)
-# ChannelDefinition.operations.append(toHCS)
-# ChannelDefinition.operations.append(alpha_overlay)
-
-
 _public = list(set([_k for _k, _v in locals().items() if public(_v)]))
-__all__ = _public
+
+for _k, _v in locals().items():
+    if public(_v) and issubclass(_v, ElementOperation):
+        if getattr(_v, 'output_type', None) in [RGBA, Matrix]:
+            ChannelDefinition.operations.append(_v)
+
+__all__ = _public + ['ChannelDefinition']
