@@ -180,28 +180,15 @@ class NdLayout(UniformNdMapping):
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
-    @property
     def grid_items(self):
         """
-        Compute a dict of {(row,column): element} elements from the
+        Compute a dict of {(row,column): (key, value)} elements from the
         current set of items and specified number of columns.
         """
         if list(self.keys()) == []:  return {}
         cols = self._max_cols
-        return {(idx // cols, idx % cols): item
-                for idx, item in enumerate(self)}
-
-
-    @property
-    def grid_keys(self):
-        """
-        Compute a dict of {(row,column): element} elements from the
-        current set of items and specified number of columns.
-        """
-        if list(self.keys()) == []:  return {}
-        cols = self._max_cols
-        return {(idx // cols, idx % cols): key
-                for idx, key in enumerate(self.keys())}
+        return {(idx // cols, idx % cols): (key, item)
+                for idx, (key, item) in enumerate(self.items())}
 
 
     def cols(self, n):
@@ -298,15 +285,11 @@ class LayoutTree(AttrTree, Dimensioned):
             key = keys[idx]
         return super(LayoutTree, self).__getitem__(key)
 
-    @property
-    def grid_items(self):
-        return {tuple(np.unravel_index(idx, self.shape)): el
-                for idx, el in enumerate(self)}
 
-    @property
-    def grid_keys(self):
-        return {tuple(np.unravel_index(idx, self.shape)): path
-                for idx, path in enumerate(self.path_items.keys())}
+    def grid_items(self):
+        return {tuple(np.unravel_index(idx, self.shape)): (path, el)
+                for idx, (key, item) in enumerate(self.items())}
+
 
     def __len__(self):
         return len(self.data)
