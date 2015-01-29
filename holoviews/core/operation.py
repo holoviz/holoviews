@@ -24,16 +24,20 @@ class Operation(param.ParameterizedFunction):
 
 
     @classmethod
-    def search_overlay(cls, element, pattern):
+    def search(cls, element, pattern):
         """
         Helper method that returns a list of elements that match the
-        given path pattern of form {type}.{value}.{label}
+        given path pattern of form {type}.{value}.{label}.
+
+        The input may be a LayoutTree, an Overlay type or a single
+        Element.
         """
+        if isinstance(element, LayoutTree):
+            return [el for cell in element for el in cls.search(cell, pattern)]
         if isinstance(element, (NdOverlay, Overlay)):
             return [el for el in element if el.matches(pattern)]
         elif isinstance(element, Element):
             return [element] if element.matches(pattern) else []
-
 
 
 class ElementOperation(Operation):
@@ -73,10 +77,6 @@ class ElementOperation(Operation):
         return processed
 
 
-class LayoutOperation(param.ParameterizedFunction):
-
-    pass
-
 
 class MapOperation(param.ParameterizedFunction):
     """
@@ -114,6 +114,9 @@ class MapOperation(param.ParameterizedFunction):
         raise NotImplementedError
 
 
+class LayoutOperation(param.ParameterizedFunction):
+
+    pass
 
 class ChannelOperation(param.Parameterized):
     """
