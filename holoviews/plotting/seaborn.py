@@ -11,8 +11,9 @@ import param
 
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
+from .element import ElementPlot
 from .pandas import DFrameViewPlot
-from .plot import Plot, ElementPlot
+from .plot import Plot
 
 
 class FullRedrawPlot(ElementPlot):
@@ -61,7 +62,7 @@ class RegressionPlot(FullRedrawPlot):
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
     def __call__(self, ranges=None):
-        self._update_plot(self._map.last)
+        self._update_plot(self.map.last)
         return self._finalize_axis(self._keys[-1])
 
 
@@ -93,7 +94,7 @@ class BivariatePlot(FullRedrawPlot):
                   'shade', 'vertical', 'cmap']
 
     def __call__(self, ranges=None):
-        kdeview = self._map.last
+        kdeview = self.map.last
         axis = self.handles['axis']
         self.style = self.lookup_options(kdeview, 'style')[self.cyclic_index]
         if self.joint and self.subplot:
@@ -136,7 +137,7 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'estimator', 'kwargs']
 
     def __call__(self, ranges=None):
-        curveview = self._map.last
+        curveview = self.map.last
         axis = self.handles['axis']
         self.style = self.lookup_options(curveview, 'style')[self.cyclic_index]
         self._update_plot(axis, curveview)
@@ -167,7 +168,7 @@ class DistributionPlot(FullRedrawPlot):
                   'fit_kws', 'color']
 
     def __call__(self, ranges=None):
-        distview = self._map.last
+        distview = self.map.last
         axis = self.handles['axis']
         self.style = self.lookup_options(distview, 'style')[self.cyclic_index]
         self._update_plot(axis, distview)
@@ -240,7 +241,7 @@ class SNSFramePlot(DFrameViewPlot):
 
 
     def __call__(self, ranges=None):
-        dfview = self._map.last
+        dfview = self.map.last
         axis = self.handles['axis']
         self._validate(dfview)
 
@@ -271,7 +272,7 @@ class SNSFramePlot(DFrameViewPlot):
 
     def update_frame(self, n, ranges=None):
         key = self._keys[n]
-        view = self._map.get(key, None)
+        view = self.map.get(key, None)
         axis = self.handles['axis']
         if axis:
             axis.set_visible(view is not None)

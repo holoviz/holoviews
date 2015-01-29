@@ -5,7 +5,8 @@ from matplotlib import pyplot as plt
 import param
 
 from ..interface.pandas import DFrame, DataFrameView, pd
-from .plot import Plot, ElementPlot
+from .element import ElementPlot
+from .plot import Plot
 
 
 class DFrameViewPlot(ElementPlot):
@@ -55,12 +56,12 @@ class DFrameViewPlot(ElementPlot):
 
     def __init__(self, view, **params):
         super(DFrameViewPlot, self).__init__(view, **params)
-        if self._map.last.plot_type and 'plot_type' not in params:
-            self.plot_type = self._map.last.plot_type
+        if self.map.last.plot_type and 'plot_type' not in params:
+            self.plot_type = self.map.last.plot_type
 
 
     def __call__(self, ranges=None):
-        dfview = self._map.last
+        dfview = self.map.last
         self._validate(dfview)
 
         style = self.lookup_options(dfview, 'style')[self.cyclic_index]

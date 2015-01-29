@@ -8,13 +8,14 @@ import param
 
 from ..core import ViewableElement, CompositeOverlay, HoloMap
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
-from .plot import Plot, ElementPlot
+from .element import ElementPlot
+from .plot import Plot
 
 
 class Chart1DPlot(ElementPlot):
 
     def get_extents(self, view, ranges):
-        l, b, r, t = view.extents if self.rescale_individually else self._map.extents
+        l, b, r, t = view.extents if self.rescale_individually else self.map.extents
         ydim = view.value_dimensions[0].name
         b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
         return l, b, r, t
@@ -59,7 +60,7 @@ class CurvePlot(Chart1DPlot):
 
     def __init__(self, curves, **params):
         super(CurvePlot, self).__init__(curves, **params)
-        val_dim = self._map.last.get_dimension(1)
+        val_dim = self.map.last.get_dimension(1)
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
@@ -125,11 +126,11 @@ class CurvePlot(Chart1DPlot):
 
 
     def __call__(self, ranges=None):
-        curveview = self._map.last
+        curveview = self.map.last
         axis = self.handles['axis']
         key = self._keys[-1]
 
-        ranges = self.compute_ranges(self._map, key, ranges)
+        ranges = self.compute_ranges(self.map, key, ranges)
         ranges = self.match_range(curveview, ranges)
 
         # Create xticks and reorder data if cyclic
@@ -176,7 +177,7 @@ class ScatterPlot(Chart1DPlot):
                   'linewidth', 'marker', 's', 'visible']
 
     def __call__(self, ranges=None):
-        scatterview = self._map.last
+        scatterview = self.map.last
         axis = self.handles['axis']
         # Create line segments and apply style
         style = self.lookup_options(scatterview, 'style')[self.cyclic_index]
@@ -229,12 +230,12 @@ class HistogramPlot(Chart1DPlot):
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
-        val_dim = self._map.last.get_dimension(1)
+        val_dim = self.map.last.get_dimension(1)
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
     def __call__(self, ranges=None):
-        hist = self._map.last
+        hist = self.map.last
 
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
@@ -267,7 +268,7 @@ class HistogramPlot(Chart1DPlot):
         widths = [hist._width] * len(hist) if getattr(hist, '_width', None) else np.diff(hist.edges)
         extents = None
         if extents is None:
-            xlims = hist.xlim if self.rescale_individually else self._map.xlim
+            xlims = hist.xlim if self.rescale_individually else self.map.xlim
             ylims = hist.ylim
         else:
             l, b, r, t = extents
@@ -403,7 +404,7 @@ class SideHistogramPlot(HistogramPlot):
         the bars appropriately, respecting the required normalization
         settings.
         """
-        hist = self._map[key]
+        hist = self.map[key]
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
         plot_options = self.lookup_options(main, 'plot').options
@@ -512,7 +513,7 @@ class PointPlot(ElementPlot):
                   'cmap', 'vmin', 'vmax']
 
     def __call__(self, ranges=None):
-        points = self._map.last
+        points = self.map.last
         axis = self.handles['axis']
 
         values = points.data.shape[1]>=3
@@ -532,7 +533,7 @@ class PointPlot(ElementPlot):
         self.handles['scatter'] = scatterplot
 
         if cs is not None:
-            clims = points.range if self.normalize_individually else self._map.range
+            clims = points.range if self.normalize_individually else self.map.range
             scatterplot.set_clim(clims)
 
         return self._finalize_axis(self._keys[-1])
@@ -601,7 +602,7 @@ class VectorFieldPlot(ElementPlot):
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
-        self._min_dist, self._max_magnitude = self._get_map_info(self._map)
+        self._min_dist, self._max_magnitude = self._get_map_info(self.map)
 
 
     def _get_map_info(self, vmap):
@@ -647,7 +648,7 @@ class VectorFieldPlot(ElementPlot):
 
 
     def __call__(self, ranges=None):
-        vfield = self._map.last
+        vfield = self.map.last
         axis = self.handles['axis']
 
         colorized = self.color_dim is not None
@@ -673,7 +674,7 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_clim(clims)
         elif self.color_dim == 'magnitude':
             magnitude_dim = vfield.get_dimension(3).name
-            clims = vfield.range(magnitude_dim) if self.normalize_individually else self._map.range(magnitude_dim)
+            clims = vfield.range(magnitude_dim) if self.normalize_individually else self.map.range(magnitude_dim)
             quiver.set_clim(clims)
 
         self.handles['axis'].add_collection(quiver)

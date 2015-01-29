@@ -6,11 +6,10 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
-from matplotlib.font_manager import FontProperties
 
 import param
-from ..core import UniformNdMapping, ViewableElement, CompositeOverlay, NdOverlay, Overlay, HoloMap, \
-    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, Element3D
+from ..core import NdMapping, UniformNdMapping, ViewableElement, HoloMap, \
+    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
 from ..core.options import Options, OptionTree
 from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
@@ -85,9 +84,9 @@ class Plot(param.Parameterized):
 
 
     def __init__(self, figure=None, axis=None, dimensions=None,
-                 subplots=None, keys=None, **params):
+                 subplots=None, keys=None, subplot=None, **params):
         self.subplots = subplots
-        self.subplot = figure is not None
+        self.subplot = figure is not None or subplot
         self._create_fig = True
         self.drawn = False
         self.dimensions = dimensions
@@ -214,7 +213,7 @@ class Plot(param.Parameterized):
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
             style_opts = plot.style_opts
             opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
-            if isinstance(plot, ElementPlot):
+            if not isinstance(plot, CompositePlot) or hasattr(plot, 'style_opts'):
                 opt_groups.update({'style': Options(allowed_keywords=style_opts),
                                    'norm':  Options(mapwise=True, groupwise=True,
                                                     allowed_keywords=['groupwise',
@@ -225,29 +224,10 @@ class Plot(param.Parameterized):
                                           'norm': Options()})
 
 
-    def _check_map(self, view, element_type=Element):
-        """
-        Helper method that ensures a given element is always returned as
-        an HoloMap object.
-        """
-        if not isinstance(view, HoloMap):
-            vmap = HoloMap(initial_items=(0, view), id=view.id)
-        else:
-            vmap = view
-
-        check = vmap.last
-        if issubclass(vmap.type, CompositeOverlay):
-            check = vmap.last.values()[0]
-        if isinstance(check, Element3D):
-            self.projection = '3d'
-
-        return vmap
-
-
     def _format_title(self, key):
-        view = self._map.get(key, None)
+        view = self.map.get(key, None)
         if view is None: return None
-        title_format = self._map.get_title(key if isinstance(key, tuple) else (key,), view)
+        title_format = self.map.get_title(key if isinstance(key, tuple) else (key,), view)
         if title_format is None:
             return None
         return title_format.format(label=view.label, value=view.value,
@@ -334,215 +314,60 @@ class Plot(param.Parameterized):
         raise NotImplementedError
 
 
-
-class ElementPlot(Plot):
-
-    apply_databounds = param.Boolean(default=True, doc="""
-        Whether to compute the plot bounds from the data itself.""")
-
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'], doc="""
-        The orientation of the plot. Note that this parameter may not
-        always be respected by all plots but should be respected by
-        adjoined plots when appropriate.""")
-
-    rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per element.""")
-
-    show_grid = param.Boolean(default=False, doc="""
-        Whether to show a Cartesian grid on the plot.""")
-
-    show_xaxis = param.ObjectSelector(default='bottom',
-                                      objects=['top', 'bottom', None], doc="""
-        Whether and where to display the xaxis.""")
-
-    show_yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', None], doc="""
-        Whether and where to display the yaxis.""")
-
-    # Element Plots should declare the valid style options for matplotlib call
-    style_opts = []
-
-    def __init__(self, element, keys=None, cyclic_index=0, zorder=0, **params):
-        self._map = self._check_map(element)
-        self.cyclic_index = cyclic_index
-        self.zorder = zorder
-        keys = keys if keys else self._map.keys()
-        super(ElementPlot, self).__init__(keys=keys, **params)
-
-
-    def _get_frame(self, key, obj):
-        return self._map[key]
-
-
-    def get_extents(self, view, ranges):
-        """
-        Gets the extents for the axes from the current View. The globally
-        computed ranges can optionally override the extents.
-        """
-        return view.extents if self.rescale_individually else self._map.extents
-
-
-    def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
-                       xlabel=None, ylabel=None):
-        """
-        Applies all the axis settings before the axis or figure is returned.
-        Only plots with zorder 0 get to apply their settings.
-
-        When the number of the frame is supplied as n, this method looks
-        up and computes the appropriate title, axis labels and axis bounds.
-        """
-
-        axis = self.handles['axis']
-
-        view = self._map.get(key, None)
-        if self.zorder == 0 and key is not None:
-            if view is not None:
-                title = None if self.zorder > 0 else self._format_title(key)
-                if hasattr(view, 'xlabel') and xlabel is None:
-                    xlabel = view.xlabel
-                if hasattr(view, 'ylabel') and ylabel is None:
-                    ylabel = view.ylabel
-                if self.apply_databounds:
-                    extents = self.get_extents(view, ranges)
-                    l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                    if not np.NaN in (l, r): axis.set_xlim((l, r))
-                    if b == t: t += 1. # Arbitrary y-extent if zero range
-                    if not np.NaN in (b, t): axis.set_ylim((b, t))
-
-            if self.show_grid:
-                axis.get_xaxis().grid(True)
-                axis.get_yaxis().grid(True)
-
-            if xlabel: axis.set_xlabel(xlabel)
-            if ylabel: axis.set_ylabel(ylabel)
-
-            disabled_spines = []
-            if self.show_xaxis is not None:
-                if self.show_xaxis == 'top':
-                    axis.xaxis.set_ticks_position("top")
-                    axis.xaxis.set_label_position("top")
-                elif self.show_xaxis == 'bottom':
-                    axis.xaxis.set_ticks_position("bottom")
-            else:
-                axis.xaxis.set_visible(False)
-                disabled_spines.extend(['top', 'bottom'])
-
-            if self.show_yaxis is not None:
-                if self.show_yaxis == 'left':
-                    axis.yaxis.set_ticks_position("left")
-                elif self.show_yaxis == 'right':
-                    axis.yaxis.set_ticks_position("right")
-                    axis.yaxis.set_label_position("right")
-            else:
-                axis.yaxis.set_visible(False)
-                disabled_spines.extend(['left', 'right'])
-
-            for pos in disabled_spines:
-                axis.spines[pos].set_visible(False)
-
-            if not self.show_frame:
-                axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
-                axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
-
-            if self.aspect == 'square':
-                axis.set_aspect((1./axis.get_data_ratio()))
-            elif self.aspect not in [None, 'square']:
-                axis.set_aspect(self.aspect)
-
-            if xticks:
-                axis.set_xticks(xticks[0])
-                axis.set_xticklabels(xticks[1])
-
-            if yticks:
-                axis.set_yticks(yticks[0])
-                axis.set_yticklabels(yticks[1])
-
-            if self.show_title and title is not None:
-                self.handles['title'] = axis.set_title(title)
-
-        for hook in self.finalize_hooks:
-            hook(self.subplots, self.handles, view)
-
-        return super(ElementPlot, self)._finalize_axis(key)
-
-
-    def match_range(self, element, ranges):
-        match_tuple = ()
-        match = ranges.get((), {})
-        for spec in [type(element).__name__,
-                     valid_identifier(element.value),
-                     valid_identifier(element.label)]:
-            match_tuple += (spec,)
-            if match_tuple in ranges:
-                match = ranges[match_tuple]
-        return match
-
-
-    def update_frame(self, n, ranges=None):
-        """
-        Set the plot(s) to the given frame number.  Operates by
-        manipulating the matplotlib objects held in the self._handles
-        dictionary.
-
-        If n is greater than the number of available frames, update
-        using the last available frame.
-        """
-        n = n if n < len(self) else len(self) - 1
-        key = self._keys[n]
-        view = self._map.get(key, None)
-        axis = self.handles['axis']
-        axis.set_visible(view is not None)
-        if self.normalize:
-            ranges = self.compute_ranges(self._map, key, ranges)
-            ranges = self.match_range(view, ranges)
-        axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
-        self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
-
-
     def update_handles(self, axis, view, key, ranges=None):
         """
-        Update the elements of the plot.
-        :param axis:
+        Should be called by the update_frame class to update
+        any handles on the plot.
         """
-        raise NotImplementedError
+        pass
+
+
+class CompositePlot(Plot):
+    """
+    CompositePlot provides a baseclass for plots coordinate multiple
+    subplots to form a Layout.
+    """
+
+    def update_frame(self, n):
+        key = self._keys[n]
+        ranges = self.compute_ranges(self.layout, key, None)
+        for subplot in self.subplots.values():
+            subplot.update_frame(n, ranges=ranges)
+        axis = self.handles['axis']
+        self.update_handles(axis, self.layout, key, ranges)
+
+
+    def __len__(self):
+        return max([len(v) for v in self.subplots.values()]+[1])
 
 
 
-class GridPlot(Plot):
+class GridPlot(CompositePlot):
     """
     Plot a group of elements in a grid layout based on a AxisLayout element
     object.
     """
-
-    joint_axes = param.Boolean(default=True, doc="""
-        Share axes between all elements in the AxisLayout.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
     show_title = param.Boolean(default=False)
 
-    def __init__(self, grid, ranges=None, keys=None, **params):
-        if not isinstance(grid, AxisLayout):
+    def __init__(self, layout, ranges=None, keys=None, **params):
+        if not isinstance(layout, AxisLayout):
             raise Exception("GridPlot only accepts AxisLayout.")
-        items = [(k, self._check_map(v)) for k, v in grid.data.items()]
-        self.grid = grid.clone(items, id=grid.id)
-
-        if grid.ndims == 1:
-            self.rows, self.cols = (1, len(grid.keys()))
+        if layout.ndims == 1:
+            self.rows, self.cols = (1, len(layout.keys()))
         else:
-            x, y = list(zip(*list(grid.keys())))
+            x, y = list(zip(*list(layout.keys())))
             self.cols, self.rows = (len(set(x)), len(set(y)))
 
-        extra_opts = self.lookup_options(self.grid, 'plot').options
-        super(GridPlot, self).__init__(show_xaxis=None, show_yaxis=None,
-                                       show_frame=False,
-                                       keys=keys if keys else self.grid.all_keys ,
-                                       **dict(params, **extra_opts))
-        # Compute ranges gridwise
-        self._gridspec = gridspec.GridSpec(self.rows, self.cols)
-        self.subplots, self.subaxes = self._create_subplots()
+        extra_opts = self.lookup_options(layout, 'plot').options
+        keys = keys if keys else layout.all_keys
+        super(GridPlot, self).__init__(keys=keys, **dict(extra_opts, **params))
+        # Compute ranges layoutwise
+        self._layoutspec = gridspec.GridSpec(self.rows, self.cols)
+        self.subplots, self.subaxes, self.layout = self._create_subplots(layout)
 
 
     def _get_frame(self, key, obj):
@@ -551,43 +376,48 @@ class GridPlot(Plot):
         return obj.select(**dict(zip([d.name for d in key_dims], key)))
 
 
-    def _create_subplots(self):
+    def _create_subplots(self, layout, create_axis=True):
         subplots, subaxes = OrderedDict(), OrderedDict()
+        collapsed_layout = layout.clone(id=layout.id)
         r, c = (0, 0)
-        for coord in self.grid.keys(full_grid=True):
+        for coord in layout.keys(full_grid=True):
             # Create axes
-            subax = plt.subplot(self._gridspec[r, c])
-            subaxes[(r, c)] = subax
+            if create_axis:
+                subax = plt.subplot(self._layoutspec[r, c])
+                subax.axis('off')
+                subaxes[(r, c)] = subax
+            else:
+                subax = None
 
             # Create subplot
-            view = self.grid.data.get(coord, None)
+            view = layout.data.get(coord, None)
             if view is not None:
-                grid_dimvals = dict(AxisLayout=zip(zip(self.grid.key_dimensions, coord)))
+                layout_dimvals = dict(AxisLayout=zip(zip(layout.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = self.lookup_options(view, 'plot').options
-                opts.update(show_legend=self.show_legend, show_xaxis=self.show_xaxis,
-                            show_yaxis=self.show_yaxis, show_title=self.show_title,
-                            figure=self.handles['fig'], axis=subax,
-                            dimensions=grid_dimvals)
-                subplot = Plot.defaults[vtype](view, **opts)
+                subplot = Plot.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
+                                               dimensions=layout_dimvals, show_title=False,
+                                               subplot=not create_axis)
+                collapsed_layout[coord] = subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
                 r += 1
             else:
                 r = 0
                 c += 1
-        return subplots, subaxes
+        if create_axis:
+            self.handles['axis'] = self._layout_axis(layout)
+            self._adjust_subplots(self.handles['axis'], subaxes)
+
+        return subplots, subaxes, collapsed_layout
 
 
     def __call__(self, ranges=None):
-        # Get the extent of the grid elements (not the whole grid)
+        # Get the extent of the layout elements (not the whole layout)
         subplot_kwargs = dict()
 
-        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges)
+        ranges = self.compute_ranges(self.layout, self._keys[-1], ranges)
         for subplot in self.subplots.values():
             subplot(ranges=ranges, **subplot_kwargs)
-        self._grid_axis()
-        self._adjust_subplots()
 
         self.drawn = True
         if self.subplot: return self.handles['axis']
@@ -596,56 +426,54 @@ class GridPlot(Plot):
 
 
     def _format_title(self, key):
-        view = self.grid.values()[0]
+        view = self.layout.values()[0]
         key = key if isinstance(key, tuple) else (key,)
         if len(self) > 1:
-            title_format = view.get_title(key, self.grid)
+            title_format = view.get_title(key, layout)
         else:
-            title_format = self.grid.title
+            title_format = self.layout.title
         view = view.last
         return title_format.format(label=view.label, value=view.value,
-                                   type=self.grid.__class__.__name__)
+                                   type=self.layout.__class__.__name__)
 
 
-    def _grid_axis(self):
+    def _layout_axis(self, layout):
         fig = self.handles['fig']
-        grid_axis = fig.add_subplot(111)
-        grid_axis.patch.set_visible(False)
+        layout_axis = fig.add_subplot(111)
+        layout_axis.patch.set_visible(False)
 
-        # Set labels and titles
-        key = self._keys[-1]
-        grid_axis.set_xlabel(str(self.grid.key_dimensions[0]))
-        grid_axis.set_title(self._format_title(key))
+        # Set labels
+        layout_axis.set_xlabel(str(layout.key_dimensions[0]))
+        layout_axis.set_ylabel(str(layout.key_dimensions[1]))
 
         # Compute and set x- and y-ticks
-        keys = self.grid.keys()
-        if self.grid.ndims == 1:
+        keys = layout.keys()
+        if layout.ndims == 1:
             dim1_keys = keys
             dim2_keys = [0]
-            grid_axis.get_yaxis().set_visible(False)
+            layout_axis.get_yaxis().set_visible(False)
         else:
             dim1_keys, dim2_keys = zip(*keys)
-            grid_axis.set_ylabel(str(self.grid.key_dimensions[1]))
-            grid_axis.set_aspect(float(self.rows)/self.cols)
+            layout_axis.set_ylabel(str(layout.key_dimensions[1]))
+            layout_axis.set_aspect(float(self.rows)/self.cols)
         plot_width = 1.0 / self.cols
         xticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
         plot_height = 1.0 / self.rows
         yticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
-        grid_axis.set_xticks(xticks)
-        grid_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys))))
-        grid_axis.set_yticks(yticks)
-        grid_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys))))
+        layout_axis.set_xticks(xticks)
+        layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys))))
+        layout_axis.set_yticks(yticks)
+        layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys))))
 
-        self.handles['grid_axis'] = grid_axis
-        plt.draw()
+        return layout_axis
 
 
     def _process_ticklabels(self, labels):
         return [k if isinstance(k, str) else np.round(float(k), 3) for k in labels]
 
 
-    def _adjust_subplots(self):
-        bbox = self.handles['grid_axis'].get_position()
+    def _adjust_subplots(self, axis, subaxes):
+        bbox = axis.get_position()
         l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
 
         if self.cols == 1:
@@ -661,7 +489,7 @@ class GridPlot(Plot):
         ax_h = (h - ((h/10.) if self.rows > 1 else 0)) / self.rows
 
         r, c = (0, 0)
-        for ax in self.subaxes.values():
+        for ax in subaxes.values():
             xpos = l + (c*ax_w) + (c * b_w)
             ypos = b + (r*ax_h) + (r * b_h)
             if r != self.rows-1:
@@ -673,20 +501,16 @@ class GridPlot(Plot):
                 ax.set_position([xpos, ypos, ax_w, ax_h])
 
 
-    def update_frame(self, n, ranges=None):
-        key = self._keys[n]
-        ranges = self.compute_ranges(self.grid, key, ranges)
-        for subplot in self.subplots.values():
-            subplot.update_frame(n, ranges)
-        self.handles['grid_axis'].set_title(self._format_title(key))
-
-
-    def __len__(self):
-        return max([len(self._keys), 1])
+    def update_handles(self, axis, view, key, ranges=None):
+        """
+        Should be called by the update_frame class to update
+        any handles on the plot.
+        """
+        axis.set_title(self._format_title(key))
 
 
 
-class AdjointLayoutPlot(Plot):
+class AdjointLayoutPlot(CompositePlot):
     """
     LayoutPlot allows placing up to three Views in a number of
     predefined and fixed layouts, which are defined by the layout_dict
@@ -792,7 +616,7 @@ class AdjointLayoutPlot(Plot):
                     for v in self.layout if isinstance(v, (UniformNdMapping, AxisLayout))]+[1])
 
 
-class LayoutPlot(Plot):
+class LayoutPlot(CompositePlot):
     """
     A LayoutPlot accepts either a LayoutTree or a NdLayout and
     displays the elements in a cartesian grid in scanline order.
@@ -810,19 +634,26 @@ class LayoutPlot(Plot):
         if not isinstance(layout, (NdLayout, LayoutTree)):
             raise Exception("LayoutPlot only accepts LayoutTree objects.")
 
-        self.layout = layout
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        keys = None
-        if isinstance(layout, NdLayout):
-            keys = layout.traverse(lambda x: x.keys(), ('HoloMap',),
-                                   full_breadth=False)[0]
+        keys = self._compute_common_keys(layout)
 
         super(LayoutPlot, self).__init__(keys=keys, **params)
-        self.handles['axis'], self.subplots, self.subaxes = self._compute_gridspec()
+        self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
 
+
+    def _compute_common_keys(self, layout):
+        key_dimvals = layout.traverse(lambda x: (tuple(x.key_dimensions), x.keys()), ('HoloMap',))
+        keys = []
+        if len(key_dimvals):
+            dimensions_list, keys_list = zip(*key_dimvals)
+            dimensions = dimensions_list[np.argmax([len(keys) for keys in keys_list])]
+            keys_lists = [keys_list[idx] for idx, dims in enumerate(dimensions_list) if dims == dimensions]
+            keys = set(key for keys in keys_lists for key in keys)
+            keys = NdMapping([(k, 0) for k in keys], key_dimensions=dimensions).keys()
+        return keys
 
     def _get_frame(self, n, obj):
         """
@@ -841,7 +672,7 @@ class LayoutPlot(Plot):
         return layout_frame
 
 
-    def _compute_gridspec(self):
+    def _compute_gridspec(self, layout):
         """
         Computes the tallest and widest cell for each row and column
         by examining the Layouts in the AxisLayout. The GridSpec is then
@@ -852,13 +683,15 @@ class LayoutPlot(Plot):
         the grid indicies needed to instantiate the axes for each
         LayoutPlot.
         """
-        axis = self._init_axis(None)
+        self.handles['axis'] = self._init_axis(None)
+        layout_items = layout.grid_items()
+        layout_keys = layout.grid_keys()
 
         layouts, grid_indices = {}, {}
         row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
-            view = self.layout.grid_items.get((r, c), None)
+            view = layout_items.get((r, c), None)
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
@@ -895,6 +728,8 @@ class LayoutPlot(Plot):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
         gidx = 0
+        collapsed_layout = layout.clone(id=layout.id)
+
         layout_subplots, layout_axes = {}, {}
         for (r, c) in self.coords:
             # Compute the layout type from shape
@@ -915,25 +750,35 @@ class LayoutPlot(Plot):
 
             # Create temporary subplots to get projections types
             # to create the correct subaxes for all plots in the layout
-            temp_subplots = self._create_subplots(layouts[(r, c)], positions)
+            temp_subplots, new_layout = self._create_subplots(layouts[(r, c)], positions)
             gidx, gsinds, projs = self.grid_situate(temp_subplots, gidx, layout_type, cols)
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
                        for ind, proj in zip(gsinds, projs)]
-            subplots = self._create_subplots(layouts[(r, c)], positions,
-                                             dict(zip(positions, subaxes)))
+            subplots, adjoint_layout = self._create_subplots(layouts[(r, c)], positions,
+                                                             dict(zip(positions, subaxes)))
             layout_axes[(r, c)] = subaxes
 
             # Generate the AdjointLayoutsPlot which will coordinate
             # plotting of AdjointLayouts in the larger grid
             plotopts = self.lookup_options(view, 'plot').options
-            layout_plot = AdjointLayoutPlot(view, layout_type, subaxes, subplots,
+            layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
+            layout_key = layout_keys.get((r, c))
+            if layout_key:
+                collapsed_layout[layout_key] = adjoint_layout
 
-        return axis, layout_subplots, layout_axes
+        return layout_subplots, layout_axes, collapsed_layout
+
+
+    def compute_framewise_ranges(self, obj):
+        ranges = OrderedDict()
+        for key in self.keys:
+            ranges[key] = self.compute_ranges(obj, key, None)
+        return ranges
 
 
     def grid_situate(self, subplots, current_idx, layout_type, subgrid_width):
@@ -984,6 +829,7 @@ class LayoutPlot(Plot):
         empty axes as necessary.
         """
         subplots = {}
+        adjoint_clone = layout.clone(id=layout.id)
         subplot_opts = dict(show_title=False, layout=layout)
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
@@ -1020,7 +866,8 @@ class LayoutPlot(Plot):
                     plot_type = Plot.sideplots[vtype]
 
             subplots[pos] = plot_type(view, axis=ax, **dict({'keys':self._keys}, **plotopts))
-        return subplots
+            adjoint_clone[pos] = subplots[pos].map
+        return subplots, adjoint_clone
 
 
     def __call__(self):
@@ -1041,103 +888,7 @@ class LayoutPlot(Plot):
         return self._finalize_axis(None)
 
 
-    def update_frame(self, n):
-        ranges = self.compute_ranges(self.layout, n, None)
-        for subplot in self.subplots.values():
-            subplot.update_frame(n, ranges=ranges)
-
-
-    def __len__(self):
-        return max([len(v) for v in self.subplots.values()]+[1])
-
-
-
-class OverlayPlot(ElementPlot):
-    """
-    OverlayPlot supports processing of channel operations on Overlays
-    across maps.
-    """
-
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
-
-    def __init__(self, overlay, **params):
-        super(OverlayPlot, self).__init__(overlay, **params)
-        self.subplots = self._create_subplots()
-
-
-    def _create_subplots(self):
-        subplots = OrderedDict()
-
-        keys, vmaps = self._map.split_overlays()
-        style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(vmaps, lambda s: (s.last.value)))
-        for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
-            cyclic_index, _ = next(style_groups[(vmap.last.value)])
-            plotopts = self.lookup_options(vmap.last, 'plot').options
-            if issubclass(vmap.type, NdOverlay):
-                plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
-            plotopts = dict(keys=self._keys, axis=self.handles['axis'],
-                            cyclic_index=cyclic_index, figure=self.handles['fig'],
-                            zorder=zorder, **plotopts)
-            plotype = Plot.defaults[type(vmap.last)]
-            subplots[key] = plotype(vmap, **plotopts)
-
-        return subplots
-
-
-    def _adjust_legend(self, axis):
-        # If legend enabled update handles and labels
-        if not axis or not axis.get_legend(): return
-        handles, _ = axis.get_legend_handles_labels()
-        labels = self._map.last.legend
-        if len(handles) and self.show_legend:
-            fontP = FontProperties()
-            fontP.set_size('medium')
-            leg = axis.legend(handles[::-1], labels[::-1], prop=fontP)
-            leg.get_frame().set_alpha(1.0)
-        frame = axis.get_legend().get_frame()
-        frame.set_facecolor('1.0')
-        frame.set_edgecolor('0.0')
-        frame.set_linewidth('1.5')
-
-    def _format_title(self, key):
-        view = self._map.get(key, None)
-        if view is None: return None
-        title_format = self._map.get_title(key if isinstance(key, tuple) else (key,), view)
-        if title_format is None: return None
-
-        values = [v.value for v in view]
-        value = values[0] if len(set(values)) == 1 else ""
-        return title_format.format(label=view.label, value=value,
-                                   type=view.__class__.__name__)
-
-
-    def __call__(self, ranges=None):
-        axis = self.handles['axis']
-
-        for plot in self.subplots.values():
-            plot(ranges=ranges)
-        self._adjust_legend(axis)
-
-        key = self._keys[-1]
-        return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
-
-
-    def update_frame(self, n, ranges=None):
-        n = n if n < len(self) else len(self) - 1
-        key = self._keys[n]
-        if self.projection == '3d':
-            self.handles['axis'].clear()
-
-        for plot in self.subplots.values():
-            plot.update_frame(n, ranges)
-        self._finalize_axis(key, ranges)
-
-
 Plot.defaults.update({AxisLayout: GridPlot,
                       NdLayout: LayoutPlot,
                       LayoutTree: LayoutPlot,
-                      AdjointLayout: AdjointLayoutPlot,
-                      NdOverlay: OverlayPlot,
-                      Overlay: OverlayPlot})
+                      AdjointLayout: AdjointLayoutPlot})

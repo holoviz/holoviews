@@ -4,7 +4,8 @@ from matplotlib.table import Table as mpl_Table
 import param
 
 from ..element import ItemTable, Table
-from .plot import Plot, ElementPlot
+from .element import ElementPlot
+from .plot import Plot
 
 
 class TablePlot(ElementPlot):
@@ -62,8 +63,8 @@ class TablePlot(ElementPlot):
 
 
     def __call__(self, ranges=None):
-        tableview = self._map.last
-        self.handles['axis']
+        tableview = self.map.last
+        axis = self.handles['axis']
 
         axis.set_axis_off()
         size_factor = (1.0 - 2*self.border)

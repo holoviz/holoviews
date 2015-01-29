@@ -3,7 +3,8 @@ from matplotlib.collections import LineCollection
 from matplotlib.path import Path
 
 from ..element import Contours, VLine, HLine, Arrow, Spline, Text
-from .plot import Plot, ElementPlot
+from .element import ElementPlot
+from .plot import Plot
 
 
 class AnnotationPlot(ElementPlot):
@@ -17,7 +18,7 @@ class AnnotationPlot(ElementPlot):
         self.handles['annotations'] = []
 
     def __call__(self, ranges=None):
-        annotation = self._map.last
+        annotation = self.map.last
         axis = self.handles['axis']
         opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
         handle = self.draw_annotation(axis, annotation, annotation.data, opts)
@@ -120,7 +121,7 @@ class ContourPlot(ElementPlot):
 
 
     def __call__(self, ranges=None):
-        lines = self._map.last
+        lines = self.map.last
 
         style = self.lookup_options(lines, 'style')[self.cyclic_index]
         line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
