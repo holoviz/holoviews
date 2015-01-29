@@ -18,7 +18,7 @@ from ..plotting import Plot
 from collections import OrderedDict
 from IPython.display import display, HTML
 
-from ..operation.channel import ChannelOperation
+from ..operation import ChannelDefinition
 
 #========#
 # Magics #
@@ -290,7 +290,7 @@ class ChannelMagic(Magics):
     @line_magic
     def channels(self, line):
         if line.strip():
-            ChannelOperation.channel_ops += ChannelSpec.parse(line.strip())
+            ChannelDefinition.channel_ops += ChannelSpec.parse(line.strip())
         else:
             print "For help with the %channels magic, call %channels?\n"
 
@@ -298,7 +298,7 @@ class ChannelMagic(Magics):
     @classmethod
     def option_completer(cls, k,v):
         line = v.text_until_cursor
-        operation_openers = [op.__name__+'(' for op in ChannelOperation.operations]
+        operation_openers = [op.__name__+'(' for op in ChannelDefinition.operations]
 
         op_declared = any(op in line for op in operation_openers)
         if not op_declared:
@@ -341,7 +341,7 @@ class OptsCompleter(object):
                 completion_key = token
                 break
 
-        channel_op_values = [el.value for el in ChannelOperation.channel_ops]
+        channel_op_values = [el.value for el in ChannelDefinition.channel_ops]
 
         if not completion_key:
             return completions.keys() + channel_op_values

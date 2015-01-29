@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from ..core.operation import ElementOperation, ChannelOperation
+from ..core.operation import ElementOperation
 from ..core.options import Options, Cycle
 from ..element import Matrix
 from ..plotting import Plot, GrayNearest

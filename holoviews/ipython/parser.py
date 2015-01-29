@@ -15,7 +15,7 @@ from holoviews.core.options import Options, Cycle
 from itertools import groupby
 import pyparsing as pp
 
-from ..operation.channel import ChannelOperation
+from ..operation import ChannelDefinition
 from ..plotting import Plot
 
 import numpy as np  # pyflakes:ignore (API import for keyword eval)
@@ -122,7 +122,7 @@ class OptsSpec(Parser):
 
 
     channelops = pp.MatchFirst(
-        [pp.Literal(el.value) for el in ChannelOperation.channel_ops])
+        [pp.Literal(el.value) for el in ChannelDefinition.channel_ops])
 
     dotted_path = pp.Combine( pp.Word(string.uppercase, exact=1)
                               + pp.Word(pp.alphas+'._'))
@@ -254,7 +254,7 @@ class ChannelSpec(Parser):
     @classmethod
     def parse(cls, line):
         """
-        Parse a list of channel specification, returning a ChannelOperation
+        Parse a list of channel specification, returning a ChannelDefinition
         """
         channel_ops = []
         parses  = [p for p in cls.channel_spec.scanString(line)]
@@ -266,7 +266,7 @@ class ChannelSpec(Parser):
             if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
 
-        opmap = {op.__name__:op for op in ChannelOperation.operations}
+        opmap = {op.__name__:op for op in ChannelDefinition.operations}
         for group in cls.channel_spec.parseString(line):
 
             kwargs = {}
@@ -281,6 +281,6 @@ class ChannelSpec(Parser):
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets')
 
-            channel_op = ChannelOperation(str(spec), operation, str(group['value']), **kwargs)
+            channel_op = ChannelDefinition(str(spec), operation, str(group['value']), **kwargs)
             channel_ops.append(channel_op)
         return channel_ops
