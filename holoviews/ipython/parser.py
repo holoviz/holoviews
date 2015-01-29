@@ -15,6 +15,7 @@ from holoviews.core.options import Options, Cycle
 from itertools import groupby
 import pyparsing as pp
 
+from ..operation.channel import ChannelOperation
 from ..plotting import Plot
 
 class Parser(object):
@@ -212,3 +213,74 @@ class OptsSpec(Parser):
                 options['style'] = Options(**cls.todict(styleopts, 'parens'))
             parse[group['pathspec']] = options
         return parse
+
+
+
+class ChannelSpec(Parser):
+    """
+    Parser used by the %channels line magic. Given a string of the
+    following form:
+
+    [ value op(spec) [settings] ]+
+
+    One or more ChannelOperations are returned. The components are:
+
+    value     : Value identifier with capitalized initial letter.
+    op        : The name of the operation to apply.
+    spec      : Overlay specification of form (A * B) where A and B are
+                 dotted path specifications.
+    settings : Optional list of keyword arguments to be used as
+               parameters to the operation (in square brackets).
+    """
+
+    value = pp.Word(pp.alphas+pp.nums+'_').setResultsName("value")
+
+    op = pp.Word(pp.alphas+pp.nums+'_').setResultsName("op")
+
+    overlay_spec = pp.nestedExpr(opener='(',
+                                 closer=')',
+                                 ignoreExpr=None
+                             ).setResultsName("spec")
+
+    op_settings = pp.nestedExpr(opener='[',
+                                closer=']',
+                                ignoreExpr=None
+                            ).setResultsName("op_settings")
+
+    channel_spec = pp.OneOrMore(pp.Group(value + op + overlay_spec
+                                         + pp.Optional(op_settings)))
+
+
+    @classmethod
+    def parse(cls, line):
+        """
+        Parse a list of channel specification, returning a ChannelOperation
+        """
+        channel_ops = []
+        parses  = [p for p in cls.channel_spec.scanString(line)]
+        if len(parses) != 1:
+            raise SyntaxError("Invalid specification syntax.")
+        else:
+            (k,s,e) = parses[0]
+            processed = line[:e]
+            if (processed.strip() != line.strip()):
+                raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
+
+        opmap = {op.__name__:op for op in ChannelOperation.operations}
+        for group in cls.channel_spec.parseString(line):
+
+            kwargs = {}
+            operation = opmap[group['op']]
+            spec = ' '.join(group['spec'].asList()[0])
+
+            if '*' not in spec:
+                raise SyntaxError("Overlay specification must contain at least one * operation")
+            if  group['op'] not in opmap:
+                raise SyntaxError("Operation %s not available for channel operations"
+                                  % group['op'])
+            if  'op_settings' in group:
+                kwargs = cls.todict(group['op_settings'][0], 'brackets')
+
+            channel_op = ChannelOperation(group['value'], spec, operation, **kwargs)
+            channel_ops.append(channel_op)
+        return channel_ops
