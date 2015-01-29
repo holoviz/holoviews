@@ -15,6 +15,8 @@ from holoviews.core.options import Options, Cycle
 from itertools import groupby
 import pyparsing as pp
 
+from ..plotting import Plot
+
 class Parser(object):
     """
     Base class for magic line parsers, designed for forgiving parsing
@@ -115,10 +117,16 @@ class OptsSpec(Parser):
                                  ignoreExpr=None
                                  ).setResultsName("norm_options")
 
-    pathspec = pp.Combine(
-                          pp.Word(string.uppercase, exact=1)
-                        + pp.Word(pp.alphas+'._')
-                         ).setResultsName("pathspec")
+
+    channelops = pp.MatchFirst(
+        [pp.Literal(el.value) for el in Plot.channel_ops])
+
+    dotted_path = pp.Combine( pp.Word(string.uppercase, exact=1)
+                              + pp.Word(pp.alphas+'._'))
+
+
+    pathspec = (dotted_path | channelops).setResultsName("pathspec")
+
 
     spec_group = pp.Group(pathspec
                           + pp.Optional(norm_options)
