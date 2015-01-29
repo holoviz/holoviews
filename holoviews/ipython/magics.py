@@ -439,8 +439,8 @@ def load_magics(ip):
     ip.register_magics(ChannelMagic)
 
     # Configuring tab completion
-    ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
-    ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%%channels')
+    # ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
+    # ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%%channels')
 
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')

@@ -126,8 +126,8 @@ def process_cell_magics(obj):
     "Hook into %%opts and %%channels magics to process displayed element"
     invalid_options = OptsMagic.process_view(obj)
     if invalid_options: return invalid_options
-    invalid_channels = ChannelMagic.set_channels(obj)
-    if invalid_channels: return invalid_channels
+    # invalid_channels = ChannelMagic.set_channels(obj)
+    # if invalid_channels: return invalid_channels
 
 
 def display_hook(fn):
