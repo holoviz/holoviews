@@ -57,41 +57,23 @@ class ElementOperation(Operation):
         """
         raise NotImplementedError
 
-    def __call__(self, view, **params):
+
+    def __call__(self, element, **params):
         self.p = param.ParamOverrides(self, params)
 
-        if isinstance(view, ViewableElement):
-            views = self._process(view)
-            if len(views) > 1:
-                return NdLayout(views)
-            else:
-                return views[0]
-
-        elif isinstance(view, AxisLayout):
-            grids = []
-            for pos, cell in view.items():
-                val = self(cell, **params)
-                maps = val.values() if isinstance(val, NdLayout) else [val]
-                # Initialize the list of data or coordinate grids
-                if grids == []:
-                    grids = [AxisLayout(None, label=view.label) for vmap in maps]
-                # Populate the grids
-                for ind, vmap in enumerate(maps):
-                    grids[ind][pos] = vmap
-
-            if len(grids) == 1: return grids[0]
-            else:               return NdLayout(grids)
-
-
-        elif isinstance(view, HoloMap):
-            mapped_items = [(k, self._process(el, key=k)) for k, el in view.items()]
-            maps = [view.clone() for _ in range(len(mapped_items[0][1]))]
-            for k, views in mapped_items:
-                for ind, v in enumerate(views):
-                    maps[ind][k] = v
-
-            if len(maps) == 1:  return maps[0]
-            else:               return NdLayout(maps)
+        if isinstance(element, ViewableElement):
+            processed = self._process(element)
+        elif isinstance(element, AxisLayout):
+            # Initialize an empty axis layout
+            processed = AxisLayout(None, label=element.label)
+            # Populate the axis layout
+            for pos, cell in element.items():
+                processed[pos] = self(cell, **params)
+        elif isinstance(element, HoloMap):
+            mapped_items = [(k, self._process(el, key=k))
+                            for k, el in element.items()]
+            processed = element.clone(mapped_items)
+        return processed
 
 
 class LayoutOperation(param.ParameterizedFunction):
