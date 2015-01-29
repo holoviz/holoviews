@@ -27,7 +27,7 @@ import param
 from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
 from ..element import Raster
 from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
-from .magics import ViewMagic, OptsMagic, ChannelMagic
+from .magics import ViewMagic
 
 
 class ProgressBar(param.Parameterized):
@@ -242,14 +242,6 @@ def isnumeric(val):
         return False
 
 
-def process_cell_magics(obj):
-    "Hook into %%opts and %%channels magics to process displayed element"
-    invalid_options = OptsMagic.process_view(obj)
-    if invalid_options: return invalid_options
-    invalid_channels = ChannelMagic.set_channels(obj)
-    if invalid_channels: return invalid_channels
-
-
 def get_plot_size():
     factor = ViewMagic.options['size'] / 100.0
     return (Plot.size[0] * factor,
@@ -284,8 +276,6 @@ class NdWidget(param.Parameterized):
             view_size = (scale_factor * view.shape[0] * get_plot_size()[0],
                          scale_factor * view.shape[1] * get_plot_size()[1])
 
-            magic_info = process_cell_magics(view)
-            if magic_info: return magic_info
             layer_types = view.layer_types
             if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
                 plot_type = MatrixGridPlot
