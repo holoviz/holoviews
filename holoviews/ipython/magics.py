@@ -289,8 +289,13 @@ class ChannelMagic(Magics):
 
     @line_magic
     def channels(self, line):
+        defined_values = [op.value for op in ChannelDefinition.channel_ops]
         if line.strip():
-            ChannelDefinition.channel_ops += ChannelSpec.parse(line.strip())
+            for definition in ChannelSpec.parse(line.strip()):
+                if definition.value in defined_values:
+                    print("Channel definition ignored as value %r already defined" % definition.value)
+
+                ChannelDefinition.channel_ops.append(definition)
         else:
             print "For help with the %channels magic, call %channels?\n"
 
