@@ -166,15 +166,17 @@ class OptsSpec(Parser):
 
         # If unspecified, default is +groupwise and +mapwise
         if len(opts) == 1 and opts[0].endswith('mapwise'):
-            opts += ['+groupwise']
+            groupwise = True
+            mapwise =   True if '+mapwise' in opts else False
         elif len(opts) == 1 and opts[0].endswith('groupwise'):
-            opts += ['+mapwise']
-
-        if '+groupwise' in opts:
-            normval = 0 if '+mapwise' in opts else 1
+            mapwise = True
+            groupwise = True if '+groupwise' in opts else False
         else:
-            normval = 2 if '+mapwise' in opts else 3
-        return normval
+            groupwise = True if '+groupwise' in opts else False
+            mapwise =   True if '+mapwise' in opts else False
+
+        return dict(groupwise=groupwise,
+                    mapwise=mapwise)
 
 
 
@@ -199,14 +201,11 @@ class OptsSpec(Parser):
 
             normalization = cls.process_normalization(group)
             if normalization is not None:
-                plot_options['normalization'] = normalization
+                options['norm'] = Options(**normalization)
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
-                plot_options = dict(plot_options,
-                                    **cls.todict(plotopts, 'brackets'))
-            if plot_options:
-                options['plot'] = Options(**plot_options)
+                options['plot'] = Options(**cls.todict(plotopts, 'brackets'))
 
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
