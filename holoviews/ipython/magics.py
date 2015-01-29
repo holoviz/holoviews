@@ -4,7 +4,7 @@ import string
 from IPython.core import page
 
 try:
-    from IPython.core.magic import Magics, magics_class, cell_magic, line_cell_magic
+    from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
 except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -268,13 +268,17 @@ class ViewMagic(Magics):
 @magics_class
 class ChannelMagic(Magics):
 
-    @line_cell_magic
-    def channels(self, line, cell=None):
+    @line_magic
+    def channels(self, line):
         from holoviews.ipython.parser import ChannelSpec
 
         if line.strip() is not '':
             Plot.channel_ops +=  ChannelSpec.parse(line.strip())
 
+
+    @classmethod
+    def option_completer(cls, k,v):
+        return []
 
 
 class OptsCompleter(object):
@@ -439,8 +443,7 @@ def load_magics(ip):
     ip.register_magics(ChannelMagic)
 
     # Configuring tab completion
-    # ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
-    # ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%%channels')
+    ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
 
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
