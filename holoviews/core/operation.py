@@ -1,8 +1,6 @@
 """
-ViewOperations manipulate holoviews, typically for the purposes of
-analysis or visualization. Such operations apply to Views or ViewMaps
-and return the appropriate objects to visualize and access the
-processed data.
+Operations manipulate Elements, HoloMaps and Layouts, typically for
+the purposes of analysis or visualization.
 """
 
 import numpy as np
@@ -17,16 +15,11 @@ from .overlay import CompositeOverlay, NdOverlay, Overlay
 
 class ElementOperation(param.ParameterizedFunction):
     """
-    A ElementOperation takes one or more elements as inputs and processes
-    them, returning arbitrary new elements as output. Individual
-    holoviews may be passed in directly while multiple holoviews must
-    be passed in as a UniformNdMapping of the appropriate type. A
-    ElementOperation may be used to implement simple dataview
-    manipulations or perform complex analysis.
-
-    Internally, ViewOperations operate on the level of individual
-    holoviews, processing each layer on an input UniformNdMapping
-    independently.
+    An ElementOperation process an Element or HoloMap at the level of
+    individual elements or overlays. If a holomap is passed in as
+    input, a processed holomap is returned as output where the
+    individual elements have been transformed accordingly. An
+    ElementOperation may turn overlays in new elements or vice versa.
     """
 
     label = param.String(default='ElementOperation', doc="""
@@ -35,12 +28,10 @@ class ElementOperation(param.ParameterizedFunction):
 
     def _process(self, view, key=None):
         """
-        Process a single input element and output a list of views. When
-        multiple views are returned as a list, they will be returned
-        to the user as a NdLayout. If a UniformNdMapping is passed into a
-        ElementOperation, the individual layers are processed
-        sequentially and the dimension keys are passed along with
-        the ViewableElement.
+        Process a single input element and outputs new single element
+        or overlay. If a HoloMap is passed into a ElementOperation,
+        the individual components are processed sequentially with the
+        corresponding key passed as the optional key argument.
         """
         raise NotImplementedError
 
@@ -97,10 +88,17 @@ class ElementOperation(param.ParameterizedFunction):
             else:               return NdLayout(maps)
 
 
+class LayoutOperation(param.ParameterizedFunction):
+
+    pass
+
+
 class MapOperation(param.ParameterizedFunction):
     """
-    A MapOperation takes a UniformNdMapping of Views or Overlays as inputs
-    and processes them, returning arbitrary new UniformNdMapping objects as output.
+    A MapOperation takes a HoloMap containing elements or overlays and
+    processes them at the HoloMap level, returning arbitrary new
+    HoloMap objects as output. Unlike ElementOperation, MapOperations
+    have access to the keys and dimensions of the input map.
     """
 
     label = param.String(default='MapOperation', doc="""
