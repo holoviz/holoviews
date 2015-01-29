@@ -45,14 +45,10 @@ class Plot(param.Parameterized):
         The hook is passed the full set of plot handles and the
         displayed object.""")
 
-    normalization = param.Integer(default=0, bounds=(0, 1), doc="""
-        Normalization options defining how to normalize the values in
-        each plot. Valid options include:
-
-        0 - Normalize by group over all frames.
-        1 - Normalize by group for each frame individually.
-        2 - Normalize per element over all frames.
-        3 - Normalize per element for each frame""")
+    normalize = param.Boolean(default=True, doc="""
+        Whether to compute ranges across all Elements at this level
+        of plotting. Allows selecting normalization at different levels
+        for nested data containers.""")
 
     projection = param.ObjectSelector(default=None,
                                       objects=['3d', 'polar', None], doc="""
@@ -80,7 +76,9 @@ class Plot(param.Parameterized):
     sideplots = {}
 
     # Once register_options is called, this OptionTree is populated
-    options = OptionTree(groups={'plot': Options(), 'style': Options()})
+    options = OptionTree(groups={'plot':  Options(),
+                                 'style': Options(),
+                                 'norm':  Options()})
 
     # A dictionary of custom OptionTree by custom id
     custom_options = {}
@@ -113,7 +111,7 @@ class Plot(param.Parameterized):
             raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
 
-    def compute_ranges(self, obj, key, ranges, norm_opt):
+    def compute_ranges(self, obj, key, ranges):
         """
         Given an object, a specific key and the normalization options
         this method will find the specified normalization options on
@@ -122,12 +120,11 @@ class Plot(param.Parameterized):
         over the whole animation) and finally compute the dimension
         ranges in each group. The new set of ranges is returned.
         """
-        if obj is None: return None
+        if obj is None or not self.normalize:
+            return OrderedDict()
         # Get inherited ranges
         ranges = dict((ranges if ranges else {}),
                       **(self.ranges if self.ranges else {}))
-        # If only one norm option was requested then wrap it in a list
-        if not isinstance(norm_opt, list): norm_opt = [norm_opt]
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -137,14 +134,15 @@ class Plot(param.Parameterized):
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
         return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, nopt in norm_opts.items():
-            if nopt not in norm_opt or group in ranges:
-                continue
-            elif nopt in [1, 3]: # Traverse frame
-                elements = self._get_frame(key, obj).traverse(return_fn, [group])
-            elif nopt in [0, 2]: # Traverse full animation
+        for group, (groupwise, mapwise) in norm_opts.items():
+            if group in ranges:
+                continue # Skip if ranges are already computed
+            elif mapwise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
-            self._compute_group_range(group, elements, ranges)
+            else: # Traverse to get elements for each frame
+                elements = self._get_frame(key, obj).traverse(return_fn, [group])
+            if groupwise: # Compute new ranges
+                self._compute_group_range(group, elements, ranges)
         return ranges
 
 
@@ -158,21 +156,33 @@ class Plot(param.Parameterized):
         element in the tree.
         """
         norm_opts = {}
+
+        # Get all elements' type.value.label specs and ids
         type_val_fn = lambda x: (x.id, (type(x).__name__, valid_identifier(x.value),
                                         valid_identifier(x.label)))\
                                         if isinstance(x, Element) else None
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
                          if idspec is not None}
+
+        # Group elements specs by ID and override normalization
+        # options sequentially
         id_groups = sorted(groupby(element_specs, lambda x: x[0]))
         for gid, element_spec_group in id_groups:
             group_specs = [el for _, el in element_spec_group]
             optstree = self.custom_options.get(gid, Plot.options)
-            custom_opts = [(tuple(opts.path.split('.')[1:]), opts['plot'].options.get('normalization'))
-                           for opts in optstree]
-            norm_opts.update({path: nopt for path, nopt in custom_opts if nopt is not None and
-                              any(path == spec[:i] for spec in group_specs for i in range(1, 4))})
+            # Get the normalization options for the current id
+            # and match against customizable elements
+            for opts in optstree:
+                path = tuple(opts.path.split('.')[1:])
+                applies = any(path == spec[:i] for spec in group_specs
+                              for i in range(1, 4))
+                if applies and 'norm' in opts.groups:
+                    nopts = opts['norm'].options
+                    if 'groupwise' in nopts or 'mapwise' in nopts:
+                        norm_opts.update({path: (opts['norm'].options.get('groupwise', True),
+                                                 opts['norm'].options.get('mapwise', True))})
         element_specs = [spec for eid, spec in element_specs]
-        norm_opts.update({spec: self.normalization for spec in element_specs
+        norm_opts.update({spec: (True, True) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
 
@@ -206,11 +216,15 @@ class Plot(param.Parameterized):
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
             style_opts = plot.style_opts
             opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
-            if style_opts:
-                opt_groups.update({'style': Options(allowed_keywords=style_opts)})
+            if isinstance(plot, ElementPlot):
+                opt_groups.update({'style': Options(allowed_keywords=style_opts),
+                                   'norm':  Options(mapwise=True, groupwise=True,
+                                                    allowed_keywords=['groupwise',
+                                                                      'mapwise'])})
             path_items[name] = opt_groups
         cls.options = OptionTree(sorted(path_items.items()),
-                                  groups={'style': Options(), 'plot': Options()})
+                                  groups={'style': Options(), 'plot': Options(),
+                                          'norm': Options()})
 
 
     def _check_map(self, view, element_type=Element):
@@ -392,15 +406,6 @@ class ElementPlot(Plot):
     apply_databounds = param.Boolean(default=True, doc="""
         Whether to compute the plot bounds from the data itself.""")
 
-    normalization = param.Integer(default=2, bounds=(0, 3), doc="""
-        Normalization options defining how to normalize the values in
-        each plot. Valid options include:
-
-        0 - Normalize by group over all frames.
-        1 - Normalize by group for each frame individually.
-        2 - Normalize per element over all frames.
-        3 - Normalize per element for each frame""")
-
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
@@ -421,6 +426,8 @@ class ElementPlot(Plot):
                                       objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
 
+    # Element Plots should declare the valid style options for matplotlib call
+    style_opts = []
 
     def __init__(self, element, keys=None, cyclic_index=0, zorder=0, **params):
         self._map = self._check_map(element)
@@ -552,8 +559,9 @@ class ElementPlot(Plot):
         view = self._map.get(key, None)
         axis = self.handles['axis']
         axis.set_visible(view is not None)
-        ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
-        ranges = self.match_range(view, ranges)
+        if self.normalize:
+            ranges = self.compute_ranges(self._map, key, ranges)
+            ranges = self.match_range(view, ranges)
         axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
@@ -599,7 +607,6 @@ class GridPlot(Plot):
                                        keys=keys if keys else self.grid.all_keys ,
                                        **dict(params, **extra_opts))
         # Compute ranges gridwise
-        self.ranges = self.compute_ranges(self.grid, None, ranges, 0)
         self._gridspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots, self.subaxes = self._create_subplots()
 
@@ -642,7 +649,7 @@ class GridPlot(Plot):
         # Get the extent of the grid elements (not the whole grid)
         subplot_kwargs = dict()
 
-        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges, [0, 1])
+        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges)
         for subplot in self.subplots.values():
             subplot(ranges=ranges, **subplot_kwargs)
         self._grid_axis()
@@ -734,7 +741,7 @@ class GridPlot(Plot):
 
     def update_frame(self, n, ranges=None):
         key = self._keys[n]
-        ranges = self.compute_ranges(self.grid, key, ranges, 1)
+        ranges = self.compute_ranges(self.grid, key, ranges)
         for subplot in self.subplots.values():
             subplot.update_frame(n, ranges)
         self.handles['grid_axis'].set_title(self._format_title(key))
@@ -1086,7 +1093,7 @@ class LayoutPlot(Plot):
         self.handles['axis'].get_xaxis().set_visible(False)
         self.handles['axis'].get_yaxis().set_visible(False)
 
-        ranges = self.compute_ranges(self.layout, -1, None, [0, 1])
+        ranges = self.compute_ranges(self.layout, -1, None)
         rcopts = self.lookup_options(self.layout, 'style').options
         for subplot in self.subplots.values():
             with matplotlib.rc_context(rcopts):
@@ -1101,7 +1108,7 @@ class LayoutPlot(Plot):
 
 
     def update_frame(self, n):
-        ranges = self.compute_ranges(self.layout, n, None, [0, 1])
+        ranges = self.compute_ranges(self.layout, n, None)
         for subplot in self.subplots.values():
             subplot.update_frame(n, ranges=ranges)
 

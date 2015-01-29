@@ -129,7 +129,7 @@ class CurvePlot(Chart1DPlot):
         axis = self.handles['axis']
         key = self._keys[-1]
 
-        ranges = self.compute_ranges(self._map, key, ranges, [0, 1, 2, 3])
+        ranges = self.compute_ranges(self._map, key, ranges)
         ranges = self.match_range(curveview, ranges)
 
         # Create xticks and reorder data if cyclic

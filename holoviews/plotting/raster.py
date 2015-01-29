@@ -25,7 +25,7 @@ class MatrixPlot(ElementPlot):
         view = self._map.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self._map, self._keys[-1], ranges, [0, 1, 2, 3])
+        ranges = self.compute_ranges(self._map, self._keys[-1], ranges)
         ranges = self.match_range(view, ranges)
 
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
@@ -122,8 +122,6 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")
 
-    normalization = param.Integer(default=0)
-
     show_frame = param.Boolean(default=False)
 
     show_title = param.Boolean(default=True)
@@ -140,7 +138,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         self.zorder = 0
         self._keys = self.grid.all_keys
         self._map = {}
-        self.ranges = self.compute_ranges(self.grid, None, ranges, 0)
+        self.ranges = self.compute_ranges(self.grid, None, ranges)
         xkeys, ykeys = zip(*self.grid.data.keys())
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
@@ -160,7 +158,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     def __call__(self, ranges=None):
         width, height, b_w, b_h, widths, heights = self._compute_borders()
 
-        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges, [0, 1])
+        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges)
         self.handles['projs'] = []
         key = self._keys[-1]
         x, y = b_w, b_h
@@ -177,7 +175,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 else:
                     pane = vmap.last.last if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
-                ranges = self.compute_ranges(vmap, self._keys[-1], ranges, [2, 3])
+                ranges = self.compute_ranges(vmap, self._keys[-1], ranges)
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
@@ -204,7 +202,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         n = n  if n < len(self) else len(self) - 1
         key = self._keys[n]
         grid_values = self.grid.values()
-        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges, [0, 1])
+        ranges = self.compute_ranges(self.grid, self._keys[-1], ranges)
         for i, plot in enumerate(self.handles['projs']):
             view = grid_values[i].get(key, None)
             if view:
