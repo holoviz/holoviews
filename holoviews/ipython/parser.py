@@ -18,6 +18,8 @@ import pyparsing as pp
 from ..operation.channel import ChannelOperation
 from ..plotting import Plot
 
+import numpy as np  # pyflakes:ignore (API import for keyword eval)
+
 class Parser(object):
     """
     Base class for magic line parsers, designed for forgiving parsing
