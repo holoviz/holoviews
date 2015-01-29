@@ -61,10 +61,9 @@ html_blue = '#00008e'
 @magics_class
 class ViewMagic(Magics):
     """
-    Magic to allow easy control over the display of holoviews. The
-    applicable options are available on the options attribute.
+    Magic for easy customising of display options.
+    Consult %%view? for more information.
     """
-
     # Formats that are always available
     inbuilt_formats= ['auto', 'widgets', 'scrubber']
     # Codec or system-dependent format options
@@ -277,7 +276,10 @@ class ViewMagic(Magics):
 
 @magics_class
 class ChannelMagic(Magics):
-
+    """
+    Magic allowing easy definition of channel operations.
+    Consult %%channels? for more information.
+    """
 
     def __init__(self, *args, **kwargs):
         super(ChannelMagic, self).__init__(*args, **kwargs)
@@ -311,7 +313,7 @@ class ChannelMagic(Magics):
 
 class OptsCompleter(object):
     """
-    Implements the TAB-completer for the %%opts magic.
+    Implements the TAB-completion for the %%opts magic.
     """
     _completions = {} # Contains valid plot and style keywords per Element
 
@@ -361,6 +363,10 @@ class OptsCompleter(object):
 
 @magics_class
 class OptsMagic(Magics):
+    """
+    Magic for easy customising of normalization, plot and style options.
+    Consult %%opts? for more information.
+    """
 
     error_message = None
     next_id = None
