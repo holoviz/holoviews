@@ -60,8 +60,7 @@ class operator(ElementOperation):
         else:
             new_data = self.p.operator([el.data for el in overlay])
 
-        return [Matrix(new_data, bounds=overlay[0].bounds, label=self.p.label,
-                            roi_bounds=overlay[0].roi_bounds)]
+        return [Matrix(new_data, bounds=overlay[0].bounds, label=self.p.label)]
 
 
 class convolve(ElementOperation):

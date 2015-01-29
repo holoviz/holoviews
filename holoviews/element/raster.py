@@ -287,10 +287,6 @@ class Matrix(SheetCoordinateSystem, Raster):
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
-    roi_bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
-        The ROI can be specified to select only a sub-region of the bounds to
-        be stored as data.""")
-
     value = param.String(default='Matrix')
 
     value_dimensions = param.List(default=[Dimension('Luminance')],
@@ -379,12 +375,6 @@ class Matrix(SheetCoordinateSystem, Raster):
 
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
-
-
-    @property
-    def roi(self):
-        bounds = self.roi_bounds if self.roi_bounds else self.bounds
-        return self.get_roi(bounds)
 
 
     def get_roi(self, roi_bounds):
