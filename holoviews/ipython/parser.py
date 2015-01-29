@@ -246,7 +246,7 @@ class ChannelSpec(Parser):
                                 ignoreExpr=None
                             ).setResultsName("op_settings")
 
-    channel_spec = pp.OneOrMore(pp.Group(value + op + overlay_spec
+    channel_spec = pp.OneOrMore(pp.Group(op + overlay_spec + value
                                          + pp.Optional(op_settings)))
 
 
@@ -280,6 +280,6 @@ class ChannelSpec(Parser):
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets')
 
-            channel_op = ChannelOperation(str(group['value']), str(spec), operation, **kwargs)
+            channel_op = ChannelOperation(str(spec), operation, str(group['value']), **kwargs)
             channel_ops.append(channel_op)
         return channel_ops

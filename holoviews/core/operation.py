@@ -141,10 +141,6 @@ class ChannelOperation(param.Parameterized):
     are permitted.
     """
 
-    value = param.String(doc="""
-       The value identifier for the output of this particular
-       ChannelOperation definition.""")
-
     operation = param.ClassSelector(class_=ElementOperation, is_instance=False, doc="""
        The ElementOperation to apply when combining channels""")
 
@@ -161,12 +157,16 @@ class ChannelOperation(param.Parameterized):
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")
 
+    value = param.String(doc="""
+       The value identifier for the output of this particular
+       ChannelOperation definition.""")
+
     kwargs = param.Dict(doc="""
        Optional set of parameters to pass to the operation.""")
 
     operations = []
 
-    def __init__(self, value, pattern, operation, **kwargs):
+    def __init__(self, pattern, operation, value, **kwargs):
         if not any (operation is op for op in self.operations):
             raise ValueError("Operation %r not in allowed operations" % operation)
         self._pattern_spec, labels = [], []
