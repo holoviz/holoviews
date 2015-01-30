@@ -13,6 +13,7 @@ import sys, traceback, base64
 
 try:
     import mpld3
+    from ..plotting import hooks
 except:
     mpld3 = None
 
