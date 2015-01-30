@@ -340,19 +340,25 @@ class OptsCompleter(object):
     @classmethod
     def option_completer(cls, k,v):
         "Tab completion hook for the %%opts cell magic."
-        completions = cls.setup_completer()
         line = v.text_until_cursor
+
+        completions = cls.setup_completer()
+        channel_definitions = {el.value:el.operation.output_type.__name__
+                               for el in ChannelDefinition.definitions}
+
         # Find the last element class mentioned
         completion_key = None
         for token in [t for t in reversed(line.replace('.', ' ').split())]:
             if token in completions:
                 completion_key = token
                 break
-
-        channel_definitions = [el.value for el in ChannelDefinition.definitions]
+            # Attempting to match channel definitions
+            if token in channel_definitions:
+                completion_key = channel_definitions[token]
+                break
 
         if not completion_key:
-            return completions.keys() + channel_definitions
+            return completions.keys() + channel_definitions.keys()
 
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             kws = completions[completion_key][0]
@@ -364,7 +370,7 @@ class OptsCompleter(object):
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
-        return style_completions + completions.keys() + channel_definitions
+        return style_completions + completions.keys() + channel_definitions.keys()
 
 
 
