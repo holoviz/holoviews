@@ -308,7 +308,7 @@ class Matrix(SheetCoordinateSystem, Raster):
         ydensity = ydensity if ydensity else dim2/(t-b)
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
-        Element2D.__init__(self, data, extents=self.lbrt, **params)
+        Element2D.__init__(self, data, extents=self.lbrt, bounds=bounds, **params)
 
         if len(self.data.shape) == 3:
             if self.data.shape[2] != len(self.value_dimensions):
@@ -349,7 +349,8 @@ class Matrix(SheetCoordinateSystem, Raster):
         else:
             raise IndexError('Indexing requires x- and y-slice ranges.')
 
-        return self.clone(Slice(bounds, self).submatrix(self.data))
+        return self.clone(Slice(bounds, self).submatrix(self.data),
+                          bounds=bounds)
 
 
     @property
