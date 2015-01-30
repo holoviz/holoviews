@@ -18,7 +18,7 @@ from ..plotting import Plot
 from collections import OrderedDict
 from IPython.display import display, HTML
 
-from ..operation import ChannelDefinition
+from ..operation import Channel
 
 #========#
 # Magics #
@@ -289,7 +289,7 @@ class ChannelMagic(Magics):
 
     @line_magic
     def channels(self, line):
-        defined_values = [op.value for op in ChannelDefinition.definitions]
+        defined_values = [op.value for op in Channel.definitions]
         if line.strip():
             for definition in ChannelSpec.parse(line.strip()):
                 if definition.value in defined_values:
@@ -298,7 +298,7 @@ class ChannelMagic(Magics):
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.operation.output_type.__name__
                 Plot.options[type_name + '.' + definition.value] = group
-                ChannelDefinition.definitions.append(definition)
+                Channel.definitions.append(definition)
         else:
             print "For help with the %channels magic, call %channels?\n"
 
@@ -306,7 +306,7 @@ class ChannelMagic(Magics):
     @classmethod
     def option_completer(cls, k,v):
         line = v.text_until_cursor
-        operation_openers = [op.__name__+'(' for op in ChannelDefinition.operations]
+        operation_openers = [op.__name__+'(' for op in Channel.operations]
 
         op_declared = any(op in line for op in operation_openers)
         if not op_declared:
@@ -344,7 +344,7 @@ class OptsCompleter(object):
 
         completions = cls.setup_completer()
         channel_defs = {el.value:el.operation.output_type.__name__
-                        for el in ChannelDefinition.definitions}
+                        for el in Channel.definitions}
 
         # Find the last element class mentioned
         completion_key = None
@@ -447,7 +447,7 @@ class OptsMagic(Magics):
         """
         expanded_spec={}
         channel_defs = {el.value:el.operation.output_type.__name__
-                        for el in ChannelDefinition.definitions}
+                        for el in Channel.definitions}
         for key, val in spec.items():
             if key not in channel_defs:
                 expanded_spec[key] = val

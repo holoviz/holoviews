@@ -333,16 +333,17 @@ class OptionTree(AttrTree):
 
 
 
-class ChannelDefinition(param.Parameterized):
+class Channel(param.Parameterized):
     """
-    A ChannelDefinition object defines an operation to be
-    automatically collapse certain channels within Overlays. For
-    instance, this can be used to display three overlaid monochrome
-    matrices as an RGB image.
+    A Channel defines an operation that is automatically applied to
+    certain Overlays matching a specified pattern. For instance, this
+    can be used to automatically display three overlaid monochrome
+    matrices as an RGB image as long as the values of those matrices
+    match 'R', 'G' and 'B'.
     """
 
     operation = param.ClassSelector(class_=ElementOperation, is_instance=False, doc="""
-       The ElementOperation to apply when combining channels""")
+       The operation to apply when collapsing overlays into a channel.""")
 
     pattern = param.String(doc="""
        The overlay pattern to be processed. An overlay pattern is a
@@ -358,15 +359,14 @@ class ChannelDefinition(param.Parameterized):
       operation that returns a single RGB matrix for display.""")
 
     value = param.String(doc="""
-       The value identifier for the output of this particular
-       ChannelDefinition definition.""")
+       The value identifier for the output of this particular channel""")
 
     kwargs = param.Dict(doc="""
        Optional set of parameters to pass to the operation.""")
 
-    operations = []
 
-    definitions = []
+    operations = []  # The operations that can be used to define channels.
+    definitions = [] # The set of all the channel instances
 
     def __init__(self, pattern, operation, value, **kwargs):
         if not any (operation is op for op in self.operations):
@@ -391,10 +391,10 @@ class ChannelDefinition(param.Parameterized):
         else:
             self.label = ''
 
-        super(ChannelDefinition, self).__init__(value=value,
-                                                pattern=pattern,
-                                                operation=operation,
-                                                kwargs=kwargs)
+        super(Channel, self).__init__(value=value,
+                                      pattern=pattern,
+                                      operation=operation,
+                                      kwargs=kwargs)
 
 
     @classmethod
