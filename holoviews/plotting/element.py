@@ -156,7 +156,7 @@ class ElementPlot(Plot):
                 self.handles['title'] = axis.set_title(title)
 
         for hook in self.finalize_hooks:
-            hook(self.subplots, self.handles, view)
+            hook(self, view)
 
         return super(ElementPlot, self)._finalize_axis(key)
 
