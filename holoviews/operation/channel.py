@@ -188,10 +188,6 @@ class split(ElementOperation):
                 for i in range(sheetview.depth)]
 
 
-ChannelOperation.operations.append(toRGBA)
-ChannelOperation.operations.append(toHCS)
-ChannelOperation.operations.append(alpha_overlay)
-
 Plot.options.RGBA.Red_Channel = GrayNearest
 Plot.options.RGBA.Green_Channel = GrayNearest
 Plot.options.RGBA.Blue_Channel = GrayNearest
