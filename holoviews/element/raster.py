@@ -416,3 +416,21 @@ class RGBA(Matrix):
 
         super(RGBA, self).__init__(data, **params)
 
+
+    def __getitem__(self, coords):
+        """
+        Slice the underlying numpy array in sheet coordinates.
+        """
+        if len(coords) > self.ndims:
+            value = coords[self.ndims:]
+            if len(value) > 1:
+                raise KeyError()
+            sliced = super(RGBA, self).__getitem__(coords[:self.ndims])
+            vidx = self.get_dimension_index(value[0])
+            data = sliced.data[:,:, vidx]
+            return Matrix(data, **dict(self.get_param_values(),
+                                       value_dimensions=[self.value_dimensions[vidx-2]]))
+        else:
+            return super(RGBA, self).__getitem__(coords)
+
+
