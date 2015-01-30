@@ -226,7 +226,8 @@ class OptionTree(AttrTree):
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
-        group_options = self.groups[group_name]
+        current_node = self[identifier] if identifier in self.children else self
+        group_options = current_node.groups[group_name]
         try:
             return group_options(**override_kwargs)
         except OptionError as e:
