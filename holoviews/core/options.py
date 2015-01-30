@@ -435,30 +435,9 @@ class Channel(param.Parameterized):
 
 
     @classmethod
-    def collapse_channels(cls, vmap):
+    def collapse_channels(cls, holomap, ranges=None):
         """
         Given a map of Overlays, apply all applicable channel
         reductions.
         """
-        if not issubclass(vmap.type, CompositeOverlay):
-            return vmap
-        elif not CompositeOverlay.channels.keys(): # No potential channel reductions
-            return vmap
-
-        # Apply all customized channel operations
-        collapsed_vmap = vmap.clone()
-        for key, overlay in vmap.items():
-            customized = [k for k in CompositeOverlay.channels.keys()
-                          if overlay.label and k.startswith(overlay.label)]
-            # Largest reductions should be applied first
-            sorted_customized = sorted(customized, key=lambda k: -CompositeOverlay.channels[k].size)
-            sorted_reductions = sorted(CompositeOverlay.channels.options(),
-                                       key=lambda k: -CompositeOverlay.channels[k].size)
-            # Collapse the customized channel before the other definitions
-            for key in sorted_customized + sorted_reductions:
-                channel = CompositeOverlay.channels[key]
-                if channel.mode is None: continue
-                collapse_fn = channel.operation
-                fn = collapse_fn.instance(**channel.opts)
-                collapsed_vmap[k] = cls._collapse(overlay, channel.pattern, fn, key)
-        return vmap
+        return holomap
