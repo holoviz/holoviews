@@ -438,6 +438,24 @@ class OptsMagic(Magics):
         else:
             cls.next_id = None
 
+    @classmethod
+    def expand_channel_keys(cls, spec):
+        """
+        Expands channel definition keys into {type}.{value} keys. For
+        instance a channel operation returning a value string 'Image'
+        of element type RGBA expands to 'RGBA.Image'.
+        """
+        expanded_spec={}
+        channel_defs = {el.value:el.operation.output_type.__name__
+                        for el in ChannelDefinition.definitions}
+        for key, val in spec.items():
+            if key not in channel_defs:
+                expanded_spec[key] = val
+            else:
+                type_name = channel_defs[key]
+                expanded_spec[str(type_name+'.'+key)] = val
+        return expanded_spec
+
 
     @line_cell_magic
     def opts(self, line='', cell=None):
@@ -469,6 +487,7 @@ class OptsMagic(Magics):
         get_object = None
         try:
             spec = OptsSpec.parse(line)
+            spec = self.expand_channel_keys(spec)
         except SyntaxError:
             display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
             return
