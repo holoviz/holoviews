@@ -62,7 +62,7 @@ class RegressionPlot(FullRedrawPlot):
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
     def __call__(self, ranges=None):
-        self._update_plot(self.map.last)
+        self._update_plot(self.map.last, self.handles['axis'])
         return self._finalize_axis(self._keys[-1])
 
 
