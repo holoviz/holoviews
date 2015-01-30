@@ -343,8 +343,8 @@ class OptsCompleter(object):
         line = v.text_until_cursor
 
         completions = cls.setup_completer()
-        channel_definitions = {el.value:el.operation.output_type.__name__
-                               for el in ChannelDefinition.definitions}
+        channel_defs = {el.value:el.operation.output_type.__name__
+                        for el in ChannelDefinition.definitions}
 
         # Find the last element class mentioned
         completion_key = None
@@ -353,12 +353,12 @@ class OptsCompleter(object):
                 completion_key = token
                 break
             # Attempting to match channel definitions
-            if token in channel_definitions:
-                completion_key = channel_definitions[token]
+            if token in channel_defs:
+                completion_key = channel_defs[token]
                 break
 
         if not completion_key:
-            return completions.keys() + channel_definitions.keys()
+            return completions.keys() + channel_defs.keys()
 
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             kws = completions[completion_key][0]
@@ -370,7 +370,7 @@ class OptsCompleter(object):
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
-        return style_completions + completions.keys() + channel_definitions.keys()
+        return style_completions + completions.keys() + channel_defs.keys()
 
 
 
