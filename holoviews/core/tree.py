@@ -178,8 +178,9 @@ class AttrTree(object):
 
         super(AttrTree, self).__setattr__(identifier, val)
 
-        if identifier[0].isupper() and not identifier in self.children:
-            self.children.append(identifier)
+        if identifier[0].isupper():
+            if not identifier in self.children:
+                self.children.append(identifier)
             self._propagate((identifier,), val)
 
 
