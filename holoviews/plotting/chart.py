@@ -162,44 +162,6 @@ class CurvePlot(Chart1DPlot):
 
 
 
-class ScatterPlot(Chart1DPlot):
-    """
-    ScatterPlot can plot Scatter and ViewMaps of Scatter, which can
-    be displayed as a single frame or animation. Axes, titles and
-    legends are automatically generated from dim_info.
-
-    If the dimension is set to cyclic in the dim_info it will
-    rotate the points curve so that minimum y values are at the minimum
-    x value to make the plots easier to interpret.
-    """
-
-    style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
-                  'linewidth', 'marker', 's', 'visible']
-
-    def __call__(self, ranges=None):
-        scatterview = self.map.last
-        axis = self.handles['axis']
-        # Create line segments and apply style
-        style = self.lookup_options(scatterview, 'style')[self.cyclic_index]
-        paths = axis.scatter(scatterview.data[:, 0], scatterview.data[:, 1],
-                             zorder=self.zorder, label=scatterview.label,
-                             **style)
-
-        self.handles['paths'] = paths
-
-        return self._finalize_axis(self._keys[-1])
-
-
-    def update_handles(self, axis, view, key, ranges=None):
-        self.handles['paths'].remove()
-
-        style = self.lookup_options(view, 'style')[self.cyclic_index]
-        paths = axis.scatter(view.data[:, 0], view.data[:, 1],
-                             zorder=self.zorder, label=view.label, **style)
-
-        self.handles['paths'] = paths
-
-
 class HistogramPlot(Chart1DPlot):
     """
     HistogramPlot can plot DataHistograms and ViewMaps of
@@ -508,6 +470,11 @@ class PointPlot(ElementPlot):
       allows for linear scaling of the area and a factor of 4 linear
       scaling of the point width.""")
 
+    value_map = param.List(['size', 'color'], doc="""
+      If Element has more than two value dimensions, this determines,
+      in which order the dimensions are converted to the size and color
+      of the scatter points.""")
+
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 's', 'visible',
                   'cmap', 'vmin', 'vmax']
@@ -516,48 +483,65 @@ class PointPlot(ElementPlot):
         points = self.map.last
         axis = self.handles['axis']
 
-        values = points.data.shape[1]>=3
+        ranges = self.compute_ranges(self.map, self._keys[-1], ranges)
+        ranges = self.match_range(points, ranges)
+
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        #cs = points.data[:, 2] if values else None
-        cs=None
+        cs, cidx, sz, sidx = self._get_color_size(points)
 
         style = self.lookup_options(points, 'style')[self.cyclic_index]
-        if values and self.scaling_factor > 1:
+        if sz is not None and self.scaling_factor > 1:
             style['s'] = self._compute_size(cs, style)
-        scatterplot = axis.scatter(xs, ys, zorder=self.zorder,
-                                   **({k:v for k,v in dict(style, c=cs).items() if k!='color'}
-                                      if cs is not None else style))
-
-        axis.add_collection(scatterplot)
-        self.handles['scatter'] = scatterplot
+        if cs is not None:
+            style['c'] = cs
+            style.pop('color', None)
+        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, **style)
+        self.handles['paths'] = scatterplot
 
         if cs is not None:
-            clims = points.range if self.normalize_individually else self.map.range
+            val_dim = [d.name for d in points.value_dimensions][cidx]
+            clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
 
         return self._finalize_axis(self._keys[-1])
 
 
+    def _get_color_size(self, points):
+        ndims = points.data.shape[1]
+        color_idx, size_idx = None, None
+        if ndims > 2:
+            if 'size' in self.value_map:
+                size_idx = self.value_map.index('size')
+                size_idx -= 1 if size_idx + 2 >= ndims else 0
+            if 'color' in self.value_map:
+                color_idx = self.value_map.index('color')
+                color_idx -= 1 if color_idx + 2 >= ndims else 0
+        sz = None if size_idx is None else points.data[:, size_idx+2]
+        cs = None if color_idx is None else points.data[:, color_idx+2]
+        return cs, color_idx, sz, color_idx
+
+
     def _compute_size(self, sizes, opts):
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
         sizes = np.ma.array(sizes, mask=sizes<=0)
-        scaled_sizes = sizes / np.min(sizes.nonzero())
-        return (ms*self.scaling_factor**scaled_sizes)
+        return (ms*self.scaling_factor**sizes)
 
 
     def update_handles(self, axis, view, key, ranges=None):
-        scatter = self.handles['scatter']
-        scatter.set_offsets(view.data[:,0:2])
-        if view.data.shape[1]==3:
+        points = self.handles['paths']
+        points.set_offsets(view.data[:,0:2])
+        if view.data.shape[1]>2:
+            cs, cidx, sz, sidx = self._get_color_size(points)
             opts = self.lookup_options(view, 'style')[0]
-            values = view.data[:, 2]
-            scatter.set_array(values)
-            if self.scaling_factor > 1:
-                scatter.set_sizes(self._compute_size(values, opts))
 
-        if self.normalize_individually:
-            scatter.set_clim(view.range)
+            if sz is not None and self.scaling_factor > 1:
+                points.set_sizes(self._compute_size(sz, opts))
+            if cs is not None:
+                val_dim = [d.name for d in view.value_dimensions][cidx]
+                ranges = self.compute_ranges(self.map, self._keys[-1], ranges)
+                ranges = self.match_range(points, ranges)
+                points.set_clim(ranges[val_dim])
 
 
 class VectorFieldPlot(ElementPlot):
@@ -702,7 +686,7 @@ class VectorFieldPlot(ElementPlot):
 
 
 Plot.defaults.update({Curve: CurvePlot,
-                      Scatter: ScatterPlot,
+                      Scatter: PointPlot,
                       Bars: HistogramPlot,
                       Histogram: HistogramPlot,
                       Points: PointPlot,

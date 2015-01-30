@@ -81,9 +81,9 @@ Plot.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize':
                                                  'axes.titlesize': 'small'})
 # Color cycles can be removed once default style set and test data updated
 Plot.options.Curve = Options('style', color=Cycle(), linewidth=2)
-Plot.options.Scatter = Options('style', color=Cycle(), linewidth=2)
+Plot.options.Scatter = Options('style', color=Cycle(), marker='o')
 Plot.options.Histogram = Options('style', ec='k', fc='w')
-Plot.options.Points = Options('style', color='r', marker='x')
+Plot.options.Points = Options('style', color=Cycle(), marker='o')
 
 # Defining the most common style options for holoviews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')

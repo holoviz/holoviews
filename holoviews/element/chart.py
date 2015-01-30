@@ -312,8 +312,7 @@ class Points(Chart):
 
     value = param.String(default='Points')
 
-    value_dimensions = param.List(default=[Dimension('Magnitude')],
-                                  bounds=(1, 2))
+    value_dimensions = param.List(default=[], bounds=(0, 2))
 
     _null_value = np.array([[], []]).T # For when data is None
     _min_dims = 2                      # Minimum number of columns
