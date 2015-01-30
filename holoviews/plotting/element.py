@@ -70,7 +70,8 @@ class ElementPlot(Plot):
         check = vmap.last
         if issubclass(vmap.type, CompositeOverlay):
             check = vmap.last.values()[0]
-            vmap = Channel.collapse_channels(vmap, (ranges, keys))
+            vmap = Channel.collapse_channels(vmap,
+                                             (ranges, keys if keys else None))
         if isinstance(check, Element3D):
             self.projection = '3d'
 
