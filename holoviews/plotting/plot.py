@@ -120,8 +120,7 @@ class Plot(param.Parameterized):
         if obj is None or not self.normalize:
             return OrderedDict()
         # Get inherited ranges
-        ranges = dict((ranges if ranges else {}),
-                      **(self.ranges if self.ranges else {}))
+        ranges = {} if ranges is None else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -136,7 +135,7 @@ class Plot(param.Parameterized):
                 continue # Skip if ranges are already computed
             elif mapwise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
-            else: # Traverse to get elements for each frame
+            elif key is not None: # Traverse to get elements for each frame
                 elements = self._get_frame(key, obj).traverse(return_fn, [group])
             if groupwise: # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
@@ -367,7 +366,7 @@ class GridPlot(CompositePlot):
         super(GridPlot, self).__init__(keys=keys, **dict(extra_opts, **params))
         # Compute ranges layoutwise
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols)
-        self.subplots, self.subaxes, self.layout = self._create_subplots(layout)
+        self.subplots, self.subaxes, self.layout = self._create_subplots(layout, ranges)
 
 
     def _get_frame(self, key, obj):
@@ -376,8 +375,12 @@ class GridPlot(CompositePlot):
         return obj.select(**dict(zip([d.name for d in key_dims], key)))
 
 
-    def _create_subplots(self, layout, create_axis=True):
+    def _create_subplots(self, layout, ranges=None, create_axis=True):
         subplots, subaxes = OrderedDict(), OrderedDict()
+
+        frame_ranges = self.compute_ranges(layout, None, ranges)
+        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+                                    for key in self._keys])
         collapsed_layout = layout.clone(id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
@@ -396,7 +399,7 @@ class GridPlot(CompositePlot):
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 subplot = Plot.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
                                                dimensions=layout_dimvals, show_title=False,
-                                               subplot=not create_axis)
+                                               subplot=not create_axis, ranges=frame_ranges)
                 collapsed_layout[coord] = subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
@@ -728,7 +731,9 @@ class LayoutPlot(CompositePlot):
         # indices for all the axes required by each LayoutPlot.
         gidx = 0
         collapsed_layout = layout.clone(id=layout.id)
-
+        frame_ranges = self.compute_ranges(layout, None, None)
+        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+                                    for key in self._keys])
         layout_subplots, layout_axes = {}, {}
         for (r, c) in self.coords:
             # Compute the layout type from shape
@@ -749,7 +754,8 @@ class LayoutPlot(CompositePlot):
 
             # Create temporary subplots to get projections types
             # to create the correct subaxes for all plots in the layout
-            temp_subplots, new_layout = self._create_subplots(layouts[(r, c)], positions)
+            temp_subplots, new_layout = self._create_subplots(layouts[(r, c)], positions,
+                                                              frame_ranges)
             gidx, gsinds, projs = self.grid_situate(temp_subplots, gidx, layout_type, cols)
 
             # Generate the axes and create the subplots with the appropriate
@@ -757,6 +763,7 @@ class LayoutPlot(CompositePlot):
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
                        for ind, proj in zip(gsinds, projs)]
             subplots, adjoint_layout = self._create_subplots(layouts[(r, c)], positions,
+                                                             frame_ranges,
                                                              dict(zip(positions, subaxes)))
             layout_axes[(r, c)] = subaxes
 
@@ -819,7 +826,7 @@ class LayoutPlot(CompositePlot):
         return start, inds, projs
 
 
-    def _create_subplots(self, layout, positions, axes={}):
+    def _create_subplots(self, layout, positions, ranges, axes={}):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -864,7 +871,8 @@ class LayoutPlot(CompositePlot):
                 else:
                     plot_type = Plot.sideplots[vtype]
 
-            subplots[pos] = plot_type(view, axis=ax, **dict({'keys':self._keys}, **plotopts))
+            subplots[pos] = plot_type(view, axis=ax, ranges=ranges,
+                                      **dict({'keys':self._keys}, **plotopts))
             adjoint_clone[pos] = subplots[pos].map
         return subplots, adjoint_clone
 

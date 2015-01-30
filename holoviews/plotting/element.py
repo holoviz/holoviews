@@ -38,15 +38,15 @@ class ElementPlot(Plot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    def __init__(self, element, keys=None, cyclic_index=0, zorder=0, **params):
-        self.map = self._check_map(element)
+    def __init__(self, element, keys=None, ranges=None, cyclic_index=0, zorder=0, **params):
+        self.map = self._check_map(element, ranges)
         self.cyclic_index = cyclic_index
         self.zorder = zorder
         keys = keys if keys else self.map.keys()
         super(ElementPlot, self).__init__(keys=keys, **params)
 
 
-    def _check_map(self, view, element_type=Element):
+    def _check_map(self, view, ranges=None):
         """
         Helper method that ensures a given element is always returned as
         an HoloMap object.

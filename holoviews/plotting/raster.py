@@ -136,7 +136,6 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         self.zorder = 0
         self._keys = layout.all_keys
         self.map = {}
-        self.ranges = self.compute_ranges(layout, None, ranges)
         xkeys, ykeys = zip(*layout.data.keys())
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
@@ -145,7 +144,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         else:
             x, y = list(zip(*list(layout.keys())))
             self.cols, self.rows = (len(set(x)), len(set(y)))
-        _, _, self.layout = self._create_subplots(layout, create_axis=False)
+        _, _, self.layout = self._create_subplots(layout, ranges, create_axis=False)
         self._keys = self.layout.all_keys
 
 
