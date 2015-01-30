@@ -326,7 +326,7 @@ class HoloMap(UniformNdMapping):
         N separate Maps.
         """
         if not issubclass(self.type, CompositeOverlay):
-            return self.clone(self.items())
+            return None, self.clone(self.items())
 
         item_maps = OrderedDict()
         for k, overlay in self.items():
