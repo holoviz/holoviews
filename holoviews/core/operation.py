@@ -86,6 +86,8 @@ class ElementOperation(Operation):
             mapped_items = [(k, self._process(el, key=k))
                             for k, el in element.items()]
             processed = element.clone(mapped_items)
+        else:
+            raise ValueError("Cannot process type %r" % type(element).__name__)
         return processed
 
 
