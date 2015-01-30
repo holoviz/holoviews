@@ -7,6 +7,7 @@ import param
 
 from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element, Element3D
 from ..core.util import valid_identifier
+from ..operation import Channel
 from .plot import Plot
 
 
@@ -39,18 +40,28 @@ class ElementPlot(Plot):
     style_opts = []
 
     def __init__(self, element, keys=None, ranges=None, cyclic_index=0, zorder=0, **params):
-        self.map = self._check_map(element, ranges)
+        self.map = self._check_map(element, ranges, keys)
         self.cyclic_index = cyclic_index
         self.zorder = zorder
         keys = keys if keys else self.map.keys()
         super(ElementPlot, self).__init__(keys=keys, **params)
 
 
-    def _check_map(self, view, ranges=None):
+    def _check_map(self, view, ranges=None, keys=None):
         """
         Helper method that ensures a given element is always returned as
         an HoloMap object.
         """
+        # Compute framewise normalization
+        frame_ranges = self.compute_ranges(view, None, ranges)
+        if keys or isinstance(view, HoloMap):
+            frame_ranges = OrderedDict([(key, self.compute_ranges(view, key, frame_ranges))
+                                        for key in view.keys()])
+            ranges = frame_ranges.values()
+        else:
+            ranges = frame_ranges
+
+        # Wrap elements in HoloMap
         if not isinstance(view, HoloMap):
             vmap = HoloMap(initial_items=(0, view), id=view.id)
         else:
@@ -59,6 +70,7 @@ class ElementPlot(Plot):
         check = vmap.last
         if issubclass(vmap.type, CompositeOverlay):
             check = vmap.last.values()[0]
+            vmap = Channel.collapse_channels(vmap, (ranges, keys))
         if isinstance(check, Element3D):
             self.projection = '3d'
 
