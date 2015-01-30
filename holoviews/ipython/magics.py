@@ -295,6 +295,9 @@ class ChannelMagic(Magics):
                 if definition.value in defined_values:
                     print("Channel definition ignored as value %r already defined" % definition.value)
 
+                group = {'style':Options(), 'style':Options(), 'norm':Options()}
+                type_name = definition.operation.output_type.__name__
+                Plot.options[type_name + '.' + definition.value] = group
                 ChannelDefinition.definitions.append(definition)
         else:
             print "For help with the %channels magic, call %channels?\n"
