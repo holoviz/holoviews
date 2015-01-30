@@ -342,11 +342,11 @@ class LayoutTree(AttrTree, Dimensioned):
         return relabelled_items
 
 
-    @staticmethod
-    def from_view(view):
+    @classmethod
+    def from_view(cls, view):
         # Return ViewTrees and Overlays directly
         if isinstance(view, LayoutTree) and not isinstance(view, ViewableElement): return view
-        return LayoutTree(items=[((view.value, view.label if view.label else 'I'), view)])
+        return cls(items=[((view.value, view.label if view.label else 'I'), view)])
 
 
     def group(self, name):
