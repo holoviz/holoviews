@@ -157,6 +157,10 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
                       **{k:v for k,v in params.items() if k in view_params})
 
 
+    def __add__(self, other):
+        return LayoutTree.from_view(self) + LayoutTree.from_view(other)
+
+
     def __mul__(self, other):
         if isinstance(other, Overlay):
             items = list(self.data.items()) + list(other.data.items())
