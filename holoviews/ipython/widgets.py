@@ -25,7 +25,7 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 import param
 
 from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
-from ..core.dimutils import unique_dimkeys
+from ..core.traversal import unique_dimkeys
 from ..element import Raster
 from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
 from .magics import ViewMagic

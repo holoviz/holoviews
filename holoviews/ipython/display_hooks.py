@@ -21,7 +21,7 @@ import param
 
 from ..core import ViewableElement, Element, HoloMap, AdjointLayout, NdLayout,\
  AxisLayout, LayoutTree, Overlay
-from ..core.dimutils import uniform
+from ..core.traversal import uniform
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from . import magics

@@ -16,7 +16,7 @@ from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
-from .dimutils import uniform
+from .traversal import uniform
 
 
 class Composable(object):

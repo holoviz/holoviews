@@ -1,5 +1,6 @@
 """
-Advanced utilities for working with Dimensioned objects.
+Advanced utilities for traversing nesting/hierarchical Dimensioned
+objects either to inspect the structure of their declared dimensions.
 """
 
 from .dimension import Dimension

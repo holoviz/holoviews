@@ -11,7 +11,7 @@ import param
 from ..core import NdMapping, UniformNdMapping, ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
 from ..core.options import Options, OptionTree
-from ..core.dimutils import unique_dimkeys, uniform
+from ..core.traversal import unique_dimkeys, uniform
 from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
 

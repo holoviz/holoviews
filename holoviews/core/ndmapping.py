@@ -10,7 +10,7 @@ import numpy as np
 import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
-from .dimutils import uniform
+from .traversal import uniform
 
 
 class MultiDimensionalMapping(Dimensioned):

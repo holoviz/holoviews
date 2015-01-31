@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ..core import CompositeOverlay
-from ..core.dimutils import unique_dimkeys
+from ..core.traversal import unique_dimkeys
 from ..element.raster import HeatMap, Matrix, Raster, RGBA
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
