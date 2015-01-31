@@ -139,7 +139,7 @@ class Plot(param.Parameterized):
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 elements = self._get_frame(key).traverse(return_fn, [group])
-            if groupwise: # Compute new ranges
+            if groupwise or (mapwise and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
         return ranges
 
