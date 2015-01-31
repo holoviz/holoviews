@@ -63,7 +63,7 @@ class RegressionPlot(FullRedrawPlot):
 
     def __call__(self, ranges=None):
         self._update_plot(self.map.last, self.handles['axis'])
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def _update_plot(self, axis, view):
@@ -101,7 +101,7 @@ class BivariatePlot(FullRedrawPlot):
             raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(axis, kdeview)
 
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def _update_plot(self, axis, view):
@@ -142,7 +142,7 @@ class TimeSeriesPlot(FullRedrawPlot):
         self.style = self.lookup_options(curveview, 'style')[self.cyclic_index]
         self._update_plot(axis, curveview)
 
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def _update_plot(self, axis, view):
@@ -173,7 +173,7 @@ class DistributionPlot(FullRedrawPlot):
         self.style = self.lookup_options(distview, 'style')[self.cyclic_index]
         self._update_plot(axis, distview)
 
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def _update_plot(self, axis, view):
@@ -253,7 +253,7 @@ class SNSFramePlot(DFrameViewPlot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def _process_style(self, styles):
@@ -271,7 +271,7 @@ class SNSFramePlot(DFrameViewPlot):
                             % self.plot_type)
 
     def update_frame(self, n, ranges=None):
-        key = self._keys[n]
+        key = self.keys[n]
         view = self.map.get(key, None)
         axis = self.handles['axis']
         if axis:

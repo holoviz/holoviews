@@ -11,6 +11,7 @@ import param
 from ..core import NdMapping, UniformNdMapping, ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
 from ..core.options import Options, OptionTree
+from ..core.dimutils import unique_dimkeys, uniform
 from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
 
@@ -84,14 +85,15 @@ class Plot(param.Parameterized):
 
 
     def __init__(self, figure=None, axis=None, dimensions=None,
-                 subplots=None, keys=None, subplot=None, **params):
+                 subplots=None, uniform=True, keys=None, subplot=None, **params):
         self.subplots = subplots
         self.subplot = figure is not None or subplot
+        self.dimensions = dimensions
+        self.keys = keys
+        self.uniform = uniform
+
         self._create_fig = True
         self.drawn = False
-        self.dimensions = dimensions
-        self._keys = keys
-        self.ranges = None
         # List of handles to matplotlib objects for animation update
         self.handles = {} if figure is None else {'fig': figure}
         super(Plot, self).__init__(**params)
@@ -136,7 +138,7 @@ class Plot(param.Parameterized):
             elif mapwise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
-                elements = self._get_frame(key, obj).traverse(return_fn, [group])
+                elements = self._get_frame(key).traverse(return_fn, [group])
             if groupwise: # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
         return ranges
@@ -155,8 +157,8 @@ class Plot(param.Parameterized):
 
         # Get all elements' type.value.label specs and ids
         type_val_fn = lambda x: (x.id, (type(x).__name__, valid_identifier(x.value),
-                                        valid_identifier(x.label)))\
-                                        if isinstance(x, Element) else None
+                                        valid_identifier(x.label))) \
+            if isinstance(x, Element) else None
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
                          if idspec is not None}
 
@@ -189,19 +191,21 @@ class Plot(param.Parameterized):
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
         for el in elements:
-            for dim in el.dimensions():
-                dim_range = el.range(dim.name)
+            for dim in el.dimensions(label=True):
+                dim_range = el.range(dim)
                 if group not in ranges: ranges[group] = OrderedDict()
-                if dim.name in ranges[group]:
-                    ranges[group][dim.name] = find_minmax(ranges[group][dim.name], dim_range)
+                if dim in ranges[group]:
+                    ranges[group][dim] = find_minmax(ranges[group][dim], dim_range)
                 else:
-                    ranges[group][dim.name] = dim_range
+                    ranges[group][dim] = dim_range
 
 
-    def _get_frame(self, key, obj):
-        if not isinstance(key, tuple): key = (key,)
-        key_dims = obj.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
-        return obj.select(**dict(zip([d.name for d in key_dims], key)))
+    def _get_frame(self, key):
+        """
+        Required on each Plot type to get the data corresponding
+        just to the current frame out from the object.
+        """
+        pass
 
 
     @classmethod
@@ -272,7 +276,7 @@ class Plot(param.Parameterized):
         if frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self()
-        self.update_frame(frame)
+        self.update_frame(self.keys[frame])
         return self.handles['fig']
 
 
@@ -286,7 +290,7 @@ class Plot(param.Parameterized):
 
         figure = self()
         anim = animation.FuncAnimation(figure, self.update_frame,
-                                       frames=frames,
+                                       frames=self.keys,
                                        interval = 1000.0/fps)
         # Close the figure handle
         plt.close(figure)
@@ -296,7 +300,7 @@ class Plot(param.Parameterized):
         """
         Returns the total number of available frames.
         """
-        return len(self._keys)
+        return len(self.keys)
 
 
     def __call__(self, ranges=None):
@@ -306,7 +310,7 @@ class Plot(param.Parameterized):
         raise NotImplementedError
 
 
-    def update_frame(self, n, ranges=None):
+    def update_frame(self, key, ranges=None):
         """
         Updates the current frame of the plot.
         """
@@ -327,17 +331,36 @@ class CompositePlot(Plot):
     subplots to form a Layout.
     """
 
-    def update_frame(self, n):
-        key = self._keys[n]
+    def update_frame(self, key):
         ranges = self.compute_ranges(self.layout, key, None)
         for subplot in self.subplots.values():
-            subplot.update_frame(n, ranges=ranges)
+            subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
         self.update_handles(axis, self.layout, key, ranges)
 
 
+    def _get_frame(self, key):
+        """
+        Creates a clone of the Layout with the nth-frame for each
+        Element.
+        """
+        layout_frame = self.layout.clone()
+        nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
+                                  x.data.keys()[max([key, len(x)-1])])
+        for path, item in self.layout.items():
+            if self.uniform:
+                dim_keys = zip([d.name for d in self.dimensions], key)
+            else:
+                dim_keys = item.traverse(nthkey_fn, ('HoloMap',))
+            if dim_keys:
+                layout_frame[path] = item.select(**dict(dim_keys))
+            else:
+                layout_frame[path] = item
+        return layout_frame
+
+
     def __len__(self):
-        return max([len(v) for v in self.subplots.values()]+[1])
+        return len(self.keys)
 
 
 
@@ -352,27 +375,20 @@ class GridPlot(CompositePlot):
 
     show_title = param.Boolean(default=False)
 
-    def __init__(self, layout, ranges=None, keys=None, **params):
+    def __init__(self, layout, ranges=None, keys=None, dimensions=None, **params):
         if not isinstance(layout, AxisLayout):
             raise Exception("GridPlot only accepts AxisLayout.")
-        if layout.ndims == 1:
-            self.rows, self.cols = (1, len(layout.keys()))
-        else:
-            x, y = list(zip(*list(layout.keys())))
-            self.cols, self.rows = (len(set(x)), len(set(y)))
-
+        self.cols, self.rows = layout.shape
         extra_opts = self.lookup_options(layout, 'plot').options
-        keys = keys if keys else layout.all_keys
-        super(GridPlot, self).__init__(keys=keys, **dict(extra_opts, **params))
+        if not keys or not dimensions:
+            dimensions, keys = unique_dimkeys(layout)
+
+        super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                       uniform=uniform(layout),
+                                       **dict(extra_opts, **params))
         # Compute ranges layoutwise
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols)
         self.subplots, self.subaxes, self.layout = self._create_subplots(layout, ranges)
-
-
-    def _get_frame(self, key, obj):
-        if not isinstance(key, tuple): key = (key,)
-        key_dims = obj.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
-        return obj.select(**dict(zip([d.name for d in key_dims], key)))
 
 
     def _create_subplots(self, layout, ranges=None, create_axis=True):
@@ -380,7 +396,7 @@ class GridPlot(CompositePlot):
 
         frame_ranges = self.compute_ranges(layout, None, ranges)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
-                                    for key in self._keys])
+                                    for key in self.keys])
         collapsed_layout = layout.clone(id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
@@ -393,13 +409,15 @@ class GridPlot(CompositePlot):
                 subax = None
 
             # Create subplot
+            if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             if view is not None:
                 layout_dimvals = dict(AxisLayout=zip(zip(layout.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 subplot = Plot.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
-                                               dimensions=layout_dimvals, show_title=False,
-                                               subplot=not create_axis, ranges=frame_ranges)
+                                               dimensions=self.dimensions, show_title=False,
+                                               subplot=not create_axis, ranges=frame_ranges,
+                                               uniform=self.uniform)
                 collapsed_layout[coord] = subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
@@ -417,8 +435,7 @@ class GridPlot(CompositePlot):
     def __call__(self, ranges=None):
         # Get the extent of the layout elements (not the whole layout)
         subplot_kwargs = dict()
-
-        ranges = self.compute_ranges(self.layout, self._keys[-1], ranges)
+        ranges = self.compute_ranges(self.layout, self.keys[-1], ranges)
         for subplot in self.subplots.values():
             subplot(ranges=ranges, **subplot_kwargs)
 
@@ -429,14 +446,8 @@ class GridPlot(CompositePlot):
 
 
     def _format_title(self, key):
-        view = self.layout.values()[0]
-        key = key if isinstance(key, tuple) else (key,)
-        if len(self) > 1:
-            title_format = view.get_title(key, self.layout)
-        else:
-            title_format = self.layout.title
-        view = view.last
-        return title_format.format(label=view.label, value=view.value,
+        title_format = self.layout.title
+        return title_format.format(label=self.layout.label, value=self.layout.value,
                                    type=self.layout.__class__.__name__)
 
 
@@ -447,7 +458,8 @@ class GridPlot(CompositePlot):
 
         # Set labels
         layout_axis.set_xlabel(str(layout.key_dimensions[0]))
-        layout_axis.set_ylabel(str(layout.key_dimensions[1]))
+        if layout.ndims == 2:
+            layout_axis.set_ylabel(str(layout.key_dimensions[1]))
 
         # Compute and set x- and y-ticks
         keys = layout.keys()
@@ -608,10 +620,10 @@ class AdjointLayoutPlot(CompositePlot):
                              bbox.width, bbox.height * self.subplot_size])
 
 
-    def update_frame(self, n, ranges=None):
+    def update_frame(self, key, ranges=None):
         for pos, subplot in self.subplots.items():
             if subplot is not None:
-                subplot.update_frame(n, ranges)
+                subplot.update_frame(key, ranges)
 
 
     def __len__(self):
@@ -641,38 +653,10 @@ class LayoutPlot(CompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        keys = self._compute_common_keys(layout)
-
-        super(LayoutPlot, self).__init__(keys=keys, **params)
+        dimensions, keys = unique_dimkeys(layout)
+        super(LayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                         uniform=uniform(layout), **params)
         self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
-
-
-    def _compute_common_keys(self, layout):
-        key_dimvals = layout.traverse(lambda x: (tuple(x.key_dimensions), x.keys()), ('HoloMap',))
-        keys = []
-        if len(key_dimvals):
-            dimensions_list, keys_list = zip(*key_dimvals)
-            dimensions = dimensions_list[np.argmax([len(keys) for keys in keys_list])]
-            keys_lists = [keys_list[idx] for idx, dims in enumerate(dimensions_list) if dims == dimensions]
-            keys = set(key for keys in keys_lists for key in keys)
-            keys = NdMapping([(k, 0) for k in keys], key_dimensions=dimensions).keys()
-        return keys
-
-    def _get_frame(self, n, obj):
-        """
-        Creates a clone of the Layout with the nth-frame for each
-        Element.
-        """
-        layout_frame = obj.clone()
-        nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
-                                  x.data.keys()[max([n, len(x)-1])])
-        for path, item in obj.items():
-            dim_keys = item.traverse(nthkey_fn, ('HoloMap',))
-            if dim_keys:
-                layout_frame[path] = item.select(**dict(dim_keys[0]))
-            else:
-                layout_frame[path] = item
-        return layout_frame
 
 
     def _compute_gridspec(self, layout):
@@ -733,7 +717,7 @@ class LayoutPlot(CompositePlot):
         collapsed_layout = layout.clone(id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
-                                    for key in self._keys])
+                                    for key in self.keys])
         layout_subplots, layout_axes = {}, {}
         for (r, c) in self.coords:
             # Compute the layout type from shape
@@ -778,13 +762,6 @@ class LayoutPlot(CompositePlot):
                 collapsed_layout[layout_key] = adjoint_layout
 
         return layout_subplots, layout_axes, collapsed_layout
-
-
-    def compute_framewise_ranges(self, obj):
-        ranges = OrderedDict()
-        for key in self.keys:
-            ranges[key] = self.compute_ranges(obj, key, None)
-        return ranges
 
 
     def grid_situate(self, subplots, current_idx, layout_type, subgrid_width):
@@ -872,7 +849,9 @@ class LayoutPlot(CompositePlot):
                     plot_type = Plot.sideplots[vtype]
 
             subplots[pos] = plot_type(view, axis=ax, ranges=ranges,
-                                      **dict({'keys':self._keys}, **plotopts))
+                                      dimensions=self.dimensions,
+                                      uniform=self.uniform,
+                                      keys=self.keys, **plotopts)
             adjoint_clone[pos] = subplots[pos].map
         return subplots, adjoint_clone
 
@@ -881,7 +860,7 @@ class LayoutPlot(CompositePlot):
         self.handles['axis'].get_xaxis().set_visible(False)
         self.handles['axis'].get_yaxis().set_visible(False)
 
-        ranges = self.compute_ranges(self.layout, -1, None)
+        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         rcopts = self.lookup_options(self.layout, 'style').options
         for subplot in self.subplots.values():
             with matplotlib.rc_context(rcopts):

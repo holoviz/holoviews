@@ -23,7 +23,7 @@ class AnnotationPlot(ElementPlot):
         opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
         handle = self.draw_annotation(axis, annotation, annotation.data, opts)
         self.handles['annotations'].append(handle)
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def update_handles(self, axis, annotation, key, ranges=None):
@@ -128,7 +128,7 @@ class ContourPlot(ElementPlot):
         self.handles['line_segments'] = line_segments
         self.handles['axis'].add_collection(line_segments)
 
-        return self._finalize_axis(self._keys[-1])
+        return self._finalize_axis(self.map.last_key)
 
 
     def update_handles(self, axis, view, key, ranges=None):

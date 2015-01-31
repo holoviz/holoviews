@@ -39,12 +39,28 @@ class ElementPlot(Plot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    def __init__(self, element, keys=None, ranges=None, cyclic_index=0, zorder=0, **params):
+    def __init__(self, element, keys=None, ranges=None, dimensions=None, cyclic_index=0, zorder=0, **params):
         self.map = self._check_map(element, ranges, keys)
         self.cyclic_index = cyclic_index
         self.zorder = zorder
-        keys = keys if keys else self.map.keys()
-        super(ElementPlot, self).__init__(keys=keys, **params)
+        dimensions = self.map.key_dimensions if dimensions is None else dimensions
+        keys = keys if keys else self.map.data.keys()
+        super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions, **params)
+
+
+    def _get_frame(self, key):
+        if self.uniform:
+            if not isinstance(key, tuple): key = (key,)
+            select = {d.name: k for d, k in zip(self.dimensions, key)}
+        elif isinstance(key, int):
+            return self.map.values()[min([key, len(self.map)-1])]
+        else:
+            select = dict(zip(self.map.dimensions('key', label=True), key))
+        try:
+            selection = self.map.select(ignore_invalid=True, **select)
+        except KeyError:
+            selection = None
+        return selection.last if isinstance(selection, HoloMap) else selection
 
 
     def _check_map(self, view, ranges=None, keys=None):
@@ -56,14 +72,14 @@ class ElementPlot(Plot):
         frame_ranges = self.compute_ranges(view, None, ranges)
         if keys or isinstance(view, HoloMap):
             frame_ranges = OrderedDict([(key, self.compute_ranges(view, key, frame_ranges))
-                                        for key in view.keys()])
+                                        for key in (keys if keys else view.keys())])
             ranges = frame_ranges.values()
         else:
             ranges = frame_ranges
 
         # Wrap elements in HoloMap
         if not isinstance(view, HoloMap):
-            vmap = HoloMap(initial_items=(0, view), id=view.id)
+            vmap = HoloMap(initial_items=(0, view), key_dimensions=['Frame'], id=view.id)
         else:
             vmap = view
 
@@ -76,10 +92,6 @@ class ElementPlot(Plot):
             self.projection = '3d'
 
         return vmap
-
-
-    def _get_frame(self, key, obj):
-        return self.map[key]
 
 
     def get_extents(self, view, ranges):
@@ -102,7 +114,7 @@ class ElementPlot(Plot):
 
         axis = self.handles['axis']
 
-        view = self.map.get(key, None)
+        view = self._get_frame(key)
         if self.zorder == 0 and key is not None:
             if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
@@ -186,7 +198,7 @@ class ElementPlot(Plot):
         return match
 
 
-    def update_frame(self, n, ranges=None):
+    def update_frame(self, key, ranges=None):
         """
         Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
@@ -195,11 +207,10 @@ class ElementPlot(Plot):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        n = n if n < len(self) else len(self) - 1
-        key = self._keys[n]
-        view = self.map.get(key, None)
+        view = self._get_frame(key)
         axis = self.handles['axis']
         axis.set_visible(view is not None)
+        if view is None: return
         if self.normalize:
             ranges = self.compute_ranges(self.map, key, ranges)
             ranges = self.match_range(view, ranges)
@@ -240,7 +251,7 @@ class OverlayPlot(ElementPlot):
             plotopts = self.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
-            plotopts = dict(keys=self._keys, axis=self.handles['axis'],
+            plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=zorder, **plotopts)
             plotype = Plot.defaults[type(vmap.last)]
@@ -283,18 +294,16 @@ class OverlayPlot(ElementPlot):
             plot(ranges=ranges)
         self._adjust_legend(axis)
 
-        key = self._keys[-1]
+        key = self.map.last_key
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
-    def update_frame(self, n, ranges=None):
-        n = n if n < len(self) else len(self) - 1
-        key = self._keys[n]
+    def update_frame(self, key, ranges=None):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
         for plot in self.subplots.values():
-            plot.update_frame(n, ranges)
+            plot.update_frame(key, ranges)
         self._finalize_axis(key, ranges)
 
 
