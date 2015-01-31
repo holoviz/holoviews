@@ -25,6 +25,7 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 import param
 
 from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
+from ..core.dimutils import unique_dimkeys
 from ..element import Raster
 from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
 from .magics import ViewMagic
@@ -288,14 +289,10 @@ class NdWidget(param.Parameterized):
                         size=get_plot_size())
             plot = Plot.defaults[view.type](view, **opts)
 
-        key_dimvals = view.traverse(lambda x: (tuple(x.key_dimensions), x.keys()), ('HoloMap',))
-        dimensions_list, keys_list = zip(*key_dimvals)
-        dimensions = dimensions_list[np.argmax([len(keys) for keys in keys_list])]
-        keys_lists = [keys_list[idx] for idx, dims in enumerate(dimensions_list) if dims == dimensions]
-        keys = set(key for keys in keys_lists for key in keys)
+        dimensions, keys = unique_dimkeys(view)
 
         # Create mock NdMapping to hold the common dimensions and keys
-        mock_obj = NdMapping([(k, 0) for k in keys],
+        mock_obj = NdMapping([(k, None) for k in keys],
                              key_dimensions=dimensions)
         return plot, dimensions, keys, mock_obj
 

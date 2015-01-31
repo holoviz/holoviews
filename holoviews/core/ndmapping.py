@@ -10,6 +10,7 @@ import numpy as np
 import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
+from .dimutils import uniform
 
 
 class MultiDimensionalMapping(Dimensioned):
@@ -634,6 +635,9 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
+        if not uniform(NdMapping([(0, self), (1, data)])):
+            raise ValueError("HoloMaps dimensions must be consistent in %s." %
+                             type(self).__name__)
         super(UniformNdMapping, self)._item_check(dim_vals, data)
 
 

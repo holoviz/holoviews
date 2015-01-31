@@ -17,8 +17,11 @@ try:
 except:
     mpld3 = None
 
+import param
+
 from ..core import ViewableElement, Element, HoloMap, AdjointLayout, NdLayout,\
  AxisLayout, LayoutTree, Overlay
+from ..core.dimutils import uniform
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from . import magics
@@ -166,9 +169,15 @@ def animation_display(anim, map_format, **kwargs):
 def widget_display(view,  widget_format, widget_mode):
     assert widget_mode is not None, "Mistaken call to widget_display method"
 
+    isuniform = uniform(view)
+    if not isuniform and widget_format == 'widgets':
+        param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
+                                    % type(view).__name__)
+        widget_format == 'scrubber'
+
     if widget_format == 'auto':
         dims = view.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
-        widget_format = 'scrubber' if len(dims) == 1 else 'widgets'
+        widget_format = 'scrubber' if len(dims) == 1 or not isuniform else 'widgets'
 
     if widget_format == 'scrubber':
         return ScrubberWidget(view)()
