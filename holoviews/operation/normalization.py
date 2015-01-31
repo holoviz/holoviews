@@ -108,7 +108,8 @@ class Normalization(ElementOperation):
         if keys is None:
             specs = ranges
         elif keys and not isinstance(ranges, list):
-            raise ValueError("Key list specified by ranges not also specified as a list.")
+            raise ValueError("Key list specified but ranges parameter"
+                             " not specified as a list.")
 
         elif len(keys) != len(ranges):
             try:
@@ -117,7 +118,7 @@ class Normalization(ElementOperation):
             except:
                 raise KeyError("Could not match element key to defined keys")
         else:
-            raise ValueError("")
+            raise ValueError("Key list length must match length of supplied ranges")
 
         return self.matches(specs, element)
 
@@ -157,8 +158,6 @@ class raster_normalization(Normalization):
         if not isinstance(raster, Raster): return raster
         norm_raster = raster.clone(data=raster.data.copy())
         ranges = self.get_ranges(raster, key)
-
-        print ranges
 
         for depth, name in enumerate(d.name for d in raster.value_dimensions):
             depth_range = ranges.get(name, None)
