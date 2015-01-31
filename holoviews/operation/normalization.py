@@ -122,3 +122,51 @@ class Normalization(ElementOperation):
 
     def _process(self, view, key=None):
         raise NotImplementedError("Normalization not implemented")
+
+
+
+class raster_normalization(Normalization):
+    """
+    Normalizes elements of type Raster.
+
+    For Raster elements containing (NxM) data, this will normalize the
+    array/matrix into the specified range if value_dimension matches
+    a key in the ranges dictionary.
+
+    For elements containing (NxMxD) data, the (NxM) components of the
+    third dimensional are normalized independently if the
+    corresponding value dimensions are selected by the ranges
+    dictionary.
+    """
+
+    def _process(self, raster, key=None):
+        if isinstance(raster, Raster):
+            return self._normalize_raster(raster, key)
+        elif isinstance(raster, Overlay):
+            overlay_clone = raster.clone()
+            for k, el in raster.items():
+                overlay_clone[k] =  self._normalize_raster(el, key)
+            return overlay_clone
+        else:
+            raise ValueError("Input element must be a Raster or subclass of Raster.")
+
+
+    def _normalize_raster(self, raster, key):
+        if not isinstance(raster, Raster): return raster
+        norm_raster = raster.clone(data=raster.data.copy())
+        ranges = self.get_ranges(raster, key)
+
+        print ranges
+
+        for depth, name in enumerate(d.name for d in raster.value_dimensions):
+            depth_range = ranges.get(name, None)
+            if len(norm_raster.data.shape) == 2:
+                depth_range = ranges[name]
+                norm_raster.data[:,:] -= depth_range[0]
+                norm_raster.data[:,:] /= depth_range[1]
+            else:
+                norm_raster.data[:,:,depth] -= depth_range[0]
+                norm_raster.data[:,:,depth] /= depth_range[1]
+        return norm_raster
+
+
