@@ -68,14 +68,11 @@ class ElementPlot(Plot):
         Helper method that ensures a given element is always returned as
         an HoloMap object.
         """
-        if not isinstance(holomap, HoloMap):
-            holomap = HoloMap(initial_items=(0, holomap),
-                              key_dimensions=['Frame'], id=holomap.id)
-
         # Compute framewise normalization
         mapwise_ranges = self.compute_ranges(holomap, None, None)
-        if keys:
-            frame_ranges = OrderedDict([(tuple(key), self.compute_ranges(holomap, key, ranges[key]))
+        if keys and isinstance(holomap, HoloMap) and ranges:
+            frame_ranges = OrderedDict([(tuple(key),
+                                         self.compute_ranges(holomap, key, ranges[key]))
                                         for key in keys])
             ranges = frame_ranges.values()
         elif isinstance(holomap, HoloMap):
