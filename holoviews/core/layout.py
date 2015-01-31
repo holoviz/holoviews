@@ -16,6 +16,7 @@ from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
+from .dimutils import uniform
 
 
 class Composable(object):
@@ -183,6 +184,11 @@ class NdLayout(UniformNdMapping):
 
 
     @property
+    def uniform(self):
+        return uniform(self)
+
+
+    @property
     def shape(self):
         num = len(self.keys())
         if num <= self._max_cols:
@@ -276,9 +282,13 @@ class LayoutTree(AttrTree, Dimensioned):
         self._max_cols = ncols
         return self
 
+    @property
+    def uniform(self):
+        pass
+
 
     def select(self, **selections):
-        return self.clone([(path, item.select(**selections))
+        return self.clone([(path, item.select(ignore_dropped=True, **selections))
                             for path, item in self.items()])
 
 
