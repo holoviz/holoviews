@@ -177,7 +177,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
         values = []
         found = False
         for el in self:
-            if dimension in [dim.name for dim in el.dimensions()]:
+            if dimension in el.dimensions(label=True):
                 values.append(el.dimension_values(dimension))
                 found = True
         if not found:

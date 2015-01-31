@@ -204,7 +204,7 @@ class Table(Element, NdMapping):
         if not isinstance(args, tuple) or len(args) <= self.ndims:
             return subtable
 
-        col_names = [dim.name for dim in self.value_dimensions]
+        col_names = self.dimensions('value', label=True)
         cols = self._filter_columns(args[-1], col_names)
         indices = [col_names.index(col) for col in cols]
         value_dimensions=[self.value_dimensions[i] for i in indices]

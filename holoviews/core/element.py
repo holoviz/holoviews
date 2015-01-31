@@ -85,7 +85,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def dframe(self):
         import pandas
-        column_names = [dim.name for dim in self.dimensions()]
+        column_names = self.dimensions(labels=True)
         dim_vals = np.vstack([self.dimension_values(dim) for dim in column_names]).T
         return pandas.DataFrame(dim_vals, columns=column_names)
 
