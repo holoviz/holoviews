@@ -570,7 +570,8 @@ class AxisLayout(UniformNdMapping):
     # NOTE: If further composite types supporting Overlaying and Layout these
     #       classes may be moved to core/composite.py
 
-    key_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")], bounds=(2,2))
+    key_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
+                                bounds=(1,2))
 
     label = param.String(constant=True, doc="""
       A short label used to indicate what kind of data is contained
