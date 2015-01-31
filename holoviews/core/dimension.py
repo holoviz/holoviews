@@ -328,7 +328,7 @@ class Dimensioned(LabelledData):
             return []
 
 
-    def dimensions(self, selection='all'):
+    def dimensions(self, selection='all', label=False):
         """
         Provides convenient access to Dimensions on nested
         Dimensioned objects. Dimensions can be selected
@@ -336,17 +336,18 @@ class Dimensioned(LabelledData):
         By default 'all' dimensions are returned.
         """
         if selection == 'all':
-            return [dim for group in self._dim_groups
+            dims = [dim for group in self._dim_groups
                     for dim in getattr(self, group)]
         elif selection == 'key':
             key_traversal = self.traverse(lambda x: x.key_dimensions, full_breadth=False)
-            return [dim for keydims in key_traversal for dim in keydims]
+            dims = [dim for keydims in key_traversal for dim in keydims]
         elif selection == 'value':
             key_traversal = self.traverse(lambda x: x.value_dimensions)
-            return [dim for keydims in key_traversal for dim in keydims]
+            dims = [dim for keydims in key_traversal for dim in keydims]
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
+        return [dim.name if label else dim for dim in dims]
 
 
     def get_dimension(self, dimension, default=None):
