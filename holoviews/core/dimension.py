@@ -404,12 +404,16 @@ class Dimensioned(LabelledData):
         raise NotImplementedError
 
 
-    def select(self, **kwargs):
+    def select(self, ignore_invalid=False, **kwargs):
         """
         Allows slicing or indexing into the Dimensioned object
         by supplying the dimension and index/slice as key
         value pairs.
         """
+        valid_kwargs = {k: v for k, v in kwargs.items()
+                        if k in self.dimensions(label=True)}
+        if not len(valid_kwargs) and not ignore_invalid:
+            raise KeyError("Invalid Dimension supplied.")
         deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
                            and (kw not in self._cached_index_names)])
         selection_depth = len(self.dimensions('key')) if deep_select else self.ndims
