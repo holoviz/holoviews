@@ -61,6 +61,17 @@ class ElementOperation(Operation):
     ElementOperation may turn overlays in new elements or vice versa.
     """
 
+    input_ranges = param.ClassSelector(default={},
+                                       class_=(dict, tuple), doc="""
+       Ranges to be used for input normalization (if applicable) in a
+       format appropriate for the Normalization.ranges parameter.
+
+       By default, no normalization is applied. If key-wise
+       normalization is required, a 2-tuple may be supplied where the
+       first component is a Normalization.ranges list and the second
+       component is Normalization.keys. """)
+
+
     def _process(self, view, key=None):
         """
         Process a single input element and outputs new single element
