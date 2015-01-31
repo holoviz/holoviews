@@ -63,35 +63,40 @@ class ElementPlot(Plot):
         return selection.last if isinstance(selection, HoloMap) else selection
 
 
-    def _check_map(self, view, ranges=None, keys=None):
+    def _check_map(self, holomap, ranges=None, keys=None):
         """
         Helper method that ensures a given element is always returned as
         an HoloMap object.
         """
+        if not isinstance(holomap, HoloMap):
+            holomap = HoloMap(initial_items=(0, holomap),
+                              key_dimensions=['Frame'], id=holomap.id)
+
         # Compute framewise normalization
-        frame_ranges = self.compute_ranges(view, None, ranges)
-        if keys or isinstance(view, HoloMap):
-            frame_ranges = OrderedDict([(key, self.compute_ranges(view, key, frame_ranges))
-                                        for key in (keys if keys else view.keys())])
+        mapwise_ranges = self.compute_ranges(holomap, None, None)
+        if keys:
+            frame_ranges = OrderedDict([(tuple(key), self.compute_ranges(holomap, key, ranges[key]))
+                                        for key in keys])
             ranges = frame_ranges.values()
+        elif isinstance(holomap, HoloMap):
+            frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
+                                        for key in (keys if keys else holomap.keys())])
+            ranges = frame_ranges.values()
+            keys = holomap.keys()
         else:
-            ranges = frame_ranges
+            holomap = HoloMap(initial_items=(0, holomap), key_dimensions=['Frame'], id=holomap.id)
+            ranges = {(0,): mapwise_ranges}
+            keys = None
 
-        # Wrap elements in HoloMap
-        if not isinstance(view, HoloMap):
-            vmap = HoloMap(initial_items=(0, view), key_dimensions=['Frame'], id=view.id)
-        else:
-            vmap = view
-
-        check = vmap.last
-        if issubclass(vmap.type, CompositeOverlay):
-            check = vmap.last.values()[0]
-            vmap = Channel.collapse_channels(vmap,
+        check = holomap.last
+        if issubclass(holomap.type, CompositeOverlay):
+            check = holomap.last.values()[0]
+            holomap = Channel.collapse_channels(holomap,
                                              (ranges, keys if keys else None))
         if isinstance(check, Element3D):
             self.projection = '3d'
 
-        return vmap
+        return holomap
 
 
     def get_extents(self, view, ranges):
@@ -235,12 +240,12 @@ class OverlayPlot(ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    def __init__(self, overlay, **params):
-        super(OverlayPlot, self).__init__(overlay, **params)
-        self.subplots = self._create_subplots()
+    def __init__(self, overlay, ranges=None, **params):
+        super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+        self.subplots = self._create_subplots(ranges)
 
 
-    def _create_subplots(self):
+    def _create_subplots(self, ranges):
         subplots = OrderedDict()
 
         keys, vmaps = self.map.split_overlays()
@@ -253,7 +258,7 @@ class OverlayPlot(ElementPlot):
                 plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
             plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
-                            zorder=zorder, **plotopts)
+                            zorder=zorder, ranges=ranges, **plotopts)
             plotype = Plot.defaults[type(vmap.last)]
             subplots[key] = plotype(vmap, **plotopts)
 
