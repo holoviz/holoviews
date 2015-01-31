@@ -111,7 +111,8 @@ class Normalization(ElementOperation):
             raise ValueError("Key list specified but ranges parameter"
                              " not specified as a list.")
 
-        elif len(keys) != len(ranges):
+        elif len(keys) == len(ranges):
+            # Unpack any 1-tuple keys
             try:
                 index = keys.index(key)
                 specs = ranges[index]
@@ -161,11 +162,11 @@ class raster_normalization(Normalization):
 
         for depth, name in enumerate(d.name for d in raster.value_dimensions):
             depth_range = ranges.get(name, None)
-            if len(norm_raster.data.shape) == 2:
+            if depth_range and len(norm_raster.data.shape) == 2:
                 depth_range = ranges[name]
                 norm_raster.data[:,:] -= depth_range[0]
                 norm_raster.data[:,:] /= depth_range[1]
-            else:
+            elif depth_range:
                 norm_raster.data[:,:,depth] -= depth_range[0]
                 norm_raster.data[:,:,depth] /= depth_range[1]
         return norm_raster
