@@ -103,15 +103,17 @@ class Normalization(ElementOperation):
         Method to get the appropriate normalization range dictionary
         given a key and element.
         """
-        if self.p['keys'] is None:
-            specs = self.p.ranges
-        elif self.p.keys and not isinstance(self.p.ranges, list):
-            raise ValueError("")
+        keys = self.p['keys']
+        ranges = self.p['ranges']
+        if keys is None:
+            specs = ranges
+        elif keys and not isinstance(ranges, list):
+            raise ValueError("Key list specified by ranges not also specified as a list.")
 
-        elif len(self.p.keys) != len(self.p.ranges):
+        elif len(keys) != len(ranges):
             try:
-                index = self.p.keys.index(key)
-                specs = self.p.ranges[index]
+                index = keys.index(key)
+                specs = ranges[index]
             except:
                 raise KeyError("Could not match element key to defined keys")
         else:
