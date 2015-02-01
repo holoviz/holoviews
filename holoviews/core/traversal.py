@@ -44,8 +44,9 @@ def unique_dimkeys(obj):
     subset = all(set(g1) <= set(g2) or set(g1) >= set(g2)
                for g1 in dim_groups for g2 in dim_groups)
     # Find unique keys
-    all_dims = list({dim for dim_group in dim_groups
-                     for dim in dim_group})
+    all_dims = sorted({dim for dim_group in dim_groups
+                       for dim in dim_group},
+                      lambda x, k: -dim_groups[0].index(k))
     ndims = len(all_dims)
     unique_keys = []
     for group, keys in key_dims:
