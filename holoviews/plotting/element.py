@@ -104,6 +104,18 @@ class ElementPlot(Plot):
         return view.extents if self.rescale_individually else self.map.extents
 
 
+    def _format_title(self, key):
+        frame = self._get_frame(key)
+        if frame is None: return None
+        type_name = type(frame).__name__
+        value = frame.value if frame.value != type_name else ''
+        title = self.title_format.format(label=frame.label,
+                                         value=value,
+                                         type=type_name)
+        dim_title = self._frame_title(key, 2)
+        return ' '.join([title, dim_title])
+
+
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
                        xlabel=None, ylabel=None):
         """
@@ -276,17 +288,6 @@ class OverlayPlot(ElementPlot):
         frame.set_facecolor('1.0')
         frame.set_edgecolor('0.0')
         frame.set_linewidth('1.5')
-
-    def _format_title(self, key):
-        view = self.map.get(key, None)
-        if view is None: return None
-        title_format = self.map.get_title(key if isinstance(key, tuple) else (key,), view)
-        if title_format is None: return None
-
-        values = [v.value for v in view]
-        value = values[0] if len(set(values)) == 1 else ""
-        return title_format.format(label=view.label, value=value,
-                                   type=view.__class__.__name__)
 
 
     def __call__(self, ranges=None):

@@ -64,6 +64,9 @@ class Plot(param.Parameterized):
     size = param.NumericTuple(default=(4, 4), doc="""
         The matplotlib figure size in inches.""")
 
+    title_format = param.String(default="{label} {value}", doc="""
+        The formatting string for the title of this plot.""")
+
     # A list of matplotlib keyword arguments that may be supplied via a
     # style options object. Each subclass should override this
     # parameter to list every option that works correctly.
@@ -208,6 +211,20 @@ class Plot(param.Parameterized):
         pass
 
 
+    def _frame_title(self, key, group_size=2):
+        """
+        Returns the formatted dimension value strings
+        for a particular frame.
+        """
+        if self.subplot or not self.uniform or len(self) == 1:
+            return ''
+        dimension_labels = [dim.pprint_value(k) for dim, k in
+                            zip(self.dimensions, key)]
+        groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
+                  for i in range(len(dimension_labels))]
+        return '\n '.join(g for g in groups if g)
+
+
     @classmethod
     def register_options(cls):
         path_items = {}
@@ -227,31 +244,6 @@ class Plot(param.Parameterized):
                                           'norm': Options()})
 
 
-    def _format_title(self, key):
-        view = self.map.get(key, None)
-        if view is None: return None
-        title_format = self.map.get_title(key if isinstance(key, tuple) else (key,), view)
-        if title_format is None:
-            return None
-        return title_format.format(label=view.label, value=view.value,
-                                   type=view.__class__.__name__)
-
-
-    def _finalize_axis(self, key):
-        """
-        General method to finalize the axis and plot.
-        """
-
-        self.drawn = True
-        if self.subplot:
-            return self.handles['axis']
-        else:
-            plt.draw()
-            fig = self.handles['fig']
-            plt.close(fig)
-            return fig
-
-
     def _init_axis(self, axis):
         """
         Return an axis which may need to be initialized from
@@ -267,6 +259,22 @@ class Plot(param.Parameterized):
             axis.set_aspect('auto')
 
         return axis
+
+
+    def _finalize_axis(self, key):
+        """
+        General method to finalize the axis and plot.
+        """
+
+        self.drawn = True
+        if self.subplot:
+            return self.handles['axis']
+        else:
+            plt.tight_layout()
+            plt.draw()
+            fig = self.handles['fig']
+            plt.close(fig)
+            return fig
 
 
     def __getitem__(self, frame):
@@ -325,6 +333,7 @@ class Plot(param.Parameterized):
         pass
 
 
+
 class CompositePlot(Plot):
     """
     CompositePlot provides a baseclass for plots coordinate multiple
@@ -337,6 +346,14 @@ class CompositePlot(Plot):
             subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
         self.update_handles(axis, self.layout, key, ranges)
+
+
+    def update_handles(self, axis, view, key, ranges=None):
+        """
+        Should be called by the update_frame class to update
+        any handles on the plot.
+        """
+        title = axis.set_title(self._format_title(key))
 
 
     def _get_frame(self, key):
@@ -361,6 +378,25 @@ class CompositePlot(Plot):
 
     def __len__(self):
         return len(self.keys)
+
+
+    def _format_title(self, key):
+        dim_title = self._frame_title(key, 3)
+        layout = self.layout
+        type_name = type(self.layout).__name__
+        value = layout.value if layout.value != type_name else ''
+        title = self.title_format.format(label=layout.label,
+                                         value=value,
+                                         type=type_name)
+        return ' '.join([title, dim_title])
+
+
+    def _layout_axis(self, layout):
+        fig = self.handles['fig']
+        layout_axis = fig.add_subplot(111)
+        layout_axis.patch.set_visible(False)
+
+        return layout_axis
 
 
 
@@ -445,12 +481,6 @@ class GridPlot(CompositePlot):
         return self.handles['fig']
 
 
-    def _format_title(self, key):
-        title_format = self.layout.title
-        return title_format.format(label=self.layout.label, value=self.layout.value,
-                                   type=self.layout.__class__.__name__)
-
-
     def _layout_axis(self, layout):
         fig = self.handles['fig']
         layout_axis = fig.add_subplot(111)
@@ -514,14 +544,6 @@ class GridPlot(CompositePlot):
                 c += 1
             if not ax is None:
                 ax.set_position([xpos, ypos, ax_w, ax_h])
-
-
-    def update_handles(self, axis, view, key, ranges=None):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        axis.set_title(self._format_title(key))
 
 
 
@@ -654,8 +676,9 @@ class LayoutPlot(CompositePlot):
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
         dimensions, keys = unique_dimkeys(layout)
+        plotopts = self.lookup_options(layout, 'plot').options
         super(LayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                         uniform=uniform(layout), **params)
+                                         uniform=uniform(layout), **dict(plotopts, **params))
         self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
 
 
@@ -760,6 +783,7 @@ class LayoutPlot(CompositePlot):
             layout_key, _ = layout_items.get((r, c), (None, None))
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
+        self.handles['axis'] = self._layout_axis(layout)
 
         return layout_subplots, layout_axes, collapsed_layout
 
@@ -857,8 +881,9 @@ class LayoutPlot(CompositePlot):
 
 
     def __call__(self):
-        self.handles['axis'].get_xaxis().set_visible(False)
-        self.handles['axis'].get_yaxis().set_visible(False)
+        axis = self.handles['axis']
+        axis.set_title(self._format_title(self.keys[-1]))
+        axis.axis('off')
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         rcopts = self.lookup_options(self.layout, 'style').options
