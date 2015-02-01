@@ -8,6 +8,7 @@ from ..core.operation import ElementOperation
 from ..core.options import Options, Cycle
 from ..element import Matrix, RGB
 from .normalization import raster_normalization
+from .element import split_raster
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -61,24 +62,6 @@ class toRGB(ElementOperation):
                    label  = self.get_overlay_label(overlay),
                    value  = self.p.value)
 
-
-
-class alpha_overlay(ElementOperation):
-    """
-    Accepts an overlay of a Matrix defined with a cmap and converts
-    it to an RGBA Matrix. The alpha channel of the result is
-    defined by the second layer of the overlay.
-    """
-
-    label = param.String(default='AlphaOverlay', doc="""
-        The label suffix to use for the alpha overlay result where the
-        suffix is added to the label of the first layer.""")
-
-    def _process(self, overlay, key=None):
-        R,G,B,_ = split(cmap2rgb(overlay[0]))
-        return [Matrix(toRGBA(R*G*B*overlay[1]).data, overlay[0].bounds,
-                       label=overlay[0].label, value=self.p.label,
-                       value_dimensions=overlay[0].value_dimensions)]
 
 
 class toHCS(ElementOperation):
@@ -168,6 +151,30 @@ class colormap(ElementOperation):
                    bounds = matrix.bounds,
                    label = matrix.label,
                    value=self.p.value)
+
+
+
+class alpha_overlay(ElementOperation):
+    """
+    Accepts an overlay of a Matrix defined with a cmap and converts it
+    to an RGB element whereby the alpha channel of the result is
+    obtained from the second layer of the overlay.
+    """
+
+    value = param.String(default='AlphaOverlay', doc="""
+        The value string for the output (an RGB element).""")
+
+    cmap = param.String(default='jet', doc="""
+        The name of matplotlib color map to apply.""")
+
+    def _process(self, overlay, key=None):
+        R,G,B,_ = split_raster(colormap(overlay[0], cmap=self.p.cmap))
+        return RGB(toRGB(R*G*B*overlay[1]).data,
+                   bounds=self.get_overlay_extents(overlay),
+                   label=self.get_overlay_label(overlay),
+                   value=self.p.value)
+
+
 
 
 class colorize(ElementOperation):
