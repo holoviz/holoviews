@@ -133,13 +133,11 @@ def display_widgets(view,  widget_format, widget_mode):
         return IPySelectionWidget(view, cached=False)()
 
 
-def display_figure(fig, size=None, message=None, max_width='100%'):
+def display_figure(fig, message=None, max_width='100%'):
     "Display widgets applicable to the specified view"
     figure_format = ViewMagic.options['fig']
     backend = ViewMagic.options['backend']
-    if size is not None:
-        inches = size / float(fig.dpi)
-        fig.set_size_inches(inches, inches)
+
     if backend == 'd3' and mpld3:
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
@@ -152,11 +150,7 @@ def display_figure(fig, size=None, message=None, max_width='100%'):
             mime_type = 'png'
         prefix = 'data:image/%s;base64,' % mime_type
         b64 = prefix + base64.b64encode(figdata).decode("utf-8")
-        if size is not None:
-            html = "<center><img height='%d' width='%d' style='max-width:%s' " \
-                   "src='%s'/><center/>" % (size, size, b64, max_width)
-        else:
-            html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
+        html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
@@ -192,7 +186,7 @@ def animation_display(anim, map_format, **kwargs):
 
 
 @display_hook
-def view_display(view, size=256, **kwargs):
+def view_display(view, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
@@ -202,7 +196,7 @@ def view_display(view, size=256, **kwargs):
 
 
 @display_hook
-def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
+def map_display(vmap, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
@@ -223,7 +217,7 @@ def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
 
 
 @display_hook
-def layout_display(layout, map_format, max_frames, max_branches, widget_mode, size=256, **kwargs):
+def layout_display(layout, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     shape = layout.shape
@@ -253,7 +247,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
 
 
 @display_hook
-def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=256, **kwargs):
+def grid_display(grid, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, AxisLayout): return None
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
