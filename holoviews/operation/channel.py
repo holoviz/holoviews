@@ -6,8 +6,8 @@ import param
 
 from ..core.operation import ElementOperation
 from ..core.options import Options, Cycle
-from ..element import Matrix
-from ..plotting import Plot, GrayNearest
+from ..element import Matrix, RGBA
+from .normalization import raster_normalization
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
@@ -16,33 +16,51 @@ hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 class toRGBA(ElementOperation):
     """
     Accepts an overlay containing either 3 or 4 layers. The first
-    three layers are the R,G, B channels and the last layer (if given)
-    is the alpha channel.
+    three layers are the R,G, B channels and the last layer (if
+    supplied) is the alpha channel.
+
+    Note that the values in the input Matrix elements are expected to
+    be bounded between 0.0-1.0. If this isn't the case, the values of
+    these channels will be clipped into this range.
     """
 
-    label = param.String(default='RGBA', doc="""
-        The label to use for the resulting RGBA Matrix.""")
+    output_type = RGBA
+
+    value = param.String(default='RGBA', doc="""
+        The value string for the output RGBA element.""")
+
 
     def _process(self, overlay, key=None):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
         if not all(isinstance(el, Matrix) for el in overlay):
-            raise Exception("All layers must be Matrix to convert"
-                            " to RGB(A) format")
+            raise Exception("All layers must be of type Matrix to convert to RGBA")
         if not all(el.depth == 1 for el in overlay):
-            raise Exception("All Matrix elements must have a depth of one for"
-                            " conversion to RGB(A) format")
+            raise Exception("All Matrix elements must have single value"
+                            " dimension for conversion to RGBA")
+        if not all(el.bounds == overlay[0].bounds for el in overlay):
+            raise Exception("All input Matrix elements must have the same bounds.")
+        if not all(el.data.shape == overlay[0].data.shape for el in overlay):
+            raise Exception("All input Matrix must have data with matching shape.")
+
+        if self.p.input_ranges:
+            normfn = raster_normalization.instance()
+            overlay = normfn.process_element(overlay, key, *self.p.input_ranges)
 
         arrays = []
         for el in overlay:
             if el.data.max() > 1.0 or el.data.min() < 0:
                 self.warning("Clipping data into the interval [0, 1]")
-                el.data.clip(0,1.0)
-            arrays.append(el.data)
+                data = el.data.clip(0,1.0)
+                arrays.append(data)
+            else:
+                arrays.append(el.data.copy())
 
+        return RGBA(np.dstack(arrays),
+                    bounds=overlay[0].bounds,
+                    label=self.get_overlay_label(overlay),
+                    value=self.p.value)
 
-        return [Matrix(np.dstack(arrays), overlay[0].bounds, label=overlay[0].label,
-                       roi_bounds=overlay[0].roi_bounds, value=self.p.label)]
 
 
 class alpha_overlay(ElementOperation):
