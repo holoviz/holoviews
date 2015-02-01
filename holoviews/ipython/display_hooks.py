@@ -37,6 +37,10 @@ ENABLE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
+def opts(el, size):
+    "Returns the plot options with supplied size (if not overridden)"
+    return dict(size=size, **Plot.lookup_options(el, 'plot').options)
+
 
 def get_plot_size(size):
     factor = size / 100.0
@@ -191,8 +195,8 @@ def view_display(view, size, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
-    opts = dict(size=get_plot_size(size), **Plot.lookup_options(view, 'plot').options)
-    fig = Plot.defaults[view.__class__](view, **opts)()
+    fig = Plot.defaults[view.__class__](view,
+                                        **opts(view, get_plot_size(size)))()
     return display_figure(fig)
 
 
@@ -201,8 +205,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(Plot.lookup_options(vmap.last, 'plot').options, size=get_plot_size(size))
-    mapplot = Plot.defaults[vmap.type](vmap, **opts)
+    mapplot = Plot.defaults[vmap.type](vmap,
+                                       **opts(vmap.last, get_plot_size(size)))
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
     elif len(mapplot) > max_frames:
@@ -227,8 +231,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     grid_size = (shape[1]*get_plot_size(size)[1],
                  shape[0]*get_plot_size(size)[0])
 
-    opts = dict(Plot.lookup_options(layout, 'plot').options, size=grid_size)
-    layoutplot = LayoutPlot(layout, **opts)
+    layoutplot = LayoutPlot(layout, **opts(layout, grid_size))
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in layout.data.keys()]))
@@ -266,8 +269,7 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot
-    opts = Plot.lookup_options(grid, 'plot').options
-    gridplot = plot_type(grid, **dict({'size': grid_size}, **opts))
+    gridplot = plot_type(grid, **opts(grid, grid_size))
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
         return sanitized_repr(grid)
