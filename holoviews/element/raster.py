@@ -387,34 +387,43 @@ class Matrix(SheetCoordinateSystem, Raster):
         return Matrix(data, bounds, style=self.style, value=self.value)
 
 
+
 class RGBA(Matrix):
     """
     An RGBA element is a Matrix containing channel data for the the
-    red, green, blue and alpha channels. The values of each channel
-    must be in the range 0.0 to 1.0.
+    red, green, blue and (optionally) the alpha channels. The values
+    of each channel must be in the range 0.0 to 1.0.
 
     In input array may have a shape of NxMx4 or NxMx3. In the latter
-    case, a default alpha channel is added where alpha=1. Each depth
-    layer of the array is interpreted as a channel of the 2D
-    representation, in the order declared in the value_dimensions.
+    case, the defined alpha dimension parameter is appended to the
+    list of value dimensions.
     """
+
+    alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
+                                          class_=Dimension, doc="""
+        The alpha dimension definition to add the value_dimensions if
+        an alpha channel is supplied.""")
 
     value_dimensions = param.List(
         default=[Dimension('R', range=(0,1)), Dimension('G',range=(0,1)),
-                 Dimension('B', range=(0,1)), Dimension('A',range=(0,1))],
-                                                 bounds=(4, 4), doc="""
-        The dimension description of the data held in the matrix.""")
+                 Dimension('B', range=(0,1))], bounds=(3, 4), doc="""
+        The dimension description of the data held in the matrix.
+
+        If an alpha channel is supplied, the defined alpha_dimension
+        is automatically appended to this list.""")
 
     def __init__(self, data, **params):
-
+        sliced = None
         if len(data.shape) != 3:
             raise ValueError("Three dimensional matrices or arrays required")
-        if data.shape[2] == 3:
-            data = np.dstack([data, np.ones(data.shape[:-1])])
-        elif data.shape[2] != 4:
-            raise Exception("RGBA element requires array with either 3 or 4 channels.")
+        elif data.shape[2] == 4:
+            sliced = data[:,:,:-1]
+            alpha = data[:,:,-1]
 
-        super(RGBA, self).__init__(data, **params)
+        super(RGBA, self).__init__(data if sliced is None else sliced, **params)
+        if sliced is not None:
+            self.value_dimensions.append(self.alpha_dimension)
+            self.data = np.dstack([self.data, alpha])
 
 
     def __getitem__(self, coords):
