@@ -48,7 +48,6 @@ class operator(ElementOperation):
 
     output_type = Matrix
 
-
     operator = param.Callable(np.add, doc="""
         The commutative operator to apply between the data attributes
         of the supplied Views used to collapse the data.
@@ -79,27 +78,28 @@ class operator(ElementOperation):
 class convolve(ElementOperation):
     """
     Apply a convolution to an overlay using the top layer as the
-    kernel used to convolve the bottom layer. Both input Matrix
-    elements in the overlay should be single-channel.
+    kernel for convolving the bottom layer. Both Matrix elements in
+    the input overlay should have a single value dimension.
     """
 
-    label = param.String(default='Convolution', doc="""
-        The label to identify the output of the Convolution.""")
+    output_type = Matrix
+
+    value = param.String(default='Convolution', doc="""
+        The value assigned to the convolved output.""")
 
     kernel_roi = param.NumericTuple(default=(0,0,0,0), length=4, doc="""
         A 2-dimensional slice of the kernel layer to use in the
         convolution in lbrt (left, bottom, right, top) format. By
         default, no slicing is applied.""")
 
-    def _process(self, view, key=None):
+    def _process(self, overlay, key=None):
+        if len(overlay) != 2:
+            raise Exception("Overlay must contain at least to items.")
 
-        if len(view) != 2:
-            raise Exception("CompositeOverlay must contain at least to items.")
+        [target, kernel] = overlay[0], overlay[1]
 
-        [target, kernel] = view[0], view[1]
-
-        if len(target.data.shape) != 2:
-            raise Exception("Convolve requires monochrome inputs.")
+        if len(target.value_dimensions) != 1:
+            raise Exception("Convolution requires inputs with single value dimensions.")
 
         xslice = slice(self.p.kernel_roi[0], self.p.kernel_roi[2])
         yslice = slice(self.p.kernel_roi[1], self.p.kernel_roi[3])
@@ -114,7 +114,7 @@ class convolve(ElementOperation):
         rolled = np.roll(np.roll(convolved_raw, -(k_cols//2), axis=-1), -(k_rows//2), axis=-2)
         convolved = rolled / float(k.sum())
 
-        return [Matrix(convolved, bounds=target.bounds)]
+        return Matrix(convolved, bounds=target.bounds, value=self.p.value)
 
 
 class contours(ElementOperation):
