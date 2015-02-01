@@ -412,8 +412,9 @@ class Dimensioned(LabelledData):
         """
         valid_kwargs = {k: v for k, v in kwargs.items()
                         if k in self.dimensions(label=True)}
-        if not len(valid_kwargs) and not ignore_invalid:
+        if not len(valid_kwargs) == len(kwargs) and not ignore_invalid:
             raise KeyError("Invalid Dimension supplied.")
+        kwargs = {k: kwargs[k] for k in valid_kwargs.keys()}
         deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
                            and (kw not in self._cached_index_names)])
         selection_depth = len(self.dimensions('key')) if deep_select else self.ndims
