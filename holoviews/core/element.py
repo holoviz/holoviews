@@ -297,7 +297,7 @@ class HoloMap(UniformNdMapping):
             return new_map
 
 
-    def grid(self, dimensions, layout=False):
+    def _tocomposite(self, dimensions, container_type=NdLayout):
         """
         AxisLayout takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a AxisLayout.
@@ -306,18 +306,32 @@ class HoloMap(UniformNdMapping):
             raise ValueError('At most two dimensions can be laid out in a grid.')
 
         if len(dimensions) == self.ndims:
-            split_map = self
+            split_map = composite(self)
         elif all(d in self._cached_index_names for d in dimensions):
             split_dims = [d for d in self._cached_index_names if d not in dimensions]
-            split_map = self.groupby(split_dims)
+            split_map = self.groupby(split_dims, container_type=composite)
             split_map = split_map.reindex(dimensions)
         else:
             raise ValueError('HoloMap does not have supplied dimensions.')
+        return split_map
 
-        if layout:
-            return NdLayout(split_map)
-        else:
-            return AxisLayout(split_map, key_dimensions=split_map.key_dimensions)
+
+    def grid(self, dimensions):
+        """
+        AxisLayout takes a list of one or two dimensions, and lays out the containing
+        Views along these axes in a AxisLayout.
+        """
+        if len(dimensions) > 2:
+            raise ValueError('At most two dimensions can be laid out in a grid.')
+        return self._tocomposite(dimensions, AxisLayout)
+
+
+    def layout(self, dimensions):
+        """
+        AxisLayout takes a list of one or two dimensions, and lays out the containing
+        Views along these axes in a AxisLayout.
+        """
+        return self._tocomposite(dimensions)
 
 
     def split_overlays(self):
