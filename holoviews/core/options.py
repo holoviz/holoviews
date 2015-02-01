@@ -387,7 +387,7 @@ class Channel(param.Parameterized):
 
 
     @classmethod
-    def _collapse(cls, overlay, key, ranges, holomap_id):
+    def _collapse(cls, overlay, key, ranges):
         """
         Finds any applicable channel operation and applies it.
         """
@@ -396,7 +396,7 @@ class Channel(param.Parameterized):
 
         output = applicable_op.apply(overlay, ranges)
         output = output.relabel(value=applicable_op.value)
-        output.id = holomap_id #  USE OVERLAY ID!!
+        output.id = overlay.id
         return Overlay.from_view(output)
 
 
@@ -415,7 +415,7 @@ class Channel(param.Parameterized):
         # Collapse channel operations
         clone = holomap.clone()
         for key, overlay in holomap.items():
-            clone[key] = cls._collapse(overlay, key, ranges, holomap.id)
+            clone[key] = cls._collapse(overlay, key, ranges)
         return clone
 
 
