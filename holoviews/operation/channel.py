@@ -175,45 +175,39 @@ class alpha_overlay(ElementOperation):
                    value=self.p.value)
 
 
-
-
-class colorize(ElementOperation):
+class colorizeHSV(ElementOperation):
     """
-    Given a CompositeOverlay object consisting of a grayscale colormap and a
-    second Sheetview with some specified colour map, use the second
-    layer to colorize the data of the first layer.
-
-    Currently, colorize only support the 'hsv' color map and is just a
-    shortcut to the HCS operation using a constant confidence
-    value. Arbitrary colorization will be supported in future.
+    Given an Overlay consisting of two Matrix elements, colorize the
+    data in the bottom Matrix with the data in the top Matrix using
+    the HSV color space.
     """
 
-    label = param.String(default='Colorized', doc="""
-        The label suffix to use for the resulting colorized plot where
-        the suffix is added to the label of the first layer.""")
+    value = param.String(default='ColorizedHSV', doc="""
+        The value string for the colorized output (an RGB element)""")
 
     def _process(self, overlay, key=None):
-
-         if len(overlay) != 2 and overlay[0].mode != 'cmap':
-             raise Exception("Can only colorize grayscale overlayed with colour map.")
-         if [overlay[0].depth, overlay[1].depth ] != [1,1]:
-             raise Exception("Depth one layers required.")
-         if overlay[0].shape != overlay[1].shape:
-             raise Exception("Shapes don't match.")
-
-         # Needs a general approach which works with any color map
-         C = Matrix(np.ones(overlay[0].data.shape),
-                       bounds=overlay[0].bounds)
-         hcs = toHCS(overlay[1] * C * overlay[0].N)
-
-         return [Matrix(hcs.data, hcs.bounds, roi_bounds=hcs.roi_bounds,
-                        label=hcs.label, value=self.p.label)]
+        if len(overlay) != 2:
+            raise Exception("colorizeHSV required an overlay of two Matrix elements as input.")
+        if (len(overlay[0].value_dimensions), len(overlay[1].value_dimensions)) != (1,1):
+            raise Exception("Each Matrix element must have single value dimension.")
+        if overlay[0].shape != overlay[1].shape:
+            raise Exception("Mismatch in the shapes of the data in the Matrix elements.")
 
 
+        hue = overlay[1]
+        Hdim = hue.value_dimensions[0]
+        H = hue.clone(hue.data.copy(),
+                      value_dimensions=[Hdim(cyclic=True, range=hue.range(Hdim.name))])
 
+        if self.p.input_ranges:
+            normfn = raster_normalization.instance()
+            S = normfn.process_element(overlay[0], key, *self.p.input_ranges)
+        else:
+            S = overlay[0]
 
-
-
+        C = Matrix(np.ones(hue.data.shape),
+                   bounds=self.get_overlay_extents(overlay), value='F', label='G')
+        return toHCS(H * C * S).clone(shared_data=True, value=self.p.value)
 
 
 Plot.options.RGBA.Red_Channel = GrayNearest
