@@ -47,7 +47,7 @@ def update_matplotlib_rc():
 
 
 # Populating the namespace for keyword evaluation
-from holoviews.element import RGBA       # pyflakes:ignore (namespace import)
+from ..core.options import Cycle         # pyflakes:ignore (namespace import)
 import numpy as np                       # pyflakes:ignore (namespace import)
 
 Parser.namespace = {'np':np, 'Cycle':Cycle}
