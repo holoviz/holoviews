@@ -52,6 +52,19 @@ class Operation(param.ParameterizedFunction):
             return default_label
 
 
+    @classmethod
+    def get_overlay_extents(cls, overlay):
+        """
+        Returns the extents if all the elements of an overlay agree on
+        a consistent extents, otherwise raises an exception.
+        """
+        if all(el.extents==overlay[0].extents for el in overlay):
+            return overlay[0].extents
+        else:
+            raise ValueError("Extents across the overlay are inconsistent")
+
+
+
 class ElementOperation(Operation):
     """
     An ElementOperation process an Element or HoloMap at the level of

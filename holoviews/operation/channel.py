@@ -57,9 +57,9 @@ class toRGBA(ElementOperation):
                 arrays.append(el.data.copy())
 
         return RGBA(np.dstack(arrays),
-                    bounds=overlay[0].bounds,
-                    label=self.get_overlay_label(overlay),
-                    value=self.p.value)
+                    bounds = self.get_overlay_extents(overlay),
+                    label  = self.get_overlay_label(overlay),
+                    value  = self.p.value)
 
 
 
