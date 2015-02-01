@@ -10,12 +10,11 @@ from param import ipython as param_ext
 try:    from matplotlib import animation
 except: animation = None
 
-
-
-all_line_magics = sorted(['%params', '%opts', '%view'])
+all_line_magics = sorted(['%params', '%opts', '%view', '%channels'])
 all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
 message = """Welcome to the holoviews IPython extension! (http://ioam.github.io/holoviews/)"""
-message += '\nAvailable magics: %s' % ', '.join(all_line_magics + all_cell_magics)
+message += '\nAvailable magics: %s' % ', '.join(sorted(all_line_magics)
+                                                + sorted(all_cell_magics))
 
 
 def supported_formats(optional_formats):
