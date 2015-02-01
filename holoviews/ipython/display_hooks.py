@@ -110,9 +110,9 @@ def render(plot):
         return str(e)+'<br/>'+figure_display(plot())
 
 
-def widget_display(view,  widget_format, widget_mode):
+def display_widgets(view,  widget_format, widget_mode):
     "Display widgets applicable to the specified view"
-    assert widget_mode is not None, "Mistaken call to widget_display method"
+    assert widget_mode is not None, "Mistaken call to display_widgets method"
 
     isuniform = uniform(view)
     if not isuniform and widget_format == 'widgets':
@@ -134,7 +134,7 @@ def widget_display(view,  widget_format, widget_mode):
         return IPySelectionWidget(view, cached=False)()
 
 
-def figure_display(fig, size=None, message=None, max_width='100%'):
+def display_figure(fig, size=None, message=None, max_width='100%'):
     "Display widgets applicable to the specified view"
     figure_format = ViewMagic.options['fig']
     backend = ViewMagic.options['backend']
@@ -199,7 +199,7 @@ def view_display(view, size=256, **kwargs):
     if magic_info: return magic_info
     opts = dict(size=get_plot_size(), **Plot.lookup_options(view, 'plot').options)
     fig = Plot.defaults[view.__class__](view, **opts)()
-    return figure_display(fig)
+    return display_figure(fig)
 
 
 @display_hook
@@ -216,9 +216,9 @@ def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
         return sanitized_repr(vmap)
     elif len(mapplot) == 1:
         fig = mapplot()
-        return figure_display(fig)
+        return display_figure(fig)
     elif widget_mode is not None:
-        return widget_display(vmap, map_format, widget_mode)
+        return display_widgets(vmap, map_format, widget_mode)
 
     return render(mapplot)
 
@@ -246,9 +246,9 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, si
 
     if len(layoutplot) == 1:
         fig = layoutplot()
-        return figure_display(fig)
+        return display_figure(fig)
     elif widget_mode is not None:
-        return widget_display(layout, map_format, widget_mode)
+        return display_widgets(layout, map_format, widget_mode)
 
     return render(layoutplot)
 
@@ -279,9 +279,9 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
         return sanitized_repr(grid)
     if len(gridplot) == 1:
         fig = gridplot()
-        return figure_display(fig)
+        return display_figure(fig)
     elif widget_mode is not None:
-        return widget_display(grid, map_format, widget_mode)
+        return display_widgets(grid, map_format, widget_mode)
 
     return render(gridplot)
 
