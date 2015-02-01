@@ -206,6 +206,9 @@ class ElementPlot(Plot):
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
 
+        if not self.subplot:
+            plt.tight_layout()
+
         for hook in self.finalize_hooks:
             hook(self, view)
 

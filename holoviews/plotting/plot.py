@@ -270,7 +270,6 @@ class Plot(param.Parameterized):
         if self.subplot:
             return self.handles['axis']
         else:
-            plt.tight_layout()
             plt.draw()
             fig = self.handles['fig']
             plt.close(fig)
