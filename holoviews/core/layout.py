@@ -83,10 +83,6 @@ class AdjointLayout(Dimensioned):
         super(AdjointLayout, self).__init__(data, **params)
 
 
-    def __len__(self):
-        return len(self.data)
-
-
     def get(self, key, default=None):
         return self.data[key] if key in self.data else default
 
@@ -122,15 +118,15 @@ class AdjointLayout(Dimensioned):
         else:
             raise Exception('Position %s not valid in AdjointLayout.' % key)
 
-    @property
-    def deep_dimensions(self):
-        return self.main.dimensions()
-
 
     def __lshift__(self, other):
         views = [self.data.get(k, None) for k in self.layout_order]
         return AdjointLayout([v for v in views if v is not None] + [other])
 
+
+    @property
+    def deep_dimensions(self):
+        return self.main.dimensions()
 
     @property
     def main(self):
@@ -160,6 +156,10 @@ class AdjointLayout(Dimensioned):
 
     def __add__(self, obj):
         return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+
+
+    def __len__(self):
+        return len(self.data)
 
 
 
@@ -239,11 +239,11 @@ class NdLayout(UniformNdMapping):
 
 class LayoutTree(AttrTree, Dimensioned):
     """
-    A LayoutTree is an AttrTree with ViewableElement objects as leaf values. Unlike
-    AttrTree, a LayoutTree supports a rich display, displaying leaf
-    items in a grid style layout. In addition to the usual AttrTree
-    indexing, LayoutTree supports indexing of items by their row and
-    column index in the layout.
+    A LayoutTree is an AttrTree with ViewableElement objects as leaf
+    values. Unlike AttrTree, a LayoutTree supports a rich display,
+    displaying leaf items in a grid style layout. In addition to the
+    usual AttrTree indexing, LayoutTree supports indexing of items by
+    their row and column index in the layout.
 
     The maximum number of columns in such a layout may be controlled
     with the cols method and the display policy is set with the
@@ -282,9 +282,10 @@ class LayoutTree(AttrTree, Dimensioned):
         self._max_cols = ncols
         return self
 
+
     @property
     def uniform(self):
-        pass
+        return uniform(self)
 
 
     def select(self, **selections):
@@ -324,6 +325,7 @@ class LayoutTree(AttrTree, Dimensioned):
         nrows = num // self._max_cols
         last_row_cols = num % self._max_cols
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
+
 
     @staticmethod
     def relabel_items(items):
