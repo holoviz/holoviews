@@ -38,8 +38,8 @@ ENABLE_TRACEBACKS=True
 #==================#
 
 
-def get_plot_size():
-    factor = ViewMagic.options['size'] / 100.0
+def get_plot_size(size):
+    factor = size / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
 
@@ -169,6 +169,7 @@ def display_hook(fn):
             # If widget_mode is None, widgets are not being used
             widget_mode = (widget_mode if map_format in ViewMagic.inbuilt_formats else None)
             return fn(view,
+                      size=ViewMagic.options['size'],
                       max_frames=ViewMagic.options['max_frames'],
                       max_branches = ViewMagic.options['max_branches'],
                       map_format = map_format,
@@ -186,21 +187,21 @@ def animation_display(anim, map_format, **kwargs):
 
 
 @display_hook
-def view_display(view, **kwargs):
+def view_display(view, size, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
-    opts = dict(size=get_plot_size(), **Plot.lookup_options(view, 'plot').options)
+    opts = dict(size=get_plot_size(size), **Plot.lookup_options(view, 'plot').options)
     fig = Plot.defaults[view.__class__](view, **opts)()
     return display_figure(fig)
 
 
 @display_hook
-def map_display(vmap, map_format, max_frames, widget_mode, **kwargs):
+def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
-    opts = dict(Plot.lookup_options(vmap.last, 'plot').options, size=get_plot_size())
+    opts = dict(Plot.lookup_options(vmap.last, 'plot').options, size=get_plot_size(size))
     mapplot = Plot.defaults[vmap.type](vmap, **opts)
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
@@ -217,14 +218,14 @@ def map_display(vmap, map_format, max_frames, widget_mode, **kwargs):
 
 
 @display_hook
-def layout_display(layout, map_format, max_frames, max_branches, widget_mode, **kwargs):
+def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     shape = layout.shape
     magic_info = process_cell_magics(layout)
     if magic_info: return magic_info
-    grid_size = (shape[1]*get_plot_size()[1],
-                 shape[0]*get_plot_size()[0])
+    grid_size = (shape[1]*get_plot_size(size)[1],
+                 shape[0]*get_plot_size(size)[0])
 
     opts = dict(Plot.lookup_options(layout, 'plot').options, size=grid_size)
     layoutplot = LayoutPlot(layout, **opts)
@@ -247,7 +248,7 @@ def layout_display(layout, map_format, max_frames, max_branches, widget_mode, **
 
 
 @display_hook
-def grid_display(grid, map_format, max_frames, max_branches, widget_mode, **kwargs):
+def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, AxisLayout): return None
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
@@ -255,8 +256,8 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, **kwar
     # Expand small grids to a sensible viewing size
     expand_factor = 1 + (max_dim - 1) * 0.1
     scale_factor = expand_factor * shape_factor
-    grid_size = (scale_factor * grid.shape[0] * get_plot_size()[0],
-                 scale_factor * grid.shape[1] * get_plot_size()[1])
+    grid_size = (scale_factor * grid.shape[0] * get_plot_size(size)[0],
+                 scale_factor * grid.shape[1] * get_plot_size(size)[1])
 
     magic_info = process_cell_magics(grid)
     if magic_info: return magic_info
