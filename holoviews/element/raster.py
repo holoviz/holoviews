@@ -13,7 +13,7 @@ from .tabular import Table
 
 class Raster(Element2D):
     """
-    Raster is a basic 2D atomic ViewableElement type.
+    Raster is a basic 2D atomic Element type.
 
     Arrays with a shape of (N,M) are valid inputs for Raster wheras
     subclasses of Raster (e.g. RGBA) may also accept 3D arrays
@@ -115,7 +115,7 @@ class Raster(Element2D):
         Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
-        the result ViewableElement label.
+        the result Element label.
         """
         label = ' '.join([label_prefix, self.label]) if label_prefix else self.label
         if len(dimreduce_map) == self.ndims:
@@ -131,7 +131,7 @@ class Raster(Element2D):
             x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
             return Curve(data, key_dimensions=other_dimension, label=label,
-                         title=self.title, value=self.value)
+                         value=self.value)
 
     @property
     def depth(self):
@@ -182,7 +182,7 @@ class Raster(Element2D):
 
 class HeatMap(Raster):
     """
-    HeatMap is an atomic ViewableElement element used to visualize two dimensional
+    HeatMap is an atomic Element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
     upsampling them to a dense representation, which can be visualized.
 

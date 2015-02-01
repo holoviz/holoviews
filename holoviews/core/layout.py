@@ -21,8 +21,8 @@ from .traversal import uniform
 
 class Composable(object):
     """
-    Pane extends the ViewableElement type with the add and left shift operators
-    which allow the Pane to be embedded within Layouts and GridLayouts.
+    Composable is a mix-in class to allow Dimensioned object to be
+    embedded within Layouts and AxisLayouts.
     """
 
     def __add__(self, obj):

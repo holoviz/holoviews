@@ -144,7 +144,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
     a LayoutTree and in fact extend the LayoutTree structure. Overlays are
     constructed using the * operator (building an identical structure
     to the + operator) and are the only objects that inherit both from
-    LayoutTree and ViewableElement.
+    LayoutTree and CompositeOverlay.
     """
 
     value = param.String(default='Overlay', constant=True)

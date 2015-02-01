@@ -424,9 +424,9 @@ class HoloMap(UniformNdMapping):
 
     def dframe(self):
         """
-        Gets a dframe for each ViewableElement in the
-        UniformNdMapping, appends the dimensions of the
-        UniformNdMapping as series and concatenates the dframes.
+        Gets a dframe for each Element in the HoloMap, appends the
+        dimensions of the HoloMap as series and concatenates the
+        dframes.
         """
         import pandas
         dframes = []
@@ -502,9 +502,9 @@ class HoloMap(UniformNdMapping):
 
     def reduce(self, label_prefix='', **reduce_map):
         """
-        Reduce each Matrix in the UniformNdMapping using a function supplied
+        Reduce each Element in the HoloMap using a function supplied
         via the kwargs, where the keyword has to match a particular
-        dimension in the ViewableElement.
+        dimension in the Elements.
         """
         reduced_items = [(k, v.reduce(label_prefix=label_prefix, **reduce_map))
                          for k, v in self.items()]

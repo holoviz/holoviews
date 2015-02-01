@@ -134,7 +134,7 @@ class Chart(Element2D):
 
 class Scatter(Chart):
     """
-    Scatter is a simple 1D ViewableElement2D, which gets displayed as a number of
+    Scatter is a Element2D type which gets displayed as a number of
     disconnected points.
     """
 
@@ -144,8 +144,8 @@ class Scatter(Chart):
 
 class Curve(Chart):
     """
-    Curve is a simple 1D ViewableElement2D of points and therefore assumes the data is
-    ordered.
+    Curve is a simple Chart Element providing 1D indexing along
+    the x-axis.
     """
 
     value = param.String(default='Curve')
@@ -168,7 +168,7 @@ class Curve(Chart):
 
 class Bars(Chart):
     """
-    A bar is a simple 1D ViewableElement2D of bars, which assumes that the data is
+    A bar is a simple Chart element, which assumes that the data is
     sorted by x-value and there are no gaps in the bars.
     """
 

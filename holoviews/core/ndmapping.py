@@ -586,17 +586,15 @@ class NdMapping(MultiDimensionalMapping):
 
 class UniformNdMapping(NdMapping):
     """
-    A UniformNdMapping is a map of Views over a number of specified dimensions. The
-    dimension may be a spatial dimension (i.e., a ZStack), time
-    (specifying a frame sequence) or any other combination of
-    Dimensions.  UniformNdMapping also adds handling of styles, appending the
-    Dimension keys and values to titles and a number of methods to
-    manipulate the Dimensions.
+    A UniformNdMapping is a map of Dimensioned objects and is itself
+    indexed over a number of specified dimensions. The dimension may
+    be a spatial dimension (i.e., a ZStack), time (specifying a frame
+    sequence) or any other combination of Dimensions.
 
-    UniformNdMapping objects can be sliced, sampled, reduced, overlaid and split
-    along its and its containing Views dimensions. Subclasses should
-    implement the appropriate slicing, sampling and reduction methods
-    for their ViewableElement type.
+    UniformNdMapping objects can be sliced, sampled, reduced, overlaid
+    and split along its and its containing Views
+    dimensions. Subclasses should implement the appropriate slicing,
+    sampling and reduction methods for their Dimensioned type.
     """
 
     value = param.String(default='UniformNdMapping')
