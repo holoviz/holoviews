@@ -298,18 +298,11 @@ class HoloMap(UniformNdMapping):
 
 
     def _tocomposite(self, dimensions, container_type=NdLayout):
-        """
-        AxisLayout takes a list of one or two dimensions, and lays out the containing
-        Views along these axes in a AxisLayout.
-        """
-        if len(dimensions) > 2:
-            raise ValueError('At most two dimensions can be laid out in a grid.')
-
         if len(dimensions) == self.ndims:
-            split_map = composite(self)
+            split_map = container_type(self)
         elif all(d in self._cached_index_names for d in dimensions):
             split_dims = [d for d in self._cached_index_names if d not in dimensions]
-            split_map = self.groupby(split_dims, container_type=composite)
+            split_map = self.groupby(split_dims, container_type=container_type)
             split_map = split_map.reindex(dimensions)
         else:
             raise ValueError('HoloMap does not have supplied dimensions.')
@@ -323,7 +316,8 @@ class HoloMap(UniformNdMapping):
         """
         if len(dimensions) > 2:
             raise ValueError('At most two dimensions can be laid out in a grid.')
-        return self._tocomposite(dimensions, AxisLayout)
+        composite = self._tocomposite(dimensions, UniformNdMapping)
+        return AxisLayout(composite, key_dimensions=composite.key_dimensions)
 
 
     def layout(self, dimensions):
@@ -542,7 +536,7 @@ class HoloMap(UniformNdMapping):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = HoloMap(key_dimensions=self.key_dimensions, title_suffix=self.title_suffix)
+        histmap = HoloMap(key_dimensions=self.key_dimensions)
 
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
@@ -590,9 +584,6 @@ class AxisLayout(UniformNdMapping):
     label = param.String(constant=True, doc="""
       A short label used to indicate what kind of data is contained
       within the AxisLayout.""")
-
-    title = param.String(default="{label} {value}", doc="""
-      The title formatting string for the AxisLayout object""")
 
     value = param.String(default='AxisLayout')
 
