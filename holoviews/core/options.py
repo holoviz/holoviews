@@ -397,6 +397,40 @@ class Channel(param.Parameterized):
                                       operation=operation,
                                       kwargs=kwargs)
 
+    def match_level(self, overlay):
+        """
+        Given an overlay, return an integer if there is a match or
+        None if there is no match.
+
+        The returned integer is the number of matching
+        components. Higher values indicate a stronger match.
+        """
+        level = 0
+        if len(self._pattern_spec) != len(overlay):
+            return None
+
+        for spec, el in zip(self._pattern_spec, overlay):
+            if spec[0] != type(el).__name__:
+                return None
+            level += 1      # Types match
+            if len(spec) > 2 and (spec[1] == el.value):
+                level += 1  # Values match
+            elif spec[1] != el.value:
+                return None
+            if len(spec) == 3 and (spec[2] == el.label):
+                level += 1  # Labels match
+            elif len(spec) == 3:
+                return None
+        return level
+
+
+    def apply(self, value, input_ranges):
+        """
+        Apply the channel operation on the input value using the given
+        input ranges.
+        """
+        return self.operation(value, input_ranges=input_ranges, **self.kwargs)
+
 
     @classmethod
     def _collapse(cls, overlay, pattern, fn, style_key):
