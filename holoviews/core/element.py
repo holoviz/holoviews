@@ -735,7 +735,7 @@ class AxisLayout(UniformNdMapping):
     def shape(self):
         keys = self.keys()
         if self.ndims == 1:
-            return (1, len(keys))
+            return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
 
 
