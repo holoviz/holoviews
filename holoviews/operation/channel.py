@@ -142,6 +142,33 @@ class toHCS(ElementOperation):
                     value =  self.p.value)
 
 
+
+class colormap(ElementOperation):
+    """
+    Applies a colormap on a Matrix input, returning the result as an
+    RGBA element.
+    """
+
+    output_type = RGBA
+
+    cmap = param.String(default='jet', doc="""
+        The name of matplotlib color map to apply.""")
+
+    value = param.String(default='Colormap', doc="""
+        The value string for the output (an RGBA element).""")
+
+    def _process(self, matrix, key=None):
+        import matplotlib
+
+        if len(matrix.value_dimensions) != 1:
+            raise Exception("Can only apply colour maps to Matrix"
+                            " with single value dimension.")
+
+        return RGBA(matplotlib.cm.get_cmap(self.p.cmap)(matrix.data),
+                    bounds = matrix.bounds,
+                    label = matrix.label,
+                    value=self.p.value)
+
 class colorize(ElementOperation):
     """
     Given a CompositeOverlay object consisting of a grayscale colormap and a
@@ -175,34 +202,6 @@ class colorize(ElementOperation):
                         label=hcs.label, value=self.p.label)]
 
 
-class cmap2rgb(ElementOperation):
-    """
-    Convert Matrix Views using colormaps to RGBA mode. The colormap of
-    the style is used, if available. Otherwise, the colormap may be
-    forced as a parameter.
-    """
-
-    cmap = param.String(default=None, allow_None=True, doc="""
-          Force the use of a specific color map. Otherwise, the cmap
-          property of the applicable style is used.""")
-
-    label = param.String(default='RGB', doc="""
-        The label suffix to use for the resulting RGB Matrix where
-        the suffix is added to the label of the Matrix to be
-        colored.""")
-
-    def _process(self, sheetview, key=None):
-        import matplotlib
-
-        if sheetview.depth != 1:
-            raise Exception("Can only apply colour maps to Matrix with depth of 1.")
-
-        style_cmap = options.style(sheetview)[0].get('cmap', None)
-        if not any([self.p.cmap, style_cmap]):
-            raise Exception("No color map supplied and no cmap in the active style.")
-
-        cmap = matplotlib.cm.get_cmap(style_cmap if self.p.cmap is None else self.p.cmap)
-        return [sheetview.clone(cmap(sheetview.data), value=self.p.label)]
 
 
 class split(ElementOperation):
