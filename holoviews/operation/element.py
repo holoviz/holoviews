@@ -27,7 +27,7 @@ class chain(ElementOperation):
     """
 
     value = param.String(default='Chain', doc="""
-        The label for the result after having applied the chain.""")
+        The value assigned to the result after having applied the chain.""")
 
 
     chain = param.Callable(doc="""A chain of existing ViewOperations.""")
@@ -60,7 +60,7 @@ class operator(ElementOperation):
        unpack collection of arguments or as a list.""")
 
     value = param.String(default='Operation', doc="""
-        The label for the result after having applied the operator.""")
+        The value assigned to the result after having applied the operator.""")
 
     def _process(self, overlay, key=None):
         if not isinstance(overlay, CompositeOverlay):
