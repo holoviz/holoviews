@@ -26,10 +26,14 @@ class chain(ElementOperation):
     and turns it into an RGB Matrix using the 'jet' colormap.
     """
 
+    value = param.String(default='Chain', doc="""
+        The label for the result after having applied the chain.""")
+
+
     chain = param.Callable(doc="""A chain of existing ViewOperations.""")
 
     def _process(self, view, key=None):
-        return self.p.chain(view)
+        return self.p.chain(view).clone(shared_data=True, value=self.p.value)
 
 
 class operator(ElementOperation):
