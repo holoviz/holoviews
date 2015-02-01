@@ -22,8 +22,7 @@ except:
 
 import param
 
-from ..core import ViewableElement, Element, HoloMap, AdjointLayout, NdLayout,\
- AxisLayout, LayoutTree, Overlay
+from ..core import ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree
 from ..core.traversal import uniform
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
@@ -293,10 +292,9 @@ render_anim = HTML_video
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
-    html_formatter.for_type(Element, view_display)
+    html_formatter.for_type(ViewableElement, view_display)
     html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(NdLayout, layout_display)
     html_formatter.for_type(AxisLayout, grid_display)
     html_formatter.for_type(LayoutTree, layout_display)
-    html_formatter.for_type(Overlay, view_display)
