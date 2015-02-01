@@ -205,22 +205,8 @@ class colorize(ElementOperation):
 
 
 
-class split(ElementOperation):
-    """
-    Given Matrix in RGBA mode, return the R,G,B and A channels as
-    a NdLayout.
-    """
 
-    label = param.String(default='Channel', doc="""
-      The label suffix used to label the components of the split
-      following the character selected from output_names.""")
 
-    def _process(self, sheetview, key=None):
-        if sheetview.mode not in ['rgb', 'rgba']:
-            raise Exception("Can only split Matrix with a depth of 3 or 4")
-        return [sheetview.clone(sheetview.data[:, :, i],
-                                value='RGBA'[i] + ' ' + self.p.label)
-                for i in range(sheetview.depth)]
 
 
 Plot.options.RGBA.Red_Channel = GrayNearest

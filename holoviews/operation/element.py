@@ -337,3 +337,23 @@ class roi_table(ElementOperation):
             results = {self.p.heading:results}
 
         return [ItemTable(results, label=mview.label, value=self.p.label + ' ' + mview.value)]
+
+
+class split_raster(ElementOperation):
+    """
+    Given a Raster element, return the individual value dimensions as
+    an overlay of Matrix elements.
+    """
+
+    value = param.String(default='', doc="""
+       Optional suffix appended to the value dimensions in the
+       components of the output overlay. Default keeps the value
+       strings identical to those in the input raster.""")
+
+    def _process(self, raster, key=None):
+        matrices = []
+        for i, dim in enumerate(raster.value_dimensions):
+            matrix = Matrix(raster.data[:, :, i],
+                            value_dimensions = [dim(name=dim.name+self.p.value)])
+            matrices.append(matrix)
+        return np.product(matrices)
