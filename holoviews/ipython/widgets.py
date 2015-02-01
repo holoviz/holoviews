@@ -263,7 +263,7 @@ class NdWidget(param.Parameterized):
         initialize the plots.
         """
         if isinstance(view, (NdLayout, LayoutTree, AdjointLayout)):
-            shape = view.shape if isinstance(view, NdLayout) else (1, 1)
+            shape = view.shape if isinstance(view, (NdLayout, LayoutTree)) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
             plot = LayoutPlot(view, **dict(size=grid_size))
