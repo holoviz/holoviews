@@ -4,6 +4,7 @@ from ..styles import set_style
 from . import magics
 from .magics import ViewMagic, load_magics
 from .display_hooks import animate, set_display_hooks
+from .parser import Parser
 
 from param import ipython as param_ext
 
@@ -44,6 +45,12 @@ def update_matplotlib_rc():
          }
     matplotlib.rcParams.update(rc)
 
+
+# Populating the namespace for keyword evaluation
+from holoviews.element import RGBA       # pyflakes:ignore (namespace import)
+import numpy as np                       # pyflakes:ignore (namespace import)
+
+Parser.namespace = {'np':np, 'Cycle':Cycle}
 
 _loaded = False
 def load_ipython_extension(ip, verbose=True):

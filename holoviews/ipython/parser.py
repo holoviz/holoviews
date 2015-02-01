@@ -10,21 +10,22 @@ holoviews is being used in conjunction with matplotlib.
 """
 
 import string
-# Should pass some explicit namespace to eval...
-from holoviews.core.options import Options, Cycle
+from holoviews.core.options import Options
+
 from itertools import groupby
 import pyparsing as pp
 
 from ..operation import Channel
 from ..plotting import Plot
 
-import numpy as np  # pyflakes:ignore (API import for keyword eval)
 
 class Parser(object):
     """
     Base class for magic line parsers, designed for forgiving parsing
     of keyword lists.
     """
+
+    namespace = {}
 
     @classmethod
     def _strip_commas(cls, kw):
@@ -66,7 +67,7 @@ class Parser(object):
                 grouped[-1] += ''.join(items)
 
         for keyword in grouped:
-            try:     kwargs.update(eval('dict(%s)' % keyword))
+            try:     kwargs.update(eval('dict(%s)' % keyword, cls.namespace))
             except:  raise SyntaxError("Could not evaluate keyword: %r" % keyword)
         return kwargs
 
