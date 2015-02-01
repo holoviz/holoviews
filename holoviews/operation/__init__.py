@@ -1,7 +1,7 @@
 from ..core.operation import ElementOperation, MapOperation
 from ..core.options import Channel
 
-#from .channel import * # pyflakes:ignore (API import)
+from .channel import * # pyflakes:ignore (API import)
 from .element import * # pyflakes:ignore (API import)
 from ..element import Matrix, RGB # pyflakes:ignore (API import)
 from .map import * # pyflakes:ignore (API import)

@@ -208,9 +208,3 @@ class colorizeHSV(ElementOperation):
         C = Matrix(np.ones(hue.data.shape),
                    bounds=self.get_overlay_extents(overlay), value='F', label='G')
         return toHCS(H * C * S).clone(shared_data=True, value=self.p.value)
-
-
-Plot.options.RGBA.Red_Channel = GrayNearest
-Plot.options.RGBA.Green_Channel = GrayNearest
-Plot.options.RGBA.Blue_Channel = GrayNearest
-Plot.options.Contours.Level = Options('style', color=Cycle(['b', 'g', 'r']))
