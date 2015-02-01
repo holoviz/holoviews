@@ -176,12 +176,17 @@ class LabelledData(param.Parameterized):
         super(LabelledData, self).__init__(**params)
 
 
-    def clone(self, data=None, *args, **overrides):
+    def clone(self, data=None, shared_data=False, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
-        containing the specified args and kwargs (empty by default).
+        containing the specified args and kwargs.
+
+        If shared_data is set to True and no data explicitly supplied,
+        the clone will share data with the original.
         """
         settings = dict(self.get_param_values(), **overrides)
+        if data is None and shared_data:
+            data = self.data
         return self.__class__(data, *args, **settings)
 
 
