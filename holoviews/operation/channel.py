@@ -6,38 +6,38 @@ import param
 
 from ..core.operation import ElementOperation
 from ..core.options import Options, Cycle
-from ..element import Matrix, RGBA
+from ..element import Matrix, RGB
 from .normalization import raster_normalization
 
 rgb_to_hsv = np.vectorize(colorsys.rgb_to_hsv)
 hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
 
 
-class toRGBA(ElementOperation):
+class toRGB(ElementOperation):
     """
     Accepts an overlay containing either 3 or 4 layers. The first
     three layers are the R,G, B channels and the last layer (if
-    supplied) is the alpha channel.
+    supplied) is the (optional) alpha channel.
 
     Note that the values in the input Matrix elements are expected to
     be bounded between 0.0-1.0. If this isn't the case, the values of
     these channels will be clipped into this range.
     """
 
-    output_type = RGBA
+    output_type = RGB
 
-    value = param.String(default='RGBA', doc="""
-        The value string for the output RGBA element.""")
+    value = param.String(default='RGB', doc="""
+        The value string for the output RGB element.""")
 
 
     def _process(self, overlay, key=None):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
         if not all(isinstance(el, Matrix) for el in overlay):
-            raise Exception("All layers must be of type Matrix to convert to RGBA")
+            raise Exception("All layers must be of type Matrix to convert to RGB")
         if not all(el.depth == 1 for el in overlay):
             raise Exception("All Matrix elements must have single value"
-                            " dimension for conversion to RGBA")
+                            " dimension for conversion to RGB")
         if not all(el.bounds == overlay[0].bounds for el in overlay):
             raise Exception("All input Matrix elements must have the same bounds.")
         if not all(el.data.shape == overlay[0].data.shape for el in overlay):
@@ -56,10 +56,10 @@ class toRGBA(ElementOperation):
             else:
                 arrays.append(el.data.copy())
 
-        return RGBA(np.dstack(arrays),
-                    bounds = self.get_overlay_extents(overlay),
-                    label  = self.get_overlay_label(overlay),
-                    value  = self.p.value)
+        return RGB(np.dstack(arrays),
+                   bounds = self.get_overlay_extents(overlay),
+                   label  = self.get_overlay_label(overlay),
+                   value  = self.p.value)
 
 
 
@@ -90,7 +90,7 @@ class toHCS(ElementOperation):
     is the strength channel.
     """
 
-    output_type = RGBA
+    output_type = RGB
 
     S_multiplier = param.Number(default=1.0, bounds=(0.0,None), doc="""
         Post-normalization multiplier for the strength value.
@@ -108,7 +108,7 @@ class toHCS(ElementOperation):
         Whether to flip the strength and confidence channels""")
 
     value = param.String(default='HCS', doc="""
-        The value string for the output (an RGBA element).""")
+        The value string for the output (an RGB element).""")
 
     def _process(self, overlay, key=None):
 
@@ -136,26 +136,26 @@ class toHCS(ElementOperation):
         if self.p.flipSC:
             (h,s,v) = (h,v,s.clip(0,1.0))
 
-        return RGBA(np.dstack(hsv_to_rgb(h,s,v)),
-                    bounds = self.get_overlay_extents(overlay),
-                    label =  self.get_overlay_label(overlay),
-                    value =  self.p.value)
+        return RGB(np.dstack(hsv_to_rgb(h,s,v)),
+                   bounds = self.get_overlay_extents(overlay),
+                   label =  self.get_overlay_label(overlay),
+                   value =  self.p.value)
 
 
 
 class colormap(ElementOperation):
     """
     Applies a colormap on a Matrix input, returning the result as an
-    RGBA element.
+    RGB element.
     """
 
-    output_type = RGBA
+    output_type = RGB
 
     cmap = param.String(default='jet', doc="""
         The name of matplotlib color map to apply.""")
 
     value = param.String(default='Colormap', doc="""
-        The value string for the output (an RGBA element).""")
+        The value string for the output (an RGB element).""")
 
     def _process(self, matrix, key=None):
         import matplotlib
@@ -164,10 +164,11 @@ class colormap(ElementOperation):
             raise Exception("Can only apply colour maps to Matrix"
                             " with single value dimension.")
 
-        return RGBA(matplotlib.cm.get_cmap(self.p.cmap)(matrix.data),
-                    bounds = matrix.bounds,
-                    label = matrix.label,
-                    value=self.p.value)
+        return RGB(matplotlib.cm.get_cmap(self.p.cmap)(matrix.data),
+                   bounds = matrix.bounds,
+                   label = matrix.label,
+                   value=self.p.value)
+
 
 class colorize(ElementOperation):
     """

@@ -443,7 +443,7 @@ class OptsMagic(Magics):
         """
         Expands channel definition keys into {type}.{value} keys. For
         instance a channel operation returning a value string 'Image'
-        of element type RGBA expands to 'RGBA.Image'.
+        of element type RGB expands to 'RGB.Image'.
         """
         expanded_spec={}
         channel_defs = {el.value:el.output_type.__name__

@@ -184,18 +184,18 @@ class TestChannelMagic(ExtensionTestCase):
         del self.channels
         super(TestChannelMagic, self).tearDown()
 
-    def test_RGBA_channeldef(self):
+    def test_RGB_channeldef(self):
         self.cell("R = Matrix(np.random.rand(5,5), label='R_Channel')")
         self.cell("G = Matrix(np.random.rand(5,5), label='G_Channel')")
         self.cell("B = Matrix(np.random.rand(5,5), label='B_Channel')")
         self.cell("overlay = Overlay([R, G, B], name='RGBTest')")
-        definition = " R_Channel * G_Channel * B_Channel => RGBA []"
+        definition = " R_Channel * G_Channel * B_Channel => RGB []"
         self.cell_magic('channels', definition, 'overlay')
 
-        expected_key = 'Custom[<RGBTest>]_RGBA'
+        expected_key = 'Custom[<RGBTest>]_RGB'
         self.assertEqual(CompositeOverlay.channels.keys(), [expected_key])
         self.assertEqual(CompositeOverlay.channels[expected_key].pattern, 'R_Channel * G_Channel * B_Channel')
-        self.assertEqual(CompositeOverlay.channels[expected_key].mode, 'RGBA')
+        self.assertEqual(CompositeOverlay.channels[expected_key].mode, 'RGB')
 
 
     def test_HCS_channeldef(self):

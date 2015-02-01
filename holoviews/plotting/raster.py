@@ -8,7 +8,7 @@ import param
 
 from ..core import CompositeOverlay
 from ..core.traversal import unique_dimkeys
-from ..element.raster import HeatMap, Matrix, Raster, RGBA
+from ..element.raster import HeatMap, Matrix, Raster, RGB
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
 
@@ -234,5 +234,5 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 Plot.defaults.update({Raster: MatrixPlot,
                       HeatMap: MatrixPlot,
                       Matrix: MatrixPlot,
-                      RGBA: MatrixPlot})
+                      RGB: MatrixPlot})
 

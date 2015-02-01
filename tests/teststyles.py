@@ -17,8 +17,8 @@ class TestOpts(ViewTestCase):
         self.assertEqual(opt.items, dict(opt1='opt1', opt2='opt2'))
 
     def test_channelopts_init(self):
-        opt = ChannelOpts('RGBA', 'view1 * view2', opt1='opt1', opt2='opt2')
-        self.assertEqual(opt.mode, 'RGBA')
+        opt = ChannelOpts('RGB', 'view1 * view2', opt1='opt1', opt2='opt2')
+        self.assertEqual(opt.mode, 'RGB')
         self.assertEqual(opt.pattern, 'view1 * view2')
         self.assertEqual(opt.items, dict(opt1='opt1', opt2='opt2'))
 

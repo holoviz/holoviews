@@ -16,7 +16,7 @@ class Raster(Element2D):
     Raster is a basic 2D atomic Element type.
 
     Arrays with a shape of (N,M) are valid inputs for Raster wheras
-    subclasses of Raster (e.g. RGBA) may also accept 3D arrays
+    subclasses of Raster (e.g. RGB) may also accept 3D arrays
     containing channel information.
     """
 
@@ -388,9 +388,9 @@ class Matrix(SheetCoordinateSystem, Raster):
 
 
 
-class RGBA(Matrix):
+class RGB(Matrix):
     """
-    An RGBA element is a Matrix containing channel data for the the
+    An RGB element is a Matrix containing channel data for the the
     red, green, blue and (optionally) the alpha channels. The values
     of each channel must be in the range 0.0 to 1.0.
 
@@ -420,7 +420,7 @@ class RGBA(Matrix):
             sliced = data[:,:,:-1]
             alpha = data[:,:,-1]
 
-        super(RGBA, self).__init__(data if sliced is None else sliced, **params)
+        super(RGB, self).__init__(data if sliced is None else sliced, **params)
         if sliced is not None:
             self.value_dimensions.append(self.alpha_dimension)
             self.data = np.dstack([self.data, alpha])
@@ -434,12 +434,12 @@ class RGBA(Matrix):
             value = coords[self.ndims:]
             if len(value) > 1:
                 raise KeyError()
-            sliced = super(RGBA, self).__getitem__(coords[:self.ndims])
+            sliced = super(RGB, self).__getitem__(coords[:self.ndims])
             vidx = self.get_dimension_index(value[0])
             data = sliced.data[:,:, vidx]
             return Matrix(data, **dict(self.get_param_values(),
                                        value_dimensions=[self.value_dimensions[vidx-2]]))
         else:
-            return super(RGBA, self).__getitem__(coords)
+            return super(RGB, self).__getitem__(coords)
 
 
