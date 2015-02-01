@@ -448,6 +448,19 @@ class Channel(param.Parameterized):
                                       operation=operation,
                                       kwargs=kwargs)
 
+
+    @property
+    def output_type(self):
+        """
+        Returns the operation output_type unless explicitly overridden
+        in the kwargs.
+        """
+        if 'output_type' in self.kwargs:
+            return self.kwargs['output_type']
+        else:
+            return self.operation.output_type
+
+
     def match_level(self, overlay):
         """
         Given an overlay, return an integer if there is a match or

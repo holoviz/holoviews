@@ -296,7 +296,7 @@ class ChannelMagic(Magics):
                     print("Channel definition ignored as value %r already defined" % definition.value)
 
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
-                type_name = definition.operation.output_type.__name__
+                type_name = definition.output_type.__name__
                 Plot.options[type_name + '.' + definition.value] = group
                 Channel.definitions.append(definition)
         else:
@@ -343,7 +343,7 @@ class OptsCompleter(object):
         line = v.text_until_cursor
 
         completions = cls.setup_completer()
-        channel_defs = {el.value:el.operation.output_type.__name__
+        channel_defs = {el.value:el.output_type.__name__
                         for el in Channel.definitions}
 
         # Find the last element class mentioned
@@ -446,7 +446,7 @@ class OptsMagic(Magics):
         of element type RGBA expands to 'RGBA.Image'.
         """
         expanded_spec={}
-        channel_defs = {el.value:el.operation.output_type.__name__
+        channel_defs = {el.value:el.output_type.__name__
                         for el in Channel.definitions}
         for key, val in spec.items():
             if key not in channel_defs:
