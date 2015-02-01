@@ -522,8 +522,8 @@ class ScrubberWidget(NdWidget):
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
         else:
-            from .display_hooks import figure_display
-            return figure_display(fig)
+            from .display_hooks import display_figure
+            return display_figure(fig)
 
 
     def __call__(self):

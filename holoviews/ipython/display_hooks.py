@@ -74,16 +74,16 @@ def HTML_video(plot):
 
 def first_frame(plot):
     "Only display the first frame of an animated plot"
-    return figure_display(plot[0])
+    return display_figure(plot[0])
 
 def middle_frame(plot):
     "Only display the (approximately) middle frame of an animated plot"
     middle_frame = int(len(plot) / 2)
-    return figure_display(plot[middle_frame])
+    return display_figure(plot[middle_frame])
 
 def last_frame(plot):
     "Only display the last frame of an animated plot"
-    return figure_display(plot[len(plot)])
+    return display_figure(plot[len(plot)])
 
 
 def sanitized_repr(obj):
@@ -106,7 +106,7 @@ def render(plot):
     try:
         return render_anim(plot)
     except Exception as e:
-        return str(e)+'<br/>'+figure_display(plot())
+        return str(e)+'<br/>'+display_figure(plot())
 
 
 def display_widgets(view,  widget_format, widget_mode):
