@@ -293,7 +293,7 @@ class ChannelMagic(Magics):
         if line.strip():
             for definition in ChannelSpec.parse(line.strip()):
                 if definition.value in defined_values:
-                    print("Channel definition ignored as value %r already defined" % definition.value)
+                    Channel.definitions.pop(defined_values.index(definition.value))
 
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
