@@ -1,5 +1,7 @@
 from collections import OrderedDict
 from itertools import groupby
+from matplotlib import pyplot as plt
+from matplotlib import ticker
 from matplotlib.font_manager import FontProperties
 import numpy as np
 
@@ -35,6 +37,12 @@ class ElementPlot(Plot):
     show_yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
+
+    xticks = param.Integer(default=5, doc="""
+        Number of ticks along the x-axis.""")
+
+    yticks = param.Integer(default=5, doc="""
+        Number of ticks along the y-axis.""")
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
@@ -186,10 +194,14 @@ class ElementPlot(Plot):
             if xticks:
                 axis.set_xticks(xticks[0])
                 axis.set_xticklabels(xticks[1])
+            else:
+                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
 
             if yticks:
                 axis.set_yticks(yticks[0])
                 axis.set_yticklabels(yticks[1])
+            else:
+                axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)

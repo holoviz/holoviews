@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
+from matplotlib import ticker
 
 import param
 
@@ -12,7 +13,83 @@ from .element import ElementPlot
 from .plot import Plot
 
 
-class Chart1DPlot(ElementPlot):
+class ChartPlot(ElementPlot):
+
+    log_x = param.Boolean(default=False)
+
+    log_y  = param.Boolean(default=False)
+
+
+    def __init__(self, data, **params):
+        super(ChartPlot, self).__init__(data, **params)
+        val_dim = self.map.last.get_dimension(1)
+        self.cyclic_range = val_dim.range if val_dim.cyclic else None
+
+
+    def _finalize_axis(self, key, **kwargs):
+        ret = super(ChartPlot, self)._finalize_axis(key, **kwargs)
+        axis = self.handles['axis']
+        if self.log_x:
+            axis.set_xscale('log')
+            log_locator = ticker.LogLocator(numticks=self.xticks,
+                                            subs=range(1,10))
+            axis.xaxis.set_major_locator(log_locator)
+        elif self.log_y:
+            axis.set_yscale('log')
+            log_locator = ticker.LogLocator(numticks=self.yticks,
+                                            subs=range(1,10))
+            axis.yaxis.set_major_locator(log_locator)
+        
+        return ret
+
+
+    def _cyclic_format_x_tick_label(self, x):
+        if self.relative_labels:
+            return str(x)
+        return str(int(np.round(180*x/self.cyclic_range)))
+
+
+    def _rotate(self, seq, n=1):
+        n = n % len(seq) # n=hop interval
+        return seq[n:] + seq[:n]
+
+    def _cyclic_reduce_ticks(self, x_values):
+        values = []
+        labels = []
+        step = self.cyclic_range / (self.xticks - 1)
+        if self.relative_labels:
+            labels.append(-90)
+            label_step = 180 / (self.xticks - 1)
+        else:
+            labels.append(x_values[0])
+            label_step = step
+        values.append(x_values[0])
+        for i in range(0, self.xticks - 1):
+            labels.append(labels[-1] + label_step)
+            values.append(values[-1] + step)
+        return values, [self._cyclic_format_x_tick_label(x) for x in labels]
+
+
+    def _cyclic_curves(self, curveview):
+        """
+        Mutate the lines object to generate a rotated cyclic curves.
+        """
+        x_values = list(curveview.data[:, 0])
+        y_values = list(curveview.data[:, 1])
+        if self.center_cyclic:
+            rotate_n = self.peak_argmax+len(x_values)/2
+            y_values = self._rotate(y_values, n=rotate_n)
+            ticks = self._rotate(x_values, n=rotate_n)
+        else:
+            ticks = list(x_values)
+
+        ticks.append(ticks[0])
+        x_values.append(x_values[0]+self.cyclic_range)
+        y_values.append(y_values[0])
+
+        curveview.data = np.vstack([x_values, y_values]).T
+        self.xvalues = x_values
+
 
     def get_extents(self, view, ranges):
         l, b, r, t = view.extents if self.rescale_individually else self.map.extents
@@ -21,7 +98,7 @@ class Chart1DPlot(ElementPlot):
         return l, b, r, t
 
 
-class CurvePlot(Chart1DPlot):
+class CurvePlot(ChartPlot):
     """
     CurvePlot can plot Curve and ViewMaps of Curve, which can be
     displayed as a single frame or animation. Axes, titles and legends
@@ -58,73 +135,6 @@ class CurvePlot(Chart1DPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth']
 
-    def __init__(self, curves, **params):
-        super(CurvePlot, self).__init__(curves, **params)
-        val_dim = self.map.last.get_dimension(1)
-        self.cyclic_range = val_dim.range if val_dim.cyclic else None
-
-
-    def _format_x_tick_label(self, x):
-        return "%g" % round(x, 2)
-
-
-    def _cyclic_format_x_tick_label(self, x):
-        if self.relative_labels:
-            return str(x)
-        return str(int(np.round(180*x/self.cyclic_range)))
-
-
-    def _rotate(self, seq, n=1):
-        n = n % len(seq) # n=hop interval
-        return seq[n:] + seq[:n]
-
-
-    def _reduce_ticks(self, x_values):
-        values = [x_values[0]]
-        rangex = float(x_values[-1]) - x_values[0]
-        for i in range(1, self.num_ticks+1):
-            values.append(values[-1]+rangex/(self.num_ticks))
-        return values, [self._format_x_tick_label(x) for x in values]
-
-
-    def _cyclic_reduce_ticks(self, x_values):
-        values = []
-        labels = []
-        step = self.cyclic_range / (self.num_ticks - 1)
-        if self.relative_labels:
-            labels.append(-90)
-            label_step = 180 / (self.num_ticks - 1)
-        else:
-            labels.append(x_values[0])
-            label_step = step
-        values.append(x_values[0])
-        for i in range(0, self.num_ticks - 1):
-            labels.append(labels[-1] + label_step)
-            values.append(values[-1] + step)
-        return values, [self._cyclic_format_x_tick_label(x) for x in labels]
-
-
-    def _cyclic_curves(self, curveview):
-        """
-        Mutate the lines object to generate a rotated cyclic curves.
-        """
-        x_values = list(curveview.data[:, 0])
-        y_values = list(curveview.data[:, 1])
-        if self.center_cyclic:
-            rotate_n = self.peak_argmax+len(x_values)/2
-            y_values = self._rotate(y_values, n=rotate_n)
-            ticks = self._rotate(x_values, n=rotate_n)
-        else:
-            ticks = list(x_values)
-
-        ticks.append(ticks[0])
-        x_values.append(x_values[0]+self.cyclic_range)
-        y_values.append(y_values[0])
-
-        curveview.data = np.vstack([x_values, y_values]).T
-        self.xvalues = x_values
-
-
     def __call__(self, ranges=None):
         curveview = self.map.last
         axis = self.handles['axis']
@@ -135,9 +145,7 @@ class CurvePlot(Chart1DPlot):
 
         # Create xticks and reorder data if cyclic
         xticks = None
-        if self.autotick:
-            xticks = None
-        elif self.cyclic_range is not None:
+        if self.cyclic_range is not None:
             if self.center_cyclic:
                 self.peak_argmax = np.argmax(curveview.data[:, 1])
             self._cyclic_curves(curveview)
@@ -150,7 +158,6 @@ class CurvePlot(Chart1DPlot):
                                  **style)[0]
 
         self.handles['line_segment'] = line_segment
-
         return self._finalize_axis(self.map.last_key, ranges=ranges, xticks=xticks)
 
 
@@ -162,7 +169,7 @@ class CurvePlot(Chart1DPlot):
 
 
 
-class HistogramPlot(Chart1DPlot):
+class HistogramPlot(ChartPlot):
     """
     HistogramPlot can plot DataHistograms and ViewMaps of
     DataHistograms, which can be displayed as a single frame or
@@ -452,7 +459,7 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(ElementPlot):
+class PointPlot(ChartPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
