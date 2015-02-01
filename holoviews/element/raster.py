@@ -420,6 +420,10 @@ class RGB(Matrix):
             sliced = data[:,:,:-1]
             alpha = data[:,:,-1]
 
+        if len(params.get('value_dimensions',[])) == 4:
+            alpha_dim = params['value_dimensions'].pop(3)
+            params['alpha_dimension'] = alpha_dim
+
         super(RGB, self).__init__(data if sliced is None else sliced, **params)
         if sliced is not None:
             self.value_dimensions.append(self.alpha_dimension)
