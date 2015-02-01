@@ -172,8 +172,7 @@ class NdLayout(UniformNdMapping):
     value = param.String(default='NdLayout')
 
     data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
-
-    def __init__(self, initial_items, **params):
+    def __init__(self, initial_items=None, **params):
         self._max_cols = 4
         self._style = None
         if isinstance(initial_items, list):
