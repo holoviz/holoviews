@@ -90,39 +90,56 @@ class toHCS(ElementOperation):
     is the strength channel.
     """
 
+    output_type = RGBA
+
     S_multiplier = param.Number(default=1.0, bounds=(0.0,None), doc="""
-        Multiplier for the strength value.""")
+        Post-normalization multiplier for the strength value.
+
+        Note that if the result is outside the bounds 0.0-1.0, it will
+        be clipped. """)
 
     C_multiplier = param.Number(default=1.0, bounds=(0.0,None), doc="""
-        Multiplier for the confidence value.""")
+        Post-normalization multiplier for the confidence value.
+
+        Note that if the result is outside the bounds 0.0-1.0, it will
+        be clipped.""")
 
     flipSC = param.Boolean(default=False, doc="""
         Whether to flip the strength and confidence channels""")
 
-    label = param.String(default='HCS', doc="""
-        The label suffix to use for the resulting HCS plot where the
-        suffix is added to the label of the Hue channel.""")
+    value = param.String(default='HCS', doc="""
+        The value string for the output (an RGBA element).""")
 
     def _process(self, overlay, key=None):
-        hue = overlay[0]
-        confidence = overlay[1]
 
+        if self.p.input_ranges:
+            normfn = raster_normalization.instance()
+            overlay = normfn.process_element(overlay, key, *self.p.input_ranges)
+
+        hue, confidence = overlay[0], overlay[1]
         strength_data = overlay[2].data if (len(overlay) == 3) else np.ones(hue.shape)
 
-        if hue.shape != confidence.shape:
-            raise Exception("Cannot combine plots with different shapes")
+        hue_range = hue.value_dimensions[0].range
+        if (not hue.value_dimensions[0].cyclic) or (None in hue_range):
+            raise Exception("The input hue channel must be declared cyclic with a defined range.")
+        else:
+            hue_data = hue.data - hue_range[0]
+            hue_data /= (hue_range[1] - hue_range[0])
 
-        (h,s,v)= (hue.N.data.clip(0.0, 1.0),
+        if hue.shape != confidence.shape:
+            raise Exception("Cannot combine input Matrices with different shapes.")
+
+        (h,s,v)= (hue_data,
                   (confidence.data * self.p.C_multiplier).clip(0.0, 1.0),
                   (strength_data * self.p.S_multiplier).clip(0.0, 1.0))
 
         if self.p.flipSC:
             (h,s,v) = (h,v,s.clip(0,1.0))
 
-        r, g, b = hsv_to_rgb(h, s, v)
-        rgb = np.dstack([r,g,b])
-        return [Matrix(rgb, hue.bounds, roi_bounds=hue.roi_bounds,
-                       label=hue.label, value=self.p.label)]
+        return RGBA(np.dstack(hsv_to_rgb(h,s,v)),
+                    bounds = self.get_overlay_extents(overlay),
+                    label =  self.get_overlay_label(overlay),
+                    value =  self.p.value)
 
 
 class colorize(ElementOperation):
