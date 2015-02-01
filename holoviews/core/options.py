@@ -30,6 +30,7 @@ OptionTree:
 import param
 from .tree import AttrTree
 from .operation import ElementOperation
+from .overlay import CompositeOverlay, Overlay
 
 
 class OptionError(Exception):
@@ -369,6 +370,56 @@ class Channel(param.Parameterized):
     operations = []  # The operations that can be used to define channels.
     definitions = [] # The set of all the channel instances
 
+
+    @classmethod
+    def strongest_match(cls, overlay):
+        """
+        Returns the strongest matching channel operation given an
+        overlay. If no matches are found, None is returned.
+
+        The best match is defined as the channel operation with the
+        highest match value as returned by the match_level method.
+        """
+        match_strength = [(op.match_level(overlay), op) for op in cls.definitions]
+        matches = [(lvl, op) for (lvl, op) in match_strength if lvl is not None]
+        if matches == []: return None
+        else:             return sorted(matches)[0][1]
+
+
+    @classmethod
+    def _collapse(cls, overlay, key, ranges, holomap_id):
+        """
+        Finds any applicable channel operation and applies it.
+        """
+        applicable_op = cls.strongest_match(overlay)
+        if applicable_op is None: return overlay
+
+        output = applicable_op.apply(overlay, ranges)
+        output = output.relabel(value=applicable_op.value)
+        output.id = holomap_id #  USE OVERLAY ID!!
+        return Overlay.from_view(output)
+
+
+    @classmethod
+    def collapse_channels(cls, holomap, ranges=None):
+        """
+        Given a map of Overlays, apply all applicable channel
+        reductions.
+        """
+        if not issubclass(holomap.type, CompositeOverlay):
+            return holomap
+        # No potential channel reductions
+        elif cls.definitions == []:
+            return holomap
+
+        # Collapse channel operations
+        clone = holomap.clone()
+        for key, overlay in holomap.items():
+            clone[key] = cls._collapse(overlay, key, ranges, holomap.id)
+        return clone
+
+
+
     def __init__(self, pattern, operation, value, **kwargs):
         if not any (operation is op for op in self.operations):
             raise ValueError("Operation %r not in allowed operations" % operation)
@@ -431,47 +482,3 @@ class Channel(param.Parameterized):
         """
         return self.operation(value, input_ranges=input_ranges, **self.kwargs)
 
-
-    @classmethod
-    def _collapse(cls, overlay, pattern, fn, style_key):
-        """
-        Given an overlay object collapse the channels according to
-        pattern using the supplied function. Any collapsed ViewableElement is
-        then given the supplied style key.
-        """
-        pattern = [el.strip() for el in pattern.rsplit('*')]
-        if len(pattern) > len(overlay): return overlay
-
-        skip=0
-        collapsed_overlay = overlay.clone(None)
-        for i, key in enumerate(overlay.keys()):
-            layer_labels = overlay.labels[i:len(pattern)+i]
-            matching = all(l.endswith(p) for l, p in zip(layer_labels, pattern))
-            if matching and len(layer_labels)==len(pattern):
-                views = [el for el in overlay if el.label in layer_labels]
-                if isinstance(overlay, Overlay):
-                    views = np.product([Overlay.from_view(el) for el in overlay])
-                overlay_slice = overlay.clone(views)
-                collapsed_view = fn(overlay_slice)
-                if isinstance(overlay, LayoutTree):
-                    collapsed_overlay *= collapsed_view
-                else:
-                    collapsed_overlay[key] = collapsed_view
-                skip = len(views)-1
-            elif skip:
-                skip = 0 if skip <= 0 else (skip - 1)
-            else:
-                if isinstance(overlay, LayoutTree):
-                    collapsed_overlay *= overlay[key]
-                else:
-                    collapsed_overlay[key] = overlay[key]
-        return collapsed_overlay
-
-
-    @classmethod
-    def collapse_channels(cls, holomap, ranges=None):
-        """
-        Given a map of Overlays, apply all applicable channel
-        reductions.
-        """
-        return holomap
