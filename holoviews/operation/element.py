@@ -12,17 +12,18 @@ from ..element.tabular import ItemTable
 
 class chain(ElementOperation):
     """
-    Definining a viewoperation chain is an easy way to define a new
-    ElementOperation from a series of existing ones. The single argument
-    is a callable that accepts an input element and returns a list of
-    output views. To create the custom ElementOperation, you will need to
-    supply this argument to a new instance of chain. For example:
+    Defining an ElementOperation chain is an easy way to define a new
+    ElementOperation from a series of existing ones. The single
+    argument is a callable that accepts an input element and returns
+    the final, transformed element. To create the custom
+    ElementOperation, you will need to supply this argument to a new
+    instance of chain. For example:
 
-    chain.instance(chain=lambda x: [cmap2rgb(operator(x).N, cmap='jet')])
+    chain.instance(
+       chain=lambda x: colormap(operator(x, operator=np.add), cmap='jet'))
 
-    This is now a ElementOperation that sums the data in the input
-    overlay and turns it into an RGB Matrix with the 'jet'
-    colormap.
+    This defines an ElementOperation that sums the data in the input
+    and turns it into an RGB Matrix using the 'jet' colormap.
     """
 
     chain = param.Callable(doc="""A chain of existing ViewOperations.""")
