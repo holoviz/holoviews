@@ -599,11 +599,6 @@ class UniformNdMapping(NdMapping):
     for their ViewableElement type.
     """
 
-    title_suffix = param.String(default='\n {dims}', doc="""
-       A string appended to the ViewableElement titles when they are added to the
-       UniformNdMapping. Default adds a new line with the formatted dimensions
-       of the UniformNdMapping inserted using the {dims} formatting keyword.""")
-
     value = param.String(default='UniformNdMapping')
 
     data_type = (ViewableElement, NdMapping)
@@ -639,21 +634,3 @@ class UniformNdMapping(NdMapping):
             raise ValueError("HoloMaps dimensions must be consistent in %s." %
                              type(self).__name__)
         super(UniformNdMapping, self)._item_check(dim_vals, data)
-
-
-    def get_title(self, key, item, group_size=2):
-        """
-        Resolves the title string on the ViewableElement being added
-        to the UniformNdMapping, adding the Maps title suffix.
-        """
-        if self.ndims == 1 and self.get_dimension('Default'):
-            title_suffix = ''
-        else:
-            title_suffix = self.title_suffix
-        dimension_labels = [dim.pprint_value(k) for dim, k in
-                            zip(self.key_dimensions, key)]
-        groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
-                  for i in range(len(dimension_labels))]
-        dims = '\n '.join(g for g in groups if g)
-        title_suffix = title_suffix.format(dims=dims)
-        return item.title + title_suffix

@@ -465,9 +465,4 @@ class ViewableElement(Dimensioned):
 
     __abstract = True
 
-    title = param.String(default='{label} {value}', doc=""" The title
-        formatting string allows the title to be composed from the
-        {label}, {value} quantity and element {type}. Alternatively,
-        the title may be set to a simple string.""")
-
     value = param.String(default='ViewableElement')
