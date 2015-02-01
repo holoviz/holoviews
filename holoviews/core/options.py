@@ -477,10 +477,11 @@ class Channel(param.Parameterized):
             if spec[0] != type(el).__name__:
                 return None
             level += 1      # Types match
-            if len(spec) > 2 and (spec[1] == el.value):
-                level += 1  # Values match
-            elif spec[1] != el.value:
-                return None
+            if len(spec) == 1: continue
+
+            elif spec[1] == el.value: level += 1  # Values match
+            else:                     return None
+
             if len(spec) == 3 and (spec[2] == el.label):
                 level += 1  # Labels match
             elif len(spec) == 3:
