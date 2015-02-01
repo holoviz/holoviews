@@ -381,9 +381,9 @@ class OptsMagic(Magics):
     Magic for easy customising of normalization, plot and style options.
     Consult %%opts? for more information.
     """
-
-    error_message = None
-    next_id = None
+    error_message = None # If not None, the error message that will be displayed
+    next_id = None       # Next id to propagate, binding displayed object together.
+    applied_keys = []    # Path specs selecting the objects to be given a new id
 
     @classmethod
     def process_view(cls, obj):
@@ -401,7 +401,7 @@ class OptsMagic(Magics):
             obj.traverse(lambda o: setattr(o, 'id', cls.next_id),
                          specs=cls.applied_keys)
             cls.next_id = None
-            cls.applied_keys = None
+            cls.applied_keys = []
         return None
 
 
@@ -434,7 +434,7 @@ class OptsMagic(Magics):
         if custom_tree is not None:
             Plot.custom_options[max_id+1] = custom_tree
             cls.next_id = max_id+1
-            cls.applied_keys = spec.keys()
+            cls.applied_keys += spec.keys()
         else:
             cls.next_id = None
 
@@ -452,6 +452,7 @@ class OptsMagic(Magics):
             if key not in channel_defs:
                 expanded_spec[key] = val
             else:
+                cls.applied_keys = ['Overlay'] # Send id to Overlays
                 type_name = channel_defs[key]
                 expanded_spec[str(type_name+'.'+key)] = val
         return expanded_spec
