@@ -33,34 +33,42 @@ class chain(ElementOperation):
 
 class operator(ElementOperation):
     """
-    Applies any arbitrary operator on the data (currently only
-    supports Matrix views) and returns the result.
+    Applies any arbitrary collapsing operator across the data elements
+    of the input overlay and returns the result.
+
+    As applying collapse operations on arbitrary data works very
+    naturally using arrays, the result is a Matrix containing the
+    computed result data.
     """
+
+    output_type = Matrix
+
 
     operator = param.Callable(np.add, doc="""
         The commutative operator to apply between the data attributes
-        of the supplied Views. By default, performs elementwise
-        addition across the Matrix arrays.""")
+        of the supplied Views used to collapse the data.
 
-    unpack = param.Boolean(default=True, doc=""" Whether the operator
-       is supplied the .data attributes as an unpack collection of
-       arguments or as a list.""")
+        By default applies elementwise addition across the input data.""")
 
-    label = param.String(default='Operation', doc="""
+    unpack = param.Boolean(default=True, doc="""
+       Whether the operator is supplied the .data attributes as an
+       unpack collection of arguments or as a list.""")
+
+    value = param.String(default='Operation', doc="""
         The label for the result after having applied the operator.""")
 
-
     def _process(self, overlay, key=None):
-
         if not isinstance(overlay, CompositeOverlay):
-            raise Exception("Operation requires an CompositeOverlay as input")
+            raise Exception("Operation requires an Overlay type as input")
 
         if self.p.unpack:
             new_data = self.p.operator(*[el.data for el in overlay])
         else:
             new_data = self.p.operator([el.data for el in overlay])
 
-        return [Matrix(new_data, bounds=overlay[0].bounds, label=self.p.label)]
+        return Matrix(new_data, bounds=overlay[0].bounds,
+                      label=self.get_overlay_label(overlay))
+
 
 
 class convolve(ElementOperation):
