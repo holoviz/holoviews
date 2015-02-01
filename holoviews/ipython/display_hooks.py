@@ -1,3 +1,6 @@
+"""
+Definition and registration of display hooks for the IPython Notebook.
+"""
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -84,7 +87,55 @@ def last_frame(plot):
     return figure_display(plot[len(plot)])
 
 
+def sanitized_repr(obj):
+    "Sanitize text output for HTML display"
+    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
+
+def max_frame_warning(max_frames):
+    sys.stderr.write("Skipping matplotlib display to avoid "
+                     "lengthy animation render times\n"
+                     "[Total item frames exceeds max_frames on ViewMagic (%d)]"
+                     % max_frames)
+
+def process_cell_magics(obj):
+    "Hook into %%opts and %%channels magics to process displayed element"
+    invalid_options = OptsMagic.process_view(obj)
+    if invalid_options: return invalid_options
+
+
+def render(plot):
+    try:
+        return render_anim(plot)
+    except Exception as e:
+        return str(e)+'<br/>'+figure_display(plot())
+
+
+def widget_display(view,  widget_format, widget_mode):
+    "Display widgets applicable to the specified view"
+    assert widget_mode is not None, "Mistaken call to widget_display method"
+
+    isuniform = uniform(view)
+    if not isuniform and widget_format == 'widgets':
+        param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
+                                    % type(view).__name__)
+        widget_format == 'scrubber'
+
+    if widget_format == 'auto':
+        dims = view.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        widget_format = 'scrubber' if len(dims) == 1 or not isuniform else 'widgets'
+
+    if widget_format == 'scrubber':
+        return ScrubberWidget(view)()
+    if widget_mode == 'embed':
+        return SelectionWidget(view)()
+    elif widget_mode == 'cached':
+        return IPySelectionWidget(view, cached=True)()
+    else:
+        return IPySelectionWidget(view, cached=False)()
+
+
 def figure_display(fig, size=None, message=None, max_width='100%'):
+    "Display widgets applicable to the specified view"
     figure_format = ViewMagic.options['fig']
     backend = ViewMagic.options['backend']
     if size is not None:
@@ -111,27 +162,9 @@ def figure_display(fig, size=None, message=None, max_width='100%'):
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
-
 #===============#
 # Display hooks #
 #===============#
-
-def sanitized_repr(obj):
-    "Sanitize text output for HTML display"
-    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
-
-def max_frame_warning(max_frames):
-    sys.stderr.write("Skipping matplotlib display to avoid "
-                     "lengthy animation render times\n"
-                     "[Total item frames exceeds max_frames on ViewMagic (%d)]"
-                     % max_frames)
-
-def process_cell_magics(obj):
-    "Hook into %%opts and %%channels magics to process displayed element"
-    invalid_options = OptsMagic.process_view(obj)
-    if invalid_options: return invalid_options
-    # invalid_channels = ChannelMagic.set_channels(obj)
-    # if invalid_channels: return invalid_channels
 
 
 def display_hook(fn):
@@ -154,39 +187,20 @@ def display_hook(fn):
     return wrapped
 
 
-def render(plot):
-    try:
-        return render_anim(plot)
-    except Exception as e:
-        return str(e)+'<br/>'+figure_display(plot())
-
-
 @display_hook
 def animation_display(anim, map_format, **kwargs):
     return animate(anim, *ViewMagic.ANIMATION_OPTS[map_format])
 
 
-def widget_display(view,  widget_format, widget_mode):
-    assert widget_mode is not None, "Mistaken call to widget_display method"
+@display_hook
+def view_display(view, size=256, **kwargs):
+    if not isinstance(view, ViewableElement): return None
+    magic_info = process_cell_magics(view)
+    if magic_info: return magic_info
+    opts = dict(size=get_plot_size(), **Plot.lookup_options(view, 'plot').options)
+    fig = Plot.defaults[view.__class__](view, **opts)()
+    return figure_display(fig)
 
-    isuniform = uniform(view)
-    if not isuniform and widget_format == 'widgets':
-        param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
-                                    % type(view).__name__)
-        widget_format == 'scrubber'
-
-    if widget_format == 'auto':
-        dims = view.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
-        widget_format = 'scrubber' if len(dims) == 1 or not isuniform else 'widgets'
-
-    if widget_format == 'scrubber':
-        return ScrubberWidget(view)()
-    if widget_mode == 'embed':
-        return SelectionWidget(view)()
-    elif widget_mode == 'cached':
-        return IPySelectionWidget(view, cached=True)()
-    else:
-        return IPySelectionWidget(view, cached=False)()
 
 @display_hook
 def map_display(vmap, map_format, max_frames, widget_mode, size=256, **kwargs):
@@ -270,15 +284,6 @@ def grid_display(grid, map_format, max_frames, max_branches, widget_mode, size=2
         return widget_display(grid, map_format, widget_mode)
 
     return render(gridplot)
-
-@display_hook
-def view_display(view, size=256, **kwargs):
-    if not isinstance(view, ViewableElement): return None
-    magic_info = process_cell_magics(view)
-    if magic_info: return magic_info
-    opts = dict(size=get_plot_size(), **Plot.lookup_options(view, 'plot').options)
-    fig = Plot.defaults[view.__class__](view, **opts)()
-    return figure_display(fig)
 
 
 # HTML_video output by default, but may be set to first_frame,
