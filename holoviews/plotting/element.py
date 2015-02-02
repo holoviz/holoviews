@@ -138,7 +138,7 @@ class ElementPlot(Plot):
 
         view = self._get_frame(key)
         if self.zorder == 0 and key is not None:
-            if view is not None:
+            if view is not None and not isinstance(view, CompositeOverlay):
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
@@ -205,9 +205,6 @@ class ElementPlot(Plot):
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
-
-        if not self.subplot:
-            plt.tight_layout()
 
         for hook in self.finalize_hooks:
             hook(self, view)
