@@ -127,7 +127,7 @@ class ViewTestCase(unittest.TestCase):
 
     def compare_layers(self, view1, view2, msg):
         if len(view1) != len(view2):
-            raise self.failureException("CompositeOverlay have different lengths.")
+            raise self.failureException("Overlays have different lengths.")
 
         for (layer1, layer2) in zip(view1, view2):
             self.assertEqual(layer1, layer2)

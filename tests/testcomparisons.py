@@ -31,9 +31,9 @@ class MatrixOverlayTestCase(MatrixTestCase):
         # Two overlays of depth two with different layers
         self.overlay1_depth2 = (self.mat1 * self.mat2)
         self.overlay2_depth2 = (self.mat1 * self.mat3)
-        # NdOverlay of depth 2 with different bounds
+        # Overlay of depth 2 with different bounds
         self.overlay3_depth2 = (self.mat4 * self.mat5)
-        # # NdOverlay of depth 3
+        # # Overlay of depth 3
         self.overlay4_depth3 = (self.mat1 * self.mat2 * self.mat3)
 
 
@@ -86,7 +86,7 @@ class MapTestCase(MatrixOverlayTestCase):
 
 
 
-class SheetComparisonTest(MatrixTestCase):
+class ComparisonTest(MatrixTestCase):
     """
     This tests the ViewTestCase class which is an important component
     of other tests.
@@ -110,7 +110,7 @@ class SheetComparisonTest(MatrixTestCase):
 
 
 
-class SheetOverlayComparisonTest(MatrixOverlayTestCase):
+class OverlayComparisonTest(MatrixOverlayTestCase):
 
     def test_depth_mismatch(self):
         try:
