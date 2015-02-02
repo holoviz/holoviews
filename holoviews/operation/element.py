@@ -36,7 +36,9 @@ class chain(ElementOperation):
     def _process(self, view, key=None):
         return self.p.chain(view).clone(shared_data=True, value=self.p.value)
 
-
+#==============================#
+# Raster processing operations #
+#==============================#
 
 class operator(ElementOperation):
     """
@@ -74,6 +76,43 @@ class operator(ElementOperation):
 
         return Matrix(new_data, bounds=overlay[0].bounds,
                       label=self.get_overlay_label(overlay))
+
+
+class threshold(ElementOperation):
+    """
+    Threshold a given Matrix whereby all values higher than a given
+    level map to the specified high value and all values lower than
+    that level map to the specified low value.
+    """
+
+    output_type = Matrix
+
+    level = param.Number(default=0.5, doc="""
+       The value at which the threshold is applied. Values lower than
+       the threshold map to the 'low' value and values above map to
+       the 'high' value.""")
+
+    high = param.Number(default=1.0, doc="""
+      The value given to elements greater than (or equal to) the
+      threshold.""")
+
+    low = param.Number(default=0.0, doc="""
+      The value given to elements below the threshold.""")
+
+    value = param.String(default='Threshold', doc="""
+       The value assigned to the thresholded output.""")
+
+    def _process(self, matrix, key=None):
+
+        if not isinstance(matrix, Matrix):
+            raise TypeError("The threshold operation requires a Matrix as input.")
+
+        arr = matrix.data
+        high = np.ones(arr.shape) * self.p.high
+        low = np.ones(arr.shape) * self.p.low
+        thresholded = np.where(arr > self.p.level, high, low)
+
+        return matrix.clone(thresholded, value=self.p.value)
 
 
 
@@ -117,6 +156,27 @@ class convolve(ElementOperation):
         convolved = rolled / float(k.sum())
 
         return Matrix(convolved, bounds=target.bounds, value=self.p.value)
+
+
+
+class split_raster(ElementOperation):
+    """
+    Given a Raster element, return the individual value dimensions as
+    an overlay of Matrix elements.
+    """
+
+    value = param.String(default='', doc="""
+       Optional suffix appended to the value dimensions in the
+       components of the output overlay. Default keeps the value
+       strings identical to those in the input raster.""")
+
+    def _process(self, raster, key=None):
+        matrices = []
+        for i, dim in enumerate(raster.value_dimensions):
+            matrix = Matrix(raster.data[:, :, i],
+                            value_dimensions = [dim(name=dim.name+self.p.value)])
+            matrices.append(matrix)
+        return np.product(matrices)
 
 
 
@@ -268,44 +328,6 @@ class vectorfield(ElementOperation):
 
 
 
-class threshold(ElementOperation):
-    """
-    Threshold a given Matrix whereby all values higher than a given
-    level map to the specified high value and all values lower than
-    that level map to the specified low value.
-    """
-
-    output_type = Matrix
-
-    level = param.Number(default=0.5, doc="""
-       The value at which the threshold is applied. Values lower than
-       the threshold map to the 'low' value and values above map to
-       the 'high' value.""")
-
-    high = param.Number(default=1.0, doc="""
-      The value given to elements greater than (or equal to) the
-      threshold.""")
-
-    low = param.Number(default=0.0, doc="""
-      The value given to elements below the threshold.""")
-
-    value = param.String(default='Threshold', doc="""
-       The value assigned to the thresholded output.""")
-
-    def _process(self, matrix, key=None):
-
-        if not isinstance(matrix, Matrix):
-            raise TypeError("The threshold operation requires a Matrix as input.")
-
-        arr = matrix.data
-        high = np.ones(arr.shape) * self.p.high
-        low = np.ones(arr.shape) * self.p.low
-        thresholded = np.where(arr > self.p.level, high, low)
-
-        return matrix.clone(thresholded, value=self.p.value)
-
-
-
 class analyze_roi(ElementOperation):
     """
     Compute a table of information from a Matrix within the indicated
@@ -360,22 +382,3 @@ class analyze_roi(ElementOperation):
                          value=self.p.value)
 
 
-
-class split_raster(ElementOperation):
-    """
-    Given a Raster element, return the individual value dimensions as
-    an overlay of Matrix elements.
-    """
-
-    value = param.String(default='', doc="""
-       Optional suffix appended to the value dimensions in the
-       components of the output overlay. Default keeps the value
-       strings identical to those in the input raster.""")
-
-    def _process(self, raster, key=None):
-        matrices = []
-        for i, dim in enumerate(raster.value_dimensions):
-            matrix = Matrix(raster.data[:, :, i],
-                            value_dimensions = [dim(name=dim.name+self.p.value)])
-            matrices.append(matrix)
-        return np.product(matrices)
