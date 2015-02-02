@@ -416,10 +416,8 @@ class Channel(param.Parameterized):
         Given a map of Overlays, apply all applicable channel
         reductions.
         """
-        if not issubclass(holomap.type, CompositeOverlay):
-            return holomap
         # No potential channel reductions
-        elif cls.definitions == []:
+        if cls.definitions == []:
             return holomap
 
         # Collapse channel operations
