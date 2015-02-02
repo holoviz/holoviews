@@ -266,8 +266,12 @@ class vectorfield(ElementOperation):
 
 class threshold(ElementOperation):
     """
-    Threshold a given Matrix at a given level into the specified
-    low and high values.  """
+    Threshold a given Matrix whereby all values higher than a given
+    level map to the specified high value and all values lower than
+    that level map to the specified low value.
+    """
+
+    output_type = Matrix
 
     level = param.Number(default=0.5, doc="""
        The value at which the threshold is applied. Values lower than
@@ -281,18 +285,20 @@ class threshold(ElementOperation):
     low = param.Number(default=0.0, doc="""
       The value given to elements below the threshold.""")
 
-    label = param.String(default='Thresholded', doc="""
-       The label suffix used to label the resulting sheetview where
-       the suffix is added to the label of the input Matrix""")
+    value = param.String(default='Threshold', doc="""
+       The value assigned to the thresholded output.""")
 
-    def _process(self, view, key=None):
-        arr = view.data
+    def _process(self, matrix, key=None):
+
+        if not isinstance(matrix, Matrix):
+            raise TypeError("The threshold operation requires a Matrix as input.")
+
+        arr = matrix.data
         high = np.ones(arr.shape) * self.p.high
         low = np.ones(arr.shape) * self.p.low
         thresholded = np.where(arr > self.p.level, high, low)
 
-
-        return [view.clone(thresholded, value=self.p.label + ' ' + view.value)]
+        return matrix.clone(thresholded, value=self.p.value)
 
 
 class roi_table(ElementOperation):
