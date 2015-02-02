@@ -337,11 +337,15 @@ class OptionTree(AttrTree):
 
 class Channel(param.Parameterized):
     """
-    A Channel defines an operation that is automatically applied to
-    certain Overlays matching a specified pattern. For instance, this
-    can be used to automatically display three overlaid monochrome
-    matrices as an RGB image as long as the values of those matrices
-    match 'R', 'G' and 'B'.
+    A Channel is a way of specifying an operation to be automatically
+    applied to Overlays that match a specified pattern upon display.
+
+    Any operation that takes an Overlay as input and outputs a single,
+    non-overlayed element may be used to define a channel.
+
+    For instance, a channel may be defined to automatically display
+    three overlaid monochrome matrices as an RGB image as long as the
+    values names of those matrices match 'R', 'G' and 'B' respectively.
     """
 
     operation = param.ClassSelector(class_=ElementOperation, is_instance=False, doc="""
@@ -401,7 +405,7 @@ class Channel(param.Parameterized):
 
 
     @classmethod
-    def collapse_channels(cls, holomap, ranges=None):
+    def collapse(cls, holomap, ranges=None):
         """
         Given a map of Overlays, apply all applicable channel
         reductions.

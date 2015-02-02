@@ -96,8 +96,8 @@ class ElementPlot(Plot):
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
             check = holomap.last.values()[0]
-            holomap = Channel.collapse_channels(holomap,
-                                             (ranges, keys if keys else None))
+            holomap = Channel.collapse(holomap,
+                                       (ranges, keys if keys else None))
         if isinstance(check, Element3D):
             self.projection = '3d'
 
