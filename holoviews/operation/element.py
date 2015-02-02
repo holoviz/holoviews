@@ -211,7 +211,7 @@ class histogram(ElementOperation):
         hist_view = Histogram(hist, edges, key_dimensions=[view.get_dimension(selected_dim)],
                               label=view.label)
 
-        return [(view << hist_view) if self.p.adjoin else hist_view]
+        return (view << hist_view) if self.p.adjoin else hist_view
 
 
 
