@@ -31,7 +31,7 @@ class PlottingHook(param.ParameterizedFunction):
 
     __abstract = True
 
-    def _applies(self, view):
+    def _applies(self, plot, view):
         return type(view) in self.types
 
 
@@ -56,8 +56,11 @@ class MplD3Plugin(PlottingHook):
 
     __abstract = True
 
-    def _applies(self, view):
+    def _applies(self, plot, view):
         types_match = super(MplD3Plugin, self)._applies(view)
+        if plot.projection == '3d': return False
+        if plot.subplots:
+            return not any(sp.projection == '3d' for sp in plot.subplots.values())
         mpld3_backend = ViewMagic.options['backend'] == 'd3'
         return types_match and mpld3_backend
 
@@ -69,7 +72,7 @@ class PointPlugin(MplD3Plugin):
     types = param.List([Points, Scatter])
 
     def __call__(self, plot, view):
-        if not self._applies(view): return
+        if not self._applies(plot, view): return
         fig = plot.handles['fig']
         df = view.dframe()
         labels = []
@@ -93,7 +96,7 @@ class CurvePlugin(MplD3Plugin):
     types = param.List([Curve])
 
     def __call__(self, plot, view):
-        if not self._applies(view): return
+        if not self._applies(plot, view): return
         fig = plot.handles['fig']
         labels = [self.format_string.format(label=view.label)]
         tooltip = plugins.LineHTMLTooltip(plot.handles['line_segment'], labels,
@@ -108,7 +111,7 @@ class BarPlugin(MplD3Plugin):
     types = param.List([Bars, Histogram])
 
     def __call__(self, plot, view):
-        if not self._applies(view): return
+        if not self._applies(plot, view): return
         fig = plot.handles['fig']
 
         df = view.dframe()
@@ -134,7 +137,7 @@ class RasterPlugin(MplD3Plugin):
     types = param.List(default=[Raster, HeatMap])
 
     def __call__(self, plot, view):
-        if not self._applies(view): return
+        if not self._applies(plot, view): return
 
         fig = plot.handles['fig']
         ax = plot.handles['axis']
@@ -176,7 +179,7 @@ class RasterPlugin(MplD3Plugin):
 
 
 
-class LegendPlugin(PlottingHook):
+class LegendPlugin(Mpld3Plugin):
     """
     Provides an interactive legend allowing selecting
     and unselecting of different elements.
@@ -191,8 +194,7 @@ class LegendPlugin(PlottingHook):
     types = param.List([Overlay, NdOverlay])
 
     def __call__(self, plot, view):
-        if not self._applies(view): return
-
+        if not self._applies(plot, view): return
         fig = plot.handles['fig']
         line_segments, labels = [], []
         keys = view.keys()
