@@ -35,8 +35,6 @@ Store:
 
 import param
 from .tree import AttrTree
-from .operation import ElementOperation
-from .overlay import CompositeOverlay, Overlay
 
 
 class OptionError(Exception):
@@ -354,8 +352,9 @@ class Channel(param.Parameterized):
     values names of those matrices match 'R', 'G' and 'B' respectively.
     """
 
-    operation = param.ClassSelector(class_=ElementOperation, is_instance=False, doc="""
-       The operation to apply when collapsing overlays into a channel.""")
+    operation = param.Parameter(doc="""
+       The ElementOperation to apply when collapsing overlays into a
+       channel.""")
 
     pattern = param.String(doc="""
        The overlay pattern to be processed. An overlay pattern is a
@@ -401,6 +400,7 @@ class Channel(param.Parameterized):
         """
         Finds any applicable channel operation and applies it.
         """
+        from .overlay import Overlay
         applicable_op = cls.strongest_match(overlay)
         if applicable_op is None: return overlay
 
@@ -561,6 +561,7 @@ class Store(object):
           only has plot options (and not style or normalization
           options).
         """
+        from .overlay import CompositeOverlay
         path_items = {}
         for view_class, plot in cls.defaults.items():
             name = view_class.__name__
