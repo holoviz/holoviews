@@ -340,8 +340,8 @@ class Channel(param.Parameterized):
     A Channel is a way of specifying an operation to be automatically
     applied to Overlays that match a specified pattern upon display.
 
-    Any operation that takes an Overlay as input and outputs a single,
-    non-overlayed element may be used to define a channel.
+    Any ElementOperation that takes an Overlay as input may be used to
+    define a channel.
 
     For instance, a channel may be defined to automatically display
     three overlaid monochrome matrices as an RGB image as long as the

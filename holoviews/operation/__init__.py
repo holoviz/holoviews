@@ -17,7 +17,6 @@ _public = list(set([_k for _k, _v in locals().items() if public(_v)]))
 
 for _k, _v in locals().items():
     if public(_v) and issubclass(_v, ElementOperation):
-        if getattr(_v, 'output_type', None) != Overlay:
-            Channel.operations.append(_v)
+        Channel.operations.append(_v)
 
 __all__ = _public + ['Channel']
