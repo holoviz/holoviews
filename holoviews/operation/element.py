@@ -213,24 +213,25 @@ class histogram(ElementOperation):
 
 class vectorfield(ElementOperation):
     """
-    Given a Matrix with a single channel, convert it to a
-    VectorField object at a given spatial sampling interval. The
-    values in the Matrix are assumed to correspond to the vector
-    angle in radians and the value is assumed to be cyclic.
+    Given a Matrix with a single channel, convert it to a VectorField
+    object at a given spatial sampling interval. The values in the
+    Matrix are assumed to correspond to the vector angle in radians
+    and the value is assumed to be cyclic.
 
-    If supplied with an overlay, the second sheetview in the overlay
+    If supplied with an Overlay, the second sheetview in the overlay
     will be interpreted as the third vector dimension.
     """
 
+    output_type = VectorField
+
     rows = param.Integer(default=10, doc="""
-         Number of rows in the vector field.""")
+       The number of rows in the vector field.""")
 
     cols = param.Integer(default=10, doc="""
-         Number of columns in the vector field.""")
+       The number of columns in the vector field.""")
 
-    label = param.String(default='Vectors', doc="""
-      The label suffix used to label the resulting vector field
-      where the suffix is added to the label of the  input Matrix""")
+    value = param.String(default='Vectors', doc="""
+       The value assigned to the output vector field.""")
 
 
     def _process(self, view, key=None):
@@ -240,7 +241,8 @@ class vectorfield(ElementOperation):
         else:
             radians, lengths = view, None
 
-        if not radians.value.cyclic:
+        cyclic_dim = radians.value_dimensions[0]
+        if not cyclic_dim.cyclic:
             raise Exception("First input Matrix must be declared cyclic")
 
         l, b, r, t = radians.bounds.lbrt()
@@ -249,16 +251,17 @@ class vectorfield(ElementOperation):
 
         vector_data = []
         for x, y in zip(X.flat, Y.flat):
-
             components = (x,y, radians[x,y])
             if lengths is not None:
                 components += (lengths[x,y],)
 
             vector_data.append(components)
 
-        value_dimensions = [Dimension('Magnitude'), Dimension('Angle', cyclic=True, range=radians.range)]
-        return [VectorField(vector_data, label=radians.label, value=self.p.label,
-                            value_dimensions=value_dimensions)]
+        value_dimensions = [Dimension('Magnitude'),
+                            Dimension('Angle', cyclic=True, range=cyclic_dim.range)]
+        return VectorField(vector_data, label=radians.label, value=self.p.value,
+                           value_dimensions=value_dimensions)
+
 
 
 class threshold(ElementOperation):
