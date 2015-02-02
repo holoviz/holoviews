@@ -123,15 +123,14 @@ class Options(param.Parameterized):
 
 
     def __init__(self, key=None, allowed_keywords=None, **kwargs):
-
-        allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        super(Options, self).__init__(allowed_keywords=allowed_keywords, key=key)
-
         for kwarg in kwargs:
             if allowed_keywords and kwarg not in allowed_keywords:
                 raise OptionError(kwarg, allowed_keywords)
+
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
+        allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
+        super(Options, self).__init__(allowed_keywords=allowed_keywords, key=key)
 
 
     def __call__(self, allowed_keywords=None, **kwargs):
