@@ -228,7 +228,7 @@ class HoloMap(UniformNdMapping):
 
     value = param.String(default='HoloMap')
 
-    data_type = ViewableElement
+    data_type = (ViewableElement, UniformNdMapping)
 
     @property
     def layer_types(self):
