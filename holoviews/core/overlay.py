@@ -182,6 +182,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
                 found = True
         if not found:
             raise KeyError("Dimension %s was not found." % dimension)
+        values = [v for v in values if v is not None and len(v)]
         return np.concatenate(values) if len(values) else []
 
 
