@@ -7,6 +7,7 @@ to act as supplementary elements.
 import uuid
 from collections import OrderedDict
 from itertools import groupby
+from operator import itemgetter
 
 import numpy as np
 
@@ -336,8 +337,7 @@ class LayoutTree(AttrTree, Dimensioned):
         identifiers if necessary.
         """
         relabelled_items = []
-        group_fn = lambda x: x[0][0:2] if len(x[0]) > 2 else (x[0][0],)
-        for path, group in groupby(items, key=group_fn):
+        for path, group in groupby(sorted(items), key=itemgetter(0)):
             group = list(group)
             if len(group) == 1 and len(path) > 1:
                 relabelled_items.append((path, group[0][1]))
