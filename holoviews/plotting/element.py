@@ -279,7 +279,7 @@ class OverlayPlot(ElementPlot):
             cyclic_index, _ = next(style_groups[(vmap.last.value)])
             plotopts = self.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
-                plotopts['dimensions'] = zip(vmap.last.key_dimensions, key)
+                plotopts['dimensions'] = vmap.last.key_dimensions
             plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=zorder, ranges=ranges, **plotopts)
