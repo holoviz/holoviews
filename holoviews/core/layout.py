@@ -207,7 +207,7 @@ class NdLayout(UniformNdMapping):
         if list(self.keys()) == []:  return {}
         cols = self._max_cols
         return {(idx // cols, idx % cols): (key, item)
-                for idx, (key, item) in enumerate(self.items())}
+                for idx, (key, item) in enumerate(self.data.items())}
 
 
     def cols(self, n):
