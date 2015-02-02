@@ -6,6 +6,7 @@ to act as supplementary elements.
 """
 import uuid
 from collections import OrderedDict
+from functools import reduce
 from itertools import groupby
 from operator import itemgetter
 
@@ -365,9 +366,13 @@ class LayoutTree(AttrTree, Dimensioned):
         return cls(items=[((view.value, view.label if view.label else 'I'), view)])
 
 
-    def group(self, name):
-        new_items = [((name, path[-1]), item) for path, item in self.data.items()]
-        return LayoutTree(items=self.relabel_item_paths(new_items))
+    def group(self, value):
+        """
+        Assign a new value string to all the elements and return a new
+        LayoutTree.
+        """
+        new_items = [el.relabel(value=value) for el in self.data.values()]
+        return reduce(lambda x,y: x+y, new_items)
 
 
     def __add__(self, other):
