@@ -651,6 +651,12 @@ class LayoutPlot(CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
+    figure_bounds = param.NumericTuple(default=(0.05, 0.05, 0.95, 0.95),
+                                       doc="""
+        The bounds of the figure as a 4-tuple of the form
+        (left, bottom, right, top), defining the size of the border
+        around the subplots.""")
+
     horizontal_spacing = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
@@ -663,6 +669,7 @@ class LayoutPlot(CompositePlot):
         if not isinstance(layout, (NdLayout, LayoutTree)):
             raise Exception("LayoutPlot only accepts LayoutTree objects.")
 
+        self.layout = layout
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
@@ -776,6 +783,7 @@ class LayoutPlot(CompositePlot):
             layout_key, _ = layout_items.get((r, c), (None, None))
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
+        self.handles['title'] = self.handles['fig'].suptitle('', fontsize=16)
 
         return layout_subplots, layout_axes, collapsed_layout
 
@@ -877,7 +885,7 @@ class LayoutPlot(CompositePlot):
         Should be called by the update_frame class to update
         any handles on the plot.
         """
-        self.handles['title'] = self.handles['fig'].suptitle(self._format_title(key))
+        self.handles['title'].set_text(self._format_title(key))
 
 
     def __call__(self):
