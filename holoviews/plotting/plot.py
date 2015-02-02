@@ -353,7 +353,7 @@ class CompositePlot(Plot):
         Should be called by the update_frame class to update
         any handles on the plot.
         """
-        title = axis.set_title(self._format_title(key))
+        self.handles['title'] = axis.set_title(self._format_title(key))
 
 
     def _get_frame(self, key):
@@ -877,7 +877,7 @@ class LayoutPlot(CompositePlot):
         Should be called by the update_frame class to update
         any handles on the plot.
         """
-        title = self.handles['fig'].suptitle(self._format_title(key))
+        self.handles['title'] = self.handles['fig'].suptitle(self._format_title(key))
 
 
     def __call__(self):
