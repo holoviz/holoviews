@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ElementOperation, CompositeOverlay, NdOverlay
+from ..core import Dimension, ElementOperation, CompositeOverlay, NdOverlay, Overlay
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField
 from ..element.annotation import Contours
@@ -122,37 +122,35 @@ class contours(ElementOperation):
     Given a Matrix with a single channel, annotate it with contour
     lines for a given set of contour levels.
 
-    The return is a overlay with a Contours layer for each given
+    The return is an NdOverlay with a Contours layer for each given
     level, overlaid on top of the input Matrix.
     """
 
+    output_type = Overlay
+
     levels = param.NumericTuple(default=(0.5,), doc="""
-         A list of scalar values used to specify the contour levels.""")
+        A list of scalar values used to specify the contour levels.""")
 
-    label = param.String(default='Level', doc="""
-      The label suffix used to label the resulting contour curves
-      where the suffix is added to the label of the  input Matrix""")
+    value = param.String(default='Level', doc="""
+        The value assigned to the output contours.""")
 
-    def _process(self, sheetview, key=None):
+
+    def _process(self, matrix, key=None):
         from matplotlib import pyplot as plt
 
         figure_handle = plt.figure()
-        (l, b, r, t) = sheetview.extents
-        contour_set = plt.contour(sheetview.data, extent=(l, r, t, b),
+        (l, b, r, t) = matrix.extents
+        contour_set = plt.contour(matrix.data, extent=(l, r, t, b),
                                   levels=self.p.levels)
 
         contours = NdOverlay(None, key_dimensions=['Levels'])
         for level, cset in zip(self.p.levels, contour_set.collections):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
-            contours[level] = Contours(lines, label=sheetview.label + ' ' + self.p.label)
+            contours[level] = Contours(lines, value=self.p.value)
 
         plt.close(figure_handle)
-
-        if len(contours) == 1:
-            return [(sheetview * contours.last)]
-        else:
-            return [sheetview * contours]
+        return matrix * contours
 
 
 class histogram(ElementOperation):
