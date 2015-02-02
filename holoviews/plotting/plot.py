@@ -218,6 +218,7 @@ class Plot(param.Parameterized):
         """
         if self.subplot or not self.uniform or len(self) == 1:
             return ''
+        key = key if isinstance(key, tuple) else (key,)
         dimension_labels = [dim.pprint_value(k) for dim, k in
                             zip(self.dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
