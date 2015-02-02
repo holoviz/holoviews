@@ -10,6 +10,7 @@ from ..element.raster import Matrix
 from ..element.tabular import ItemTable
 
 
+
 class chain(ElementOperation):
     """
     Defining an ElementOperation chain is an easy way to define a new
@@ -34,6 +35,7 @@ class chain(ElementOperation):
 
     def _process(self, view, key=None):
         return self.p.chain(view).clone(shared_data=True, value=self.p.value)
+
 
 
 class operator(ElementOperation):
@@ -117,6 +119,7 @@ class convolve(ElementOperation):
         return Matrix(convolved, bounds=target.bounds, value=self.p.value)
 
 
+
 class contours(ElementOperation):
     """
     Given a Matrix with a single channel, annotate it with contour
@@ -151,6 +154,7 @@ class contours(ElementOperation):
 
         plt.close(figure_handle)
         return matrix * contours
+
 
 
 class histogram(ElementOperation):
@@ -301,6 +305,7 @@ class threshold(ElementOperation):
         return matrix.clone(thresholded, value=self.p.value)
 
 
+
 class roi_table(ElementOperation):
     """
     Compute a table of information from a Matrix within the
@@ -349,6 +354,7 @@ class roi_table(ElementOperation):
             results = {self.p.heading:results}
 
         return [ItemTable(results, label=mview.label, value=self.p.label + ' ' + mview.value)]
+
 
 
 class split_raster(ElementOperation):
