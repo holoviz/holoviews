@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..core.util import valid_identifier
-
+from .options import Store
 
 class Dimension(param.Parameterized):
     """
@@ -240,6 +240,33 @@ class LabelledData(param.Parameterized):
         except:
             pass
         return accumulator
+
+
+    def __getstate__(self):
+        """
+        When pickling, make sure to save the relevant style and
+        plotting options as well.
+        """
+        obj_dict = self.__dict__.copy()
+        if obj_dict.get('id', None) is not None:
+            custom_key = '_custom_option_%d' % obj_dict['id']
+            if custom_key not in obj_dict:
+                obj_dict[custom_key] = Store.custom_options[obj_dict['id']]
+        return obj_dict
+
+
+    def __setstate__(self, d):
+        """
+        When unpickled, restore the saved style and plotting options
+        to ViewableElement.options.
+        """
+        matches = [k for k in d if k.startswith('_custom_option')]
+        for match in matches:
+            custom_id = int(match.split('_')[-1])
+            Store.custom_options[custom_id] = d[match]
+            d.pop(match)
+
+        self.__dict__.update(d)
 
 
 

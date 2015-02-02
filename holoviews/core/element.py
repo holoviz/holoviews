@@ -90,23 +90,6 @@ class Element(ViewableElement, Composable, Overlayable):
         return pandas.DataFrame(dim_vals, columns=column_names)
 
 
-    def __getstate__(self):
-        """
-        When pickling, make sure to save the relevant style and
-        plotting options as well.
-        """
-        obj_dict = self.__dict__.copy()
-        return obj_dict
-
-
-    def __setstate__(self, d):
-        """
-        When unpickled, restore the saved style and plotting options
-        to ViewableElement.options.
-        """
-        self.__dict__.update(d)
-
-
     def __repr__(self):
         params = ', '.join('%s=%r' % (k,v) for (k,v) in self.get_param_values())
         return "%s(%r, %s)" % (self.__class__.__name__, self.data, params)
