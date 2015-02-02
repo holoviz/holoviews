@@ -1,3 +1,11 @@
+"""
+ElementOperations that output RGB elements are commonly used for
+displaying colored images.
+
+The element operations can often be used with option.Channel to define
+operations that should automatically be applied upon display.
+"""
+
 import colorsys
 
 import numpy as np
