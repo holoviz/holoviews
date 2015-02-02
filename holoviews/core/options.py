@@ -431,10 +431,6 @@ class Channel(param.Parameterized):
 
         for path in pattern.split('*'):
             path_tuple = tuple(el.strip() for el in path.strip().split('.'))
-
-            if path_tuple[0] != 'Matrix':
-                raise KeyError("Only Matrix is currently supported in channel operation patterns")
-
             self._pattern_spec.append(path_tuple)
 
             if len(path_tuple) == 3:
