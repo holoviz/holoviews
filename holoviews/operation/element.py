@@ -318,6 +318,8 @@ class analyze_roi(ElementOperation):
     the analysis.
     """
 
+    output_type = ItemTable
+
     fn = param.Callable(default=np.mean, doc="""
         The function that is applied within the mask area to supply
         the relevant information.
