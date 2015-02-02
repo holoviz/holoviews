@@ -57,7 +57,7 @@ class table_collate(MapOperation):
                     key = new_key
                     value = table.get_dimension(label)
                     settings.update(value_dimensions=[value], label=table.label,
-                                    title=table.title, value=table.value)
+                                    value=table.value)
                 curve = Curve(zip(xvalues, yvalues), **settings)
                 if new_dimensions:
                     maps[label][key] = curve
