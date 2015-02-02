@@ -3,10 +3,9 @@ Advanced utilities for traversing nesting/hierarchical Dimensioned
 objects either to inspect the structure of their declared dimensions.
 """
 
-from .dimension import Dimension
+from operator import itemgetter
 
-def get_by_idxs(idxs):
-    return lambda x: tuple(x[idx] for idx in idxs)
+from .dimension import Dimension
 
 def create_ndkey(length, indexes, values):
     key = [None] * length
@@ -53,7 +52,7 @@ def unique_dimkeys(obj):
         dim_idxs = [all_dims.index(dim) for dim in group]
         for k in keys:
             matches = [item for item in unique_keys
-                       if k == get_by_idxs(dim_idxs)(item)]
+                       if k == itemgetter(*dim_idxs)(item)]
             if not matches:
                 unique_keys.append(create_ndkey(ndims, dim_idxs, k))
     if subset:
