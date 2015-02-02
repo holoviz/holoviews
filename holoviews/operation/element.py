@@ -4,7 +4,7 @@ import param
 
 from ..core import Dimension, ElementOperation, CompositeOverlay, NdOverlay, Overlay
 from ..core.util import find_minmax
-from ..element.chart import Histogram, VectorField
+from ..element.chart import Histogram, VectorField, Curve
 from ..element.annotation import Contours
 from ..element.raster import Matrix
 from ..element.tabular import ItemTable
@@ -347,7 +347,7 @@ class analyze_roi(ElementOperation):
         the relevant information.
 
         The function may return a single value (e.g np.sum, np.median,
-        np.std) or a dictionary of values..""")
+        np.std) or a dictionary of values.""")
 
     heading = param.String(default='result', doc="""
        If the output of the function is not a dictionary, this is the
@@ -380,5 +380,47 @@ class analyze_roi(ElementOperation):
         return ItemTable(results,
                          label=self.get_overlay_label(overlay),
                          value=self.p.value)
+
+
+#==================#
+# Other operations #
+#==================#
+
+
+class collapse_curve(ElementOperation):
+    """
+    Given an overlay of Curves, compute a new curve which is collapsed
+    for each x-value given a specified function.
+
+    This is an example of an ElementOperation that does not involve
+    any Raster types.
+    """
+
+    output_type = Curve
+
+    fn = param.Callable(default=np.mean, doc="""
+        The function that is used to collapse the curve y-values for
+        each x-value.""")
+
+    value = param.String(default='Collapses', doc="""
+       The value assigned to the collapsed curve output.""")
+
+    def _process(self, overlay, key=None):
+
+        for curve in overlay:
+            if not isinstance(curve, Curve):
+                raise ValueError("The collapse_curve operation requires Curves as input.")
+            if not all(curve.data[:,0] == overlay[0].data[:,0]):
+                raise ValueError("All input curves must have same x-axis values.")
+
+        data = []
+        for i, xval in enumerate(overlay[0].data[:,0]):
+            yval = self.p.fn([c.data[i,1]  for c in overlay])
+            data.append((xval, yval))
+
+        return Curve(np.array(data), value=self.p.value,
+                     label=self.get_overlay_label(overlay))
+
+
 
 
