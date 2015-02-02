@@ -417,7 +417,7 @@ class Channel(param.Parameterized):
             return holomap
 
         # Collapse channel operations
-        clone = holomap.clone()
+        clone = holomap.clone(shared_data=False)
         for key, overlay in holomap.items():
             clone[key] = cls._collapse(overlay, key, ranges)
         return clone

@@ -277,7 +277,7 @@ class Table(Element, NdMapping):
             split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
             if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.groupby([dim])
-                reduced_table = self.clone(None, key_dimensions=split_dims)
+                reduced_table = self.clone(shared_data=False, key_dimensions=split_dims)
                 for k, table in split_map.items():
                     if len(self.value_dimensions) > 1:
                         reduced = tuple(reduce_fn(table.dimension_values(vdim.name))

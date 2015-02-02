@@ -144,7 +144,7 @@ class DataFrameView(Element):
         view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
             mapping[k] = self.clone(v.drop(dimensions, axis=1),
-                                      key_dimensions=view_dims)
+                                    key_dimensions=view_dims)
         return mapping
 
 

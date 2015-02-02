@@ -34,7 +34,7 @@ class chain(ElementOperation):
     chain = param.Callable(doc="""A chain of existing ViewOperations.""")
 
     def _process(self, view, key=None):
-        return self.p.chain(view).clone(shared_data=True, value=self.p.value)
+        return self.p.chain(view).clone(value=self.p.value)
 
 #==============================#
 # Raster processing operations #

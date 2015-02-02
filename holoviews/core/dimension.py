@@ -176,7 +176,7 @@ class LabelledData(param.Parameterized):
         super(LabelledData, self).__init__(**params)
 
 
-    def clone(self, data=None, shared_data=False, *args, **overrides):
+    def clone(self, data=None, shared_data=True, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.

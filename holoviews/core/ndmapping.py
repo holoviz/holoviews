@@ -228,7 +228,7 @@ class MultiDimensionalMapping(Dimensioned):
         dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
 
         for fk in first_keys:  # The first groups keys
-            split_data[fk] = self.clone(key_dimensions=second_dims)
+            split_data[fk] = self.clone(shared_data=False, key_dimensions=second_dims)
             split_data[fk]._check_key_type = False # Speed optimization
             for sk in set(second_keys):  # The second groups keys
                 # Generate a candidate expanded key

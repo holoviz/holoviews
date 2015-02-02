@@ -286,7 +286,7 @@ class HoloMap(UniformNdMapping):
             new_map = dict()
         else:
             split_map = self.groupby(dimensions, NdOverlay)
-            new_map = self.clone(key_dimensions=split_map.key_dimensions)
+            new_map = self.clone(shared_data=False, key_dimensions=split_map.key_dimensions)
 
         for outer, vmap in split_map.items():
             new_map[outer] = NdOverlay(vmap, key_dimensions=vmap.key_dimensions)
@@ -671,7 +671,7 @@ class AxisLayout(UniformNdMapping):
         directly or use the items() method.
         """
 
-        last_items = [(k, v.clone(items=(list(v.keys())[-1], v.last)))
+        last_items = [(k, v.clone((list(v.keys())[-1], v.last)))
                       for (k, v) in self.items()]
         return self.clone(last_items)
 

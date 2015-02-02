@@ -361,7 +361,7 @@ class CompositePlot(Plot):
         Creates a clone of the Layout with the nth-frame for each
         Element.
         """
-        layout_frame = self.layout.clone()
+        layout_frame = self.layout.clone(shared_data=False)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
                                   x.data.keys()[max([key, len(x)-1])])
         for path, item in self.layout.items():
@@ -425,7 +425,7 @@ class GridPlot(CompositePlot):
         frame_ranges = self.compute_ranges(layout, None, ranges)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
-        collapsed_layout = layout.clone(id=layout.id)
+        collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
             # Create axes
@@ -730,7 +730,7 @@ class LayoutPlot(CompositePlot):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
         gidx = 0
-        collapsed_layout = layout.clone(id=layout.id)
+        collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
@@ -828,7 +828,7 @@ class LayoutPlot(CompositePlot):
         empty axes as necessary.
         """
         subplots = {}
-        adjoint_clone = layout.clone(id=layout.id)
+        adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(show_title=False, layout=layout)
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None

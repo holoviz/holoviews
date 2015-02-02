@@ -215,4 +215,4 @@ class colorizeHSV(ElementOperation):
 
         C = Matrix(np.ones(hue.data.shape),
                    bounds=self.get_overlay_extents(overlay), value='F', label='G')
-        return toHCS(H * C * S).clone(shared_data=True, value=self.p.value)
+        return toHCS(H * C * S).clone(value=self.p.value)

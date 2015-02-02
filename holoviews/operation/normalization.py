@@ -147,7 +147,7 @@ class raster_normalization(Normalization):
         if isinstance(raster, Raster):
             return self._normalize_raster(raster, key)
         elif isinstance(raster, Overlay):
-            overlay_clone = raster.clone()
+            overlay_clone = raster.clone(shared_data=False)
             for k, el in raster.items():
                 overlay_clone[k] =  self._normalize_raster(el, key)
             return overlay_clone
@@ -157,7 +157,7 @@ class raster_normalization(Normalization):
 
     def _normalize_raster(self, raster, key):
         if not isinstance(raster, Raster): return raster
-        norm_raster = raster.clone(data=raster.data.copy())
+        norm_raster = raster.clone(raster.data.copy())
         ranges = self.get_ranges(raster, key)
 
         for depth, name in enumerate(d.name for d in raster.value_dimensions):
