@@ -47,8 +47,10 @@ class ElementPlot(Plot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    def __init__(self, element, keys=None, ranges=None, dimensions=None, cyclic_index=0, zorder=0, **params):
+    def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
+                 cyclic_index=0, zorder=0, **params):
         self.map = self._check_map(element, ranges, keys)
+        self.overlaid = overlaid
         self.cyclic_index = cyclic_index
         self.zorder = zorder
         dimensions = self.map.key_dimensions if dimensions is None else dimensions
@@ -137,8 +139,8 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         view = self._get_frame(key)
-        if self.zorder == 0 and key is not None:
-            if view is not None and not isinstance(view, CompositeOverlay):
+        if not self.overlaid and key is not None:
+            if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
@@ -279,7 +281,8 @@ class OverlayPlot(ElementPlot):
                 plotopts['dimensions'] = vmap.last.key_dimensions
             plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
-                            zorder=zorder, ranges=ranges, **plotopts)
+                            zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
+                            **plotopts)
             plotype = Plot.defaults[type(vmap.last)]
             subplots[key] = plotype(vmap, **plotopts)
 

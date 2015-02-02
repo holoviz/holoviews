@@ -137,6 +137,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
         self.cyclic_index = 0
         self.zorder = 0
+        self.overlaid = False
         self.map = {}
         xkeys, ykeys = zip(*layout.data.keys())
         self._xkeys = sorted(set(xkeys))
