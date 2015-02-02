@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ..core import CompositeOverlay
-from ..core.traversal import unique_dimkeys
+from ..core import traversal
 from ..element.raster import HeatMap, Matrix, Raster, RGB
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
@@ -133,7 +133,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
     def __init__(self, layout, keys=None, dimensions=None, ranges=None, **params):
         if not keys or not dimensions:
-            dimensions, keys = unique_dimkeys(layout)
+            dimensions, keys = traversal.unique_dimkeys(layout)
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
         self.cyclic_index = 0
         self.zorder = 0

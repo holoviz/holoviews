@@ -17,7 +17,7 @@ from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
-from .traversal import uniform
+import traversal
 
 
 class Composable(object):
@@ -185,7 +185,7 @@ class NdLayout(UniformNdMapping):
 
     @property
     def uniform(self):
-        return uniform(self)
+        return traversal.uniform(self)
 
 
     @property
@@ -285,7 +285,7 @@ class LayoutTree(AttrTree, Dimensioned):
 
     @property
     def uniform(self):
-        return uniform(self)
+        return traversal.uniform(self)
 
 
     def select(self, **selections):

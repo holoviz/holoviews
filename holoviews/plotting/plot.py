@@ -11,7 +11,7 @@ import param
 from ..core import NdMapping, UniformNdMapping, ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
 from ..core.options import Options, OptionTree
-from ..core.traversal import unique_dimkeys, uniform
+from ..core import traversal
 from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
 
@@ -409,10 +409,10 @@ class GridPlot(CompositePlot):
         self.cols, self.rows = layout.shape
         extra_opts = self.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
-            dimensions, keys = unique_dimkeys(layout)
+            dimensions, keys = traversal.unique_dimkeys(layout)
 
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                       uniform=uniform(layout),
+                                       uniform=traversal.uniform(layout),
                                        **dict(extra_opts, **params))
         # Compute ranges layoutwise
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols)
@@ -667,10 +667,11 @@ class LayoutPlot(CompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dimensions, keys = unique_dimkeys(layout)
+        dimensions, keys = traversal.unique_dimkeys(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(LayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                         uniform=uniform(layout), **dict(plotopts, **params))
+                                         uniform=traversal.uniform(layout),
+                                         **dict(plotopts, **params))
         self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
 
 

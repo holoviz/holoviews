@@ -23,7 +23,7 @@ except:
 import param
 
 from ..core import ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
-from ..core.traversal import uniform
+from ..core import traversal
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from . import magics
@@ -117,7 +117,7 @@ def display_widgets(view,  widget_format, widget_mode):
     "Display widgets applicable to the specified view"
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
-    isuniform = uniform(view)
+    isuniform = traversal.uniform(view)
     if not isuniform and widget_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
                                     % type(view).__name__)
