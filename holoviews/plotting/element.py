@@ -313,7 +313,57 @@ class OverlayPlot(ElementPlot):
         self._adjust_legend(axis)
 
         key = self.map.last_key
-        return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
+        return self._finalize_axis(key, ranges=ranges,
+                                   title=self._format_title(key))
+
+
+    def _get_extents(self, overlay, ranges):
+        if self.projection == '3d':
+            indexes = ((0,3), (1, 4), (2, 5))
+        else:
+            indexes = ((0,2), (1, 3))
+        extents = None
+        for key, subplot in self.subplots.items():
+            layer = overlay.data.get(key, False)
+            if layer:
+                lextnt = subplot.get_extents(layer, ranges)
+                if not extents:
+                    extents = lextnt
+                    continue
+                bounds = [find_minmax((extents[low], extents[high]),
+                                          (lextnt[low], lextnt[high]))
+                                          for low, high in indexes]
+                if self.projection == '3d':
+                    extents = (bounds[0][0], bounds[1][0], bounds[2][0],
+                               bounds[0][1], bounds[1][1], bounds[2][1])
+                else:
+                    extents = (bounds[0][0], bounds[1][0],
+                               bounds[0][1], bounds[1][1])
+        return extents
+
+
+    def _format_title(self, key):
+        frame = self._get_frame(key)
+        if frame is None: return None
+        type_name = type(frame).__name__
+        value = frame.value if frame.value != type_name else ''
+        label = frame.label
+
+        labels, values = [], []
+        for key, subplot in self.subplots.items():
+            layer = frame.data.get(key, False)
+            if layer:
+                labels.append(layer.label)
+                values.append(layer.value)
+        if not label and all(labels[0] == l for l in labels):
+            label = labels[0]
+        if not value and all(values[0] == v for v in values):
+            value = values[0]
+        title = self.title_format.format(label=label,
+                                         value=value,
+                                         type=type_name)
+        dim_title = self._frame_title(key, 2)
+        return ' '.join([title, dim_title])
 
 
     def update_frame(self, key, ranges=None):
