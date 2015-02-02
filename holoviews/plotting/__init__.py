@@ -2,9 +2,9 @@ import os
 
 import param
 
-from ..core.options import Cycle, Options
-from . import seaborn # pyflakes:ignore (API import)
-from . import pandas # pyflakes:ignore (API import)
+from ..core.options import Cycle, Options, Store
+#from . import seaborn # pyflakes:ignore (API import)
+#from . import pandas # pyflakes:ignore (API import)
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .plot import * # pyflakes:ignore (API import)
@@ -54,8 +54,8 @@ class PlotSaver(param.ParameterizedFunction):
             raise Exception("File of type %r not in %s" % (ext, valid_exts))
         file_format = ext[1:]
 
-        plottype = Plot.defaults[type(view)]
-        plotopts = self.lookup_options(view, 'plot').options
+        plottype = Store.defaults[type(view)]
+        plotopts = Store.lookup_options(view, 'plot').options
         plot = plottype(view, **dict(plotopts, size=self.p.size))
 
         if len(plot) > 1 and ext in anim_exts:
@@ -72,18 +72,21 @@ class PlotSaver(param.ParameterizedFunction):
                            **self.p.extra_keywords())
 
 
-Plot.register_options()
-Plot.options.Contours = Options('style', color='k')
-Plot.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
-Plot.options.Raster = Options('style', cmap='jet', interpolation='nearest')
-Plot.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
-Plot.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
+Store.register_plots()
+
+
+
+Store.options.Contours = Options('style', color='k')
+Store.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
+Store.options.Raster = Options('style', cmap='jet', interpolation='nearest')
+Store.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
+Store.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
                                                  'axes.titlesize': 'small'})
 # Color cycles can be removed once default style set and test data updated
-Plot.options.Curve = Options('style', color=Cycle(), linewidth=2)
-Plot.options.Scatter = Options('style', color=Cycle(), marker='o')
-Plot.options.Histogram = Options('style', ec='k', fc='w')
-Plot.options.Points = Options('style', color=Cycle(), marker='o')
+Store.options.Curve = Options('style', color=Cycle(), linewidth=2)
+Store.options.Scatter = Options('style', color=Cycle(), marker='o')
+Store.options.Histogram = Options('style', ec='k', fc='w')
+Store.options.Points = Options('style', color=Cycle(), marker='o')
 
 # Defining the most common style options for holoviews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')

@@ -155,6 +155,6 @@ class MapOperation(param.ParameterizedFunction):
 
 
 
-class LayoutOperation(param.ParameterizedFunction):
+class TreeOperation(param.ParameterizedFunction):
 
     pass

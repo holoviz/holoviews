@@ -25,6 +25,12 @@ OptionTree:
    of the tree supports a group of Options objects and the leaf nodes
    inherit their keyword values from parent nodes up to the root.
 
+Store:
+
+   A singleton class that stores all global and custom options and
+   links holoview objects, the chosen plotting backend and the IPython
+   extension together.
+
 """
 
 import param
@@ -495,4 +501,84 @@ class Channel(param.Parameterized):
         input ranges.
         """
         return self.operation(value, input_ranges=input_ranges, **self.kwargs)
+
+
+
+class Store(object):
+    """
+    The Store is what links up HoloViews objects and elements to both
+    the IPython extension and to the plotting/display backend.
+
+    * Data objects are independent of plotting and the IPython
+      extension.
+
+    * Plotting and the IPython extension are likewise independent from
+      each other.
+
+    The Store stores the display options (plotting) for data elements
+    as well as the association from holoview objects to the respective
+    plotting classes.
+    """
+
+    # A mapping from ViewableElement types to their corresponding plot
+    # types. Set using the register_plots methods.
+    defaults = {}
+
+    # Once register_plotting_classes is called, this OptionTree is populated
+    options = OptionTree(groups={'plot':  Options(),
+                                 'style': Options(),
+                                 'norm':  Options()})
+
+    # A dictionary of custom OptionTree by custom object id
+    custom_options = {}
+
+
+    @classmethod
+    def lookup_options(cls, obj, group):
+        if obj.id is None:
+            return cls.options.closest(obj, group)
+        elif obj.id in cls.custom_options:
+            return cls.custom_options[obj.id].closest(obj, group)
+        else:
+            raise KeyError("No custom settings defined for object with id %d" % obj.id)
+
+
+    @classmethod
+    def register_plots(cls):
+        """
+        Given that the Store.defaults dictionary has been populate
+        with {<element>:<plot-class>} items, build an OptionsTree for the
+        supported plot types, registering allowed plotting and style
+        keywords.
+
+        This is designed to be backend independent but makes the
+        following assumptions:
+
+        * Plotting classes are param.Parameterized objects.
+
+        * Plotting classes have a style_opts list of keywords used to
+          control the display style of the output.
+
+        * Overlay plotting is a function of the overlaid elements and
+          only has plot options (and not style or normalization
+          options).
+        """
+        path_items = {}
+        for view_class, plot in cls.defaults.items():
+            name = view_class.__name__
+            plot_opts = [k for k in plot.params().keys() if k not in ['name']]
+            style_opts = plot.style_opts
+            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
+
+            if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
+                opt_groups.update({'style': Options(allowed_keywords=style_opts),
+                                   'norm':  Options(mapwise=True, groupwise=True,
+                                                    allowed_keywords=['groupwise',
+                                                                      'mapwise'])})
+            path_items[name] = opt_groups
+
+        cls.options = OptionTree(sorted(path_items.items()),
+                                  groups={'style': Options(),
+                                          'plot': Options(),
+                                          'norm': Options()})
 

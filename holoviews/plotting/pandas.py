@@ -4,6 +4,7 @@ from matplotlib import pyplot as plt
 
 import param
 
+from ..core.options import Store
 from ..interface.pandas import DFrame, DataFrameView, pd
 from .element import ElementPlot
 from .plot import Plot
@@ -64,7 +65,7 @@ class DFrameViewPlot(ElementPlot):
         dfview = self.map.last
         self._validate(dfview)
 
-        style = self.lookup_options(dfview, 'style')[self.cyclic_index]
+        style = Store.lookup_options(dfview, 'style')[self.cyclic_index]
         self.style = self._process_style(style)
 
         self._update_plot(dfview)
@@ -118,5 +119,5 @@ class DFrameViewPlot(ElementPlot):
         self._update_plot(axis, view)
 
 
-Plot.defaults.update({DataFrameView: DFrameViewPlot,
-                      DFrame: DFrameViewPlot})
+Store.defaults.update({DataFrameView: DFrameViewPlot,
+                       DFrame: DFrameViewPlot})

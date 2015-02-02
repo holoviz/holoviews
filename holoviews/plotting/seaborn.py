@@ -12,6 +12,7 @@ import param
 from ..interface.pandas import DFrame, DataFrameView
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
+from ..core.options import Store
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
 from .plot import Plot
@@ -70,7 +71,7 @@ class RegressionPlot(FullRedrawPlot):
     def _update_plot(self, axis, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
                     ax=axis, label=view.label,
-                    **self.lookup_options(view, 'style')[self.cyclic_index])
+                    **Store.lookup_options(view, 'style')[self.cyclic_index])
 
 
 
@@ -97,7 +98,7 @@ class BivariatePlot(FullRedrawPlot):
     def __call__(self, ranges=None):
         kdeview = self.map.last
         axis = self.handles['axis']
-        self.style = self.lookup_options(kdeview, 'style')[self.cyclic_index]
+        self.style = Store.lookup_options(kdeview, 'style')[self.cyclic_index]
         if self.joint and self.subplot:
             raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(axis, kdeview)
@@ -140,7 +141,7 @@ class TimeSeriesPlot(FullRedrawPlot):
     def __call__(self, ranges=None):
         curveview = self.map.last
         axis = self.handles['axis']
-        self.style = self.lookup_options(curveview, 'style')[self.cyclic_index]
+        self.style = Store.lookup_options(curveview, 'style')[self.cyclic_index]
         self._update_plot(axis, curveview)
 
         return self._finalize_axis(self.map.last_key)
@@ -171,7 +172,7 @@ class DistributionPlot(FullRedrawPlot):
     def __call__(self, ranges=None):
         distview = self.map.last
         axis = self.handles['axis']
-        self.style = self.lookup_options(distview, 'style')[self.cyclic_index]
+        self.style = Store.lookup_options(distview, 'style')[self.cyclic_index]
         self._update_plot(axis, distview)
 
         return self._finalize_axis(self.map.last_key)
@@ -247,7 +248,7 @@ class SNSFramePlot(DFrameViewPlot):
         self._validate(dfview)
 
         # Process styles
-        style = self.style = self.lookup_options(dfview, 'style')[self.cyclic_index]
+        style = self.style = Store.lookup_options(dfview, 'style')[self.cyclic_index]
         self.style = self._process_style(style)
 
         self._update_plot(axis, dfview)
@@ -317,10 +318,10 @@ class SNSFramePlot(DFrameViewPlot):
             super(SNSFramePlot, self)._update_plot(axis, view)
 
 
-Plot.defaults.update({TimeSeries: TimeSeriesPlot,
-                      Bivariate: BivariatePlot,
-                      Distribution: DistributionPlot,
-                      Regression: RegressionPlot,
-                      SNSFrame: SNSFramePlot,
-                      DFrame: SNSFramePlot,
-                      DataFrameView: SNSFramePlot})
+Store.defaults.update({TimeSeries: TimeSeriesPlot,
+                       Bivariate: BivariatePlot,
+                       Distribution: DistributionPlot,
+                       Regression: RegressionPlot,
+                       SNSFrame: SNSFramePlot,
+                       DFrame: SNSFramePlot,
+                       DataFrameView: SNSFramePlot})

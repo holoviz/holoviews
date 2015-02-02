@@ -12,7 +12,7 @@ except:
 from ..core import NdOverlay, Element, HoloMap,\
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
 
-from ..core.options import OptionTree, Options, OptionError
+from ..core.options import OptionTree, Options, OptionError, Store
 from ..plotting import Plot
 
 from collections import OrderedDict
@@ -297,7 +297,7 @@ class ChannelMagic(Magics):
 
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
-                Plot.options[type_name + '.' + definition.value] = group
+                Store.options[type_name + '.' + definition.value] = group
                 Channel.definitions.append(definition)
         else:
             print "For help with the %channels magic, call %channels?\n"
@@ -329,8 +329,8 @@ class OptsCompleter(object):
     def setup_completer(cls):
         "Get the dictionary of valid completions"
         if len(cls._completions) != 0: return cls._completions
-        for element in Plot.options.children:
-            options = Plot.options[element]
+        for element in Store.options.children:
+            options = Store.options[element]
             plotkws = options['plot'].allowed_keywords
             stylekws = options['style'].allowed_keywords
             cls._completions[element] = (plotkws, stylekws if stylekws else [])
@@ -397,7 +397,7 @@ class OptsMagic(Magics):
         if cls.error_message:
             return cls.error_message
         if cls.next_id is not None:
-            assert cls.next_id in Plot.custom_options, 'RealityError'
+            assert cls.next_id in Store.custom_options, 'RealityError'
             obj.traverse(lambda o: setattr(o, 'id', cls.next_id),
                          specs=cls.applied_keys)
             cls.next_id = None
@@ -414,7 +414,7 @@ class OptsMagic(Magics):
     @classmethod
     def customize_tree(cls, spec, options):
         """
-        Returns a customized copy of the Plot.options OptionsTree object.
+        Returns a customized copy of the Store.options OptionsTree object.
         """
         for key in sorted(spec.keys()):
             try:
@@ -426,13 +426,13 @@ class OptsMagic(Magics):
 
     @classmethod
     def register_custom_spec(cls, spec, obj):
-        ids = Plot.custom_options.keys()
+        ids = Store.custom_options.keys()
         max_id = max(ids) if len(ids)>0 else -1
-        options = OptionTree(items=Plot.options.data.items(),
-                             groups=Plot.options.groups)
+        options = OptionTree(items=Store.options.data.items(),
+                             groups=Store.options.groups)
         custom_tree = cls.customize_tree(spec, options)
         if custom_tree is not None:
-            Plot.custom_options[max_id+1] = custom_tree
+            Store.custom_options[max_id+1] = custom_tree
             cls.next_id = max_id+1
             cls.applied_keys += spec.keys()
         else:
@@ -497,7 +497,7 @@ class OptsMagic(Magics):
         if cell:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            retval = self.customize_tree(spec, Plot.options)
+            retval = self.customize_tree(spec, Store.options)
             if retval is None:
                 display(HTML(OptsMagic.error_message))
         OptsMagic.error_message = None

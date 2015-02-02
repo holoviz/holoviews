@@ -2,6 +2,7 @@ from matplotlib import patches as patches
 from matplotlib.collections import LineCollection
 from matplotlib.path import Path
 
+from ..core.options import Store
 from ..element import Contours, VLine, HLine, Arrow, Spline, Text
 from .element import ElementPlot
 from .plot import Plot
@@ -20,7 +21,7 @@ class AnnotationPlot(ElementPlot):
     def __call__(self, ranges=None):
         annotation = self.map.last
         axis = self.handles['axis']
-        opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
+        opts = Store.lookup_options(annotation, 'style')[self.cyclic_index]
         handle = self.draw_annotation(axis, annotation, annotation.data, opts)
         self.handles['annotations'].append(handle)
         return self._finalize_axis(self.map.last_key)
@@ -31,7 +32,7 @@ class AnnotationPlot(ElementPlot):
         for element in self.handles['annotations']:
             element.remove()
 
-        opts = self.lookup_options(annotation, 'style')[self.cyclic_index]
+        opts = Store.lookup_options(annotation, 'style')[self.cyclic_index]
         self.draw_annotation(annotation, annotation.data, opts)
 
 
@@ -123,7 +124,7 @@ class ContourPlot(ElementPlot):
     def __call__(self, ranges=None):
         lines = self.map.last
 
-        style = self.lookup_options(lines, 'style')[self.cyclic_index]
+        style = Store.lookup_options(lines, 'style')[self.cyclic_index]
         line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
         self.handles['axis'].add_collection(line_segments)
@@ -135,7 +136,7 @@ class ContourPlot(ElementPlot):
         self.handles['line_segments'].set_paths(view.data)
 
 
-Plot.defaults.update({
+Store.defaults.update({
     Contours: ContourPlot,
     VLine: VLinePlot,
     HLine: HLinePlot,

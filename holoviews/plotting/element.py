@@ -7,6 +7,7 @@ import numpy as np
 
 import param
 
+from ..core.options import Store
 from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element, Element3D
 from ..core.util import valid_identifier
 from ..operation import Channel
@@ -280,14 +281,14 @@ class OverlayPlot(ElementPlot):
                             in groupby(vmaps, lambda s: (s.last.value)))
         for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
             cyclic_index, _ = next(style_groups[(vmap.last.value)])
-            plotopts = self.lookup_options(vmap.last, 'plot').options
+            plotopts = Store.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = vmap.last.key_dimensions
             plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
                             **plotopts)
-            plotype = Plot.defaults[type(vmap.last)]
+            plotype = Store.defaults[type(vmap.last)]
             subplots[key] = plotype(vmap, **plotopts)
 
         return subplots
@@ -379,5 +380,5 @@ class OverlayPlot(ElementPlot):
         self._finalize_axis(key, ranges)
 
 
-Plot.defaults.update({NdOverlay: OverlayPlot,
-                      Overlay: OverlayPlot})
+Store.defaults.update({NdOverlay: OverlayPlot,
+                       Overlay: OverlayPlot})

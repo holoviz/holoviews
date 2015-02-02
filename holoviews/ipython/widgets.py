@@ -26,6 +26,7 @@ import param
 
 from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
 from ..core import traversal
+from ..core.options import Store
 from ..element import Raster
 from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
 from .magics import ViewMagic
@@ -282,12 +283,12 @@ class NdWidget(param.Parameterized):
                 plot_type = MatrixGridPlot
             else:
                 plot_type = GridPlot
-            opts = Plot.lookup_options(view, 'plot').options
+            opts = Store.lookup_options(view, 'plot').options
             plot = plot_type(view, **dict({'size': view_size}, **opts))
         else:
-            opts = dict(Plot.options.closest(view, 'plot').options,
+            opts = dict(Store.options.closest(view, 'plot').options,
                         size=get_plot_size())
-            plot = Plot.defaults[view.type](view, **opts)
+            plot = Store.defaults[view.type](view, **opts)
 
         dimensions, keys = traversal.unique_dimkeys(view)
 

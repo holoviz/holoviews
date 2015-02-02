@@ -9,6 +9,7 @@ except:
 
 import param
 
+from ..core.options import Store
 from ..ipython.magics import ViewMagic
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
@@ -143,7 +144,7 @@ class RasterPlugin(MplD3Plugin):
         ax = plot.handles['axis']
         valid_opts = ['cmap']
 
-        opts = {k:v for k,v, in Plot.lookup_options(view, 'style').options.items()
+        opts = {k:v for k,v, in Store.lookup_options(view, 'style').options.items()
                 if k in valid_opts}
 
         data = view.data

@@ -7,6 +7,7 @@ from matplotlib import ticker
 
 import param
 
+from ..core.options import Store
 from ..core import ViewableElement, CompositeOverlay, HoloMap
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
 from .element import ElementPlot
@@ -39,7 +40,6 @@ class ChartPlot(ElementPlot):
             log_locator = ticker.LogLocator(numticks=self.yticks,
                                             subs=range(1,10))
             axis.yaxis.set_major_locator(log_locator)
-        
         return ret
 
 
@@ -152,7 +152,7 @@ class CurvePlot(ChartPlot):
             xticks = self._cyclic_reduce_ticks(self.xvalues)
 
         # Create line segments and apply style
-        style = self.lookup_options(curveview, 'style')[self.cyclic_index]
+        style = Store.lookup_options(curveview, 'style')[self.cyclic_index]
         line_segment = axis.plot(curveview.data[:, 0], curveview.data[:, 1],
                                  zorder=self.zorder, label=curveview.label,
                                  **style)[0]
@@ -217,7 +217,7 @@ class HistogramPlot(ChartPlot):
             self.plotfn = self.handles['axis'].bar
 
         # Plot bars and make any adjustments
-        style = self.lookup_options(hist, 'style')[self.cyclic_index]
+        style = Store.lookup_options(hist, 'style')[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self.map.last_key, bars, lims) # Indexing top
 
@@ -376,7 +376,7 @@ class SideHistogramPlot(HistogramPlot):
         hist = self._get_frame(key)
         main = self.layout.main
         offset = self.offset * lims[3] * (1-self.offset)
-        plot_options = self.lookup_options(main, 'plot').options
+        plot_options = Store.lookup_options(main, 'plot').options
         individually = plot_options.get('normalize_individually', False)
 
         hist_dim = hist.get_dimension(0).name
@@ -407,7 +407,7 @@ class SideHistogramPlot(HistogramPlot):
             main = main.values()[0]
 
         if isinstance(main, (Raster, Points)):
-            style = self.lookup_options(main, 'style')[self.cyclic_index]
+            style = Store.lookup_options(main, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap')) if self.offset else None
             main_range = style.get('clims', main_range) if self.offset else None
         else:
@@ -497,7 +497,7 @@ class PointPlot(ChartPlot):
         ys = points.data[:, 1] if len(points.data) else []
         cs, cidx, sz, sidx = self._get_color_size(points)
 
-        style = self.lookup_options(points, 'style')[self.cyclic_index]
+        style = Store.lookup_options(points, 'style')[self.cyclic_index]
         if sz is not None and self.scaling_factor > 1:
             style['s'] = self._compute_size(cs, style)
         if cs is not None:
@@ -540,7 +540,7 @@ class PointPlot(ChartPlot):
         points.set_offsets(view.data[:,0:2])
         if view.data.shape[1]>2:
             cs, cidx, sz, sidx = self._get_color_size(points)
-            opts = self.lookup_options(view, 'style')[0]
+            opts = Store.lookup_options(view, 'style')[0]
 
             if sz is not None and self.scaling_factor > 1:
                 points.set_sizes(self._compute_size(sz, opts))
@@ -643,7 +643,7 @@ class VectorFieldPlot(ElementPlot):
         axis = self.handles['axis']
 
         colorized = self.color_dim is not None
-        kwargs = self.lookup_options(vfield, 'style')[self.cyclic_index]
+        kwargs = Store.lookup_options(vfield, 'style')[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 
@@ -692,11 +692,11 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_clim(view.range)
 
 
-Plot.defaults.update({Curve: CurvePlot,
-                      Scatter: PointPlot,
-                      Bars: HistogramPlot,
-                      Histogram: HistogramPlot,
-                      Points: PointPlot,
-                      VectorField: VectorFieldPlot})
+Store.defaults.update({Curve: CurvePlot,
+                       Scatter: PointPlot,
+                       Bars: HistogramPlot,
+                       Histogram: HistogramPlot,
+                       Points: PointPlot,
+                       VectorField: VectorFieldPlot})
 
 Plot.sideplots.update({Histogram: SideHistogramPlot})

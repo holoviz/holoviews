@@ -10,7 +10,7 @@ from matplotlib import gridspec, animation
 import param
 from ..core import NdMapping, UniformNdMapping, ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
-from ..core.options import Options, OptionTree
+from ..core.options import Options, OptionTree, Store
 from ..core import traversal
 from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
@@ -72,19 +72,8 @@ class Plot(param.Parameterized):
     # parameter to list every option that works correctly.
     style_opts = []
 
-    # A mapping from ViewableElement types to their corresponding plot types
-    defaults = {}
-
     # A mapping from ViewableElement types to their corresponding side plot types
     sideplots = {}
-
-    # Once register_options is called, this OptionTree is populated
-    options = OptionTree(groups={'plot':  Options(),
-                                 'style': Options(),
-                                 'norm':  Options()})
-
-    # A dictionary of custom OptionTree by custom id
-    custom_options = {}
 
 
     def __init__(self, figure=None, axis=None, dimensions=None,
@@ -101,16 +90,6 @@ class Plot(param.Parameterized):
         self.handles = {} if figure is None else {'fig': figure}
         super(Plot, self).__init__(**params)
         self.handles['axis'] = self._init_axis(axis)
-
-
-    @classmethod
-    def lookup_options(cls, obj, group):
-        if obj.id is None:
-            return cls.options.closest(obj, group)
-        elif obj.id in cls.custom_options:
-            return cls.custom_options[obj.id].closest(obj, group)
-        else:
-            raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -170,7 +149,7 @@ class Plot(param.Parameterized):
         id_groups = sorted(groupby(element_specs, lambda x: x[0]))
         for gid, element_spec_group in id_groups:
             group_specs = [el for _, el in element_spec_group]
-            optstree = self.custom_options.get(gid, Plot.options)
+            optstree = Store.custom_options.get(gid, Store.options)
             # Get the normalization options for the current id
             # and match against customizable elements
             for opts in optstree:
@@ -224,25 +203,6 @@ class Plot(param.Parameterized):
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         return '\n '.join(g for g in groups if g)
-
-
-    @classmethod
-    def register_options(cls):
-        path_items = {}
-        for view_class, plot in Plot.defaults.items():
-            name = view_class.__name__
-            plot_opts = [k for k in plot.params().keys() if k not in ['name']]
-            style_opts = plot.style_opts
-            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
-            if not isinstance(plot, CompositePlot) or hasattr(plot, 'style_opts'):
-                opt_groups.update({'style': Options(allowed_keywords=style_opts),
-                                   'norm':  Options(mapwise=True, groupwise=True,
-                                                    allowed_keywords=['groupwise',
-                                                                      'mapwise'])})
-            path_items[name] = opt_groups
-        cls.options = OptionTree(sorted(path_items.items()),
-                                  groups={'style': Options(), 'plot': Options(),
-                                          'norm': Options()})
 
 
     def _init_axis(self, axis):
@@ -407,7 +367,7 @@ class GridPlot(CompositePlot):
         if not isinstance(layout, AxisLayout):
             raise Exception("GridPlot only accepts AxisLayout.")
         self.cols, self.rows = layout.shape
-        extra_opts = self.lookup_options(layout, 'plot').options
+        extra_opts = Store.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
 
@@ -442,10 +402,10 @@ class GridPlot(CompositePlot):
             if view is not None:
                 layout_dimvals = dict(AxisLayout=zip(zip(layout.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                subplot = Plot.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
-                                               dimensions=self.dimensions, show_title=False,
-                                               subplot=not create_axis, ranges=frame_ranges,
-                                               uniform=self.uniform)
+                subplot = Store.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
+                                                dimensions=self.dimensions, show_title=False,
+                                                subplot=not create_axis, ranges=frame_ranges,
+                                                uniform=self.uniform)
                 collapsed_layout[coord] = subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
@@ -675,7 +635,7 @@ class LayoutPlot(CompositePlot):
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
         dimensions, keys = traversal.unique_dimkeys(layout)
-        plotopts = self.lookup_options(layout, 'plot').options
+        plotopts = Store.lookup_options(layout, 'plot').options
         super(LayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
                                          uniform=traversal.uniform(layout),
                                          **dict(plotopts, **params))
@@ -776,7 +736,7 @@ class LayoutPlot(CompositePlot):
 
             # Generate the AdjointLayoutsPlot which will coordinate
             # plotting of AdjointLayouts in the larger grid
-            plotopts = self.lookup_options(view, 'plot').options
+            plotopts = Store.lookup_options(view, 'plot').options
             layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
@@ -845,7 +805,7 @@ class LayoutPlot(CompositePlot):
             if view is None:
                 continue
             # Customize plotopts depending on position.
-            plotopts = self.lookup_options(view, 'plot').options
+            plotopts = Store.lookup_options(view, 'plot').options
             # Options common for any subplot
 
             override_opts = {}
@@ -868,7 +828,7 @@ class LayoutPlot(CompositePlot):
                     plot_type = GridPlot
             else:
                 if pos == 'main':
-                    plot_type = Plot.defaults[vtype]
+                    plot_type = Store.defaults[vtype]
                 else:
                     plot_type = Plot.sideplots[vtype]
 
@@ -893,7 +853,7 @@ class LayoutPlot(CompositePlot):
         self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        rcopts = self.lookup_options(self.layout, 'style').options
+        rcopts = Store.lookup_options(self.layout, 'style').options
         for subplot in self.subplots.values():
             with matplotlib.rc_context(rcopts):
                 subplot(ranges=ranges)
@@ -906,7 +866,7 @@ class LayoutPlot(CompositePlot):
         return self._finalize_axis(None)
 
 
-Plot.defaults.update({AxisLayout: GridPlot,
-                      NdLayout: LayoutPlot,
-                      LayoutTree: LayoutPlot,
-                      AdjointLayout: AdjointLayoutPlot})
+Store.defaults.update({AxisLayout: GridPlot,
+                       NdLayout: LayoutPlot,
+                       LayoutTree: LayoutPlot,
+                       AdjointLayout: AdjointLayoutPlot})

@@ -6,6 +6,7 @@ import param
 from ..element import ItemTable, Table
 from .element import ElementPlot
 from .plot import Plot
+from ..core.options import Store
 
 
 class TablePlot(ElementPlot):
@@ -113,5 +114,5 @@ class TablePlot(ElementPlot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-Plot.defaults.update({ItemTable: TablePlot,
-                      Table: TablePlot})
+Store.defaults.update({ItemTable: TablePlot,
+                       Table: TablePlot})

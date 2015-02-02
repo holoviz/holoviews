@@ -22,6 +22,7 @@ except:
 
 import param
 
+from ..core.options import Store
 from ..core import ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
 from ..core import traversal
 from ..element import Raster
@@ -39,7 +40,7 @@ ENABLE_TRACEBACKS=True
 
 def opts(el, size):
     "Returns the plot options with supplied size (if not overridden)"
-    return dict(size=size, **Plot.lookup_options(el, 'plot').options)
+    return dict(size=size, **Store.lookup_options(el, 'plot').options)
 
 
 def get_plot_size(size):
@@ -195,8 +196,8 @@ def view_display(view, size, **kwargs):
     if not isinstance(view, ViewableElement): return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
-    fig = Plot.defaults[view.__class__](view,
-                                        **opts(view, get_plot_size(size)))()
+    fig = Store.defaults[view.__class__](view,
+                                         **opts(view, get_plot_size(size)))()
     return display_figure(fig)
 
 
@@ -207,8 +208,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
         return display_widgets(vmap, map_format, widget_mode)
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
-    mapplot = Plot.defaults[vmap.type](vmap,
-                                       **opts(vmap.last, get_plot_size(size)))
+    mapplot = Store.defaults[vmap.type](vmap,
+                                        **opts(vmap.last, get_plot_size(size)))
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
     elif len(mapplot) > max_frames:
