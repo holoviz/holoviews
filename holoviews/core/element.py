@@ -299,7 +299,8 @@ class HoloMap(UniformNdMapping):
 
     def _tocomposite(self, dimensions, container_type=NdLayout):
         if len(dimensions) == self.ndims:
-            split_map = container_type(self)
+            split_map = container_type(self, key_dimensions=self.key_dimensions,
+                                       label=self.label)
         elif all(d in self._cached_index_names for d in dimensions):
             split_dims = [d for d in self._cached_index_names if d not in dimensions]
             split_map = self.groupby(split_dims, container_type=container_type)

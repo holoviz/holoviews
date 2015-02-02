@@ -78,4 +78,4 @@ class table_collate(MapOperation):
                     grid += item
             else:
                 grid = maps.last
-        return [grid]
+        return grid
