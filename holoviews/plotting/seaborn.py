@@ -9,6 +9,7 @@ except:
 
 import param
 
+from ..interface.pandas import DFrame, DataFrameView
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
 from .element import ElementPlot
@@ -62,7 +63,7 @@ class RegressionPlot(FullRedrawPlot):
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
     def __call__(self, ranges=None):
-        self._update_plot(self.map.last, self.handles['axis'])
+        self._update_plot(self.handles['axis'], self.map.last)
         return self._finalize_axis(self.map.last_key)
 
 
@@ -106,7 +107,7 @@ class BivariatePlot(FullRedrawPlot):
 
     def _update_plot(self, axis, view):
         if self.joint:
-            self.style.pop('cmap')
+            self.style.pop('cmap', None)
             self.handles['fig'] = sns.jointplot(view.data[:,0],
                                                 view.data[:,1],
                                                 **self.style).fig
@@ -270,8 +271,7 @@ class SNSFramePlot(DFrameViewPlot):
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)
 
-    def update_frame(self, n, ranges=None):
-        key = self.keys[n]
+    def update_frame(self, key, ranges=None):
         view = self.map.get(key, None)
         axis = self.handles['axis']
         if axis:
@@ -314,11 +314,13 @@ class SNSFramePlot(DFrameViewPlot):
                 getattr(g, opt)(plot_fn, *args[1:])
             self.handles['fig'] = plt.gcf()
         else:
-            super(SNSFramePlot, self)._update_plot(view)
+            super(SNSFramePlot, self)._update_plot(axis, view)
 
 
 Plot.defaults.update({TimeSeries: TimeSeriesPlot,
                       Bivariate: BivariatePlot,
                       Distribution: DistributionPlot,
                       Regression: RegressionPlot,
-                      SNSFrame: SNSFramePlot})
+                      SNSFrame: SNSFramePlot,
+                      DFrame: SNSFramePlot,
+                      DataFrameView: SNSFramePlot})

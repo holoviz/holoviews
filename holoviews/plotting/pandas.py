@@ -96,8 +96,7 @@ class DFrameViewPlot(ElementPlot):
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 
-    def _update_plot(self, view):
-        axis = self.handles['axis']
+    def _update_plot(self, axis, view):
         if self.plot_type == 'scatter_matrix':
             pd.scatter_matrix(view.data, ax=axis, **self.style)
         elif self.plot_type == 'autocorrelation_plot':
@@ -116,7 +115,7 @@ class DFrameViewPlot(ElementPlot):
         if not self.plot_type in ['hist', 'scatter_matrix']:
             if self.zorder == 0 and axis:
                 axis.cla()
-        self._update_plot(view)
+        self._update_plot(axis, view)
 
 
 Plot.defaults.update({DataFrameView: DFrameViewPlot,
