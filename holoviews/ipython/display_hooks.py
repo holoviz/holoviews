@@ -203,6 +203,8 @@ def view_display(view, size, **kwargs):
 @display_hook
 def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
+    if widget_mode is not None and len(vmap.keys()) > 1:
+        return display_widgets(vmap, map_format, widget_mode)
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
     mapplot = Plot.defaults[vmap.type](vmap,
@@ -215,8 +217,6 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     elif len(mapplot) == 1:
         fig = mapplot()
         return display_figure(fig)
-    elif widget_mode is not None:
-        return display_widgets(vmap, map_format, widget_mode)
 
     return render(mapplot)
 
@@ -225,6 +225,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
 def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
+    if widget_mode is not None and layout.traverse(lambda x: True, (('HoloMap',))):
+        return display_widgets(layout, map_format, widget_mode)
     shape = layout.shape
     magic_info = process_cell_magics(layout)
     if magic_info: return magic_info
@@ -244,8 +246,6 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     if len(layoutplot) == 1:
         fig = layoutplot()
         return display_figure(fig)
-    elif widget_mode is not None:
-        return display_widgets(layout, map_format, widget_mode)
 
     return render(layoutplot)
 
@@ -253,6 +253,8 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 @display_hook
 def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, AxisLayout): return None
+    if widget_mode is not None and grid.traverse(lambda x: True, (('HoloMap',))):
+        return display_widgets(grid, map_format, widget_mode)
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
     shape_factor = 1. / max_dim
@@ -276,8 +278,6 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
     if len(gridplot) == 1:
         fig = gridplot()
         return display_figure(fig)
-    elif widget_mode is not None:
-        return display_widgets(grid, map_format, widget_mode)
 
     return render(gridplot)
 
