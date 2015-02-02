@@ -210,7 +210,10 @@ class ElementPlot(Plot):
                 self.handles['title'] = axis.set_title(title)
 
         for hook in self.finalize_hooks:
-            hook(self, view)
+            try:
+                hook(self, view)
+            except:
+                self.warning("Plotting hook %r could not be applied." % hook)
 
         return super(ElementPlot, self)._finalize_axis(key)
 
