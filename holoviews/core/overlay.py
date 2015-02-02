@@ -32,7 +32,7 @@ class Overlayable(object):
         self_item = [((self.value, self.label if self.label else 'I'), self)]
         other_items = (other.items() if isinstance(other, Overlay)
                        else [((other.value, other.label if other.label else 'I'), other)])
-        return Overlay(items=Overlay.relabel_items(self_item + other_items))
+        return Overlay(items=Overlay.relabel_item_paths(self_item + other_items))
 
 
 
@@ -170,7 +170,7 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
         elif isinstance(other, UniformNdMapping):
             raise NotImplementedError
 
-        return Overlay(items=self.relabel_items(items)).display('all')
+        return Overlay(items=self.relabel_item_paths(items)).display('all')
 
 
     def dimension_values(self, dimension):

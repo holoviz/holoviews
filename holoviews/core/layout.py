@@ -342,7 +342,7 @@ class LayoutTree(AttrTree, Dimensioned):
 
 
     @classmethod
-    def relabel_items(cls, items):
+    def relabel_item_paths(cls, items):
         """
         Given a list of path items (list of tuples where each element
         is a (path, element) pair), generate a new set of path items that
@@ -367,13 +367,13 @@ class LayoutTree(AttrTree, Dimensioned):
 
     def group(self, name):
         new_items = [((name, path[-1]), item) for path, item in self.data.items()]
-        return LayoutTree(items=self.relabel_items(new_items))
+        return LayoutTree(items=self.relabel_item_paths(new_items))
 
 
     def __add__(self, other):
         other = self.from_view(other)
         items = list(self.data.items()) + list(other.data.items())
-        return LayoutTree(items=self.relabel_items(items)).display('all')
+        return LayoutTree(items=self.relabel_item_paths(items)).display('all')
 
 
 
