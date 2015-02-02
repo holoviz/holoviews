@@ -390,14 +390,6 @@ class CompositePlot(Plot):
         return ' '.join([title, dim_title])
 
 
-    def _layout_axis(self, layout):
-        fig = self.handles['fig']
-        layout_axis = fig.add_subplot(111)
-        layout_axis.patch.set_visible(False)
-
-        return layout_axis
-
-
 
 class GridPlot(CompositePlot):
     """
@@ -782,7 +774,6 @@ class LayoutPlot(CompositePlot):
             layout_key, _ = layout_items.get((r, c), (None, None))
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
-        self.handles['axis'] = self._layout_axis(layout)
 
         return layout_subplots, layout_axes, collapsed_layout
 
@@ -879,10 +870,17 @@ class LayoutPlot(CompositePlot):
         return subplots, adjoint_clone
 
 
+    def update_handles(self, axis, view, key, ranges=None):
+        """
+        Should be called by the update_frame class to update
+        any handles on the plot.
+        """
+        title = self.handles['fig'].suptitle(self._format_title(key))
+
+
     def __call__(self):
         axis = self.handles['axis']
-        axis.set_title(self._format_title(self.keys[-1]))
-        axis.axis('off')
+        self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         rcopts = self.lookup_options(self.layout, 'style').options
