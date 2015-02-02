@@ -160,29 +160,30 @@ class ElementPlot(Plot):
             if xlabel: axis.set_xlabel(xlabel)
             if ylabel: axis.set_ylabel(ylabel)
 
-            disabled_spines = []
-            if self.show_xaxis is not None:
-                if self.show_xaxis == 'top':
-                    axis.xaxis.set_ticks_position("top")
-                    axis.xaxis.set_label_position("top")
-                elif self.show_xaxis == 'bottom':
-                    axis.xaxis.set_ticks_position("bottom")
-            else:
-                axis.xaxis.set_visible(False)
-                disabled_spines.extend(['top', 'bottom'])
+            if not self.projection == '3d':
+                disabled_spines = []
+                if self.show_xaxis is not None:
+                    if self.show_xaxis == 'top':
+                        axis.xaxis.set_ticks_position("top")
+                        axis.xaxis.set_label_position("top")
+                    elif self.show_xaxis == 'bottom':
+                        axis.xaxis.set_ticks_position("bottom")
+                    else:
+                        axis.xaxis.set_visible(False)
+                        disabled_spines.extend(['top', 'bottom'])
 
-            if self.show_yaxis is not None:
-                if self.show_yaxis == 'left':
-                    axis.yaxis.set_ticks_position("left")
-                elif self.show_yaxis == 'right':
-                    axis.yaxis.set_ticks_position("right")
-                    axis.yaxis.set_label_position("right")
-            else:
-                axis.yaxis.set_visible(False)
-                disabled_spines.extend(['left', 'right'])
+                if self.show_yaxis is not None:
+                    if self.show_yaxis == 'left':
+                        axis.yaxis.set_ticks_position("left")
+                    elif self.show_yaxis == 'right':
+                        axis.yaxis.set_ticks_position("right")
+                        axis.yaxis.set_label_position("right")
+                else:
+                    axis.yaxis.set_visible(False)
+                    disabled_spines.extend(['left', 'right'])
 
-            for pos in disabled_spines:
-                axis.spines[pos].set_visible(False)
+                for pos in disabled_spines:
+                    axis.spines[pos].set_visible(False)
 
             if not self.show_frame:
                 axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
