@@ -328,7 +328,21 @@ class LayoutTree(AttrTree, Dimensioned):
 
 
     @staticmethod
-    def relabel_items(items):
+    def new_path(path, item, paths):
+        count = 2
+        while path in paths:
+            pl = len(path)
+            if pl == 1 and not item.label or pl == 2 and item.label :
+                paths[paths.index(path)] = path + ('I',)
+                paths.append(path + ('II',))
+            else:
+                path = path[:-1] + (int_to_roman(count),)
+            count += 1
+        return path
+
+
+    @classmethod
+    def relabel_items(cls, items):
         """
         Given a list of path items (list of tuples where each element
         is a (path, element) pair), generate a new set of path items that
@@ -336,20 +350,12 @@ class LayoutTree(AttrTree, Dimensioned):
         appropriate and automatically generates roman numeral
         identifiers if necessary.
         """
-        relabelled_items = []
-        for path, group in groupby(sorted(items), key=itemgetter(0)):
-            group = list(group)
-            if len(group) == 1 and len(path) > 1:
-                relabelled_items.append((path, group[0][1]))
-                continue
-            for idx, (path, item) in enumerate(group):
-                numeral = int_to_roman(idx+1)
-                if len(path) == 2 and not item.label:
-                    new_path = (path[0], numeral)
-                else:
-                    new_path = path + (numeral,)
-                relabelled_items.append((new_path, item))
-        return relabelled_items
+        paths, path_items = [], []
+        for path, item in items:
+            new_path = cls.new_path(path, item, paths)
+            path_items.append(item)
+            paths.append(new_path)
+        return zip(paths, path_items)
 
 
     @classmethod
