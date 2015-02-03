@@ -64,7 +64,7 @@ class TimeSeries(Element2D):
         elif dim_idx == 1:
             return self.data.flatten()
         elif dim_idx == 2:
-            return self.data.shape[1]
+            return range(self.data.shape[1])
 
 
     def sample(self, **samples):
@@ -88,7 +88,7 @@ class Bivariate(Chart):
 
     value_dimensions = param.List(default=[], bounds=(0,0))
 
-    value = param.ClassSelector(class_=Dimension, default=None)
+    value = param.String(default="Bivariate")
 
 
 
