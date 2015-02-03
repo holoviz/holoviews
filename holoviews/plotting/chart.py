@@ -498,8 +498,8 @@ class PointPlot(ChartPlot):
         ndims = points.data.shape[1]
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        sz = None if self.size_index < ndims else points.data[:, self.size_index]
-        cs = None if self.color_index < ndims else points.data[:, self.color_index]
+        sz = points.data[:, self.size_index] if self.size_index < ndims else None
+        cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
         style = Store.lookup_options(points, 'style')[self.cyclic_index]
         if sz is not None and self.scaling_factor > 1:
