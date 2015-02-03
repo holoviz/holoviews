@@ -127,7 +127,7 @@ class OptsSpec(Parser):
         [pp.Literal(el.value) for el in Channel.definitions])
 
     dotted_path = pp.Combine( pp.Word(ascii_uppercase, exact=1)
-                              + pp.Word(pp.alphas+'._'))
+                              + pp.Word(pp.alphanums+'._'))
 
 
     pathspec = (dotted_path | channelops).setResultsName("pathspec")
