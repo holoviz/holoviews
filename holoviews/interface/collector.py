@@ -558,8 +558,9 @@ class Collector(AttrTree):
     >>> print("Collected the data for %d time values" % len(times))
     Collected the data for 5 time values
 
-    >>> data.Target.Path.last                 #doctest: +ELLIPSIS
-    ViewableElement('example string'...)
+    >>> results = data.Target.Path.last
+    >>> results.name
+    'example string'
     """
 
     # A callable that advances by the specified time before the next
