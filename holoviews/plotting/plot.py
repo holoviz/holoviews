@@ -258,9 +258,6 @@ class Plot(param.Parameterized):
         Method to return an Matplotlib animation. The start and stop
         frames may be specified as well as the fps.
         """
-
-        frames = list(range(len(self)))[slice(start, stop, 1)]
-
         figure = self()
         anim = animation.FuncAnimation(figure, self.update_frame,
                                        frames=self.keys,
