@@ -317,7 +317,7 @@ class Table(Element, NdMapping):
             raise Exception('Dimension to be specified by name')
         if dim == self.value:
             return self.values()
-        elif dim in self.value_dimensions:
+        elif dim in self.dimensions('value', label=True):
             if len(self.value_dimensions) == 1: return self.values()
             index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
