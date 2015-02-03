@@ -123,7 +123,7 @@ class Options(param.Parameterized):
 
 
     def __init__(self, key=None, allowed_keywords=None, **kwargs):
-        for kwarg in kwargs:
+        for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
                 raise OptionError(kwarg, allowed_keywords)
 
