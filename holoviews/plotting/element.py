@@ -9,7 +9,7 @@ import param
 
 from ..core.options import Store
 from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element, Element3D
-from ..core.util import valid_identifier
+from ..core.util import valid_identifier, find_minmax
 from ..operation import Channel
 from .plot import Plot
 
@@ -140,7 +140,7 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         view = self._get_frame(key)
-        if not self.overlaid and key is not None:
+        if self.zorder == 0 and key is not None:
             if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
                 if hasattr(view, 'xlabel') and xlabel is None:
@@ -149,10 +149,11 @@ class ElementPlot(Plot):
                     ylabel = view.ylabel
                 if self.apply_databounds:
                     extents = self.get_extents(view, ranges)
-                    l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                    if not np.NaN in (l, r): axis.set_xlim((l, r))
-                    if b == t: t += 1. # Arbitrary y-extent if zero range
-                    if not np.NaN in (b, t): axis.set_ylim((b, t))
+                    if extents:
+                        l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+                        if not np.NaN in (l, r): axis.set_xlim((l, r))
+                        if b == t: t += 1. # Arbitrary y-extent if zero range
+                        if not np.NaN in (b, t): axis.set_ylim((b, t))
 
             if self.show_grid:
                 axis.get_xaxis().grid(True)
@@ -322,11 +323,11 @@ class OverlayPlot(ElementPlot):
                                    title=self._format_title(key))
 
 
-    def _get_extents(self, overlay, ranges):
+    def get_extents(self, overlay, ranges):
         if self.projection == '3d':
-            indexes = ((0,3), (1, 4), (2, 5))
+            indexes = ((0, 3), (1, 4), (2, 5))
         else:
-            indexes = ((0,2), (1, 3))
+            indexes = ((0, 2), (1, 3))
         extents = None
         for key, subplot in self.subplots.items():
             layer = overlay.data.get(key, False)
@@ -336,7 +337,7 @@ class OverlayPlot(ElementPlot):
                     extents = lextnt
                     continue
                 bounds = [find_minmax((extents[low], extents[high]),
-                                          (lextnt[low], lextnt[high]))
+                                      (lextnt[low], lextnt[high]))
                                           for low, high in indexes]
                 if self.projection == '3d':
                     extents = (bounds[0][0], bounds[1][0], bounds[2][0],
@@ -360,9 +361,9 @@ class OverlayPlot(ElementPlot):
             if layer:
                 labels.append(layer.label)
                 values.append(layer.value)
-        if not label and all(labels[0] == l for l in labels):
+        if not label and (len(labels) and all(labels[0] == l for l in labels)):
             label = labels[0]
-        if not value and all(values[0] == v for v in values):
+        if not value and (len(values) and all(values[0] == v for v in values)):
             value = values[0]
         title = self.title_format.format(label=label,
                                          value=value,
