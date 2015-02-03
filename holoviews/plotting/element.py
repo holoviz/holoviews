@@ -142,6 +142,7 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         view = self._get_frame(key)
+        subplots = self.subplots.values() if self.subplots else {}
         if self.zorder == 0 and key is not None:
             if view is not None:
                 title = None if self.zorder > 0 else self._format_title(key)
@@ -149,7 +150,7 @@ class ElementPlot(Plot):
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
-                if self.apply_databounds:
+                if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
                     extents = self.get_extents(view, ranges)
                     if extents:
                         l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
@@ -172,9 +173,9 @@ class ElementPlot(Plot):
                         axis.xaxis.set_label_position("top")
                     elif self.show_xaxis == 'bottom':
                         axis.xaxis.set_ticks_position("bottom")
-                    else:
-                        axis.xaxis.set_visible(False)
-                        disabled_spines.extend(['top', 'bottom'])
+                else:
+                    axis.xaxis.set_visible(False)
+                    disabled_spines.extend(['top', 'bottom'])
 
                 if self.show_yaxis is not None:
                     if self.show_yaxis == 'left':
