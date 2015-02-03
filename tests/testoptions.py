@@ -1,39 +1,83 @@
-from collections import namedtuple
-
-from holoviews.core.element import Element
-from holoviews.core.options import OptionsGroup, Options
-from holoviews.core.options import PlotOpts, StyleOpts, ChannelOpts, Cycle
+from holoviews.core.options import OptionError, Cycle, Options, OptionTree, Store
 from holoviews.testing import ViewTestCase
 
 
-class TestOpts(ViewTestCase):
+class TestOptions(ViewTestCase):
 
-    def test_styleopts_init(self):
-        opt = StyleOpts(key1='key1', key2='key2')
-        self.assertEqual(opt.items, dict(key1='key1', key2='key2'))
+    def test_options_init(self):
+        Options('test')
 
-    def test_plotopts_init(self):
-        opt = PlotOpts(opt1='opt1', opt2='opt2')
-        self.assertEqual(opt.items, dict(opt1='opt1', opt2='opt2'))
+    def test_options_valid_keywords1(self):
+        Options('test', allowed_keywords=['kw1'], kw1='value')
 
-    def test_channelopts_init(self):
-        opt = ChannelOpts('RGB', 'view1 * view2', opt1='opt1', opt2='opt2')
-        self.assertEqual(opt.mode, 'RGB')
-        self.assertEqual(opt.pattern, 'view1 * view2')
-        self.assertEqual(opt.items, dict(opt1='opt1', opt2='opt2'))
+    def test_options_valid_keywords2(self):
+        Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value')
 
+    def test_options_valid_keywords3(self):
+        Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value', kw2='value')
 
-    def test_styleopts_methods(self):
-        kwargs = dict(key2='key2', key1='key1')
-        opt = StyleOpts(**kwargs)
-        self.assertEqual(opt.keys(), ['key1', 'key2'])
+    def test_options_any_keywords3(self):
+        Options('test', kw1='value', kw2='value')
+
+    def test_options_invalid_keywords1(self):
+        try:
+            Options('test', allowed_keywords=['kw1'], kw='value')
+        except OptionError as e:
+            assert str(e) == "Invalid option 'kw', valid options are: ['kw1']"
+
+    def test_options_invalid_keywords2(self):
+        try:
+            Options('test', allowed_keywords=['kw2'], kw2='value', kw3='value')
+        except OptionError as e:
+            assert str(e) == "Invalid option 'kw3', valid options are: ['kw2']"
+
+    def test_options_get_options(self):
+        opts = Options('test', allowed_keywords=['kw2', 'kw3'],
+                       kw2='value', kw3='value').options
+        self.assertEqual(opts, dict(kw2='value', kw3='value'))
+
+    def test_options_get_options_cyclic1(self):
+        opts = Options('test', allowed_keywords=['kw2', 'kw3'],
+                       kw2='value', kw3='value')
         for i in range(16):
-            self.assertEqual(opt[i], kwargs)
+            self.assertEqual(opts[i], dict(kw2='value', kw3='value'))
 
-    def test_styleopts_cycles(self):
+    def test_options_keys(self):
+        opts = Options('test', allowed_keywords=['kw3', 'kw2'],
+                       kw2='value', kw3='value')
+        self.assertEqual(opts.keys(), ['kw2', 'kw3'])
+
+    def test_options_inherit(self):
+        original_kws = dict(kw2='value', kw3='value')
+        opts = Options('test', **original_kws)
+        new_kws = dict(kw4='val4', kw5='val5')
+        new_opts = opts(**new_kws)
+
+        self.assertEqual(new_opts.options, dict(original_kws, **new_kws))
+
+    def test_options_inherit_invalid_keywords(self):
+        original_kws = dict(kw2='value', kw3='value')
+        opts = Options('test', allowed_keywords=['kw3', 'kw2'], **original_kws)
+        new_kws = dict(kw4='val4', kw5='val5')
+        try:
+            new_opts = opts(**new_kws)
+        except OptionError as e:
+            assert str(e) == "Invalid option 'kw5', valid options are: ['kw2', 'kw3']"
+
+
+
+class TestCycle(ViewTestCase):
+
+    def test_cycle_init(self):
         cycle1 = Cycle(['a', 'b', 'c'])
         cycle2 = Cycle([1, 2, 3])
-        opts = StyleOpts(one=cycle1, two=cycle2)
+
+
+    def test_cycle_expansion(self):
+        cycle1 = Cycle(['a', 'b', 'c'])
+        cycle2 = Cycle([1, 2, 3])
+
+        opts = Options('test', one=cycle1, two=cycle2)
         self.assertEqual(opts[0], {'one': 'a', 'two': 1})
         self.assertEqual(opts[1], {'one': 'b', 'two': 2})
         self.assertEqual(opts[2], {'one': 'c', 'two': 3})
@@ -41,215 +85,131 @@ class TestOpts(ViewTestCase):
         self.assertEqual(opts[4], {'one': 'b', 'two': 2})
         self.assertEqual(opts[5], {'one': 'c', 'two': 3})
 
-    def test_styleopts_opts_property_noncyclic(self):
-        kwargs = dict(key2='key2', key1='key1')
-        opt = StyleOpts(**kwargs)
-        self.assertEqual(opt.opts, kwargs)
-
-    def test_styleopts_opts_property_cyclic(self):
+    def test_options_property_disabled(self):
         cycle1 = Cycle(['a', 'b', 'c'])
-        cycle2 = Cycle([1, 2, 3])
-        opts = StyleOpts(one=cycle1, two=cycle2)
+        opts = Options('test', one=cycle1)
         try:
-            self.assertEqual(opts.opts, {'one': 'a', 'two': 1})
-            raise AssertionError("Opts property only applicable without cycles")
+            opts.options
         except Exception as e:
-            assert str(e) == "The opts property may only be used with non-cyclic styles"
+            assert str(e) == "The options property may only be used with non-cyclic Options."
 
-    def test_styleopts_cycle_mismatch(self):
+
+    def test_cycle_mismatch(self):
         cycle1 = Cycle(['a', 'b',])
         cycle2 = Cycle([1, 2, 3])
         try:
-            StyleOpts(one=cycle1, two=cycle2)
+            Options('test', one=cycle1, two=cycle2)
             raise AssertionError("Cycle length mismatch not detected")
         except Exception as e:
             assert str(e) == 'Cycle objects supplied with different lengths'
 
 
-    def test_styleopts_inherit(self):
-        kwargs = dict(key2='key2', key1='key1')
-        opt = StyleOpts(**kwargs)
-        self.assertEqual(opt(key3='key3').opts,
-                         dict(kwargs, key3='key3'))
+
+class TestOptionTree(ViewTestCase):
+
+    def test_optiontree_init(self):
+        options = OptionTree(groups={'group1':  Options(),
+                                     'group2': Options()})
+
+    def test_optiontree_setter_getter(self):
+        options = OptionTree(groups={'group1':  Options(),
+                                     'group2': Options()})
+        opts = Options('group1', kw1='value')
+        options.MyType = opts
+        self.assertEqual(options.MyType['group1'], opts)
+        self.assertEqual(options.MyType['group1'].options, {'kw1':'value'})
+
+    def test_optiontree_dict_setter_getter(self):
+        options = OptionTree(groups={'group1':  Options(),
+                                     'group2': Options()})
+
+        opts1 = Options(kw1='value1')
+        opts2 = Options(kw2='value2')
+        options.MyType = {'group1':opts1, 'group2':opts2}
+
+        self.assertEqual(options.MyType['group1'], opts1)
+        self.assertEqual(options.MyType['group1'].options, {'kw1':'value1'})
+
+        self.assertEqual(options.MyType['group2'], opts2)
+        self.assertEqual(options.MyType['group2'].options, {'kw2':'value2'})
+
+    def test_optiontree_inheritance(self):
+        options = OptionTree(groups={'group1':  Options(),
+                                     'group2': Options()})
+
+        opts1 = Options(kw1='value1')
+        opts2 = Options(kw2='value2')
+        options.MyType = {'group1':opts1, 'group2':opts2}
+
+        opts3 = Options(kw3='value3')
+        opts4 = Options(kw4='value4')
+        options.MyType.Child = {'group1':opts3, 'group2':opts4}
+
+        self.assertEqual(options.MyType.Child['group1'].options,
+                         {'kw1':'value1', 'kw3':'value3'})
+
+        self.assertEqual(options.MyType.Child['group2'].options,
+                         {'kw2':'value2', 'kw4':'value4'})
 
 
-
-class TestOptions(ViewTestCase):
-
-    def setUp(self):
-        self.s1_kws = dict(key1='style1_key1', key2='style1_key2')
-        self.s2_kws = dict(key3='style2_key3', key4='style2_key4')
-        self.s3_kws = dict(key5='style3_key5', key6='style3_key6')
-        self.style1 = StyleOpts(**self.s1_kws)
-        self.style2 = StyleOpts(**self.s2_kws)
-        self.style3 = StyleOpts(**self.s3_kws)
-        self.custom = StyleOpts(key5='custom_key5', key6='custom_key6')
-
-    def test_style_options_init(self):
-        Options('style', StyleOpts)
-
-    def test_plot_options_init(self):
-        Options('plotting', PlotOpts)
-
-    def test_channel_options_init(self):
-        Options('channels', ChannelOpts)
-
-
-    def test_channel_options_init_invalid(self):
-        try:
-            Options('invalid', None)
-            raise AssertionError("None is not an Opts object.")
-        except TypeError as e:
-            assert str(e) == "issubclass() arg 1 must be a class"
-
-    def test_options_access(self):
-        options = Options('style', StyleOpts)
-        try:
-            options.set('style1', self.style1)
-            raise AssertionError("Options should only be set through OptionGroups")
-        except Exception as e:
-            assert str(e) == "OptionMaps should be set via OptionGroup"
-
-    def test_option_keys(self):
-        options = Options('style', StyleOpts)
-        options._settable = True
-        options.set('style1', self.style1)
-        options.set('style2', self.style2)
-        options.set('Custom', self.custom)
-        self.assertEqual(set(options.keys()), set(['style1','style2', 'Custom']))
-        self.assertEqual(set(options.options()), set(['style1','style2']))
-
-    def test_option_contains(self):
-        options = Options('style', StyleOpts)
-        options._settable = True
-        options.set('style1', self.style1)
-        options.set('style2', self.style2)
-        options.set('Custom', self.custom)
-        self.assertEqual('style1' in options, True)
-        self.assertEqual('style4' in options, False)
-
-    def test_option_access(self):
-        options = Options('style', StyleOpts)
-        options._settable = True
-        options.set('style1', self.style1)
-        options.set('style2', self.style2)
-        options.set('Custom', self.custom)
-
-        self.assertEqual(options['style1'], self.style1)
-        self.assertEqual(options['invalid'], StyleOpts())
-        self.assertEqual(options.style1, self.style1)
-        try:
-            self.assertEqual(options.invalid, StyleOpts())
-            raise AssertionError("AttributeError should be raised for invalid key")
-        except AttributeError as e:
-            assert str(e) == 'invalid'
-
-    def test_option_fuzzy_match_two_levels(self):
-        options = Options('style', StyleOpts)
-        options._settable = True
-        options.set('style', self.style1)
-        options.set('specific_style', self.style2)
-        self.assertEqual(options('nomatch'), StyleOpts())
-        self.assertEqual(options('style').opts, self.s1_kws)
-        self.assertEqual(options('specific_style').opts,
-                         dict(self.s1_kws, **self.s2_kws))
-        self.assertEqual(options('nonmatching_style').opts, self.s1_kws)
-
-    def test_option_fuzzy_match_three_levels(self):
-        options = Options('style', StyleOpts)
-        options._settable = True
-        options.set('style', self.style1)
-        options.set('specific_style', self.style2)
-        options.set('very_specific_style', self.style3)
-        self.assertEqual(options('nomatch'), StyleOpts())
-        self.assertEqual(options('fairly_specific_style').opts,
-                         dict(self.s1_kws, **self.s2_kws))
-        self.assertEqual(options('very_specific_style').opts,
-                         dict(list(self.s1_kws.items())
-                            + list(self.s2_kws.items())
-                            + list(self.s3_kws.items())))
-
-    def test_option_fuzzy_match_object(self):
-        styled = namedtuple('Test', 'style')
-        style_obj = styled(style='specific_style')
-
-        options = Options('style', StyleOpts)
-        options._settable = True
-        options.set('style', self.style1)
-        options.set('specific_style', self.style2)
-        self.assertEqual(options(style_obj).opts,
-                         dict(self.s1_kws, **self.s2_kws))
-
-class TestOptionGroup(ViewTestCase):
+class TestOptionTreeFind(ViewTestCase):
 
     def setUp(self):
-        self.s1 = StyleOpts(key1='key1', key2='key2')
-        self.s2 = StyleOpts(key3='key3', key4='key4')
-        self.s3 = StyleOpts(key5='key5', key6='key6')
+        options = OptionTree(groups={'group':  Options()})
+        self.opts1 = Options('group', kw1='value1')
+        self.opts2 = Options('group', kw2='value2')
+        self.opts3 = Options('group', kw3='value3')
+        self.opts4 = Options('group', kw4='value4')
+        self.opts5 = Options('group', kw5='value5')
+        self.opts6 = Options('group', kw6='value6')
 
-        self.p1 = PlotOpts(opt1='opt1', opt2='opt2')
-        self.p2 = PlotOpts(opt3='opt3', opt4='opt4')
+        options.MyType = self.opts1
+        options.XType = self.opts2
+        options.MyType.Foo = self.opts3
+        options.MyType.Bar = self.opts4
+        options.XType.Foo = self.opts5
+        options.XType.Bar = self.opts6
 
-    def test_option_group_init(self):
-        OptionsGroup([Options('plotting', PlotOpts),
-                      Options('style', StyleOpts)])
-
-    def test_option_group_access(self):
-        optgroup = OptionsGroup([Options('plotting', PlotOpts),
-                                 Options('style', StyleOpts)])
-        # StyleOpts attribute setting
-        optgroup.name1 = self.s1
-        optgroup.name2 = self.s2
-        # PlotOpts attribute setting
-        optgroup.name1 = self.p1
-        optgroup.name3 = self.p2
-        # Dictionary style access
-        for (opt1,opt2) in zip(optgroup['name1'], [self.p1, self.s1]):
-            self.assertEqual(opt1, opt2)
-        # Attribute style access
-        for (opt1,opt2) in zip(optgroup.name2, [PlotOpts(), self.s2]):
-            self.assertEqual(opt1, opt2)
-        for (opt1,opt2) in zip(optgroup.name3, [self.p2, StyleOpts()]):
-            self.assertEqual(opt1, opt2)
+        self.options = options
 
 
-    def test_option_group_keys(self):
-        optgroup = OptionsGroup([Options('plotting', PlotOpts),
-                                 Options('style', StyleOpts)])
-        optgroup.name1 = self.s1
-        optgroup.name2 = self.s2
-        optgroup.name1 = self.p1
-        optgroup.name3 = self.p2
-        optgroup.Custom_key = self.p2
+    def test_optiontree_find1(self):
+        self.assertEqual(self.options.find('MyType').options('group').options,
+                         dict(kw1='value1'))
 
-        self.assertEqual(optgroup.options(), ['name1', 'name2', 'name3'])
-        self.assertEqual(optgroup.keys(), ['Custom_key', 'name1', 'name2', 'name3'])
+    def test_optiontree_find2(self):
+        self.assertEqual(self.options.find('XType').options('group').options,
+                         dict(kw2='value2'))
 
+    def test_optiontree_find3(self):
+        self.assertEqual(self.options.find('MyType.Foo').options('group').options,
+                         dict(kw1='value1', kw3='value3'))
 
-    def test_option_group_fuzzy_match_keys(self):
-        optgroup = OptionsGroup([Options('plotting', PlotOpts),
-                                 Options('style', StyleOpts)])
-        optgroup.unrelated = self.s1
-        self.assertEqual(optgroup.fuzzy_match_keys('name'), [])
-        optgroup.Name = self.s1
-        optgroup.SpecificName = self.s2
-        self.assertEqual(optgroup.fuzzy_match_keys('SpecificName'),
-                         ['SpecificName', 'Name'])
+    def test_optiontree_find4(self):
+        self.assertEqual(self.options.find('MyType.Bar').options('group').options,
+                         dict(kw1='value1', kw4='value4'))
 
-        self.assertEqual(optgroup.fuzzy_match_keys('SpecificWrongName'), ['Name'])
+    def test_optiontree_find5(self):
+        self.assertEqual(self.options.find('XType.Foo').options('group').options,
+                         dict(kw2='value2', kw5='value5'))
 
-        self.assertEqual(optgroup.fuzzy_match_keys('VerySpecificName'),
-                         ['SpecificName', 'Name'])
+    def test_optiontree_find6(self):
+        self.assertEqual(self.options.find('XType.Bar').options('group').options,
+                         dict(kw2='value2', kw6='value6'))
 
-    def test_option_fuzzy_match_view(self):
-        optgroup = OptionsGroup([Options('plotting', PlotOpts),
-                                 Options('style', StyleOpts)])
-        Element.options = optgroup
-        v = Element(None, label='Test')
-        optgroup.Test_View = self.s1
-        self.assertEqual(v.label, 'Test')
-        self.assertEqual(v.style, 'Test_Element')
-        self.assertEqual(v.options.fuzzy_match_keys('Test_Element'), ['Test_Element'])
+    def test_optiontree_find_mismatch1(self):
+        self.assertEqual(self.options.find('MyType.Baz').options('group').options,
+                         dict(kw1='value1'))
+
+    def test_optiontree_find_mismatch2(self):
+        self.assertEqual(self.options.find('XType.Baz').options('group').options,
+                         dict(kw2='value2'))
+
+    def test_optiontree_find_mismatch3(self):
+        self.assertEqual(self.options.find('Baz').options('group').options, dict())
+
+    def test_optiontree_find_mismatch4(self):
+        self.assertEqual(self.options.find('Baz.Baz').options('group').options, dict())
 
 
 
