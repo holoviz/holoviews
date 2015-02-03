@@ -313,7 +313,7 @@ class OverlayPlot(ElementPlot):
                 layer = self.map.last.data.get(key, False)
                 if layer: labels.append(layer.label)
                 else: labels.append('')
-        if (not any(len(l) for l in labels) and len(handles)) or self.show_legend:
+        if not any(len(l) for l in labels) or not len(handles) > 1 or not self.show_legend:
             legend = axis.get_legend()
             if legend:
                 legend.set_visible(False)
