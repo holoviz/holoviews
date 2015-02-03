@@ -47,7 +47,8 @@ class Chart(Element2D):
         Should return the data and parameters of the new Chart.
         """
         if isinstance(ndmap, Table):
-            data = [tuple(k for k in key) + (v,) for key, v in ndmap.data.items()]
+            data = [tuple(k for k in key) + tuple(v for v in vals)
+                    for key, vals in ndmap.data.items()]
             settings = dict(ndmap.get_param_values())
         else:
             data = np.concatenate([v.data for v in ndmap])
