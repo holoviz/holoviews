@@ -4,7 +4,7 @@ cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..', 'param'))
 
 import param
-__version__ = param.Version(release=(0,7), fpath=__file__,
+__version__ = param.Version(release=(0,8,1), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
 from .core.dimension import Dimension         # pyflakes:ignore (API import)
