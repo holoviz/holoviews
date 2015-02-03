@@ -62,7 +62,7 @@ class TestOptions(ViewTestCase):
         try:
             new_opts = opts(**new_kws)
         except OptionError as e:
-            assert str(e) == "Invalid option 'kw5', valid options are: ['kw2', 'kw3']"
+            assert str(e) == "Invalid option 'kw4', valid options are: ['kw2', 'kw3']"
 
 
 
