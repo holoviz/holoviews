@@ -249,6 +249,7 @@ class DFrame(DataFrameView):
             vm_dims = ['None']
 
         vmap = HoloMap(key_dimensions=vm_dims)
+        value = value if self.value != type(self).__name__ else 'Table'
         vdims = [self.get_dimension(d) for d in view_dims]
         valdims = [self.get_dimension(d) for d in value_dims]
         for map_key, group in map_groups:
@@ -258,6 +259,7 @@ class DFrame(DataFrameView):
                 data = reduce_fn(data, axis=1) if reduce_fn else data[:, 0]
                 table_data[k] = data
             view = Table(table_data, key_dimensions=vdims,
-                         value_dimensions=valdims, value=self.value)
+                         value_dimensions=valdims, label=self.label,
+                         )
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
         return vmap if map_dims else vmap.last
