@@ -108,6 +108,20 @@ class CompositeOverlay(ViewableElement, Composable):
 
 
 
+    def dimension_values(self, dimension):
+        values = []
+        found = False
+        for el in self:
+            if dimension in el.dimensions(label=True):
+                values.append(el.dimension_values(dimension))
+                found = True
+        if not found:
+            raise KeyError("Dimension %s was not found." % dimension)
+        values = [v for v in values if v is not None and len(v)]
+        return np.concatenate(values) if len(values) else []
+
+
+
 class Overlay(LayoutTree, CompositeOverlay, Composable):
     """
     An Overlay consists of multiple Views (potentially of
@@ -147,19 +161,6 @@ class Overlay(LayoutTree, CompositeOverlay, Composable):
         return Overlay(items=self.relabel_item_paths(items)).display('all')
 
 
-    def dimension_values(self, dimension):
-        values = []
-        found = False
-        for el in self:
-            if dimension in el.dimensions(label=True):
-                values.append(el.dimension_values(dimension))
-                found = True
-        if not found:
-            raise KeyError("Dimension %s was not found." % dimension)
-        values = [v for v in values if v is not None and len(v)]
-        return np.concatenate(values) if len(values) else []
-
-
     @property
     def deep_dimensions(self):
         dimensions = []
@@ -193,10 +194,6 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
         data = self._process_layers(overlays)
         ViewableElement.__init__(self, data, **params)
         NdMapping.__init__(self, data, **params)
-
-
-    def dimension_values(self, *args, **kwargs):
-        NdMapping.dimension_values(self, *args, **kwargs)
 
 
     def _process_layers(self, layers):
