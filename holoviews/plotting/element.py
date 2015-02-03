@@ -158,6 +158,11 @@ class ElementPlot(Plot):
                         if b == t: t += 1. # Arbitrary y-extent if zero range
                         if not np.NaN in (b, t): axis.set_ylim((b, t))
 
+            if not self.overlaid and not isinstance(self, OverlayPlot):
+                legend = axis.get_legend()
+                if legend:
+                    legend.set_visible(False)
+
             if self.show_grid:
                 axis.get_xaxis().grid(True)
                 axis.get_yaxis().grid(True)
