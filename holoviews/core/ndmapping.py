@@ -198,9 +198,9 @@ class MultiDimensionalMapping(Dimensioned):
         sortkws = {}
         dimensions = self.key_dimensions
         if self._cached_categorical:
-            sortkws['key'] = lambda k, v: tuple(dimensions[i].values.index(k[i])
-                                                if dimensions[i].values else k[i]
-                                                for i in range(self.ndims))
+            sortkws['key'] = lambda x: tuple(dimensions[i].values.index(x[0][i])
+                                             if dimensions[i].values else x[0][i]
+                                             for i in range(self.ndims))
         self.data = OrderedDict(sorted(self.data.items(), **sortkws))
 
 
