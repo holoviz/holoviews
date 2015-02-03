@@ -56,7 +56,9 @@ class ElementPlot(Plot):
         self.zorder = zorder
         dimensions = self.map.key_dimensions if dimensions is None else dimensions
         keys = keys if keys else self.map.data.keys()
-        super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions, **params)
+        plot_opts = Store.lookup_options(self.map.last, 'plot').options
+        super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                          **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
