@@ -2,13 +2,14 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ElementOperation, CompositeOverlay, NdOverlay, Overlay
+from ..core import Dimension, ElementOperation, CompositeOverlay, \
+                   NdOverlay, Overlay, BoundingBox
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField, Curve
 from ..element.annotation import Contours
 from ..element.raster import Matrix
 from ..element.tabular import ItemTable
-
+from .normalization import raster_normalization
 
 
 class chain(ElementOperation):
@@ -113,6 +114,41 @@ class threshold(ElementOperation):
         thresholded = np.where(arr > self.p.level, high, low)
 
         return matrix.clone(thresholded, value=self.p.value)
+
+
+
+class fft_power(ElementOperation):
+    """
+    Given a Matrix element, compute the power of the 2D Fast Fourier
+    Transform (FFT).
+    """
+
+    output_type = Curve
+
+    max_power = param.Number(default=1.0, doc="""
+    The maximum power value of the output power spectrum.""")
+
+    value = param.String(default='FFT Power', doc="""
+    The value assigned to the output power spectrum.""")
+
+
+    def _process(self, matrix, key=None):
+
+        if self.p.input_ranges:
+            normfn = raster_normalization.instance()
+            matrix = normfn.process_element(matrix, key, *self.p.input_ranges)
+
+        fft_spectrum = abs(np.fft.fftshift(np.fft.fft2(matrix.data - 0.5, s=None, axes=(-2, -1))))
+        fft_spectrum = 1 - fft_spectrum # Inverted spectrum by convention
+        zero_min_spectrum = fft_spectrum - fft_spectrum.min()
+        spectrum_range = fft_spectrum.max() - fft_spectrum.min()
+        spectrum = (self.p.max_power * zero_min_spectrum) / spectrum_range
+
+        l, b, r, t = matrix.bounds.lbrt()
+        density = matrix.xdensity
+        bounds = BoundingBox(radius=(density/2)/(r-l))
+
+        return Matrix(spectrum, bounds, label=matrix.label, value=self.p.value)
 
 
 
