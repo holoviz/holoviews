@@ -16,10 +16,11 @@ from .plot import Plot
 
 class ChartPlot(ElementPlot):
 
-    log_x = param.Boolean(default=False)
+    log_x = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the x-axis of the Chart.""")
 
-    log_y  = param.Boolean(default=False)
-
+    log_y  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
 
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
@@ -516,16 +517,17 @@ class PointPlot(ChartPlot):
 
     def _get_color_size(self, points):
         ndims = points.data.shape[1]
+        nax = len(points.key_dimensions)
         color_idx, size_idx = None, None
-        if ndims > 2:
+        if ndims > nax:
             if 'size' in self.value_map:
                 size_idx = self.value_map.index('size')
-                size_idx -= 1 if size_idx + 2 >= ndims else 0
+                size_idx -= 1 if size_idx + nax >= ndims else 0
             if 'color' in self.value_map:
                 color_idx = self.value_map.index('color')
-                color_idx -= 1 if color_idx + 2 >= ndims else 0
-        sz = None if size_idx is None else points.data[:, size_idx+2]
-        cs = None if color_idx is None else points.data[:, color_idx+2]
+                color_idx -= 1 if color_idx + nax >= ndims else 0
+        sz = None if size_idx is None else points.data[:, size_idx+nax]
+        cs = None if color_idx is None else points.data[:, color_idx+nax]
         return cs, color_idx, sz, color_idx
 
 
