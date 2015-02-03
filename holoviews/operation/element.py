@@ -37,6 +37,38 @@ class chain(ElementOperation):
     def _process(self, view, key=None):
         return self.p.chain(view).clone(value=self.p.value)
 
+
+class transform(ElementOperation):
+    """
+    Generic ElementOperation to transform an input Matrix or RGBA
+    element into an output Matrix. The transformation is defined by
+    the supplied callable that accepts the data of the input Matrix
+    (typically a numpy array) and returns the transformed data of the
+    output Matrix.
+
+    For instance, you can implement a transform that computes the
+    autocorrelation using the scipy library by specifying:
+
+    transform=lambda x: scipy.signal.correlate2d(x, x)
+    """
+
+    output_type = Matrix
+
+    value = param.String(default='Transform', doc="""
+        The value assigned to the result after applying the
+        transform.""")
+
+    transform = param.Callable(doc="""
+       Function of one argument that transforms the data in the input
+       Matrix to the data in the output Matrix. By default, acts as
+       the identity function such that the output matches the input.""")
+
+    def _process(self, matrix, key=None):
+        processed = (matrix.data if not self.p.transform
+                     else self.p.transform(matrix.data))
+        return Matrix(processed, matrix.bounds, value=self.p.value)
+
+
 #==============================#
 # Raster processing operations #
 #==============================#
