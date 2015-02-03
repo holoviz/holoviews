@@ -15,7 +15,6 @@ from ..interface.seaborn import DFrame as SNSFrame
 from ..core.options import Store
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
-from .plot import Plot
 
 
 class FullRedrawPlot(ElementPlot):
@@ -70,7 +69,7 @@ class RegressionPlot(FullRedrawPlot):
 
     def _update_plot(self, axis, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=axis, label=view.label,
+                    ax=axis, label=' ',
                     **Store.lookup_options(view, 'style')[self.cyclic_index])
 
 
@@ -113,7 +112,7 @@ class BivariatePlot(FullRedrawPlot):
                                                 view.data[:,1],
                                                 **self.style).fig
         else:
-            sns.kdeplot(view.data, ax=axis, label=view.label,
+            sns.kdeplot(view.data, ax=axis, label=' ',
                         zorder=self.zorder, **self.style)
 
 
@@ -179,7 +178,7 @@ class DistributionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
-        sns.distplot(view.data, ax=axis, label=view.label, **self.style)
+        sns.distplot(view.data, ax=axis, label=' ', **self.style)
 
 
 
