@@ -47,12 +47,8 @@ class Chart(Element2D):
         Should return the data and parameters of the new Chart.
         """
         if isinstance(ndmap, Table):
-            if ndmap.ndims == 1:
-                data = ndmap.items()
-                settings = dict(ndmap.get_param_values())
-            else:
-                raise Exception("Only single dimensioned Table can become"
-                                "a %s" % self.__class__.__name__)
+            data = [tuple(k for k in key) + (v,) for key, v in ndmap.data.items()]
+            settings = dict(ndmap.get_param_values())
         else:
             data = np.concatenate([v.data for v in ndmap])
             settings = dict([v for v in ndmap][0].get_param_values())
