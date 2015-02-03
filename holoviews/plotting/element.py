@@ -381,5 +381,5 @@ class OverlayPlot(ElementPlot):
         self._finalize_axis(key, ranges)
 
 
-Plot.defaults.update({NdOverlay: OverlayPlot,
-                      Overlay: OverlayPlot})
+Store.defaults.update({NdOverlay: OverlayPlot,
+                       Overlay: OverlayPlot})
