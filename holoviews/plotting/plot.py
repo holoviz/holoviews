@@ -76,11 +76,12 @@ class Plot(param.Parameterized):
     sideplots = {}
 
 
-    def __init__(self, figure=None, axis=None, dimensions=None,
-                 subplots=None, uniform=True, keys=None, subplot=None, **params):
+    def __init__(self, figure=None, axis=None, dimensions=None, layout_dimensions=None,
+                 subplots=None, uniform=True, keys=None, subplot=None, create_figure=None, **params):
         self.subplots = subplots
         self.subplot = figure is not None or subplot
         self.dimensions = dimensions
+        self.layout_dimensions = layout_dimensions
         self.keys = keys
         self.uniform = uniform
 
@@ -195,11 +196,15 @@ class Plot(param.Parameterized):
         Returns the formatted dimension value strings
         for a particular frame.
         """
-        if self.subplot or not self.uniform or len(self) == 1:
+        if self.layout_dimensions is not None:
+            dimensions, key = zip(*self.layout_dimensions.items())
+        elif not self.uniform or len(self) == 1:
             return ''
-        key = key if isinstance(key, tuple) else (key,)
+        else:
+            key = key if isinstance(key, tuple) else (key,)
+            dimensions = self.dimensions
         dimension_labels = [dim.pprint_value(k) for dim, k in
-                            zip(self.dimensions, key)]
+                            zip(dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         return '\n '.join(g for g in groups if g)
@@ -653,8 +658,8 @@ class LayoutPlot(CompositePlot):
         the grid indicies needed to instantiate the axes for each
         LayoutPlot.
         """
-        self.handles['axis'] = self._init_axis(None)
         layout_items = layout.grid_items()
+        layout_dimensions = layout.key_dimensions if isinstance(layout, NdLayout) else None
 
         layouts, grid_indices = {}, {}
         row_heightratios, col_widthratios = {}, {}
@@ -722,15 +727,19 @@ class LayoutPlot(CompositePlot):
             # Create temporary subplots to get projections types
             # to create the correct subaxes for all plots in the layout
             temp_subplots, new_layout = self._create_subplots(layouts[(r, c)], positions,
-                                                              frame_ranges)
+                                                              None, frame_ranges)
             gidx, gsinds, projs = self.grid_situate(temp_subplots, gidx, layout_type, cols)
+
+            layout_key, _ = layout_items.get((r, c), (None, None))
+            if isinstance(layout, NdLayout) and layout_key:
+                layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
                        for ind, proj in zip(gsinds, projs)]
             subplots, adjoint_layout = self._create_subplots(layouts[(r, c)], positions,
-                                                             frame_ranges,
+                                                             layout_dimensions, frame_ranges,
                                                              dict(zip(positions, subaxes)))
             layout_axes[(r, c)] = subaxes
 
@@ -740,7 +749,6 @@ class LayoutPlot(CompositePlot):
             layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
-            layout_key, _ = layout_items.get((r, c), (None, None))
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
         self.handles['title'] = self.handles['fig'].suptitle('', fontsize=16)
@@ -787,7 +795,7 @@ class LayoutPlot(CompositePlot):
         return start, inds, projs
 
 
-    def _create_subplots(self, layout, positions, ranges, axes={}):
+    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -832,10 +840,11 @@ class LayoutPlot(CompositePlot):
                 else:
                     plot_type = Plot.sideplots[vtype]
 
-            subplots[pos] = plot_type(view, axis=ax, ranges=ranges,
+            subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
                                       dimensions=self.dimensions,
-                                      uniform=self.uniform,
-                                      keys=self.keys, **plotopts)
+                                      layout_dimensions=layout_dimensions,
+                                      ranges=ranges, subplot=True,
+                                      uniform=self.uniform, **plotopts)
             adjoint_clone[pos] = subplots[pos].map
         return subplots, adjoint_clone
 

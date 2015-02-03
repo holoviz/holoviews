@@ -287,7 +287,7 @@ class OverlayPlot(ElementPlot):
             plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
-                            **plotopts)
+                            layout_dimensions=self.layout_dimensions)
             plotype = Store.defaults[type(vmap.last)]
             subplots[key] = plotype(vmap, **plotopts)
 
@@ -380,5 +380,5 @@ class OverlayPlot(ElementPlot):
         self._finalize_axis(key, ranges)
 
 
-Store.defaults.update({NdOverlay: OverlayPlot,
-                       Overlay: OverlayPlot})
+Plot.defaults.update({NdOverlay: OverlayPlot,
+                      Overlay: OverlayPlot})
