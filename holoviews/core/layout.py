@@ -4,31 +4,35 @@ allow multiple Views to be presented side-by-side in a GridLayout. An
 AdjointLayout allows one or two Views to be ajoined to a primary View
 to act as supplementary elements.
 """
-
-import math
+import uuid
 from collections import OrderedDict
+from functools import reduce
+from itertools import groupby
+from operator import itemgetter
+
+import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned
-from .ndmapping import NdMapping
-from .options import options
-from .view import View
+from .dimension import Dimension, Dimensioned, ViewableElement
+from .ndmapping import NdMapping, UniformNdMapping
+from .tree import AttrTree
+from .util import int_to_roman
+from . import traversal
 
 
-class Pane(View):
+class Composable(object):
     """
-    Pane extends the View type with the add and left shift operators
-    which allow the Pane to be embedded within Layouts and GridLayouts.
+    Composable is a mix-in class to allow Dimensioned object to be
+    embedded within Layouts and AxisLayouts.
     """
 
     def __add__(self, obj):
-        if not isinstance(obj, GridLayout):
-            return GridLayout(initial_items=[self, obj])
+        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
 
 
     def __lshift__(self, other):
-        if isinstance(other, (View, NdMapping)):
+        if isinstance(other, (ViewableElement, NdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data.values()+[self])
@@ -36,158 +40,13 @@ class Pane(View):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-class GridLayout(NdMapping):
-    """
-    A GridLayout is an NdMapping, which can contain any View or Map type.
-    It is used to group different View or Map elements into a grid for
-    display. Just like all other NdMappings it can be sliced and indexed
-    allowing selection of subregions of the grid.
-    """
-
-    dimensions = param.List(default=[Dimension('Row', type=int),
-                                     Dimension('Column', type=int)], constant=True)
-
-    def __init__(self, initial_items=[], **params):
-        self._max_cols = 4
-        self._style = None
-        if all(isinstance(el, (View, NdMapping, AdjointLayout)) for el in initial_items):
-            initial_items = self._grid_to_items([initial_items])
-        super(GridLayout, self).__init__(initial_items=initial_items, **params)
-
-
-    @property
-    def shape(self):
-        rows, cols = list(zip(*list(self.keys())))
-        return max(rows)+1, max(cols)+1
-
-
-    @property
-    def coords(self):
-        """
-        Compute the list of (row,column,view) elements from the
-        current set of items (i.e. tuples of form ((row, column), view))
-        """
-        if list(self.keys()) == []:  return []
-        return [(r, c, v) for ((r, c), v) in zip(list(self.keys()), list(self.values()))]
-
-
-    @property
-    def max_cols(self):
-        return self._max_cols
-
-
-    @max_cols.setter
-    def max_cols(self, n):
-        self._max_cols = n
-        self.reorder({}, n)
-
-
-    def cols(self, n):
-        self.reorder({}, n)
-        return self
-
-
-    def _grid_to_items(self, grid):
-        """
-        Given a grid (i.e. a list of lists), compute the list of
-        items.
-        """
-        items = []  # Flatten this method to single list comprehension.
-        for rind, row in enumerate(grid):
-            for cind, view in enumerate(row):
-                items.append(((rind, cind), view))
-        return items
-
-
-    def reorder(self, other, cols=None):
-        """
-        Given a mapping or iterable of additional views, extend the
-        grid in scanline order, obeying max_cols (if applicable).
-        """
-        values = other if isinstance(other, list) else list(other.values())
-        grid = [[]] if self.coords == [] else self._grid(self.coords)
-        new_grid = grid[:-1] + ([grid[-1]+ values])
-        cols = self.max_cols if cols is None else cols
-        reshaped_grid = self._reshape_grid(new_grid, cols)
-        self._data = OrderedDict(self._grid_to_items(reshaped_grid))
-
-
-    def _grid(self, coords):
-        """
-        From a list of coordinates of form [<(row, col, view)>] build
-        a corresponding list of lists grid.
-        """
-        rows = max(r for (r, _, _) in coords) + 1 if coords != [] else 0
-        unpadded_grid = [[p for (r, _, p) in coords if r == row] for row in
-                         range(rows)]
-        return unpadded_grid
-
-
-    def _reshape_grid(self, grid, cols):
-        """
-        Given a grid (i.e. a list of lists) , reformat it to a layout
-        with a maximum of cols columns (if not None).
-        """
-        if cols is None: return grid
-        flattened = [view for row in grid for view in row if (view is not None)]
-        row_num = int(math.ceil(len(flattened) / float(cols)))
-
-        reshaped_grid = []
-        for rind in range(row_num):
-            new_row = flattened[rind*cols:cols*(rind+1)]
-            reshaped_grid.append(new_row)
-
-        return reshaped_grid
-
-
-    def __add__(self, other):
-        new_values = list(other.values()) if isinstance(other, GridLayout) else [other]
-        return self.clone(list(self.values())+new_values)
-
-
-    @property
-    def last(self):
-        """
-        Returns another GridLayout constituted of the last views of the
-        individual elements (if they are maps).
-        """
-        last_items = []
-        for (k, v) in self.items():
-            if isinstance(v, NdMapping):
-                item = (k, v.clone((v.last_key, v.last)))
-            elif isinstance(v, AdjointLayout):
-                item = (k, v.last)
-            else:
-                item = (k, v)
-            last_items.append(item)
-        return self.clone(last_items)
-
-
-    @property
-    def style(self):
-        """
-        The name of the style that may be used to control display of
-        this view.
-        """
-        if self._style:
-            return self._style
-
-        class_name = self.__class__.__name__
-        matches = options.fuzzy_match_keys(class_name)
-        return matches[0] if matches else class_name
-
-
-    @style.setter
-    def style(self, val):
-        self._style = val
-
 
 class AdjointLayout(Dimensioned):
     """
     A AdjointLayout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a
     Matrix annotated with a luminance histogram. AdjointLayout accepts a
-    list of three View elements, which are laid out as follows with
+    list of three ViewableElement elements, which are laid out as follows with
     the names 'main', 'top' and 'right':
      ___________ __
     |____ 3_____|__|
@@ -198,40 +57,45 @@ class AdjointLayout(Dimensioned):
     |___________|__|
     """
 
-    dimensions = param.List(default=[Dimension('Layout')], constant=True)
+    key_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
+
+    value = param.String(default='AdjointLayout')
 
     layout_order = ['main', 'right', 'top']
 
     _deep_indexable = True
 
-    def __init__(self, views, **params):
+    def __init__(self, data, **params):
 
         self.main_layer = 0 # The index of the main layer if .main is an overlay
-        if len(views) > 3:
+        if data and len(data) > 3:
             raise Exception('AdjointLayout accepts no more than three elements.')
 
-        if isinstance(views, dict):
-            wrong_pos = [k for k in views if k not in self.layout_order]
+        if isinstance(data, dict):
+            wrong_pos = [k for k in data if k not in self.layout_order]
             if wrong_pos:
                 raise Exception('Wrong AdjointLayout positions provided.')
             else:
-                self.data = views
-        elif isinstance(views, list):
-            self.data = dict(zip(self.layout_order, views))
+                data = data
+        elif isinstance(data, list):
+            data = dict(zip(self.layout_order, data))
+        else:
+            data = OrderedDict()
 
-        if 'dimensions' in params:
-            params['dimensions'] = [d if isinstance(d, Dimension) else Dimension(d)
-                                    for d in params.pop('dimensions')]
-
-        super(AdjointLayout, self).__init__(**params)
-
-
-    def __len__(self):
-        return len(self.data)
+        super(AdjointLayout, self).__init__(data, **params)
 
 
     def get(self, key, default=None):
         return self.data[key] if key in self.data else default
+
+
+    def dimension_values(self, dimension):
+        if isinstance(dimension, int):
+            dimension = self.get_dimension(dimension).name
+        if dimension in self._cached_index_names:
+            return self.layout_order[:len(self.data)]
+        else:
+            return self.main.dimension_values(dimension)
 
 
     def __getitem__(self, key):
@@ -247,27 +111,24 @@ class AdjointLayout(Dimensioned):
             raise KeyError("Key {0} not found in AdjointLayout.".format(key))
 
 
-    @property
-    def deep_dimensions(self):
-        return ['AdjointLayout'] + self.main.deep_dimensions
-
-    @property
-    def style(self):
-        return [el.style for el in self]
-
-
-    @style.setter
-    def style(self, styles):
-        for layer, style in zip(self, styles):
-            layer.style = style
+    def __setitem__(self, key, value):
+        if key in ['main', 'right', 'top']:
+            if isinstance(value, (ViewableElement, UniformNdMapping)):
+                self.data[key] = value
+            else:
+                raise ValueError('AdjointLayout only accepts Element types.')
+        else:
+            raise Exception('Position %s not valid in AdjointLayout.' % key)
 
 
     def __lshift__(self, other):
-        if isinstance(other, AdjointLayout):
-            raise Exception("Cannot adjoin two AdjointLayout objects.")
         views = [self.data.get(k, None) for k in self.layout_order]
         return AdjointLayout([v for v in views if v is not None] + [other])
 
+
+    @property
+    def deep_dimensions(self):
+        return self.main.dimensions()
 
     @property
     def main(self):
@@ -295,13 +156,232 @@ class AdjointLayout(Dimensioned):
             i += 1
 
 
+    def __add__(self, obj):
+        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+
+
+    def __len__(self):
+        return len(self.data)
+
+
+
+class NdLayout(UniformNdMapping):
+    """
+    A NdLayout is an NdMapping, which unlike a HoloMap lays
+    the individual elements out in a AxisLayout.
+    """
+
+    value = param.String(default='NdLayout')
+
+    data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
+    def __init__(self, initial_items=None, **params):
+        self._max_cols = 4
+        self._style = None
+        if isinstance(initial_items, list):
+            initial_items = [(idx, item) for idx, item in enumerate(initial_items)]
+        elif isinstance(initial_items, NdMapping):
+            params = dict(initial_items.get_param_values(), **params)
+        super(NdLayout, self).__init__(initial_items=initial_items, **params)
+
+
+    @property
+    def uniform(self):
+        return traversal.uniform(self)
+
+
+    @property
+    def shape(self):
+        num = len(self.keys())
+        if num <= self._max_cols:
+            return (1, num)
+        nrows = num // self._max_cols
+        last_row_cols = num % self._max_cols
+        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
+
+
+    def grid_items(self):
+        """
+        Compute a dict of {(row,column): (key, value)} elements from the
+        current set of items and specified number of columns.
+        """
+        if list(self.keys()) == []:  return {}
+        cols = self._max_cols
+        return {(idx // cols, idx % cols): (key, item)
+                for idx, (key, item) in enumerate(self.data.items())}
+
+
+    def cols(self, n):
+        self._max_cols = n
+        return self
+
+
+    def __add__(self, obj):
+        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+
+
+    @property
+    def last(self):
+        """
+        Returns another NdLayout constituted of the last views of the
+        individual elements (if they are maps).
+        """
+        last_items = []
+        for (k, v) in self.items():
+            if isinstance(v, NdMapping):
+                item = (k, v.clone((v.last_key, v.last)))
+            elif isinstance(v, AdjointLayout):
+                item = (k, v.last)
+            else:
+                item = (k, v)
+            last_items.append(item)
+        return self.clone(last_items)
+
+
+
+class LayoutTree(AttrTree, Dimensioned):
+    """
+    A LayoutTree is an AttrTree with ViewableElement objects as leaf
+    values. Unlike AttrTree, a LayoutTree supports a rich display,
+    displaying leaf items in a grid style layout. In addition to the
+    usual AttrTree indexing, LayoutTree supports indexing of items by
+    their row and column index in the layout.
+
+    The maximum number of columns in such a layout may be controlled
+    with the cols method and the display policy is set with the
+    display method. A display policy of 'auto' may use the string repr
+    of the tree for large trees that would otherwise take a long time
+    to display wheras a policy of 'all' will always display all the
+    available leaves. The detailed settings for the 'auto' policy may
+    be set using the max_branches option of the %view magic.
+    """
+
+    value = param.String(default='LayoutTree', constant=True)
+
+    style = 'LayoutTree'
+
+    _deep_indexable = True
+
+    def __init__(self, *args, **kwargs):
+        self.__dict__['_display'] = 'auto'
+        self.__dict__['_max_cols'] = 4
+        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
+        AttrTree.__init__(self, *args, **kwargs)
+        Dimensioned.__init__(self, self.data, **params)
+
+
+    def display(self, option):
+        "Sets the display policy of the LayoutTree before returning self"
+        options = ['auto', 'all']
+        if option not in options:
+            raise Exception("Display option must be one of %s" %
+                            ','.join(repr(el) for el in options))
+        self._display = option
+        return self
+
+
+    def cols(self, ncols):
+        self._max_cols = ncols
+        return self
+
+
+    @property
+    def uniform(self):
+        return traversal.uniform(self)
+
+
+    def select(self, **selections):
+        return self.clone([(path, item.select(ignore_dropped=True, **selections))
+                            for path, item in self.items()])
+
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key < len(self):
+                return self.data.values()[key]
+            raise KeyError("Element out of range.")
+        if len(key) == 2 and not any([isinstance(k, str) for k in key]):
+            row, col = key
+            idx = row * self._cols + col
+            keys = self.data.keys()
+            if idx >= len(keys) or col >= self._cols:
+                raise KeyError('Index %s is outside available item range' % str(key))
+            key = keys[idx]
+        return super(LayoutTree, self).__getitem__(key)
+
+
+    def grid_items(self):
+        return {tuple(np.unravel_index(idx, self.shape)): (path, item)
+                for idx, (path, item) in enumerate(self.items())}
+
+
+    def __len__(self):
+        return len(self.data)
+
+
+    @property
+    def shape(self):
+        num = len(self)
+        if num <= self._max_cols:
+            return (1, num)
+        nrows = num // self._max_cols
+        last_row_cols = num % self._max_cols
+        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
+
+
+    @staticmethod
+    def new_path(path, item, paths):
+        count = 2
+        while path in paths:
+            pl = len(path)
+            if pl == 1 and not item.label or pl == 2 and item.label :
+                paths[paths.index(path)] = path + ('I',)
+                paths.append(path + ('II',))
+            else:
+                path = path[:-1] + (int_to_roman(count),)
+            count += 1
+        return path
+
+
+    @classmethod
+    def relabel_item_paths(cls, items):
+        """
+        Given a list of path items (list of tuples where each element
+        is a (path, element) pair), generate a new set of path items that
+        guarantees that no paths clash. This uses the element labels as
+        appropriate and automatically generates roman numeral
+        identifiers if necessary.
+        """
+        paths, path_items = [], []
+        for path, item in items:
+            new_path = cls.new_path(path, item, paths)
+            path_items.append(item)
+            paths.append(new_path)
+        return zip(paths, path_items)
+
+
+    @classmethod
+    def from_view(cls, view):
+        # Return ViewTrees and Overlays directly
+        if isinstance(view, LayoutTree) and not isinstance(view, ViewableElement): return view
+        return cls(items=[((view.value, view.label if view.label else 'I'), view)])
+
+
+    def group(self, value):
+        """
+        Assign a new value string to all the elements and return a new
+        LayoutTree.
+        """
+        new_items = [el.relabel(value=value) for el in self.data.values()]
+        return reduce(lambda x,y: x+y, new_items)
+
+
     def __add__(self, other):
-        if isinstance(other, GridLayout):
-            elements = [self] + list(other.values())
-        else:
-            elements = [self, other]
-        return GridLayout(elements)
+        other = self.from_view(other)
+        items = list(self.data.items()) + list(other.data.items())
+        return LayoutTree(items=self.relabel_item_paths(items)).display('all')
+
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
-                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
+                    if isinstance(_v, type) and (issubclass(_v, Dimensioned)
+                                                 or issubclass(_v, LayoutTree))]))

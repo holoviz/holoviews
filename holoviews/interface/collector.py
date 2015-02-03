@@ -8,9 +8,10 @@ import numpy as np
 
 import param
 
-from ..core import Map, NdMapping, Dimension, Grid, View, ViewMap, AttrTree
+from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
+ AxisLayout, AttrTree, HoloMap
+from ..element.raster import Matrix
 from ..ipython.widgets import RunProgress, ProgressBar
-from ..view import Matrix
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
@@ -67,7 +68,7 @@ class ViewRef(Reference):
     possible to schedule tasks for processing data not yet present.
 
     ViewRefs compose with the * operator to specify Overlays and also
-    support slicing of the referenced view objects:
+    support slicing of the referenced elements:
 
     >>> ref = ViewRef('Example.Path1 * Example.Path2')
 
@@ -138,12 +139,12 @@ class ViewRef(Reference):
 
     @property
     def resolved_type(self):
-        return (View, Map, Grid)
+        return (ViewableElement, UniformNdMapping, AxisLayout)
 
 
     def _resolve_ref(self, ref, attrtree):
         """
-        Get the View referred to by a single reference tuple if the
+        Get the ViewableElement referred to by a single reference tuple if the
         data exists, otherwise raise AttributeError.
         """
         obj = attrtree
@@ -158,7 +159,7 @@ class ViewRef(Reference):
 
     def resolve(self, attrtree):
         """
-        Resolve the current ViewRef object into the appropriate View
+        Resolve the current ViewRef object into the appropriate ViewableElement
         object (if available).
         """
         overlaid_view = None
@@ -177,7 +178,7 @@ class ViewRef(Reference):
 
     def __getitem__(self, index):
         """
-        Slice the referenced DataView.
+        Slice the referenced Chart.
         """
         if len(self.slices) == 1:
             self.slices[0] = index
@@ -243,7 +244,7 @@ class Collect(object):
     """
     An Collect takes an object and corresponding hook and when
     called with an AttrTree, updates it with the output of the hook
-    (given the object). The output of the hook should be a View or an
+    (given the object). The output of the hook should be a ViewableElement or an
     AttrTree.
 
     The input object may be a picklable object (e.g. a
@@ -304,7 +305,7 @@ class Collect(object):
 
     def _get_result(self, attrtree, time, times):
         """
-        Method returning a View or AttrTree to be merged into the
+        Method returning a ViewableElement or AttrTree to be merged into the
         attrtree (via the specified hook) in the call.
         """
         resolvable = hasattr(self.obj, 'resolve')
@@ -334,10 +335,10 @@ class Collect(object):
                 raise Exception("Return value is not a AttrTree and mode is 'merge'.")
 
         if self.path not in attrtree:
-            if not isinstance(val, NdMapping):
-                val = ViewMap([((time,), val)], dimensions=[Time])
+            if not isinstance(val, UniformNdMapping):
+                val = HoloMap([((time,), val)], key_dimensions=[Time])
         else:
-            current_val = attrtree.path_items[self.path]
+            current_val = attrtree.data[self.path]
             val = self._merge_views(current_val, val, time)
 
         attrtree.set_path(self.path,  val)
@@ -347,11 +348,12 @@ class Collect(object):
     def _merge_views(self, current_val, val, time):
         """
         Helper for merging views together. For instance, this method
-        will add a Matrix to a ViewMap or merge two ViewMaps.
+        will add a Matrix to a HoloMap or merge two ViewMaps.
         """
-        if isinstance(val, View):
+        if isinstance(val, ViewableElement):
             current_val[time] = val
-        elif (isinstance(current_val, Map) and 'Time' not in current_val.dimension_labels):
+        elif (isinstance(current_val, UniformNdMapping) and 'Time' not in
+              [d.name for d in current_val.key_dimensions]):
             raise Exception("Time dimension is missing.")
         else:
             current_val.update(val)
@@ -379,8 +381,8 @@ class Collect(object):
 class Analyze(Collect):
     """
     An Analyze is a type of Collect that updates an Attrtree with
-    the results of a ViewOperation. Analyze takes a ViewRef object as
-    input which is resolved to generate input for the ViewOperation.
+    the results of a ElementOperation. Analyze takes a ViewRef object as
+    input which is resolved to generate input for the ElementOperation.
     """
 
     def __init__(self, reference, analysis, *args, **kwargs):
@@ -430,7 +432,7 @@ class Collator(NdMapping):
     Collator is an NdMapping holding AttrTree objects and
     provides methods to filter and merge them via the call
     method. Collation inserts the Collator dimensions on
-    each Map type contained within the AttrTree objects.
+    each UniformNdMapping type contained within the AttrTree objects.
     """
 
     drop = param.List(default=[], doc="""
@@ -447,16 +449,16 @@ class Collator(NdMapping):
         AttrTrees is returned. Optionally a list of dimensions
         to be ignored can be supplied.
         """
-        constant_dims = self.constant_dims
-        ndmapping = NdMapping(dimensions=self.dimensions)
+        constant_dims = self.constant_dimensions
+        ndmapping = NdMapping(key_dimensions=self.key_dimensions)
 
         progressbar = ProgressBar(label='Collation')
         num_elements = len(self)
-        for idx, (key, data) in enumerate(self._data.items()):
+        for idx, (key, data) in enumerate(self.data.items()):
            attrtree = self._process_data(data).filter(path_filters)
 
            if merge:
-              dim_keys = zip(self.dimension_labels, key)
+              dim_keys = zip(self._cached_index_names, key)
               varying_keys = [(d, k) for d, k in dim_keys
                               if d not in constant_dims]
               constant_keys = [(d, k) for d, k in dim_keys
@@ -468,18 +470,31 @@ class Collator(NdMapping):
 
         if merge:
             trees = ndmapping.values()
-            accumulator = AttrTree(path_items=trees[0].path_items)
+            accumulator = AttrTree(data=trees[0].data)
             for tree in trees:
                 accumulator.update(tree)
             return accumulator
         return ndmapping
 
 
+    @property
+    def constant_dimensions(self):
+        """
+        Return all constant dimensions.
+        """
+        dimensions = []
+        for dim in self.key_dimensions:
+            low, high = self.range(dim.name)
+            if (low is not None and low == high) or set([self.dimension_values(dim.name)]):
+                dimensions.append(dim)
+        return dimensions
+
+
     def _add_dimensions(self, item, dims, constant_keys):
         """
         Recursively descend through an AttrTree and NdMapping objects
         in order to add the supplied dimension values to all contained
-        Map objects.
+        UniformNdMapping objects.
         """
         if isinstance(item, AttrTree):
             item.fixed = False
@@ -487,11 +502,11 @@ class Collator(NdMapping):
         new_item = item.clone({}) if isinstance(item, NdMapping) else item
         for k in item.keys():
             v = item[k]
-            if isinstance(v, Map):
+            if isinstance(v, UniformNdMapping):
                 dim_vals = [(dim, val) for dim, val in dims[::-1]
                             if dim not in self.drop]
                 for dim, val in dim_vals:
-                    if dim not in v.dimension_labels:
+                    if dim not in [d.name for d in v.key_dimensions]:
                         v = v.add_dimension(dim, 0, val)
                 if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v
@@ -524,9 +539,9 @@ class Collector(AttrTree):
 
     The analysis method takes a reference to data on the attrtree (a
     ViewRef) and passes the resolved output to the given analysisfn
-    ViewOperation.
+    ElementOperation.
 
-    >>> Collector.for_type(str, lambda x: View(x, name=x))
+    >>> Collector.for_type(str, lambda x: ViewableElement(x, name=x))
     >>> Collector.interval_hook = param.Dynamic.time_fn.advance
 
     >>> c = Collector()
@@ -536,15 +551,16 @@ class Collector(AttrTree):
     >>> data = c(times=[1,2,3,4,5])
     >>> isinstance(data, AttrTree)
     True
-    >>> isinstance(data.Target.Path, Map)
+    >>> isinstance(data.Target.Path, UniformNdMapping)
     True
 
     >>> times = data.Target.Path.keys()
     >>> print("Collected the data for %d time values" % len(times))
     Collected the data for 5 time values
 
-    >>> data.Target.Path.last                 #doctest: +ELLIPSIS
-    View('example string'...)
+    >>> results = data.Target.Path.last
+    >>> results.name
+    'example string'
     """
 
     # A callable that advances by the specified time before the next
@@ -556,7 +572,7 @@ class Collector(AttrTree):
 
     # A callable that returns the time where the time may be the
     # simulation time or wall-clock time. The time values are
-    # recorded by the Map keys
+    # recorded by the UniformNdMapping keys
     time_fn = param.Dynamic.time_fn
 
     type_hooks = {}
@@ -583,7 +599,7 @@ class Collector(AttrTree):
 
         for (path_spec, obj) in specs:
             if path_spec is None:
-                self.__dict__['path_items'][uuid.uuid4().hex] = obj
+                self.__dict__['data'][uuid.uuid4().hex] = obj
             else:
                 path = path_spec.rsplit('.')
                 self.set_path(path, obj)
@@ -599,7 +615,7 @@ class Collector(AttrTree):
     def ref(self):
         """
         A convenient property to easily generate ViewRef object (via
-        attribute access). Used to define View references for analysis
+        attribute access). Used to define ViewableElement references for analysis
         or for setting a path for an Collect on the Collector.
         """
         return ViewRef()
@@ -615,19 +631,19 @@ class Collector(AttrTree):
         """
         task = Collect(obj, *args, **kwargs)
         if task.mode == 'merge':
-            self.path_items[uuid.uuid4().hex] = task
+            self.data[uuid.uuid4().hex] = task
             return None
         return task
 
 
     def analyze(self, reference, analysisfn,  *args, **kwargs):
         """
-        Given a ViewRef and the ViewOperation analysisfn, process the
+        Given a ViewRef and the ElementOperation analysisfn, process the
         data resolved by the reference with analysisfn at each step.
         """
         task = Analyze(reference, analysisfn, *args, **kwargs)
         if task.mode == 'merge':
-            self.path_items[uuid.uuid4().hex] = task
+            self.data[uuid.uuid4().hex] = task
         return task
 
 
@@ -680,7 +696,7 @@ class Collector(AttrTree):
         Given a set of times this method checks that all
         scheduled measurements will actually be carried out.
         """
-        for path, task in self.path_items.items():
+        for path, task in self.items():
             if task.times:
                 self._verify_task_times(task, times, strict)
 
@@ -704,11 +720,11 @@ class Collector(AttrTree):
 
     def _schedule_tasks(self, times, strict=False):
         """
-        Inspect the path_items to find all the Collects that have
+        Inspect the data to find all the Collects that have
         been specified and add them to the scheduled tasks list.
         """
         self._scheduled_tasks = []
-        for path, task in self.path_items.items():
+        for path, task in self.items():
 
             if task is None:
                 raise Exception("Incorrect task definition for %r" % '.'.join(path))
@@ -729,22 +745,21 @@ class Collector(AttrTree):
 
     def __repr__(self):
         spec_strs = []
-        for path, val in self.path_items.items():
+        for path, val in self.items():
             key = repr('.'.join(path)) if isinstance(path, tuple) else 'None'
             spec_strs.append('\n(%s, %r)' % (key, val))
         return 'Collector([%s])' % ', '.join(spec_strs)
 
     def __str__(self):
         indent = '  '
-        num_items = len(self.path_items)
-        padding = len(str(num_items))
+        padding = len(str(len(self)))
         num_fmt = '%%0%dd.' % padding
 
-        lines = ["%d tasks scheduled:\n" % num_items]
+        lines = ["%d tasks scheduled:\n" % len(self)]
         dotted_line = indent + num_fmt +"  %s"
         merge_line = indent + num_fmt + "  [...] "
         value_line = indent*3 + ' '*padding + " %s %s"
-        for i, (path, val) in enumerate(self.path_items.items()):
+        for i, (path, val) in enumerate(self.items()):
             if isinstance(path, tuple):
                 lines.append(dotted_line % (i+1, '.'.join(p for p in path)))
                 lines.append(value_line % (' ', val))

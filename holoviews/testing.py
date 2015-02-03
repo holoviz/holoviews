@@ -1,35 +1,38 @@
 import unittest
 from unittest import SkipTest
 
-import numpy as np
 from numpy.testing import assert_array_almost_equal
 from IPython.display import HTML, SVG
 
-from .core import Dimension, GridLayout, AdjointLayout, Overlay, Grid, ViewMap
-from .core.options import ChannelOpts, PlotOpts, StyleOpts
+from .core import AdjointLayout, Overlay
+from .core.options import Options
+from .element import *
+from holoviews import Matrix
+from holoviews.element.annotation import Annotation, Contours
+from holoviews.element.raster import Raster
 from .interface.pandas import *
 from .interface.seaborn import *
-from .view import *
 
 
 class ViewTestCase(unittest.TestCase):
     """
-    The class implements comparisons between View objects for the
+    The class implements comparisons between ViewableElement objects for the
     purposes of testing. The most important attribute that needs to be
     compared is the data attribute as this contains the raw data held
-    by the View object.
+    by the ViewableElement object.
     """
     def __init__(self, *args, **kwargs):
         super(ViewTestCase, self).__init__(*args, **kwargs)
         # General view classes
-        self.addTypeEqualityFunc(GridLayout,    self.compare_gridlayout)
+        self.addTypeEqualityFunc(NdLayout,    self.compare_gridlayout)
         self.addTypeEqualityFunc(AdjointLayout, self.compare_layouts)
-        self.addTypeEqualityFunc(Overlay,       self.compare_overlays)
+        self.addTypeEqualityFunc(NdOverlay,     self.compare_layers)
+        self.addTypeEqualityFunc(Overlay,       self.compare_layers)
         self.addTypeEqualityFunc(Annotation,    self.compare_annotations)
-        self.addTypeEqualityFunc(Grid,          self.compare_grids)
+        self.addTypeEqualityFunc(AxisLayout,    self.compare_grids)
+        self.addTypeEqualityFunc(HoloMap,       self.compare_viewmap)
 
         # DataLayers
-        self.addTypeEqualityFunc(ViewMap,      self.compare_viewmap)
         self.addTypeEqualityFunc(Curve,        self.compare_curve)
         self.addTypeEqualityFunc(Histogram,    self.compare_histogram)
         self.addTypeEqualityFunc(Raster,       self.compare_raster)
@@ -55,9 +58,7 @@ class ViewTestCase(unittest.TestCase):
         self.addTypeEqualityFunc(TimeSeries,   self.compare_timeseries)
 
         # Option objects
-        self.addTypeEqualityFunc(StyleOpts,    self.compare_opts)
-        self.addTypeEqualityFunc(PlotOpts,     self.compare_opts)
-        self.addTypeEqualityFunc(ChannelOpts,  self.compare_channelopts)
+        self.addTypeEqualityFunc(Options,     self.compare_options)
         # Dimension objects
         self.addTypeEqualityFunc(Dimension,    self.compare_dims)
 
@@ -91,7 +92,7 @@ class ViewTestCase(unittest.TestCase):
         if view1.ndims != view2.ndims:
             raise self.failureException("Maps have different numbers of dimensions.")
 
-        if view1.dimension_labels != view2.dimension_labels:
+        if [d.name for d in view1.dimensions()] != [d.name for d in view2.dimensions()]:
             raise self.failureException("Maps have different dimension labels.")
 
         if len(view1.keys()) != len(view2.keys()):
@@ -124,7 +125,7 @@ class ViewTestCase(unittest.TestCase):
         for el1, el2 in zip(view1, view1):
             self.assertEqual(el1, el2)
 
-    def compare_overlays(self, view1, view2, msg):
+    def compare_layers(self, view1, view2, msg):
         if len(view1) != len(view2):
             raise self.failureException("Overlays have different lengths.")
 
@@ -182,16 +183,10 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_curve(self, view1, view2, msg):
-        if view1.cyclic_range != view2.cyclic_range:
-            raise self.failureException("Curves do not have matching cyclic_range.")
         self.compare_arrays(view1.data, view2.data, 'Curve data')
 
 
     def compare_histogram(self, view1, view2, msg):
-
-        if view1.cyclic_range != view2.cyclic_range:
-            raise self.failureException("Histograms do not have matching cyclic_range.")
-
         self.compare_arrays(view1.edges, view2.edges, "Histogram edges")
         self.compare_arrays(view1.values, view2.values, "Histogram values")
 
@@ -211,13 +206,13 @@ class ViewTestCase(unittest.TestCase):
     def compare_itemtables(self, view1, view2, msg):
 
         if view1.rows != view2.rows:
-            raise self.failureException("Tables have different numbers of rows.")
+            raise self.failureException("ItemTables have different numbers of rows.")
 
         if view1.cols != view2.cols:
-            raise self.failureException("Tables have different numbers of columns.")
+            raise self.failureException("ItemTables have different numbers of columns.")
 
-        if view1.dimension_labels != view2.dimension_labels:
-            raise self.failureException("Tables have different Dimensions.")
+        if [d.name for d in view1.dimensions()] != [d.name for d in view2.dimensions()]:
+            raise self.failureException("ItemTables have different Dimensions.")
 
 
     def compare_tables(self, view1, view2, msg):
@@ -308,14 +303,14 @@ class ViewTestCase(unittest.TestCase):
 
 
     def compare_grids(self, view1, view2, msg):
-        self._compare_grids(view1, view2, 'Grid')
+        self._compare_grids(view1, view2, 'AxisLayout')
 
     #=========#
     # Options #
     #=========#
 
-    def compare_opts(self, opt1, opt2, msg):
-        self.assertEqual(opt1.items, opt2.items)
+    def compare_options(self, options1, options2, msg):
+        self.assertEqual(options1.kwargs, options2.kwargs)
 
 
     def compare_channelopts(self, opt1, opt2, msg):

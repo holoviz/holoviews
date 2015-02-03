@@ -4,40 +4,43 @@ import string
 from IPython.core import page
 
 try:
-    from IPython.core.magic import Magics, magics_class, cell_magic, line_cell_magic
+    from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
 except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import Map, View, Overlay, AdjointLayout, GridLayout, Grid
-from ..core.options import PlotOpts, StyleOpts, ChannelOpts
+from ..core import NdOverlay, Element, HoloMap,\
+    AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
+
+from ..core.options import OptionTree, Options, OptionError, Store
 from ..plotting import Plot
 
+from collections import OrderedDict
+from IPython.display import display, HTML
 
-channel_ops = ChannelOpts.operations
+from ..operation import Channel
 
 #========#
 # Magics #
 #========#
 
-GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
-VIDEO_TAG = """<center><video controls style='max-width:100%'>
- <source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
- Your browser does not support the video tag.
-</video><center/>"""
 
-# 'format name':(animation writer, mime_type,  anim_kwargs, extra_args, tag)
-ANIMATION_OPTS = {
-    'webm': ('ffmpeg', 'webm', {},
-             ['-vcodec', 'libvpx', '-b', '1000k'],
-             VIDEO_TAG),
-    'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
-             ['-pix_fmt', 'yuv420p'],
-             VIDEO_TAG),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, [],
-            GIF_TAG),
-    'scrubber': ('html', None, {'fps': 5}, None, None)
-}
+try:
+    import pyparsing
+except ImportError:
+    pyparsing = None
+else:
+    from holoviews.ipython.parser import ChannelSpec
+    from holoviews.ipython.parser import OptsSpec
+
+
+
+GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
+VIDEO_TAG = """
+<center><video controls style='max-width:100%'>
+<source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
+Your browser does not support the video tag.
+</video><center/>"""
 
 
 # Set to True to automatically run notebooks.
@@ -58,633 +61,464 @@ html_blue = '#00008e'
 @magics_class
 class ViewMagic(Magics):
     """
-    Magic to allow easy control over the display of holoviews. The
-    figure and animation output formats, the animation frame rate and
-    figure size can all be controlled.
-
-    Usage: %view [png|svg] [webm|h264|gif[:<fps>]] [<percent size>]
+    Magic for easy customising of display options.
+    Consult %%view? for more information.
     """
+    # Formats that are always available
+    inbuilt_formats= ['auto', 'widgets', 'scrubber']
+    # Codec or system-dependent format options
+    optional_formats = ['webm','h264', 'gif']
 
-    anim_formats = ['webm','h264','gif','scrubber','widgets']
-    fig_formats = ['svg', 'png', 'mpld3']
+    allowed = {'backend'     : ['mpl','d3'],
+               'fig'         : ['svg', 'png'],
+               'holomap'     : inbuilt_formats,
+               'widgets'     : ['embed', 'live', 'cached'],
+               'fps'         : (0, float('inf')),
+               'max_frames'  : (0, float('inf')),
+               'max_branches': (0, float('inf')),
+               'size'        : (0, float('inf')),
+               'charwidth'   : (0, float('inf'))}
 
-    PERCENTAGE_SIZE = 100
-    FPS = 20
-    FIGURE_FORMAT = 'png'
-    VIDEO_FORMAT = 'webm'
+    defaults = OrderedDict([('backend'     , 'mpl'),
+                            ('fig'         , 'png'),
+                            ('holomap'     , 'auto'),
+                            ('widgets'     , 'embed'),
+                            ('fps'         , 20),
+                            ('max_frames'  , 500),
+                            ('max_branches', 2),
+                            ('size'        , 100),
+                            ('charwidth'   , 80)])
+
+    options = OrderedDict(defaults.items())
+
+    # <format name> : (animation writer, mime_type,  anim_kwargs, extra_args, tag)
+    ANIMATION_OPTS = {
+        'webm': ('ffmpeg', 'webm', {},
+                 ['-vcodec', 'libvpx', '-b', '1000k'],
+                 VIDEO_TAG),
+        'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+                 ['-pix_fmt', 'yuv420p'],
+                 VIDEO_TAG),
+        'gif': ('imagemagick', 'gif', {'fps': 10}, [],
+                GIF_TAG),
+        'scrubber': ('html', None, {'fps': 5}, None, None)
+    }
 
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
-        self.usage_info = "Usage: %view [png|svg|mpld3] [webm|h264|gif[:<fps>]|widgets[:embedded|cached|live]|scrubber] [<percent size>]"
-        self.usage_info += " (Arguments may be in any order)"
+        self.view.__func__.__doc__ = self._generate_docstring()
+
+
+    @classmethod
+    def register_supported_formats(cls, supported_formats):
+        "Extend available holomap formats with supported format list"
+        if not all(el in cls.optional_formats for el in supported_formats):
+            raise AssertionError("Registering format in list %s not in known formats %s"
+                                 % (supported_formats, cls.optional_formats))
+        cls.allowed['holomap'] = cls.inbuilt_formats + supported_formats
+
+
+    @classmethod
+    def _generate_docstring(cls):
+        intro = ["Magic for setting holoview display options.",
+                 "Arguments are supplied as a series of keywords in any order:", '']
+        backend = "backend      : The backend used by holoviews %r"  % cls.allowed['backend']
+        fig =     "fig          : The static figure format %r" % cls.allowed['fig']
+        holomap = "holomap      : The display type for holomaps %r" % cls.allowed['holomap']
+        widgets = "widgets      : The widget mode for widgets %r" % cls.allowed['widgets']
+        fps =    ("fps          : The frames per second for animations (default %r)"
+                  % cls.defaults['widgets'])
+        frames=  ("max_frames   : The max number of frames rendered (default %r)"
+                  % cls.defaults['max_frames'])
+        branches=("max_branches : The max number of LayoutTree branches rendered (default %r)"
+                  % cls.defaults['max_branches'])
+        size =   ("size         : The percentage size of displayed output (default %r)"
+                  % cls.defaults['size'])
+        chars =  ("charwidth    : The max character width view magic options display (default %r)"
+                  % cls.defaults['charwidth'])
+
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, chars]
+        return '\n'.join(intro + descriptions)
+
+
+    def _extract_keywords(self, line, items):
+        """
+        Given the keyword string, parse a dictionary of options.
+        """
+        unprocessed = list(reversed(line.split('=')))
+        while unprocessed:
+            chunk = unprocessed.pop()
+            key = None
+            if chunk.strip() in self.allowed:
+                key = chunk.strip()
+            else:
+                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
+            # The next chunk may end in a subsequent keyword
+            value = unprocessed.pop().strip()
+            if len(unprocessed) != 0:
+                # Check if a new keyword has begun
+                for option in self.allowed:
+                    if value.endswith(option):
+                        value = value[:-len(option)].strip()
+                        unprocessed.append(option)
+                        break
+                else:
+                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
+            keyword = '%s=%s' % (key, value)
+            try:
+                items.update(eval('dict(%s)' % keyword))
+            except:
+                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
+        return items
+
+
+    def _validate(self, options):
+        "Validation of edge cases and incompatible options"
+        if options['backend'] == 'd3':
+            try:      import mpld3 # pyflakes:ignore (Testing optional import)
+            except:
+                raise ValueError("Cannot use d3 backend without mpld3. "
+                                 "Please select a different backend")
+            allowed = ['scrubber', 'widgets', 'auto']
+            if options['holomap'] not in allowed:
+                raise ValueError("The D3 backend only supports holomap options %r" % allowed)
+
+        if (options['holomap']=='widgets'
+            and options['widgets']!='embed'
+            and options['fig']=='svg'):
+            raise ValueError("SVG mode not supported by widgets unless in embed mode")
+        return options
+
+
+    def get_options(self, line, options):
+        "Given a keyword specification line, validated and compute options"
+        items = self._extract_keywords(line, OrderedDict())
+        for keyword in self.defaults:
+            if keyword in items:
+                value = items[keyword]
+                allowed = self.allowed[keyword]
+                if isinstance(allowed, list) and value not in allowed:
+                    raise ValueError("Value %r for key %r not one of %s"
+                                     % (value, keyword, allowed))
+                elif isinstance(allowed, tuple):
+                    if not (allowed[0] <= value <= allowed[1]):
+                        info = (keyword,value)+allowed
+                        raise ValueError("Value %r for key %r not between %s and %s" % info)
+                options[keyword] = value
+            else:
+                options[keyword] = self.defaults[keyword]
+        return self._validate(options)
+
 
     @classmethod
     def option_completer(cls, k,v):
-        return cls.anim_formats + cls.fig_formats
+        raw_line = v.text_until_cursor
+        line = raw_line.replace('%view','')
 
-    def _set_animation_options(self, anim_spec):
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
+
+        for token in tokens:
+            if token.strip() in cls.allowed:
+                completion_key = token.strip()
+                break
+        values = [repr(el) for el in cls.allowed.get(completion_key, [])
+                  if not isinstance(el, tuple)]
+
+        return values + [el+'=' for el in cls.allowed.keys()]
+
+
+    def pprint(self):
         """
-        Parse the animation format and fps from the specification string.
+        Pretty print the current view options with a maximum width of
+        self.pprint_width.
         """
-        format_choice, opt_str = ((anim_spec, None) if (':' not in anim_spec)
-                                  else anim_spec.rsplit(':'))
-        if format_choice not in self.anim_formats:
-            print("Valid animations types: %s" % ', '.join(self.anim_formats))
-            return False
-        elif format_choice == 'widgets':
-            if opt_str not in ['embedded', 'cached', 'live', None]:
-                print("Valid widget modes are embedded, cached and live.")
-                return False
+        elements = ["%view"]
+        lines, current, count = [], '', 0
+        for k,v in ViewMagic.options.items():
+            keyword = '%s=%r' % (k,v)
+            if len(current) + len(keyword) > self.options['charwidth']:
+                print(('%view' if count==0 else '      ')  + current)
+                count += 1
+                current = keyword
             else:
-                ViewMagic.VIDEO_FORMAT = (format_choice, opt_str if opt_str else 'embedded')
-                return True
-        elif opt_str is None:
-            ViewMagic.VIDEO_FORMAT = format_choice
-            return True
-
-        try:
-            fps = int(opt_str)
-        except:
-            print("Invalid frame rate: '%s'" %  opt_str)
-            return False
-
-        global ANIMATION_OPTS
-        ViewMagic.VIDEO_FORMAT, ViewMagic.FPS = format_choice, fps
-        if format_choice in ['gif', 'scrubber']:
-            ANIMATION_OPTS[format_choice][2]['fps'] = fps
-        return True
-
-
-    def _set_size(self, size_spec):
-        try:     size = int(size_spec)
-        except:  size = None
-
-        if (size is None) or (size < 0):
-            print("Percentage size must be an integer larger than zero.")
-            return False
+                current += ' '+ keyword
         else:
-            ViewMagic.PERCENTAGE_SIZE = size
-            return True
+            print(('%view' if count==0 else '      ')  + current)
 
-
-    def _parse_settings(self, opts):
-        fig_fmt = [f in opts for f in self.fig_formats]
-        if all(fig_fmt):
-            success = False
-            print("Please select either png, svg or mpld3 for static output")
-        elif True in fig_fmt:
-            figure_format = self.fig_formats[fig_fmt.index(True)]
-            if figure_format == 'mpld3':
-                try:
-                    import mpld3 # pyflakes:ignore (Testing optional import)
-                except:
-                    print("mpld3 could not be imported, falling back to "
-                          "previous display backend.")
-                    figure_format = ViewMagic.FIGURE_FORMAT
-                print("Warning: mpld3 backend is still in development.")
-            ViewMagic.FIGURE_FORMAT = figure_format
-            opts.remove(figure_format)
-        elif len(opts) == 0: success = True
-
-        if not len(opts) or len(opts) > 2:
-            success = not len(opts)
-        elif len(opts) == 1:
-            success = (self._set_animation_options(opts[0].lower())
-                       if opts[0][0].isalpha() else self._set_size(opts[0]))
-        elif sum(el[0].isalpha() for el in opts) in [0,2]:
-            success = False
-        else:
-            (anim, size) = (opts if opts[0][0].isalpha()
-                            else (opts[1], opts[0]))
-            anim_success = self._set_animation_options(anim.lower())
-            size_success = self._set_size(size)
-            success =  anim_success and size_success
-
-        return success
 
     @line_cell_magic
     def view(self, line, cell=None):
-        start_opts = [ViewMagic.FIGURE_FORMAT,  ViewMagic.VIDEO_FORMAT,
-                      ViewMagic.PERCENTAGE_SIZE,  ViewMagic.FPS]
+        if line.strip() == '':
+            self.pprint()
+            print("\nFor help with the %view magic, call %view?")
+            return
 
-        opts = line.split()
-        success = self._parse_settings(opts)
+        restore_copy = OrderedDict(ViewMagic.options.items())
+        try:
+            options = self.get_options(line, OrderedDict())
+            ViewMagic.options = options
+            # Inform writer of chosen fps
+            if options['holomap'] in ['gif', 'scrubber']:
+                self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
+        except Exception as e:
+            print('Error: %s' % str(e))
+            print("For help with the %view magic, call %view?\n")
+            return
 
-        if cell is None and success:
-            if isinstance(ViewMagic.VIDEO_FORMAT, tuple):
-                msg = "Display %s widget" % ViewMagic.VIDEO_FORMAT[1]
-            else:
-                msg = "Displaying %s animation [%s FPS]" % (ViewMagic.VIDEO_FORMAT.upper(), ViewMagic.FPS)
-            info = (msg, ViewMagic.FIGURE_FORMAT.upper(), ViewMagic.PERCENTAGE_SIZE)
-            print("%s and %s figures [%d%% size]" % info)
-        elif cell and success:
+        if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            [ViewMagic.FIGURE_FORMAT,  ViewMagic.VIDEO_FORMAT,
-             ViewMagic.PERCENTAGE_SIZE,  ViewMagic.FPS] = start_opts
-        else:
-            print(self.usage_info)
+            ViewMagic.options = restore_copy
 
 
 
 @magics_class
 class ChannelMagic(Magics):
+    """
+    Magic allowing easy definition of channel operations.
+    Consult %%channels? for more information.
+    """
 
-    custom_channels = {}
-
-    @cell_magic
-    def channels(self, line, cell=None):
-        """
-        The %%channels cell magic allows channel definitions to be
-        defined on the displayed Overlay.
-
-        For instance, if you have three Matrix Views (R,G and B)
-        together in a Overlay with labels 'R_Channel',
-        'G_Channel', 'B_Channel' respectively, you can display this
-        object as an RGB image using:
-
-        %%channels R_Channel * G_Channel * B_Channel => RGBA []
-        R * G * B
-
-        The available operators are defined in the modes dictionary of
-        ChannelOpts and additional arguments to the channel operator
-        are supplied via keywords in the square brackets.
-        """
-        ChannelMagic.custom_channels = self._parse_channels(str(line))
-        self.shell.run_cell(cell, store_history=STORE_HISTORY)
-        ChannelMagic.custom_channels = {}
+    def __init__(self, *args, **kwargs):
+        super(ChannelMagic, self).__init__(*args, **kwargs)
+        lines = ['The %channels line magic is used to define channel operations.']
+        self.channels.__func__.__doc__ = '\n'.join(lines + [ChannelSpec.__doc__])
 
 
-    @classmethod
-    def _set_overlay_labels(cls, obj, label):
-        """
-        Labels on Overlays are used to index channel definitions.
-        """
-        if isinstance(obj, (AdjointLayout, Grid, GridLayout)):
-            for subview in obj:
-                cls._set_overlay_labels(subview, label)
-        elif isinstance(obj, Map) and issubclass(obj.type, Overlay):
-            for overlay in obj:
-                overlay.label = label
-        elif isinstance(obj, Overlay):
-            obj.label = label
+    @line_magic
+    def channels(self, line):
+        defined_values = [op.value for op in Channel.definitions]
+        if line.strip():
+            for definition in ChannelSpec.parse(line.strip()):
+                if definition.value in defined_values:
+                    Channel.definitions.pop(defined_values.index(definition.value))
 
-
-    @classmethod
-    def _set_channels(cls, obj, custom_channels, prefix):
-        cls._set_overlay_labels(obj, prefix)
-        for name, (pattern, params) in custom_channels.items():
-            Overlay.channels[prefix + '_' + name] = ChannelOpts(name, pattern,
-                                                        **params)
-
-
-    @classmethod
-    def set_channels(cls, obj):
-        prefix = 'Custom[<' + obj.name + '>]'
-        if cls.custom_channels:
-            cls._set_channels(obj, cls.custom_channels, prefix)
-
-
-    def _parse_channels(self, line):
-        """
-        Parse the arguments to the magic, returning a dictionary of
-        {'channel op name' : ('pattern', kwargs).
-        """
-        tokens = line.split()
-        if tokens == []: return {}
-
-        channel_split = [(el+']') for el in line.rsplit(']') if el.strip()]
-        spec_split = [el.rsplit('=>') for el in channel_split]
-        channels = {}
-        for head, tail in spec_split:
-            head = head.strip()
-            op_match = [op for op in channel_ops if tail.strip().startswith(op)]
-            if len(op_match) != 1:
-                raise Exception("Unrecognized channel operation: ", tail.split()[0])
-            argument_str = tail.replace(op_match[0],'')
-            try:
-                eval_str = argument_str.replace('[','dict(').replace(']', ')')
-                args = eval(eval_str)
-            except:
-                raise Exception("Could not evaluate: %s" % argument_str)
-
-            op = op_match[0]
-            params = set(p for p in channel_ops[op].params().keys() if p!='name')
-
-            mismatch_keys = set(args.keys()) - params
-            if mismatch_keys:
-                raise Exception("Parameter(s) %r not accepted by %s operation"
-                                % (', '.join(mismatch_keys), op))
-            # As string.letters (Python 2) does not exist in Python 3
-            letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-            valid_chars = letters + string.digits + '_* '
-            if not head.count('*') or any(l not in valid_chars for l in head):
-                raise Exception("Invalid characters in overlay pattern specification: %s" % head)
-
-            pattern =  ' * '.join(el.strip() for el in head.rsplit('*'))
-            channel_ops[op].instance(**args)
-            channels[op] =  (pattern, args)
-        return channels
+                group = {'style':Options(), 'style':Options(), 'norm':Options()}
+                type_name = definition.output_type.__name__
+                Store.options[type_name + '.' + definition.value] = group
+                Channel.definitions.append(definition)
+        else:
+            print("For help with the %channels magic, call %channels?\n")
 
 
     @classmethod
     def option_completer(cls, k,v):
-        """
-        Tab completion hook for the %opts and %%opts magic.
-        """
         line = v.text_until_cursor
+        operation_openers = [op.__name__+'(' for op in Channel.operations]
+
+        op_declared = any(op in line for op in operation_openers)
+        if not op_declared:
+            return operation_openers
+        if op_declared and ')' not in line:
+            return [')']
+        elif line.split(')')[1].strip() and ('[' not in line):
+            return ['[']
+        elif '[' in line:
+            return [']']
+
+
+class OptsCompleter(object):
+    """
+    Implements the TAB-completion for the %%opts magic.
+    """
+    _completions = {} # Contains valid plot and style keywords per Element
+
+    @classmethod
+    def setup_completer(cls):
+        "Get the dictionary of valid completions"
+        if len(cls._completions) != 0: return cls._completions
+        for element in Store.options.children:
+            options = Store.options[element]
+            plotkws = options['plot'].allowed_keywords
+            stylekws = options['style'].allowed_keywords
+            cls._completions[element] = (plotkws, stylekws if stylekws else [])
+        return cls._completions
+
+
+    @classmethod
+    def option_completer(cls, k,v):
+        "Tab completion hook for the %%opts cell magic."
+        line = v.text_until_cursor
+
+        completions = cls.setup_completer()
+        channel_defs = {el.value:el.output_type.__name__
+                        for el in Channel.definitions}
+
+        # Find the last element class mentioned
+        completion_key = None
+        for token in [t for t in reversed(line.replace('.', ' ').split())]:
+            if token in completions:
+                completion_key = token
+                break
+            # Attempting to match channel definitions
+            if token in channel_defs:
+                completion_key = channel_defs[token]
+                break
+
+        if not completion_key:
+            return completions.keys() + channel_defs.keys()
+
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
-            line_tail = line[len('%%channels'):]
-            op_name = line_tail[::-1].rsplit('[')[1][::-1].strip().split()[-1]
-            if op_name in  channel_ops:
-                return list(channel_ops[op_name].params().keys())
-        else:
-            return list(channel_ops.keys())
+            kws = completions[completion_key][0]
+            return [kw+'=' for kw in kws]
+
+        if line.endswith('}') or (line.count('{') - line.count('}')) % 2:
+            return ['-groupwise', '-mapwise']
+
+        style_completions = [kw+'=' for kw in completions[completion_key][1]]
+        if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
+            return style_completions
+        return style_completions + completions.keys() + channel_defs.keys()
+
+
 
 
 @magics_class
 class OptsMagic(Magics):
     """
-    The %opts and %%opts line and cell magics allow customization of
-    how holoviews are displayed. The %opts line magic updates or
-    creates new options for either StyleOpts (i.e. matplotlib options)
-    or in the PlotOpts (plot settings). The %%opts cell magic sets
-    custom display options associated on the displayed view object
-    which will persist every time that object is displayed.
+    Magic for easy customising of normalization, plot and style options.
+    Consult %%opts? for more information.
     """
-    # Attributes set by the magic and read when display hooks run
-    custom_options = {}
-    show_info = False
-    show_labels = False
+    error_message = None # If not None, the error message that will be displayed
+    next_id = None       # Next id to propagate, binding displayed object together.
+    applied_keys = []    # Path specs selecting the objects to be given a new id
 
-    def __init__(self, *args, **kwargs):
-        super(OptsMagic, self).__init__(*args, **kwargs)
-        styles_list = [el.style_opts for el in Plot.defaults.values()]
-        params_lists = [[k for (k,v) in el.params().items()
-                         if not v.constant] for el in Plot.defaults.values()]
-
-        # List of all parameters and styles for tab completion
-        OptsMagic.all_styles = sorted(set([s for styles in styles_list for s in styles]))
-        OptsMagic.all_params = sorted(set([p for plist in params_lists for p in plist]))
+    @classmethod
+    def process_view(cls, obj):
+        """
+        To be called by the display hook which supplies the element to
+        be displayed. Any customisation of the object can then occur
+        before final display. If there is any error, a HTML message
+        may be returned. If None is returned, display will proceed as
+        normal.
+        """
+        if cls.error_message:
+            return cls.error_message
+        if cls.next_id is not None:
+            assert cls.next_id in Store.custom_options, 'RealityError'
+            obj.traverse(lambda o: setattr(o, 'id', cls.next_id),
+                         specs=cls.applied_keys)
+            cls.next_id = None
+            cls.applied_keys = []
+        return None
 
 
     @classmethod
-    def pprint_kws(cls, style):
-        return ', '.join("%s=%r" % (k,v) for (k,v) in sorted(style.items.items()))
+    def _format_options_error(cls, err):
+        info = (err.invalid_keyword, err.group_name, ', '.join(err.allowed_keywords))
+        return "Keyword <b>%r</b> not one of following %s options:<br><br><b>%s</b>" % info
 
 
     @classmethod
-    def collect(cls, obj, attr='style'):
+    def customize_tree(cls, spec, options):
         """
-        Given a composite view object, build a dictionary of either
-        the 'style' or 'label' attributes across all contained
-        atoms. This method works across overlays, grid layouts and
-        maps. The return is a dictionary with the collected string
-        values as keys for the the associated view type.
+        Returns a customized copy of the Store.options OptionsTree object.
         """
-        group = {}
-        if isinstance(obj, (Overlay, AdjointLayout, Grid, GridLayout)):
-            for subview in obj:
-                group.update(cls.collect(subview, attr))
-            if isinstance(obj, (AdjointLayout, Overlay)):
-                return group
+        for key in sorted(spec.keys()):
+            try:
+                options[str(key)] = spec[key]
+            except OptionError as e:
+                cls.error_message = cls._format_options_error(e)
+                return None
+        return options
 
-        if isinstance(obj, Map) and not issubclass(obj.type, Overlay):
-            key_lists = [list(cls.collect(el, attr).keys()) for el in obj]
-            values = set(el for els in key_lists for el in els)
-            for val in values:
-                group.update({val:obj.type})
-        elif isinstance(obj, Map):
-            for subview in obj.last:
-                group.update(cls.collect(subview, attr))
+    @classmethod
+    def register_custom_spec(cls, spec, obj):
+        ids = Store.custom_options.keys()
+        max_id = max(ids) if len(ids)>0 else -1
+        options = OptionTree(items=Store.options.data.items(),
+                             groups=Store.options.groups)
+        custom_tree = cls.customize_tree(spec, options)
+        if custom_tree is not None:
+            Store.custom_options[max_id+1] = custom_tree
+            cls.next_id = max_id+1
+            cls.applied_keys += spec.keys()
         else:
-            value = '' if getattr(obj, attr, None) is None else getattr(obj, attr)
-            group.update({value:type(obj)})
-        return group
-
+            cls.next_id = None
 
     @classmethod
-    def _basename(cls, name):
+    def expand_channel_keys(cls, spec):
         """
-        Strips out the 'Custom' prefix from styles names that have
-        been customized by an object identifier.
+        Expands channel definition keys into {type}.{value} keys. For
+        instance a channel operation returning a value string 'Image'
+        of element type RGB expands to 'RGB.Image'.
         """
-        split = name.rsplit('>]_')
-        if not name.startswith('Custom'):   return name
-        elif len(split) == 2:               return split[1]
-        else:
-            raise Exception("Invalid style name %s" % name)
-
-
-    @classmethod
-    def _set_style_names(cls, obj, custom_name_map):
-        """
-        Update the style names on a composite view to the custom style
-        name for all matches. A match occurs when the basename of the
-        view.style is found in the supplied dictionary.
-        """
-        if isinstance(obj, (AdjointLayout, Grid, GridLayout)):
-            for subview in obj:
-                cls._set_style_names(subview, custom_name_map)
-            if isinstance(obj, AdjointLayout):
-                return
-
-        if isinstance(obj.style, list) and not isinstance(obj, AdjointLayout):
-            obj.style = [custom_name_map.get(cls._basename(s), s) for s in obj.style]
-        else:
-            style = cls._basename(obj.style)
-            obj.style = custom_name_map.get(style, obj.style)
-
-
-    @classmethod
-    def set_view_options(cls, obj):
-        """
-        To be called by the display hook which supplies the view
-        object to be displayed. Any custom options are defined on the
-        object as necessary and if there is an error, an HTML message
-        is returned.
-        """
-        prefix = 'Custom[<' + obj.name + '>]_'
-
-        # Implements the %%labels magic
-        if cls.show_labels:
-            labels = list(cls.collect(obj, 'label').keys())
-            info = (len(labels), labels.count(''))
-            summary = ("%d objects inspected, %d without labels. "
-                       "The set of labels found:<br><br>&emsp;" % info)
-            label_list = '<br>&emsp;'.join(['<b>%s</b>' % l for l in sorted(set(labels)) if l])
-            return summary + label_list
-
-        # Nothing to be done
-        if not any([cls.custom_options, cls.show_info]): return
-
-        styles = cls.collect(obj, 'style')
-        # The set of available style basenames present in the object
-        available_styles = set(cls._basename(s) for s in styles)
-        custom_styles = set(s for s in styles if s.startswith('Custom'))
-
-        mismatches = set(cls.custom_options.keys()) - (available_styles | set(channel_ops))
-        if cls.show_info or mismatches:
-            return cls._option_key_info(obj, available_styles, mismatches, custom_styles)
-
-        # Test the options are valid
-        error = cls._keyword_info(styles, cls.custom_options)
-        if error: return error
-
-        # Link the object to the new custom style
-        cls._set_style_names(obj, dict((k, prefix + k) for k in cls.custom_options))
-        # Define the Styles in the OptionMaps
-        cls._define_options(cls.custom_options, prefix=prefix)
-
-
-    @classmethod
-    def _keyword_info(cls, styles, custom_options):
-        """
-        Check that the keywords in the StyleOpts or PlotOpts are
-        valid. If not, the appropriate HTML error message is returned.
-        """
-        errmsg = ''
-        for key, (plot_kws, style_kws) in custom_options.items():
-            for name, viewtype in styles.items():
-                plottype = Plot.defaults[viewtype]
-                if cls._basename(name) != key: continue
-                # Plot options checks
-                params = [k for (k,v) in plottype.params().items() if not v.constant]
-                mismatched_params = set(plot_kws.keys()) - set(params)
-                if mismatched_params:
-                    info = (', '.join('<b>%r</b>' % el for el in mismatched_params),
-                            '<b>%r</b>' % plottype.name,
-                            ', '.join('<b>%s</b>' % el for el in params))
-                    errmsg += "Keywords %s not in valid %s plot options: <br>&nbsp;&nbsp;%s" % info
-
-                # Style options checks
-                style_opts = plottype.style_opts
-                mismatched_opts = set(style_kws.keys()) - set(style_opts)
-                if style_opts == [] and mismatched_opts:
-                    errmsg += 'No styles accepted by %s. <br>' % plottype.name
-                elif mismatched_opts:
-                    spacing = '<br><br>' if errmsg else ''
-                    info = (spacing,
-                            ', '.join('<b>%r</b>' % el for el in mismatched_opts),
-                            '<b>%r</b>' % plottype.name,
-                            ', '.join('<b>%s</b>' % el for el in style_opts))
-                    errmsg += "%sKeywords %s not in valid %s style options: <br>&nbsp;&nbsp;%s" % info
-        return errmsg
-
-
-    @classmethod
-    def _option_key_info(cls, obj, available_styles, mismatches, custom_styles):
-        """
-        Format the information about valid options keys as HTML,
-        listing mismatched names and the available keys.
-        """
-        fmt = '&emsp;<code><font color="%s">%%s</font>%%s : ' % html_red
-        fmt+= '<font color="%s">[%%s]</font> %%s</code><br>' % html_blue
-        obj_name = "<b>%s</b>" % obj.__class__.__name__
-        if len(available_styles) == 0:
-            return "<b>No keys are available in the current %s</b>" % obj_name
-
-        mismatch_str = ', '.join('<b>%r</b>' % el for el in mismatches)
-        unavailable_msg = '%s not in customizable' % mismatch_str if mismatch_str else 'Customizable'
-        s = "%s %s options:<br>" % (unavailable_msg, obj_name)
-        max_len = max(len(s) for s in available_styles)
-        for name in sorted(available_styles):
-            padding = '&nbsp;'*(max_len - len(name))
-            s += fmt % (name, padding,
-                        cls.pprint_kws(View.options.plotting(name)),
-                        cls.pprint_kws(View.options.style(name)))
-
-        if custom_styles:
-            s += '<br>Options that have been customized for the displayed view only:<br>'
-            custom_names = [style_name.rsplit('>]_')[1] for style_name in custom_styles]
-            max_len = max(len(s) for s in custom_names)
-            for custom_name, custom_style  in sorted(zip(custom_names, custom_styles)):
-                padding = '&nbsp;'*(max_len - len(custom_name))
-                s += fmt % (custom_name, padding,
-                            cls.pprint_kws(View.options.plotting(custom_style)),
-                            cls.pprint_kws(View.options.style(custom_style)))
-        return s
-
-
-    def _parse_keywords(self, line):
-        """
-        Parse the arguments to the magic, returning a dictionary with
-        style name keys and tuples of keywords as values. The first
-        element of the tuples are the plot keyword options and the
-        second element are the style keyword options.
-        """
-        tokens = line.split()
-        if tokens == []: return {}
-        elif not tokens[0][0].isupper():
-            raise SyntaxError("First token must be a option name (a capitalized string)")
-
-        # Split the input by the capitalized tokens
-        style_names, tuples = [], []
-        for upper, vals in itertools.groupby(tokens, key=lambda x: x[0].isupper()):
-            values = list(vals)
-            if upper and len(values) != 1:
-                raise SyntaxError("Options should be split by keywords")
-            elif upper:
-                style_names.append(values[0])
+        expanded_spec={}
+        channel_defs = {el.value:el.output_type.__name__
+                        for el in Channel.definitions}
+        for key, val in spec.items():
+            if key not in channel_defs:
+                expanded_spec[key] = val
             else:
-                parse_string = ' '.join(values).replace(',', ' ')
-                if not parse_string.startswith('[') and parse_string.count(']')==0:
-                    plotstr, stylestr = '',  parse_string
-                elif [parse_string.count(el) for el in '[]'] != [1,1]:
-                    raise SyntaxError("Plot options not supplied in a well formed list.")
-                else:
-                    split_ind = parse_string.index(']')
-                    plotstr = parse_string[1:split_ind]
-                    stylestr = parse_string[split_ind+1:]
-                try:
-                    # Evalute the strings to obtain dictionaries
-                    dicts = [eval('dict(%s)' % ', '.join(els))
-                             for els in [plotstr.split(), stylestr.split()]]
-                    tuples.append(tuple(dicts))
-                except:
-                    raise SyntaxError("Could not parse keywords from '%s'" % parse_string)
-
-        return dict((k,v) for (k,v) in zip(style_names, tuples) if v != ({},{}))
-
-
-
-    @classmethod
-    def _define_options(cls, kwarg_map, prefix='', verbose=False):
-        """
-        Define the style and plot options.
-        """
-        lens, strs = [0,0,0], []
-        for name, (plot_kws, style_kws) in kwarg_map.items():
-            plot_update = name in View.options.plotting
-            if plot_update and plot_kws:
-                View.options[prefix+name] = View.options.plotting[name](**plot_kws)
-            elif plot_kws:
-                View.options[prefix+name] = PlotOpts(**plot_kws)
-
-            style_update = name in View.options.style
-            if style_update and style_kws:
-                View.options[prefix+name] = View.options.style[name](**style_kws)
-            elif style_kws:
-                View.options[prefix+name] = StyleOpts(**style_kws)
-
-            if verbose:
-                plotstr = ('[%s]' % cls.pprint_kws(View.options.plotting[name])
-                           if name in View.options.plotting else '')
-                stylestr = (cls.pprint_kws(View.options.style[name])
-                            if name in View.options.style else '')
-                strs.append((name+':', plotstr, stylestr))
-                lens = [max(len(name)+1, lens[0]),
-                        max(len(plotstr), lens[1]),
-                        max(len(stylestr),lens[2])]
-
-        if verbose:
-            heading = "Plot and Style Options"
-            title = '%s\n%s' % (heading, '='*len(heading))
-            description = "Each line describes the options associated with a single key:"
-            msg = '%s\n\n%s\n\n    %s %s %s\n\n' % (green % title, description,
-                                                    red % 'Name:', blue % '[Plot Options]',
-                                                    'Style Options')
-            for (name, plot_str, style_str) in strs:
-                msg += "%s %s %s\n" % (red % name.ljust(lens[0]),
-                                       blue % plot_str.ljust(lens[1]),
-                                       style_str.ljust(lens[2]))
-            page.page(msg)
-
-
-    @classmethod
-    def option_completer(cls, k,v):
-        """
-        Tab completion hook for the %opts and %%opts magic.
-        """
-        line = v.text_until_cursor
-        if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
-            return [el+'=' for el in cls.all_params]
-        else:
-            return [el+'=' for el in cls.all_styles] + View.options.options()
-
-
-    def _line_magic(self, line):
-        """
-        Update or create new options in for the plot or style
-        options. Plot options keyword-value pairs, when supplied need
-        to be give in square brackets after the option key. Any style
-        keywords then following the closing square bracket. The -v
-        flag toggles verbose output.
-
-        Usage: %opts [-v] <Key> [ [<keyword>=<value>...]] [<keyword>=<value>...]
-        """
-        verbose = False
-        if str(line).startswith('-v'):
-            verbose = True
-            line = line.replace('-v', '')
-
-        kwarg_map = self._parse_keywords(str(line))
-
-        if not kwarg_map:
-            info = (len(View.options.style.keys()),
-                    len([k for k in View.options.style.keys() if k.startswith('Custom')]))
-            print("There are %d style options defined (%d custom object styles)." % info)
-            info = (len(View.options.plotting.keys()),
-                    len([k for k in View.options.plotting.keys() if k.startswith('Custom')]))
-            print("There are %d plot options defined (%d custom object plot settings)." % info)
-            return
-
-        self._define_options(kwarg_map, verbose=verbose)
-
-
-    @cell_magic
-    def labels(self, line, cell=None):
-        """
-        Simple magic to see the full list of defined labels for the
-        displayed view object.
-        """
-        if line != '':
-            raise Exception("%%labels magics accepts no arguments.")
-        OptsMagic.show_labels = True
-        self.shell.run_cell(cell, store_history=STORE_HISTORY)
-        OptsMagic.show_labels = False
+                cls.applied_keys = ['Overlay'] # Send id to Overlays
+                type_name = channel_defs[key]
+                expanded_spec[str(type_name+'.'+key)] = val
+        return expanded_spec
 
 
     @line_cell_magic
     def opts(self, line='', cell=None):
         """
-        Set custom display options unique to the displayed view. The
-        keyword-value pairs in the square brackets (if present) set
-        the plot parameters. Keyword-value pairs outside the square
-        brackets are matplotlib style options.
+        The opts line/cell magic with tab-completion.
 
-        Usage: %%opts <Key> [ [<keyword>=<value>...] ] [<keyword>=<value>...]
+        %%opts [ [path] [normalization] [plotting options] [style options]]+
 
-        Multiple keys may be listed, setting plot and style options in
-        this way.
+        path:             A dotted type.value.label specification
+                          (e.g. Matrix.Grayscale.Photo)
+
+        normalization:    List of normalization options delimited by braces.
+                          One of | -groupwise | -mapwise | +groupwise | +mapwise |
+                          E.g. { -groupwise -mapwise }
+
+        plotting options: List of plotting option keywords delimited by
+                          square brackets. E.g. [show_title=False]
+
+        style options:    List of style option keywords delimited by
+                          parentheses. E.g. (lw=10 marker='+')
+
+        Note that commas between keywords are optional (not
+        recommended) and that keywords must end in '=' without a
+        separating space.
+
+        More information may be found in the class docstring of
+        ipython.parser.OptsSpec.
         """
-        if cell is None:
-            return self._line_magic(str(line))
-        elif not line.strip():
-            OptsMagic.show_info=True
+        get_object = None
+        try:
+            spec = OptsSpec.parse(line)
+            spec = self.expand_channel_keys(spec)
+        except SyntaxError:
+            display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
+            return
+
+        self.register_custom_spec(spec, None)
+        if cell:
+            self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            OptsMagic.custom_options = self._parse_keywords(str(line))
-
-        # Run the cell in the updated environment
-        self.shell.run_cell(cell, store_history=STORE_HISTORY)
-        # Reset the class attributes
-        OptsMagic.custom_options = {}
-        OptsMagic.show_info=False
-
+            retval = self.customize_tree(spec, Store.options)
+            if retval is None:
+                display(HTML(OptsMagic.error_message))
+        OptsMagic.error_message = None
 
 
 def load_magics(ip):
-
     ip.register_magics(ViewMagic)
-    ip.register_magics(OptsMagic)
-    ip.register_magics(ChannelMagic)
+
+    if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
+    else: ip.register_magics(OptsMagic)
+
+    if pyparsing is None: print("%channels magic unavailable (pyparsing cannot be imported)")
+    else: ip.register_magics(ChannelMagic)
+
 
     # Configuring tab completion
     ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
-    ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%%channels')
 
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
 
-    ip.set_hook('complete_command', OptsMagic.option_completer, str_key = '%%opts')
-    ip.set_hook('complete_command', OptsMagic.option_completer, str_key = '%opts')
+    OptsCompleter.setup_completer()
+    ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%%opts')
+    ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%opts')

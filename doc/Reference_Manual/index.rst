@@ -30,7 +30,7 @@ holoviews modules
 `ipython`_
  Defines the IPython notebook magics and display hooks.
 `operation`_
- Defines ViewOperation and MapOperation classes used to manipulate and
+ Defines ElementOperation and MapOperation classes used to manipulate and
  transform existing Views and Stacks.
 `plotting`_
  Defines the plotting classes generating matplotlib figures.

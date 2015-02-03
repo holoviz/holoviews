@@ -20,12 +20,12 @@ except:
 
 import param
 
-from ..core import Dimension, NdMapping, View, Layer, Overlay, ViewMap, GridLayout, Grid
-from ..core.options import options, PlotOpts
-from ..view import HeatMap, Table, Curve, Scatter, Bars, Points, VectorField
+from ..core import Dimension, ViewableElement, NdMapping, NdOverlay,\
+ NdLayout, AxisLayout, Element, HoloMap
+from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap
 
 
-class DataFrameView(Layer):
+class DataFrameView(Element):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -51,33 +51,37 @@ class DataFrameView(Layer):
                                               'autocorrelation_plot',
                                               None],
                                      doc="""Selects which Pandas plot type to use,
-                                            when visualizing the View.""")
+                                            when visualizing the ViewableElement.""")
 
     x = param.String(doc="""Dimension to visualize along the x-axis.""")
 
+    x2 = param.String(doc="""Dimension to visualize along a second
+                             dependent axis.""")
+
     y = param.String(doc="""Dimension to visualize along the y-axis.""")
 
-    value = param.ClassSelector(class_=(str, Dimension), precedence=-1,
-                                doc="DataFrameView has no value dimension.")
+    value = param.String(default='DFrame')
 
-    def __init__(self, data, dimensions=None, **params):
+    value_dimensions = param.List(doc="DataFrameView has no value dimension.")
+
+    def __init__(self, data, key_dimensions=None, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
-            raise Exception('DataFrame View type requires Pandas dataframe as data.')
-        if dimensions is None:
+            raise Exception('DataFrame ViewableElement type requires Pandas dataframe as data.')
+        if key_dimensions is None:
             dims = list(data.columns)
         else:
             dims = ['' for i in range(len(data.columns))]
-            for dim in dimensions:
+            for dim in key_dimensions:
                 dim_name = dim.name if isinstance(dim, Dimension) else dim
                 if dim_name in data.columns:
                     dims[list(data.columns).index(dim_name)] = dim
 
         self._xlim = None
         self._ylim = None
-        View.__init__(self, data, dimensions=dims, **params)
-        self.data.columns = self.dimension_labels
+        ViewableElement.__init__(self, data, key_dimensions=dims, **params)
+        self.data.columns = self._cached_index_names
 
 
     def __getitem__(self, key):
@@ -88,10 +92,10 @@ class DataFrameView(Layer):
             return self
         else:
             if len(key) <= self.ndims:
-                return self.select(**dict(zip(self.dimension_labels, key)))
+                return self.select(**dict(zip(self._cached_index_names, key)))
             else:
                 raise Exception('Selection contains %d dimensions, DataFrameView '
-                                'only has %d dimensions.' % (self.ndims, len(key)))
+                                'only has %d index dimensions.' % (self.ndims, len(key)))
 
 
     def select(self, **select):
@@ -109,7 +113,7 @@ class DataFrameView(Layer):
         return self.clone(df)
 
 
-    def dim_values(self, dim):
+    def dimension_values(self, dim):
         return np.array(self.data[dim])
 
 
@@ -128,46 +132,44 @@ class DataFrameView(Layer):
         return self.data.copy()
 
 
-    def _split_dimensions(self, dimensions, ndmapping_type=NdMapping):
-        invalid_dims = list(set(dimensions) - set(self.dimension_labels))
+    def groupby(self, dimensions, container_type=NdMapping):
+        invalid_dims = list(set(dimensions) - set(self._cached_index_names))
         if invalid_dims:
             raise Exception('Following dimensions could not be found %s.'
                             % invalid_dims)
 
-        ndmapping = ndmapping_type(None, dimensions=[self.dim_dict[d] for d in dimensions])
-        view_dims = set(self.dimension_labels) - set(dimensions)
-        view_dims = [self.dim_dict[d] for d in view_dims]
+        index_dims = [self.get_dimension(d) for d in dimensions]
+        mapping = container_type(None, key_dimensions=index_dims)
+        view_dims = set(self._cached_index_names) - set(dimensions)
+        view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
-            ndmapping[k] = self.clone(v.drop(dimensions, axis=1),
-                                      dimensions=view_dims)
-        return ndmapping
+            mapping[k] = self.clone(v.drop(dimensions, axis=1),
+                                    key_dimensions=view_dims)
+        return mapping
 
 
-    def overlay_dimensions(self, dimensions):
-        return self._split_dimensions(dimensions, Overlay)
+    def overlay(self, dimensions):
+        return self.groupby(dimensions, NdOverlay)
 
 
-    def grid(self, dimensions=[], layout=False, cols=4):
+    def layout(self, dimensions=[], cols=4):
+        return self.groupby(dimensions, NdLayout).cols(4)
+
+
+    def grid(self, dimensions):
         """
-        Splits the supplied the dimensions out into a Grid.
+        Splits the supplied the dimensions out into a AxisLayout.
         """
         if len(dimensions) > 2:
             raise Exception('Grids hold a maximum of two dimensions.')
-        if layout:
-            ndmapping = self._split_dimensions(dimensions, NdMapping)
-            for keys, vmap in ndmapping._data.items():
-                label = ', '.join([d.pprint_value(k) for d, k in
-                                   zip(ndmapping.dimensions, keys)])
-                vmap.title = ' '.join([label, vmap.title])
-            return GridLayout(ndmapping).cols(cols)
-        return self._split_dimensions(dimensions, Grid)
+        return self.groupby(dimensions, AxisLayout)
 
 
-    def viewmap(self, dimensions=[]):
+    def viewmap(self, key_dimensions=[]):
         """
-        Splits the supplied dimensions out into a ViewMap.
+        Splits the supplied dimensions out into a HoloMap.
         """
-        return self._split_dimensions(dimensions, ViewMap)
+        return self.groupby(key_dimensions, HoloMap)
 
     @property
     def xlabel(self):
@@ -202,10 +204,10 @@ class DataFrameView(Layer):
 class DFrame(DataFrameView):
     """
     DFrame is a DataFrameView type, which additionally provides
-    methods to convert Pandas DataFrames to different View types,
+    methods to convert Pandas DataFrames to different ViewableElement types,
     currently including Tables and HeatMaps.
 
-    The View conversion methods all share a common signature:
+    The ViewableElement conversion methods all share a common signature:
 
       * The value dimension (string).
       * The index dimensions (list of strings).
@@ -231,7 +233,7 @@ class DFrame(DataFrameView):
     def vectorfield(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=VectorField, **kwargs))
 
-    def table(self, value_dim, view_dims, reduce_fn=None, map_dims=[], view_type=None, **kwargs):
+    def table(self, value_dims, view_dims, reduce_fn=None, map_dims=[], view_type=None, **kwargs):
         if map_dims:
             map_groups = self.data.groupby(map_dims)
             vm_dims = map_dims
@@ -239,18 +241,16 @@ class DFrame(DataFrameView):
             map_groups = [(0, self.data)]
             vm_dims = ['None']
 
-        vmap = ViewMap(dimensions=vm_dims)
-        vdims = [self.dim_dict[dim] for dim in view_dims]
+        vmap = HoloMap(key_dimensions=vm_dims)
+        vdims = [self.get_dimension(d) for d in view_dims]
+        valdims = [self.get_dimension(d) for d in value_dims]
         for map_key, group in map_groups:
             table_data = OrderedDict()
             for k, v in group.groupby(view_dims):
-                data = np.array(v[value_dim])
-                table_data[k] = reduce_fn(data) if reduce_fn else data[0]
-                view = Table(table_data, dimensions=vdims,
-                             value=self.dim_dict[value_dim])
+                data = np.vstack(np.array(v[d]) for d in value_dims)
+                data = reduce_fn(data, axis=1) if reduce_fn else data[:, 0]
+                table_data[k] = data
+            view = Table(table_data, key_dimensions=vdims,
+                         value_dimensions=valdims, value=self.value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
-
         return vmap if map_dims else vmap.last
-
-
-options.DFrameView = PlotOpts()

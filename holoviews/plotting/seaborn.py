@@ -9,14 +9,16 @@ except:
 
 import param
 
-from ..core import View
+from ..interface.pandas import DFrame, DataFrameView
 from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ..interface.seaborn import DFrame as SNSFrame
-from .viewplots import Plot
+from ..core.options import Store
+from .element import ElementPlot
 from .pandas import DFrameViewPlot
+from .plot import Plot
 
 
-class FullRedrawPlot(Plot):
+class FullRedrawPlot(ElementPlot):
     """
     FullRedrawPlot provides an abstract baseclass, defining an
     update_frame method, which completely wipes the axis and
@@ -33,16 +35,17 @@ class FullRedrawPlot(Plot):
         are also supported.""")
 
     rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per view.""")
+        Whether to use redraw the axes per map or per element.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Enables the axis grid.""")
 
     _abstract = True
 
-    def update_handles(self, view, key, lbrt=None):
-        if self.zorder == 0 and self.ax: self.ax.cla()
-        self._update_plot(view)
+    def update_handles(self, axis, view, key, ranges=None):
+        if self.zorder == 0 and axis:
+            axis.cla()
+        self._update_plot(axis, view)
 
 
 
@@ -54,32 +57,21 @@ class RegressionPlot(FullRedrawPlot):
     to the replot function can be supplied via the opts magic.
     """
 
-    style_opts = param.List(default=['x_estimator', 'x_bins', 'x_ci',
-                                     'scatter', 'fit_reg', 'color',
-                                     'n_boot', 'order', 'logistic',
-                                     'lowess', 'robust', 'truncate',
-                                     'scatter_kws', 'line_kws', 'ci',
-                                     'dropna', 'x_jitter', 'y_jitter',
-                                     'x_partial', 'y_partial'],
-                            constant=True, doc="""
-       The style options for CurvePlot match those of matplotlib's
-       LineCollection object.""")
+    style_opts = ['x_estimator', 'x_bins', 'x_ci', 'scatter',
+                  'fit_reg', 'color', 'n_boot', 'order',
+                  'logistic', 'lowess', 'robust', 'truncate',
+                  'scatter_kws', 'line_kws', 'ci', 'dropna',
+                  'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
-    _view_type = Regression
-
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        self.cyclic_index = cyclic_index
-
-        self.ax = self._init_axis(axis)
-
-        self._update_plot(self._map.last)
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+    def __call__(self, ranges=None):
+        self._update_plot(self.handles['axis'], self.map.last)
+        return self._finalize_axis(self.map.last_key)
 
 
-    def _update_plot(self, view):
+    def _update_plot(self, axis, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=self.ax, label=view.label,
-                    **View.options.style(view)[self.cyclic_index])
+                    ax=axis, label=view.label,
+                    **Store.lookup_options(view, 'style')[self.cyclic_index])
 
 
 
@@ -99,50 +91,29 @@ class BivariatePlot(FullRedrawPlot):
         distributions along each axis. Does not animate or compose
         when enabled.""")
 
-    style_opts = param.List(default=['color', 'alpha', 'err_style',
-                                     'interpolate', 'ci', 'kind',
-                                     'bw', 'kernel', 'cumulative',
-                                     'shade', 'vertical', 'cmap'],
-                            constant=True, doc="""
-       The style options for BivariatePlot match those of seaborns
-       kdeplot.""")
+    style_opts = ['color', 'alpha', 'err_style', 'interpolate',
+                  'ci', 'kind', 'bw', 'kernel', 'cumulative',
+                  'shade', 'vertical', 'cmap']
 
-    _view_type = Bivariate
+    def __call__(self, ranges=None):
+        kdeview = self.map.last
+        axis = self.handles['axis']
+        self.style = Store.lookup_options(kdeview, 'style')[self.cyclic_index]
+        if self.joint and self.subplot:
+            raise Exception("Joint plots can't be animated or laid out in a grid.")
+        self._update_plot(axis, kdeview)
 
-    def __init__(self, kde, **params):
-        super(BivariatePlot, self).__init__(kde, **params)
-        self.cyclic_range = self._map.last.cyclic_range
+        return self._finalize_axis(self.map.last_key)
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        kdeview = self._map.last
-        self.style = View.options.style(kdeview)[cyclic_index]
-
-        # Create xticks and reorder data if cyclic
-        if lbrt is None:
-            lbrt = kdeview.lbrt if self.rescale_individually else\
-                   self._map.lbrt
-
+    def _update_plot(self, axis, view):
         if self.joint:
-            if axis is not None:
-                 raise Exception("Joint plots can't be animated or "
-                                 "laid out in a grid.")
-        else:
-            self.ax = self._init_axis(axis)
-
-        self._update_plot(kdeview)
-
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
-
-
-    def _update_plot(self, view):
-        if self.joint:
-            self.style.pop('cmap')
+            self.style.pop('cmap', None)
             self.handles['fig'] = sns.jointplot(view.data[:,0],
                                                 view.data[:,1],
                                                 **self.style).fig
         else:
-            sns.kdeplot(view.data, ax=self.ax, label=view.label,
+            sns.kdeplot(view.data, ax=axis, label=view.label,
                         zorder=self.zorder, **self.style)
 
 
@@ -163,40 +134,21 @@ class TimeSeriesPlot(FullRedrawPlot):
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
-    style_opts = param.List(default=['color', 'alpha', 'err_style',
-                                     'interpolate', 'ci', 'n_boot',
-                                     'err_kws', 'err_palette',
-                                     'estimator', 'kwargs'],
-                            constant=True, doc="""
-       The style options for TimeSeriesPlot match those of seaborns
-       tsplot.""")
+    style_opts = ['color', 'alpha', 'err_style', 'interpolate',
+                  'ci', 'n_boot', 'err_kws', 'err_palette',
+                  'estimator', 'kwargs']
 
-    _view_type = TimeSeries
+    def __call__(self, ranges=None):
+        curveview = self.map.last
+        axis = self.handles['axis']
+        self.style = Store.lookup_options(curveview, 'style')[self.cyclic_index]
+        self._update_plot(axis, curveview)
 
-    def __init__(self, curves, **params):
-        super(TimeSeriesPlot, self).__init__(curves, **params)
-        self.cyclic_range = self._map.last.cyclic_range
+        return self._finalize_axis(self.map.last_key)
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        curveview = self._map.last
-        self.cyclic_index = cyclic_index
-        self.style = View.options.style(curveview)[self.cyclic_index]
-
-        if lbrt is None:
-            lbrt = None if self.rescale_individually else\
-                   self._map.lbrt
-
-        self.ax = self._init_axis(axis)
-
-        self._update_plot(curveview)
-
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
-
-
-    def _update_plot(self, view):
-        sns.tsplot(view.data, view.xdata, ax=self.ax,
-                   condition=view.label,
+    def _update_plot(self, axis, view):
+        sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
                    zorder=self.zorder, **self.style)
 
 
@@ -213,33 +165,21 @@ class DistributionPlot(FullRedrawPlot):
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")
 
-    style_opts = param.List(default=['bins', 'hist', 'kde', 'rug',
-                                     'fit', 'hist_kws', 'kde_kws',
-                                     'rug_kws', 'fit_kws', 'color'],
-                            constant=True, doc="""
-       The style options for CurvePlot match those of matplotlib's
-       LineCollection object.""")
+    style_opts = ['bins', 'hist', 'kde', 'rug', 'fit',
+                  'hist_kws', 'kde_kws', 'rug_kws',
+                  'fit_kws', 'color']
 
-    _view_type = Distribution
+    def __call__(self, ranges=None):
+        distview = self.map.last
+        axis = self.handles['axis']
+        self.style = Store.lookup_options(distview, 'style')[self.cyclic_index]
+        self._update_plot(axis, distview)
 
-    def __init__(self, dist, **params):
-        super(DistributionPlot, self).__init__(dist, **params)
-        self.cyclic_range = self._map.last.cyclic_range
-
-
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        distview = self._map.last
-        self.style = View.options.style(distview)[cyclic_index]
-        self.ax = self._init_axis(axis)
-
-        self._update_plot(distview)
-
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self.map.last_key)
 
 
-    def _update_plot(self, view):
-        sns.distplot(view.data, ax=self.ax, label=view.label,
-                     **self.style)
+    def _update_plot(self, axis, view):
+        sns.distplot(view.data, ax=axis, label=view.label, **self.style)
 
 
 
@@ -251,8 +191,6 @@ class SNSFramePlot(DFrameViewPlot):
     types plot one dimension against another it uses the x and y
     parameters, which can be set on the SNSFrame.
     """
-
-    _view_type = SNSFrame
 
     plot_type = param.ObjectSelector(default='scatter_matrix',
                                      objects=['interact', 'regplot',
@@ -298,26 +236,26 @@ class SNSFramePlot(DFrameViewPlot):
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
     def __init__(self, view, **params):
-        super(SNSFramePlot, self).__init__(view, **params)
         if self.plot_type in ['pairgrid', 'pairplot', 'facetgrid']:
             self._create_fig = False
+        super(SNSFramePlot, self).__init__(view, **params)
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        dfview = self._map.last
-        self._validate(dfview, axis)
 
-        if self.plot_type not in ['pairplot']:
-            self.ax = self._init_axis(axis)
+    def __call__(self, ranges=None):
+        dfview = self.map.last
+        axis = self.handles['axis']
+        self._validate(dfview)
 
         # Process styles
-        self.style = self._process_style(View.options.style(dfview)[cyclic_index])
+        style = self.style = Store.lookup_options(dfview, 'style')[self.cyclic_index]
+        self.style = self._process_style(style)
 
-        self._update_plot(dfview)
+        self._update_plot(axis, dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self.map.last_key)
 
 
     def _process_style(self, styles):
@@ -327,45 +265,43 @@ class SNSFramePlot(DFrameViewPlot):
         return styles
 
 
-    def _validate(self, dfview, axis):
-        super(SNSFramePlot, self)._validate(dfview, axis)
-
-        composed = axis is not None
-        multi_dim = len(dfview.dimensions) > 1
-        if composed and multi_dim and self.plot_type == 'lmplot':
+    def _validate(self, dfview):
+        super(SNSFramePlot, self)._validate(dfview)
+        multi_dim = dfview.ndims > 1
+        if self.subplot and multi_dim and self.plot_type == 'lmplot':
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)
 
-    def update_frame(self, n, lbrt=None):
-        key = self._keys[n]
-        view = self._map.get(key, None)
-        if self.ax:
-            self.ax.set_visible(view is not None)
-        axis_kwargs = self.update_handles(view, key, lbrt) if view is not None else {}
-        if self.ax:
-            self._finalize_axis(key, **dict({'lbrt': lbrt}, **(axis_kwargs if axis_kwargs else {})))
+    def update_frame(self, key, ranges=None):
+        view = self.map.get(key, None)
+        axis = self.handles['axis']
+        if axis:
+            axis.set_visible(view is not None)
+        axis_kwargs = self.update_handles(axis, view, key, ranges)
+        if axis:
+            self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def _update_plot(self, view):
+    def _update_plot(self, axis, view):
         if self.plot_type == 'regplot':
             sns.regplot(x=view.x, y=view.y, data=view.data,
-                        ax=self.ax, **self.style)
+                        ax=axis, **self.style)
         elif self.plot_type == 'boxplot':
             self.style.pop('return_type', None)
             self.style.pop('figsize', None)
-            sns.boxplot(view.data[view.y], view.data[view.x], ax=self.ax,
+            sns.boxplot(view.data[view.y], view.data[view.x], ax=axis,
                         **self.style)
         elif self.plot_type == 'violinplot':
-            sns.violinplot(view.data[view.y], view.data[view.x], ax=self.ax,
+            sns.violinplot(view.data[view.y], view.data[view.x], ax=axis,
                            **self.style)
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
-                             data=view.data, ax=self.ax, **self.style)
+                             data=view.data, ax=axis, **self.style)
         elif self.plot_type == 'corrplot':
-            sns.corrplot(view.data, ax=self.ax, **self.style)
+            sns.corrplot(view.data, ax=axis, **self.style)
         elif self.plot_type == 'lmplot':
             sns.lmplot(x=view.x, y=view.y, data=view.data,
-                       ax=self.ax, **self.style)
+                       ax=axis, **self.style)
         elif self.plot_type in ['pairplot', 'pairgrid', 'facetgrid']:
             map_opts = [(k, self.style.pop(k)) for k in self.style.keys() if 'map' in k]
             if self.plot_type == 'pairplot':
@@ -379,11 +315,13 @@ class SNSFramePlot(DFrameViewPlot):
                 getattr(g, opt)(plot_fn, *args[1:])
             self.handles['fig'] = plt.gcf()
         else:
-            super(SNSFramePlot, self)._update_plot(view)
+            super(SNSFramePlot, self)._update_plot(axis, view)
 
 
-Plot.defaults.update({TimeSeries: TimeSeriesPlot,
-                      Bivariate: BivariatePlot,
-                      Distribution: DistributionPlot,
-                      Regression: RegressionPlot,
-                      SNSFrame: SNSFramePlot})
+Store.defaults.update({TimeSeries: TimeSeriesPlot,
+                       Bivariate: BivariatePlot,
+                       Distribution: DistributionPlot,
+                       Regression: RegressionPlot,
+                       SNSFrame: SNSFramePlot,
+                       DFrame: SNSFramePlot,
+                       DataFrameView: SNSFramePlot})

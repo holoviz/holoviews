@@ -4,29 +4,31 @@ from ..styles import set_style
 from . import magics
 from .magics import ViewMagic, load_magics
 from .display_hooks import animate, set_display_hooks
+from .parser import Parser
 
 from param import ipython as param_ext
 
 try:    from matplotlib import animation
 except: animation = None
 
-
-
-all_line_magics = sorted(['%params', '%opts', '%view'])
+all_line_magics = sorted(['%params', '%opts', '%view', '%channels'])
 all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
 message = """Welcome to the holoviews IPython extension! (http://ioam.github.io/holoviews/)"""
-message += '\nAvailable magics: %s' % ', '.join(all_line_magics + all_cell_magics)
+message += '\nAvailable magics: %s' % ', '.join(sorted(all_line_magics)
+                                                + sorted(all_cell_magics))
 
 
-def select_format(format_priority):
-    for fmt in format_priority:
+def supported_formats(optional_formats):
+    "Optional formats that are actually supported"
+    supported = []
+    for fmt in optional_formats:
         try:
             anim = animation.FuncAnimation(plt.figure(),
                                            lambda x: x, frames=[0,1])
-            animate(anim, *magics.ANIMATION_OPTS[fmt])
-            return fmt
+            animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
+            supported.append(fmt)
         except: pass
-    return format_priority[-1]
+    return supported
 
 
 def update_matplotlib_rc():
@@ -44,9 +46,11 @@ def update_matplotlib_rc():
     matplotlib.rcParams.update(rc)
 
 
-ViewMagic.VIDEO_FORMAT = select_format(['webm','h264','gif'])
-# HTML_video output by default, but may be set to first_frame,
-# middle_frame or last_frame (e.g. for testing purposes)
+# Populating the namespace for keyword evaluation
+from ..core.options import Cycle         # pyflakes:ignore (namespace import)
+import numpy as np                       # pyflakes:ignore (namespace import)
+
+Parser.namespace = {'np':np, 'Cycle':Cycle}
 
 _loaded = False
 def load_ipython_extension(ip, verbose=True):
@@ -60,6 +64,8 @@ def load_ipython_extension(ip, verbose=True):
         param_ext.load_ipython_extension(ip, verbose=False)
 
         load_magics(ip)
+        valid_formats = supported_formats(ViewMagic.optional_formats)
+        ViewMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
         update_matplotlib_rc()
         set_style('default')

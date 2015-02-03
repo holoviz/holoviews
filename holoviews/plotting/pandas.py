@@ -4,12 +4,13 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ..core import View
+from ..core.options import Store
 from ..interface.pandas import DFrame, DataFrameView, pd
-from .viewplots import Plot
+from .element import ElementPlot
+from .plot import Plot
 
 
-class DFrameViewPlot(Plot):
+class DFrameViewPlot(ElementPlot):
     """
     DFramePlot provides a wrapper around Pandas dataframe plots.  It
     takes a single DataFrameView or DFrameMap as input and plots it
@@ -54,27 +55,24 @@ class DFrameViewPlot(Plot):
 
     apply_databounds = False
 
-    _view_type = DataFrameView
-
-
     def __init__(self, view, **params):
         super(DFrameViewPlot, self).__init__(view, **params)
-        if self._map.last.plot_type and 'plot_type' not in params:
-            self.plot_type = self._map.last.plot_type
+        if self.map.last.plot_type and 'plot_type' not in params:
+            self.plot_type = self.map.last.plot_type
 
 
-    def __call__(self, axis=None, cyclic_index=0, lbrt=None):
-        dfview = self._map.last
-        self._validate(dfview, axis)
+    def __call__(self, ranges=None):
+        dfview = self.map.last
+        self._validate(dfview)
 
-        self.ax = self._init_axis(axis)
-        self.style = self._process_style(View.options.style(dfview)[cyclic_index])
+        style = Store.lookup_options(dfview, 'style')[self.cyclic_index]
+        self.style = self._process_style(style)
 
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self._keys[-1], lbrt=lbrt)
+        return self._finalize_axis(self.map.last_key)
 
 
     def _process_style(self, styles):
@@ -92,33 +90,34 @@ class DFrameViewPlot(Plot):
         return styles
 
 
-    def _validate(self, dfview, axis):
-        composed = axis is not None
+    def _validate(self, dfview):
+        composed = self.handles['axis'] is not None
 
-        if composed and len(dfview.dimensions) > 1 and self.plot_type in ['hist']:
+        if composed and dfview.ndims > 1 and self.plot_type in ['hist']:
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 
-    def _update_plot(self, view):
+    def _update_plot(self, axis, view):
         if self.plot_type == 'scatter_matrix':
-            pd.scatter_matrix(view.data, ax=self.ax, **self.style)
+            pd.scatter_matrix(view.data, ax=axis, **self.style)
         elif self.plot_type == 'autocorrelation_plot':
-            pd.tools.plotting.autocorrelation_plot(view.data, ax=self.ax, **self.style)
+            pd.tools.plotting.autocorrelation_plot(view.data, ax=axis, **self.style)
         elif self.plot_type == 'plot':
             opts = dict({'x': view.x, 'y': view.y}, **self.style)
-            view.data.plot(ax=self.ax, **opts)
+            view.data.plot(ax=self.handles['axis'], **opts)
         else:
-            getattr(view.data, self.plot_type)(ax=self.ax, **self.style)
+            getattr(view.data, self.plot_type)(ax=axis, **self.style)
 
 
-    def update_handles(self, view, key, lbrt=None):
+    def update_handles(self, axis, view, key, ranges=None):
         """
         Update the plot for an animation.
         """
         if not self.plot_type in ['hist', 'scatter_matrix']:
-            if self.zorder == 0 and self.ax: self.ax.cla()
-        self._update_plot(view)
+            if self.zorder == 0 and axis:
+                axis.cla()
+        self._update_plot(axis, view)
 
 
-Plot.defaults.update({DataFrameView: DFrameViewPlot,
-                      DFrame: DFrameViewPlot})
+Store.defaults.update({DataFrameView: DFrameViewPlot,
+                       DFrame: DFrameViewPlot})

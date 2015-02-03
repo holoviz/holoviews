@@ -24,9 +24,12 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import NdMapping, View, ViewMap, GridLayout, AdjointLayout, Grid, Overlay
-from ..plotting import Plot, GridLayoutPlot
-from .magics import ViewMagic, ANIMATION_OPTS
+from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
+from ..core import traversal
+from ..core.options import Store
+from ..element import Raster
+from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
+from .magics import ViewMagic
 
 
 class ProgressBar(param.Parameterized):
@@ -242,7 +245,7 @@ def isnumeric(val):
 
 
 def get_plot_size():
-    factor = ViewMagic.PERCENTAGE_SIZE / 100.0
+    factor = ViewMagic.options['size'] / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
 
@@ -250,7 +253,7 @@ def get_plot_size():
 class NdWidget(param.Parameterized):
     """
     NdWidget is an abstract base class implementing a method to
-    find the dimensions and keys of any View, Grid or Map type.
+    find the dimensions and keys of any ViewableElement, AxisLayout or UniformNdMapping type.
     In the process it creates a mock_obj to hold the dimensions
     and keys.
     """
@@ -260,43 +263,43 @@ class NdWidget(param.Parameterized):
         Determine the dimensions and keys to be turned into widgets and
         initialize the plots.
         """
-        if isinstance(view, (GridLayout, AdjointLayout)):
-            shape = view.shape if isinstance(view, GridLayout) else (1, 1)
+        if isinstance(view, (NdLayout, LayoutTree, AdjointLayout)):
+            shape = view.shape if isinstance(view, (NdLayout, LayoutTree)) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
-            self.plot = GridLayoutPlot(view, **dict(size=grid_size))
+            plot = LayoutPlot(view, **dict(size=grid_size))
+        elif isinstance(view, AxisLayout):
+            max_dim = max(view.shape)
+            # Reduce plot size as AxisLayout gets larger
+            shape_factor = 1. / max_dim
+            # Expand small views to a sensible viewing size
+            expand_factor = 1 + (max_dim - 1) * 0.1
+            scale_factor = expand_factor * shape_factor
+            view_size = (scale_factor * view.shape[0] * get_plot_size()[0],
+                         scale_factor * view.shape[1] * get_plot_size()[1])
+
+            layer_types = view.layer_types
+            if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
+                plot_type = MatrixGridPlot
+            else:
+                plot_type = GridPlot
+            opts = Store.lookup_options(view, 'plot').options
+            plot = plot_type(view, **dict({'size': view_size}, **opts))
         else:
-            opts = dict(View.options.plotting(view).opts, size=get_plot_size())
-            self.plot = Plot.defaults[view.type](view, **opts)
-            view = [view]
+            opts = dict(Store.options.closest(view, 'plot').options,
+                        size=get_plot_size())
+            plot = Store.defaults[view.type](view, **opts)
 
-        keys_list = []
-        dimensions = []
-        for i, v in enumerate(view):
-            if isinstance(v, Grid): v = v.values()[0]
-            if isinstance(v, AdjointLayout): v = v.main
-            if isinstance(v, Overlay): v = v.values()[0]
-            if isinstance(v, View):
-                v = ViewMap([((0,), v)], dimensions=['Frame'])
-
-            keys_list.append(list(v._data.keys()))
-            if i == 0: dimensions = v.dimensions
-
-        # Check if all elements in the Grid have common dimensions
-        if all(x == keys_list[0] for x in keys_list):
-            self._keys = keys_list[0]
-            self.dimensions = dimensions
-        else:
-            self._keys = [(k,) for k in range(len(view))]
-            self.dimensions = ['Frame']
+        dimensions, keys = traversal.unique_dimkeys(view)
 
         # Create mock NdMapping to hold the common dimensions and keys
-        self.mock_obj = NdMapping([(k, 0) for k in self._keys],
-                                  dimensions=self.dimensions)
+        mock_obj = NdMapping([(k, None) for k in keys],
+                             key_dimensions=dimensions)
+        return plot, dimensions, keys, mock_obj
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
-        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+        if ViewMagic.options['backend'] == 'mpld3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_html(fig)
@@ -307,15 +310,15 @@ class NdWidget(param.Parameterized):
 
 class IPySelectionWidget(NdWidget):
     """
-    Interactive widget to select and view View objects contained
+    Interactive widget to select and view ViewableElement objects contained
     in an NdMapping. ViewSelector creates Slider and Dropdown widgets
     for each dimension contained within the supplied object and
-    an image widget for the plotted View. All widgets are dynamically
+    an image widget for the plotted ViewableElement. All widgets are dynamically
     updated to match the current selection.
     """
 
     cached = param.Boolean(default=True, doc="""
-        Whether to cache the View plots when initializing the object.""")
+        Whether to cache the ViewableElement plots when initializing the object.""")
 
     css = param.Dict(default={'margin-left': 'auto',
                               'margin-right': 'auto'}, doc="""
@@ -327,7 +330,7 @@ class IPySelectionWidget(NdWidget):
         if widgets is None:
             raise ImportError('ViewSelector requires IPython >= 2.0.')
 
-        self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
         self._initialize_widgets()
         self.refresh = True
 
@@ -343,12 +346,12 @@ class IPySelectionWidget(NdWidget):
 
         self.pwidgets = {}
         self.dim_val = {}
-        for didx, dim in enumerate(self.mock_obj.dimension_labels):
+        for didx, dim in enumerate(self.mock_obj.key_dimensions):
             all_vals = [k[didx] for k in self._keys]
 
             # Initialize dimension value
             vals = self._get_dim_vals(list(self._keys[0]), didx)
-            self.dim_val[dim] = vals[0]
+            self.dim_val[dim.name] = vals[0]
 
             # Initialize widget
             if isnumeric(vals[0]):
@@ -356,12 +359,13 @@ class IPySelectionWidget(NdWidget):
             else:
                 widget_type = widgets.DropdownWidget
                 all_vals = dict((str(v), v) for v in all_vals)
-            self.pwidgets[dim] = widget_type(values=sorted(set(all_vals)))
+            self.pwidgets[dim.name] = widget_type(values=sorted(set(all_vals)))
 
 
     def __call__(self):
         # Initalize image widget
-        if ViewMagic.FIGURE_FORMAT in ['mpld3', 'svg']:
+        if (ViewMagic.options['backend'] == 'mpld3'
+            or ViewMagic.options['fig'] =='svg'):
             self.image_widget = widgets.HTMLWidget()
         else:
             self.image_widget = widgets.ImageWidget()
@@ -380,7 +384,7 @@ class IPySelectionWidget(NdWidget):
         # Display widgets
         display(interactive_widget)
         display(self.image_widget)
-        return '' # Suppresses outputting View repr when called through hook
+        return '' # Suppresses outputting ViewableElement repr when called through hook
 
 
     def _get_dim_vals(self, indices, idx):
@@ -397,7 +401,7 @@ class IPySelectionWidget(NdWidget):
     def update_widgets(self, **kwargs):
         """
         Callback method to process the new keys, find the closest matching
-        View and update all the widgets.
+        ViewableElement and update all the widgets.
         """
 
         # Do nothing if dimension values are unchanged
@@ -413,7 +417,7 @@ class IPySelectionWidget(NdWidget):
         checked = [slice(None) for i in range(self.mock_obj.ndims)]
         for dim, val in dimvals:
             if not isnumeric(val): val = str(val)
-            dim_idx = self.mock_obj.dim_index(dim)
+            dim_idx = self.mock_obj.get_dimension_index(dim)
             widget = self.pwidgets[dim]
             vals = self._get_dim_vals(checked, dim_idx)
             if val not in vals:
@@ -476,13 +480,13 @@ class ScrubberWidget(NdWidget):
     def __init__(self, view, **params):
         super(ScrubberWidget, self).__init__(**params)
         self.view = view
-        self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
         self.frames = OrderedDict((idx, self._plot_figure(idx))
                                   for idx in range(len(self.plot)))
 
 
     def get_frames(self, id):
-        use_mpld3 = ViewMagic.FIGURE_FORMAT == 'mpld3'
+        use_mpld3 = ViewMagic.options['backend'] == 'd3'
         frames = {idx: frame if use_mpld3 or self.export_json else
                   str(frame) for idx, frame in enumerate(self.frames.values())}
         encoder = {}
@@ -514,13 +518,13 @@ class ScrubberWidget(NdWidget):
 
     def _plot_figure(self, idx):
         fig = self.plot[idx]
-        if ViewMagic.FIGURE_FORMAT == 'mpld3':
+        if ViewMagic.options['backend'] == 'd3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
         else:
-            from .display_hooks import figure_display
-            return figure_display(fig)
+            from .display_hooks import display_figure
+            return display_figure(fig)
 
 
     def __call__(self):
@@ -528,13 +532,13 @@ class ScrubberWidget(NdWidget):
         frames = self.get_frames(id)
 
         data = {'id': id, 'Nframes': len(self.plot),
-                'interval': int(1000. / ANIMATION_OPTS['scrubber'][2]['fps']),
+                'interval': int(1000. / ViewMagic.ANIMATION_OPTS['scrubber'][2]['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
                 'server': self.server_url,
                 'mpld3_url': self.mpld3_url,
                 'd3_url': self.d3_url[:-3],
-                'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
+                'mpld3': str(ViewMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
 
@@ -542,10 +546,10 @@ class ScrubberWidget(NdWidget):
 
 class SelectionWidget(ScrubberWidget):
     """
-    Javascript based widget to select and view View objects contained
+    Javascript based widget to select and view ViewableElement objects contained
     in an NdMapping. For each dimension in the NdMapping a slider or
     dropdown selection widget is created and can be used to select the
-    html output associated with the selected View type. Supports
+    html output associated with the selected ViewableElement type. Supports
     selection of any holoviews static output type including png, svg
     and mpld3 output. Unlike the IPSelectionWidget, this widget type
     is exportable to a static html.
@@ -566,7 +570,7 @@ class SelectionWidget(ScrubberWidget):
     def __init__(self, view, **params):
         NdWidget.__init__(self, **params)
         self.view = view
-        self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
         self.frames = OrderedDict((k, self._plot_figure(idx))
                                   for idx, k in enumerate(self._keys))
 
@@ -576,8 +580,8 @@ class SelectionWidget(ScrubberWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
-        for idx, dim in enumerate(self.mock_obj.dimensions):
-            dim_vals = sorted(set(self.mock_obj.dim_values(dim.name)))
+        for idx, dim in enumerate(self.mock_obj.key_dimensions):
+            dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
             if isnumeric(dim_vals[0]):
                 dim_vals = [round(v, 10) for v in dim_vals]
                 widget_type = 'slider'
@@ -594,7 +598,7 @@ class SelectionWidget(ScrubberWidget):
     def get_key_data(self):
         # Generate key data
         key_data = {}
-        for i, k in enumerate(self.mock_obj._data.keys()):
+        for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
                    if isnumeric(v) else v for v in k]
             key_data[str(tuple(key))] = i
@@ -617,7 +621,8 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
-                'mpld3': str(ViewMagic.FIGURE_FORMAT == 'mpld3').lower()}
+                'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
+                'mpld3': str(ViewMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
 

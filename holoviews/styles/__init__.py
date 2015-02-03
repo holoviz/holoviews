@@ -9,33 +9,6 @@ import os
 import matplotlib.pyplot as plt
 from matplotlib import rc_params_from_file
 
-# Default Styles
-from ..core.options import options, Cycle, StyleOpts, PlotOpts
-
-options.Style = StyleOpts()
-
-# Default Plotopts
-options.Grid = PlotOpts()
-options.GridLayout = PlotOpts()
-
-options.Contours = StyleOpts(color='k')
-options.Matrix = StyleOpts(cmap='gray', interpolation='nearest')
-options.Raster = StyleOpts(cmap='jet', interpolation='nearest')
-options.HeatMap = StyleOpts(cmap='jet', interpolation='nearest')
-options.GridLayout = StyleOpts(**{'font.size': 10, 'axes.labelsize': 'small',
-                                  'axes.titlesize': 'small'})
-# Color cycles can be removed once default style set and test data updated
-options.Curve = StyleOpts(color=Cycle(), linewidth=2)
-options.Scatter = StyleOpts(color=Cycle(), linewidth=2)
-options.Annotation = StyleOpts()
-options.Histogram = StyleOpts(ec='k', fc='w')
-options.Table = StyleOpts()
-options.Points = StyleOpts(color='r', marker='x')
-
-# Defining the most common style options for holoviews
-GrayNearest = StyleOpts(cmap='gray', interpolation='nearest')
-
-
 styles = {'default': './default.mplstyle'}
 
 

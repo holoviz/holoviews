@@ -1,3 +1,6 @@
+"""
+Definition and registration of display hooks for the IPython Notebook.
+"""
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -13,12 +16,17 @@ import sys, traceback, base64
 
 try:
     import mpld3
+    from ..plotting import hooks
 except:
     mpld3 = None
 
-from ..core import View, Map, AdjointLayout, GridLayout, Grid
-from ..plotting import GridLayoutPlot, GridPlot, MatrixGridPlot, Plot
-from ..view import Raster
+import param
+
+from ..core.options import Store
+from ..core import ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
+from ..core import traversal
+from ..element import Raster
+from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from . import magics
 from .magics import ViewMagic, ChannelMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
@@ -30,9 +38,13 @@ ENABLE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
+def opts(el, size):
+    "Returns the plot options with supplied size (if not overridden)"
+    return dict(size=size, **Store.lookup_options(el, 'plot').options)
 
-def get_plot_size():
-    factor = ViewMagic.PERCENTAGE_SIZE / 100.0
+
+def get_plot_size(size):
+    factor = size / 100.0
     return (Plot.size[0] * factor,
             Plot.size[1] * factor)
 
@@ -51,14 +63,15 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
 
 
 def HTML_video(plot):
-    anim = plot.anim(fps=ViewMagic.FPS)
+    anim = plot.anim(fps=ViewMagic.options['fps'])
     writers = animation.writers.avail
-    for fmt in [ViewMagic.VIDEO_FORMAT] + list(magics.ANIMATION_OPTS.keys()):
-        if magics.ANIMATION_OPTS[fmt][0] in writers:
+    current_format = ViewMagic.options['holomap']
+    for fmt in [current_format] + list(ViewMagic.ANIMATION_OPTS.keys()):
+        if ViewMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
-                return animate(anim, *magics.ANIMATION_OPTS[fmt])
+                return animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
             except: pass
-    msg = "<b>Could not generate %s animation</b>" % ViewMagic.VIDEO_FORMAT
+    msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
         msg = "<b>Python 3 Matplotlib animation support broken &lt;= 1.3</b>"
     raise Exception(msg)
@@ -66,43 +79,85 @@ def HTML_video(plot):
 
 def first_frame(plot):
     "Only display the first frame of an animated plot"
-    return figure_display(plot[0])
+    return display_figure(plot[0])
 
 def middle_frame(plot):
     "Only display the (approximately) middle frame of an animated plot"
     middle_frame = int(len(plot) / 2)
-    return figure_display(plot[middle_frame])
+    return display_figure(plot[middle_frame])
 
 def last_frame(plot):
     "Only display the last frame of an animated plot"
-    return figure_display(plot[len(plot)])
+    return display_figure(plot[len(plot)])
 
 
-def figure_display(fig, size=None, message=None, max_width='100%'):
-    if size is not None:
-        inches = size / float(fig.dpi)
-        fig.set_size_inches(inches, inches)
+def sanitized_repr(obj):
+    "Sanitize text output for HTML display"
+    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
 
-    if ViewMagic.FIGURE_FORMAT.lower() == 'mpld3' and mpld3:
+def max_frame_warning(max_frames):
+    sys.stderr.write("Skipping matplotlib display to avoid "
+                     "lengthy animation render times\n"
+                     "[Total item frames exceeds max_frames on ViewMagic (%d)]"
+                     % max_frames)
+
+def process_cell_magics(obj):
+    "Hook into %%opts and %%channels magics to process displayed element"
+    invalid_options = OptsMagic.process_view(obj)
+    if invalid_options: return invalid_options
+
+
+def render(plot):
+    try:
+        return render_anim(plot)
+    except Exception as e:
+        return str(e)+'<br/>'+display_figure(plot())
+
+
+def display_widgets(view,  widget_format, widget_mode):
+    "Display widgets applicable to the specified view"
+    assert widget_mode is not None, "Mistaken call to display_widgets method"
+
+    isuniform = traversal.uniform(view)
+    if not isuniform and widget_format == 'widgets':
+        param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
+                                    % type(view).__name__)
+        widget_format == 'scrubber'
+
+    if widget_format == 'auto':
+        dims = view.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        widget_format = 'scrubber' if len(dims) == 1 or not isuniform else 'widgets'
+
+    if widget_format == 'scrubber':
+        return ScrubberWidget(view)()
+    if widget_mode == 'embed':
+        return SelectionWidget(view)()
+    elif widget_mode == 'cached':
+        return IPySelectionWidget(view, cached=True)()
+    else:
+        return IPySelectionWidget(view, cached=False)()
+
+
+def display_figure(fig, message=None, max_width='100%'):
+    "Display widgets applicable to the specified view"
+    figure_format = ViewMagic.options['fig']
+    backend = ViewMagic.options['backend']
+
+    if backend == 'd3' and mpld3:
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        figdata = print_figure(fig, ViewMagic.FIGURE_FORMAT)
-        if ViewMagic.FIGURE_FORMAT.lower()=='svg':
+        figdata = print_figure(fig, figure_format)
+        if figure_format=='svg':
             mime_type = 'svg+xml'
             figdata = figdata.encode("utf-8")
         else:
             mime_type = 'png'
         prefix = 'data:image/%s;base64,' % mime_type
         b64 = prefix + base64.b64encode(figdata).decode("utf-8")
-        if size is not None:
-            html = "<center><img height='%d' width='%d' style='max-width:%s' " \
-                   "src='%s'/><center/>" % (size, size, b64, max_width)
-        else:
-            html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
+        html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
-
 
 
 #===============#
@@ -110,128 +165,135 @@ def figure_display(fig, size=None, message=None, max_width='100%'):
 #===============#
 
 
-def process_view_magics(obj):
-    "Hook into %%opts and %%channels magics to process display view"
-    invalid_styles = OptsMagic.set_view_options(obj)
-    if invalid_styles: return invalid_styles
-    invalid_channels = ChannelMagic.set_channels(obj)
-    if invalid_channels: return invalid_channels
-
 def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
         try:
-            return fn(view, **kwargs)
+            widget_mode = ViewMagic.options['widgets']
+            map_format  = ViewMagic.options['holomap']
+            # If widget_mode is None, widgets are not being used
+            widget_mode = (widget_mode if map_format in ViewMagic.inbuilt_formats else None)
+            return fn(view,
+                      size=ViewMagic.options['size'],
+                      max_frames=ViewMagic.options['max_frames'],
+                      max_branches = ViewMagic.options['max_branches'],
+                      map_format = map_format,
+                      widget_mode = widget_mode,
+                      **kwargs)
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
     return wrapped
 
-def render(plot):
-    try:
-        return render_anim(plot)
-    except Exception as e:
-        return str(e)+'<br/>'+figure_display(plot())
 
 @display_hook
-def animation_display(anim):
-    return animate(anim, *magics.ANIMATION_OPTS[ViewMagic.VIDEO_FORMAT])
+def animation_display(anim, map_format, **kwargs):
+    return animate(anim, *ViewMagic.ANIMATION_OPTS[map_format])
 
-def widget_display(view):
-    if ViewMagic.VIDEO_FORMAT == 'scrubber':
-        return ScrubberWidget(view)()
-    mode = ViewMagic.VIDEO_FORMAT[1]
-    if mode == 'embedded':
-        return SelectionWidget(view)()
-    elif mode == 'cached':
-        return IPySelectionWidget(view, cached=True)()
-    else:
-        return IPySelectionWidget(view, cached=False)()
 
 @display_hook
-def map_display(vmap, size=256):
-    if not isinstance(vmap, Map): return None
-    magic_info = process_view_magics(vmap)
+def view_display(view, size, **kwargs):
+    if not isinstance(view, ViewableElement): return None
+    magic_info = process_cell_magics(view)
     if magic_info: return magic_info
-    opts = dict(View.options.plotting(vmap).opts, size=get_plot_size())
-    mapplot = Plot.defaults[vmap.type](vmap, **opts)
+    fig = Store.defaults[view.__class__](view,
+                                         **opts(view, get_plot_size(size)))()
+    return display_figure(fig)
+
+
+@display_hook
+def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
+    if not isinstance(vmap, HoloMap): return None
+    if widget_mode is not None and len(vmap.keys()) > 1:
+        return display_widgets(vmap, map_format, widget_mode)
+    magic_info = process_cell_magics(vmap)
+    if magic_info: return magic_info
+    mapplot = Store.defaults[vmap.type](vmap,
+                                        **opts(vmap.last, get_plot_size(size)))
     if len(mapplot) == 0:
-        return repr(vmap)
+        return sanitized_repr(vmap)
+    elif len(mapplot) > max_frames:
+        max_frame_warning(max_frames)
+        return sanitized_repr(vmap)
     elif len(mapplot) == 1:
         fig = mapplot()
-        return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
-        return widget_display(vmap)
+        return display_figure(fig)
 
     return render(mapplot)
 
+
 @display_hook
-def layout_display(grid, size=256):
-    if not isinstance(grid, (GridLayout, AdjointLayout)): return None
-    shape = grid.shape if isinstance(grid, GridLayout) else (1,1)
-    magic_info = process_view_magics(grid)
+def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
+    if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
+    if not isinstance(layout, (LayoutTree, NdLayout)): return None
+    if widget_mode is not None and layout.traverse(lambda x: True, (('HoloMap',))):
+        return display_widgets(layout, map_format, widget_mode)
+    shape = layout.shape
+    magic_info = process_cell_magics(layout)
     if magic_info: return magic_info
-    grid_size = (shape[1]*get_plot_size()[1],
-                 shape[0]*get_plot_size()[0])
+    grid_size = (shape[1]*get_plot_size(size)[1],
+                 shape[0]*get_plot_size(size)[0])
 
-    opts = dict(View.options.plotting(grid).opts, size=grid_size)
-    gridplot = GridLayoutPlot(grid, **opts)
-    if len(gridplot)==1:
-        fig =  gridplot()
-        return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
-        return widget_display(grid)
+    layoutplot = LayoutPlot(layout, **opts(layout, grid_size))
+    if isinstance(layout, LayoutTree):
+        if layout._display == 'auto':
+            branches = len(set([path[0] for path in layout.data.keys()]))
+            if branches > max_branches:
+                return '<tt>'+ sanitized_repr(layout) + '</tt>'
+            elif len(layout.data) * len(layoutplot) > max_frames:
+                max_frame_warning(max_frames)
+                return '<tt>'+ sanitized_repr(layout) + '</tt>'
 
-    return render(gridplot)
+    if len(layoutplot) == 1:
+        fig = layoutplot()
+        return display_figure(fig)
+
+    return render(layoutplot)
+
 
 @display_hook
-def grid_display(grid, size=256):
-    if not isinstance(grid, Grid): return None
-
+def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
+    if not isinstance(grid, AxisLayout): return None
+    if widget_mode is not None and grid.traverse(lambda x: True, (('HoloMap',))):
+        return display_widgets(grid, map_format, widget_mode)
     max_dim = max(grid.shape)
-    # Reduce plot size as Grid gets larger
+    # Reduce plot size as AxisLayout gets larger
     shape_factor = 1. / max_dim
     # Expand small grids to a sensible viewing size
     expand_factor = 1 + (max_dim - 1) * 0.1
     scale_factor = expand_factor * shape_factor
-    grid_size = (scale_factor * grid.shape[0] * get_plot_size()[0],
-                 scale_factor * grid.shape[1] * get_plot_size()[1])
+    grid_size = (scale_factor * grid.shape[0] * get_plot_size(size)[0],
+                 scale_factor * grid.shape[1] * get_plot_size(size)[1])
 
-    magic_info = process_view_magics(grid)
+    magic_info = process_cell_magics(grid)
     if magic_info: return magic_info
     layer_types = grid.layer_types
     if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot
-    gridplot = plot_type(grid, size=grid_size)
+    gridplot = plot_type(grid, **opts(grid, grid_size))
+    if len(gridplot) > max_frames:
+        max_frame_warning(max_frames)
+        return sanitized_repr(grid)
     if len(gridplot) == 1:
         fig = gridplot()
-        return figure_display(fig)
-    elif isinstance(ViewMagic.VIDEO_FORMAT, tuple) or\
-                    ViewMagic.VIDEO_FORMAT == 'scrubber':
-        return widget_display(grid)
+        return display_figure(fig)
 
     return render(gridplot)
 
-@display_hook
-def view_display(view, size=256):
-    if not isinstance(view, View): return None
-    magic_info = process_view_magics(view)
-    if magic_info: return magic_info
-    opts = dict(View.options.plotting(view).opts, size=get_plot_size())
-    fig = Plot.defaults[view.__class__](view, **opts)()
-    return figure_display(fig)
 
+# HTML_video output by default, but may be set to first_frame,
+# middle_frame or last_frame (e.g. for testing purposes)
 render_anim = HTML_video
 
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
-    html_formatter.for_type(View, view_display)
-    html_formatter.for_type(Map, map_display)
+    html_formatter.for_type(LayoutTree, layout_display)
+    html_formatter.for_type(ViewableElement, view_display)
+    html_formatter.for_type(Overlay, view_display)
+    html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
-    html_formatter.for_type(GridLayout, layout_display)
-    html_formatter.for_type(Grid, grid_display)
+    html_formatter.for_type(NdLayout, layout_display)
+    html_formatter.for_type(AxisLayout, grid_display)

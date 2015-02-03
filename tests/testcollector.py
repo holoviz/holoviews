@@ -96,8 +96,8 @@ class AttrTreeTest(ViewTestCase):
         tr = AttrTree()
         dumped = pickle.dumps(tr)
         tr2 = pickle.loads(dumped)
-        self.assertEqual(tr.path_items, OrderedDict())
-        self.assertEqual(tr.path_items, tr2.path_items)
+        self.assertEqual(tr.data, OrderedDict())
+        self.assertEqual(tr.data, tr2.data)
 
     def test_pickle_with_data(self):
         tr = AttrTree()
@@ -105,9 +105,9 @@ class AttrTreeTest(ViewTestCase):
         tr.Example2.Data = 'some data'
         dumped = pickle.dumps(tr)
         tr2 = pickle.loads(dumped)
-        self.assertEqual(tr.path_items, OrderedDict([(('Example1', 'Data'), 42),
+        self.assertEqual(tr.data, OrderedDict([(('Example1', 'Data'), 42),
                                                      (('Example2', 'Data'), 'some data')]))
-        self.assertEqual(tr.path_items, tr2.path_items)
+        self.assertEqual(tr.data, tr2.data)
 
 
 

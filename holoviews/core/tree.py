@@ -1,8 +1,6 @@
 from collections import OrderedDict
 
-from .layer import Grid
-from .layout import GridLayout
-from .view import View, Map
+from .util import valid_identifier
 
 
 class AttrTree(object):
@@ -10,12 +8,12 @@ class AttrTree(object):
     An AttrTree offers convenient, multi-level attribute access for
     collections of objects. AttrTree objects may also be combined
     together using the update method or merge classmethod. Here is an
-    example of adding a View to an AttrTree and accessing it:
+    example of adding a ViewableElement to an AttrTree and accessing it:
 
     >>> t = AttrTree()
-    >>> t.Example.Path = View('data1')
+    >>> t.Example.Path = 1
     >>> t.Example.Path                             #doctest: +ELLIPSIS
-    View('data1', ...)
+    1
     """
 
     @classmethod
@@ -28,23 +26,38 @@ class AttrTree(object):
             first.update(tree)
         return first
 
-    def __init__(self, label=None, parent=None, path_items=None):
+    def __init__(self, items=None, identifier=None, parent=None):
+        """
+        identifier: A string identifier for the current node (if any)
+        parent:     The parent node (if any)
+        items:      Items as (path, value) pairs to construct
+                    (sub)tree down to given leaf values.
+
+        Note that the root node does not have a parent and does not
+        require an identifier.
+        """
         self.__dict__['parent'] = parent
-        self.__dict__['label'] = label
+        self.__dict__['identifier'] = valid_identifier(identifier)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
-        self.__dict__['path_items'] = OrderedDict()
-        if path_items:
-            path_items = OrderedDict(path_items)
-            for path, item in path_items.items():
-                self.set_path(path, item)
+        self.__dict__['data'] = OrderedDict()
+        # Python 3
+        items = list(items) if items else items
+        items = [] if items is None else (items if isinstance(items, list) else items.items())
+        for path, item in items:
+            self.set_path(path, item)
 
+    @property
+    def path(self):
+        "Returns the path up to the root for the current node."
+        if self.parent:
+            return '.'.join([self.parent.path, str(self.identifier)])
+        else:
+            return self.identifier if self.identifier else self.__class__.__name__
 
-    def __iter__(self):
-        return iter(self.path_items.values())
 
     @property
     def fixed(self):
@@ -55,24 +68,6 @@ class AttrTree(object):
     def fixed(self, val):
         self.__dict__['_fixed'] = val
 
-    def grid(self, ordering='alphanumeric'):
-        """
-        Turn the AttrTree into a GridLayout with the available View
-        objects ordering specified by a list of labels or by the
-        specified ordering mode ('alphanumeric' or 'insertion').
-        """
-        if ordering == 'alphanumeric':
-            child_ordering = sorted(self.children)
-        elif ordering == 'insertion':
-            child_ordering = self.children
-        else:
-            child_ordering = ordering
-
-        children = [self.__dict__[l] for l in child_ordering]
-        dataview_types = (View, Map, GridLayout, Grid)
-        return GridLayout(list(child for child in children
-                               if isinstance(child, dataview_types)))
-
 
     def update(self, other):
         """
@@ -82,13 +77,13 @@ class AttrTree(object):
         fixed_status = (self.fixed, other.fixed)
         (self.fixed, other.fixed) = (False, False)
         if self.parent is None:
-            self.path_items.update(other.path_items)
-        for label in other.children:
-            item = other[label]
-            if label not in self:
-                self[label] = item
+            self.data.update(other.data)
+        for identifier in other.children:
+            item = other[identifier]
+            if identifier not in self:
+                self[identifier] = item
             else:
-                self[label].update(item)
+                self[identifier].update(item)
         (self.fixed, other.fixed) = fixed_status
 
 
@@ -98,6 +93,7 @@ class AttrTree(object):
         a tuple of strings or a string in A.B.C format.
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
+
         if not all(p[0].isupper() for p in path):
             raise Exception("All paths elements must be capitalized.")
 
@@ -120,7 +116,7 @@ class AttrTree(object):
 
         # Search for substring matches between paths and path filters
         new_attrtree = self.__class__()
-        for path, item in self.path_items.items():
+        for path, item in self.data.items():
             if any([all([subpath in path for subpath in pf]) for pf in path_filters]):
                 new_attrtree.set_path(path, item)
 
@@ -131,130 +127,155 @@ class AttrTree(object):
         """
         Propagate the value up to the root node.
         """
-        self.path_items[path] = val
+        self.data[path] = val
         if self.parent is not None:
-            self.parent._propagate((self.label,)+path, val)
+            self.parent._propagate((self.identifier,)+path, val)
 
 
-    def __setitem__(self, label, val):
+    def __setitem__(self, identifier, val):
         """
-        Set a value at a child node with given label. If at a root
+        Set a value at a child node with given identifier. If at a root
         node, multi-level path specifications is allowed (i.e. 'A.B.C'
         format or tuple format) in which case the behaviour matches
         that of set_path.
         """
-        if isinstance(label, str) and '.' not in label:
-            self.__setattr__(label, val)
-        elif isinstance(label, str) and self.parent is None:
-            self.set_path(tuple(label.split('.')), val)
-        elif isinstance(label, tuple) and self.parent is None:
-            self.set_path(label, val)
+        if isinstance(identifier, str) and '.' not in identifier:
+            self.__setattr__(identifier, val)
+        elif isinstance(identifier, str) and self.parent is None:
+            self.set_path(tuple(identifier.split('.')), val)
+        elif isinstance(identifier, tuple) and self.parent is None:
+            self.set_path(identifier, val)
         else:
             raise Exception("Multi-level item setting only allowed from root node.")
 
 
-    def __getitem__(self, label):
+    def __getitem__(self, identifier):
         """
-        For a given non-root node, access a child element by label.
+        For a given non-root node, access a child element by identifier.
 
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
         """
         keyerror_msg = ''
-        split_label = (tuple(label.split('.'))
-                       if isinstance(label, str) else tuple(label))
+        split_label = (tuple(identifier.split('.'))
+                       if isinstance(identifier, str) else tuple(identifier))
         if len(split_label) == 1:
-            label = split_label[0]
-            if label in self.children:
-                return self.__dict__[label]
+            identifier = split_label[0]
+            if identifier in self.children:
+                return self.__dict__[identifier]
             else:
-                raise KeyError(label + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
+                raise KeyError(identifier + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
         path_item = self
-        for label in split_label:
-            path_item = path_item[label]
+        for identifier in split_label:
+            path_item = path_item[identifier]
         return path_item
 
 
-    def get(self, label, default=None):
-        return self.__dict__.get(label, default)
-
-
-    def keys(self):
-        return self.children[:]
-
-
-    def pop(self, label, default=None):
-        if label in self.children:
-            item = self[label]
-            self.__delitem__(label)
-            return item
-        else:
-            return default
-
-
-    def __setattr__(self, label, val):
+    def __setattr__(self, identifier, val):
+        identifier = valid_identifier(identifier)
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        if label[0].isupper() and self.fixed and shallow:
-            raise AttributeError(self._fixed_error % label)
+        if identifier[0].isupper() and self.fixed and shallow:
+            raise AttributeError(self._fixed_error % identifier)
 
-        super(AttrTree, self).__setattr__(label, val)
+        super(AttrTree, self).__setattr__(identifier, val)
 
-        if label in self.children: pass
-        elif label[0].isupper():
-            self.children.append(label)
-            self._propagate((label,), val)
+        if identifier[0].isupper():
+            if not identifier in self.children:
+                self.children.append(identifier)
+            self._propagate((identifier,), val)
 
 
-    def __getattr__(self, label):
+    def __getattr__(self, identifier):
         """
-        Access a label from the AttrTree or generate a new AttrTree
+        Access a identifier from the AttrTree or generate a new AttrTree
         with the chosen attribute path.
         """
         try:
-            return super(AttrTree, self).__getattr__(label)
+            return super(AttrTree, self).__getattr__(identifier)
         except AttributeError: pass
 
-        if label.startswith('_'):   raise AttributeError(str(label))
-        elif self.fixed==True:      raise AttributeError(self._fixed_error % label)
+        if identifier.startswith('_'):   raise AttributeError(str(identifier))
+        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
+        identifier = valid_identifier(identifier)
 
-        if label in self.children:
-            return self.__dict__[label]
+        if identifier in self.children:
+            return self.__dict__[identifier]
 
-        if label[0].isupper():
-            self.children.append(label)
-            child_tree = self.__class__(label=label, parent=self)
-            self.__dict__[label] = child_tree
+        if identifier[0].isupper():
+            self.children.append(identifier)
+            child_tree = self.__class__(identifier=identifier, parent=self)
+            self.__dict__[identifier] = child_tree
             return child_tree
         else:
-            raise AttributeError("%s: Custom paths elements must be capitalized." % label)
+            raise AttributeError("%s: Custom paths elements must be capitalized." % identifier)
 
+
+    def _node_repr(self, node):
+        return '--+' if node.identifier is None else node.identifier
+
+
+    def _draw_tree(self, node, prefix='', identifier=''):
+        """
+        Recursive function that builds up an ASCII tree given an
+        AttrTree node.
+        """
+        children = node.children if isinstance(node, AttrTree) else []
+        if isinstance(node, AttrTree):
+            identifier = self._node_repr(node)
+        else:
+            identifier = identifier + ' : ' + str(type(node).__name__)
+
+        tree =  prefix[:-3] + '  +--' if prefix else prefix
+        tree += identifier + '\n'
+        for index, child in enumerate(children):
+            child_prefix = prefix + ('   ' if index+1 == len(children) else '  |')
+            tree += self._draw_tree(node[child], child_prefix, child)
+        return tree
 
     def __repr__(self):
         """
-        A useful summary of the contents of the AttrTree node that
-        works for any node in the tree. Note that this is not a repr
-        that can be evaluated.
+        The repr of an AttrTree is an ASCII tree showing the structure
+        of the tree and the types of leaves.
         """
-        path, node = [], self
-        while node.parent is not None:
-            path = [node.label] + path
-            node = node.parent
-
-        filtered = OrderedDict((k,v) for (k,v) in node.path_items.items()
-                               if k[:len(path)]==tuple(path))
-        if len(filtered) == 0:
+        if len(self) == 0:
             return "Dangling AttrTree node with no leaf items."
+        return "%s of %s items:\n\n%s" % (self.__class__.__name__,
+                                          len(self.data),
+                                          self._draw_tree(self))
 
-        path_strs = ['.'.join(p) for p in filtered]
-        max_chars = max(len(el) for el in path_strs)
-
-        lines = ["AttrTree with %d leaf nodes of type:\n" % len(filtered)]
-        for (path_str, val) in zip(path_strs, filtered.values()):
-            val_type = type(val).__name__
-            lines.append("   %s : %s" % (path_str.ljust(max_chars), val_type))
-        return "\n".join(lines)
+    def __iter__(self):
+        return iter(self.data.values())
 
 
     def __contains__(self, name):
-        return name in self.children or name in self.path_items
+        return name in self.children or name in self.data
+
+
+    def __len__(self):
+        return len(self.data)
+
+
+    def get(self, identifier, default=None):
+        return self.__dict__.get(identifier, default)
+
+
+    def keys(self):
+        return self.data.keys()
+
+
+    def items(self):
+        return self.data.items()
+
+
+    def values(self):
+        return self.data.values()
+
+
+    def pop(self, identifier, default=None):
+        if identifier in self.children:
+            item = self[identifier]
+            self.__delitem__(identifier)
+            return item
+        else:
+            return default

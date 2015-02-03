@@ -1,16 +1,20 @@
 import os
 
-from . import seaborn # pyflakes:ignore (API import)
-from . import pandas # pyflakes:ignore (API import)
-from .dataplots import * # pyflakes:ignore (API import)
-from .sheetplots import * # pyflakes:ignore (API import)
-from .viewplots import * # pyflakes:ignore (API import)
+import param
 
+from ..core.options import Cycle, Options, Store
+from .annotation import * # pyflakes:ignore (API import)
+from .chart import * # pyflakes:ignore (API import)
+from .plot import * # pyflakes:ignore (API import)
+from .raster import * # pyflakes:ignore (API import)
+from .tabular import * # pyflakes:ignore (API import)
+from . import pandas # pyflakes:ignore (API import)
+from . import seaborn # pyflakes:ignore (API import)
 
 
 class PlotSaver(param.ParameterizedFunction):
     """
-    Parameterized function for saving the plot of a View object to
+    Parameterized function for saving the plot of a ViewableElement object to
     disk either as a static figure or as an animation. Keywords that
     are not parameters are passed into the anim method of the
     appropriate plot for animations and into matplotlib.figure.savefig
@@ -50,8 +54,8 @@ class PlotSaver(param.ParameterizedFunction):
             raise Exception("File of type %r not in %s" % (ext, valid_exts))
         file_format = ext[1:]
 
-        plottype = Plot.defaults[type(view)]
-        plotopts = View.options.plotting(view).opts
+        plottype = Store.defaults[type(view)]
+        plotopts = Store.lookup_options(view, 'plot').options
         plot = plottype(view, **dict(plotopts, size=self.p.size))
 
         if len(plot) > 1 and ext in anim_exts:
@@ -68,11 +72,30 @@ class PlotSaver(param.ParameterizedFunction):
                            **self.p.extra_keywords())
 
 
+Store.register_plots()
+
+
+
+Store.options.Contours = Options('style', color='k')
+Store.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
+Store.options.Raster = Options('style', cmap='jet', interpolation='nearest')
+Store.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
+Store.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
+                                                 'axes.titlesize': 'small'})
+# Color cycles can be removed once default style set and test data updated
+Store.options.Curve = Options('style', color=Cycle(), linewidth=2)
+Store.options.Scatter = Options('style', color=Cycle(), marker='o')
+Store.options.Histogram = Options('style', ec='k', fc='w')
+Store.options.Points = Options('style', color=Cycle(), marker='o')
+
+# Defining the most common style options for holoviews
+GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')
+
 def public(obj):
     if not isinstance(obj, type): return False
     baseclasses = [Plot]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 
-_public = ["PlotSaver"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = ["PlotSaver", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public
