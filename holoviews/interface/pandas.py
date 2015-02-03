@@ -22,7 +22,7 @@ import param
 
 from ..core import Dimension, ViewableElement, NdMapping, NdOverlay,\
  NdLayout, AxisLayout, Element, HoloMap
-from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap
+from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 
 
 class DataFrameView(Element):
@@ -45,7 +45,7 @@ class DataFrameView(Element):
                  selecting and slicing the data using NdMapping.
     """
 
-    plot_type = param.ObjectSelector(default=None, 
+    plot_type = param.ObjectSelector(default=None,
                                      objects=['plot', 'boxplot',
                                               'hist', 'scatter_matrix',
                                               'autocorrelation_plot',
@@ -64,19 +64,19 @@ class DataFrameView(Element):
 
     value_dimensions = param.List(doc="DataFrameView has no value dimension.")
 
-    def __init__(self, data, key_dimensions=None, **params):
+    def __init__(self, data, dimensions={}, key_dimensions=None, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame ViewableElement type requires Pandas dataframe as data.')
-        if key_dimensions is None:
-            dims = list(data.columns)
-        else:
-            dims = ['' for i in range(len(data.columns))]
-            for dim in key_dimensions:
-                dim_name = dim.name if isinstance(dim, Dimension) else dim
-                if dim_name in data.columns:
-                    dims[list(data.columns).index(dim_name)] = dim
+        if key_dimensions:
+            if len(key_dimensions) != data.columns:
+                raise ValueError("Supplied key dimensions do not match data columns")
+            dims = key_dimensions
+        dims = key_dimensions if key_dimensions else list(data.columns)
+        for name, dim in dimensions.items():
+            if name in data.columns:
+                dims[list(data.columns).index(name)] = dim
 
         self._xlim = None
         self._ylim = None
@@ -243,7 +243,7 @@ class DFrame(DataFrameView):
     def table(self, value_dims, view_dims, reduce_fn=None, map_dims=[], view_type=None, **kwargs):
         if map_dims:
             map_groups = self.data.groupby(map_dims)
-            vm_dims = map_dims
+            vm_dims = [self.get_dimension(d) for d in map_dims]
         else:
             map_groups = [(0, self.data)]
             vm_dims = ['None']
