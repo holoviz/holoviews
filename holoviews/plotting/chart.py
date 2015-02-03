@@ -155,7 +155,7 @@ class CurvePlot(ChartPlot):
         # Create line segments and apply style
         style = Store.lookup_options(curveview, 'style')[self.cyclic_index]
         line_segment = axis.plot(curveview.data[:, 0], curveview.data[:, 1],
-                                 zorder=self.zorder, label=curveview.label,
+                                 zorder=self.zorder, label=" ",
                                  **style)[0]
 
         self.handles['line_segment'] = line_segment
@@ -657,7 +657,7 @@ class VectorFieldPlot(ElementPlot):
 
         if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
-        quiver = axis.quiver(*args, zorder=self.zorder, units='x',
+        quiver = axis.quiver(*args, zorder=self.zorder, units='x', label=' ',
                               scale_units='x', scale = scale, angles = angles ,
                               **({k:v for k,v in kwargs.items() if k!='color'}
                                  if colorized else kwargs))

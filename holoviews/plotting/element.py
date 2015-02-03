@@ -299,18 +299,32 @@ class OverlayPlot(ElementPlot):
 
     def _adjust_legend(self, axis):
         # If legend enabled update handles and labels
-        if not axis or not axis.get_legend(): return
         handles, _ = axis.get_legend_handles_labels()
-        labels = self.map.last.legend
-        if len(handles) and self.show_legend:
+        labels = []
+        title = ''
+        if issubclass(self.map.type, NdOverlay):
+            for key in self.map.last.data.keys():
+                labels.append(','.join([k + dim.unit if dim.unit else k for dim, k in
+                                        zip(self.map.last.key_dimensions, key)]))
+            title = ', '.join(self.map.last.dimensions('key', label=True))
+        else:
+            for key, subplot in self.subplots.items():
+                layer = self.map.last.data.get(key, False)
+                if layer: labels.append(layer.label)
+                else: labels.append('')
+        if (not any(len(l) for l in labels) and len(handles)) or self.show_legend:
+            legend = axis.get_legend()
+            if legend:
+                legend.set_visible(False)
+        else:
             fontP = FontProperties()
             fontP.set_size('medium')
-            leg = axis.legend(handles[::-1], labels[::-1], prop=fontP)
+            leg = axis.legend(handles[::-1], labels[::-1], prop=fontP, title=title)
             leg.get_frame().set_alpha(1.0)
-        frame = axis.get_legend().get_frame()
-        frame.set_facecolor('1.0')
-        frame.set_edgecolor('0.0')
-        frame.set_linewidth('1.5')
+            frame = axis.get_legend().get_frame()
+            frame.set_facecolor('1.0')
+            frame.set_edgecolor('0.0')
+            frame.set_linewidth('1.5')
 
 
     def __call__(self, ranges=None):
@@ -365,9 +379,9 @@ class OverlayPlot(ElementPlot):
             if layer:
                 labels.append(layer.label)
                 values.append(layer.value)
-        if not label and (len(labels) and all(labels[0] == l for l in labels)):
+        if not label and (len(labels) == set(labels)):
             label = labels[0]
-        if not value and (len(values) and all(values[0] == v for v in values)):
+        if not value and (len(values) == set(labels)):
             value = values[0]
         title = self.title_format.format(label=label,
                                          value=value,
