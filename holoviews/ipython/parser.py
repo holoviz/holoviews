@@ -18,6 +18,7 @@ import pyparsing as pp
 from ..operation import Channel
 from ..plotting import Plot
 
+ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 class Parser(object):
     """
@@ -125,7 +126,7 @@ class OptsSpec(Parser):
     channelops = pp.MatchFirst(
         [pp.Literal(el.value) for el in Channel.definitions])
 
-    dotted_path = pp.Combine( pp.Word(string.uppercase, exact=1)
+    dotted_path = pp.Combine( pp.Word(ascii_uppercase, exact=1)
                               + pp.Word(pp.alphas+'._'))
 
 

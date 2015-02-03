@@ -240,20 +240,20 @@ class ViewMagic(Magics):
         for k,v in ViewMagic.options.items():
             keyword = '%s=%r' % (k,v)
             if len(current) + len(keyword) > self.options['charwidth']:
-                print ('%view' if count==0 else '      ')  + current
+                print(('%view' if count==0 else '      ')  + current)
                 count += 1
                 current = keyword
             else:
                 current += ' '+ keyword
         else:
-            print ('%view' if count==0 else '      ')  + current
+            print(('%view' if count==0 else '      ')  + current)
 
 
     @line_cell_magic
     def view(self, line, cell=None):
         if line.strip() == '':
             self.pprint()
-            print "\nFor help with the %view magic, call %view?"
+            print("\nFor help with the %view magic, call %view?")
             return
 
         restore_copy = OrderedDict(ViewMagic.options.items())
@@ -264,8 +264,8 @@ class ViewMagic(Magics):
             if options['holomap'] in ['gif', 'scrubber']:
                 self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
         except Exception as e:
-            print 'Error: %s' % str(e)
-            print "For help with the %view magic, call %view?\n"
+            print('Error: %s' % str(e))
+            print("For help with the %view magic, call %view?\n")
             return
 
         if cell is not None:
@@ -300,7 +300,7 @@ class ChannelMagic(Magics):
                 Store.options[type_name + '.' + definition.value] = group
                 Channel.definitions.append(definition)
         else:
-            print "For help with the %channels magic, call %channels?\n"
+            print("For help with the %channels magic, call %channels?\n")
 
 
     @classmethod

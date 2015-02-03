@@ -15,7 +15,8 @@ def public(obj):
 
 _public = list(set([_k for _k, _v in locals().items() if public(_v)]))
 
-for _k, _v in locals().items():
+_current_locals = [el for el in locals().items()]
+for _k, _v in _current_locals:
     if public(_v) and issubclass(_v, ElementOperation):
         Channel.operations.append(_v)
 

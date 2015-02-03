@@ -60,7 +60,9 @@ class HLine(Annotation):
 class Spline(Annotation):
     """
     Draw a spline using the given handle coordinates and handle
-    codes. Follows matplotlib spline definitions as used in
+    codes. The constructor accepts a tuple in format (coords, codes).
+
+    Follows matplotlib spline definitions as used in
     matplotlib.path.Path with the following codes:
 
     Path.STOP     : 0
@@ -73,8 +75,8 @@ class Spline(Annotation):
 
     value = param.String(default='Spline')
 
-    def __init__(self, (coords, codes), **params):
-        super(Spline, self).__init__((coords, codes), **params)
+    def __init__(self, spline_points, **params):
+        super(Spline, self).__init__(spline_points, **params)
 
 
 

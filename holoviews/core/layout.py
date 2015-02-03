@@ -18,7 +18,7 @@ from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
-import traversal
+from . import traversal
 
 
 class Composable(object):
