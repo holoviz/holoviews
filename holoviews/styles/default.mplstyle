@@ -28,6 +28,7 @@ ytick.major.size: 0.1
 ytick.minor.size: 0
 
 legend.fancybox: True
+legend.loc: best
 
 font.size:11
 
