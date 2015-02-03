@@ -227,8 +227,15 @@ class DFrame(DataFrameView):
     def points(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Points, **kwargs))
 
+    def points3d(self, *args, **kwargs):
+        return self.table(*args, **dict(view_type=Scatter3D, **kwargs))
+
     def scatter(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=Scatter, **kwargs))
+
+    def surface(self, *args, **kwargs):
+        heatmap = self.table(*args, **dict(view_type=HeatMap, **kwargs))
+        return Surface(heatmap.data, **kwargs)
 
     def vectorfield(self, *args, **kwargs):
         return self.table(*args, **dict(view_type=VectorField, **kwargs))
