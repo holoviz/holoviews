@@ -215,6 +215,12 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
         self.data = data
 
 
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        from ..operation import histogram
+        return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
+                         individually=individually, **kwargs)
+
+
     @property
     def labels(self):
         return [el.label for el in self]
