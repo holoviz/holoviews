@@ -180,7 +180,7 @@ class RasterPlugin(MplD3Plugin):
 
 
 
-class LegendPlugin(Mpld3Plugin):
+class LegendPlugin(MplD3Plugin):
     """
     Provides an interactive legend allowing selecting
     and unselecting of different elements.
