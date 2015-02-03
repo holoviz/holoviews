@@ -312,7 +312,7 @@ class OverlayPlot(ElementPlot):
             for key in self.map.last.data.keys():
                 labels.append(','.join([k + dim.unit if dim.unit else k for dim, k in
                                         zip(self.map.last.key_dimensions, key)]))
-            title = ', '.join(self.map.last.dimensions('key', label=True))
+            title = ', '.join([d.name for d in self.map.last.key_dimensions])
         else:
             for key, subplot in self.subplots.items():
                 layer = self.map.last.data.get(key, False)
@@ -325,7 +325,7 @@ class OverlayPlot(ElementPlot):
         else:
             fontP = FontProperties()
             fontP.set_size('medium')
-            leg = axis.legend(handles[::-1], labels[::-1], prop=fontP, title=title)
+            leg = axis.legend(handles, labels, prop=fontP, title=title)
             leg.get_frame().set_alpha(1.0)
             frame = axis.get_legend().get_frame()
             frame.set_facecolor('1.0')
