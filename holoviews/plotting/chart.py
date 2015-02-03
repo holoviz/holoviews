@@ -466,6 +466,12 @@ class PointPlot(ChartPlot):
     how point magnitudes are rendered to different colors.
     """
 
+    color_index = param.Integer(default=4, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    size_index = param.Integer(default=3, doc="""
+      Index of the dimension from which the sizes will the drawn.""")
+
     normalize_individually = param.Boolean(default=False, doc="""
       Whether to normalize the colors used to represent magnitude for
       each frame or across the map (when color is applicable).""")
@@ -478,11 +484,6 @@ class PointPlot(ChartPlot):
       allows for linear scaling of the area and a factor of 4 linear
       scaling of the point width.""")
 
-    value_map = param.List(['size', 'color'], doc="""
-      If Element has more than two value dimensions, this determines,
-      in which order the dimensions are converted to the size and color
-      of the scatter points.""")
-
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 's', 'visible',
                   'cmap', 'vmin', 'vmax']
@@ -494,41 +495,27 @@ class PointPlot(ChartPlot):
         ranges = self.compute_ranges(self.map, self.map.last_key, ranges)
         ranges = self.match_range(points, ranges)
 
+        ndims = points.data.shape[1]
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        cs, cidx, sz, sidx = self._get_color_size(points)
+        sz = None if self.size_index < ndims else points.data[:, self.size_index]
+        cs = None if self.color_index < ndims else points.data[:, self.color_index]
 
         style = Store.lookup_options(points, 'style')[self.cyclic_index]
         if sz is not None and self.scaling_factor > 1:
-            style['s'] = self._compute_size(cs, style)
+            style['s'] = self._compute_size(sz, style)
         if cs is not None:
             style['c'] = cs
             style.pop('color', None)
-        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, **style)
+        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=' ', **style)
         self.handles['paths'] = scatterplot
 
         if cs is not None:
-            val_dim = [d.name for d in points.value_dimensions][cidx]
+            val_dim = points.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
 
         return self._finalize_axis(self.map.last_key)
-
-
-    def _get_color_size(self, points):
-        ndims = points.data.shape[1]
-        nax = len(points.key_dimensions)
-        color_idx, size_idx = None, None
-        if ndims > nax:
-            if 'size' in self.value_map:
-                size_idx = self.value_map.index('size')
-                size_idx -= 1 if size_idx + nax >= ndims else 0
-            if 'color' in self.value_map:
-                color_idx = self.value_map.index('color')
-                color_idx -= 1 if color_idx + nax >= ndims else 0
-        sz = None if size_idx is None else points.data[:, size_idx+nax]
-        cs = None if color_idx is None else points.data[:, color_idx+nax]
-        return cs, color_idx, sz, color_idx
 
 
     def _compute_size(self, sizes, opts):
@@ -551,6 +538,14 @@ class PointPlot(ChartPlot):
                 ranges = self.compute_ranges(self.map, self.map.last_key, ranges)
                 ranges = self.match_range(points, ranges)
                 points.set_clim(ranges[val_dim])
+
+
+    def get_extents(self, view, ranges):
+        l, b, r, t = view.extents if self.rescale_individually else self.map.extents
+        ydim = view.key_dimensions[1].name
+        b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
+        return l, b, r, t
+
 
 
 class VectorFieldPlot(ElementPlot):
