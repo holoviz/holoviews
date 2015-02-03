@@ -333,8 +333,10 @@ class OverlayPlot(ElementPlot):
             layer = overlay.data.get(key, False)
             if layer:
                 lextnt = subplot.get_extents(layer, ranges)
-                if not extents:
+                if not extents and lextnt:
                     extents = lextnt
+                    continue
+                elif not lextnt:
                     continue
                 bounds = [find_minmax((extents[low], extents[high]),
                                       (lextnt[low], lextnt[high]))
