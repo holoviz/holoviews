@@ -117,6 +117,61 @@ class threshold(ElementOperation):
 
 
 
+class gradient(ElementOperation):
+    """
+    Compute the gradient plot of the supplied Matrix.
+
+    If the Matrix value dimension is cyclic, negative differences will
+    be wrapped into the cyclic range.
+    """
+
+    output_type = Matrix
+
+    value = param.String(default='Gradient', doc="""
+    The value assigned to the output gradient matrix.""")
+
+
+    @classmethod
+    def wrap(cls, lower, upper, x):
+        """
+        Circularly alias the numeric value x into the range
+        [lower,upper). Corresponds to a function of the same name in
+        the ImaGen project.
+
+        Valid for cyclic quantities.
+        """
+        range_=upper-lower
+        return lower + np.fmod(x-lower + 2*range_*(1-np.floor(x/(2*range_))), range_)
+
+
+    def _process(self, matrix, key=None):
+
+        if len(matrix.value_dimensions) != 1:
+            raise ValueError("Input matrix to gradient operation must "
+                             "have single value dimension.")
+
+        matrix_dim = matrix.value_dimensions[0]
+
+        data = matrix.data
+        r, c = data.shape
+        dx = np.diff(data, 1, axis=1)[0:r-1, 0:c-1]
+        dy = np.diff(data, 1, axis=0)[0:r-1, 0:c-1]
+
+        cyclic_range = 1.0 if not matrix_dim.cyclic else matrix_dim.range
+        if cyclic_range is not None: # Wrap into the specified range
+            # Convert negative differences to an equivalent positive value
+            dx = self.wrap(0, cyclic_range, dx)
+            dy = self.wrap(0, cyclic_range, dy)
+            #
+            # Make it increase as gradient reaches the halfway point,
+            # and decrease from there
+            dx = 0.5 * cyclic_range - np.abs(dx - 0.5 * cyclic_range)
+            dy = 0.5 * cyclic_range - np.abs(dy - 0.5 * cyclic_range)
+
+        return Matrix(np.sqrt(dx * dx + dy * dy), matrix.bounds, value=self.p.value)
+
+
+
 class fft_power(ElementOperation):
     """
     Given a Matrix element, compute the power of the 2D Fast Fourier
