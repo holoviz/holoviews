@@ -3,13 +3,13 @@ import os
 import param
 
 from ..core.options import Cycle, Options, Store
-#from . import seaborn # pyflakes:ignore (API import)
-#from . import pandas # pyflakes:ignore (API import)
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .plot import * # pyflakes:ignore (API import)
 from .raster import * # pyflakes:ignore (API import)
 from .tabular import * # pyflakes:ignore (API import)
+from . import pandas # pyflakes:ignore (API import)
+from . import seaborn # pyflakes:ignore (API import)
 
 
 class PlotSaver(param.ParameterizedFunction):
