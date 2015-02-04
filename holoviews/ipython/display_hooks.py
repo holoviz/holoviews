@@ -25,10 +25,10 @@ import param
 from ..core.options import Store
 from ..core import ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
 from ..core import traversal
+from ..core.traversal import unique_dimkeys
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
-from . import magics
-from .magics import ViewMagic, ChannelMagic, OptsMagic
+from .magics import ViewMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
 # To assist with debugging of display hooks
@@ -226,7 +226,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
 def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
-    if widget_mode is not None and layout.traverse(lambda x: True, (('HoloMap',))):
+    if widget_mode is not None and len(unique_dimkeys(layout)[1]) > 1:
         return display_widgets(layout, map_format, widget_mode)
     shape = layout.shape
     magic_info = process_cell_magics(layout)
@@ -254,7 +254,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 @display_hook
 def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, AxisLayout): return None
-    if widget_mode is not None and grid.traverse(lambda x: True, (('HoloMap',))):
+    if widget_mode is not None and len(unique_dimkeys(grid)[1]) > 1:
         return display_widgets(grid, map_format, widget_mode)
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
