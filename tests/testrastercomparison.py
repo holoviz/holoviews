@@ -1,5 +1,5 @@
 """
-Test cases for ComparisonTestCase which implements view comparison.
+Test cases for the Comparisons class over the Raster types.
 """
 import numpy as np
 
@@ -86,13 +86,13 @@ class RasterMapTestCase(RasterOverlayTestCase):
 
 
 
-class ComparisonTest(RasterTestCase):
+class BasicRasterComparisonTest(RasterTestCase):
     """
     This tests the ComparisonTestCase class which is an important
     component of other tests.
     """
 
-    def test_equal(self):
+    def test_matrices_equal(self):
         self.assertEqual(self.mat1, self.mat1)
 
     def test_unequal_arrays(self):
