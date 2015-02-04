@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from itertools import groupby
-from matplotlib import pyplot as plt
 from matplotlib import ticker
 from matplotlib.font_manager import FontProperties
 import numpy as np

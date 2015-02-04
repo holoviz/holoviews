@@ -69,7 +69,7 @@ class Plot(param.Parameterized):
 
 
     def __init__(self, figure=None, axis=None, dimensions=None, layout_dimensions=None,
-                 subplots=None, uniform=True, keys=None, subplot=None, create_figure=None, **params):
+                 subplots=None, uniform=True, keys=None, subplot=False, **params):
         self.subplots = subplots
         self.subplot = figure is not None or subplot
         self.dimensions = dimensions
@@ -394,7 +394,6 @@ class GridPlot(CompositePlot):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             if view is not None:
-                layout_dimvals = dict(AxisLayout=zip(zip(layout.key_dimensions, coord)))
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 subplot = Store.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
