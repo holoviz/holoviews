@@ -92,9 +92,12 @@ class ChartPlot(ElementPlot):
         self.xvalues = x_values
 
 
-    def get_extents(self, view, ranges):
-        l, b, r, t = view.extents if self.rescale_individually else self.map.extents
-        ydim = view.value_dimensions[0].name
+    def get_extents(self, element, ranges):
+        l, b, r, t = element.extents if self.rescale_individually else self.map.extents
+        dimensions = element.dimensions(label=True)
+        xdim = dimensions[0].name
+        ydim = dimensions[1].name
+        l, r = (l, r) if ranges is None else ranges.get(xdim, (l, r))
         b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
         return l, b, r, t
 
