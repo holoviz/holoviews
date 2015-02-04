@@ -158,7 +158,7 @@ class Comparison(ComparisonInterface):
         try:
             assert_array_almost_equal(arr1, arr2)
         except AssertionError as e:
-            raise cls.failureException(name+': '+str(e))
+            raise cls.failureException(name + str(e)[11:])
 
     @classmethod
     def bounds_check(cls, view1, view2, msg=None):

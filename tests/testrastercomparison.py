@@ -100,7 +100,7 @@ class ComparisonTest(RasterTestCase):
             self.assertEqual(self.mat1, self.mat2)
             raise AssertionError("Array mismatch not detected")
         except AssertionError as e:
-            assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
+            self.assertEqual(str(e)[:39], 'Matrices not almost equal to 6 decimals')
 
     def test_bounds_mismatch(self):
         try:
@@ -122,7 +122,7 @@ class RasterOverlayComparisonTest(RasterOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
+            self.assertEqual(str(e)[:39], 'Matrices not almost equal to 6 decimals')
 
 
 
@@ -162,7 +162,7 @@ class RasterMapComparisonTest(RasterMapTestCase):
             self.assertEqual(self.map1_1D, self.map4_1D)
             raise AssertionError("Pane mismatch in array data not detected.")
         except AssertionError as e:
-            assert str(e).startswith('Matrix: \nArrays are not almost equal to 6 decimals')
+            self.assertEqual(str(e)[:39], 'Matrices not almost equal to 6 decimals')
 
 
 if __name__ == "__main__":
