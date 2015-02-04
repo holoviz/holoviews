@@ -1,19 +1,10 @@
-import itertools
-import string
-
-from IPython.core import page
-
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
 except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import NdOverlay, Element, HoloMap,\
-    AdjointLayout, NdLayout, AxisLayout, LayoutTree, CompositeOverlay
-
 from ..core.options import OptionTree, Options, OptionError, Store
-from ..plotting import Plot
 
 from collections import OrderedDict
 from IPython.display import display, HTML
