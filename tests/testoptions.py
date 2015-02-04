@@ -1,8 +1,8 @@
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree, Store
-from holoviews.testing import ViewTestCase
+from . import ComparisonTestCase
 
 
-class TestOptions(ViewTestCase):
+class TestOptions(ComparisonTestCase):
 
     def test_options_init(self):
         Options('test')
@@ -66,7 +66,7 @@ class TestOptions(ViewTestCase):
 
 
 
-class TestCycle(ViewTestCase):
+class TestCycle(ComparisonTestCase):
 
     def test_cycle_init(self):
         cycle1 = Cycle(['a', 'b', 'c'])
@@ -105,7 +105,7 @@ class TestCycle(ViewTestCase):
 
 
 
-class TestOptionTree(ViewTestCase):
+class TestOptionTree(ComparisonTestCase):
 
     def test_optiontree_init(self):
         options = OptionTree(groups={'group1':  Options(),
@@ -152,7 +152,7 @@ class TestOptionTree(ViewTestCase):
                          {'kw2':'value2', 'kw4':'value4'})
 
 
-class TestOptionTreeFind(ViewTestCase):
+class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
         options = OptionTree(groups={'group':  Options()})

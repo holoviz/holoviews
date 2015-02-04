@@ -2,10 +2,10 @@ from collections import OrderedDict
 
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import MultiDimensionalMapping
-from holoviews.testing import ViewTestCase
+from . import ComparisonTestCase
 
 
-class DimensionTest(ViewTestCase):
+class DimensionTest(ComparisonTestCase):
 
     def test_dimension_init(self):
         Dimension('Test dimension')
@@ -28,7 +28,7 @@ class DimensionTest(ViewTestCase):
         self.assertEqual(dim.pprint_value(4.2344, rounding=3),  'Test dimension: 4.234 Twilight zones')
 
 
-class NdIndexableMappingTest(ViewTestCase):
+class NdIndexableMappingTest(ComparisonTestCase):
 
     def setUp(self):
         self.init_items_1D_list = [(1, 'a'), (5, 'b')]

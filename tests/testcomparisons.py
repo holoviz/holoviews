@@ -1,5 +1,5 @@
 """
-Test cases for ViewTestCase which implements view comparison.
+Test cases for ComparisonTestCase which implements view comparison.
 """
 import numpy as np
 
@@ -7,9 +7,9 @@ import numpy as np
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
 from holoviews import Matrix
-from holoviews.testing import ViewTestCase
+from . import ComparisonTestCase
 
-class MatrixTestCase(ViewTestCase):
+class MatrixTestCase(ComparisonTestCase):
 
     def setUp(self):
         self.arr1 = np.array([[1,2], [3,4]])
@@ -88,8 +88,8 @@ class MapTestCase(MatrixOverlayTestCase):
 
 class ComparisonTest(MatrixTestCase):
     """
-    This tests the ViewTestCase class which is an important component
-    of other tests.
+    This tests the ComparisonTestCase class which is an important
+    component of other tests.
     """
 
     def test_equal(self):

@@ -6,10 +6,10 @@ import numpy as np
 from holoviews import Matrix
 from holoviews.core.tree import AttrTree
 from holoviews.interface.collector import ViewRef
-from holoviews.testing import ViewTestCase
+from . import ComparisonTestCase
 
 
-class AttrTreeTest(ViewTestCase):
+class AttrTreeTest(ComparisonTestCase):
 
     def setUp(self):
         self.fixed_error = ("No attribute 'Test' in this AttrTree,"
@@ -111,7 +111,7 @@ class AttrTreeTest(ViewTestCase):
 
 
 
-class ViewRefTest(ViewTestCase):
+class ViewRefTest(ComparisonTestCase):
 
     def setUp(self):
         super(ViewRefTest, self).setUp()
