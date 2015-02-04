@@ -102,6 +102,9 @@ class Comparison(ComparisonInterface):
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray] =   cls.compare_arrays
 
+        # Dimension objects
+        cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
+
         # Rasters
         cls.equality_type_funcs[Matrix] =       cls.compare_matrix
 
@@ -141,15 +144,12 @@ class Comparison(ComparisonInterface):
         # Option objects
         cls.equality_type_funcs[Options] =     cls.compare_options
 
-        # Dimension objects
-        cls.equality_type_funcs[Dimension] =    cls.compare_dims
-
         return cls.equality_type_funcs
 
 
-    #================#
-    # Helper methods #
-    #================#
+    #=====================#
+    # Literal comparisons #
+    #=====================#
 
     @classmethod
     def compare_floats(cls, arr1, arr2, msg='Floats'):
@@ -166,6 +166,32 @@ class Comparison(ComparisonInterface):
     def bounds_check(cls, view1, view2, msg=None):
         if view1.bounds.lbrt() != view2.bounds.lbrt():
             raise cls.failureException("BoundingBoxes are mismatched.")
+
+
+    #=======================================#
+    # Dimension and Dimensioned comparisons #
+    #=======================================#
+
+
+    @classmethod
+    def compare_dimensions(cls, dim1, dim2, msg=None):
+        if dim1.name != dim2.name:
+            raise cls.failureException("Dimension names mismatched.")
+        if dim1.cyclic != dim2.cyclic:
+            raise cls.failureException("Dimension cyclic declarations mismatched.")
+        if dim1.range != dim2.range:
+            raise cls.failureException("Dimension ranges mismatched.")
+        if dim1.type != dim2.type:
+            raise cls.failureException("Dimension type declarations mismatched.")
+        if dim1.unit != dim2.unit:
+            raise cls.failureException("Dimension unit declarations mismatched.")
+        if dim1.values != dim2.values:
+            raise cls.failureException("Dimension value declarations mismatched.")
+        if dim1.format_string != dim2.format_string:
+            raise cls.failureException("Dimension format string declarations mismatched.")
+
+
+
 
     #================================#
     # AttrTree and Map based classes #
@@ -374,24 +400,3 @@ class Comparison(ComparisonInterface):
         cls.assertEqual(opt1.mode, opt2.mode)
         cls.assertEqual(opt1.pattern, opt2.pattern)
         cls.assertEqual(opt1.patter, opt2.pattern)
-
-    #============#
-    # Dimensions #
-    #============#
-
-    @classmethod
-    def compare_dims(cls, dim1, dim2, msg=None):
-        if dim1.name != dim2.name:
-            raise cls.failureException("Dimension names are mismatched.")
-        if dim1.cyclic != dim1.cyclic:
-            raise cls.failureException("Dimension cyclic declarations mismatched.")
-        if dim1.range != dim1.range:
-            raise cls.failureException("Dimension ranges mismatched.")
-        if dim1.type != dim1.type:
-            raise cls.failureException("Dimension type declarations mismatched.")
-        if dim1.unit != dim1.unit:
-            raise cls.failureException("Dimension unit declarations mismatched.")
-        if dim1.format_string != dim1.format_string:
-            raise cls.failureException("Dimension format string declarations mismatched.")
-
-
