@@ -58,6 +58,7 @@ class ComparisonInterface(object):
         """
         Classmethod equivalent to unittest.TestCase method
         """
+        asserter = None
         if type(first) is type(second):
             asserter = cls.equality_type_funcs.get(type(first))
 
@@ -67,12 +68,14 @@ class ComparisonInterface(object):
             if asserter is not None:
                 if isinstance(asserter, basestring):
                     asserter = getattr(self, asserter)
-            if asserter is None:
-                asserter = cls.simple_equality
-            if msg is None:
-                asserter(first, second)
-            else:
-                asserter(first, second, msg=msg)
+
+        if asserter is None:
+            asserter = cls.simple_equality
+
+        if msg is None:
+            asserter(first, second)
+        else:
+            asserter(first, second, msg=msg)
 
 
 class Comparison(ComparisonInterface):
