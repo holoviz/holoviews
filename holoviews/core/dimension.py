@@ -25,14 +25,14 @@ class Dimension(param.Parameterized):
     support a custom, pretty-printed representation.
     """
 
+    name = param.String(doc="""
+        Optional name associated with the Dimension. For instance,
+        'height' or 'weight'.""")
+
     cyclic = param.Boolean(default=False, doc="""
         Whether the range of this feature is cyclic such that the
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
-
-    name = param.String(doc="""
-        Optional name associated with the Dimension. For instance,
-        'height' or 'weight'.""")
 
     range = param.Tuple(default=(None, None), doc="""
         Specifies the minimum and maximum allowed values for a
