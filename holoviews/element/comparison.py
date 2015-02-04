@@ -102,13 +102,8 @@ class Comparison(ComparisonInterface):
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray] =   cls.compare_arrays
 
-        # NdMappings
-        cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
-        cls.equality_type_funcs[AdjointLayout] = cls.compare_layouts
-        cls.equality_type_funcs[NdOverlay] =     cls.compare_layers
-        cls.equality_type_funcs[Overlay] =       cls.compare_layers
-        cls.equality_type_funcs[AxisLayout] =    cls.compare_grids
-        cls.equality_type_funcs[HoloMap] =       cls.compare_viewmap
+        # Rasters
+        cls.equality_type_funcs[Matrix] =       cls.compare_matrix
 
         # Charts
         cls.equality_type_funcs[Curve] =        cls.compare_curve
@@ -124,10 +119,6 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Points] =       cls.compare_points
         cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
-        # Rasters
-        cls.equality_type_funcs[Matrix] =       cls.compare_matrix
-
-
         # Pandas DFrame objects
         cls.equality_type_funcs[DataFrameView] = cls.compare_dframe
         cls.equality_type_funcs[PandasDFrame] =  cls.compare_dframe
@@ -138,6 +129,14 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Distribution] = cls.compare_distribution
         cls.equality_type_funcs[Regression] =   cls.compare_regression
         cls.equality_type_funcs[TimeSeries] =   cls.compare_timeseries
+
+        # NdMappings
+        cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
+        cls.equality_type_funcs[AdjointLayout] = cls.compare_layouts
+        cls.equality_type_funcs[NdOverlay] =     cls.compare_layers
+        cls.equality_type_funcs[Overlay] =       cls.compare_layers
+        cls.equality_type_funcs[AxisLayout] =    cls.compare_grids
+        cls.equality_type_funcs[HoloMap] =       cls.compare_viewmap
 
         # Option objects
         cls.equality_type_funcs[Options] =     cls.compare_options
@@ -168,6 +167,10 @@ class Comparison(ComparisonInterface):
         if view1.bounds.lbrt() != view2.bounds.lbrt():
             raise cls.failureException("BoundingBoxes are mismatched.")
 
+    #================================#
+    # AttrTree and Map based classes #
+    #================================#
+
 
     @classmethod
     def compare_maps(cls, view1, view2, msg=None):
@@ -187,9 +190,6 @@ class Comparison(ComparisonInterface):
         for el1, el2 in zip(view1, view2):
             cls.assertEqual(el1,el2)
 
-    #================================#
-    # AttrTree and Map based classes #
-    #================================#
 
     @classmethod
     def compare_viewmap(cls, view1, view2, msg=None):
