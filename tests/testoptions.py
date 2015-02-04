@@ -23,13 +23,13 @@ class TestOptions(ComparisonTestCase):
         try:
             Options('test', allowed_keywords=['kw1'], kw='value')
         except OptionError as e:
-            assert str(e) == "Invalid option 'kw', valid options are: ['kw1']"
+            self.assertEqual(str(e), "Invalid option 'kw', valid options are: ['kw1']")
 
     def test_options_invalid_keywords2(self):
         try:
             Options('test', allowed_keywords=['kw2'], kw2='value', kw3='value')
         except OptionError as e:
-            assert str(e) == "Invalid option 'kw3', valid options are: ['kw2']"
+            self.assertEqual(str(e), "Invalid option 'kw3', valid options are: ['kw2']")
 
     def test_options_get_options(self):
         opts = Options('test', allowed_keywords=['kw2', 'kw3'],
@@ -62,7 +62,7 @@ class TestOptions(ComparisonTestCase):
         try:
             new_opts = opts(**new_kws)
         except OptionError as e:
-            assert str(e) == "Invalid option 'kw4', valid options are: ['kw2', 'kw3']"
+            self.assertEqual(str(e), "Invalid option 'kw4', valid options are: ['kw2', 'kw3']")
 
 
 
@@ -91,7 +91,7 @@ class TestCycle(ComparisonTestCase):
         try:
             opts.options
         except Exception as e:
-            assert str(e) == "The options property may only be used with non-cyclic Options."
+            self.assertEqual(str(e), "The options property may only be used with non-cyclic Options.")
 
 
     def test_cycle_mismatch(self):
@@ -101,7 +101,7 @@ class TestCycle(ComparisonTestCase):
             Options('test', one=cycle1, two=cycle2)
             raise AssertionError("Cycle length mismatch not detected")
         except Exception as e:
-            assert str(e) == 'Cycle objects supplied with different lengths'
+            self.assertEqual(str(e), 'Cycle objects supplied with different lengths')
 
 
 

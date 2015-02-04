@@ -18,7 +18,7 @@ class SimpleComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(3,4)
         except AssertionError as e:
-            assert str(e) == "3 != 4"
+            self.assertEqual(str(e), "3 != 4")
 
     def test_floats_equal(self):
         self.assertEqual(3.5,3.5)

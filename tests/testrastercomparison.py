@@ -106,7 +106,7 @@ class BasicRasterComparisonTest(RasterTestCase):
         try:
             self.assertEqual(self.mat1, self.mat4)
         except AssertionError as e:
-            assert str(e).startswith('BoundingBoxes are mismatched.')
+            self.assertEqual(str(e), 'BoundingBoxes are mismatched.')
 
 
 
@@ -116,7 +116,7 @@ class RasterOverlayComparisonTest(RasterOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay4_depth3)
         except AssertionError as e:
-            assert str(e).startswith("Overlays have different lengths.")
+            self.assertEqual(str(e), "Overlays have different lengths.")
 
     def test_element_mismatch(self):
         try:
@@ -133,14 +133,14 @@ class RasterMapComparisonTest(RasterMapTestCase):
              self.assertEqual(self.map1_1D, self.map1_2D)
              raise AssertionError("Mismatch in dimension number not detected.")
          except AssertionError as e:
-             assert str(e).startswith("Maps have different numbers of dimensions.")
+             self.assertEqual(str(e), "Maps have different numbers of dimensions.")
 
     def test_dimension_label_mismatch(self):
          try:
              self.assertEqual(self.map1_1D, self.map6_1D)
              raise AssertionError("Mismatch in dimension labels not detected.")
          except AssertionError as e:
-             assert str(e).startswith("Maps have different dimension labels.")
+             self.assertEqual(str(e), "Maps have different dimension labels.")
 
 
     def test_key_len_mismatch(self):
@@ -148,14 +148,14 @@ class RasterMapComparisonTest(RasterMapTestCase):
             self.assertEqual(self.map1_1D, self.map3_1D)
             raise AssertionError("Mismatch in map key number not detected.")
         except AssertionError as e:
-            assert str(e).startswith("Maps have different numbers of keys.")
+            self.assertEqual(str(e), "Maps have different numbers of keys.")
 
     def test_key_mismatch(self):
         try:
             self.assertEqual(self.map1_1D, self.map2_1D)
             raise AssertionError("Mismatch in map keys not detected.")
         except AssertionError as e:
-            assert str(e).startswith("Maps have different sets of keys.")
+            self.assertEqual(str(e), "Maps have different sets of keys.")
 
     def test_element_mismatch(self):
         try:
