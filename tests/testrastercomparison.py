@@ -9,7 +9,7 @@ from holoviews.core.element import HoloMap
 from holoviews import Matrix
 from . import ComparisonTestCase
 
-class MatrixTestCase(ComparisonTestCase):
+class RasterTestCase(ComparisonTestCase):
 
     def setUp(self):
         self.arr1 = np.array([[1,2], [3,4]])
@@ -24,10 +24,10 @@ class MatrixTestCase(ComparisonTestCase):
         self.mat5 = Matrix(self.arr2, BoundingBox(radius=0.3))
 
 
-class MatrixOverlayTestCase(MatrixTestCase):
+class RasterOverlayTestCase(RasterTestCase):
 
     def setUp(self):
-        super(MatrixOverlayTestCase, self).setUp()
+        super(RasterOverlayTestCase, self).setUp()
         # Two overlays of depth two with different layers
         self.overlay1_depth2 = (self.mat1 * self.mat2)
         self.overlay2_depth2 = (self.mat1 * self.mat3)
@@ -37,10 +37,10 @@ class MatrixOverlayTestCase(MatrixTestCase):
         self.overlay4_depth3 = (self.mat1 * self.mat2 * self.mat3)
 
 
-class MapTestCase(MatrixOverlayTestCase):
+class RasterMapTestCase(RasterOverlayTestCase):
 
     def setUp(self):
-        super(MapTestCase, self).setUp()
+        super(RasterMapTestCase, self).setUp()
         # Example 1D map
         self.map1_1D = HoloMap(key_dimensions=['int'])
         self.map1_1D[0] = self.mat1
@@ -86,7 +86,7 @@ class MapTestCase(MatrixOverlayTestCase):
 
 
 
-class ComparisonTest(MatrixTestCase):
+class ComparisonTest(RasterTestCase):
     """
     This tests the ComparisonTestCase class which is an important
     component of other tests.
@@ -110,7 +110,7 @@ class ComparisonTest(MatrixTestCase):
 
 
 
-class OverlayComparisonTest(MatrixOverlayTestCase):
+class RasterOverlayComparisonTest(RasterOverlayTestCase):
 
     def test_depth_mismatch(self):
         try:
@@ -126,7 +126,7 @@ class OverlayComparisonTest(MatrixOverlayTestCase):
 
 
 
-class MapComparisonTest(MapTestCase):
+class RasterMapComparisonTest(RasterMapTestCase):
 
     def test_dimension_mismatch(self):
          try:
