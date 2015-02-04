@@ -8,8 +8,9 @@ import numpy as np
 import param
 
 from ..core.options import Store
-from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element, Element3D
+from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ..core.util import valid_identifier, find_minmax
+from ..element import Annotation
 from ..operation import Channel
 from .plot import Plot
 
@@ -361,7 +362,7 @@ class OverlayPlot(ElementPlot):
         extents = None
         for key, subplot in self.subplots.items():
             layer = overlay.data.get(key, False)
-            if layer:
+            if layer and not isinstance(layer, Annotation):
                 lextnt = subplot.get_extents(layer, ranges)
                 if not extents and lextnt:
                     extents = lextnt
