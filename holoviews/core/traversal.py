@@ -52,7 +52,8 @@ def unique_dimkeys(obj):
         dim_idxs = [all_dims.index(dim) for dim in group]
         for k in keys:
             matches = [item for item in unique_keys
-                       if k == itemgetter(*dim_idxs)(item)]
+                       if k == (itemgetter(*dim_idxs)(item)
+                                if len(dim_idxs) != 1 else (item[dim_idxs[0]]),)]
             if not matches:
                 unique_keys.append(create_ndkey(ndims, dim_idxs, k))
     if subset:
