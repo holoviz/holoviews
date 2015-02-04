@@ -403,7 +403,7 @@ class Channel(param.Parameterized):
         applicable_op = cls.strongest_match(overlay)
         if applicable_op is None: return overlay
 
-        output = applicable_op.apply(overlay, ranges)
+        output = applicable_op.apply(overlay, ranges, key=key)
         output = output.relabel(value=applicable_op.value)
         output.id = overlay.id
         return Overlay.from_view(output)
@@ -492,12 +492,14 @@ class Channel(param.Parameterized):
         return level
 
 
-    def apply(self, value, input_ranges):
+    def apply(self, value, input_ranges, key=None):
         """
         Apply the channel operation on the input value using the given
         input ranges.
         """
-        return self.operation(value, input_ranges=input_ranges, **self.kwargs)
+        if key is None:
+            return self.operation(value, input_ranges=input_ranges, **self.kwargs)
+        return self.operation.instance(input_ranges=input_ranges, **self.kwargs).process_element(value, key, )
 
 
 
