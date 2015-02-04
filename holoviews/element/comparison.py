@@ -150,7 +150,7 @@ class Comparison(ComparisonInterface):
     #================#
 
     @classmethod
-    def compare_floats(cls, arr1, arr2, msg='Float'):
+    def compare_floats(cls, arr1, arr2, msg='Floats'):
         cls.compare_arrays(arr1, arr2, msg)
 
     @classmethod
