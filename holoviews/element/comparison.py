@@ -50,7 +50,6 @@ class ComparisonInterface(object):
         """
         if not first==second:
             standardMsg = '%s != %s' % (safe_repr(first), safe_repr(second))
-            msg = self._formatMessage(msg, standardMsg)
             return msg or standardMsg
 
 
