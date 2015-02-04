@@ -25,6 +25,8 @@ class ItemTable(Element):
     value_dimensions = param.List(default=[], bounds=(0, 0), doc="""
        ItemTables should have only index Dimensions.""")
 
+    value = param.String(default="ItemTable")
+
     @property
     def rows(self):
         return self.ndims
