@@ -11,6 +11,11 @@ Comparison.assertEqual(matrix1, matrix2)
 
 This will raise an AssertionError if the two matrix objects are not
 equal, including information regarding what exactly failed to match.
+
+Note that this functionality could not be provided using comparison
+methods on all objects as comparison opertors only return Booleans and
+thus would not supply any information regarding *why* two elements are
+considered different.
 """
 
 from unittest.util import safe_repr
