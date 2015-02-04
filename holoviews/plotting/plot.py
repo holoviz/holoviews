@@ -415,10 +415,14 @@ class GridPlot(CompositePlot):
 
     def __call__(self, ranges=None):
         # Get the extent of the layout elements (not the whole layout)
+        key = self.keys[-1]
+        axis = self.handles['axis']
         subplot_kwargs = dict()
-        ranges = self.compute_ranges(self.layout, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
             subplot(ranges=ranges, **subplot_kwargs)
+
+        self.handles['title'] = axis.set_title(self._format_title(key))
 
         self.drawn = True
         if self.subplot: return self.handles['axis']
