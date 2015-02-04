@@ -58,7 +58,7 @@ class MplD3Plugin(PlottingHook):
     __abstract = True
 
     def _applies(self, plot, view):
-        types_match = super(MplD3Plugin, self)._applies(view)
+        types_match = super(MplD3Plugin, self)._applies(plot, view)
         if plot.projection == '3d': return False
         if plot.subplots:
             return not any(sp.projection == '3d' for sp in plot.subplots.values())
