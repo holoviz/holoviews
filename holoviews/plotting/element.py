@@ -19,6 +19,14 @@ class ElementPlot(Plot):
     apply_databounds = param.Boolean(default=True, doc="""
         Whether to compute the plot bounds from the data itself.""")
 
+    aspect = param.Parameter(default='square', doc="""
+        The aspect ratio mode of the plot. By default, a plot may
+        select its own appropriate aspect ratio but sometimes it may
+        be necessary to force a square aspect ratio (e.g. to display
+        the plot as an element of a grid). The modes 'auto' and
+        'equal' correspond to the axis modes of the same name in
+        matplotlib, a numeric value may also be passed.""")
+
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
