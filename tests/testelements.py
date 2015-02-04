@@ -1,10 +1,12 @@
 import unittest
+import numpy as np
 
 from holoviews.core import BoundingBox, ViewableElement
-from holoviews.element import VLine, HLine
+from holoviews.element import *
 
+from . import ComparisonTestCase
 
-class ViewableElementTest(unittest.TestCase):
+class ViewableElementTest(ComparisonTestCase):
 
     def test_view(self):
         ViewableElement('An example of arbitrary data')
@@ -19,13 +21,19 @@ class ViewableElementTest(unittest.TestCase):
         except TypeError: pass
 
 
-class AnnotationTest(unittest.TestCase):
-
+class AnnotationConstructorTest(ComparisonTestCase):
 
     def test_annotation_vline_init(self):  VLine(0.1)
 
     def test_annotation_add_hline_init(self): HLine(0.1)
 
+
+class ElementConstructorTest(ComparisonTestCase):
+
+    def test_matrix_init(self):
+        activity = np.array([[1,2],[3,4]])
+        bounds = BoundingBox(radius=0.5)
+        Matrix(activity, bounds)
 
 if __name__ == "__main__":
     import sys
