@@ -156,7 +156,7 @@ class Plot(param.Parameterized):
                                                  opts['norm'].options.get('mapwise', True))})
         element_specs = [spec for eid, spec in element_specs]
         norm_opts.update({spec: (True, True) for spec in element_specs
-                          if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
+                          if not any(spec[1:i] in norm_opts.keys() for i in range(1, 3))})
         return norm_opts
 
 
