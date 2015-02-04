@@ -204,9 +204,9 @@ def view_display(view, size, **kwargs):
 @display_hook
 def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
+    magic_info = process_cell_magics(vmap)
     if widget_mode is not None and len(vmap.keys()) > 1:
         return display_widgets(vmap, map_format, widget_mode)
-    magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
     mapplot = Store.defaults[vmap.type](vmap,
                                         **opts(vmap.last, get_plot_size(size)))
