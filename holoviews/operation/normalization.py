@@ -165,10 +165,10 @@ class raster_normalization(Normalization):
             if depth_range and len(norm_raster.data.shape) == 2:
                 depth_range = ranges[name]
                 norm_raster.data[:,:] -= depth_range[0]
-                norm_raster.data[:,:] /= depth_range[1]
+                norm_raster.data[:,:] /= (depth_range[1] - depth_range[0])
             elif depth_range:
                 norm_raster.data[:,:,depth] -= depth_range[0]
-                norm_raster.data[:,:,depth] /= depth_range[1]
+                norm_raster.data[:,:,depth] /= (depth_range[1] - depth_range[0])
         return norm_raster
 
 
