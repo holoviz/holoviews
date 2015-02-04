@@ -190,7 +190,7 @@ class Plot(param.Parameterized):
         """
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1:
+        elif not self.uniform or len(self) == 1 or self.subplot:
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
