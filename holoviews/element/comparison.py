@@ -74,6 +74,16 @@ class ComparisonInterface(object):
 
 
 class Comparison(ComparisonInterface):
+    """
+    Class used for comparing two holoview objects, including complex
+    composite objects. Comparisons are available as classmethods, the
+    most general being the assertEqual method that is intended to work
+    with any input.
+
+    For instance, to test if two Matrix objects are equal you can use:
+
+    Comparison.assertEqual(matrix1, matrix2)
+    """
 
     @classmethod
     def register(cls):
