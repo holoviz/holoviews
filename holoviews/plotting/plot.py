@@ -342,6 +342,7 @@ class CompositePlot(Plot):
         title = self.title_format.format(label=layout.label,
                                          value=value,
                                          type=type_name)
+        title = '' if title.isspace() else title
         return ' '.join([title, dim_title])
 
 

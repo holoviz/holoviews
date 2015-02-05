@@ -134,6 +134,7 @@ class ElementPlot(Plot):
                                          value=value,
                                          type=type_name)
         dim_title = self._frame_title(key, 2)
+        title = '' if title.isspace() else title
         return ' '.join([title, dim_title])
 
 
@@ -388,19 +389,20 @@ class OverlayPlot(ElementPlot):
         label = frame.label
 
         labels, values = [], []
-        for key, subplot in self.subplots.items():
-            layer = frame.data.get(key, False)
+        for path, subplot in self.subplots.items():
+            layer = frame.data.get(path, False)
             if layer:
                 labels.append(layer.label)
                 values.append(layer.value)
-        if not label and (len(labels) == set(labels)):
+        if not label and (len(labels) == len(set(labels))):
             label = labels[0]
-        if not value and (len(values) == set(labels)):
+        if not value and (len(values) == len(set(labels))):
             value = values[0]
         title = self.title_format.format(label=label,
                                          value=value,
                                          type=type_name)
         dim_title = self._frame_title(key, 2)
+        title = '' if title.isspace() else title
         return ' '.join([title, dim_title])
 
 
