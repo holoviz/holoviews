@@ -221,7 +221,7 @@ class OptionTree(AttrTree):
         Computes the inherited Options object for the given group
         name from the current node given a new set of options.
         """
-        override_kwargs = options.kwargs
+        override_kwargs = dict(options.kwargs)
         if not self._instantiated:
             override_kwargs['allowed_keywords'] = options.allowed_keywords
         elif identifier in self.children:
