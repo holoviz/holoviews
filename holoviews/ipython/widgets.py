@@ -24,7 +24,7 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
+from ..core import Dimension, Element, NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
 from ..core import traversal
 from ..core.options import Store
 from ..element import Raster
@@ -278,8 +278,10 @@ class NdWidget(param.Parameterized):
             view_size = (scale_factor * view.shape[0] * get_plot_size()[0],
                          scale_factor * view.shape[1] * get_plot_size()[1])
 
-            layer_types = view.layer_types
-            if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
+            raster_fn = lambda x: True if isinstance(x, Raster) or \
+                (not isinstance(x, Element)) else False
+            all_raster = all(grid.traverse(raster_fn))
+            if all_raster:
                 plot_type = MatrixGridPlot
             else:
                 plot_type = GridPlot

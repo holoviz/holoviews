@@ -23,7 +23,7 @@ except:
 import param
 
 from ..core.options import Store
-from ..core import ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
+from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
 from ..core import traversal
 from ..core.traversal import unique_dimkeys
 from ..element import Raster
@@ -267,8 +267,10 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
 
     magic_info = process_cell_magics(grid)
     if magic_info: return magic_info
-    layer_types = grid.layer_types
-    if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
+    raster_fn = lambda x: True if isinstance(x, Raster) or \
+                                  (not isinstance(x, Element)) else False
+    all_raster = all(grid.traverse(raster_fn))
+    if all_raster:
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot
