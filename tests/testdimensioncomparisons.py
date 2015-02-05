@@ -83,6 +83,91 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
 
 
 
+class DimensionedComparisonTestCase(ComparisonTestCase):
+
+    def setUp(self):
+        super(DimensionedComparisonTestCase, self).setUp()
+        # Value dimension lists
+        self.value_list1 = [Dimension('val1')]
+        self.value_list2 = [Dimension('val2')]
+        # Key dimension lists
+        self.key_list1 = [Dimension('key1')]
+        self.key_list2 = [Dimension('key2')]
+        # Dimensioned instances
+        self.dimensioned1 = Dimensioned('data1', value_dimensions=self.value_list1,
+                                                 key_dimensions=self.key_list1)
+        self.dimensioned2 = Dimensioned('data2', value_dimensions=self.value_list2,
+                                                 key_dimensions=self.key_list1)
+
+        self.dimensioned3 = Dimensioned('data3', value_dimensions=self.value_list1,
+                                                 key_dimensions=self.key_list2)
+
+        self.dimensioned4 = Dimensioned('data4', value_dimensions=[],
+                                                 key_dimensions=self.key_list1)
+
+        self.dimensioned5 = Dimensioned('data5', value_dimensions=self.value_list1,
+                                                 key_dimensions=[])
+        # Value / Label comparison tests
+        self.dimensioned6 = Dimensioned('data6', value='foo',
+                                        value_dimensions=self.value_list1,
+                                        key_dimensions=self.key_list1)
+
+        self.dimensioned7 = Dimensioned('data7', value='foo', label='bar',
+                                        value_dimensions=self.value_list1,
+                                        key_dimensions=self.key_list1)
+
+
+    def test_dimensioned_comparison_equal(self):
+        "Note that the data is not compared at the Dimensioned level"
+        self.assertEqual(self.dimensioned1,
+                         Dimensioned('other_data',
+                                     value_dimensions=self.value_list1,
+                                     key_dimensions=self.key_list1))
+
+    def test_dimensioned_comparison_unequal_value_dims(self):
+        try:
+            self.assertEqual(self.dimensioned1, self.dimensioned2)
+        except AssertionError as e:
+            self.assertEqual(str(e), "Dimension names mismatched: val1 != val2")
+
+
+    def test_dimensioned_comparison_unequal_key_dims(self):
+        try:
+            self.assertEqual(self.dimensioned1, self.dimensioned3)
+        except AssertionError as e:
+            self.assertEqual(str(e), 'Dimension names mismatched: key1 != key2')
+
+    def test_dimensioned_comparison_unequal_value_dim_lists(self):
+        try:
+            self.assertEqual(self.dimensioned1, self.dimensioned4)
+        except AssertionError as e:
+            self.assertEqual(str(e), "Value dimension list mismatched")
+
+    def test_dimensioned_comparison_unequal_key_dim_lists(self):
+        try:
+            self.assertEqual(self.dimensioned1, self.dimensioned5)
+        except AssertionError as e:
+            self.assertEqual(str(e), 'Key dimension list mismatched')
+
+    def test_dimensioned_comparison_unequal_value(self):
+        try:
+            self.assertEqual(self.dimensioned1, self.dimensioned6)
+        except AssertionError as e:
+            self.assertEqual(str(e), 'Value labels mismatched.')
+
+
+    def test_dimensioned_comparison_unequal_value(self):
+        try:
+            self.assertEqual(self.dimensioned1, self.dimensioned6)
+        except AssertionError as e:
+            self.assertEqual(str(e), 'Value labels mismatched.')
+
+    def test_dimensioned_comparison_unequal_label(self):
+        try:
+            self.assertEqual(self.dimensioned6, self.dimensioned7)
+        except AssertionError as e:
+            self.assertEqual(str(e), 'Labels mismatched.')
+
 
 if __name__ == "__main__":
     import sys
