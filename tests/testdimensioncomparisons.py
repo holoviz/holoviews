@@ -79,7 +79,7 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension10, self.dimension11)
         except AssertionError as e:
-            self.assertEqual(str(e), "Dimension type declarations mismatched: <type 'int'> != <type 'float'>")
+            self.assertEqual(str(e)[:39], "Dimension type declarations mismatched:")
 
 
 
