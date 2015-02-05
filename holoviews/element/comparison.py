@@ -236,7 +236,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_trees(cls, el1, el2, msg='Trees'):
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("%s have mismatched key counts." % msg)
+            raise cls.failureException("%s have mismatched path counts." % msg)
         if el1.keys() != el2.keys():
             raise cls.failureException("%s have mismatched paths." % msg)
         for element1, element2 in zip(el1.values(),  el2.values()):
