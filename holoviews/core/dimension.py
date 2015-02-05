@@ -3,7 +3,7 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
-
+from operator import itemgetter
 import numpy as np
 
 import param
@@ -209,8 +209,13 @@ class LabelledData(param.Parameterized):
         specification = (self.__class__.__name__, self.value, self.label)
         identifier_specification = tuple(valid_identifier(ident) for ident in specification)
         split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
-        identifier_match = identifier_specification[:len(split_spec)] == split_spec
-        unescaped_match = specification[:len(split_spec)] == split_spec
+        split_spec, nocompare = zip(*((None, True) if s == '*' or s is None else (s, False)
+                                    for s in split_spec))
+        if all(nocompare): return True
+        match_fn = itemgetter(*(idx for idx, nc in enumerate(nocompare) if not nc))
+        self_spec = match_fn(split_spec)
+        identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
+        unescaped_match = specification[:len(split_spec)] == self_spec
         return identifier_match or unescaped_match
 
 
