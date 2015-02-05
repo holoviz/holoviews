@@ -148,14 +148,14 @@ class RasterMapComparisonTest(RasterMapTestCase):
             self.assertEqual(self.map1_1D, self.map3_1D)
             raise AssertionError("Mismatch in map key number not detected.")
         except AssertionError as e:
-            self.assertEqual(str(e), "Maps have different numbers of keys.")
+            self.assertEqual(str(e), 'HoloMaps have different numbers of keys.')
 
     def test_key_mismatch(self):
         try:
             self.assertEqual(self.map1_1D, self.map2_1D)
             raise AssertionError("Mismatch in map keys not detected.")
         except AssertionError as e:
-            self.assertEqual(str(e), "Maps have different sets of keys.")
+            self.assertEqual(str(e), 'HoloMaps have different sets of keys.')
 
     def test_element_mismatch(self):
         try:

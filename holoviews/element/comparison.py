@@ -140,7 +140,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[NdOverlay] =     cls.compare_layers
         cls.equality_type_funcs[Overlay] =       cls.compare_layers
         cls.equality_type_funcs[AxisLayout] =    cls.compare_grids
-        cls.equality_type_funcs[HoloMap] =       cls.compare_viewmap
+        cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
 
         # Option objects
         cls.equality_type_funcs[Options] =     cls.compare_options
@@ -225,28 +225,22 @@ class Comparison(ComparisonInterface):
 
 
     @classmethod
-    def compare_maps(cls, el1, el2, msg=None):
+    def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
         cls.compare_dimensioned(el1, el2)
-        if el1.ndims != el2.ndims:
-            raise cls.failureException("Maps have different numbers of dimensions.")
-
-        if [d.name for d in el1.dimensions()] != [d.name for d in el2.dimensions()]:
-            raise cls.failureException("Maps have different dimension labels.")
-
         if len(el1.keys()) != len(el2.keys()):
-            raise cls.failureException("Maps have different numbers of keys.")
+            raise cls.failureException("%s have different numbers of keys." % msg)
 
         if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException("Maps have different sets of keys.")
+            raise cls.failureException("%s have different sets of keys." % msg)
 
         for element1, element2 in zip(el1, el2):
-            cls.assertEqual(element1,element2)
+            cls.assertEqual(element1, element2)
 
 
     @classmethod
-    def compare_viewmap(cls, el1, el2, msg=None):
+    def compare_holomap(cls, el1, el2, msg='HoloMaps'):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_maps(el1, el2, msg)
+        cls.compare_ndmappings(el1, el2, msg)
 
 
     @classmethod
@@ -368,7 +362,7 @@ class Comparison(ComparisonInterface):
         if el1.cols != el2.cols:
             raise cls.failureException("Tables have different numbers of columns.")
 
-        cls.compare_maps(el1, el2, msg)
+        cls.compare_ndmappings(el1, el2, msg)
 
 
     #========#
