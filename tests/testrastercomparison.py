@@ -117,7 +117,7 @@ class RasterOverlayComparisonTest(RasterOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay4_depth3)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Overlays have mismatched key counts.')
+            self.assertEqual(str(e), 'Overlays have mismatched path counts.')
 
     def test_element_mismatch(self):
         try:
