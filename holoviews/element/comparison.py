@@ -23,7 +23,7 @@ from unittest import TestCase
 from numpy.testing import assert_array_almost_equal
 
 from . import *
-from ..core import AdjointLayout, Overlay, Dimensioned
+from ..core import AdjointLayout, Overlay, Dimensioned, LayoutTree
 from ..core.options import Options
 from ..interface.pandas import *
 from ..interface.seaborn import *
@@ -107,6 +107,10 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
         cls.equality_type_funcs[Dimensioned] =  cls.compare_dimensioned  # Used in unit tests
 
+        # Composition (+ and *)
+        cls.equality_type_funcs[Overlay] =       cls.compare_overlays
+        cls.equality_type_funcs[LayoutTree] =    cls.compare_layouttrees
+
         # Rasters
         cls.equality_type_funcs[Matrix] =       cls.compare_matrix
 
@@ -137,9 +141,8 @@ class Comparison(ComparisonInterface):
 
         # NdMappings
         cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
-        cls.equality_type_funcs[AdjointLayout] = cls.compare_layouts
+        cls.equality_type_funcs[AdjointLayout] = cls.compare_adjointlayouts
         cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
-        cls.equality_type_funcs[Overlay] =       cls.compare_overlays
         cls.equality_type_funcs[AxisLayout] =    cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
 
@@ -219,11 +222,33 @@ class Comparison(ComparisonInterface):
                                     'Key dimension list')
 
 
+    #===============================#
+    # Compositional trees (+ and *) #
+    #===============================#
+
+    @classmethod
+    def compare_trees(cls, el1, el2, msg='Trees'):
+        if len(el1.keys()) != len(el2.keys()):
+            raise cls.failureException("%s have mismatched key counts." % msg)
+        if el1.keys() != el2.keys():
+            raise cls.failureException("%s have mismatched paths." % msg)
+        for element1, element2 in zip(el1.values(),  el2.values()):
+            cls.assertEqual(element1, element2)
+
+    @classmethod
+    def compare_layouttrees(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_trees(el1, el2, msg='LayoutTrees')
+
+    @classmethod
+    def compare_overlays(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_trees(el1, el2, msg='Overlays')
+
 
     #================================#
     # AttrTree and Map based classes #
     #================================#
-
 
     @classmethod
     def compare_ndmappings(cls, el1, el2, msg='NdMappings'):
@@ -236,7 +261,6 @@ class Comparison(ComparisonInterface):
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1, element2)
-
 
     @classmethod
     def compare_holomap(cls, el1, el2, msg='HoloMaps'):
@@ -257,31 +281,22 @@ class Comparison(ComparisonInterface):
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1,element2)
 
-    @classmethod
-    def compare_layouts(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        for element1, element2 in zip(el1, el1):
-            cls.assertEqual(element1, element2)
-
-
-    @classmethod
-    def compare_overlays(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        if len(el1) != len(el2):
-            raise cls.failureException("Overlays have different lengths.")
-
-        for (layer1, layer2) in zip(el1, el2):
-            cls.assertEqual(layer1, layer2)
-
 
     @classmethod
     def compare_ndoverlays(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
         if len(el1) != len(el2):
-            raise cls.failureException("Overlays have different lengths.")
+            raise cls.failureException("NdOverlays have different lengths.")
 
         for (layer1, layer2) in zip(el1, el2):
             cls.assertEqual(layer1, layer2)
+
+    @classmethod
+    def compare_adjointlayouts(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        for element1, element2 in zip(el1, el1):
+            cls.assertEqual(element1, element2)
+
 
     #========#
     # Charts #
