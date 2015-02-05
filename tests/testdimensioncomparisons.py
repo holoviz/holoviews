@@ -2,7 +2,7 @@
 Test cases for Dimension and Dimensioned object comparison.
 """
 
-from holoviews.core import Dimension
+from holoviews.core import Dimension, Dimensioned
 from . import ComparisonTestCase
 
 
@@ -19,6 +19,8 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         self.dimension7 = Dimension('dim1', cyclic=True, range=(0,1), unit='ms')
         self.dimension8 = Dimension('dim1', values=['a', 'b'])
         self.dimension9 = Dimension('dim1', format_string='{name}')
+        self.dimension10 = Dimension('dim1', type=int)
+        self.dimension11 = Dimension('dim1', type=float)
 
     def test_dimension_comparison_equal1(self):
         self.assertEqual(self.dimension1, self.dimension1)
@@ -35,13 +37,13 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension1, self.dimension2)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension names mismatched.')
+            self.assertEqual(str(e),  'Dimension names mismatched: dim1 != dim2')
 
     def test_dimension_comparison_range_unequal1(self):
         try:
             self.assertEqual(self.dimension1, self.dimension3)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension ranges mismatched.')
+            self.assertEqual(str(e), 'Dimension ranges mismatched: (0, 1) != (0, 2)')
 
     def test_dimension_comparison_cyclic_unequal(self):
         try:
@@ -53,25 +55,32 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension5, self.dimension6)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension ranges mismatched.')
+            self.assertEqual(str(e), 'Dimension ranges mismatched: (None, None) != (0, 1)')
 
     def test_dimension_comparison_units_unequal(self):
         try:
             self.assertEqual(self.dimension6, self.dimension7)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension unit declarations mismatched.')
+            self.assertEqual(str(e), 'Dimension unit declarations mismatched: None != ms')
 
     def test_dimension_comparison_values_unequal(self):
         try:
             self.assertEqual(self.dimension4, self.dimension8)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension value declarations mismatched.')
+            self.assertEqual(str(e), "Dimension value declarations mismatched: [] != ['a', 'b']")
 
     def test_dimension_comparison_format_unequal(self):
         try:
             self.assertEqual(self.dimension4, self.dimension9)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension format string declarations mismatched.')
+            self.assertEqual(str(e), 'Dimension format string declarations mismatched: {name}: {val}{unit} != {name}')
+
+    def test_dimension_comparison_types_unequal(self):
+        try:
+            self.assertEqual(self.dimension10, self.dimension11)
+        except AssertionError as e:
+            self.assertEqual(str(e), "Dimension type declarations mismatched: <type 'int'> != <type 'float'>")
+
 
 
 

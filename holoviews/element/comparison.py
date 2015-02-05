@@ -177,19 +177,25 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dimensions(cls, dim1, dim2, msg=None):
         if dim1.name != dim2.name:
-            raise cls.failureException("Dimension names mismatched.")
+            raise cls.failureException("Dimension names mismatched: %s != %s"
+                                       % (dim1.name, dim2.name))
         if dim1.cyclic != dim2.cyclic:
             raise cls.failureException("Dimension cyclic declarations mismatched.")
         if dim1.range != dim2.range:
-            raise cls.failureException("Dimension ranges mismatched.")
+            raise cls.failureException("Dimension ranges mismatched: %s != %s"
+                                       % (dim1.range, dim2.range))
         if dim1.type != dim2.type:
-            raise cls.failureException("Dimension type declarations mismatched.")
+            raise cls.failureException("Dimension type declarations mismatched: %s != %s"
+                                       % (dim1.type,dim2.type))
         if dim1.unit != dim2.unit:
-            raise cls.failureException("Dimension unit declarations mismatched.")
+            raise cls.failureException("Dimension unit declarations mismatched: %s != %s"
+                                       % (dim1.unit , dim2.unit))
         if dim1.values != dim2.values:
-            raise cls.failureException("Dimension value declarations mismatched.")
+            raise cls.failureException("Dimension value declarations mismatched: %s != %s"
+                                       % (dim1.values , dim2.values))
         if dim1.format_string != dim2.format_string:
-            raise cls.failureException("Dimension format string declarations mismatched.")
+            raise cls.failureException("Dimension format string declarations mismatched: %s != %s"
+                                       % (dim1.format_string , dim2.format_string))
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
