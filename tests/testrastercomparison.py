@@ -140,7 +140,7 @@ class RasterMapComparisonTest(RasterMapTestCase):
              self.assertEqual(self.map1_1D, self.map6_1D)
              raise AssertionError("Mismatch in dimension labels not detected.")
          except AssertionError as e:
-             self.assertEqual(str(e), "Maps have different dimension labels.")
+             self.assertEqual(str(e), 'Dimension names mismatched.')
 
 
     def test_key_len_mismatch(self):
