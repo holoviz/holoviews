@@ -9,6 +9,7 @@ notifications:
     on_failure: change # [always|never|change] default: always
 
 install:
+  - pip install coveralls
   - pip install git+git://github.com/ioam/param.git
   - pip install jinja2 tornado pyzmq matplotlib==1.4.0
   - if [[ $TRAVIS_PYTHON_VERSION == 2* ]]; then pip install ipython==1.0; fi
@@ -18,4 +19,6 @@ before-script:
   - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
 
 script:
-  - nosetests --with-doctest
+  - nosetests --with-doctest --with-coverage --cover-package=holoviews
+
+after_success: coveralls
