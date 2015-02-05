@@ -4,7 +4,7 @@ Test cases for Dimension and Dimensioned object behaviour.
 
 import unittest
 from holoviews.core import Dimensioned
-from . import ComparisonTestCase
+from holoviews.element.comparison import ComparisonTestCase
 
 
 class DimensionedTest(ComparisonTestCase):

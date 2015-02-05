@@ -19,6 +19,7 @@ considered different.
 """
 
 from unittest.util import safe_repr
+from unittest import TestCase
 from numpy.testing import assert_array_almost_equal
 
 from . import *
@@ -440,3 +441,16 @@ class Comparison(ComparisonInterface):
         cls.assertEqual(opt1.mode, opt2.mode)
         cls.assertEqual(opt1.pattern, opt2.pattern)
         cls.assertEqual(opt1.patter, opt2.pattern)
+
+
+
+class ComparisonTestCase(Comparison, TestCase):
+    """
+    Class to integrate the Comparison class with unittest.TestCase.
+    """
+
+    def __init__(self, *args, **kwargs):
+        TestCase.__init__(self, *args, **kwargs)
+        registry = Comparison.register()
+        for k, v in registry.items():
+            self.addTypeEqualityFunc(k, v)

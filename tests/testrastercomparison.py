@@ -6,8 +6,9 @@ import numpy as np
 
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews import Matrix
-from . import ComparisonTestCase
+
 
 class RasterTestCase(ComparisonTestCase):
 

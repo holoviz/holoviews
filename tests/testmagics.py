@@ -1,9 +1,8 @@
 from holoviews.core.options import Store # Options
 
 from holoviews import ipython
-from .  import IPTestCase
+from holoviews.ipython import IPTestCase
 
-from holoviews.ipython.magics import ViewMagic
 from holoviews.operation import Channel, toRGB, toHCS
 
 class ExtensionTestCase(IPTestCase):

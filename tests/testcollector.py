@@ -5,8 +5,8 @@ import numpy as np
 
 from holoviews import Matrix
 from holoviews.core.tree import AttrTree
+from holoviews.element.comparison import ComparisonTestCase
 from holoviews.interface.collector import ViewRef
-from . import ComparisonTestCase
 
 
 class AttrTreeTest(ComparisonTestCase):

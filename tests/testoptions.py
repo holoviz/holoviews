@@ -1,5 +1,5 @@
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree, Store
-from . import ComparisonTestCase
+from holoviews.element.comparison import ComparisonTestCase
 
 
 class TestOptions(ComparisonTestCase):

@@ -3,7 +3,7 @@ Test cases for Dimension and Dimensioned object comparison.
 """
 
 from holoviews.core import Dimension, Dimensioned
-from . import ComparisonTestCase
+from holoviews.element.comparison import ComparisonTestCase
 
 
 class DimensionsComparisonTestCase(ComparisonTestCase):

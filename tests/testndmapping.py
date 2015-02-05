@@ -2,7 +2,7 @@ from collections import OrderedDict
 
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import MultiDimensionalMapping
-from . import ComparisonTestCase
+from holoviews.element.comparison import ComparisonTestCase
 
 
 class DimensionTest(ComparisonTestCase):
