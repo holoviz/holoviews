@@ -1,10 +1,6 @@
 """
-Test cases for the Comparisons class over the composite types:
-
-LayoutTree (the + operator)
-Overlay    (the * operator)
-
-It does *not* test HoloMaps.
+Test cases for the composite types built with + and * i.e LayoutTree
+and Overlay (does *not* test HoloMaps).
 """
 
 from holoviews import Element, LayoutTree, Overlay
