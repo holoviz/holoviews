@@ -205,16 +205,16 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
         if len(dlist1) != len(dlist2):
-            cls.failureException('%s mismatched' % msg)
+            raise cls.failureException('%s mismatched' % msg)
         for d1, d2 in zip(dlist1, dlist2):
             cls.assertEqual(d1, d2)
 
     @classmethod
     def compare_dimensioned(cls, obj1, obj2, msg=None):
         cls.compare_labelled_data(obj1, obj2)
-        cls.compare_dimension_lists(obj1.key_dimensions, obj2.key_dimensions,
-                                    'Value dimension list')
         cls.compare_dimension_lists(obj1.value_dimensions, obj2.value_dimensions,
+                                    'Value dimension list')
+        cls.compare_dimension_lists(obj1.key_dimensions, obj2.key_dimensions,
                                     'Key dimension list')
 
 
