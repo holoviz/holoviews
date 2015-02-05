@@ -23,7 +23,7 @@ from unittest import TestCase
 from numpy.testing import assert_array_almost_equal
 
 from . import *
-from ..core import AdjointLayout, Overlay, Dimensioned, LayoutTree
+from ..core import Element, AdjointLayout, Overlay, Dimensioned, LayoutTree
 from ..core.options import Options
 from ..interface.pandas import *
 from ..interface.seaborn import *
@@ -106,6 +106,8 @@ class Comparison(ComparisonInterface):
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
         cls.equality_type_funcs[Dimensioned] =  cls.compare_dimensioned  # Used in unit tests
+        cls.equality_type_funcs[Element]     =  cls.compare_elements     # Used in unit tests
+
 
         # Composition (+ and *)
         cls.equality_type_funcs[Overlay] =       cls.compare_overlays
@@ -220,6 +222,11 @@ class Comparison(ComparisonInterface):
                                     'Value dimension list')
         cls.compare_dimension_lists(obj1.key_dimensions, obj2.key_dimensions,
                                     'Key dimension list')
+
+    @classmethod
+    def compare_elements(cls, obj1, obj2, msg=None):
+        cls.compare_labelled_data(obj1, obj2)
+        cls.assertEqual(obj1.data, obj2.data)
 
 
     #===============================#
