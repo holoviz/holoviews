@@ -75,19 +75,20 @@ class PlotSaver(param.ParameterizedFunction):
 
 Store.register_plots()
 
-Store.options.Contours = Options('style', color='k')
-Store.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
-Store.options.Raster = Options('style', cmap='jet', interpolation='nearest')
-Store.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
-Store.options.RGBA = Options('style', interpolation='nearest')
-Store.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
-                                                 'axes.titlesize': 'small'})
 Store.options.Curve = Options('style', color=Cycle(), linewidth=2)
 Store.options.Scatter = Options('style', color=Cycle(), marker='o')
 Store.options.Histogram = Options('style', ec='k', fc='w')
 Store.options.Points = Options('style', color=Cycle(), marker='o')
 Store.options.Scatter3D = Options('style', color=Cycle(), marker='o')
 Store.options.TimeSeries = Options('style', color=Cycle())
+Store.options.Contours = Options('style', color='k')
+Store.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
+Store.options.Raster = Options('style', cmap='jet', interpolation='nearest')
+Store.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
+Store.options.RGBA = Options('style', interpolation='nearest')
+Store.options.RGB = Options('style', interpolation='nearest')
+Store.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
+                                                 'axes.titlesize': 'small'})
 
 # Defining the most common style options for holoviews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')
