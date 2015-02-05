@@ -138,8 +138,8 @@ class Comparison(ComparisonInterface):
         # NdMappings
         cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
         cls.equality_type_funcs[AdjointLayout] = cls.compare_layouts
-        cls.equality_type_funcs[NdOverlay] =     cls.compare_layers
-        cls.equality_type_funcs[Overlay] =       cls.compare_layers
+        cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
+        cls.equality_type_funcs[Overlay] =       cls.compare_overlays
         cls.equality_type_funcs[AxisLayout] =    cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
 
@@ -263,8 +263,19 @@ class Comparison(ComparisonInterface):
         for element1, element2 in zip(el1, el1):
             cls.assertEqual(element1, element2)
 
+
     @classmethod
-    def compare_layers(cls, el1, el2, msg=None):
+    def compare_overlays(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        if len(el1) != len(el2):
+            raise cls.failureException("Overlays have different lengths.")
+
+        for (layer1, layer2) in zip(el1, el2):
+            cls.assertEqual(layer1, layer2)
+
+
+    @classmethod
+    def compare_ndoverlays(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
         if len(el1) != len(el2):
             raise cls.failureException("Overlays have different lengths.")
