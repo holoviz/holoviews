@@ -261,15 +261,15 @@ class AttrTree(object):
 
 
     def keys(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
 
     def items(self):
-        return self.data.items()
+        return list(self.data.items())
 
 
     def values(self):
-        return self.data.values()
+        return list(self.data.values())
 
 
     def pop(self, identifier, default=None):
