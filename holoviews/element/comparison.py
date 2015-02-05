@@ -190,6 +190,25 @@ class Comparison(ComparisonInterface):
         if dim1.format_string != dim2.format_string:
             raise cls.failureException("Dimension format string declarations mismatched.")
 
+    @classmethod
+    def compare_labelled_data(cls, obj1, obj2, msg=None):
+        cls.assertEqual(obj1.value, obj2.value, "Value labels mismatched.")
+        cls.assertEqual(obj1.label, obj2.label, "Labels mismatched.")
+
+    @classmethod
+    def compare_dimension_lists(cls, dlist1, dlist2, msg='Dimension lists'):
+        if len(dlist1) != len(dlist2):
+            cls.failureException('%s mismatched' % msg)
+        for d1, d2 in zip(dlist1, dlist2):
+            cls.assertEqual(d1, d2)
+
+    @classmethod
+    def compare_dimensioned(cls, obj1, obj2, msg=None):
+        cls.compare_labelled_data(obj1, obj2)
+        cls.compare_dimension_lists(obj1.key_dimensions, obj2.key_dimensions,
+                                    'Value dimension list')
+        cls.compare_dimension_lists(obj1.value_dimensions, obj2.value_dimensions,
+                                    'Key dimension list')
 
 
 
@@ -200,7 +219,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_maps(cls, view1, view2, msg=None):
-
+        cls.compare_dimensioned(view1, view2)
         if view1.ndims != view2.ndims:
             raise cls.failureException("Maps have different numbers of dimensions.")
 
@@ -219,10 +238,14 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_viewmap(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_maps(view1, view2, msg)
+
 
     @classmethod
     def compare_gridlayout(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
+
         if len(view1) != len(view2):
             raise cls.failureException("GridLayouts have different sizes.")
 
@@ -234,11 +257,13 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_layouts(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         for el1, el2 in zip(view1, view1):
             cls.assertEqual(el1, el2)
 
     @classmethod
     def compare_layers(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         if len(view1) != len(view2):
             raise cls.failureException("Overlays have different lengths.")
 
@@ -251,26 +276,31 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_curve(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'Curve data')
 
 
     @classmethod
     def compare_histogram(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.edges, view2.edges, "Histogram edges")
         cls.compare_arrays(view1.values, view2.values, "Histogram values")
 
 
     @classmethod
     def compare_raster(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'Raster')
 
 
     @classmethod
     def compare_heatmap(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'HeatMap')
 
     @classmethod
     def compare_contours(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         if len(view1) != len(view2):
             raise cls.failureException("Contours do not have a matching number of contours.")
 
@@ -279,6 +309,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_points(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         if len(view1) != len(view2):
             raise cls.failureException("Points objects have different numbers of points.")
 
@@ -286,6 +317,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_vectorfield(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         if len(view1) != len(view2):
             raise cls.failureException("VectorField objects have different numbers of vectors.")
 
@@ -298,6 +330,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_matrix(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'Matrices')
         cls.bounds_check(view1,view2)
 
@@ -308,7 +341,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_itemtables(cls, view1, view2, msg=None):
-
+        cls.compare_dimensioned(view1, view2)
         if view1.rows != view2.rows:
             raise cls.failureException("ItemTables have different numbers of rows.")
 
@@ -321,7 +354,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_tables(cls, view1, view2, msg=None):
-
+        cls.compare_dimensioned(view1, view2)
         if view1.rows != view2.rows:
             raise cls.failureException("Tables have different numbers of rows.")
 
@@ -337,6 +370,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_dframe(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         from pandas.util.testing import assert_frame_equal
         try:
             assert_frame_equal(view1.data, view2.data)
@@ -349,18 +383,22 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_distribution(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'Distribution data')
 
     @classmethod
     def compare_timeseries(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'TimeSeries data')
 
     @classmethod
     def compare_bivariate(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'Bivariate data')
 
     @classmethod
     def compare_regression(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls.compare_arrays(view1.data, view2.data, 'Regression data')
 
     #=======#
@@ -384,6 +422,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_grids(cls, view1, view2, msg=None):
+        cls.compare_dimensioned(view1, view2)
         cls._compare_grids(view1, view2, 'AxisLayout')
 
     #=========#
