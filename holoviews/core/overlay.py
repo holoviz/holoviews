@@ -32,7 +32,7 @@ class Overlayable(object):
         self_item = [((self.value, self.label if self.label else 'I'), self)]
         other_items = (other.items() if isinstance(other, Overlay)
                        else [((other.value, other.label if other.label else 'I'), other)])
-        return Overlay(items=Overlay.relabel_item_paths(self_item + other_items))
+        return Overlay(items=Overlay.relabel_item_paths(list(self_item) + list(other_items)))
 
 
 
