@@ -291,13 +291,13 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_raster(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Raster')
+        cls.compare_arrays(el1.data, el2.data, 'Raster data')
 
 
     @classmethod
     def compare_heatmap(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'HeatMap')
+        cls.compare_arrays(el1.data, el2.data, 'HeatMap data')
 
     @classmethod
     def compare_contours(cls, el1, el2, msg=None):
@@ -332,7 +332,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_matrix(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Matrices')
+        cls.compare_arrays(el1.data, el2.data, 'Matrix data')
         cls.bounds_check(el1,el2)
 
 
