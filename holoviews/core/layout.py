@@ -328,8 +328,8 @@ class LayoutTree(AttrTree, Dimensioned):
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
-    @staticmethod
-    def new_path(path, item, paths):
+    @classmethod
+    def new_path(cls, path, item, paths):
         count = 2
         while path in paths:
             pl = len(path)
