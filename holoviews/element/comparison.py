@@ -22,7 +22,7 @@ from unittest.util import safe_repr
 from numpy.testing import assert_array_almost_equal
 
 from . import *
-from ..core import AdjointLayout, Overlay
+from ..core import AdjointLayout, Overlay, Dimensioned
 from ..core.options import Options
 from ..interface.pandas import *
 from ..interface.seaborn import *
@@ -104,6 +104,7 @@ class Comparison(ComparisonInterface):
 
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
+        cls.equality_type_funcs[Dimensioned] =  cls.compare_dimensioned  # Used in unit tests
 
         # Rasters
         cls.equality_type_funcs[Matrix] =       cls.compare_matrix
