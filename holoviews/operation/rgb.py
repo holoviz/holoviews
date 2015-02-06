@@ -190,6 +190,8 @@ class colorizeHSV(ElementOperation):
     value = param.String(default='ColorizedHSV', doc="""
         The value string for the colorized output (an RGB element)""")
 
+    output_type = RGB
+
     def _process(self, overlay, key=None):
         if len(overlay) != 2:
             raise Exception("colorizeHSV required an overlay of two Matrix elements as input.")
