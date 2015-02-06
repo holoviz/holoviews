@@ -161,7 +161,7 @@ class MultiDimensionalMapping(Dimensioned):
         indexable. Warns if attempting to slice an object that has not
         been declared deep indexable.
         """
-        if getattr(data, '_deep_indexable', False):
+        if isinstance(data, Dimensioned):
             return data[indices]
         elif len(indices) > 0:
             self.warning('Cannot index into data element, extra data'

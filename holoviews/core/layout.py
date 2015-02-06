@@ -290,7 +290,7 @@ class LayoutTree(AttrTree, Dimensioned):
 
 
     def select(self, **selections):
-        return self.clone([(path, item.select(ignore_dropped=True, **selections))
+        return self.clone([(path, item.select(ignore_invalid=True, **selections))
                             for path, item in self.items()])
 
 
