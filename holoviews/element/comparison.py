@@ -108,10 +108,16 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Dimensioned] =  cls.compare_dimensioned  # Used in unit tests
         cls.equality_type_funcs[Element]     =  cls.compare_elements     # Used in unit tests
 
-
         # Composition (+ and *)
         cls.equality_type_funcs[Overlay] =       cls.compare_overlays
         cls.equality_type_funcs[LayoutTree] =    cls.compare_layouttrees
+
+        # Annotations
+        cls.equality_type_funcs[VLine] =       cls.compare_vline
+        cls.equality_type_funcs[HLine] =       cls.compare_hline
+        cls.equality_type_funcs[Spline] =      cls.compare_spline
+        cls.equality_type_funcs[Arrow] =       cls.compare_arrow
+        cls.equality_type_funcs[Text] =        cls.compare_text
 
         # Rasters
         cls.equality_type_funcs[Matrix] =       cls.compare_matrix
@@ -303,6 +309,36 @@ class Comparison(ComparisonInterface):
         cls.compare_dimensioned(el1, el2)
         for element1, element2 in zip(el1, el1):
             cls.assertEqual(element1, element2)
+
+
+    #=============#
+    # Annotations #
+    #=============#
+
+    @classmethod
+    def compare_annotation(cls, el1, el2, msg='Annotation'):
+        cls.compare_dimensioned(el1, el2)
+        cls.assertEqual(el1.data, el2.data)
+
+    @classmethod
+    def compare_hline(cls, el1, el2, msg='HLine'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_vline(cls, el1, el2, msg='VLine'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_spline(cls, el1, el2, msg='Spline'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_arrow(cls, el1, el2, msg='Arrow'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_text(cls, el1, el2, msg='Text'):
+        cls.compare_annotation(el1, el2, msg=msg)
 
 
     #========#
