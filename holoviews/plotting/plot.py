@@ -823,9 +823,11 @@ class LayoutPlot(CompositePlot):
             # Override the plotopts as required
             plotopts.update(override_opts, figure=self.handles['fig'])
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
-            layer_types = (vtype,) if isinstance(view, ViewableElement) else view.layer_types
             if isinstance(view, AxisLayout):
-                if len(layer_types) == 1 and issubclass(layer_types[0], Raster):
+                raster_fn = lambda x: True if isinstance(x, Raster) or \
+                                  (not isinstance(x, Element)) else False
+                all_raster = all(view.traverse(raster_fn))
+                if all_raster:
                     from .raster import MatrixGridPlot
                     plot_type = MatrixGridPlot
                 else:
@@ -841,7 +843,10 @@ class LayoutPlot(CompositePlot):
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, **plotopts)
-            adjoint_clone[pos] = subplots[pos].map
+            if subplots[pos].map != {}:
+                adjoint_clone[pos] = subplots[pos].map
+            else:
+                adjoint_clone[pos] = subplots[pos].layout
         return subplots, adjoint_clone
 
 
