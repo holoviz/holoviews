@@ -358,6 +358,9 @@ class GridPlot(CompositePlot):
 
     show_title = param.Boolean(default=False)
 
+    tick_format = param.String(default="%.2f", doc="""
+        Formatting string for the GridPlot ticklabels.""")
+
     def __init__(self, layout, ranges=None, keys=None, dimensions=None, **params):
         if not isinstance(layout, AxisLayout):
             raise Exception("GridPlot only accepts AxisLayout.")
@@ -464,7 +467,7 @@ class GridPlot(CompositePlot):
 
 
     def _process_ticklabels(self, labels):
-        return [k if isinstance(k, str) else np.round(float(k), 3) for k in labels]
+        return [k if isinstance(k, str) else self.tick_format % k for k in labels]
 
 
     def _adjust_subplots(self, axis, subaxes):
