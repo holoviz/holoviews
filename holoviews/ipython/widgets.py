@@ -258,41 +258,41 @@ class NdWidget(param.Parameterized):
     and keys.
     """
 
-    def _process_view(self, view):
+    def _process_element(self, element):
         """
         Determine the dimensions and keys to be turned into widgets and
         initialize the plots.
         """
-        if isinstance(view, (NdLayout, LayoutTree, AdjointLayout)):
-            shape = view.shape if isinstance(view, (NdLayout, LayoutTree)) else (1, 1)
+        if isinstance(element, (NdLayout, LayoutTree, AdjointLayout)):
+            shape = element.shape if isinstance(element, (NdLayout, LayoutTree)) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
-            plot = LayoutPlot(view, **dict(size=grid_size))
-        elif isinstance(view, AxisLayout):
-            max_dim = max(view.shape)
+            plot = LayoutPlot(element, **dict(size=grid_size))
+        elif isinstance(element, AxisLayout):
+            max_dim = max(element.shape)
             # Reduce plot size as AxisLayout gets larger
             shape_factor = 1. / max_dim
-            # Expand small views to a sensible viewing size
+            # Expand small elements to a sensible elementing size
             expand_factor = 1 + (max_dim - 1) * 0.1
             scale_factor = expand_factor * shape_factor
-            view_size = (scale_factor * view.shape[0] * get_plot_size()[0],
-                         scale_factor * view.shape[1] * get_plot_size()[1])
+            element_size = (scale_factor * element.shape[0] * get_plot_size()[0],
+                         scale_factor * element.shape[1] * get_plot_size()[1])
 
             raster_fn = lambda x: True if isinstance(x, Raster) or \
                 (not isinstance(x, Element)) else False
-            all_raster = all(grid.traverse(raster_fn))
+            all_raster = all(element.traverse(raster_fn))
             if all_raster:
                 plot_type = MatrixGridPlot
             else:
                 plot_type = GridPlot
-            opts = Store.lookup_options(view, 'plot').options
-            plot = plot_type(view, **dict({'size': view_size}, **opts))
+            opts = Store.lookup_options(element, 'plot').options
+            plot = plot_type(element, **dict({'size': element_size}, **opts))
         else:
-            opts = dict(Store.options.closest(view, 'plot').options,
+            opts = dict(Store.options.closest(element, 'plot').options,
                         size=get_plot_size())
-            plot = Store.defaults[view.type](view, **opts)
+            plot = Store.defaults[element.type](element, **opts)
 
-        dimensions, keys = traversal.unique_dimkeys(view)
+        dimensions, keys = traversal.unique_dimkeys(element)
 
         # Create mock NdMapping to hold the common dimensions and keys
         mock_obj = NdMapping([(k, None) for k in keys],
@@ -326,13 +326,13 @@ class IPySelectionWidget(NdWidget):
                               'margin-right': 'auto'}, doc="""
                               CSS to apply to the widgets.""")
 
-    def __init__(self, view, **params):
+    def __init__(self, element, **params):
         super(IPySelectionWidget, self).__init__(**params)
 
         if widgets is None:
             raise ImportError('ViewSelector requires IPython >= 2.0.')
 
-        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_element(element)
         self._initialize_widgets()
         self.refresh = True
 
@@ -479,10 +479,10 @@ class ScrubberWidget(NdWidget):
     mpld3_url = '//mpld3.github.io/js/mpld3.v0.3git.js'
     d3_url = '//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
-    def __init__(self, view, **params):
+    def __init__(self, element, **params):
         super(ScrubberWidget, self).__init__(**params)
-        self.view = view
-        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
+        self.element = element
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_element(element)
         self.frames = OrderedDict((idx, self._plot_figure(idx))
                                   for idx in range(len(self.plot)))
 
@@ -569,10 +569,10 @@ class SelectionWidget(ScrubberWidget):
 
     jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
 
-    def __init__(self, view, **params):
+    def __init__(self, element, **params):
         NdWidget.__init__(self, **params)
-        self.view = view
-        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_view(view)
+        self.element = element
+        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_element(element)
         self.frames = OrderedDict((k, self._plot_figure(idx))
                                   for idx, k in enumerate(self._keys))
 
