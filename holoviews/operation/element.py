@@ -73,7 +73,7 @@ class transform(ElementOperation):
 # Raster processing operations #
 #==============================#
 
-class operator(ElementOperation):
+class collapse(ElementOperation):
     """
     Applies any arbitrary collapsing operator across the data elements
     of the input overlay and returns the result.
@@ -86,14 +86,28 @@ class operator(ElementOperation):
     output_type = Matrix
 
     operator = param.Callable(np.add, doc="""
-        The commutative operator to apply between the data attributes
+        The collapsing operator to apply between the data attributes
         of the supplied Views used to collapse the data.
 
-        By default applies elementwise addition across the input data.""")
+        By default applies elementwise addition across the input
+        data. In unpack is set to True, needs to be used with
+        operators than can take an arbitrary number of inputs.
+
+       Simple example operators include:
+          np.add, np.subtract, np.multiply np.divide
+
+       For more complex example see the documentation for unpack.""")
 
     unpack = param.Boolean(default=True, doc="""
        Whether the operator is supplied the .data attributes as an
-       unpack collection of arguments or as a list.""")
+       unpack collection of arguments or as a list.
+
+       Using unpack=False, more complex operators may be used such as:
+
+        lambda x: np.mean(x, axis=0)
+        lambda x: np.std(lx, axis=0)
+        lambda x: np.var(lx, axis=0)
+        """)
 
     value = param.String(default='Operation', doc="""
         The value assigned to the result after having applied the operator.""")
