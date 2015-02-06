@@ -46,10 +46,15 @@ class transform(ElementOperation):
     (typically a numpy array) and returns the transformed data of the
     output Matrix.
 
-    For instance, you can implement a transform that computes the
-    autocorrelation using the scipy library by specifying:
+    This operator is extremely versatile; for instance, you could
+    implement an alternative to the explict threshold operator with:
 
-    transform=lambda x: scipy.signal.correlate2d(x, x)
+    operator=lambda x: np.clip(x, 0, 0.5)
+
+    Alternatively, you can implement a transform computing the 2D
+    autocorrelation using the scipy library with:
+
+    operator=lambda x: scipy.signal.correlate2d(x, x)
     """
 
     output_type = Matrix
@@ -125,13 +130,13 @@ class collapse(ElementOperation):
                       label=self.get_overlay_label(overlay))
 
 
+
 class threshold(ElementOperation):
     """
     Threshold a given Matrix whereby all values higher than a given
     level map to the specified high value and all values lower than
     that level map to the specified low value.
     """
-
     output_type = Matrix
 
     level = param.Number(default=0.5, doc="""
