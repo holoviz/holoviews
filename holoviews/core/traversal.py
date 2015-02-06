@@ -35,6 +35,7 @@ def unique_dimkeys(obj):
     is no common subset of dimensions, None is
     returned.
     """
+    from .ndmapping import NdMapping
     key_dims = obj.traverse(lambda x: (tuple(x.key_dimensions),
                                        (x.data.keys())), ('HoloMap',))
     if not key_dims:
@@ -56,8 +57,8 @@ def unique_dimkeys(obj):
                                 if len(dim_idxs) != 1 else (item[dim_idxs[0]]),)]
             if not matches:
                 unique_keys.append(create_ndkey(ndims, dim_idxs, k))
+    sorted_keys = NdMapping({key: None for key in unique_keys}, key_dimensions=all_dims).data.keys()
     if subset:
-        return all_dims, unique_keys
+        return all_dims, sorted_keys
     else:
         return ['Frames'], [i for i in range(len(unique_keys))]
-
