@@ -438,7 +438,10 @@ class Dimensioned(LabelledData):
         deep dimensions may then be listed (for applicable deep
         dimensions).
         """
-        raise NotImplementedError
+        if len(key):
+            raise NotImplementedError
+        else:
+            return self
 
 
     def select(self, ignore_invalid=False, **kwargs):
