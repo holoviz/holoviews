@@ -368,9 +368,10 @@ class GridPlot(CompositePlot):
         extra_opts = Store.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
+        if 'uniform' not in params:
+            params['uniform'] = traversal.uniform(layout)
 
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                       uniform=traversal.uniform(layout),
                                        **dict(extra_opts, **params))
         # Compute ranges layoutwise
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols)
