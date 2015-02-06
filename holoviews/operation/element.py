@@ -58,14 +58,14 @@ class transform(ElementOperation):
         The value assigned to the result after applying the
         transform.""")
 
-    transform = param.Callable(doc="""
+    operator = param.Callable(doc="""
        Function of one argument that transforms the data in the input
        Matrix to the data in the output Matrix. By default, acts as
        the identity function such that the output matches the input.""")
 
     def _process(self, matrix, key=None):
-        processed = (matrix.data if not self.p.transform
-                     else self.p.transform(matrix.data))
+        processed = (matrix.data if not self.p.operator
+                     else self.p.operator(matrix.data))
         return Matrix(processed, matrix.bounds, value=self.p.value)
 
 
