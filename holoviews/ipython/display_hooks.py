@@ -226,7 +226,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
 def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
-    if widget_mode is not None and len(unique_dimkeys(layout)[1]) > 1:
+    nframes = len(unique_dimkeys(layout)[1])
+    if widget_mode is not None and nframes > 1:
         return display_widgets(layout, map_format, widget_mode)
     shape = layout.shape
     magic_info = process_cell_magics(layout)
@@ -240,11 +241,11 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
             branches = len(set([path[0] for path in layout.data.keys()]))
             if branches > max_branches:
                 return '<tt>'+ sanitized_repr(layout) + '</tt>'
-            elif len(layout.data) * len(layoutplot) > max_frames:
+            elif len(layout.data) * nframes > max_frames:
                 max_frame_warning(max_frames)
                 return '<tt>'+ sanitized_repr(layout) + '</tt>'
 
-    if len(layoutplot) == 1:
+    if nframes == 1:
         fig = layoutplot()
         return display_figure(fig)
 
