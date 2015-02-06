@@ -110,13 +110,10 @@ class toHCS(ElementOperation):
         hue, confidence = overlay[0], overlay[1]
         strength_data = overlay[2].data if (len(overlay) == 3) else np.ones(hue.shape)
 
+        hue_data = hue.data
         hue_range = hue.value_dimensions[0].range
         if (not hue.value_dimensions[0].cyclic) or (None in hue_range):
-            raise Exception("The input hue channel must be declared cyclic with a defined range.")
-        else:
-            hue_data = hue.data - hue_range[0]
-            hue_data /= (hue_range[1] - hue_range[0])
-
+             raise Exception("The input hue channel must be declared cyclic with a defined range.")
         if hue.shape != confidence.shape:
             raise Exception("Cannot combine input Matrices with different shapes.")
 
