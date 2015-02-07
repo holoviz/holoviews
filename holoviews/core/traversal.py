@@ -28,7 +28,7 @@ def uniform(obj):
     return True
 
 
-def unique_dimkeys(obj):
+def unique_dimkeys(obj, default_dim='Frame'):
     """
     Finds all common dimension keys in the object
     including subsets of dimensions. If there are
@@ -39,7 +39,7 @@ def unique_dimkeys(obj):
     key_dims = obj.traverse(lambda x: (tuple(x.key_dimensions),
                                        (x.data.keys())), ('HoloMap',))
     if not key_dims:
-        return [Dimension('Frame')], [(0,)]
+        return [Dimension(default_dim)], [(0,)]
     dim_groups, keys = zip(*sorted(key_dims, lambda d, k: len(d)))
     subset = all(set(g1) <= set(g2) or set(g1) >= set(g2)
                for g1 in dim_groups for g2 in dim_groups)
@@ -61,4 +61,4 @@ def unique_dimkeys(obj):
     if subset:
         return all_dims, sorted_keys
     else:
-        return ['Frames'], [i for i in range(len(unique_keys))]
+        return [default_dim], [i for i in range(len(unique_keys))]
