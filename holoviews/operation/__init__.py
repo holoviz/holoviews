@@ -1,4 +1,4 @@
-from ..core.operation import ElementOperation, MapOperation
+from ..core.operation import ElementOperation, MapOperation, TreeOperation
 from ..core.options import Channel
 
 from .rgb import *          # pyflakes:ignore (API import)
