@@ -1,6 +1,7 @@
 """
 Advanced utilities for traversing nesting/hierarchical Dimensioned
-objects either to inspect the structure of their declared dimensions.
+objects either to inspect the structure of their declared dimensions
+or mutate the matching elements.
 """
 
 from operator import itemgetter
@@ -15,10 +16,9 @@ def create_ndkey(length, indexes, values):
 
 def uniform(obj):
     """
-    Finds all common dimension keys in the object
-    including subsets of dimensions. If there are
-    is no common subset of dimensions, None is
-    returned.
+    Finds all common dimension keys in the object including subsets of
+    dimensions. If there are is no common subset of dimensions, None
+    is returned.
     """
     dim_groups = obj.traverse(lambda x: tuple(x.key_dimensions),
                               ('HoloMap',))
@@ -30,10 +30,12 @@ def uniform(obj):
 
 def unique_dimkeys(obj, default_dim='Frame'):
     """
-    Finds all common dimension keys in the object
-    including subsets of dimensions. If there are
-    is no common subset of dimensions, None is
-    returned.
+    Finds all common dimension keys in the object including subsets of
+    dimensions. If there are is no common subset of dimensions, None
+    is returned.
+
+    Returns the list of dimensions followed by the list of unique
+    keys.
     """
     from .ndmapping import NdMapping
     key_dims = obj.traverse(lambda x: (tuple(x.key_dimensions),
