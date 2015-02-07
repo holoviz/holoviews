@@ -67,19 +67,33 @@ class ProgressBar(param.Parameterized):
         completion in percent to be broken down into smaller sub-tasks
         that individually complete to 100 percent.""")
 
+    elapsed_time = param.Boolean(default=True, doc="""
+        If enabled, the progress bar will disappear and display the
+        total elapsed time once 100% completion is reached.""")
+
     cache = {}
 
     def __init__(self, **params):
+        self.start_time = None
         super(ProgressBar,self).__init__(**params)
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
+        if self.start_time is None: self.start_time = time.time()
         span = (self.percent_range[1]-self.percent_range[0])
         percentage = self.percent_range[0] + ((percentage/100.0) * span)
 
         if self.display == 'disabled': return
         elif self.display == 'stdout':
-            self._stdout_display(percentage)
+            if percentage==100 and self.elapsed_time:
+                elapsed = time.time() -  self.start_time
+                if clear_output and not ipython2: clear_output()
+                if clear_output and ipython2: clear_output(wait=True)
+                sys.stdout.write('\r' + '100%% %s (%d minutes %d seconds)'
+                                 % (self.label.lower(), elapsed//60, elapsed%60))
+                return
+            else:
+                self._stdout_display(percentage)
             return
 
         if 'socket' not in self.cache:
