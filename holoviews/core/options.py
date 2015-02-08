@@ -425,11 +425,17 @@ class Channel(param.Parameterized):
             clone[key] = cls._collapse(overlay, key, ranges)
         return clone
 
+    @classmethod
+    def register(cls, channel):
+        defined_values = [op.value for op in cls.definitions]
+        if channel.value in defined_values:
+            cls.definitions.pop(defined_values.index(channel.value))
+        cls.definitions.append(channel)
+        if channel.operation not in cls.operations:
+            cls.operations.append(channel.operation)
 
 
     def __init__(self, pattern, operation, value, **kwargs):
-        if not any (operation is op for op in self.operations):
-            raise ValueError("Operation %r not in allowed operations" % operation)
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):

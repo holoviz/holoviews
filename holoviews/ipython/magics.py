@@ -280,16 +280,12 @@ class ChannelMagic(Magics):
 
     @line_magic
     def channels(self, line):
-        defined_values = [op.value for op in Channel.definitions]
         if line.strip():
             for definition in ChannelSpec.parse(line.strip()):
-                if definition.value in defined_values:
-                    Channel.definitions.pop(defined_values.index(definition.value))
-
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
                 Store.options[type_name + '.' + definition.value] = group
-                Channel.definitions.append(definition)
+                Channel.register(definition)
         else:
             print("For help with the %channels magic, call %channels?\n")
 
