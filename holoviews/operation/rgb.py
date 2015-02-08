@@ -52,13 +52,19 @@ class toRGB(ElementOperation):
         if not all(el.data.shape == overlay[0].data.shape for el in overlay):
             raise Exception("All input Matrix must have data with matching shape.")
 
+        normfn = raster_normalization.instance()
         if self.p.input_ranges:
-            normfn = raster_normalization.instance()
             overlay = normfn.process_element(overlay, key, *self.p.input_ranges)
 
         arrays = []
         for el in overlay:
-            if el.data.max() > 1.0 or el.data.min() < 0:
+            # Temporary fix till normalization improved
+            if None not in el.value_dimensions[0].range:
+                (lower, upper) = el.value_dimensions[0].range
+                data = el.data - lower
+                data /= (upper - lower)
+                arrays.append(data)
+            elif el.data.max() > 1.0 or el.data.min() < 0:
                 self.warning("Clipping data into the interval [0, 1]")
                 data = el.data.clip(0,1.0)
                 arrays.append(data)
