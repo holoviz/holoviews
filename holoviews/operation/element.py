@@ -28,6 +28,10 @@ class chain(ElementOperation):
     and turns it into an RGB Matrix using the 'jet' colormap.
     """
 
+    output_type = param.Parameter(Matrix, doc="""
+        The output type of the chain operation. Must be supplied if
+        the chain is to be used as a channel operation.""")
+
     value = param.String(default='Chain', doc="""
         The value assigned to the result after having applied the chain.""")
 
