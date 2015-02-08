@@ -82,6 +82,102 @@ class transform(ElementOperation):
 # Raster processing operations #
 #==============================#
 
+
+class matrix_overlay(ElementOperation):
+    """
+    Operation to build a matrix overlay to a specification from a
+    subset of the required elements.
+
+    This is useful for reordering the elements of an overlay,
+    duplicating layers of an overlay or creating blank matrix elements
+    in the appropriate positions.
+
+    For instance, matrix_overlay may build a three layered input
+    suitable for the toRGB operation even if supplied with one or two
+    of the required channels (creating blank channels for the missing
+    elements).
+
+    Note that if there is any ambiguity regarding the match, the
+    strongest match will be used. In the case of a tie in match
+    strength, the first layer in the input is used. One successful
+    match is always required.
+    """
+
+    output_type = Overlay
+
+    spec = param.Tuple(doc="""
+       Specification of the output Overlay structure. For instance:
+
+       ('Matrix.R', 'Matrix.G', 'Matrix.B')
+
+       Will ensure an overlay of this structure is created even if
+       (for instance) only (Matrix.R * Matrix.B) is supplied.
+
+       Elements in the input overlay that match are placed in the
+       appropriate positions and unavailable specification elements
+       are created with the specified fill value.""")
+
+    fill = param.Number(default=0)
+
+    value = param.String(default='Transform', doc="""
+        The value assigned to the resulting overlay.""")
+
+
+    @classmethod
+    def _match(cls, el, spec):
+        "Return the strength of the match (None if no match)"
+        spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
+        if not isinstance(el, Matrix) or spec_dict['type'] != 'Matrix':
+            raise NotImplementedError("Only Matrix currently supported")
+
+        strength = 1
+        for key in ['value', 'label']:
+            attr_value = getattr(el, key)
+            if key in spec_dict:
+                if spec_dict[key] != attr_value: return None
+                strength += 1
+        return strength
+
+
+    def _match_overlay(self, raster, overlay_spec):
+        """
+        Given a raster or input overlay, generate a list of matched
+        elements (None if no match) and corresponding tuple of match
+        strength values.
+        """
+        ordering = [None]*len(overlay_spec) # Elements to overlay
+        strengths = [0]*len(overlay_spec)   # Match strengths
+
+        elements = raster.values() if isinstance(raster, Overlay) else [raster]
+
+        for el in elements:
+            for pos in range(len(overlay_spec)):
+                strength = self._match(el, overlay_spec[pos])
+                if strength is None:               continue  # No match
+                elif (strength <= strengths[pos]): continue  # Weaker match
+                else:                                        # Stronger match
+                    ordering[pos] = el
+                    strengths[pos] = strength
+        return ordering, strengths
+
+
+    def _process(self, raster, key=None):
+        ordering, strengths = self._match_overlay(raster, self.p.spec)
+        if all(el is None for el in ordering):
+            raise Exception("The matrix_overlay operation requires at least one match")
+
+        completed = []
+        strongest = ordering[np.argmax(strengths)]
+        for el, spec in zip(ordering, self.p.spec):
+            if el is None:
+                spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
+                el = Matrix(np.ones(strongest.data.shape) * self.p.fill,
+                            value=spec_dict.get('value','Matrix'),
+                            label=spec_dict.get('label',''))
+            completed.append(el)
+        return np.prod(completed)
+
+
 class collapse(ElementOperation):
     """
     Applies any arbitrary collapsing operator across the data elements
