@@ -171,6 +171,10 @@ def display_figure(fig, message=None, max_width='100%'):
 def display_hook(fn):
     @wraps(fn)
     def wrapped(view, **kwargs):
+        # If pretty printing is off, return None (will fallback to repr)
+        ip = get_ipython()
+        if not ip.display_formatter.formatters['text/plain'].pprint:
+            return None
         try:
             widget_mode = ViewMagic.options['widgets']
             map_format  = ViewMagic.options['holomap']
