@@ -468,10 +468,10 @@ class PointPlot(ChartPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Integer(default=4, doc="""
+    color_index = param.Integer(default=3, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=3, doc="""
+    size_index = param.Integer(default=2, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     normalize_individually = param.Boolean(default=False, doc="""
@@ -526,25 +526,27 @@ class PointPlot(ChartPlot):
         return (ms*self.scaling_factor**sizes)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        points = self.handles['paths']
-        points.set_offsets(view.data[:,0:2])
-        if view.data.shape[1]>2:
-            cs, cidx, sz, sidx = self._get_color_size(points)
-            opts = Store.lookup_options(view, 'style')[0]
+    def update_handles(self, axis, element, key, ranges=None):
+        paths = self.handles['paths']
+        paths.set_offsets(element.data[:, 0:2])
+        ndims = element.data.shape[1]
+        if ndims > 2:
+            sz = element.data[:, self.size_index] if self.size_index < ndims else None
+            cs = element.data[:, self.color_index] if self.color_index < ndims else None
+            opts = Store.lookup_options(element, 'style')[0]
 
             if sz is not None and self.scaling_factor > 1:
-                points.set_sizes(self._compute_size(sz, opts))
+                paths.set_sizes(self._compute_size(sz, opts))
             if cs is not None:
-                val_dim = [d.name for d in view.value_dimensions][cidx]
+                val_dim = element.dimensions(label=True)[self.color_index]
                 ranges = self.compute_ranges(self.map, self.map.last_key, ranges)
-                ranges = self.match_range(points, ranges)
-                points.set_clim(ranges[val_dim])
+                ranges = self.match_range(element, ranges)
+                paths.set_clim(ranges[val_dim])
 
 
-    def get_extents(self, view, ranges):
-        l, b, r, t = view.extents if self.rescale_individually else self.map.extents
-        ydim = view.key_dimensions[1].name
+    def get_extents(self, element, ranges):
+        l, b, r, t = element.extents if self.rescale_individually else self.map.extents
+        ydim = element.dimensions(label=True)[1]
         b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
         return l, b, r, t
 
