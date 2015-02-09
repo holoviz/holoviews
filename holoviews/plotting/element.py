@@ -340,6 +340,7 @@ class OverlayPlot(ElementPlot):
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
             frame.set_linewidth('1.5')
+            self.handles['legend'] = axis.get_legend()
 
 
     def __call__(self, ranges=None):
