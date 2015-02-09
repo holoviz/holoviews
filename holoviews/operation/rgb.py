@@ -13,7 +13,6 @@ import numpy as np
 import param
 
 from ..core.operation import ElementOperation
-from ..core.options import Options, Cycle
 from ..element import Matrix, RGB
 from .normalization import raster_normalization
 from .element import split_raster
