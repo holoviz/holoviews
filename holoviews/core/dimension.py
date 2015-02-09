@@ -470,13 +470,19 @@ class Dimensioned(LabelledData):
         raise NotImplementedError
 
 
-    def range(self, dim):
+    def range(self, dim, data_range=True):
         """
         Returns the range of values along the specified dimension.
+
+        If data_range is True, the data may be used to try and infer
+        the appropriate range. Otherwise, (None,None) is returned to
+        indicate that no range is defined.
         """
         dimension = self.get_dimension(dim)
         if dimension.range != (None, None):
             return dimension.range
+        elif not data_range:
+            return (None, None)
         dim_vals = self.dimension_values(dimension.name)
         try:
             return np.min(dim_vals), np.max(dim_vals)

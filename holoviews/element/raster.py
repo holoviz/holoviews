@@ -361,13 +361,13 @@ class Matrix(SheetCoordinateSystem, Raster):
         return (b, t)
 
 
-    def range(self, dim):
+    def range(self, dim, data_range=True):
         dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             if dim_idx:
                 return self.ylim
             return self.xlim
-        return super(Matrix, self).range(dim)
+        return super(Matrix, self).range(dim, data_range=data_range)
 
 
     def _coord2matrix(self, coord):
