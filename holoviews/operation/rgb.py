@@ -54,16 +54,12 @@ class toRGB(ElementOperation):
         normfn = raster_normalization.instance()
         if self.p.input_ranges:
             overlay = normfn.process_element(overlay, key, *self.p.input_ranges)
+        else:
+            overlay = normfn.process_element(overlay, key)
 
         arrays = []
         for el in overlay:
-            # Temporary fix till normalization improved
-            if None not in el.value_dimensions[0].range:
-                (lower, upper) = el.value_dimensions[0].range
-                data = el.data - lower
-                data /= (upper - lower)
-                arrays.append(data)
-            elif el.data.max() > 1.0 or el.data.min() < 0:
+            if el.data.max() > 1.0 or el.data.min() < 0:
                 self.warning("Clipping data into the interval [0, 1]")
                 data = el.data.clip(0,1.0)
                 arrays.append(data)
