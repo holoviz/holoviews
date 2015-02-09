@@ -104,9 +104,11 @@ class toHCS(ElementOperation):
 
     def _process(self, overlay, key=None):
 
+        normfn = raster_normalization.instance()
         if self.p.input_ranges:
-            normfn = raster_normalization.instance()
             overlay = normfn.process_element(overlay, key, *self.p.input_ranges)
+        else:
+            overlay = normfn.process_element(overlay, key)
 
         hue, confidence = overlay[0], overlay[1]
         strength_data = overlay[2].data if (len(overlay) == 3) else np.ones(hue.shape)
@@ -207,11 +209,11 @@ class colorizeHSV(ElementOperation):
         H = hue.clone(hue.data.copy(),
                       value_dimensions=[Hdim(cyclic=True, range=hue.range(Hdim.name))])
 
+        normfn = raster_normalization.instance()
         if self.p.input_ranges:
-            normfn = raster_normalization.instance()
             S = normfn.process_element(overlay[0], key, *self.p.input_ranges)
         else:
-            S = overlay[0]
+            S = normfn.process_element(overlay[0], key)
 
         C = Matrix(np.ones(hue.data.shape),
                    bounds=self.get_overlay_extents(overlay), value='F', label='G')
