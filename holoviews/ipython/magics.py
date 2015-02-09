@@ -68,6 +68,7 @@ class ViewMagic(Magics):
                'max_frames'  : (0, float('inf')),
                'max_branches': (0, float('inf')),
                'size'        : (0, float('inf')),
+               'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf'))}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
@@ -78,6 +79,7 @@ class ViewMagic(Magics):
                             ('max_frames'  , 500),
                             ('max_branches', 2),
                             ('size'        , 100),
+                            ('dpi'         , 72),
                             ('charwidth'   , 80)])
 
     options = OrderedDict(defaults.items())
@@ -126,10 +128,12 @@ class ViewMagic(Magics):
                   % cls.defaults['max_branches'])
         size =   ("size         : The percentage size of displayed output (default %r)"
                   % cls.defaults['size'])
+        dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
+                  % cls.defaults['dpi'])
         chars =  ("charwidth    : The max character width view magic options display (default %r)"
                   % cls.defaults['charwidth'])
 
-        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, chars]
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars]
         return '\n'.join(intro + descriptions)
 
 

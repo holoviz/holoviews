@@ -27,7 +27,7 @@ def supported_formats(optional_formats):
         try:
             anim = animation.FuncAnimation(plt.figure(),
                                            lambda x: x, frames=[0,1])
-            animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
+            animate(anim, 72, *ViewMagic.ANIMATION_OPTS[fmt])
             supported.append(fmt)
         except: pass
     return supported

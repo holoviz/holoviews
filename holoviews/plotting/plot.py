@@ -32,6 +32,9 @@ class Plot(param.Parameterized):
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
+    figure_size = param.NumericTuple(default=(4, 4), doc="""
+        The matplotlib figure size in inches.""")
+
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
         The hook is passed the full set of plot handles and the
@@ -47,14 +50,14 @@ class Plot(param.Parameterized):
         The projection of the plot axis, default of None is equivalent to
         2D plot, 3D and polar plots are also supported.""")
 
+    size = param.Integer(default=100, bounds=(1, 100), doc="""
+        Size relative to the supplied figure size in percent.""")
+
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
-
-    size = param.NumericTuple(default=(4, 4), doc="""
-        The matplotlib figure size in inches.""")
 
     title_format = param.String(default="{label} {value}", doc="""
         The formatting string for the title of this plot.""")
@@ -81,7 +84,11 @@ class Plot(param.Parameterized):
         self.drawn = False
         # List of handles to matplotlib objects for animation update
         self.handles = {} if figure is None else {'fig': figure}
+
         super(Plot, self).__init__(**params)
+        size_scale = self.size / 100.
+        self.figure_size = (self.figure_size[0] * size_scale,
+                            self.figure_size[1] * size_scale)
         self.handles['axis'] = self._init_axis(axis)
 
 
@@ -212,7 +219,7 @@ class Plot(param.Parameterized):
             self.handles['fig'] = fig
             l, b, r, t = self.figure_bounds
             fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-            fig.set_size_inches(list(self.size))
+            fig.set_size_inches(list(self.figure_size))
             axis = fig.add_subplot(111, projection=self.projection)
             axis.set_aspect('auto')
 

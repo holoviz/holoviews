@@ -40,22 +40,22 @@ ENABLE_TRACEBACKS=True
 
 def opts(el, size):
     "Returns the plot options with supplied size (if not overridden)"
-    return dict(size=size, **Store.lookup_options(el, 'plot').options)
+    return dict(figure_size=size, **Store.lookup_options(el, 'plot').options)
 
 
 def get_plot_size(size):
     factor = size / 100.0
-    return (Plot.size[0] * factor,
-            Plot.size[1] * factor)
+    return (Plot.figure_size[0] * factor,
+            Plot.figure_size[1] * factor)
 
 
-def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
+def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
     if not hasattr(anim, '_encoded_video'):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
-            anim.save(f.name, writer=writer, **anim_kwargs)
+            anim.save(f.name, writer=writer, dpi=dpi, **anim_kwargs)
             video = open(f.name, "rb").read()
         anim._encoded_video = base64.b64encode(video).decode("utf-8")
     return tag.format(b64=anim._encoded_video,
@@ -63,13 +63,14 @@ def animate(anim, writer, mime_type, anim_kwargs, extra_args, tag):
 
 
 def HTML_video(plot):
+    dpi = ViewMagic.options['dpi']
     anim = plot.anim(fps=ViewMagic.options['fps'])
     writers = animation.writers.avail
     current_format = ViewMagic.options['holomap']
     for fmt in [current_format] + list(ViewMagic.ANIMATION_OPTS.keys()):
         if ViewMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
-                return animate(anim, *ViewMagic.ANIMATION_OPTS[fmt])
+                return animate(anim, dpi, *ViewMagic.ANIMATION_OPTS[fmt])
             except: pass
     msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
@@ -141,13 +142,15 @@ def display_widgets(view,  widget_format, widget_mode):
 def display_figure(fig, message=None, max_width='100%'):
     "Display widgets applicable to the specified view"
     figure_format = ViewMagic.options['fig']
+    dpi = ViewMagic.options['dpi']
     backend = ViewMagic.options['backend']
 
     if backend == 'd3' and mpld3:
+        fig.dpi = dpi
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        figdata = print_figure(fig, figure_format)
+        figdata = print_figure(fig, figure_format, dpi=dpi)
         if figure_format=='svg':
             mime_type = 'svg+xml'
             figdata = figdata.encode("utf-8")
@@ -175,6 +178,7 @@ def display_hook(fn):
             widget_mode = (widget_mode if map_format in ViewMagic.inbuilt_formats else None)
             return fn(view,
                       size=ViewMagic.options['size'],
+                      dpi=ViewMagic.options['dpi'],
                       max_frames=ViewMagic.options['max_frames'],
                       max_branches = ViewMagic.options['max_branches'],
                       map_format = map_format,
@@ -187,8 +191,8 @@ def display_hook(fn):
 
 
 @display_hook
-def animation_display(anim, map_format, **kwargs):
-    return animate(anim, *ViewMagic.ANIMATION_OPTS[map_format])
+def animation_display(anim, map_format, dpi=72, **kwargs):
+    return animate(anim, dpi, *ViewMagic.ANIMATION_OPTS[map_format])
 
 
 @display_hook

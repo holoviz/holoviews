@@ -11,7 +11,6 @@ except:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
 from IPython.display import display
-from IPython.core.pylabtools import print_figure
 try:
     from IPython.html import widgets
     from IPython.html.widgets import FloatSliderWidget
@@ -261,8 +260,8 @@ def isnumeric(val):
 
 def get_plot_size():
     factor = ViewMagic.options['size'] / 100.0
-    return (Plot.size[0] * factor,
-            Plot.size[1] * factor)
+    return (Plot.figure_size[0] * factor,
+            Plot.figure_size[1] * factor)
 
 
 class NdWidget(param.Parameterized):
@@ -282,7 +281,7 @@ class NdWidget(param.Parameterized):
             shape = element.shape if isinstance(element, (NdLayout, LayoutTree)) else (1, 1)
             grid_size = (shape[1]*get_plot_size()[1],
                          shape[0]*get_plot_size()[0])
-            plot = LayoutPlot(element, **dict(size=grid_size))
+            plot = LayoutPlot(element, **dict(figure_size=grid_size))
         elif isinstance(element, AxisLayout):
             max_dim = max(element.shape)
             # Reduce plot size as AxisLayout gets larger
@@ -301,10 +300,10 @@ class NdWidget(param.Parameterized):
             else:
                 plot_type = GridPlot
             opts = Store.lookup_options(element, 'plot').options
-            plot = plot_type(element, **dict({'size': element_size}, **opts))
+            plot = plot_type(element, **dict({'figure_size': element_size}, **opts))
         else:
             opts = dict(Store.options.closest(element, 'plot').options,
-                        size=get_plot_size())
+                        figure_size=get_plot_size())
             plot = Store.defaults[element.type](element, **opts)
 
         dimensions, keys = traversal.unique_dimkeys(element)
@@ -314,14 +313,11 @@ class NdWidget(param.Parameterized):
                              key_dimensions=dimensions)
         return plot, dimensions, keys, mock_obj
 
+
     def _plot_figure(self, idx):
+        from .display_hooks import display_figure
         fig = self.plot[idx]
-        if ViewMagic.options['backend'] == 'mpld3':
-            import mpld3
-            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            return mpld3.fig_to_html(fig)
-        else:
-            return print_figure(fig)
+        return display_figure(fig)
 
 
 
@@ -531,17 +527,6 @@ class ScrubberWidget(NdWidget):
         template = templateEnv.get_template(self.template)
 
         return template.render(**data)
-
-
-    def _plot_figure(self, idx):
-        fig = self.plot[idx]
-        if ViewMagic.options['backend'] == 'd3':
-            import mpld3
-            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            return mpld3.fig_to_dict(fig)
-        else:
-            from .display_hooks import display_figure
-            return display_figure(fig)
 
 
     def __call__(self):
