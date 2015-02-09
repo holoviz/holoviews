@@ -197,6 +197,8 @@ class LegendPlugin(MplD3Plugin):
     def __call__(self, plot, view):
         if not self._applies(plot, view): return
         fig = plot.handles['fig']
+        if 'legend' in plot.handles:
+            plot.handles['legend'].set_visible(False)
         line_segments, labels = [], []
         keys = view.keys()
         for idx, subplot in enumerate(plot.subplots.values()):
