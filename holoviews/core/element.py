@@ -36,6 +36,14 @@ class Element(ViewableElement, Composable, Overlayable):
         super(Element, self).__init__(data, **params)
 
 
+    def __getitem__(self, key):
+        if key is ():
+            return self
+        else:
+            raise NotImplementedError("%s currently does not support getitem" %
+                                      type(self).__name__)
+
+
     def closest(self, coords):
         """
         Class method that returns the exact keys for a given list of

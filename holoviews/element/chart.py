@@ -256,10 +256,6 @@ class Histogram(Element2D):
         return values, edges, settings
 
 
-    def __getitem__(self, slc):
-        raise NotImplementedError('Slicing and indexing of histograms currently not implemented.')
-
-
     def dimension_values(self, dim):
         if isinstance(dim, int):
             dim = self.get_dimension(dim).name
@@ -338,10 +334,6 @@ class Points(Chart):
                             % (self.__class__.__name__, self._min_dims))
 
         super(Points, self).__init__(data, **params)
-
-
-    def __getitem__(self, keys):
-        pass
 
 
     def __len__(self):
