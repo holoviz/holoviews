@@ -143,6 +143,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         xkeys, ykeys = zip(*layout.data.keys())
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
+        self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
         _, _, self.layout = self._create_subplots(layout, ranges, create_axis=False)
 
@@ -163,7 +164,6 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         ranges = self.compute_ranges(self.layout, key, ranges)
         self.handles['projs'] = []
         x, y = b_w, b_h
-        xticks, yticks = [], []
         for xidx, xkey in enumerate(self._xkeys):
             w = widths[xidx]
             for yidx, ykey in enumerate(self._ykeys):
@@ -186,16 +186,16 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 self.handles['projs'].append(plot)
                 y += h + b_h
                 if xidx == 0:
-                    yticks.append(y-b_h-h/2.)
+                    self._yticks.append(y-b_h-h/2.)
             y = b_h
             x += w + b_w
-            xticks.append(x-b_w-w/2.)
+            self._xticks.append(x-b_w-w/2.)
 
 
         return self._finalize_axis(key, ranges=ranges,
                                    title=self._format_title(key),
-                                   xticks=(xticks, self._process_ticklabels(self._xkeys)),
-                                   yticks=(yticks, self._process_ticklabels(self._ykeys)),
+                                   xticks=(self._xticks, self._process_ticklabels(self._xkeys)),
+                                   yticks=(self._yticks, self._process_ticklabels(self._ykeys)),
                                    xlabel=str(self.layout.get_dimension(0)),
                                    ylabel=str(self.layout.get_dimension(1)))
 
@@ -212,7 +212,9 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             else:
                 plot.set_visible(False)
 
-        self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
+        self._finalize_axis(key, ranges=ranges, title=self._format_title(key),
+                            xticks=(self._xticks, self._process_ticklabels(self._xkeys)),
+                            yticks=(self._yticks, self._process_ticklabels(self._ykeys)),)
 
 
     def _compute_borders(self):
