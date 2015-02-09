@@ -89,8 +89,9 @@ class ProgressBar(param.Parameterized):
                 elapsed = time.time() -  self.start_time
                 if clear_output and not ipython2: clear_output()
                 if clear_output and ipython2: clear_output(wait=True)
-                sys.stdout.write('\r' + '100%% %s (%d minutes %d seconds)'
-                                 % (self.label.lower(), elapsed//60, elapsed%60))
+                sys.stdout.write('\r' + '100%% %s %02d:%02d:%02d'
+                                 % (self.label.lower(), elapsed//3600,
+                                    elapsed//60, elapsed%60))
                 return
             else:
                 self._stdout_display(percentage)
