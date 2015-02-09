@@ -319,7 +319,7 @@ class OverlayPlot(ElementPlot):
         title = ''
         if issubclass(self.map.type, NdOverlay):
             for key in self.map.last.data.keys():
-                labels.append(','.join([k + dim.unit if dim.unit else k for dim, k in
+                labels.append(','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
                                         zip(self.map.last.key_dimensions, key)]))
             title = ', '.join([d.name for d in self.map.last.key_dimensions])
         else:
@@ -395,9 +395,9 @@ class OverlayPlot(ElementPlot):
             if layer:
                 labels.append(layer.label)
                 values.append(layer.value)
-        if not label and (len(labels) == len(set(labels))):
+        if not label and labels and (len(labels) == len(set(labels))):
             label = labels[0]
-        if not value and (len(values) == len(set(labels))):
+        if not value and values and (len(values) == len(set(labels))):
             value = values[0]
         title = self.title_format.format(label=label,
                                          value=value,
