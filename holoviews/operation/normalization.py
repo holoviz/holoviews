@@ -32,9 +32,16 @@ class Normalization(ElementOperation):
     normalization to also be specified.
     """
 
-    ranges = param.ClassSelector(default={}, class_=(dict, list), doc="""
-       The simplest example of a ranges dictionary is an empty
-       list. This effectively disables normalization (default).
+    data_range = param.Boolean(default=False, doc="""
+       Whether normalization is allowed to use the minimum and maximum
+       values of the existing data to infer an appropriate range""")
+
+    ranges = param.ClassSelector(default={},  allow_None=True,
+                                 class_=(dict, list), doc="""
+       The simplest value of this parameter is None to skip all
+       normalization. The next simplest value is an empty dictionary
+       to only applies normalization to Dimensions with explicitly
+       declared ranges.
 
        The next most common specification is a dictionary of values
        and tuple ranges. The value keys are the names of the
@@ -105,12 +112,15 @@ class Normalization(ElementOperation):
         """
         keys = self.p['keys']
         ranges = self.p['ranges']
+
+        if ranges == {}:
+            return {d.name: element.range(d.name, self.data_range)
+                    for d in element.dimensions()}
         if keys is None:
             specs = ranges
         elif keys and not isinstance(ranges, list):
             raise ValueError("Key list specified but ranges parameter"
                              " not specified as a list.")
-
         elif len(keys) == len(ranges):
             # Unpack any 1-tuple keys
             try:
@@ -162,6 +172,7 @@ class raster_normalization(Normalization):
 
         for depth, name in enumerate(d.name for d in raster.value_dimensions):
             depth_range = ranges.get(name, None)
+            if None in depth_range:  continue
             if depth_range and len(norm_raster.data.shape) == 2:
                 depth_range = ranges[name]
                 norm_raster.data[:,:] -= depth_range[0]
