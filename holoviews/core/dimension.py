@@ -201,11 +201,14 @@ class LabelledData(param.Parameterized):
 
     def matches(self, spec):
         """
-        A specification string is of form {type}.{value}.{label} which
-        may be supplied in full or up to the first or second
-        period. This method returns a boolean that indicates if the
-        current object matches the specification.
+        A specification may be a class, a tuple or a string.
+        Equivalent to isinstance if a class is supplied, otherwise
+        matching occurs on type, value and label. These may be supplied
+        as a tuple of strings or as a single string of form
+        {type}.{value}.{label}. Matching may be done on type alone,
+        type and value or type, value, and label.
         """
+        if isinstance(spec, type): return isinstance(self, spec)
         specification = (self.__class__.__name__, self.value, self.label)
         identifier_specification = tuple(valid_identifier(ident) for ident in specification)
         split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
@@ -236,15 +239,26 @@ class LabelledData(param.Parameterized):
         if specs is None or any(self.matches(spec) for spec in specs):
             accumulator.append(fn(self))
 
-        try:
-            # Assumes composite objects are iterables
-            if self._deep_indexable:
-                for el in self:
-                    accumulator += el.traverse(fn, specs, full_breadth)
-                    if not full_breadth: break
-        except:
-            pass
+        # Assumes composite objects are iterables
+        if self._deep_indexable:
+            for el in self:
+                accumulator += el.traverse(fn, specs, full_breadth)
+                if not full_breadth: break
         return accumulator
+
+
+    def map(self, map_fn, specs=None):
+        """
+        Recursively replaces elements using a map function when the
+        specification applies.
+        """
+        mapped = self.clone(shared_data=not self._deep_indexable)
+        if specs is None or any(self.matches(spec) for spec in specs):
+            mapped = map_fn(mapped)
+        if self._deep_indexable:
+            for k, v in self.items():
+                mapped[k] = v.map(map_fn, specs)
+        return mapped
 
 
     def __getstate__(self):
