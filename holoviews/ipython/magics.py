@@ -9,7 +9,7 @@ from ..core.options import OptionTree, Options, OptionError, Store
 from collections import OrderedDict
 from IPython.display import display, HTML
 
-from ..operation import Channel
+from ..operation import Compositor
 
 #========#
 # Magics #
@@ -21,7 +21,7 @@ try:
 except ImportError:
     pyparsing = None
 else:
-    from holoviews.ipython.parser import ChannelSpec
+    from holoviews.ipython.parser import CompositorSpec
     from holoviews.ipython.parser import OptsSpec
 
 
@@ -270,34 +270,34 @@ class ViewMagic(Magics):
 
 
 @magics_class
-class ChannelMagic(Magics):
+class CompositorMagic(Magics):
     """
-    Magic allowing easy definition of channel operations.
-    Consult %%channels? for more information.
+    Magic allowing easy definition of compositor operations.
+    Consult %compositor? for more information.
     """
 
     def __init__(self, *args, **kwargs):
-        super(ChannelMagic, self).__init__(*args, **kwargs)
-        lines = ['The %channels line magic is used to define channel operations.']
-        self.channels.__func__.__doc__ = '\n'.join(lines + [ChannelSpec.__doc__])
+        super(CompositorMagic, self).__init__(*args, **kwargs)
+        lines = ['The %compositor line magic is used to define compositors.']
+        self.compositor.__func__.__doc__ = '\n'.join(lines + [CompositorSpec.__doc__])
 
 
     @line_magic
-    def channels(self, line):
+    def compositor(self, line):
         if line.strip():
-            for definition in ChannelSpec.parse(line.strip()):
+            for definition in CompositorSpec.parse(line.strip()):
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
                 Store.options[type_name + '.' + definition.value] = group
-                Channel.register(definition)
+                Compositor.register(definition)
         else:
-            print("For help with the %channels magic, call %channels?\n")
+            print("For help with the %compositor magic, call %compositor?\n")
 
 
     @classmethod
     def option_completer(cls, k,v):
         line = v.text_until_cursor
-        operation_openers = [op.__name__+'(' for op in Channel.operations]
+        operation_openers = [op.__name__+'(' for op in Compositor.operations]
 
         modes = ['data', 'display']
         op_declared = any(op in line for op in operation_openers)
@@ -338,8 +338,8 @@ class OptsCompleter(object):
         line = v.text_until_cursor
 
         completions = cls.setup_completer()
-        channel_defs = {el.value:el.output_type.__name__
-                        for el in Channel.definitions}
+        compositor_defs = {el.value:el.output_type.__name__
+                           for el in Compositor.definitions}
 
         # Find the last element class mentioned
         completion_key = None
@@ -347,13 +347,13 @@ class OptsCompleter(object):
             if token in completions:
                 completion_key = token
                 break
-            # Attempting to match channel definitions
-            if token in channel_defs:
-                completion_key = channel_defs[token]
+            # Attempting to match compositor definitions
+            if token in compositor_defs:
+                completion_key = compositor_defs[token]
                 break
 
         if not completion_key:
-            return completions.keys() + channel_defs.keys()
+            return completions.keys() + compositor_defs.keys()
 
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             kws = completions[completion_key][0]
@@ -365,7 +365,7 @@ class OptsCompleter(object):
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
-        return style_completions + completions.keys() + channel_defs.keys()
+        return style_completions + completions.keys() + compositor_defs.keys()
 
 
 
@@ -434,21 +434,21 @@ class OptsMagic(Magics):
             cls.next_id = None
 
     @classmethod
-    def expand_channel_keys(cls, spec):
+    def expand_compositor_keys(cls, spec):
         """
-        Expands channel definition keys into {type}.{value} keys. For
-        instance a channel operation returning a value string 'Image'
-        of element type RGB expands to 'RGB.Image'.
+        Expands compositor definition keys into {type}.{value}
+        keys. For instance a compositor operation returning a value
+        string 'Image' of element type RGB expands to 'RGB.Image'.
         """
         expanded_spec={}
-        channel_defs = {el.value:el.output_type.__name__
-                        for el in Channel.definitions}
+        compositor_defs = {el.value:el.output_type.__name__
+                           for el in Compositor.definitions}
         for key, val in spec.items():
-            if key not in channel_defs:
+            if key not in compositor_defs:
                 expanded_spec[key] = val
             else:
                 cls.applied_keys = ['Overlay'] # Send id to Overlays
-                type_name = channel_defs[key]
+                type_name = compositor_defs[key]
                 expanded_spec[str(type_name+'.'+key)] = val
         return expanded_spec
 
@@ -483,7 +483,7 @@ class OptsMagic(Magics):
         get_object = None
         try:
             spec = OptsSpec.parse(line)
-            spec = self.expand_channel_keys(spec)
+            spec = self.expand_compositor_keys(spec)
         except SyntaxError:
             display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
             return
@@ -504,12 +504,12 @@ def load_magics(ip):
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)
 
-    if pyparsing is None: print("%channels magic unavailable (pyparsing cannot be imported)")
-    else: ip.register_magics(ChannelMagic)
+    if pyparsing is None: print("%compositor magic unavailable (pyparsing cannot be imported)")
+    else: ip.register_magics(CompositorMagic)
 
 
     # Configuring tab completion
-    ip.set_hook('complete_command', ChannelMagic.option_completer, str_key = '%channels')
+    ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
 
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')

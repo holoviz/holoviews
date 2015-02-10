@@ -1,5 +1,5 @@
 from ..core.operation import ElementOperation, MapOperation, TreeOperation
-from ..core.options import Channel
+from ..core.options import Compositor
 
 from .rgb import *          # pyflakes:ignore (API import)
 from .element import *      # pyflakes:ignore (API import)
@@ -18,6 +18,6 @@ _public = list(set([_k for _k, _v in locals().items() if public(_v)]))
 _current_locals = [el for el in locals().items()]
 for _k, _v in _current_locals:
     if public(_v) and issubclass(_v, ElementOperation):
-        Channel.operations.append(_v)
+        Compositor.operations.append(_v)
 
-__all__ = _public + ['Channel']
+__all__ = _public + ['Compositor']

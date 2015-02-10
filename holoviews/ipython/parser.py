@@ -15,7 +15,7 @@ from holoviews.core.options import Options
 from itertools import groupby
 import pyparsing as pp
 
-from ..operation import Channel
+from ..operation import Compositor
 from ..plotting import Plot
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -123,14 +123,14 @@ class OptsSpec(Parser):
                                  ).setResultsName("norm_options")
 
 
-    channelops = pp.MatchFirst(
-        [pp.Literal(el.value) for el in Channel.definitions])
+    compositor_ops = pp.MatchFirst(
+        [pp.Literal(el.value) for el in Compositor.definitions])
 
     dotted_path = pp.Combine( pp.Word(ascii_uppercase, exact=1)
                               + pp.Word(pp.alphanums+'._'))
 
 
-    pathspec = (dotted_path | channelops).setResultsName("pathspec")
+    pathspec = (dotted_path | compositor_ops).setResultsName("pathspec")
 
 
     spec_group = pp.Group(pathspec
@@ -219,9 +219,9 @@ class OptsSpec(Parser):
 
 
 
-class ChannelSpec(Parser):
+class CompositorSpec(Parser):
     """
-    The syntax for defining a set of channel operations is as follows:
+    The syntax for defining a set of compositor is as follows:
 
     [ mode op(spec) [settings] value ]+
 
@@ -252,17 +252,17 @@ class ChannelSpec(Parser):
                                 ignoreExpr=None
                             ).setResultsName("op_settings")
 
-    channel_spec = pp.OneOrMore(pp.Group(mode + op + overlay_spec + value
-                                         + pp.Optional(op_settings)))
+    compositor_spec = pp.OneOrMore(pp.Group(mode + op + overlay_spec + value
+                                            + pp.Optional(op_settings)))
 
 
     @classmethod
     def parse(cls, line):
         """
-        Parse a list of channel specification, returning a Channel
+        Parse compositor specifications, returning a list Compositors
         """
         definitions = []
-        parses  = [p for p in cls.channel_spec.scanString(line)]
+        parses  = [p for p in cls.compositor_spec.scanString(line)]
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
         else:
@@ -271,8 +271,8 @@ class ChannelSpec(Parser):
             if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
 
-        opmap = {op.__name__:op for op in Channel.operations}
-        for group in cls.channel_spec.parseString(line):
+        opmap = {op.__name__:op for op in Compositor.operations}
+        for group in cls.compositor_spec.parseString(line):
 
             if ('mode' not in group) or group['mode'] not in ['data', 'display']:
                 raise SyntaxError("Either data or display mode must be specified.")
@@ -285,11 +285,11 @@ class ChannelSpec(Parser):
             if '*' not in spec:
                 raise SyntaxError("Overlay specification must contain at least one * operation")
             if  group['op'] not in opmap:
-                raise SyntaxError("Operation %s not available for channel operations"
+                raise SyntaxError("Operation %s not available for use with compositors."
                                   % group['op'])
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets')
 
-            definition = Channel(str(spec), operation, str(group['value']), mode, **kwargs)
+            definition = Compositor(str(spec), operation, str(group['value']), mode, **kwargs)
             definitions.append(definition)
         return definitions

@@ -2,8 +2,9 @@
 ElementOperations that output RGB elements are commonly used for
 displaying colored images.
 
-The element operations can often be used with option.Channel to define
-operations that should automatically be applied upon display.
+The element operations can often be used with option.Compositor to
+define operations that should automatically process data or generate
+visualization upon display.
 """
 
 import colorsys

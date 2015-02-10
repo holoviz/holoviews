@@ -10,7 +10,7 @@ from ..core.options import Store
 from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ..core.util import valid_identifier, find_minmax
 from ..element import Annotation
-from ..operation import Channel
+from ..operation import Compositor
 from .plot import Plot
 
 
@@ -109,7 +109,7 @@ class ElementPlot(Plot):
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
             check = holomap.last.values()[0]
-            holomap = Channel.collapse(holomap,
+            holomap = Compositor.collapse(holomap,
                                        (ranges, keys if keys else None))
         if isinstance(check, Element3D):
             self.projection = '3d'
@@ -279,8 +279,7 @@ class ElementPlot(Plot):
 
 class OverlayPlot(ElementPlot):
     """
-    OverlayPlot supports processing of channel operations on Overlays
-    across maps.
+    OverlayPlot supports compositors processing of Overlays across maps.
     """
 
     show_legend = param.Boolean(default=True, doc="""

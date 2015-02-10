@@ -3,7 +3,7 @@ from holoviews.core.options import Store # Options
 from holoviews import ipython
 from holoviews.ipython import IPTestCase
 
-from holoviews.operation import Channel, toRGB, toHCS
+from holoviews.operation import Compositor, toRGB, toHCS
 
 class ExtensionTestCase(IPTestCase):
 
@@ -108,32 +108,32 @@ class TestViewMagic(ExtensionTestCase):
         self.assertEqual(ipython.ViewMagic.options.get('size', None), 100)
 
 
-class TestChannelMagic(ExtensionTestCase):
+class TestCompositorMagic(ExtensionTestCase):
 
     def setUp(self):
-        super(TestChannelMagic, self).setUp()
+        super(TestCompositorMagic, self).setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.element import Matrix")
 
 
     def tearDown(self):
-        Channel.definitions = []
-        super(TestChannelMagic, self).tearDown()
+        Compositor.definitions = []
+        super(TestCompositorMagic, self).tearDown()
 
-    def test_RGB_channel_definition(self):
+    def test_RGB_compositor_definition(self):
         self.cell("R = Matrix(np.random.rand(5,5), value='R')")
         self.cell("G = Matrix(np.random.rand(5,5), value='G')")
         self.cell("B = Matrix(np.random.rand(5,5), value='B')")
         self.cell("overlay = R * G * B")
 
         definition = " display toRGB(Matrix * Matrix * Matrix) RGBTEST"
-        self.line_magic('channels', definition)
+        self.line_magic('compositor', definition)
 
-        assert len(Channel.definitions) == 1, "Channel definition not created"
-        self.assertEqual(Channel.definitions[0].value, 'RGBTEST')
+        assert len(Compositor.definitions) == 1, "Compositor definition not created"
+        self.assertEqual(Compositor.definitions[0].value, 'RGBTEST')
 
 
-    def test_HCS_channel_definition(self):
+    def test_HCS_compositor_definition(self):
         self.cell("H = Matrix(np.random.rand(5,5), value='H')")
         self.cell("C = Matrix(np.random.rand(5,5), value='C')")
         self.cell("S = Matrix(np.random.rand(5,5), value='S')")
@@ -141,9 +141,9 @@ class TestChannelMagic(ExtensionTestCase):
         self.cell("overlay = H * C * S")
 
         definition = " display toHCS(Matrix * Matrix * Matrix) HCSTEST"
-        self.line_magic('channels', definition)
-        assert len(Channel.definitions) == 1, "Channel definition not created"
-        self.assertEqual(Channel.definitions[0].value, 'HCSTEST')
+        self.line_magic('compositor', definition)
+        assert len(Compositor.definitions) == 1, "Compositor definition not created"
+        self.assertEqual(Compositor.definitions[0].value, 'HCSTEST')
 
 
 if __name__ == "__main__":

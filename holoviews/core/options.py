@@ -338,27 +338,26 @@ class OptionTree(AttrTree):
 
 
 
-class Channel(param.Parameterized):
+class Compositor(param.Parameterized):
     """
-    A Channel is a way of specifying an operation to be automatically
+    A Compositor is a way of specifying an operation to be automatically
     applied to Overlays that match a specified pattern upon display.
 
     Any ElementOperation that takes an Overlay as input may be used to
-    define a channel.
+    define a compositor.
 
-    For instance, a channel may be defined to automatically display
+    For instance, a compositor may be defined to automatically display
     three overlaid monochrome matrices as an RGB image as long as the
-    values names of those matrices match 'R', 'G' and 'B' respectively.
+    values names of those matrices match 'R', 'G' and 'B'.
     """
 
     mode = param.ObjectSelector(default='data',
                                 objects=['data', 'display'], doc="""
-      The mode of the Channel object which may be either 'data' or
+      The mode of the Compositor object which may be either 'data' or
       'display'.""")
 
     operation = param.Parameter(doc="""
-       The ElementOperation to apply when collapsing overlays into a
-       channel.""")
+       The ElementOperation to apply when collapsing overlays.""")
 
     pattern = param.String(doc="""
        The overlay pattern to be processed. An overlay pattern is a
@@ -374,23 +373,23 @@ class Channel(param.Parameterized):
       operation that returns a single RGB matrix for display.""")
 
     value = param.String(doc="""
-       The value identifier for the output of this particular channel""")
+       The value identifier for the output of this particular compositor""")
 
     kwargs = param.Dict(doc="""
        Optional set of parameters to pass to the operation.""")
 
 
-    operations = []  # The operations that can be used to define channels.
-    definitions = [] # The set of all the channel instances
+    operations = []  # The operations that can be used to define compositors.
+    definitions = [] # The set of all the compositor instances
 
 
     @classmethod
     def strongest_match(cls, overlay, mode):
         """
-        Returns the strongest matching channel operation given an
+        Returns the strongest matching compositor operation given an
         overlay. If no matches are found, None is returned.
 
-        The best match is defined as the channel operation with the
+        The best match is defined as the compositor operation with the
         highest match value as returned by the match_level method.
         """
         match_strength = [(op.match_level(overlay), op) for op in cls.definitions
@@ -403,10 +402,10 @@ class Channel(param.Parameterized):
     @classmethod
     def _collapse(cls, overlay, key, ranges, mode):
         """
-        Finds any applicable channel operation and applies it.
+        Finds any applicable compositor and applies it.
         """
         from .overlay import Overlay
-        applicable_op = cls.strongest_match(overlay)
+        applicable_op = cls.strongest_match(overlay, mode)
         if applicable_op is None: return overlay
 
         output = applicable_op.apply(overlay, ranges, key=key)
@@ -418,27 +417,26 @@ class Channel(param.Parameterized):
     @classmethod
     def collapse(cls, holomap, ranges=None, mode='data'):
         """
-        Given a map of Overlays, apply all applicable channel
-        reductions.
+        Given a map of Overlays, apply all applicable compositors.
         """
-        # No potential channel reductions
+        # No potential compositors
         if cls.definitions == []:
             return holomap
 
-        # Collapse channel operations
+        # Apply compositors
         clone = holomap.clone(shared_data=False)
         for key, overlay in holomap.items():
             clone[key] = cls._collapse(overlay, key, ranges, mode)
         return clone
 
     @classmethod
-    def register(cls, channel):
+    def register(cls, compositor):
         defined_values = [op.value for op in cls.definitions]
-        if channel.value in defined_values:
-            cls.definitions.pop(defined_values.index(channel.value))
-        cls.definitions.append(channel)
-        if channel.operation not in cls.operations:
-            cls.operations.append(channel.operation)
+        if compositor.value in defined_values:
+            cls.definitions.pop(defined_values.index(compositor.value))
+        cls.definitions.append(compositor)
+        if compositor.operation not in cls.operations:
+            cls.operations.append(compositor.operation)
 
 
     def __init__(self, pattern, operation, value, mode, **kwargs):
@@ -452,17 +450,17 @@ class Channel(param.Parameterized):
                 labels.append(path_tuple[2])
 
         if len(labels) > 1 and not all(l==labels[0] for l in labels):
-            raise KeyError("Mismatched labels not allowed in channel operation patterns")
+            raise KeyError("Mismatched labels not allowed in compositor patterns")
         elif len(labels) == 1:
             self.label = labels[0]
         else:
             self.label = ''
 
-        super(Channel, self).__init__(value=value,
-                                      pattern=pattern,
-                                      operation=operation,
-                                      mode=mode,
-                                      kwargs=kwargs)
+        super(Compositor, self).__init__(value=value,
+                                         pattern=pattern,
+                                         operation=operation,
+                                         mode=mode,
+                                         kwargs=kwargs)
 
 
     @property
@@ -507,8 +505,7 @@ class Channel(param.Parameterized):
 
     def apply(self, value, input_ranges, key=None):
         """
-        Apply the channel operation on the input value using the given
-        input ranges.
+        Apply the compositor on the input with the given input ranges.
         """
         if key is None:
             return self.operation(value, input_ranges=input_ranges, **self.kwargs)
