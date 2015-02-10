@@ -152,6 +152,12 @@ class colormap(ElementOperation):
     def _process(self, matrix, key=None):
         import matplotlib
 
+        normfn = raster_normalization.instance()
+        if self.p.input_ranges:
+            matrix = normfn.process_element(matrix, key, *self.p.input_ranges)
+        else:
+            matrix = normfn.process_element(matrix, key)
+
         if len(matrix.value_dimensions) != 1:
             raise Exception("Can only apply colour maps to Matrix"
                             " with single value dimension.")
