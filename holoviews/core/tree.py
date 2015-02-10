@@ -75,16 +75,15 @@ class AttrTree(object):
         Updated the contents of the current AttrTree with the
         contents of a second AttrTree.
         """
+        if not isinstance(other, AttrTree):
+            raise Exception('Can only update with another AttrTree type.')
         fixed_status = (self.fixed, other.fixed)
         (self.fixed, other.fixed) = (False, False)
-        if self.parent is None:
-            self.data.update(other.data)
-        for identifier in other.children:
-            item = other[identifier]
-            if identifier not in self:
-                self[identifier] = item
+        for identifier, element in other.items():
+            if identifier not in self.data:
+                self[identifier] = element
             else:
-                self[identifier].update(item)
+                self[identifier].update(element)
         (self.fixed, other.fixed) = fixed_status
 
 
