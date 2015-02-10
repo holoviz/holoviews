@@ -68,7 +68,7 @@ class ComparisonInterface(object):
 
             if asserter is not None:
                 if isinstance(asserter, basestring):
-                    asserter = getattr(self, asserter)
+                    asserter = getattr(cls, asserter)
 
         if asserter is None:
             asserter = cls.simple_equality
