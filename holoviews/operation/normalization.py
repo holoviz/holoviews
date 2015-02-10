@@ -171,7 +171,7 @@ class raster_normalization(Normalization):
         ranges = self.get_ranges(raster, key)
 
         for depth, name in enumerate(d.name for d in raster.value_dimensions):
-            depth_range = ranges.get(name, None)
+            depth_range = ranges.get(name, (None, None))
             if None in depth_range:  continue
             if depth_range and len(norm_raster.data.shape) == 2:
                 depth_range = ranges[name]
