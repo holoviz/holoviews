@@ -115,28 +115,30 @@ def render(plot):
         return str(e)+'<br/>'+display_figure(plot())
 
 
-def display_widgets(view,  widget_format, widget_mode):
+def display_widgets(plot):
     "Display widgets applicable to the specified view"
+    widget_mode = ViewMagic.options['widgets']
+    widget_format = ViewMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
-    isuniform = traversal.uniform(view)
+    isuniform = plot.uniform
     if not isuniform and widget_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
-                                    % type(view).__name__)
+                                    % type(plot).__name__)
         widget_format == 'scrubber'
 
     if widget_format == 'auto':
-        dims = view.traverse(lambda x: x.key_dimensions, ('HoloMap',))[0]
+        dims = plot.dimensions
         widget_format = 'scrubber' if len(dims) == 1 or not isuniform else 'widgets'
 
     if widget_format == 'scrubber':
-        return ScrubberWidget(view)()
+        return ScrubberWidget(plot)()
     if widget_mode == 'embed':
-        return SelectionWidget(view)()
+        return SelectionWidget(plot)()
     elif widget_mode == 'cached':
-        return IPySelectionWidget(view, cached=True)()
+        return IPySelectionWidget(plot, cached=True)()
     else:
-        return IPySelectionWidget(view, cached=False)()
+        return IPySelectionWidget(plot, cached=False)()
 
 
 def display_figure(fig, message=None, max_width='100%'):
@@ -213,8 +215,6 @@ def view_display(view, size, **kwargs):
 def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
-    if widget_mode is not None and len(vmap.keys()) > 1:
-        return display_widgets(vmap, map_format, widget_mode)
     if magic_info: return magic_info
     mapplot = Store.defaults[vmap.type](vmap,
                                         **opts(vmap.last, get_plot_size(size)))
@@ -226,8 +226,10 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     elif len(mapplot) == 1:
         fig = mapplot()
         return display_figure(fig)
-
-    return render(mapplot)
+    elif widget_mode is not None:
+        return display_widgets(mapplot)
+    else:
+        return render(mapplot)
 
 
 @display_hook
@@ -235,8 +237,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     nframes = len(unique_dimkeys(layout)[1])
-    if widget_mode is not None and nframes > 1:
-        return display_widgets(layout, map_format, widget_mode)
+
     shape = layout.shape
     magic_info = process_cell_magics(layout)
     if magic_info: return magic_info
@@ -256,15 +257,15 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     if nframes == 1:
         fig = layoutplot()
         return display_figure(fig)
-
-    return render(layoutplot)
+    elif widget_mode is not None:
+        return display_widgets(layoutplot)
+    else:
+        return render(layoutplot)
 
 
 @display_hook
 def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, AxisLayout): return None
-    if widget_mode is not None and len(unique_dimkeys(grid)[1]) > 1:
-        return display_widgets(grid, map_format, widget_mode)
     max_dim = max(grid.shape)
     # Reduce plot size as AxisLayout gets larger
     shape_factor = 1. / max_dim
@@ -276,22 +277,25 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
 
     magic_info = process_cell_magics(grid)
     if magic_info: return magic_info
-    raster_fn = lambda x: True if isinstance(x, Raster) or \
-                                  (not isinstance(x, Element)) else False
-    all_raster = all(grid.traverse(raster_fn))
+
+    raster_fn = lambda x: True if isinstance(x, Raster) else False
+    all_raster = all(grid.traverse(raster_fn, [Element]))
     if all_raster:
         plot_type = MatrixGridPlot
     else:
         plot_type = GridPlot
     gridplot = plot_type(grid, **opts(grid, grid_size))
+
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
         return sanitized_repr(grid)
-    if len(gridplot) == 1:
+    elif len(gridplot) == 1:
         fig = gridplot()
         return display_figure(fig)
-
-    return render(gridplot)
+    if widget_mode is not None:
+        return display_widgets(gridplot)
+    else:
+        return render(gridplot)
 
 
 # HTML_video output by default, but may be set to first_frame,

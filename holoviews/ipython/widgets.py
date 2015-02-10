@@ -272,46 +272,14 @@ class NdWidget(param.Parameterized):
     and keys.
     """
 
-    def _process_element(self, element):
-        """
-        Determine the dimensions and keys to be turned into widgets and
-        initialize the plots.
-        """
-        if isinstance(element, (NdLayout, LayoutTree, AdjointLayout)):
-            shape = element.shape if isinstance(element, (NdLayout, LayoutTree)) else (1, 1)
-            grid_size = (shape[1]*get_plot_size()[1],
-                         shape[0]*get_plot_size()[0])
-            plot = LayoutPlot(element, **dict(figure_size=grid_size))
-        elif isinstance(element, AxisLayout):
-            max_dim = max(element.shape)
-            # Reduce plot size as AxisLayout gets larger
-            shape_factor = 1. / max_dim
-            # Expand small elements to a sensible elementing size
-            expand_factor = 1 + (max_dim - 1) * 0.1
-            scale_factor = expand_factor * shape_factor
-            element_size = (scale_factor * element.shape[0] * get_plot_size()[0],
-                         scale_factor * element.shape[1] * get_plot_size()[1])
-
-            raster_fn = lambda x: True if isinstance(x, Raster) or \
-                (not isinstance(x, Element)) else False
-            all_raster = all(element.traverse(raster_fn))
-            if all_raster:
-                plot_type = MatrixGridPlot
-            else:
-                plot_type = GridPlot
-            opts = Store.lookup_options(element, 'plot').options
-            plot = plot_type(element, **dict({'figure_size': element_size}, **opts))
-        else:
-            opts = dict(Store.options.closest(element, 'plot').options,
-                        figure_size=get_plot_size())
-            plot = Store.defaults[element.type](element, **opts)
-
-        dimensions, keys = traversal.unique_dimkeys(element)
-
+    def __init__(self, plot, **params):
+        super(NdWidget, self).__init__(**params)
+        self.plot = plot
+        self.dimensions = plot.dimensions
+        self.keys = plot.keys
         # Create mock NdMapping to hold the common dimensions and keys
-        mock_obj = NdMapping([(k, None) for k in keys],
-                             key_dimensions=dimensions)
-        return plot, dimensions, keys, mock_obj
+        self.mock_obj = NdMapping([(k, None) for k in self.keys],
+                                  key_dimensions=self.dimensions)
 
 
     def _plot_figure(self, idx):
@@ -341,19 +309,18 @@ class IPySelectionWidget(NdWidget):
                               'margin-right': 'auto'}, doc="""
                               CSS to apply to the widgets.""")
 
-    def __init__(self, element, **params):
-        super(IPySelectionWidget, self).__init__(**params)
+    def __init__(self, plot, **params):
+        super(IPySelectionWidget, self).__init__(plot, **params)
 
         if widgets is None:
             raise ImportError('ViewSelector requires IPython >= 2.0.')
 
-        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_element(element)
         self._initialize_widgets()
         self.refresh = True
 
         if self.cached:
             self.frames = OrderedDict((k, self._plot_figure(idx))
-                                      for idx, k in enumerate(self._keys))
+                                      for idx, k in enumerate(self.keys))
 
 
     def _initialize_widgets(self):
@@ -364,10 +331,10 @@ class IPySelectionWidget(NdWidget):
         self.pwidgets = {}
         self.dim_val = {}
         for didx, dim in enumerate(self.mock_obj.key_dimensions):
-            all_vals = [k[didx] for k in self._keys]
+            all_vals = [k[didx] for k in self.keys]
 
             # Initialize dimension value
-            vals = self._get_dim_vals(list(self._keys[0]), didx)
+            vals = self._get_dim_vals(list(self.keys[0]), didx)
             self.dim_val[dim.name] = vals[0]
 
             # Initialize widget
@@ -451,7 +418,7 @@ class IPySelectionWidget(NdWidget):
         if self.cached:
             self.image_widget.value = self.frames[checked]
         else:
-            self.image_widget.value = self._plot_figure(self._keys.index(checked))
+            self.image_widget.value = self._plot_figure(self.keys.index(checked))
 
 
 
@@ -494,10 +461,8 @@ class ScrubberWidget(NdWidget):
     mpld3_url = '//mpld3.github.io/js/mpld3.v0.3git.js'
     d3_url = '//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
-    def __init__(self, element, **params):
-        super(ScrubberWidget, self).__init__(**params)
-        self.element = element
-        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_element(element)
+    def __init__(self, plot, **params):
+        super(ScrubberWidget, self).__init__(plot, **params)
         self.frames = OrderedDict((idx, self._plot_figure(idx))
                                   for idx in range(len(self.plot)))
 
@@ -573,12 +538,10 @@ class SelectionWidget(ScrubberWidget):
 
     jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
 
-    def __init__(self, element, **params):
-        NdWidget.__init__(self, **params)
-        self.element = element
-        self.plot, self.dimensions, self._keys, self.mock_obj = self._process_element(element)
+    def __init__(self, plot, **params):
+        NdWidget.__init__(self, plot, **params)
         self.frames = OrderedDict((k, self._plot_figure(idx))
-                                  for idx, k in enumerate(self._keys))
+                                  for idx, k in enumerate(self.keys))
 
 
     def get_widgets(self):
