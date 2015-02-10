@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
- AxisLayout, AttrTree, HoloMap
+ AxisLayout, LayoutTree, HoloMap
 from ..element.raster import Matrix
 from ..ipython.widgets import RunProgress, ProgressBar
 
@@ -72,7 +72,7 @@ class ViewRef(Reference):
 
     >>> ref = ViewRef('Example.Path1 * Example.Path2')
 
-    >>> tree = AttrTree()
+    >>> tree = LayoutTree()
     >>> tree.Example.Path1 = Matrix(np.random.rand(5,5))
     >>> tree.Example.Path2 = Matrix(np.random.rand(5,5))
     >>> overlay = ref.resolve(tree)
@@ -84,7 +84,7 @@ class ViewRef(Reference):
     def __init__(self, spec=''):
         """
         The specification is a string that follows attribute access on
-        an AttrTree. The '*' operator is supported, as well as slicing
+        an LayoutTree. The '*' operator is supported, as well as slicing
         syntax - an example specification is 'A.B.C[2:4] *D.E'
         """
         self.specification, self.slices = self._parse_spec(spec)
@@ -243,9 +243,9 @@ class ViewRef(Reference):
 class Collect(object):
     """
     An Collect takes an object and corresponding hook and when
-    called with an AttrTree, updates it with the output of the hook
+    called with an LayoutTree, updates it with the output of the hook
     (given the object). The output of the hook should be a ViewableElement or an
-    AttrTree.
+    LayoutTree.
 
     The input object may be a picklable object (e.g. a
     ParameterizedFunction) or a Reference to the target object.  The
@@ -253,7 +253,7 @@ class Collect(object):
     the resolved object.
 
     When mode is 'merge' the return value of the hook needs to be an
-    AttrTree to be merged with the attrtree when called.
+    LayoutTree to be merged with the attrtree when called.
     """
 
     @classmethod
@@ -305,7 +305,7 @@ class Collect(object):
 
     def _get_result(self, attrtree, time, times):
         """
-        Method returning a ViewableElement or AttrTree to be merged into the
+        Method returning a ViewableElement or LayoutTree to be merged into the
         attrtree (via the specified hook) in the call.
         """
         resolvable = hasattr(self.obj, 'resolve')
@@ -315,7 +315,7 @@ class Collect(object):
 
     def __call__(self, attrtree, time=None, times=None):
         """
-        Update and return the supplied AttrTree with the output of
+        Update and return the supplied LayoutTree with the output of
         the hook at the given time out of the given list of times.
         """
         if self.path is None:
@@ -328,11 +328,11 @@ class Collect(object):
         if val is None:  return attrtree
 
         if self.mode == 'merge':
-            if isinstance(val, AttrTree):
+            if isinstance(val, LayoutTree):
                 attrtree.update(val)
                 return attrtree
             else:
-                raise Exception("Return value is not a AttrTree and mode is 'merge'.")
+                raise Exception("Return value is not a LayoutTree and mode is 'merge'.")
 
         if self.path not in attrtree:
             if not isinstance(val, UniformNdMapping):
@@ -429,10 +429,10 @@ class Analyze(Collect):
 
 class Collator(NdMapping):
     """
-    Collator is an NdMapping holding AttrTree objects and
+    Collator is an NdMapping holding LayoutTree objects and
     provides methods to filter and merge them via the call
     method. Collation inserts the Collator dimensions on
-    each UniformNdMapping type contained within the AttrTree objects.
+    each UniformNdMapping type contained within the LayoutTree objects.
     """
 
     drop = param.List(default=[], doc="""
@@ -443,10 +443,10 @@ class Collator(NdMapping):
 
     def __call__(self, path_filters=[], merge=True):
         """
-        Filter each AttrTree in the Collator with the supplied
-        path_filters. If merge is set to True all AttrTrees are
+        Filter each LayoutTree in the Collator with the supplied
+        path_filters. If merge is set to True all LayoutTrees are
         merged, otherwise an NdMapping containing all the
-        AttrTrees is returned. Optionally a list of dimensions
+        LayoutTrees is returned. Optionally a list of dimensions
         to be ignored can be supplied.
         """
         constant_dims = self.constant_dimensions
@@ -470,7 +470,7 @@ class Collator(NdMapping):
 
         if merge:
             trees = ndmapping.values()
-            accumulator = AttrTree(data=trees[0].data)
+            accumulator = LayoutTree(data=trees[0].data)
             for tree in trees:
                 accumulator.update(tree)
             return accumulator
@@ -492,11 +492,11 @@ class Collator(NdMapping):
 
     def _add_dimensions(self, item, dims, constant_keys):
         """
-        Recursively descend through an AttrTree and NdMapping objects
+        Recursively descend through an LayoutTree and NdMapping objects
         in order to add the supplied dimension values to all contained
         UniformNdMapping objects.
         """
-        if isinstance(item, AttrTree):
+        if isinstance(item, LayoutTree):
             item.fixed = False
 
         new_item = item.clone({}) if isinstance(item, NdMapping) else item
@@ -512,7 +512,7 @@ class Collator(NdMapping):
                 new_item[k] = v
             else:
                 new_item[k] = self._add_dimensions(v, dims, constant_keys)
-        if isinstance(new_item, AttrTree):
+        if isinstance(new_item, LayoutTree):
             new_item.fixed = True
 
         return new_item
@@ -527,9 +527,9 @@ class Collator(NdMapping):
 
 
 
-class Collector(AttrTree):
+class Collector(LayoutTree):
     """
-    A Collector specifies a template for how to populate a AttrTree
+    A Collector specifies a template for how to populate a LayoutTree
     with data over time. Two methods are used to schedule data
     collection: 'collect' and 'analyze'.
 
@@ -549,7 +549,7 @@ class Collector(AttrTree):
 
     # Start collection...
     >>> data = c(times=[1,2,3,4,5])
-    >>> isinstance(data, AttrTree)
+    >>> isinstance(data, LayoutTree)
     True
     >>> isinstance(data.Target.Path, UniformNdMapping)
     True
@@ -587,7 +587,7 @@ class Collector(AttrTree):
         object, a referencer (a Reference subclass) may be specified
         to wrap the object as required.
 
-        If mode is 'merge', merge the AttrTree output by the hook,
+        If mode is 'merge', merge the LayoutTree output by the hook,
         otherwise if 'set', add the output to the path specified by
         the ViewRef.
         """
@@ -647,7 +647,7 @@ class Collector(AttrTree):
         return task
 
 
-    def __call__(self, attrtree=AttrTree(), times=[], strict=False):
+    def __call__(self, attrtree=LayoutTree(), times=[], strict=False):
 
         current_time = self.time_fn()
         if times != sorted(times):
@@ -679,7 +679,7 @@ class Collector(AttrTree):
 
             # An empty attrtree buffer stops analysis repeatedly
             # computing results over the entire accumulated map
-            attrtree_buffer = AttrTree()
+            attrtree_buffer = LayoutTree()
             for task in self._scheduled_tasks:
                 if isinstance(task, Analyze) and task.mapwise:
                     task(attrtree, self.time_fn(), times)
@@ -749,6 +749,7 @@ class Collector(AttrTree):
             key = repr('.'.join(path)) if isinstance(path, tuple) else 'None'
             spec_strs.append('\n(%s, %r)' % (key, val))
         return 'Collector([%s])' % ', '.join(spec_strs)
+
 
     def __str__(self):
         indent = '  '

@@ -4,27 +4,27 @@ from collections import OrderedDict
 import numpy as np
 
 from holoviews import Matrix
-from holoviews.core.tree import AttrTree
+from holoviews.core.tree import LayoutTree
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.interface.collector import ViewRef
 
 
-class AttrTreeTest(ComparisonTestCase):
+class LayoutTreeTest(ComparisonTestCase):
 
     def setUp(self):
-        self.fixed_error = ("No attribute 'Test' in this AttrTree,"
+        self.fixed_error = ("No attribute 'Test' in this LayoutTree,"
                             " and none can be added because fixed=True")
-        super(AttrTreeTest, self).setUp()
+        super(LayoutTreeTest, self).setUp()
 
     def test_viewgroup_init(self):
-        AttrTree()
+        LayoutTree()
 
     def test_viewgroup_getter(self):
-        tr = AttrTree()
-        self.assertEqual(isinstance(tr.Test.Path, AttrTree), True)
+        tr = LayoutTree()
+        self.assertEqual(isinstance(tr.Test.Path, LayoutTree), True)
 
     def test_viewgroup_getter_fixed(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.fixed = True
         try:
             tr.Test.Path
@@ -33,12 +33,12 @@ class AttrTreeTest(ComparisonTestCase):
             self.assertEqual(str(e), self.fixed_error)
 
     def test_viewgroup_setter(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.Test.Path = 42
         self.assertEqual(tr.Test.Path, 42)
 
     def test_viewgroup_setter_fixed(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.fixed = True
         try:
             tr.Test.Path = 42
@@ -47,7 +47,7 @@ class AttrTreeTest(ComparisonTestCase):
             self.assertEqual(str(e), self.fixed_error)
 
     def test_viewgroup_shallow_fixed_setter(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.fixed = True
         try:
             tr.Test = 42
@@ -56,7 +56,7 @@ class AttrTreeTest(ComparisonTestCase):
             self.assertEqual(str(e), self.fixed_error)
 
     def test_viewgroup_toggle_fixed(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.fixed = True
         try:
             tr.Test = 42
@@ -67,14 +67,14 @@ class AttrTreeTest(ComparisonTestCase):
         tr.Test = 42
 
     def test_viewgroup_set_path(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.set_path(('Test', 'Path'), -42)
         self.assertEqual(tr.Test.Path, -42)
 
 
     def test_viewgroup_update(self):
-        tr1 = AttrTree()
-        tr2 = AttrTree()
+        tr1 = LayoutTree()
+        tr2 = LayoutTree()
         tr1.Test1.Path1 = 42
         tr2.Test2.Path2 = -42
         tr1.update(tr2)
@@ -83,24 +83,24 @@ class AttrTreeTest(ComparisonTestCase):
 
 
     def test_contains_child(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.Test.Path = 42
         self.assertEqual('Path' in tr.Test, True)
 
     def test_contains_tuple(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.Test.Path = 42
         self.assertEqual(('Test', 'Path') in tr, True)
 
     def test_simple_pickle(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         dumped = pickle.dumps(tr)
         tr2 = pickle.loads(dumped)
         self.assertEqual(tr.data, OrderedDict())
         self.assertEqual(tr.data, tr2.data)
 
     def test_pickle_with_data(self):
-        tr = AttrTree()
+        tr = LayoutTree()
         tr.Example1.Data = 42
         tr.Example2.Data = 'some data'
         dumped = pickle.dumps(tr)
@@ -115,7 +115,7 @@ class ViewRefTest(ComparisonTestCase):
 
     def setUp(self):
         super(ViewRefTest, self).setUp()
-        tree = AttrTree()
+        tree = LayoutTree()
         tree.Example.Path1 = Matrix(np.random.rand(5,5))
         tree.Example.Path2 = Matrix(np.random.rand(5,5))
         self.tree = tree
