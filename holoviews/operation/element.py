@@ -113,10 +113,10 @@ class matrix_overlay(ElementOperation):
 
     output_type = Overlay
 
-    spec = param.Tuple(doc="""
+    spec = param.String(doc="""
        Specification of the output Overlay structure. For instance:
 
-       ('Matrix.R', 'Matrix.G', 'Matrix.B')
+       Matrix.R * Matrix.G * Matrix.B
 
        Will ensure an overlay of this structure is created even if
        (for instance) only (Matrix.R * Matrix.B) is supplied.
@@ -170,13 +170,14 @@ class matrix_overlay(ElementOperation):
 
 
     def _process(self, raster, key=None):
-        ordering, strengths = self._match_overlay(raster, self.p.spec)
+        specs = tuple(el.strip() for el in self.p.spec.split('*'))
+        ordering, strengths = self._match_overlay(raster, specs)
         if all(el is None for el in ordering):
             raise Exception("The matrix_overlay operation requires at least one match")
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
-        for el, spec in zip(ordering, self.p.spec):
+        for el, spec in zip(ordering, specs):
             if el is None:
                 spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
                 el = Matrix(np.ones(strongest.data.shape) * self.p.fill,
