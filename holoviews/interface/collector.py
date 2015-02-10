@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
- AxisLayout, LayoutTree, HoloMap
+ AxisLayout, AttrTree, LayoutTree, HoloMap
 from ..element.raster import Matrix
 from ..ipython.widgets import RunProgress, ProgressBar
 
@@ -527,7 +527,7 @@ class Collator(NdMapping):
 
 
 
-class Collector(LayoutTree):
+class Collector(AttrTree):
     """
     A Collector specifies a template for how to populate a LayoutTree
     with data over time. Two methods are used to schedule data
