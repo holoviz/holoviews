@@ -230,6 +230,8 @@ class Plot(param.Parameterized):
         """
         General method to finalize the axis and plot.
         """
+        if 'title' in self.handles:
+            self.handles['title'].set_visible(self.show_title)
 
         self.drawn = True
         if self.subplot:
@@ -307,14 +309,6 @@ class CompositePlot(Plot):
             subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
         self.update_handles(axis, self.layout, key, ranges)
-
-
-    def update_handles(self, axis, view, key, ranges=None):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        self.handles['title'] = axis.set_title(self._format_title(key))
 
 
     def _get_frame(self, key):
@@ -435,12 +429,22 @@ class GridPlot(CompositePlot):
         for subplot in self.subplots.values():
             subplot(ranges=ranges, **subplot_kwargs)
 
-        self.handles['title'] = axis.set_title(self._format_title(key))
+        if self.show_title:
+            self.handles['title'] = axis.set_title(self._format_title(key))
 
         self.drawn = True
         if self.subplot: return self.handles['axis']
         plt.close(self.handles['fig'])
         return self.handles['fig']
+
+
+    def update_handles(self, axis, view, key, ranges=None):
+        """
+        Should be called by the update_frame class to update
+        any handles on the plot.
+        """
+        if self.show_title:
+            self.handles['title'] = axis.set_title(self._format_title(key))
 
 
     def _layout_axis(self, layout):
@@ -756,7 +760,9 @@ class LayoutPlot(CompositePlot):
             layout_subplots[(r, c)] = layout_plot
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
-        self.handles['title'] = self.handles['fig'].suptitle('', fontsize=16)
+
+        if self.show_title:
+            self.handles['title'] = self.handles['fig'].suptitle('', fontsize=16)
 
         return layout_subplots, layout_axes, collapsed_layout
 
@@ -864,7 +870,8 @@ class LayoutPlot(CompositePlot):
         Should be called by the update_frame class to update
         any handles on the plot.
         """
-        self.handles['title'].set_text(self._format_title(key))
+        if self.show_title and 'title' in self.handles:
+            self.handles['title'].set_text(self._format_title(key))
 
 
     def __call__(self):
