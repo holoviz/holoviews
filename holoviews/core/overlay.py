@@ -122,7 +122,7 @@ class CompositeOverlay(ViewableElement, Composable):
 
 
 
-class Overlay(LayoutTree, CompositeOverlay, Composable):
+class Overlay(LayoutTree, CompositeOverlay):
     """
     An Overlay consists of multiple Views (potentially of
     heterogeneous type) presented one on top each other with a
