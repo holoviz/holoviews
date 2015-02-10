@@ -400,7 +400,7 @@ class Compositor(param.Parameterized):
 
 
     @classmethod
-    def _collapse(cls, overlay, key, ranges, mode):
+    def collapse_element(cls, overlay, key=None, ranges=None, mode='data'):
         """
         Finds any applicable compositor and applies it.
         """
@@ -426,7 +426,7 @@ class Compositor(param.Parameterized):
         # Apply compositors
         clone = holomap.clone(shared_data=False)
         for key, overlay in holomap.items():
-            clone[key] = cls._collapse(overlay, key, ranges, mode)
+            clone[key] = cls.collapse_element(overlay, key, ranges, mode)
         return clone
 
     @classmethod
