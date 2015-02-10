@@ -22,8 +22,8 @@ class AnnotationPlot(ElementPlot):
         annotation = self.map.last
         axis = self.handles['axis']
         opts = Store.lookup_options(annotation, 'style')[self.cyclic_index]
-        handle = self.draw_annotation(axis, annotation, annotation.data, opts)
-        self.handles['annotations'].append(handle)
+        handles = self.draw_annotation(axis, annotation, annotation.data, opts)
+        self.handles['annotations'] = handles
         return self._finalize_axis(self.map.last_key)
 
 
@@ -32,8 +32,10 @@ class AnnotationPlot(ElementPlot):
         for element in self.handles['annotations']:
             element.remove()
 
+        self.handles['annotations']=[]
         opts = Store.lookup_options(annotation, 'style')[self.cyclic_index]
-        self.draw_annotation(annotation, annotation.data, opts)
+        self.handles['annotations'] = self.draw_annotation(axis, annotation,
+                                                           annotation.data, opts)
 
 
 
@@ -44,7 +46,7 @@ class VLinePlot(AnnotationPlot):
         super(VLinePlot, self).__init__(annotation, **params)
 
     def draw_annotation(self, axis, annotation, position, opts):
-        return axis.axvline(position, **opts)
+        return [axis.axvline(position, **opts)]
 
 
 
@@ -54,9 +56,9 @@ class HLinePlot(AnnotationPlot):
     def __init__(self, annotation, **params):
         super(HLinePlot, self).__init__(annotation, **params)
 
-    def draw_annotation(self, annotation, position, opts):
+    def draw_annotation(self, axis, annotation, position, opts):
         "Draw a horizontal line on the axis"
-        return self.handles['axis'].axhline(position, **opts)
+        return [axis.axhline(position, **opts)]
 
 
 
@@ -75,9 +77,9 @@ class ArrowPlot(AnnotationPlot):
             xytext = (0, points if direction=='v' else -points)
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
-        return axis.annotate(text, xy=xy, textcoords='offset points',
+        return [axis.annotate(text, xy=xy, textcoords='offset points',
                              xytext=xytext, ha="center", va="center",
-                             arrowprops=arrowprops, **opts)
+                             arrowprops=arrowprops, **opts)]
 
 
 
@@ -92,7 +94,7 @@ class SplinePlot(AnnotationPlot):
         patch = patches.PathPatch(Path(verts, codes),
                                   facecolor='none', edgecolor='b', **opts)
         axis.add_patch(patch)
-        return patch
+        return [patch]
 
 
 
@@ -105,10 +107,10 @@ class TextPlot(AnnotationPlot):
     def draw_annotation(self, axis, annotation, data, opts):
         (x,y, text, fontsize,
          horizontalalignment, verticalalignment, rotation) = data
-        return axis.text(x,y, text,
-                         horizontalalignment = horizontalalignment,
-                         verticalalignment = verticalalignment,
-                         rotation=rotation, fontsize=fontsize, **opts)
+        return [axis.text(x,y, text,
+                          horizontalalignment = horizontalalignment,
+                          verticalalignment = verticalalignment,
+                          rotation=rotation, fontsize=fontsize, **opts)]
 
 
 
