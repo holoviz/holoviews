@@ -252,13 +252,15 @@ class LabelledData(param.Parameterized):
         Recursively replaces elements using a map function when the
         specification applies.
         """
-        mapped = self.clone(shared_data=not self._deep_indexable)
-        if specs is None or any(self.matches(spec) for spec in specs):
-            mapped = map_fn(mapped)
+        applies = specs is None or any(self.matches(spec) for spec in specs)
+        mapped = map_fn(self) if applies else self
         if self._deep_indexable:
-            for k, v in self.items():
-                mapped[k] = v.map(map_fn, specs)
-        return mapped
+            deep_mapped = mapped.clone(shared_data=False)
+            for k, v in mapped.items():
+                deep_mapped[k] = v.map(map_fn, specs)
+            return deep_mapped
+        else:
+            return mapped
 
 
     def __getstate__(self):

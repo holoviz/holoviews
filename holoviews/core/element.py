@@ -508,15 +508,6 @@ class HoloMap(UniformNdMapping):
         return table_collate(self, collation_dim=collate_dim)
 
 
-    def map(self, map_fn, **kwargs):
-        """
-        UniformNdMapping a function across the HoloMap, using the bounds of first
-        mapped item.
-        """
-        mapped_items = [(k, map_fn(el, k)) for k, el in self.items()]
-        return self.clone(mapped_items, **kwargs)
-
-
     @property
     def empty_element(self):
         return self._type(None)
