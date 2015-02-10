@@ -299,8 +299,12 @@ class ChannelMagic(Magics):
         line = v.text_until_cursor
         operation_openers = [op.__name__+'(' for op in Channel.operations]
 
+        modes = ['data', 'display']
         op_declared = any(op in line for op in operation_openers)
-        if not op_declared:
+        mode_declared = any(mode in line for mode in modes)
+        if not mode_declared:
+            return modes
+        elif not op_declared:
             return operation_openers
         if op_declared and ')' not in line:
             return [')']

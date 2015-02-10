@@ -223,19 +223,20 @@ class ChannelSpec(Parser):
     """
     The syntax for defining a set of channel operations is as follows:
 
-    [ op(spec) [settings] value ]+
+    [ mode op(spec) [settings] value ]+
 
     The components are:
 
+    mode      : Operation mode, either 'data' or 'display'.
     value     : Value identifier with capitalized initial letter.
     op        : The name of the operation to apply.
     spec      : Overlay specification of form (A * B) where A and B are
                  dotted path specifications.
-    settings : Optional list of keyword arguments to be used as
-               parameters to the operation (in square brackets).
+    settings  : Optional list of keyword arguments to be used as
+                parameters to the operation (in square brackets).
     """
 
-    value = pp.Word(pp.alphas+pp.nums+'_').setResultsName("value")
+    mode = pp.Word(pp.alphas+pp.nums+'_').setResultsName("mode")
 
     op = pp.Word(pp.alphas+pp.nums+'_').setResultsName("op")
 
@@ -244,12 +245,14 @@ class ChannelSpec(Parser):
                                  ignoreExpr=None
                              ).setResultsName("spec")
 
+    value = pp.Word(pp.alphas+pp.nums+'_').setResultsName("value")
+
     op_settings = pp.nestedExpr(opener='[',
                                 closer=']',
                                 ignoreExpr=None
                             ).setResultsName("op_settings")
 
-    channel_spec = pp.OneOrMore(pp.Group(op + overlay_spec + value
+    channel_spec = pp.OneOrMore(pp.Group(mode + op + overlay_spec + value
                                          + pp.Optional(op_settings)))
 
 
@@ -271,6 +274,10 @@ class ChannelSpec(Parser):
         opmap = {op.__name__:op for op in Channel.operations}
         for group in cls.channel_spec.parseString(line):
 
+            if ('mode' not in group) or group['mode'] not in ['data', 'display']:
+                raise SyntaxError("Either data or display mode must be specified.")
+            mode = group['mode']
+
             kwargs = {}
             operation = opmap[group['op']]
             spec = ' '.join(group['spec'].asList()[0])
@@ -283,6 +290,6 @@ class ChannelSpec(Parser):
             if  'op_settings' in group:
                 kwargs = cls.todict(group['op_settings'][0], 'brackets')
 
-            definition = Channel(str(spec), operation, str(group['value']), **kwargs)
+            definition = Channel(str(spec), operation, str(group['value']), mode, **kwargs)
             definitions.append(definition)
         return definitions

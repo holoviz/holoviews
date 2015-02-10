@@ -126,7 +126,7 @@ class TestChannelMagic(ExtensionTestCase):
         self.cell("B = Matrix(np.random.rand(5,5), value='B')")
         self.cell("overlay = R * G * B")
 
-        definition = " toRGB(Matrix * Matrix * Matrix) RGBTEST"
+        definition = " display toRGB(Matrix * Matrix * Matrix) RGBTEST"
         self.line_magic('channels', definition)
 
         assert len(Channel.definitions) == 1, "Channel definition not created"
@@ -140,7 +140,7 @@ class TestChannelMagic(ExtensionTestCase):
 
         self.cell("overlay = H * C * S")
 
-        definition = " toHCS(Matrix * Matrix * Matrix) HCSTEST"
+        definition = " display toHCS(Matrix * Matrix * Matrix) HCSTEST"
         self.line_magic('channels', definition)
         assert len(Channel.definitions) == 1, "Channel definition not created"
         self.assertEqual(Channel.definitions[0].value, 'HCSTEST')
