@@ -3,8 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from holoviews import Matrix
-from holoviews.core.tree import LayoutTree
+from holoviews import Matrix, LayoutTree
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.interface.collector import ViewRef
 
