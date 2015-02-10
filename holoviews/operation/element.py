@@ -45,7 +45,7 @@ class chain(ElementOperation):
     def _process(self, view, key=None):
         processed = view
         for operation in self.p.operations:
-            processed = operation(processed, input_ranges=self.p.input_ranges)
+            processed = operation.process_element(processed, key, input_ranges=self.p.input_ranges)
 
         return processed.clone(value=self.p.value)
 
