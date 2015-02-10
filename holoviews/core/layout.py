@@ -149,6 +149,14 @@ class AdjointLayout(Dimensioned):
         return self.__class__(dict(items))
 
 
+    def keys(self):
+        return self.data.keys()
+
+
+    def items(self):
+        return self.data.items()
+
+
     def __iter__(self):
         i = 0
         while i < len(self):
