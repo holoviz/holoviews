@@ -44,9 +44,10 @@ class AttrTree(object):
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
         self.__dict__['data'] = OrderedDict()
+        items = items.items() if isinstance(items, OrderedDict) else items
         # Python 3
         items = list(items) if items else items
-        items = [] if items is None else (items if isinstance(items, list) else items.items())
+        items = [] if not items else items
         for path, item in items:
             self.set_path(path, item)
 
