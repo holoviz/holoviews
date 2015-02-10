@@ -171,10 +171,10 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
                 vmap = self.layout.get((xkey, ykey), None)
                 pane = vmap.get(key, None) if vmap else None
                 if pane:
-                    if issubclass(vmap.type, CompositeOverlay): pane = pane.last
+                    if issubclass(vmap.type, CompositeOverlay): pane = pane.values()[-1]
                     data = pane.data if pane else None
                 else:
-                    pane = vmap.last.last if issubclass(vmap.type, CompositeOverlay) else vmap.last
+                    pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = Store.lookup_options(pane, 'style')[self.cyclic_index]
