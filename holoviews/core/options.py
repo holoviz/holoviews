@@ -351,6 +351,11 @@ class Channel(param.Parameterized):
     values names of those matrices match 'R', 'G' and 'B' respectively.
     """
 
+    mode = param.ObjectSelector(default='data',
+                                objects=['data', 'display'], doc="""
+      The mode of the Channel object which may be either 'data' or
+      'display'.""")
+
     operation = param.Parameter(doc="""
        The ElementOperation to apply when collapsing overlays into a
        channel.""")
@@ -380,7 +385,7 @@ class Channel(param.Parameterized):
 
 
     @classmethod
-    def strongest_match(cls, overlay):
+    def strongest_match(cls, overlay, mode):
         """
         Returns the strongest matching channel operation given an
         overlay. If no matches are found, None is returned.
@@ -388,14 +393,15 @@ class Channel(param.Parameterized):
         The best match is defined as the channel operation with the
         highest match value as returned by the match_level method.
         """
-        match_strength = [(op.match_level(overlay), op) for op in cls.definitions]
+        match_strength = [(op.match_level(overlay), op) for op in cls.definitions
+                          if op.mode == mode]
         matches = [(lvl, op) for (lvl, op) in match_strength if lvl is not None]
         if matches == []: return None
         else:             return sorted(matches)[0][1]
 
 
     @classmethod
-    def _collapse(cls, overlay, key, ranges):
+    def _collapse(cls, overlay, key, ranges, mode):
         """
         Finds any applicable channel operation and applies it.
         """
@@ -410,7 +416,7 @@ class Channel(param.Parameterized):
 
 
     @classmethod
-    def collapse(cls, holomap, ranges=None):
+    def collapse(cls, holomap, ranges=None, mode='data'):
         """
         Given a map of Overlays, apply all applicable channel
         reductions.
@@ -422,7 +428,7 @@ class Channel(param.Parameterized):
         # Collapse channel operations
         clone = holomap.clone(shared_data=False)
         for key, overlay in holomap.items():
-            clone[key] = cls._collapse(overlay, key, ranges)
+            clone[key] = cls._collapse(overlay, key, ranges, mode)
         return clone
 
     @classmethod
@@ -435,7 +441,7 @@ class Channel(param.Parameterized):
             cls.operations.append(channel.operation)
 
 
-    def __init__(self, pattern, operation, value, **kwargs):
+    def __init__(self, pattern, operation, value, mode, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -455,6 +461,7 @@ class Channel(param.Parameterized):
         super(Channel, self).__init__(value=value,
                                       pattern=pattern,
                                       operation=operation,
+                                      mode=mode,
                                       kwargs=kwargs)
 
 
