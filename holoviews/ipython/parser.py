@@ -282,8 +282,6 @@ class CompositorSpec(Parser):
             operation = opmap[group['op']]
             spec = ' '.join(group['spec'].asList()[0])
 
-            if '*' not in spec:
-                raise SyntaxError("Overlay specification must contain at least one * operation")
             if  group['op'] not in opmap:
                 raise SyntaxError("Operation %s not available for use with compositors."
                                   % group['op'])

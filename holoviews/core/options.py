@@ -507,9 +507,12 @@ class Compositor(param.Parameterized):
         """
         Apply the compositor on the input with the given input ranges.
         """
+        from .overlay import CompositeOverlay
+        if isinstance(value, CompositeOverlay) and len(value) == 1:
+            value = value.values()[0]
         if key is None:
             return self.operation(value, input_ranges=input_ranges, **self.kwargs)
-        return self.operation.instance(input_ranges=input_ranges, **self.kwargs).process_element(value, key, )
+        return self.operation.instance(input_ranges=input_ranges, **self.kwargs).process_element(value, key)
 
 
 
