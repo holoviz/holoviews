@@ -15,17 +15,19 @@ from .normalization import raster_normalization
 class chain(ElementOperation):
     """
     Defining an ElementOperation chain is an easy way to define a new
-    ElementOperation from a series of existing ones. The single
-    argument is a callable that accepts an input element and returns
-    the final, transformed element. To create the custom
-    ElementOperation, you will need to supply this argument to a new
-    instance of chain. For example:
+    ElementOperation from a series of existing ones. The argument is a
+    list of ElementOperation (or ElementOperation instances) that are
+    called in turn until the final, transformed element is returned.
 
-    chain.instance(
-       chain=lambda x: colormap(operator(x, operator=np.add), cmap='jet'))
+    chain(operations=[collapse.instance(operator=np.add), colormap])
 
-    This defines an ElementOperation that sums the data in the input
-    and turns it into an RGB Matrix using the 'jet' colormap.
+    This first sums the data in the input with collapse (using np.add)
+    and then returns an RGB Matrix applying the default colormap of
+    the colormap operator.
+
+    Instances are only required when arguments need to be passed to
+    individual operators so that the result is a function over one
+    argument.
     """
 
     output_type = param.Parameter(Matrix, doc="""
@@ -36,10 +38,16 @@ class chain(ElementOperation):
         The value assigned to the result after having applied the chain.""")
 
 
-    chain = param.Callable(doc="""A chain of existing ViewOperations.""")
+    operations = param.List(default=[], class_=ElementOperation, doc="""
+       A list of ElementOperations (or ElementOperation instances)
+       that are applied on the input from left to right..""")
 
     def _process(self, view, key=None):
-        return self.p.chain(view).clone(value=self.p.value)
+        processed = view
+        for operation in self.p.operations:
+            processed = operation(processed, input_ranges=self.p.input_ranges)
+
+        return processed.clone(value=self.p.value)
 
 
 class transform(ElementOperation):
