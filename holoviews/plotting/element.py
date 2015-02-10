@@ -89,6 +89,9 @@ class ElementPlot(Plot):
         Helper method that ensures a given element is always returned as
         an HoloMap object.
         """
+        # Apply data collapse
+        holomap = holomap.map(Compositor.collapse_element, [CompositeOverlay])
+
         # Compute framewise normalization
         mapwise_ranges = self.compute_ranges(holomap, None, None)
         if keys and isinstance(holomap, HoloMap) and ranges:
@@ -109,8 +112,8 @@ class ElementPlot(Plot):
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
             check = holomap.last.values()[0]
-            holomap = Compositor.collapse(holomap,
-                                       (ranges, keys if keys else None))
+            holomap = Compositor.collapse(holomap, (ranges, keys if keys else None),
+                                          mode='display')
         if isinstance(check, Element3D):
             self.projection = '3d'
 

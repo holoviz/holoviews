@@ -8,9 +8,9 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 
 import param
-from ..core import NdMapping, UniformNdMapping, ViewableElement, HoloMap, \
-    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element
-from ..core.options import Options, OptionTree, Store
+from ..core import UniformNdMapping, ViewableElement, HoloMap, \
+    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, CompositeOverlay
+from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, valid_identifier
 from ..element.raster import Raster
@@ -386,6 +386,7 @@ class GridPlot(CompositePlot):
 
 
     def _create_subplots(self, layout, ranges=None, create_axis=True):
+        layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         subplots, subaxes = OrderedDict(), OrderedDict()
 
         frame_ranges = self.compute_ranges(layout, None, ranges)
@@ -638,7 +639,7 @@ class LayoutPlot(CompositePlot):
         if not isinstance(layout, (NdLayout, LayoutTree)):
             raise Exception("LayoutPlot only accepts LayoutTree objects.")
 
-        self.layout = layout
+        self.layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
