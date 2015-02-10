@@ -131,6 +131,7 @@ class TestCompositorMagic(ExtensionTestCase):
 
         assert len(Compositor.definitions) == 1, "Compositor definition not created"
         self.assertEqual(Compositor.definitions[0].value, 'RGBTEST')
+        self.assertEqual(Compositor.definitions[0].mode, 'display')
 
 
     def test_HCS_compositor_definition(self):
@@ -140,10 +141,11 @@ class TestCompositorMagic(ExtensionTestCase):
 
         self.cell("overlay = H * C * S")
 
-        definition = " display toHCS(Matrix * Matrix * Matrix) HCSTEST"
+        definition = " data toHCS(Matrix * Matrix * Matrix) HCSTEST"
         self.line_magic('compositor', definition)
         assert len(Compositor.definitions) == 1, "Compositor definition not created"
         self.assertEqual(Compositor.definitions[0].value, 'HCSTEST')
+        self.assertEqual(Compositor.definitions[0].mode, 'data')
 
 
 if __name__ == "__main__":
