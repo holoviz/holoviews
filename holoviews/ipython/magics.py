@@ -246,7 +246,8 @@ class ViewMagic(Magics):
 
     @line_cell_magic
     def view(self, line, cell=None):
-        if line.strip() == '':
+        line = line.split('#')[0].strip()
+        if line == '':
             self.pprint()
             print("\nFor help with the %view magic, call %view?")
             return
