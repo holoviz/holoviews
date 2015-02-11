@@ -63,7 +63,7 @@ class ElementPlot(Plot):
         self.cyclic_index = cyclic_index
         self.zorder = zorder
         dimensions = self.map.key_dimensions if dimensions is None else dimensions
-        keys = keys if keys else self.map.data.keys()
+        keys = keys if keys else list(self.map.data.keys())
         plot_opts = Store.lookup_options(self.map.last, 'plot').options
         super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                           **dict(params, **plot_opts))

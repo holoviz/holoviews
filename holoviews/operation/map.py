@@ -28,7 +28,7 @@ class table_collate(MapOperation):
             entry_keys = [k[-2:] for k in table.data.keys()]
         else:
             outer_dims = ['Label']
-            entry_keys = table.data.keys()
+            entry_keys = list(table.data.keys())
 
         # Generate a HoloMap for every entry in the table
         map_fn = lambda: HoloMap(**dict(vmap.get_param_values(), key_dimensions=new_dimensions))

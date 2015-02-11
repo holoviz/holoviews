@@ -150,11 +150,11 @@ class AdjointLayout(Dimensioned):
 
 
     def keys(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
 
     def items(self):
-        return self.data.items()
+        return list(self.data.items())
 
 
     def __iter__(self):
@@ -310,7 +310,7 @@ class LayoutTree(AttrTree, Dimensioned):
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
             row, col = key
             idx = row * self._cols + col
-            keys = self.data.keys()
+            keys = list(self.data.keys())
             if idx >= len(keys) or col >= self._cols:
                 raise KeyError('Index %s is outside available item range' % str(key))
             key = keys[idx]

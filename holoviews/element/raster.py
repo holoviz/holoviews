@@ -228,7 +228,7 @@ class HeatMap(Raster):
 
 
     def dense_keys(self):
-        keys = self._data.keys()
+        keys = list(self._data.keys())
         dim1_keys = sorted(set(k[0] for k in keys))
         dim2_keys = sorted(set(k[1] for k in keys))
         return dim1_keys, dim2_keys

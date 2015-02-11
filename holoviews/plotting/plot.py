@@ -146,8 +146,10 @@ class Plot(param.Parameterized):
 
         # Group elements specs by ID and override normalization
         # options sequentially
-        id_groups = sorted(groupby(element_specs, lambda x: x[0]))
+        key_fn = lambda x: -1 if x[0] is None else x[0]
+        id_groups = groupby(sorted(element_specs, key=key_fn), key_fn)
         for gid, element_spec_group in id_groups:
+            gid = None if gid == -1 else gid
             group_specs = [el for _, el in element_spec_group]
             optstree = Store.custom_options.get(gid, Store.options)
             # Get the normalization options for the current id
@@ -318,7 +320,7 @@ class CompositePlot(Plot):
         """
         layout_frame = self.layout.clone(shared_data=False)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
-                                  x.data.keys()[max([key, len(x)-1])])
+                                  list(x.data.keys())[max([key, len(x)-1])])
         for path, item in self.layout.items():
             if self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions], key)

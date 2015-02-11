@@ -220,7 +220,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise Exception('NdMapping does not support splitting of deep dimensions.')
         first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
         self._check_key_type = False # Speed optimization
-        own_keys = self.data.keys()
+        own_keys = list(self.data.keys())
 
         container_type = container_type if container_type else NdMapping
         split_data = container_type(key_dimensions=first_dims)

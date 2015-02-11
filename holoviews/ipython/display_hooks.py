@@ -247,7 +247,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     layoutplot = LayoutPlot(layout, **opts(layout, grid_size))
     if isinstance(layout, LayoutTree):
         if layout._display == 'auto':
-            branches = len(set([path[0] for path in layout.data.keys()]))
+            branches = len(set([path[0] for path in list(layout.data.keys())]))
             if branches > max_branches:
                 return '<tt>'+ sanitized_repr(layout) + '</tt>'
             elif len(layout.data) * nframes > max_frames:

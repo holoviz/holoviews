@@ -44,7 +44,7 @@ class ItemTable(Element):
 
         str_keys=dict((k.name if isinstance(k, Dimension)
                        else k ,v) for (k,v) in data.items())
-        params = dict(params, key_dimensions=data.keys())
+        params = dict(params, key_dimensions=list(data.keys()))
         super(ItemTable, self).__init__(str_keys, **params)
 
 
@@ -244,7 +244,7 @@ class Table(Element, NdMapping):
                 row_values = self.values()[row-1]
                 return (row_values[col - ndims]
                         if not np.isscalar(row_values) else row_values)
-            row_data = self.data.keys()[row-1]
+            row_data = list(self.data.keys())[row-1]
 
             return row_data[col] if isinstance(row_data, tuple) else row_data
 
