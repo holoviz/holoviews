@@ -59,11 +59,9 @@ class MplD3Plugin(PlottingHook):
 
     def _applies(self, plot, view):
         types_match = super(MplD3Plugin, self)._applies(plot, view)
-        if plot.projection == '3d': return False
-        if plot.subplots:
-            return not any(sp.projection == '3d' for sp in plot.subplots.values())
+        axes3d = plot.projection == '3d'
         mpld3_backend = ViewMagic.options['backend'] == 'd3'
-        return types_match and mpld3_backend
+        return types_match and mpld3_backend and not axes3d
 
 
 
