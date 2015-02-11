@@ -269,73 +269,6 @@ class LayoutTree(AttrTree, Dimensioned):
 
     _deep_indexable = True
 
-    def __init__(self, *args, **kwargs):
-        self.__dict__['_display'] = 'auto'
-        self.__dict__['_max_cols'] = 4
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
-        AttrTree.__init__(self, *args, **kwargs)
-        Dimensioned.__init__(self, self.data, **params)
-
-
-    def display(self, option):
-        "Sets the display policy of the LayoutTree before returning self"
-        options = ['auto', 'all']
-        if option not in options:
-            raise Exception("Display option must be one of %s" %
-                            ','.join(repr(el) for el in options))
-        self._display = option
-        return self
-
-
-    def cols(self, ncols):
-        self._max_cols = ncols
-        return self
-
-
-    @property
-    def uniform(self):
-        return traversal.uniform(self)
-
-
-    def select(self, **selections):
-        return self.clone([(path, item.select(ignore_invalid=True, **selections))
-                            for path, item in self.items()])
-
-
-    def __getitem__(self, key):
-        if isinstance(key, int):
-            if key < len(self):
-                return self.data.values()[key]
-            raise KeyError("Element out of range.")
-        if len(key) == 2 and not any([isinstance(k, str) for k in key]):
-            row, col = key
-            idx = row * self._cols + col
-            keys = list(self.data.keys())
-            if idx >= len(keys) or col >= self._cols:
-                raise KeyError('Index %s is outside available item range' % str(key))
-            key = keys[idx]
-        return super(LayoutTree, self).__getitem__(key)
-
-
-    def grid_items(self):
-        return {tuple(np.unravel_index(idx, self.shape)): (path, item)
-                for idx, (path, item) in enumerate(self.items())}
-
-
-    def __len__(self):
-        return len(self.data)
-
-
-    @property
-    def shape(self):
-        num = len(self)
-        if num <= self._max_cols:
-            return (1, num)
-        nrows = num // self._max_cols
-        last_row_cols = num % self._max_cols
-        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
-
-
     @classmethod
     def new_path(cls, path, item, paths):
         count = 2
@@ -374,6 +307,53 @@ class LayoutTree(AttrTree, Dimensioned):
         return cls(items=[((view.value, view.label if view.label else 'I'), view)])
 
 
+    def __init__(self, *args, **kwargs):
+        self.__dict__['_display'] = 'auto'
+        self.__dict__['_max_cols'] = 4
+        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
+        AttrTree.__init__(self, *args, **kwargs)
+        Dimensioned.__init__(self, self.data, **params)
+
+
+    @property
+    def uniform(self):
+        return traversal.uniform(self)
+
+    @property
+    def shape(self):
+        num = len(self)
+        if num <= self._max_cols:
+            return (1, num)
+        nrows = num // self._max_cols
+        last_row_cols = num % self._max_cols
+        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
+
+
+    def cols(self, ncols):
+        self._max_cols = ncols
+        return self
+
+
+    def display(self, option):
+        "Sets the display policy of the LayoutTree before returning self"
+        options = ['auto', 'all']
+        if option not in options:
+            raise Exception("Display option must be one of %s" %
+                            ','.join(repr(el) for el in options))
+        self._display = option
+        return self
+
+
+    def select(self, **selections):
+        return self.clone([(path, item.select(ignore_invalid=True, **selections))
+                            for path, item in self.items()])
+
+
+    def grid_items(self):
+        return {tuple(np.unravel_index(idx, self.shape)): (path, item)
+                for idx, (path, item) in enumerate(self.items())}
+
+
     def group(self, value):
         """
         Assign a new value string to all the elements and return a new
@@ -381,6 +361,25 @@ class LayoutTree(AttrTree, Dimensioned):
         """
         new_items = [el.relabel(value=value) for el in self.data.values()]
         return reduce(lambda x,y: x+y, new_items)
+
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            if key < len(self):
+                return self.data.values()[key]
+            raise KeyError("Element out of range.")
+        if len(key) == 2 and not any([isinstance(k, str) for k in key]):
+            row, col = key
+            idx = row * self._cols + col
+            keys = list(self.data.keys())
+            if idx >= len(keys) or col >= self._cols:
+                raise KeyError('Index %s is outside available item range' % str(key))
+            key = keys[idx]
+        return super(LayoutTree, self).__getitem__(key)
+
+
+    def __len__(self):
+        return len(self.data)
 
 
     def __add__(self, other):
