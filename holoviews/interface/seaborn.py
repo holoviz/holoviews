@@ -48,15 +48,6 @@ class TimeSeries(Element2D):
         super(TimeSeries, self).__init__(data, **params)
 
 
-    def __getitem__(self, slc):
-        if slc is ():
-            return self
-        else:
-            raise NotImplementedError('Slicing and indexing of'
-                                      'TimeSeries currently not '
-                                      'implemented.')
-
-
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 0:
@@ -122,10 +113,6 @@ class Distribution(Chart):
             return []
         else:
             raise KeyError("Dimension %s not found" % str(dimension))
-
-
-    def __getitem__(self, index):
-        raise NotImplementedError
 
 
 class Regression(Scatter):
