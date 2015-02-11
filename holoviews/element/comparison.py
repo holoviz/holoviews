@@ -169,11 +169,11 @@ class Comparison(ComparisonInterface):
         cls.compare_arrays(arr1, arr2, msg)
 
     @classmethod
-    def compare_arrays(cls, arr1, arr2, name='Arrays'):
+    def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
             assert_array_almost_equal(arr1, arr2)
         except AssertionError as e:
-            raise cls.failureException(name + str(e)[11:])
+            raise cls.failureException(msg + str(e)[11:])
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
@@ -400,9 +400,9 @@ class Comparison(ComparisonInterface):
     #=========#
 
     @classmethod
-    def compare_matrix(cls, el1, el2, msg=None):
+    def compare_matrix(cls, el1, el2, msg='Matrix data'):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Matrix data')
+        cls.compare_arrays(el1.data, el2.data, msg=msg)
         cls.bounds_check(el1,el2)
 
 
