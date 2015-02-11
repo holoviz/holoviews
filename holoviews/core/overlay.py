@@ -137,6 +137,11 @@ class Overlay(LayoutTree, CompositeOverlay):
 
     value = param.String(default='Overlay', constant=True)
 
+    @classmethod
+    def _from_values(cls, val):
+        return reduce(lambda x,y: x*y, val).display('auto')
+
+
     def __init__(self, items=None, **params):
         view_params = ViewableElement.params().keys()
         LayoutTree.__init__(self, items,
@@ -146,7 +151,7 @@ class Overlay(LayoutTree, CompositeOverlay):
 
 
     def __add__(self, other):
-        return LayoutTree.from_view(self) + LayoutTree.from_view(other)
+        return LayoutTree.from_values(self) + LayoutTree.from_values(other)
 
 
     def __mul__(self, other):

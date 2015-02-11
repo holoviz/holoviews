@@ -411,7 +411,7 @@ class Compositor(param.Parameterized):
         output = applicable_op.apply(overlay, ranges, key=key)
         output = output.relabel(value=applicable_op.value)
         output.id = overlay.id
-        return Overlay.from_view(output)
+        return Overlay.from_values(output)
 
 
     @classmethod

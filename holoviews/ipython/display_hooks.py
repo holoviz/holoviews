@@ -234,7 +234,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
 
 @display_hook
 def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
-    if isinstance(layout, AdjointLayout): layout = LayoutTree.from_view(layout)
+    if isinstance(layout, AdjointLayout): layout = LayoutTree.from_values(layout)
     if not isinstance(layout, (LayoutTree, NdLayout)): return None
     nframes = len(unique_dimkeys(layout)[1])
 

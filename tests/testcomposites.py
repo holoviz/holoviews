@@ -92,12 +92,12 @@ class LayoutTreeTestCase(ElementTestCase):
         self.assertEqual(t1.keys(), t2.keys())
         self.assertEqual(t2.keys(), t3.keys())
 
-    def test_layouttree_from_view1(self):
-        t = LayoutTree.from_view(self.el1)
+    def test_layouttree_from_values1(self):
+        t = LayoutTree.from_values(self.el1)
         self.assertEqual(t.keys(),  [('Element', 'I')])
 
-    def test_layouttree_from_view2(self):
-        t = LayoutTree.from_view(self.el8)
+    def test_layouttree_from_values2(self):
+        t = LayoutTree.from_values(self.el8)
         self.assertEqual(t.keys(),  [('ValA', 'LabelB')])
 
     def test_layouttree_group(self):
@@ -198,12 +198,12 @@ class OverlayTestCase(ElementTestCase):
         self.assertEqual(o1.keys(), o2.keys())
         self.assertEqual(o2.keys(), o3.keys())
 
-    def test_overlay_from_view1(self):
-        t = Overlay.from_view(self.el1)
+    def test_overlay_from_values1(self):
+        t = Overlay.from_values(self.el1)
         self.assertEqual(t.keys(),  [('Element', 'I')])
 
-    def test_overlay_from_view2(self):
-        t = Overlay.from_view(self.el8)
+    def test_overlay_from_values2(self):
+        t = Overlay.from_values(self.el8)
         self.assertEqual(t.keys(),  [('ValA', 'LabelB')])
 
     def test_overlay_group(self):

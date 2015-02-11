@@ -431,7 +431,7 @@ class HoloMap(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
 
 
     def __lshift__(self, other):
@@ -679,7 +679,7 @@ class AxisLayout(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
 
 
     @property

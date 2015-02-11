@@ -28,7 +28,7 @@ class Composable(object):
     """
 
     def __add__(self, obj):
-        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
 
 
     def __lshift__(self, other):
@@ -165,7 +165,7 @@ class AdjointLayout(Dimensioned):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
 
 
     def __len__(self):
@@ -224,7 +224,7 @@ class NdLayout(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_view(self) + LayoutTree.from_view(obj)
+        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
 
 
     @property
@@ -301,10 +301,21 @@ class LayoutTree(AttrTree, Dimensioned):
 
 
     @classmethod
-    def from_view(cls, view):
-        # Return ViewTrees and Overlays directly
-        if isinstance(view, LayoutTree) and not isinstance(view, ViewableElement): return view
-        return cls(items=[((view.value, view.label if view.label else 'I'), view)])
+    def _from_values(cls, val):
+        return reduce(lambda x,y: x+y, val).display('auto')
+
+    @classmethod
+    def from_values(cls, val):
+        """
+        Returns a LayoutTree given a list (or tuple) of viewable
+        elements or just a single viewable element.
+        """
+        if isinstance(val, (list, tuple)):
+            return cls._from_values(val)
+        elif type(val) is cls:
+            return val
+        else:
+            return cls(items=[((val.value, val.label if val.label else 'I'), val)])
 
 
     def __init__(self, *args, **kwargs):
@@ -383,7 +394,7 @@ class LayoutTree(AttrTree, Dimensioned):
 
 
     def __add__(self, other):
-        other = self.from_view(other)
+        other = self.from_values(other)
         items = list(self.data.items()) + list(other.data.items())
         return LayoutTree(items=self.relabel_item_paths(items)).display('all')
 
