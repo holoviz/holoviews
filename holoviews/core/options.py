@@ -425,7 +425,7 @@ class Compositor(param.Parameterized):
 
         # Apply compositors
         clone = holomap.clone(shared_data=False)
-        for key, overlay in holomap.items():
+        for key, overlay in holomap.data.items():
             clone[key] = cls.collapse_element(overlay, key, ranges, mode)
         return clone
 

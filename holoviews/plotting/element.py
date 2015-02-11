@@ -107,7 +107,7 @@ class ElementPlot(Plot):
         else:
             holomap = HoloMap(initial_items=(0, holomap), key_dimensions=['Frame'], id=holomap.id)
             ranges = [mapwise_ranges]
-            keys = [0]
+            keys = [(0,)]
 
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
