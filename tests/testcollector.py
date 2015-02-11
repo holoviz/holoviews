@@ -11,7 +11,7 @@ from holoviews.interface.collector import ViewRef
 class LayoutTreeTest(ComparisonTestCase):
 
     def setUp(self):
-        self.fixed_error = ("No attribute 'Test' in this LayoutTree,"
+        self.fixed_error = ("No attribute 'Test' in this AttrTree,"
                             " and none can be added because fixed=True")
         super(LayoutTreeTest, self).setUp()
 
