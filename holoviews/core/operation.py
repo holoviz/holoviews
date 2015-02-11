@@ -11,6 +11,8 @@ from .dimension import ViewableElement
 from .element import Element, HoloMap, AxisLayout
 from .layout import NdLayout, LayoutTree
 from .overlay import CompositeOverlay, NdOverlay, Overlay
+from .traversal import unique_dimkeys
+
 
 
 class Operation(param.ParameterizedFunction):
@@ -155,6 +157,59 @@ class MapOperation(param.ParameterizedFunction):
 
 
 
-class TreeOperation(param.ParameterizedFunction):
+class TreeOperation(Operation):
+    """
+    A TreeOperation is the most general Operation type; it accepts any
+    holoviews datastructure and outputs a LayoutTree containing one or
+    more elements.
+    """
 
-    pass
+    def process_element(self, element, key, **params):
+        """
+        The process_element method allows a single element to be
+        operated on given an externally supplied key.
+        """
+        self.p = param.ParamOverrides(self, params)
+        maps = self._process(element, key)
+        return reduce(lambda x,y: x + y, maps)
+
+
+    def __call__(self, src, **params):
+        self.p = param.ParamOverrides(self, params)
+        dims, keys = unique_dimkeys(src)
+
+        if not dims:
+            return self.process_element(src, None)
+        elif isinstance(src, HoloMap):
+            values = src.values()
+        elif isinstance(src, LayoutTree):
+            if not src.uniform:
+                raise Exception("TreeOperation can only process uniform LayoutTrees")
+            dim_names = [d.name for d in dims]
+            values = [src.select(**dict(zip(dim_names, key))) for key in keys]
+
+        tree = LayoutTree()
+        for key, el in zip(keys, values):
+            if not isinstance(el, LayoutTree):
+                result = self._process(LayoutTree.from_values(el), key)
+            else:
+                result = self._process(el, key)
+
+            holomaps = [HoloMap([(key,el)], key_dimensions=dims,
+                                value=el.value, label=el.label) for el in result]
+            if len(holomaps) == 1:
+                processed_tree = LayoutTree.from_values(holomaps[0])
+            else:
+                processed_tree = LayoutTree.from_values(holomaps)
+
+            tree.update(processed_tree)
+        return tree
+
+
+    def _process(self, tree, key=None):
+        """
+        Process a single input LayoutTree, returning a list of
+        elements to be merged with the output LayoutTree.
+        """
+        raise NotImplementedError
+
