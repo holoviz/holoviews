@@ -198,7 +198,8 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
         self._ylim = None
         data = self._process_layers(overlays)
         ViewableElement.__init__(self, data, **params)
-        NdMapping.__init__(self, data, **params)
+        map_data = overlays if isinstance(overlays, NdMapping) else data
+        NdMapping.__init__(self, map_data, **params)
 
 
     def _process_layers(self, layers):

@@ -4,6 +4,7 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
+from operator import itemgetter
 from collections import OrderedDict
 import numpy as np
 
@@ -49,6 +50,11 @@ class MultiDimensionalMapping(Dimensioned):
     _sorted = True
 
     def __init__(self, initial_items=None, **params):
+        if isinstance(initial_items, NdMapping):
+            own_params = self.params()
+            new_params = initial_items.get_param_values(onlychanged=True)
+            params = dict({name: value for name, value in new_params
+                           if name in own_params}, **params)
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
 
         self._next_ind = 0
