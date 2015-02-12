@@ -215,20 +215,11 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
             keys = range(len(layers))
             return OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
 
-    def set(self, layers):
-        data = self._process_layers(layers)
-        self.data = data
-
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         from ..operation import histogram
         return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
                          individually=individually, **kwargs)
-
-
-    @property
-    def labels(self):
-        return [el.label for el in self]
 
 
     def item_check(self, dim_vals, layer):
@@ -241,23 +232,6 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
             self._layer_dimensions = layer_dimensions
             self.value = layer.value
             self.label = layer.label
-
-
-    def add(self, layer):
-        """
-        NdOverlay a single layer on top of the existing overlay.
-        """
-        self[len(self)] = layer
-
-    @property
-    def layer_types(self):
-        """
-        The type of NdOverlay stored in the NdOverlay.
-        """
-        if len(self) == 0:
-            return None
-        else:
-            return tuple(set(layer.__class__ for layer in self))
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
