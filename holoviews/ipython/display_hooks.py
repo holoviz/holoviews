@@ -23,8 +23,8 @@ except:
 import param
 
 from ..core.options import Store
-from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout, AxisLayout, LayoutTree, Overlay
-from ..core import traversal
+from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
+    NdOverlay, AxisLayout, LayoutTree, Overlay
 from ..core.traversal import unique_dimkeys
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
@@ -308,6 +308,7 @@ def set_display_hooks(ip):
     html_formatter.for_type(LayoutTree, layout_display)
     html_formatter.for_type(ViewableElement, view_display)
     html_formatter.for_type(Overlay, view_display)
+    html_formatter.for_type(NdOverlay, view_display)
     html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(NdLayout, layout_display)
