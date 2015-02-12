@@ -42,3 +42,15 @@ def valid_identifier(identifier):
     if invalid_chars or not valid_first_char:
         raise SyntaxError("Invalid Python identifier: %r" % identifier)
     return identifier
+
+
+def unique_iterator(seq):
+    """
+    Returns an iterator containing all non-duplicate elements
+    in the input sequence.
+    """
+    seen = set()
+    for item in seq:
+        if item not in seen:
+            seen.add(item)
+            yield item
