@@ -134,6 +134,8 @@ class MultiDimensionalMapping(Dimensioned):
                                       for el in sl_vals]),)
             elif key is Ellipsis:
                 typed_key += (key,)
+            elif isinstance(key, list):
+                typed_key += ([key_type(k) for k in key],)
             else:
                 typed_key += (key_type(key),)
         return typed_key
@@ -492,7 +494,7 @@ class NdMapping(MultiDimensionalMapping):
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)
 
-        if all(not isinstance(el, slice) for el in map_slice):
+        if all(not isinstance(el, (slice, list)) for el in map_slice):
             return self._dataslice(self.data[map_slice], data_slice)
         else:
             conditions = self._generate_conditions(map_slice)
@@ -530,6 +532,8 @@ class NdMapping(MultiDimensionalMapping):
                     conditions.append(self._from_condition(dim))
                 else:
                     conditions.append(self._range_condition(dim))
+            elif isinstance(dim, list):
+                conditions.append(self._values_condition(dim))
             elif dim is Ellipsis:
                 conditions.append(self._all_condition())
             else:
@@ -539,6 +543,10 @@ class NdMapping(MultiDimensionalMapping):
 
     def _value_condition(self, value):
         return lambda x: x == value
+
+
+    def _values_condition(self, values):
+        return lambda x: x in values
 
 
     def _range_condition(self, slice):
