@@ -324,14 +324,43 @@ class OptsCompleter(object):
     @classmethod
     def setup_completer(cls):
         "Get the dictionary of valid completions"
-        if len(cls._completions) != 0: return cls._completions
-        for element in Store.options.children:
+        for element in Store.options.keys():
             options = Store.options[element]
             plotkws = options['plot'].allowed_keywords
             stylekws = options['style'].allowed_keywords
-            cls._completions[element] = (plotkws, stylekws if stylekws else [])
+            dotted = '.'.join(element)
+            cls._completions[dotted] = (plotkws, stylekws if stylekws else [])
         return cls._completions
 
+    @classmethod
+    def dotted_completion(cls, line, sorted_keys, compositor_defs):
+        """
+        Supply the appropriate key in Store.options and supply
+        suggestions for further completion.
+        """
+        completion_key, suggestions = None, []
+        tokens = [t for t in reversed(line.replace('.', ' ').split())]
+        for i, token in enumerate(tokens):
+            key_checks =[]
+            if i >= 0:  # Undotted key
+                key_checks.append(tokens[i])
+            if i >= 1:  # Single dotted key
+                key_checks.append('.'.join([key_checks[-1], tokens[i-1]]))
+            if i >= 2:  # Double dotted key
+                key_checks.append('.'.join([key_checks[-1], tokens[i-2]]))
+            # Check for longest potential dotted match first
+            for key in reversed(key_checks):
+                if key in sorted_keys:
+                    completion_key = key
+                    depth = completion_key.count('.')
+                    suggestions = [k.split('.')[depth+1] for k in sorted_keys
+                                   if k.startswith(completion_key+'.')]
+                    break
+            # Attempting to match compositor definitions
+            if token in compositor_defs:
+                completion_key = compositor_defs[token]
+                break
+        return completion_key, suggestions
 
     @classmethod
     def option_completer(cls, k,v):
@@ -339,22 +368,18 @@ class OptsCompleter(object):
         line = v.text_until_cursor
 
         completions = cls.setup_completer()
+        sorted_keys = sorted(completions.keys())
+        type_keys = [k for k in sorted_keys if ('.' not in k)]
+
         compositor_defs = {el.value:el.output_type.__name__
                            for el in Compositor.definitions}
 
-        # Find the last element class mentioned
-        completion_key = None
-        for token in [t for t in reversed(line.replace('.', ' ').split())]:
-            if token in completions:
-                completion_key = token
-                break
-            # Attempting to match compositor definitions
-            if token in compositor_defs:
-                completion_key = compositor_defs[token]
-                break
+        completion_key, suggestions = cls.dotted_completion(line, sorted_keys, compositor_defs)
 
-        if not completion_key:
-            return completions.keys() + compositor_defs.keys()
+        if suggestions and line.endswith('.'):
+            return ['.'.join([completion_key, el]) for el in suggestions]
+        elif not completion_key:
+            return type_keys + compositor_defs.keys()
 
         if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
             kws = completions[completion_key][0]
@@ -366,8 +391,7 @@ class OptsCompleter(object):
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
             return style_completions
-        return style_completions + completions.keys() + compositor_defs.keys()
-
+        return style_completions + type_keys + compositor_defs.keys()
 
 
 
