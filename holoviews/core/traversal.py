@@ -42,7 +42,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
                                        list(x.data.keys())), ('HoloMap',))
     if not key_dims:
         return [Dimension(default_dim)], [(0,)]
-    dim_groups, keys = zip(*sorted(key_dims, key=lambda x: len(x[0])))
+    dim_groups, keys = zip(*sorted(key_dims, key=lambda x: -len(x[0])))
     subset = all(set(g1) <= set(g2) or set(g1) >= set(g2)
                for g1 in dim_groups for g2 in dim_groups)
     # Find unique keys
