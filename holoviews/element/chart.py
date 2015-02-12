@@ -75,9 +75,13 @@ class Chart(Element2D):
         """
         if slc is ():
             return self
+        if isinstance(slc, tuple): slc = slc[0]
         xvals = self.data[:, 0]
         if isinstance(slc, slice):
             start, stop = slc.start, slc.stop
+            lower, upper = self.range(0)
+            if not start: start = lower
+            if not stop: stop = upper
             start_idx = np.abs((xvals - start)).argmin()
             start_idx += 0 if start <= xvals[start_idx] else 1
             stop_idx = np.abs((xvals - stop)).argmin()
