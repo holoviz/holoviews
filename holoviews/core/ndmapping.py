@@ -172,27 +172,6 @@ class MultiDimensionalMapping(Dimensioned):
         return data
 
 
-    def _split_dim_keys(self, dimensions):
-        """
-        Split the dimensions and keys of the mapping into two groups
-        based on the supplied list of dimensions. Returns a 4-tuple
-        consisting of the omitted dimensions and keys, followed by
-        the matching dimensions and keys.
-        """
-        # Find dimension indices
-        first_dims = [d for d in self.key_dimensions if d.name not in dimensions]
-        first_inds = [self.get_dimension_index(d.name) for d in first_dims]
-        second_dims = [d for d in self.key_dimensions if d.name in dimensions]
-        second_inds = [self.get_dimension_index(d.name) for d in second_dims]
-
-        # Split the keys
-        keys = list(self.data.keys())
-        first_keys, second_keys = zip(*[(tuple(k[fi] for fi in first_inds),
-                                        tuple(k[si] for si in second_inds))
-                                        for k in keys])
-        return first_dims, first_keys, second_dims, second_keys
-
-
     def _resort(self):
         """
         Sorts data by key using usual Python tuple sorting semantics
@@ -207,44 +186,27 @@ class MultiDimensionalMapping(Dimensioned):
         self.data = OrderedDict(sorted(self.data.items(), **sortkws))
 
 
-    def groupby(self, dimensions, container_type=None):
+    def groupby(self, dimensions, container_type=None, group_type=None):
         """
         Splits the mapping into groups by key dimension which are then
         returned together in a mapping of class container_type. The
         individual groups are of the same type as the original map.
         """
-        inner_dims = [d for d in dimensions if d in self._cached_index_names]
-        deep_dims = [d for d in dimensions
-                     if d in [d.name for d in self.deep_dimensions]]
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
             return self
-        if len(deep_dims):
-            raise Exception('NdMapping does not support splitting of deep dimensions.')
-        first_dims, first_keys, second_dims, second_keys = self._split_dim_keys(inner_dims)
-        self._check_key_type = False # Speed optimization
-        own_keys = list(self.data.keys())
 
-        container_type = container_type if container_type else NdMapping
-        split_data = container_type(key_dimensions=first_dims)
-        split_data._check_key_type = False # Speed optimization
-        dim_orderfn = lambda k: self.get_dimension_index(k[0].name)
-
-        for fk in first_keys:  # The first groups keys
-            split_data[fk] = self.clone(shared_data=False, key_dimensions=second_dims)
-            split_data[fk]._check_key_type = False # Speed optimization
-            for sk in set(second_keys):  # The second groups keys
-                # Generate a candidate expanded key
-                unordered = list(zip(first_dims, fk)) + list(zip(second_dims, sk))
-                # Sort back into key dimensions ordering
-                sorted_key = tuple([v for k, v in sorted(unordered, key=dim_orderfn)])
-                if sorted_key in own_keys:  # If the expanded key actually exists...
-                    split_data[fk][sk] = self[sorted_key]
-            split_data[fk]._check_key_type = True # Speed optimization
-        split_data._check_key_type = True # Speed optimization
-
-        self._check_key_type = True # Re-enable checks
-        return split_data
+        container_type = container_type if container_type else type(self)
+        group_type = group_type if group_type else type(self)
+        dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
+                         for dim in dimensions))
+        inames, idims = zip(*((dim.name, dim) for dim in self.key_dimensions
+                              if not dim.name in dimensions))
+        selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
+                                  for key in self.data.keys())
+        groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel))).reindex(inames)))
+                  for sel in selects]
+        return container_type(groups, key_dimensions=dims)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
