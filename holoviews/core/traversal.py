@@ -53,12 +53,14 @@ def unique_dimkeys(obj, default_dim='Frame'):
     unique_keys = []
     for group, keys in key_dims:
         dim_idxs = [all_dims.index(dim) for dim in group]
-        for k in keys:
+        for key in keys:
+            padded_key = create_ndkey(ndims, dim_idxs, key)
             matches = [item for item in unique_keys
-                       if k == (itemgetter(*dim_idxs)(item)[0]
-                                if len(dim_idxs) != 1 else (item[dim_idxs[0]]),)]
+                       if padded_key == tuple(k if k is None else i
+                                              for i, k in zip(item, padded_key))]
             if not matches:
-                unique_keys.append(create_ndkey(ndims, dim_idxs, k))
+                unique_keys.append(padded_key)
+
     sorted_keys = NdMapping({key: None for key in unique_keys},
                             key_dimensions=all_dims).data.keys()
     if subset:
