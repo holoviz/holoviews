@@ -44,7 +44,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
         return [Dimension(default_dim)], [(0,)]
     dim_groups, keys = zip(*sorted(key_dims, key=lambda x: -len(x[0])))
     subset = all(set(g1) <= set(g2) or set(g1) >= set(g2)
-               for g1 in dim_groups for g2 in dim_groups)
+                 for g1 in dim_groups for g2 in dim_groups)
     # Find unique keys
     all_dims = sorted({dim for dim_group in dim_groups
                        for dim in dim_group},
@@ -55,7 +55,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
         dim_idxs = [all_dims.index(dim) for dim in group]
         for k in keys:
             matches = [item for item in unique_keys
-                       if k == (itemgetter(*dim_idxs)(item)
+                       if k == (itemgetter(*dim_idxs)(item)[0]
                                 if len(dim_idxs) != 1 else (item[dim_idxs[0]]),)]
             if not matches:
                 unique_keys.append(create_ndkey(ndims, dim_idxs, k))
