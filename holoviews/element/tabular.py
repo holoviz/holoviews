@@ -189,6 +189,11 @@ class Table(Element, NdMapping):
             if index.stop:
                 cols = [col for col in cols if col < index.stop]
             cols = cols[::index.step] if index.step else cols
+        elif isinstance(index, list):
+            nomatch = [val for val in index if val not in col_names]
+            if nomatch:
+                raise KeyError("No columns with dimension labels %r" % nomatch)
+            cols = [col for col in col_names if col in index]
         elif index not in col_names:
             raise KeyError("No column with dimension label %r" % index)
         else:
@@ -198,9 +203,9 @@ class Table(Element, NdMapping):
         return cols
 
 
-    def _filter_table(self, subtable, value_dimension):
+    def _filter_table(self, subtable, value_dimensions):
         col_names = self.dimensions('value', label=True)
-        cols = self._filter_columns(value_dimension, col_names)
+        cols = self._filter_columns(value_dimensions, col_names)
         indices = [col_names.index(col) for col in cols]
         value_dimensions = [self.value_dimensions[i] for i in indices]
         if isinstance(subtable, ItemTable):
