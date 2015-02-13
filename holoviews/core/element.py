@@ -453,7 +453,7 @@ class HoloMap(UniformNdMapping):
         return collapsed if self.ndims > 1 else collapsed.last
 
 
-    def sample(self, samples, bounds=None, **sample_values):
+    def sample(self, samples=[], bounds=None, **sample_values):
         """
         Sample each Element in the UniformNdMapping by passing either a list of
         samples or a tuple specifying the number of regularly spaced
