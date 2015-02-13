@@ -438,6 +438,7 @@ class HoloMap(UniformNdMapping):
         on the HoloMap. Homogenous Elements may be collapsed by
         supplying a function, inhomogenous elements are merged.
         """
+        from .operation import MapOperation
         if self.ndims > 1 and len(dimensions) != self.ndims:
             groups = self.groupby([dim for dim in self._cached_index_names
                                    if dim not in dimensions])
@@ -446,8 +447,11 @@ class HoloMap(UniformNdMapping):
             groups = HoloMap([(0, self)])
         collapsed = groups.clone(shared_data=False)
         for key, group in groups.items():
-            data = group.type.collapse_data([el.data for el in group], function)
-            collapsed[key] = group.last.clone(data)
+            if isinstance(function, MapOperation):
+                collapsed[key] = function(group)
+            else:
+                data = group.type.collapse_data([el.data for el in group], function)
+                collapsed[key] = group.last.clone(data)
         return collapsed if self.ndims > 1 else collapsed.last
 
 
