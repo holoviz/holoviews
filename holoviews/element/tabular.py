@@ -190,6 +190,19 @@ class Table(Element, NdMapping):
         return cols
 
 
+    def _filter_table(self, subtable, value_dimension):
+        col_names = self.dimensions('value', label=True)
+        cols = self._filter_columns(value_dimension, col_names)
+        indices = [col_names.index(col) for col in cols]
+        value_dimensions = [self.value_dimensions[i] for i in indices]
+        if isinstance(subtable, ItemTable):
+            items = OrderedDict([(h,v) for (h,v) in subtable.data.items() if h in cols])
+            return ItemTable(items, label=self.label)
+
+        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
+        return subtable.clone(items, value_dimensions=value_dimensions)
+
+
     def __getitem__(self, args):
         """
         In addition to usual NdMapping indexing, Tables can be indexed
@@ -206,16 +219,19 @@ class Table(Element, NdMapping):
         if not isinstance(args, tuple) or len(args) <= self.ndims:
             return subtable
 
-        col_names = self.dimensions('value', label=True)
-        cols = self._filter_columns(args[-1], col_names)
-        indices = [col_names.index(col) for col in cols]
-        value_dimensions=[self.value_dimensions[i] for i in indices]
-        if isinstance(subtable, ItemTable):
-            items = OrderedDict([(h,v) for (h,v) in subtable.data.items() if h in cols])
-            return ItemTable(items, label=self.label)
+        return self._filter_table(subtable, args[-1])
 
-        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
-        return subtable.clone(items, value_dimensions=value_dimensions)
+
+    def select(self, **selection):
+        val_selection = None
+        if self.value in selection:
+            val_selection = selection.pop(self.value)
+        selection = NdMapping.select(self, **selection)
+        if val_selection:
+            return self._filter_table(selection, val_selection)
+        else:
+            return selection
+
 
     @property
     def rows(self):
