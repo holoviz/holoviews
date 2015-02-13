@@ -324,7 +324,8 @@ class Table(Element, NdMapping):
             raise Exception("Must provide function to collapse %s data." % cls.__name__)
         groups = zip(*[(np.array([values]) if np.isscalar(values) else np.array(values)
                         for values in odict.values()) for odict in data])
-        return OrderedDict([(key, function(np.concatenate(group)))
+        return OrderedDict([(key, function(np.vstack(group), axis=-1) if group[0].shape[0] > 1 else
+                                           function(np.concatenate(group)))
                              for key, group in zip(data[0].keys(), groups)])
 
 
