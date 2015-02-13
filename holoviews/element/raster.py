@@ -80,8 +80,7 @@ class Raster(Element2D):
         if isinstance(samples, tuple):
             X, Y = samples
             samples = zip(X, Y)
-        params = dict(value=self.value, label=self.label,
-                      value_dimensions=self.value_dimensions)
+        params = dict(self.get_param_values(onlychanged=True))
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
@@ -90,8 +89,8 @@ class Raster(Element2D):
             table_data = OrderedDict()
             for c in samples:
                 table_data[c] = self.data[self._coord2matrix(c)]
-            return Table(table_data, key_dimensions=self.key_dimensions,
-                         **params)
+            params['key_dimensions'] = self.key_dimensions
+            return Table(table_data, **params)
         else:
             dimension, sample_coord = sample_values.items()[0]
             if isinstance(sample_coord, slice):
@@ -111,7 +110,8 @@ class Raster(Element2D):
             # Sample data
             x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, self.data[sample])
-            return Curve(data, key_dimensions=other_dimension, **params)
+            params['key_dimensions'] = other_dimension
+            return Curve(data, **params)
 
 
     def reduce(self, **dimreduce_map):

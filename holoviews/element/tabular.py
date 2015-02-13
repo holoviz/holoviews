@@ -65,7 +65,7 @@ class ItemTable(Element):
         return [self.data[dimension]]
 
 
-    def sample(self, samples=None):
+    def sample(self, samples=[]):
         if callable(samples):
             sampled_data = OrderedDict(item for item in self.data.items()
                                        if samples(item))

@@ -109,7 +109,7 @@ class Chart(Element2D):
         sample_data = OrderedDict()
         for sample in samples:
             sample_data[sample] = self[sample]
-        return Table(sample_data, **dict(self.get_param_values()))
+        return Table(sample_data, **dict(self.get_param_values(onlychanged=True)))
 
 
     def reduce(self, **reduce_map):
