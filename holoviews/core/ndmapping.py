@@ -595,6 +595,16 @@ class UniformNdMapping(NdMapping):
         self._label_check, self._label = None, None
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
+
+    def relabel(self, label=None, value=None):
+        """
+        Relabels the UniformNdMapping and all it's Elements
+        with the supplied value and label.
+        """
+        return self.clone([(k, v.relabel(label, value)) for k, v in self.items()],
+                          value=value if value else self.value,
+                          label=self.label if label is None else label)
+
     @property
     def value(self):
         if self._value:
