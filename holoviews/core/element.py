@@ -76,12 +76,12 @@ class Element(ViewableElement, Composable, Overlayable):
         raise NotImplementedError
 
 
-    def reduce(self, label_prefix='', **reduce_map):
+    def reduce(self, **reduce_map):
         """
-        Base class signature to demonstrate API for reducing Views,
-        using some reduce function, e.g. np.mean. Signature is the
-        same as sample, however a label_prefix may be provided to
-        describe the reduction operation.
+        Base class signature to demonstrate API for reducing Elements,
+        using some reduce function, e.g. np.mean, which is applied
+        along a particular Dimension. The dimensions and reduce functions
+        should be passed as keyword arguments.
         """
         raise NotImplementedError
 
@@ -466,6 +466,7 @@ class HoloMap(UniformNdMapping):
         is the tuple (lower, upper) and the tuple (left, bottom,
         right, top) for 2D sampling.
         """
+        from ..element import Table, ItemTable
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
@@ -494,14 +495,13 @@ class HoloMap(UniformNdMapping):
         return self.clone(sampled_items)
 
 
-    def reduce(self, label_prefix='', **reduce_map):
+    def reduce(self, **reduce_map):
         """
         Reduce each Element in the HoloMap using a function supplied
         via the kwargs, where the keyword has to match a particular
         dimension in the Elements.
         """
-        reduced_items = [(k, v.reduce(label_prefix=label_prefix, **reduce_map))
-                         for k, v in self.items()]
+        reduced_items = [(k, v.reduce(**reduce_map)) for k, v in self.items()]
         return self.clone(reduced_items)
 
 

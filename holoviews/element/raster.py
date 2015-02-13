@@ -114,28 +114,26 @@ class Raster(Element2D):
             return Curve(data, key_dimensions=other_dimension, **params)
 
 
-    def reduce(self, label_prefix='', **dimreduce_map):
+    def reduce(self, **dimreduce_map):
         """
         Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
         """
-        label = ' '.join([label_prefix, self.label]) if label_prefix else self.label
         if len(dimreduce_map) == self.ndims:
             reduced_view = self
             for dim, reduce_fn in dimreduce_map.items():
-                reduced_view = reduced_view.reduce(label_prefix=label_prefix,
-                                                   **{dim: reduce_fn})
-                label_prefix = ''
+                reduced_view = reduced_view.reduce(**{dim: reduce_fn})
             return reduced_view
         else:
             dimension, reduce_fn = dimreduce_map.items()[0]
             other_dimension = [d for d in self.key_dimensions if d.name != dimension]
             x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
-            return Curve(data, key_dimensions=other_dimension, label=label,
-                         value=self.value)
+            params = dict(dict(self.get_param_values(onlychanged=True)),
+                          key_dimensions=other_dimension)
+            return Curve(data, **params)
 
     @property
     def depth(self):

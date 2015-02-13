@@ -112,17 +112,20 @@ class Chart(Element2D):
         return Table(sample_data, **dict(self.get_param_values()))
 
 
-    def reduce(self, label_prefix='', **reduce_map):
+    def reduce(self, **reduce_map):
         """
         Allows collapsing of Element2D objects using the supplied map of
         dimensions and reduce functions.
         """
-        reduced_data = OrderedDict()
-        value = ' '.join([self.value.name] + ([label_prefix] if label_prefix else []))
-        for dimension, reduce_fn in reduce_map.items():
-            reduced_data[value] = reduce_fn(self.data[:, 1])
-        return ItemTable(reduced_data, label=self.label, title=self.title,
-                         value=self.value(value))
+        if len(reduce_map) > 1:
+            raise ValueError("Chart Elements only have one indexable dimension.")
+        dim, reduce_fn = list(reduce_map.items())[0]
+        if dim in self._cached_index_names:
+            reduced_data = OrderedDict(zip(self.value_dimensions, reduce_fn(self.data[:, 1:], axis=0)))
+        else:
+            raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
+        params = dict(self.get_param_values(onlychanged=True), key_dimensions=self.value_dimensions)
+        return ItemTable(reduced_data, **params)
 
 
     def __len__(self):
