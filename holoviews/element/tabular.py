@@ -367,6 +367,15 @@ class Table(Element, NdMapping):
             raise Exception('Dimension not found.')
 
 
+    @property
+    def to(self):
+        """
+        Property to create a conversion table with methods to convert
+        to any type.
+        """
+        return TableConversion(self)
+
+
     def dframe(self, value_label='data'):
         try:
             import pandas
@@ -376,3 +385,56 @@ class Table(Element, NdMapping):
         return pandas.DataFrame(
             [dict(zip(labels, k+ (v if isinstance(v, tuple) else (v,))))
              for (k, v) in self.data.items()])
+
+
+
+class TableConversion(object):
+    """
+    TableConversion is a very simple container object which can
+    be given an existing Table and provides methods to convert
+    the Table into most other Element types.
+    """
+
+    def __init__(self, table):
+        self.table = table
+
+    def _conversion(self, key_dimensions=[], value_dimensions=[], new_type=None):
+        if not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
+        if not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
+        print key_dimensions, value_dimensions
+        group_dims = [dim for dim in self._cached_index_names if not dim in key_dimensions]
+        selected = self.table.select(**{self.table.value: value_dimensions})
+        return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type)
+
+    def bars(self, key_dimensions, value_dimensions):
+        from .chart import Curve
+        return self._conversion(key_dimensions, value_dimensions, Curve)
+
+    def curve(self, key_dimensions, value_dimensions):
+        from .chart import Bars
+        return self._conversion(key_dimensions, value_dimensions, Bars)
+
+    def heatmap(self, key_dimensions, value_dimensions):
+        from .raster import HeatMap
+        return self._conversion(key_dimensions, value_dimensions, HeatMap)
+
+    def points(self, key_dimensions, value_dimensions):
+        from .chart import Points
+        return self._conversion(key_dimensions, value_dimensions, Points)
+
+    def scatter(self, key_dimensions, value_dimensions):
+        from .chart import Scatter
+        return self._conversion(key_dimensions, value_dimensions, Scatter)
+
+    def scatter3d(self, key_dimensions, value_dimensions):
+        from .chart3d import Scatter3D
+        return self._conversion(key_dimensions, value_dimensions, Scatter3D)
+
+    def surface(self, key_dimensions, value_dimensions):
+        from .chart3d import Surface
+        heatmap = self.to_heatmap(key_dimensions, value_dimensions)
+        return Surface(heatmap.data, **dict(self.table.get_param_values(onlychanged=True)))
+
+    def vectorfield(self, key_dimensions, value_dimensions):
+        from .chart import VectorField
+        return self._conversion(key_dimensions, value_dimensions, VectorField)
