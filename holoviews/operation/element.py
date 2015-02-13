@@ -219,8 +219,8 @@ class collapse(ElementOperation):
        Using unpack=False, more complex operators may be used such as:
 
         lambda x: np.mean(x, axis=0)
-        lambda x: np.std(lx, axis=0)
-        lambda x: np.var(lx, axis=0)
+        lambda x: np.std(x, axis=0)
+        lambda x: np.var(x, axis=0)
         """)
 
     value = param.String(default='Operation', doc="""
