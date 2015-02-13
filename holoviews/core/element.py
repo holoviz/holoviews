@@ -44,6 +44,17 @@ class Element(ViewableElement, Composable, Overlayable):
                                       type(self).__name__)
 
 
+    @classmethod
+    def collapse_data(cls, data, function=None):
+        """
+        Class method to collapse a list of data matching the
+        data format of the Element type. By implementing this
+        method HoloMap can collapse multiple Elements of the
+        same type.
+        """
+        raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
+
+
     def closest(self, coords):
         """
         Class method that returns the exact keys for a given list of
@@ -420,6 +431,20 @@ class HoloMap(UniformNdMapping):
         else:
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
+
+    def collapse(self, dimensions, function=None):
+        """
+        Allows collapsing one of any number of key dimensions
+        on the HoloMap. Homogenous Elements may be collapsed by
+        supplying a function, inhomogenous elements are merged.
+        """
+        groups = self.groupby([dim for dim in self._cached_index_names
+                               if dim not in dimensions])
+        collapsed = groups.clone(shared_data=False)
+        for key, group in groups.items():
+            data = group.type.collapse_data([el.data for el in group], function)
+            collapsed[key] = group.last.clone(data)
+        return collapsed
 
     def sample(self, samples, bounds=None, **sample_values):
         """

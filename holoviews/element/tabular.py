@@ -302,6 +302,16 @@ class Table(Element, NdMapping):
         super(Table, self)._item_check(dim_vals, data)
 
 
+    @classmethod
+    def collapse_data(cls, data, function):
+        if not function:
+            raise Exception("Must provide function to collapse %s data." % cls.__name__)
+        groups = zip(*[(np.array([values]) if np.isscalar(values) else np.array(values)
+                        for values in odict.values()) for odict in data])
+        return OrderedDict([(key, function(np.concatenate(group)))
+                             for key, group in zip(data[0].keys(), groups)])
+
+
     def tablemap(self, dimensions):
         split_dims = [dim for dim in self._cached_index_names
                       if dim not in dimensions]

@@ -94,6 +94,13 @@ class Chart(Element2D):
             return Table(data, **dict(self.get_param_values()))
 
 
+    @classmethod
+    def collapse_data(cls, data, function):
+        if not function:
+            raise Exception("Must provide function to collapse %s data." % cls.__name__)
+        return np.hstack([data[0][:, 0, np.newaxis], function(np.dstack([arr[:, 1:] for arr in data]),axis=-1)])
+
+
     def sample(self, samples=[]):
         """
         Allows sampling of Element2D objects using the default
@@ -141,6 +148,12 @@ class Scatter(Chart):
 
     value = param.String(default='Scatter')
 
+    @classmethod
+    def collapse_data(cls, data, function):
+        if function:
+            raise Exception("Scatter elements are inhomogenous and "
+                            "cannot be collapsed with a function.")
+        return np.concatenate(data)
 
 
 class Curve(Chart):
@@ -349,6 +362,10 @@ class Points(Chart):
         while i < len(self):
             yield tuple(self.data[i, ...])
             i += 1
+
+    @classmethod
+    def collapse_data(cls, data, function):
+        return Scatter.collapse_data(data, function)
 
 
     def dimension_values(self, dim):

@@ -61,6 +61,13 @@ class Raster(Element2D):
         return (xidx, yidx)
 
 
+    @classmethod
+    def collapse_data(cls, data_list, function):
+        if not function:
+            raise Exception("Must provide function to collapse %s data." % cls.__name__)
+        return function(np.dstack(data_list), axis=-1)
+
+
     def sample(self, samples=[], **sample_values):
         """
         Sample the Raster along one or both of its dimensions,
