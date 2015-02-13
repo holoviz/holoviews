@@ -34,11 +34,6 @@ class OverlayTest(CompositeTest):
         self.assertEqual(overlay.labels, [v.label for v in views])
 
 
-    def test_overlay_add(self):
-        overlay = NdOverlay([self.view1])
-        overlay.add(self.view2)
-
-
     def test_overlay_integer_indexing(self):
         overlay = NdOverlay([self.view1, self.view2, self.view3])
         self.assertEqual(overlay[0], self.view1)
