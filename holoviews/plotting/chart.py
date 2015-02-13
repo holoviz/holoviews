@@ -329,6 +329,10 @@ class HistogramPlot(ChartPlot):
 
 class SideHistogramPlot(HistogramPlot):
 
+    aspect = param.Parameter(default='auto', doc="""
+        Aspect ratios on SideHistogramPlot should be determined by the
+        AdjointLayoutPlot.""")
+
     offset = param.Number(default=0.2, doc="""
         Histogram value offset for a colorbar.""")
 

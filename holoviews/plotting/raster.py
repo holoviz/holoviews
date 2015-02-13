@@ -122,6 +122,9 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
     equivalent using subplots.
     """
 
+    aspect = param.Parameter(default='auto', doc="""
+        Aspect ratios on MatrixGridPlot should be automatically determined.""")
+
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")
 
