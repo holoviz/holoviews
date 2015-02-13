@@ -205,8 +205,6 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
     key_dimensions = param.List(default=[Dimension('Element')], constant=True, doc="""List
       of dimensions the NdOverlay can be indexed by.""")
 
-    value = param.String(default='NdOverlay')
-
     _deep_indexable = True
 
     def __init__(self, overlays=None, **params):

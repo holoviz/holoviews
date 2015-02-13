@@ -228,8 +228,6 @@ class HoloMap(UniformNdMapping):
     the x- and y-dimension limits and labels.
     """
 
-    value = param.String(default='HoloMap')
-
     data_type = (ViewableElement, UniformNdMapping)
 
     @property

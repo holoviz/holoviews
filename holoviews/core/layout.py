@@ -179,8 +179,6 @@ class NdLayout(UniformNdMapping):
     the individual elements out in a AxisLayout.
     """
 
-    value = param.String(default='NdLayout')
-
     data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
 
     def __init__(self, initial_items=None, **params):

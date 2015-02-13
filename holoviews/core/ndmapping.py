@@ -584,8 +584,6 @@ class UniformNdMapping(NdMapping):
     sampling and reduction methods for their Dimensioned type.
     """
 
-    value = param.String(default='UniformNdMapping')
-
     data_type = (ViewableElement, NdMapping)
 
     _abstract = True
@@ -593,8 +591,35 @@ class UniformNdMapping(NdMapping):
 
     def __init__(self, initial_items=None, **params):
         self._type = None
+        self._value_check, self._value = None, None
+        self._label_check, self._label = None, None
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
+    @property
+    def value(self):
+        if self._value:
+            return self._value
+        elif self._value_check and self._value_check != self.type.__name__:
+            return self._value_check
+        else:
+            return type(self).__name__
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+    @property
+    def label(self):
+        if self._label:
+            return self._value
+        elif self._label_check:
+            return self._label_check
+        else:
+            return ''
+
+    @label.setter
+    def label(self, label):
+        self._label = label
 
     @property
     def type(self):
@@ -605,7 +630,6 @@ class UniformNdMapping(NdMapping):
             self._type = self.values()[0].__class__
         return self._type
 
-
     @property
     def empty_element(self):
         return self._type(None)
@@ -615,6 +639,14 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
+        if self._value is None:
+            self._value_check = data.value
+            self._label_check = data.label
+        elif self._value_check and data.value != self._value_check:
+            raise ValueError("Elements in %s need to have uniform values.")
+        elif self._label_check and data.label != self._label_check:
+            raise ValueError("Elements in %s need to have uniform labels.")
+
         if not traversal.uniform(NdMapping([(0, self), (1, data)])):
             raise ValueError("HoloMaps dimensions must be consistent in %s." %
                              type(self).__name__)
