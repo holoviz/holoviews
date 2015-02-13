@@ -4,8 +4,6 @@ from ..core.options import Compositor
 from .rgb import *          # pyflakes:ignore (API import)
 from .element import *      # pyflakes:ignore (API import)
 from ..core import Overlay  # pyflakes:ignore (API import)
-from .map import *          # pyflakes:ignore (API import)
-
 
 def public(obj):
     if not isinstance(obj, type): return False

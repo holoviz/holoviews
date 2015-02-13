@@ -507,17 +507,6 @@ class HoloMap(UniformNdMapping):
         return self.clone(reduced_items)
 
 
-    def collate(self, collate_dim):
-        """
-        Collate splits out the specified dimension and joins the
-        samples in each of the split out Maps into Curves. If there
-        are multiple entries in the ItemTable it will lay them out
-        into a AxisLayout.
-        """
-        from ..operation import table_collate
-        return table_collate(self, collation_dim=collate_dim)
-
-
     @property
     def empty_element(self):
         return self._type(None)
