@@ -438,12 +438,10 @@ class HoloMap(UniformNdMapping):
         on the HoloMap. Homogenous Elements may be collapsed by
         supplying a function, inhomogenous elements are merged.
         """
-        if self.ndims > 1:
+        if self.ndims > 1 and len(dimensions) != self.ndims:
             groups = self.groupby([dim for dim in self._cached_index_names
                                    if dim not in dimensions])
         else:
-            if len(dimensions) > 1:
-                raise ValueError("HoloMap only has one dimensions to collapse.")
             dims = [self.get_dimension(dim) for dim in dimensions]
             groups = HoloMap([(0, self)])
         collapsed = groups.clone(shared_data=False)
