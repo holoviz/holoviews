@@ -503,7 +503,7 @@ class ScrubberWidget(NdWidget):
         frames = self.get_frames(id)
 
         data = {'id': id, 'Nframes': len(self.plot),
-                'interval': int(1000. / ViewMagic.ANIMATION_OPTS['scrubber'][2]['fps']),
+                'interval': int(1000. / ViewMagic.options['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
                 'server': self.server_url,
