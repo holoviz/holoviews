@@ -590,6 +590,7 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
+                'delay': int(1000./ViewMagic.options['fps']),
                 'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
                 'mpld3': str(ViewMagic.options['backend'] == 'd3').lower()}
 

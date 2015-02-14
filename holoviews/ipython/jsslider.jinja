@@ -82,8 +82,7 @@
 	    	 <div class="span8 offset4 col-xs-8 col-xs-offset-4">
                     <div id="_anim_widget{{ id }}_{{ widget_data['dim'] }}"></div>
                 </div>
-	    </div>	
-        </br>
+	    </div>
         </br>
         <script>
 			/* Load JQuery UI CSS */
@@ -130,6 +129,7 @@
                 if (noConflict) $.noConflict(true);
                 var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
                 $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
+                    animate: "fast",
                     min: 0,
                     max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
                     value: 0,
@@ -137,6 +137,36 @@
                         var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
                         $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
                         anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
+                    }
+                });
+                $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').keypress(function(event) {
+                    if (event.which == 80 || event.which == 112) {
+                        var start = $(this).slider("option", "value");
+                        var stop =  $(this).slider("option", "max");
+                        for (var i=start; i<=stop; i++) {
+                            var delay = i*{{ delay }};
+                            $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
+                                var val = {value:i};
+                                $(this).slider('value',i);
+                                $(this).slider("option", "slide")(null, val);
+                            }, $(this)), delay);
+                            }, $(this))(i);
+                        }
+                    }
+                    if (event.which == 82 || event.which == 114) {
+                        var start = $(this).slider("option", "value");
+                        var stop =  $(this).slider("option", "min");
+                        var count = 0;
+                        for (var i=start; i>=stop; i--) {
+                            var delay = count*{{ delay }};
+                            count = count + 1;
+                            $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
+                                var val = {value:i};
+                                $(this).slider('value',i);
+                                $(this).slider("option", "slide")(null, val);
+                            }, $(this)), delay);
+                            }, $(this))(i);
+                        }
                     }
                 });
                 $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(valMap{{ id }}_{{ widget_data['dim'] }}[0]);
@@ -152,7 +182,6 @@
                 </select>
             </div>
         </div>
-        </br>
         </br>
         <script>
             var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
