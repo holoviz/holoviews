@@ -556,7 +556,6 @@ class AxisLayout(UniformNdMapping):
         super(AxisLayout, self).__init__(initial_items, **params)
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
-        self._style = None
 
 
     def __mul__(self, other):
