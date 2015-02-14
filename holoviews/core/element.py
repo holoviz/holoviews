@@ -235,17 +235,6 @@ class HoloMap(UniformNdMapping):
     data_type = (ViewableElement, UniformNdMapping)
 
     @property
-    def layer_types(self):
-        """
-        The type of layers stored in the HoloMap.
-        """
-        if self.type == NdOverlay:
-            return self.last.layer_types
-        else:
-            return (self.type)
-
-
-    @property
     def xlabel(self):
         return self.last.xlabel
 
@@ -528,11 +517,6 @@ class HoloMap(UniformNdMapping):
         return self._type(None)
 
 
-    @property
-    def N(self):
-        return self.normalize()
-
-
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         histmap = HoloMap(key_dimensions=self.key_dimensions)
 
@@ -551,17 +535,6 @@ class HoloMap(UniformNdMapping):
 
         return (self << histmap) if adjoin else histmap
 
-
-    def normalize_elements(self, **kwargs):
-        return self.map(lambda x, _: x.normalize(**kwargs))
-
-
-    def normalize(self, min=0.0, max=1.0):
-        data_max = np.max([el.data.max() for el in self.values()])
-        data_min = np.min([el.data.min() for el in self.values()])
-        norm_factor = data_max-data_min
-        return self.map(lambda x, _: x.normalize(min=min, max=max,
-                                                 norm_factor=norm_factor))
 
 
 class AxisLayout(UniformNdMapping):
@@ -667,17 +640,6 @@ class AxisLayout(UniformNdMapping):
         return self.clone(last_items)
 
 
-    @property
-    def layer_types(self):
-        """
-        The type of layers stored in the AxisLayout.
-        """
-        if self.type == NdOverlay:
-            return self.values()[0].layer_types
-        else:
-            return (self.type,)
-
-
     def __len__(self):
         """
         The maximum depth of all the elements. Matches the semantics
@@ -690,38 +652,6 @@ class AxisLayout(UniformNdMapping):
     def __add__(self, obj):
         return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
 
-
-    @property
-    def all_keys(self):
-        """
-        Returns a list of all keys of the elements in the grid.
-        """
-        keys_list = []
-        for v in self.values():
-            if isinstance(v, AdjointLayout):
-                v = v.main
-            if isinstance(v, UniformNdMapping):
-                keys_list.append(list(v.data.keys()))
-        return sorted(set(itertools.chain(*keys_list)))
-
-
-    @property
-    def common_keys(self):
-        """
-        Returns a list of common keys. If all elements in the AxisLayout share
-        keys it will return the full set common of keys, otherwise returns
-        None.
-        """
-        keys_list = []
-        for v in self.values():
-            if isinstance(v, AdjointLayout):
-                v = v.main
-            if isinstance(v, UniformNdMapping):
-                keys_list.append(list(v.data.keys()))
-        if all(x == keys_list[0] for x in keys_list):
-            return keys_list[0]
-        else:
-            return None
 
     @property
     def shape(self):

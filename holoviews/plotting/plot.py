@@ -617,8 +617,7 @@ class AdjointLayoutPlot(CompositePlot):
 
 
     def __len__(self):
-        return max([len(v) if isinstance(v, UniformNdMapping) else len(v.all_keys)
-                    for v in self.layout if isinstance(v, (UniformNdMapping, AxisLayout))]+[1])
+        return max([len(self.keys), 1])
 
 
 class LayoutPlot(CompositePlot):
