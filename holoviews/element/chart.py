@@ -29,7 +29,7 @@ class Chart(Element2D):
     def __init__(self, data, **params):
         settings = {}
         if isinstance(data, Chart):
-            settings = dict(data.get_param_values())
+            settings = dict(data.get_param_values(onlychanged=True))
             data = data.data
         elif isinstance(data, NdMapping) or (isinstance(data, list) and data
                                            and isinstance(data[0], Element2D)):
@@ -49,10 +49,10 @@ class Chart(Element2D):
         if isinstance(ndmap, Table):
             data = [tuple(k for k in key) + tuple(v for v in vals)
                     for key, vals in ndmap.data.items()]
-            settings = dict(ndmap.get_param_values())
+            settings = dict(ndmap.get_param_values(onlychanged=True))
         else:
             data = np.concatenate([v.data for v in ndmap])
-            settings = dict([v for v in ndmap][0].get_param_values())
+            settings = dict([v for v in ndmap][0].get_param_values(onlychanged=True))
         return data, settings
 
 
@@ -91,7 +91,7 @@ class Chart(Element2D):
         else:
             index = np.abs((xvals - slc)).argmin()
             data = {(self.data[index, 0],): self.data[index, 1]}
-            return Table(data, **dict(self.get_param_values()))
+            return Table(data, **dict(self.get_param_values(onlychanged=True)))
 
 
     @classmethod
@@ -259,7 +259,7 @@ class Histogram(Element2D):
         if isinstance(values, Element2D):
             values = values.data[:, 0]
             edges = values.data[:, 1]
-            settings = dict(values.get_param_values())
+            settings = dict(values.get_param_values(onlychanged=True))
         elif isinstance(values, np.ndarray) and len(values.shape) == 2:
             values = values[:, 0]
             edges = values[:, 1]

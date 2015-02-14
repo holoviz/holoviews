@@ -40,7 +40,7 @@ class TimeSeries(Element2D):
     def __init__(self, data, xdata=None, **params):
         if isinstance(data, NdMapping):
             self.xdata = data.values()[0].data[:, 0]
-            params = dict(data.values()[0].get_param_values(), **params)
+            params = dict(data.values()[0].get_param_values(onlychanged=True), **params)
             data = np.array([dv.data[:, 1] for dv in data])
         else:
             self.xdata = np.array(range(len(data[0, :]))) if xdata is None\

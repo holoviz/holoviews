@@ -443,7 +443,7 @@ class RGB(Matrix):
             sliced = super(RGB, self).__getitem__(coords[:self.ndims])
             vidx = self.get_dimension_index(value[0])
             data = sliced.data[:,:, vidx]
-            return Matrix(data, **dict(self.get_param_values(),
+            return Matrix(data, **dict(self.get_param_values(onlychanged=True),
                                        value_dimensions=[self.value_dimensions[vidx-2]]))
         else:
             return super(RGB, self).__getitem__(coords)
