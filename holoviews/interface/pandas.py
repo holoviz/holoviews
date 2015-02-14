@@ -216,32 +216,36 @@ class DFrame(DataFrameView):
       * Optional map_dims (list of strings).
     """
 
-    def bars(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Bars, **kwargs))
+    def bars(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims,  **dict(view_type=Bars, **kwargs))
 
-    def curve(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Curve, **kwargs))
+    def curve(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims, **dict(view_type=Curve, **kwargs))
 
-    def heatmap(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=HeatMap, **kwargs))
+    def heatmap(self, kdims, vdims, **kwargs):
+        return self.table( kdims, vdims, **dict(view_type=HeatMap, **kwargs))
 
-    def points(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Points, **kwargs))
+    def points(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims, **dict(view_type=Points, **kwargs))
 
-    def points3d(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Scatter3D, **kwargs))
+    def scatter3d(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims, **dict(view_type=Scatter3D, **kwargs))
 
-    def scatter(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Scatter, **kwargs))
+    def scatter(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims, **dict(view_type=Scatter, **kwargs))
 
-    def surface(self, *args, **kwargs):
-        heatmap = self.table(*args, **dict(view_type=HeatMap, **kwargs))
+    def surface(self, kdims, vdims, **kwargs):
+        heatmap = self.table(kdims, vdims, **dict(view_type=HeatMap, **kwargs))
         return Surface(heatmap.data, **kwargs)
 
-    def vectorfield(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=VectorField, **kwargs))
+    def vectorfield(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims, **dict(view_type=VectorField, **kwargs))
 
-    def table(self, value_dims, view_dims, reduce_fn=None, map_dims=[], view_type=None, **kwargs):
+    def table(self, kdims, vdims, view_type=None, **kwargs):
+        if not isinstance(kdims, list): kdims = [kdims]
+        if not isinstance(vdims, list): vdims = [vdims]
+        selected_dims = vdims+kdims
+        map_dims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
         if map_dims:
             map_groups = self.data.groupby(map_dims)
             vm_dims = [self.get_dimension(d) for d in map_dims]
@@ -251,15 +255,14 @@ class DFrame(DataFrameView):
 
         vmap = HoloMap(key_dimensions=vm_dims)
         value = self.value if self.value != type(self).__name__ else 'Table'
-        vdims = [self.get_dimension(d) for d in view_dims]
-        valdims = [self.get_dimension(d) for d in value_dims]
+        keydims = [self.get_dimension(d) for d in kdims]
+        valdims = [self.get_dimension(d) for d in vdims]
         for map_key, group in map_groups:
             table_data = OrderedDict()
-            for k, v in group.groupby(view_dims):
-                data = np.vstack(np.array(v[d]) for d in value_dims)
-                data = reduce_fn(data, axis=1) if reduce_fn else data[:, 0]
-                table_data[k] = data
-            view = Table(table_data, key_dimensions=vdims,
+            for k, v in group.groupby(kdims):
+                data = np.vstack(np.array(v[d])[0] for d in vdims)
+                table_data[k] = tuple(data) if len(valdims) > 1 else data[0]
+            view = Table(table_data, key_dimensions=keydims,
                          value_dimensions=valdims, label=self.label,
                          value=value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view

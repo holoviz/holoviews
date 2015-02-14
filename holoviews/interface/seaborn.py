@@ -28,14 +28,13 @@ class TimeSeries(Element2D):
     supplied.
     """
 
-    key_dimensions = param.List(default=[Dimension('x')],
-                                  bounds=(1,1))
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('n')],
+                                bounds=(2, 2))
 
     value = param.String(default='TimeSeries')
 
-    value_dimensions = param.List(default=[Dimension('y'),
-                                           Dimension('z')],
-                                  bounds=(2,2))
+    value_dimensions = param.List(default=[Dimension('z')],
+                                  bounds=(1, 1))
 
     def __init__(self, data, xdata=None, **params):
         if isinstance(data, NdMapping):
@@ -147,10 +146,12 @@ class DFrame(PandasDFrame):
                                      doc="""Selects which Pandas or Seaborn plot
                                             type to use, when visualizing the plot.""")
 
-    def bivariate(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Bivariate, **kwargs))
+    def bivariate(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims **dict(view_type=Bivariate, **kwargs))
 
-    def distribution(self, value_dim, map_dims=[]):
+    def distribution(self, value_dim):
+        selected_dims = [value_dim]
+        map_dims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
         if map_dims:
             map_groups = self.data.groupby(map_dims)
             vm_dims = map_dims
@@ -164,14 +165,16 @@ class DFrame(PandasDFrame):
                                          key_dimensions=[self.get_dimension(value_dim)])
         return vmap if map_dims else vmap.last
 
-    def regression(self, *args, **kwargs):
-        return self.table(*args, **dict(view_type=Regression, **kwargs))
+    def regression(self, kdims, vdims, **kwargs):
+        return self.table(kdims, vdims, **dict(view_type=Regression, **kwargs))
 
-    def timeseries(self, value_dims, dimensions, ts_dims, reduce_fn=None, map_dims=[], **kwargs):
-        curve_map = self.table(value_dims, dimensions, reduce_fn=reduce_fn,
-                               map_dims=ts_dims+map_dims, **dict(view_type=Curve, **kwargs))
-        return TimeSeries(curve_map.overlay(ts_dims), key_dimensions=[self.get_dimension(dimensions[0])],
-                          value_dimensions=[self.get_dimension(dim) for dim in value_dims+ts_dims])
+    def timeseries(self, kdims, vdims, **kwargs):
+        if not isinstance(kdims, list) or not len(kdims) ==2:
+            raise Exception('TimeSeries requires two key_dimensions.')
+        curve_map = self.table(kdims[0], vdims, **dict(view_type=Curve, **kwargs))
+        return TimeSeries(curve_map.overlay(kdims[1]),
+                          key_dimensions=[self.get_dimension(dim) for dim in kdims],
+                          **kwargs)
 
     @property
     def ylabel(self):
