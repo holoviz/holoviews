@@ -281,9 +281,9 @@ class HoloMap(UniformNdMapping):
 
     def _valid_dimensions(self, dimensions):
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        if not dimensions == self._cached_index_names:
-            invalid = [d for d in dimensions if d not in self._cached_index_names]
-            raise Exception("Supplied dimensions %s not found." % invalid)
+        for dim in dimensions:
+            if dim not in self._cached_index_names:
+                raise Exception("Supplied dimensions %s not found." % dim)
         return dimensions
 
 
