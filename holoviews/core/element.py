@@ -184,7 +184,7 @@ class Element3D(Element2D):
     def __init__(self, data, extents=None, **params):
         if extents is not None:
             self._zlim = (extents[2], extents[5])
-            extent = (extents[0], extents[1], extents[3], extents[4])
+            extents = (extents[0], extents[1], extents[3], extents[4])
         else:
             self._zlim = None
         super(Element3D, self).__init__(data, extents=extents, **params)
