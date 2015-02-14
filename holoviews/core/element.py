@@ -579,12 +579,6 @@ class AxisLayout(UniformNdMapping):
     key_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
                                 bounds=(1,2))
 
-    label = param.String(constant=True, doc="""
-      A short label used to indicate what kind of data is contained
-      within the AxisLayout.""")
-
-    value = param.String(default='AxisLayout')
-
     def __init__(self, initial_items=None, **params):
         super(AxisLayout, self).__init__(initial_items, **params)
         if self.ndims > 2:
