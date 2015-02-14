@@ -293,7 +293,7 @@ class Table(Element, NdMapping):
         sample_data = OrderedDict()
         for sample in samples:
             sample_data[sample] = self[sample]
-        return Table(sample_data, **dict(self.get_param_values()))
+        return Table(sample_data, **dict(self.get_param_values(onlychanged=True)))
 
 
     def reduce(self, **reduce_map):
@@ -402,8 +402,7 @@ class TableConversion(object):
     def _conversion(self, key_dimensions=[], value_dimensions=[], new_type=None):
         if not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
         if not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
-        print key_dimensions, value_dimensions
-        group_dims = [dim for dim in self._cached_index_names if not dim in key_dimensions]
+        group_dims = [dim for dim in self.table._cached_index_names if not dim in key_dimensions]
         selected = self.table.select(**{self.table.value: value_dimensions})
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type)
 
