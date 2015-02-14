@@ -51,9 +51,12 @@ class MultiDimensionalMapping(Dimensioned):
 
     def __init__(self, initial_items=None, **params):
         if isinstance(initial_items, NdMapping):
+            map_type = type(initial_items)
             own_params = self.params()
-            new_params = initial_items.get_param_values(onlychanged=True)
-            params = dict({name: value for name, value in new_params
+            new_params = dict(initial_items.get_param_values(onlychanged=True))
+            if new_params.get('value') == map_type.__name__:
+                new_params.pop('value')
+            params = dict({name: value for name, value in new_params.items()
                            if name in own_params}, **params)
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
 
