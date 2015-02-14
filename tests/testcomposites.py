@@ -266,7 +266,7 @@ class CompositeTestCase(ElementTestCase):
         o2 = (self.el1 * self.el2)
         o3 = (self.el7 * self.el8)
         t = (o1 + o2 + o3)
-        expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('Overlay', 'III')]
+        expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('ValA', 'I')]
         self.assertEqual(t.keys(), expected_keys)
 
 
@@ -275,11 +275,11 @@ class CompositeTestCase(ElementTestCase):
         o2 = (self.el1 * self.el2)
         o3 = (self.el7 * self.el8)
         t = (o1 + o2 + o3)
-        expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('Overlay', 'III')]
+        expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('ValA', 'I')]
         self.assertEqual(t.keys(), expected_keys)
-        self.assertEqual(t.Overlay.III, o3)
-        self.assertEqual(t.Overlay.III.ValA.LabelA, self.el7)
-        self.assertEqual(t.Overlay.III.ValA.LabelB, self.el8)
+        self.assertEqual(t.ValA.I, o3)
+        self.assertEqual(t.ValA.I.ValA.LabelA, self.el7)
+        self.assertEqual(t.ValA.I.ValA.LabelB, self.el8)
 
 
     def test_deep_composite_getitem(self):
@@ -287,11 +287,11 @@ class CompositeTestCase(ElementTestCase):
         o2 = (self.el1 * self.el2)
         o3 = (self.el7 * self.el8)
         t = (o1 + o2 + o3)
-        expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('Overlay', 'III')]
+        expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('ValA', 'I')]
         self.assertEqual(t.keys(), expected_keys)
-        self.assertEqual(t['Overlay']['III'], o3)
-        self.assertEqual(t['Overlay']['III']['ValA']['LabelA'], self.el7)
-        self.assertEqual(t['Overlay']['III']['ValA']['LabelB'], self.el8)
+        self.assertEqual(t['ValA']['I'], o3)
+        self.assertEqual(t['ValA']['I']['ValA']['LabelA'], self.el7)
+        self.assertEqual(t['ValA']['I']['ValA']['LabelB'], self.el8)
 
 
     def test_invalid_tree_structure(self):

@@ -28,12 +28,6 @@ class OverlayTest(CompositeTest):
         for el, v in zip(overlay, views):
             self.assertEqual(el, v)
 
-    def test_overlay_labels(self):
-        views = [self.view1, self.view2, self.view3]
-        overlay = NdOverlay(views)
-        self.assertEqual(overlay.labels, [v.label for v in views])
-
-
     def test_overlay_integer_indexing(self):
         overlay = NdOverlay([self.view1, self.view2, self.view3])
         self.assertEqual(overlay[0], self.view1)
