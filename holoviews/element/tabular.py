@@ -60,11 +60,11 @@ class ItemTable(Element):
 
 
     @classmethod
-    def collapse_data(cls, data, function):
+    def collapse_data(cls, data, function, **kwargs):
         if not function:
             raise Exception("Must provide function to collapse %s data." % cls.__name__)
         groups = np.vstack([np.array(odict.values()) for odict in data]).T
-        return OrderedDict(zip(data[0].keys(), function(groups, axis=-1)))
+        return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
 
 
     def dimension_values(self, dimension):
@@ -332,14 +332,15 @@ class Table(Element, NdMapping):
 
 
     @classmethod
-    def collapse_data(cls, data, function):
+    def collapse_data(cls, data, function, **kwargs):
         if not function:
             raise Exception("Must provide function to collapse %s data." % cls.__name__)
         groups = zip(*[(np.array([values]) if np.isscalar(values) else np.array(values)
                         for values in odict.values()) for odict in data])
-        return OrderedDict([(key, function(np.vstack(group), axis=-1) if group[0].shape[0] > 1 else
-                                           function(np.concatenate(group)))
-                             for key, group in zip(data[0].keys(), groups)])
+        return OrderedDict((key, function(np.vstack(group), axis=-1, **kwargs)
+                                  if group[0].shape[0] > 1 else
+                                  function(np.concatenate(group), **kwargs))
+                             for key, group in zip(data[0].keys(), groups))
 
 
     def tablemap(self, dimensions):

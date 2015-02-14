@@ -45,12 +45,16 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     @classmethod
-    def collapse_data(cls, data, function=None):
+    def collapse_data(cls, data, function=None, **kwargs):
         """
         Class method to collapse a list of data matching the
         data format of the Element type. By implementing this
         method HoloMap can collapse multiple Elements of the
-        same type.
+        same type. The kwargs are passed to the collapse
+        function. The collapse function must support the numpy
+        style axis selection. Valid function include:
+        np.mean, np.sum, np.product, np.std,
+        scipy.stats.kurtosis etc.
         """
         raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
 
@@ -430,7 +434,7 @@ class HoloMap(UniformNdMapping):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-    def collapse(self, dimensions, function=None):
+    def collapse(self, dimensions, function=None, **kwargs):
         """
         Allows collapsing one of any number of key dimensions
         on the HoloMap. Homogenous Elements may be collapsed by
@@ -441,14 +445,14 @@ class HoloMap(UniformNdMapping):
             groups = self.groupby([dim for dim in self._cached_index_names
                                    if dim not in dimensions])
         else:
-            dims = [self.get_dimension(dim) for dim in dimensions]
+            [self.get_dimension(dim) for dim in dimensions]
             groups = HoloMap([(0, self)])
         collapsed = groups.clone(shared_data=False)
         for key, group in groups.items():
             if isinstance(function, MapOperation):
-                collapsed[key] = function(group)
+                collapsed[key] = function(group, **kwargs)
             else:
-                data = group.type.collapse_data([el.data for el in group], function)
+                data = group.type.collapse_data([el.data for el in group], function, **kwargs)
                 collapsed[key] = group.last.clone(data)
         return collapsed if self.ndims > 1 else collapsed.last
 

@@ -95,10 +95,12 @@ class Chart(Element2D):
 
 
     @classmethod
-    def collapse_data(cls, data, function):
+    def collapse_data(cls, data, function, **kwargs):
         if not function:
             raise Exception("Must provide function to collapse %s data." % cls.__name__)
-        return np.hstack([data[0][:, 0, np.newaxis], function(np.dstack([arr[:, 1:] for arr in data]),axis=-1)])
+        data = [arr[:, 1:] for arr in data]
+        collapsed = function(np.dstack(data), axis=-1, **kwargs)
+        return np.hstack([data[0][:, 0, np.newaxis], collapsed])
 
 
     def sample(self, samples=[]):
@@ -152,7 +154,7 @@ class Scatter(Chart):
     value = param.String(default='Scatter')
 
     @classmethod
-    def collapse_data(cls, data, function):
+    def collapse_data(cls, data, function, **kwargs):
         if function:
             raise Exception("Scatter elements are inhomogenous and "
                             "cannot be collapsed with a function.")
@@ -367,8 +369,8 @@ class Points(Chart):
             i += 1
 
     @classmethod
-    def collapse_data(cls, data, function):
-        return Scatter.collapse_data(data, function)
+    def collapse_data(cls, data, function, **kwargs):
+        return Scatter.collapse_data(data, function, **kwargs)
 
 
     def dimension_values(self, dim):
