@@ -192,7 +192,7 @@ class MultiDimensionalMapping(Dimensioned):
         self.data = OrderedDict(sorted(self.data.items(), **sortkws))
 
 
-    def groupby(self, dimensions, container_type=None, group_type=None):
+    def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
         """
         Splits the mapping into groups by key dimension which are then
         returned together in a mapping of class container_type. The
@@ -210,7 +210,7 @@ class MultiDimensionalMapping(Dimensioned):
                               if not dim.name in dimensions))
         selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
                                   for key in self.data.keys())
-        groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel))).reindex(inames)))
+        groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel)), **kwargs).reindex(inames)))
                   for sel in selects]
         return container_type(groups, key_dimensions=dims)
 

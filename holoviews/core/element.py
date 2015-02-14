@@ -279,36 +279,48 @@ class HoloMap(UniformNdMapping):
         return float(l), float(b), float(r), float(t)
 
 
+    def _valid_dimensions(self, dimensions):
+        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if not dimensions == self._cached_index_names:
+            invalid = [d for d in dimensions if d not in self._cached_index_names]
+            raise Exception("Supplied dimensions %s not found." % invalid)
+        return dimensions
 
-    def overlay(self, dimensions):
+
+    def overlay(self, dimensions, **kwargs):
         """
         Splits the UniformNdMapping along a specified number of dimensions and
         overlays items in the split out Maps.
         """
+        dimensions = self._valid_dimensions(dimensions)
         if self.ndims == 1:
-            return NdOverlay(self)
+            return NdOverlay(self, **kwargs)
         else:
             dims = [d for d in self._cached_index_names
                     if d not in dimensions]
-            return self.groupby(dims, group_type=NdOverlay)
+            return self.groupby(dims, group_type=NdOverlay, **kwargs)
 
 
-    def grid(self, dimensions):
+    def grid(self, dimensions, **kwargs):
         """
         AxisLayout takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a AxisLayout.
         """
+        dimensions = self._valid_dimensions(dimensions)
         if self.ndims == 1:
-            return AxisLayout(self)
-        return self.groupby(dimensions, container_type=AxisLayout)
+            return AxisLayout(self, **kwargs)
+        return self.groupby(dimensions, container_type=AxisLayout, **kwargs)
 
 
-    def layout(self, dimensions):
+    def layout(self, dimensions, **kwargs):
         """
         AxisLayout takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a AxisLayout.
         """
-        return self.groupby(dimensions, container_type=NdLayout)
+        dimensions = self._valid_dimensions(dimensions)
+        if self.ndims == 1 and dimensions == self._cached_index_names:
+            return NdLayout(self, **kwargs)
+        return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
     def split_overlays(self):
