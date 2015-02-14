@@ -624,7 +624,7 @@ class UniformNdMapping(NdMapping):
     @property
     def label(self):
         if self._label:
-            return self._value
+            return self._label
         elif self._label_check:
             return self._label_check
         else:
