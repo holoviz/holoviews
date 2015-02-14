@@ -352,7 +352,7 @@ class LayoutTree(AttrTree, Dimensioned):
 
     def select(self, **selections):
         return self.clone([(path, item.select(ignore_invalid=True, **selections))
-                            for path, item in self.items()])
+                            for path, item in self.items()]).display(self._display)
 
 
     def grid_items(self):
