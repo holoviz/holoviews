@@ -402,10 +402,10 @@ class HoloMap(UniformNdMapping):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items, key_dimensions=dimensions)
+            return self.clone(items, key_dimensions=dimensions, label=self._label, value=self._value)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
-            return self.clone(items)
+            return self.clone(items, label=self._label, value=self._value)
         else:
             raise Exception("Can only overlay with {data} or {vmap}.".format(
                 data=self.data_type, vmap=self.__class__.__name__))
