@@ -388,20 +388,11 @@ class OverlayPlot(ElementPlot):
     def _format_title(self, key):
         frame = self._get_frame(key)
         if frame is None: return None
+
         type_name = type(frame).__name__
         value = frame.value if frame.value != type_name else ''
         label = frame.label
 
-        labels, values = [], []
-        for path, subplot in self.subplots.items():
-            layer = frame.data.get(path, False)
-            if layer:
-                labels.append(layer.label)
-                values.append(layer.value)
-        if not label and labels and (len(labels) == len(set(labels))):
-            label = labels[0]
-        if not value and values and (len(values) == len(set(labels))):
-            value = values[0]
         title = self.title_format.format(label=label,
                                          value=value,
                                          type=type_name)
