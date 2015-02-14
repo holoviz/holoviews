@@ -356,6 +356,9 @@ class GridPlot(CompositePlot):
     object.
     """
 
+    aspect = param.Parameter(default='auto', doc="""
+        Aspect ratios on GridPlot should be automatically determined.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
@@ -829,7 +832,9 @@ class LayoutPlot(CompositePlot):
             # Options common for any subplot
 
             override_opts = {}
-            if pos == 'right':
+            if pos == 'main':
+                override_opts['aspect'] = 'square'
+            elif pos == 'right':
                 right_opts = dict(orientation='vertical', show_xaxis=None, show_yaxis='left')
                 override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
