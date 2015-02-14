@@ -589,10 +589,10 @@ class UniformNdMapping(NdMapping):
     _abstract = True
     _deep_indexable = True
 
-    def __init__(self, initial_items=None, **params):
+    def __init__(self, initial_items=None, value=None, label=None, **params):
         self._type = None
-        self._value_check, self._value = None, None
-        self._label_check, self._label = None, None
+        self._value_check, self._value = None, value
+        self._label_check, self._label = None, label
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
 

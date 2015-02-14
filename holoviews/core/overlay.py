@@ -135,17 +135,17 @@ class Overlay(LayoutTree, CompositeOverlay):
     LayoutTree and CompositeOverlay.
     """
 
-    value = param.String(default='Overlay', constant=True)
-
     @classmethod
     def _from_values(cls, val):
         return reduce(lambda x,y: x*y, val).display('auto')
 
 
-    def __init__(self, items=None, **params):
+    def __init__(self, items=None, value=None, label=None, **params):
         view_params = ViewableElement.params().keys()
         LayoutTree.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
+        self._value = value
+        self._label = label
         ViewableElement.__init__(self, self.data,
                       **{k:v for k,v in params.items() if k in view_params})
 
@@ -181,6 +181,36 @@ class Overlay(LayoutTree, CompositeOverlay):
             return elements[0].clone(types[0].collapse_data([el.data for el in elements],
                                                             function))
 
+    @property
+    def value(self):
+        if self._value:
+            return self._value
+        values = {el.value for el in self}
+        types = {type(el) for el in self}
+        value = list(values)[0]
+        vtype = list(types)[0].__name__
+        if len(values) == 1 and value != vtype:
+            return value
+        else:
+            return type(self).__name__
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+
+    @property
+    def label(self):
+        if self._label:
+            return self._label
+        labels = {el.label for el in self}
+        if len(labels) == 1:
+            return list(labels)[0]
+        else:
+            return ''
+
+    @label.setter
+    def label(self, label):
+        self._label = label
 
     @property
     def deep_dimensions(self):
