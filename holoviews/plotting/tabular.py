@@ -100,7 +100,7 @@ class TablePlot(ElementPlot):
 
         self.handles['table'] = table
 
-        return self._finalize_axis(self.map.last_key)
+        return self._finalize_axis(self.keys[-1])
 
 
     def update_handles(self, axis, view, key, ranges=None):

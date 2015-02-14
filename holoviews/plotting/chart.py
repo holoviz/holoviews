@@ -141,7 +141,7 @@ class CurvePlot(ChartPlot):
     def __call__(self, ranges=None):
         curveview = self.map.last
         axis = self.handles['axis']
-        key = self.map.last_key
+        key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = self.match_range(curveview, ranges)
@@ -161,7 +161,7 @@ class CurvePlot(ChartPlot):
                                  **style)[0]
 
         self.handles['line_segment'] = line_segment
-        return self._finalize_axis(self.map.last_key, ranges=ranges, xticks=xticks)
+        return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
     def update_handles(self, axis, view, key, ranges=None):
@@ -222,12 +222,12 @@ class HistogramPlot(ChartPlot):
         # Plot bars and make any adjustments
         style = Store.lookup_options(hist, 'style')[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
-        self.handles['bars'] = self._update_plot(self.map.last_key, bars, lims) # Indexing top
+        self.handles['bars'] = self._update_plot(self.keys[-1], bars, lims) # Indexing top
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
 
-        return self._finalize_axis(self.map.last_key, **ax_settings)
+        return self._finalize_axis(self.keys[-1], **ax_settings)
 
 
     def _process_hist(self, hist):
@@ -498,7 +498,7 @@ class PointPlot(ChartPlot):
         points = self.map.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.map.last_key, ranges)
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = self.match_range(points, ranges)
 
         ndims = points.data.shape[1]
@@ -521,7 +521,7 @@ class PointPlot(ChartPlot):
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
 
-        return self._finalize_axis(self.map.last_key)
+        return self._finalize_axis(self.keys[-1])
 
 
     def _compute_size(self, sizes, opts):
@@ -543,7 +543,7 @@ class PointPlot(ChartPlot):
                 paths.set_sizes(self._compute_size(sz, opts))
             if cs is not None:
                 val_dim = element.dimensions(label=True)[self.color_index]
-                ranges = self.compute_ranges(self.map, self.map.last_key, ranges)
+                ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
                 ranges = self.match_range(element, ranges)
                 paths.set_clim(ranges[val_dim])
 
@@ -677,7 +677,7 @@ class VectorFieldPlot(ElementPlot):
         self.handles['quiver'] = quiver
         self.handles['input_scale'] = input_scale
 
-        return self._finalize_axis(self.map.last_key)
+        return self._finalize_axis(self.keys[-1])
 
 
     def update_handles(self, axis, view, key, ranges=None):

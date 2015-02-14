@@ -98,7 +98,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         axis = self.handles['axis']
         points = self.map.last
 
-        key = self.map.last_key
+        key = self.keys[-1]
         self.update_handles(axis, points, key)
 
         return self._finalize_axis(key)
@@ -149,7 +149,7 @@ class SurfacePlot(Plot3D):
 
     def __call__(self, ranges=None):
         view = self.map.last
-        key = self.map.last_key
+        key = self.keys[-1]
         self.update_handles(self.handles['axis'], view, key)
 
         return self._finalize_axis(key)

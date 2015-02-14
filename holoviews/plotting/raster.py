@@ -28,7 +28,7 @@ class MatrixPlot(ElementPlot):
         view = self.map.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.map.last_key, ranges)
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = self.match_range(view, ranges)
 
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
@@ -61,7 +61,7 @@ class MatrixPlot(ElementPlot):
             if self.show_values:
                 self._annotate_values(view)
 
-        return self._finalize_axis(self.map.last_key, ranges=ranges,
+        return self._finalize_axis(self.keys[-1], ranges=ranges,
                                    xticks=xticks, yticks=yticks)
 
 

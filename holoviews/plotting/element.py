@@ -353,7 +353,7 @@ class OverlayPlot(ElementPlot):
             plot(ranges=ranges)
         self._adjust_legend(axis)
 
-        key = self.map.last_key
+        key = self.keys[-1]
         return self._finalize_axis(key, ranges=ranges,
                                    title=self._format_title(key))
 
