@@ -44,26 +44,6 @@ class CompositeOverlay(ViewableElement, Composable):
     _deep_indexable = True
 
     @property
-    def labels(self):
-        return [el.label for el in self]
-
-    @property
-    def legend(self):
-        if self._cached_index_names == ['Element']:
-            labels = self.labels
-            if len(set(labels)) == len(labels):
-                return labels
-            else:
-                return None
-        else:
-            labels = []
-            for key in self.data.keys():
-                labels.append(','.join([dim.pprint_value(k) for dim, k in
-                                        zip(self.key_dimensions, key)]))
-            return labels
-
-
-    @property
     def xlim(self):
         return self.range([d.name for d in self.deep_dimensions][0])
 
