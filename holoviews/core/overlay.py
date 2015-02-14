@@ -225,7 +225,7 @@ class Overlay(LayoutTree, CompositeOverlay):
 
 
 
-class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
+class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
     """
     An NdOverlay allows a group of NdOverlay to be overlaid together. NdOverlay can
     be indexed out of an overlay and an overlay is an iterable that iterates
@@ -241,18 +241,14 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
         self._xlim = None
         self._ylim = None
         data = self._process_layers(overlays)
-        ViewableElement.__init__(self, data, **params)
-        map_data = overlays if isinstance(overlays, NdMapping) else data
-        NdMapping.__init__(self, map_data, **params)
+        super(NdOverlay, self).__init__(data, **params)
 
 
     def _process_layers(self, layers):
         """
         Set a collection of layers to be overlaid with each other.
         """
-        if isinstance(layers, (UniformNdMapping)):
-            return layers.data
-        elif isinstance(layers, (dict, OrderedDict)):
+        if isinstance(layers, (dict, OrderedDict, UniformNdMapping)):
             return layers
         elif layers is None or not len(layers):
             return OrderedDict()
@@ -265,18 +261,6 @@ class NdOverlay(CompositeOverlay, NdMapping, Overlayable):
         from ..operation import histogram
         return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
                          individually=individually, **kwargs)
-
-
-    def item_check(self, dim_vals, layer):
-        if not isinstance(layer, ViewableElement): pass
-        layer_dimensions = [d.name for d in layer.key_dimensions]
-        if len(self):
-            if layer_dimensions != self._layer_dimensions:
-                raise Exception("NdOverlay must share common dimensions.")
-        else:
-            self._layer_dimensions = layer_dimensions
-            self.value = layer.value
-            self.label = layer.label
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
