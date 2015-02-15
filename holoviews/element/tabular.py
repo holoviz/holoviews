@@ -402,17 +402,22 @@ class TableConversion(object):
     def _conversion(self, key_dimensions=[], value_dimensions=[], new_type=None):
         if not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
         if not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
+        all_dims = self.table.dimensions(label=True)
+        invalid = [dim for dim in key_dimensions+value_dimensions if dim not in all_dims]
+        if invalid:
+            raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
+                            (invalid, new_type.__name__))
         group_dims = [dim for dim in self.table._cached_index_names if not dim in key_dimensions]
         selected = self.table.select(**{self.table.value: value_dimensions})
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type)
 
     def bars(self, key_dimensions, value_dimensions):
-        from .chart import Curve
-        return self._conversion(key_dimensions, value_dimensions, Curve)
-
-    def curve(self, key_dimensions, value_dimensions):
         from .chart import Bars
         return self._conversion(key_dimensions, value_dimensions, Bars)
+
+    def curve(self, key_dimensions, value_dimensions):
+        from .chart import Curve
+        return self._conversion(key_dimensions, value_dimensions, Curve)
 
     def heatmap(self, key_dimensions, value_dimensions):
         from .raster import HeatMap
