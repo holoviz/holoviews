@@ -18,8 +18,8 @@ figure.facecolor: ffffff
 font.size:11
 
 grid.linewidth: 1.0
-grid.color: white
-grid.linestyle: -
+grid.color: black
+grid.linestyle: :
 
 legend.loc: 1
 legend.frameon: True
