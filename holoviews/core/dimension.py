@@ -339,6 +339,10 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
+    constant_dimensions = param.Dict(doc="""
+       A dictionary of Dimension : value providing additional
+       dimension information about the object.""")
+
     key_dimensions = param.List(bounds=(0, None), constant=True, doc="""
        The list of dimensions that may be used in indexing (and
        potential slicing) semantics. The order of the dimensions
