@@ -333,7 +333,7 @@ class OverlayPlot(ElementPlot):
             plotopts = dict(keys=self.keys, axis=self.handles['axis'],
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
-                            layout_dimensions=self.layout_dimensions)
+                            layout_dimensions=self.layout_dimensions, uniform=self.uniform)
             plotype = Store.defaults[type(vmap.last)]
             subplots[key] = plotype(vmap, **plotopts)
 
