@@ -211,39 +211,6 @@ class AttrTree(object):
             raise AttributeError("%s: Custom paths elements must be capitalized." % identifier)
 
 
-    def _node_repr(self, node):
-        return '--+' if node.identifier is None else node.identifier
-
-
-    def _draw_tree(self, node, prefix='', identifier=''):
-        """
-        Recursive function that builds up an ASCII tree given an
-        AttrTree node.
-        """
-        children = node.children if isinstance(node, AttrTree) else []
-        if isinstance(node, AttrTree):
-            identifier = self._node_repr(node)
-        else:
-            identifier = identifier + ' : ' + str(type(node).__name__)
-
-        tree =  prefix[:-3] + '  +--' if prefix else prefix
-        tree += identifier + '\n'
-        for index, child in enumerate(children):
-            child_prefix = prefix + ('   ' if index+1 == len(children) else '  |')
-            tree += self._draw_tree(node[child], child_prefix, child)
-        return tree
-
-    def __repr__(self):
-        """
-        The repr of an AttrTree is an ASCII tree showing the structure
-        of the tree and the types of leaves.
-        """
-        if len(self) == 0:
-            return "Dangling AttrTree node with no leaf items."
-        return "%s of %s items:\n\n%s" % (self.__class__.__name__,
-                                          len(self.data),
-                                          self._draw_tree(self))
-
     def __iter__(self):
         return iter(self.data.values())
 

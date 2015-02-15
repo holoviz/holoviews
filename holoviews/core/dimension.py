@@ -10,6 +10,8 @@ import param
 
 from ..core.util import valid_identifier
 from .options import Store
+from pprint import PrettyPrinter
+
 
 class Dimension(param.Parameterized):
     """
@@ -509,6 +511,10 @@ class Dimensioned(LabelledData):
                 return (dim_vals[0], dim_vals[-1])
             else:
                 return (None, None)
+
+
+    def __repr__(self):
+        return PrettyPrinter.pprint(self)
 
 
 
