@@ -435,13 +435,15 @@ class HoloMap(UniformNdMapping):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-    def collapse(self, dimensions, function=None, **kwargs):
+    def collapse(self, dimensions=None, function=None, **kwargs):
         """
         Allows collapsing one of any number of key dimensions
         on the HoloMap. Homogenous Elements may be collapsed by
         supplying a function, inhomogenous elements are merged.
         """
         from .operation import MapOperation
+        if not dimensions:
+            dimensions = self._cached_index_names
         if self.ndims > 1 and len(dimensions) != self.ndims:
             groups = self.groupby([dim for dim in self._cached_index_names
                                    if dim not in dimensions])
