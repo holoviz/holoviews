@@ -220,21 +220,7 @@ class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
     def __init__(self, overlays=None, **params):
         self._xlim = None
         self._ylim = None
-        data = self._process_layers(overlays)
-        super(NdOverlay, self).__init__(data, **params)
-
-
-    def _process_layers(self, layers):
-        """
-        Set a collection of layers to be overlaid with each other.
-        """
-        if isinstance(layers, (dict, OrderedDict, UniformNdMapping)):
-            return layers
-        elif layers is None or not len(layers):
-            return OrderedDict()
-        else:
-            keys = range(len(layers))
-            return OrderedDict(((key,), layer) for key, layer in zip(keys, layers))
+        super(NdOverlay, self).__init__(overlays, **params)
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
