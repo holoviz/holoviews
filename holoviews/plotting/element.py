@@ -361,11 +361,11 @@ class OverlayPlot(ElementPlot):
                 legend.set_visible(False)
         else:
             leg = axis.legend(handles, labels, title=title)
-            frame = axis.get_legend().get_frame()
+            frame = leg.get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
             frame.set_linewidth('1.0')
-            self.handles['legend'] = axis.get_legend()
+            self.handles['legend'] = leg
 
 
     def __call__(self, ranges=None):
