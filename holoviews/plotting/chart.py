@@ -16,32 +16,10 @@ from .plot import Plot
 
 class ChartPlot(ElementPlot):
 
-    log_x = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the x-axis of the Chart.""")
-
-    log_y  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""")
-
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
         val_dim = self.map.last.get_dimension(1)
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
-
-
-    def _finalize_axis(self, key, **kwargs):
-        ret = super(ChartPlot, self)._finalize_axis(key, **kwargs)
-        axis = self.handles['axis']
-        if self.log_x:
-            axis.set_xscale('log')
-            log_locator = ticker.LogLocator(numticks=self.xticks,
-                                            subs=range(1,10))
-            axis.xaxis.set_major_locator(log_locator)
-        elif self.log_y:
-            axis.set_yscale('log')
-            log_locator = ticker.LogLocator(numticks=self.yticks,
-                                            subs=range(1,10))
-            axis.yaxis.set_major_locator(log_locator)
-        return ret
 
 
     def _cyclic_format_x_tick_label(self, x):

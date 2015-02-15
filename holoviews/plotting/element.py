@@ -27,6 +27,12 @@ class ElementPlot(Plot):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
+    logx = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the x-axis of the Chart.""")
+
+    logy  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
+
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
@@ -217,20 +223,35 @@ class ElementPlot(Plot):
                 axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
                 axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
 
+            if self.logx or self.logy:
+                pass
             if self.aspect == 'square':
                 axis.set_aspect((1./axis.get_data_ratio()))
             elif self.aspect not in [None, 'square']:
                 axis.set_aspect(self.aspect)
 
+            if self.logx:
+                axis.set_xscale('log')
+            elif self.logy:
+                axis.set_yscale('log')
+
             if xticks:
                 axis.set_xticks(xticks[0])
                 axis.set_xticklabels(xticks[1])
+            elif self.logx:
+                log_locator = ticker.LogLocator(numticks=self.xticks,
+                                            subs=range(1,10))
+                axis.xaxis.set_major_locator(log_locator)
             else:
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
 
             if yticks:
                 axis.set_yticks(yticks[0])
                 axis.set_yticklabels(yticks[1])
+            elif self.logy:
+                log_locator = ticker.LogLocator(numticks=self.yticks,
+                                                subs=range(1,10))
+                axis.yaxis.set_major_locator(log_locator)
             else:
                 axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
 
