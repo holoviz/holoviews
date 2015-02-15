@@ -46,9 +46,13 @@ def unique_dimkeys(obj, default_dim='Frame'):
     subset = all(set(g1) <= set(g2) or set(g1) >= set(g2)
                  for g1 in dim_groups for g2 in dim_groups)
     # Find unique keys
-    all_dims = sorted({dim for dim_group in dim_groups
-                       for dim in dim_group},
-                      key=lambda x: dim_groups[0].index(x))
+    if subset:
+        all_dims = sorted({dim for dim_group in dim_groups
+                           for dim in dim_group},
+                               key=lambda x: dim_groups[0].index(x))
+    else:
+        all_dims = [default_dim]
+
     ndims = len(all_dims)
     unique_keys = []
     for group, keys in key_dims:
@@ -66,4 +70,4 @@ def unique_dimkeys(obj, default_dim='Frame'):
     if subset:
         return all_dims, list(sorted_keys)
     else:
-        return [default_dim], [i for i in range(len(unique_keys))]
+        return all_dims, [(i,) for i in range(len(unique_keys))]
