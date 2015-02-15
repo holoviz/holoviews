@@ -21,7 +21,7 @@ grid.linewidth: 1.0
 grid.color: black
 grid.linestyle: :
 
-legend.loc: 1
+legend.loc: upper right
 legend.frameon: True
 legend.fontsize: small
 legend.framealpha: 0.8
