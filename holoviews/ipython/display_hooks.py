@@ -204,6 +204,7 @@ def animation_display(anim, map_format, dpi=72, **kwargs):
 @display_hook
 def view_display(view, size, **kwargs):
     if not isinstance(view, ViewableElement): return None
+    if type(view) == Element:                 return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
     fig = Store.defaults[view.__class__](view,
