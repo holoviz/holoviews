@@ -178,9 +178,8 @@ class ElementPlot(Plot):
                     extents = self.get_extents(view, ranges)
                     if extents:
                         l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                        if not np.NaN in (l, r): axis.set_xlim((l, r))
-                        if b == t: t += 1. # Arbitrary y-extent if zero range
-                        if not np.NaN in (b, t): axis.set_ylim((b, t))
+                        if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
+                        if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
 
             if not self.overlaid and not isinstance(self, OverlayPlot):
                 legend = axis.get_legend()
