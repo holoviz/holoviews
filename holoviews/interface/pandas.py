@@ -133,6 +133,28 @@ class DataFrameView(Element):
         return self.data.copy()
 
 
+    def reduce(self, dimensions=[], function=None, **reductions):
+        """
+        The reduce function accepts either a list of Dimensions
+        and a function to apply to find the aggregate across
+        those Dimensions or a list of dimension/function pairs
+        to apply one by one.
+        """
+        if not dimensions and not reductions:
+            raise Exception("Supply either a list of Dimensions or"
+                            "reductions as keyword arguments")
+        reduced = self.data
+        if dimensions:
+            if not function:
+                raise Exception("Supply a function to reduce the Dimensions with")
+            reduced = reduced.groupby(dimensions, as_index=True).aggregate(function)
+        if reductions:
+            for dim, fn in reductions.items():
+                reduced = reduced.groupby(dim, as_index=True).aggregate(fn)
+        key_dimensions = [d for d in self.dimensions('key') if d.name in reduced.columns]
+        return self.clone(reduced, key_dimensions=key_dimensions)
+
+
     def groupby(self, dimensions, container_type=NdMapping):
         invalid_dims = list(set(dimensions) - set(self._cached_index_names))
         if invalid_dims:
