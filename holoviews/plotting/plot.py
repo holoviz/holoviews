@@ -40,6 +40,9 @@ class Plot(param.Parameterized):
         The hook is passed the full set of plot handles and the
         displayed object.""")
 
+    latex = param.Boolean(default=False, doc="""
+        Whether to use LaTeX text.""")
+
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
         of plotting. Allows selecting normalization at different levels
@@ -49,6 +52,9 @@ class Plot(param.Parameterized):
                                       objects=['3d', 'polar', None], doc="""
         The projection of the plot axis, default of None is equivalent to
         2D plot, 3D and polar plots are also supported.""")
+
+    rcparams = param.Dict(default={}, doc="""
+        Matplotlib rc parameters to apply to the figure.""")
 
     size = param.Integer(default=100, bounds=(1, 100), doc="""
         Size relative to the supplied figure size in percent.""")
@@ -217,13 +223,17 @@ class Plot(param.Parameterized):
         a new figure.
         """
         if not self.subplot and self._create_fig:
-            fig = plt.figure()
-            self.handles['fig'] = fig
-            l, b, r, t = self.figure_bounds
-            fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-            fig.set_size_inches(list(self.figure_size))
-            axis = fig.add_subplot(111, projection=self.projection)
-            axis.set_aspect('auto')
+            rc_params = self.rcparams
+            if self.latex:
+                rc_params['text.usetex'] = True
+            with matplotlib.rc_context(rc=rc_params):
+                fig = plt.figure()
+                self.handles['fig'] = fig
+                l, b, r, t = self.figure_bounds
+                fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
+                fig.set_size_inches(list(self.figure_size))
+                axis = fig.add_subplot(111, projection=self.projection)
+                axis.set_aspect('auto')
 
         return axis
 
