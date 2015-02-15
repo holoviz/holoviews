@@ -266,6 +266,7 @@ class DFrame(DataFrameView):
     def table(self, kdims, vdims, mdims=None, reduce_fn=None, view_type=None, **kwargs):
         if not isinstance(kdims, list): kdims = [kdims]
         if not isinstance(vdims, list): vdims = [vdims]
+        if not isinstance(mdims, list) and not mdims is None: mdims = [mdims]
         if not mdims and not reduce_fn:
             selected_dims = vdims+kdims
             mdims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
@@ -275,7 +276,7 @@ class DFrame(DataFrameView):
             vm_dims = [self.get_dimension(d) for d in mdims]
         else:
             map_groups = [(0, self.data)]
-            vm_dims = ['None']
+            vm_dims = [Dimension('None')]
 
         vmap = HoloMap(key_dimensions=vm_dims)
         value = self.value if self.value != type(self).__name__ else 'Table'
