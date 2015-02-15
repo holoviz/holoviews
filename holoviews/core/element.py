@@ -113,11 +113,6 @@ class Element(ViewableElement, Composable, Overlayable):
         return pandas.DataFrame(dim_vals, columns=column_names)
 
 
-    def __repr__(self):
-        params = ', '.join('%s=%r' % (k,v) for (k,v) in self.get_param_values())
-        return "%s(%r, %s)" % (self.__class__.__name__, self.data, params)
-
-
 
 class Element2D(Element):
 
