@@ -263,14 +263,16 @@ class DFrame(DataFrameView):
     def vectorfield(self, kdims, vdims, **kwargs):
         return self.table(kdims, vdims, **dict(view_type=VectorField, **kwargs))
 
-    def table(self, kdims, vdims, view_type=None, **kwargs):
+    def table(self, kdims, vdims, mdims=None, reduce_fn=None, view_type=None, **kwargs):
         if not isinstance(kdims, list): kdims = [kdims]
         if not isinstance(vdims, list): vdims = [vdims]
-        selected_dims = vdims+kdims
-        map_dims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
-        if map_dims:
-            map_groups = self.data.groupby(map_dims)
-            vm_dims = [self.get_dimension(d) for d in map_dims]
+        if not mdims and not reduce_fn:
+            selected_dims = vdims+kdims
+            mdims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
+
+        if mdims:
+            map_groups = self.data.groupby(mdims)
+            vm_dims = [self.get_dimension(d) for d in mdims]
         else:
             map_groups = [(0, self.data)]
             vm_dims = ['None']
@@ -282,10 +284,11 @@ class DFrame(DataFrameView):
         for map_key, group in map_groups:
             table_data = OrderedDict()
             for k, v in group.groupby(kdims):
-                data = np.vstack(np.array(v[d])[0] for d in vdims)
+                data = np.vstack(reduce_fn(np.array(v[d])) if reduce_fn else np.array(v[d])
+                                 for d in vdims)
                 table_data[k] = tuple(data) if len(valdims) > 1 else data[0]
             view = Table(table_data, key_dimensions=keydims,
                          value_dimensions=valdims, label=self.label,
                          value=value)
             vmap[map_key] = view_type(view, **kwargs) if view_type else view
-        return vmap if map_dims else vmap.last
+        return vmap if mdims else vmap.last
