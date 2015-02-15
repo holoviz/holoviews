@@ -143,10 +143,10 @@ class PrettyPrinter(Info, PrintUtils):
 
     @classmethod
     def pprint(cls, node):
-        accumulator = ''
+        accumulator = []
         for level, line in cls.recurse(node):
-            accumulator += (level *cls.tab) + line + "\n"
-        return accumulator
+            accumulator.append((level *cls.tab) + line)
+        return "\n".join(accumulator)
 
 
     @classmethod
