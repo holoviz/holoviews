@@ -361,14 +361,11 @@ class OverlayPlot(ElementPlot):
             if legend:
                 legend.set_visible(False)
         else:
-            fontP = FontProperties()
-            fontP.set_size('medium')
-            leg = axis.legend(handles, labels, prop=fontP, title=title)
-            leg.get_frame().set_alpha(1.0)
+            leg = axis.legend(handles, labels, title=title)
             frame = axis.get_legend().get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
-            frame.set_linewidth('1.5')
+            frame.set_linewidth('1.0')
             self.handles['legend'] = axis.get_legend()
 
 

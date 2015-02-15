@@ -27,8 +27,11 @@ xtick.minor.size: 0
 ytick.major.size: 0.1
 ytick.minor.size: 0
 
+legend.loc: 1
+legend.frameon: True
+legend.fontsize: small
+legend.framealpha: 0.5
 legend.fancybox: True
-legend.loc: best
 
 font.size:11
 
