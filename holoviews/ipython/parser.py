@@ -19,6 +19,8 @@ from ..operation import Compositor
 from ..plotting import Plot
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
+
 
 class Parser(object):
     """
@@ -107,10 +109,10 @@ class OptsSpec(Parser):
     '=' sign (no space).
     """
 
-    plot_options = pp.nestedExpr(opener='[',
-                              closer=']',
-                              ignoreExpr=None
-                                ).setResultsName("plot_options")
+    plot_options = pp.nestedExpr('[',
+                                 ']',
+                                 content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
+                                 ).setResultsName('plot_options')
 
     style_options = pp.nestedExpr(opener='(',
                                   closer=')',
