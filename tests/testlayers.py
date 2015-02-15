@@ -20,16 +20,16 @@ class CompositeTest(unittest.TestCase):
 class OverlayTest(CompositeTest):
 
     def test_overlay(self):
-        NdOverlay([self.view1, self.view2, self.view3])
+        NdOverlay(list(enumerate([self.view1, self.view2, self.view3])))
 
     def test_overlay_iter(self):
         views = [self.view1, self.view2, self.view3]
-        overlay = NdOverlay(views)
+        overlay = NdOverlay(list(enumerate(views)))
         for el, v in zip(overlay, views):
             self.assertEqual(el, v)
 
     def test_overlay_integer_indexing(self):
-        overlay = NdOverlay([self.view1, self.view2, self.view3])
+        overlay = NdOverlay(list(enumerate([self.view1, self.view2, self.view3])))
         self.assertEqual(overlay[0], self.view1)
         self.assertEqual(overlay[1], self.view2)
         self.assertEqual(overlay[2], self.view3)
