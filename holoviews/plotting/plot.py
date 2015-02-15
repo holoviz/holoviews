@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 
 import param
-from ..core import UniformNdMapping, ViewableElement, HoloMap, \
+from ..core import ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
