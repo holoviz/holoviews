@@ -88,6 +88,14 @@ class MatrixPlot(ElementPlot):
             xstep, ystep = 1.0/num_x, 1.0/num_y
             xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
             ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
+            if len(xpos) > self.xticks:
+                xsamples = np.linspace(0, len(xpos)-1, self.yticks, dtype=int)
+                xpos = xpos[xsamples]
+                dim1_keys = [dim1_keys[i] for i in xsamples]
+            if len(ypos) > self.yticks:
+                ysamples = np.linspace(0, len(ypos)-1, self.yticks, dtype=int)
+                ypos = ypos[ysamples]
+                dim2_keys = [dim2_keys[i] for i in ysamples]
             return (xpos, dim1_keys), (ypos, dim2_keys)
         else:
             return None, None

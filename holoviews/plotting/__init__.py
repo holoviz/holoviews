@@ -85,6 +85,7 @@ Store.options.Contours = Options('style', color='k')
 Store.options.Matrix = Options('style', cmap='gray', interpolation='nearest')
 Store.options.Raster = Options('style', cmap='jet', interpolation='nearest')
 Store.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
+Store.options.HeatMap = Options('plot', xticks=20, yticks=20)
 Store.options.RGBA = Options('style', interpolation='nearest')
 Store.options.RGB = Options('style', interpolation='nearest')
 Store.options.GridLayout = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
