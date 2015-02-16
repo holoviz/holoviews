@@ -378,6 +378,18 @@ class Dimensioned(LabelledData):
         self._settings = None
 
 
+    def _valid_dimensions(self, dimensions):
+        "Validates key dimension input"
+        if not dimensions:
+            return dimensions
+        elif not isinstance(dimensions, list):
+            dimensions = [dimensions]
+
+        for dim in dimensions:
+            if dim not in self._cached_index_names:
+                raise Exception("Supplied dimensions %s not found." % dim)
+        return dimensions
+
     @property
     def deep_dimensions(self):
         "The list of deep dimensions"

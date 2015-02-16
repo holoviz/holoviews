@@ -263,14 +263,6 @@ class HoloMap(UniformNdMapping):
         return float(l), float(b), float(r), float(t)
 
 
-    def _valid_dimensions(self, dimensions):
-        if not isinstance(dimensions, list): dimensions = [dimensions]
-        for dim in dimensions:
-            if dim not in self._cached_index_names:
-                raise Exception("Supplied dimensions %s not found." % dim)
-        return dimensions
-
-
     def overlay(self, dimensions, **kwargs):
         """
         Splits the UniformNdMapping along a specified number of dimensions and
