@@ -401,6 +401,8 @@ class RGB(Matrix):
     list of value dimensions.
     """
 
+    value = param.String(default='RGB')
+
     alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
                                           class_=Dimension, doc="""
         The alpha dimension definition to add the value_dimensions if
