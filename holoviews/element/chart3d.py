@@ -10,9 +10,9 @@ class Surface(Element3D, Raster):
     Surface Element represents a 3D surface in a 3D space.
     """
 
-    key_dimensions = param.Boolean(default=[Dimension('x'),
-                                            Dimension('y'),
-                                            Dimension('z')])
+    key_dimensions = param.List(default=[Dimension('x'),
+                                         Dimension('y'),
+                                         Dimension('z')])
 
     value = param.String(default='Surface')
 
