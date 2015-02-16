@@ -80,18 +80,21 @@ class OptsSpec(Parser):
     """
     An OptsSpec is a string specification that describes an
     OptionTree. It is a list of tree path specifications (using dotted
-    syntax) separated by keyword lists for any of the normalization,
-    plotting options or style options (in braces, square brackets and
-    parentheses respectively). All these option sets are optional and
-    may be supplied in any order.
+    syntax) separated by keyword lists for any of the style, plotting
+    or normalization options. These keyword lists are denoted
+    'plot(..)', 'style(...)' and 'norm(...)'  respectively.  These
+    three groups may be specified even more concisely using keyword
+    lists delimited by square brackets, parentheses and braces
+    respectively.  All these sets are optional and may be supplied in
+    any order.
 
     For instance, the following string:
 
-    Matrix (interpolation='nearest') [show_title=False] Curve color='r'
+    Matrix (interpolation=None) plot(show_title=False) Curve style(color='r')
 
-    Would specify an OptionTree with Options(show_title=False) plot
-    options for Matrix and style options Options(color='r') for
-    Curve.
+    Would specify an OptionTree where Matrix has "interpolation=None"
+    for style and 'show_title=False' for plot options. The Curve has a
+    style set such that color='r'.
 
     The parser is fairly forgiving; commas between keywords are
     optional and additional spaces are often allowed. The only
@@ -99,21 +102,42 @@ class OptsSpec(Parser):
     '=' sign (no space).
     """
 
-    plot_options = pp.nestedExpr('[',
-                                 ']',
-                                 content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
-                             ).setResultsName('plot_options')
+    plot_options_short = pp.nestedExpr('[',
+                                       ']',
+                                       content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
+                                   ).setResultsName('plot_options')
 
-    style_options = pp.nestedExpr(opener='(',
-                                  closer=')',
-                                  ignoreExpr=None
-                              ).setResultsName("style_options")
+    plot_options_long = pp.nestedExpr('plot(',
+                                      ')',
+                                      ignoreExpr=None,
+                                  ).setResultsName('plot_options')
 
-    norm_options = pp.nestedExpr(opener='{',
-                                 closer='}',
-                                 ignoreExpr=None
-                             ).setResultsName("norm_options")
+    plot_options = (plot_options_short | plot_options_long)
 
+    style_options_short = pp.nestedExpr(opener='(',
+                                        closer=')',
+                                        ignoreExpr=None
+                                    ).setResultsName("style_options")
+
+    style_options_long = pp.nestedExpr(opener='style(',
+                                       closer=')',
+                                       ignoreExpr=None
+                                   ).setResultsName("style_options")
+
+    style_options = (style_options_short | style_options_long)
+
+
+    norm_options_short = pp.nestedExpr(opener='{',
+                                       closer='}',
+                                       ignoreExpr=None
+                                   ).setResultsName("norm_options")
+
+    norm_options_long = pp.nestedExpr(opener='norm(',
+                                      closer=')',
+                                      ignoreExpr=None
+                                  ).setResultsName("norm_options")
+
+    norm_options = (norm_options_short | norm_options_long)
 
     compositor_ops = pp.MatchFirst(
         [pp.Literal(el.value) for el in Compositor.definitions])
