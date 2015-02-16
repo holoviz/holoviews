@@ -126,7 +126,8 @@ class Chart(Element2D):
             reduced_data = OrderedDict(zip(self.value_dimensions, reduce_fn(self.data[:, 1:], axis=0)))
         else:
             raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
-        params = dict(self.get_param_values(onlychanged=True), key_dimensions=self.value_dimensions)
+        params = dict(self.get_param_values(onlychanged=True), value_dimensions=self.value_dimensions,
+                      key_dimensions=[])
         return ItemTable(reduced_data, **params)
 
 

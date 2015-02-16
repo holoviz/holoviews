@@ -18,18 +18,19 @@ class ItemTable(Element):
     information (e.g type and units) to be associated per heading.
     """
 
-    key_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
+    key_dimensions = param.List(default=[], bounds=(0, 0), doc="""
        ItemTables hold an index Dimension for each value they contain, i.e.
        they are equivalent to the keys.""")
 
-    value_dimensions = param.List(default=[], bounds=(0, 0), doc="""
+    value_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
        ItemTables should have only index Dimensions.""")
 
     value = param.String(default="ItemTable")
 
+
     @property
     def rows(self):
-        return self.ndims
+        return len(self.value_dimensions)
 
 
     @property
@@ -44,7 +45,7 @@ class ItemTable(Element):
 
         str_keys=dict((k.name if isinstance(k, Dimension)
                        else k ,v) for (k,v) in data.items())
-        params = dict(params, key_dimensions=list(data.keys()))
+        params = dict(params, value_dimensions=list(data.keys()))
         super(ItemTable, self).__init__(str_keys, **params)
 
 
@@ -96,9 +97,9 @@ class ItemTable(Element):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return str(self.dimensions()[row])
+            return str(self.dimensions('value')[row])
         else:
-            heading = self._cached_index_names[row]
+            heading = self.dimensions('value', label=True)[row]
             return self.data[heading]
 
 
@@ -124,6 +125,10 @@ class ItemTable(Element):
         return DataFrame({(k.name if isinstance(k, Dimension)
                            else k): [v] for k, v in self.data.items()})
 
+
+    def table(self):
+        return Table(OrderedDict([((), self.data.values())]),
+                     value_dimensions=self.value_dimensions, key_dimensions=[])
 
 
 class Table(Element, NdMapping):

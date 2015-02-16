@@ -419,7 +419,7 @@ class Comparison(ComparisonInterface):
         if el1.cols != el2.cols:
             raise cls.failureException("ItemTables have different numbers of columns.")
 
-        if [d.name for d in el1.dimensions()] != [d.name for d in el2.dimensions()]:
+        if [d.name for d in el1.value_dimensions] != [d.name for d in el2.value_dimensions]:
             raise cls.failureException("ItemTables have different Dimensions.")
 
 
