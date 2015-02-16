@@ -426,6 +426,28 @@ class RGB(Matrix):
         If an alpha channel is supplied, the defined alpha_dimension
         is automatically appended to this list.""")
 
+
+    @classmethod
+    def load_image(cls, filename, height_size=1):
+        """
+        Loads an RGB element from a PNG image file, using matplotlib.
+
+        The height size determines the bounds of the RGB object, by
+        default the height is 1 unit with the width scaled
+        appropriately by the image aspect ratio.
+        """
+        try:
+            from matplotlib import pyplot as plt
+        except:
+            raise ImportError("RGB.load_image requires matplotlib.")
+
+        rgb = plt.imread(filename)
+        (height, width, channels) = rgb.shape
+        f = float(height_bounds) / height
+        xoffset, yoffset = width*f/2, height*f/2
+        return cls(rgb, bounds=(-xoffset, -yoffset, xoffset, yoffset))
+
+
     def __init__(self, data, **params):
         sliced = None
         if len(data.shape) != 3:
