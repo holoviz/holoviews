@@ -82,26 +82,16 @@ class OptsSpec(Parser):
     OptionTree. It is a list of tree path specifications (using dotted
     syntax) separated by keyword lists for any of the normalization,
     plotting options or style options (in braces, square brackets and
-    parentheses respectively). All these option sets are optional, but
-    the style options must follow the plotting options which must
-    follow the normalization options.
+    parentheses respectively). All these option sets are optional and
+    may be supplied in any order.
 
     For instance, the following string:
 
-    Matrix [show_title=False] (interpolation='nearest') Curve color='r'
+    Matrix (interpolation='nearest') [show_title=False] Curve color='r'
 
     Would specify an OptionTree with Options(show_title=False) plot
     options for Matrix and style options Options(color='r') for
     Curve.
-
-    Note that the normalization options are just syntactic sugar for
-    the the normalization plotting option. In other words:
-
-    Matrix {-groupwise -mapwise}
-
-    Is equivalent to:
-
-    Matrix [normalization=3]
 
     The parser is fairly forgiving; commas between keywords are
     optional and additional spaces are often allowed. The only
@@ -112,17 +102,17 @@ class OptsSpec(Parser):
     plot_options = pp.nestedExpr('[',
                                  ']',
                                  content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
-                                 ).setResultsName('plot_options')
+                             ).setResultsName('plot_options')
 
     style_options = pp.nestedExpr(opener='(',
                                   closer=')',
                                   ignoreExpr=None
-                                  ).setResultsName("style_options")
+                              ).setResultsName("style_options")
 
     norm_options = pp.nestedExpr(opener='{',
                                  closer='}',
                                  ignoreExpr=None
-                                 ).setResultsName("norm_options")
+                             ).setResultsName("norm_options")
 
 
     compositor_ops = pp.MatchFirst(
@@ -136,9 +126,9 @@ class OptsSpec(Parser):
 
 
     spec_group = pp.Group(pathspec
-                          + pp.Optional(norm_options)
-                          + pp.Optional(plot_options)
-                          + pp.Optional(style_options))
+                          & pp.Optional(norm_options)
+                          & pp.Optional(plot_options)
+                          & pp.Optional(style_options))
 
     opts_spec = pp.OneOrMore(spec_group)
 
