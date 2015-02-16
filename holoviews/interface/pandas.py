@@ -9,8 +9,6 @@ convert it to standard holoviews View types.
 
 from __future__ import absolute_import
 
-from collections import OrderedDict
-
 import numpy as np
 
 try:
@@ -20,7 +18,7 @@ except:
 
 import param
 
-from ..core import Dimension, ViewableElement, NdMapping, NdOverlay,\
+from ..core import OrderedDict, Dimension, ViewableElement, NdMapping, NdOverlay,\
  NdLayout, AxisLayout, Element, HoloMap
 from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 

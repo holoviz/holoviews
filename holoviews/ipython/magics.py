@@ -4,9 +4,9 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
+from ..core import OrderedDict
 from ..core.options import OptionTree, Options, OptionError, Store
 
-from collections import OrderedDict
 from IPython.display import display, HTML
 
 from ..operation import Compositor

@@ -1,10 +1,9 @@
 from itertools import product
-from collections import OrderedDict
 import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, Element2D
+from ..core import OrderedDict, Dimension, NdMapping, Element2D
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve

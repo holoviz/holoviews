@@ -4,18 +4,15 @@ allow multiple Views to be presented side-by-side in a GridLayout. An
 AdjointLayout allows one or two Views to be ajoined to a primary View
 to act as supplementary elements.
 """
-import uuid
-from collections import OrderedDict
+
 from functools import reduce
-from itertools import groupby
-from operator import itemgetter
 
 import numpy as np
 
 import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
-from .ndmapping import NdMapping, UniformNdMapping
+from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
 from .util import int_to_roman
 from . import traversal

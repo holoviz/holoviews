@@ -1,5 +1,4 @@
 from itertools import product, groupby
-from collections import OrderedDict
 
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
@@ -8,7 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 
 import param
-from ..core import ViewableElement, HoloMap, \
+from ..core import OrderedDict, ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal

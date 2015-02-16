@@ -1,5 +1,3 @@
-from collections import OrderedDict
-import itertools
 from numbers import Number
 import numpy as np
 
@@ -7,7 +5,7 @@ import param
 
 from .dimension import Dimension, ViewableElement
 from .layout import Composable, LayoutTree, AdjointLayout, NdLayout
-from .ndmapping import UniformNdMapping
+from .ndmapping import OrderedDict, UniformNdMapping
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .util import find_minmax
 

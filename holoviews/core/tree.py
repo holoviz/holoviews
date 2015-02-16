@@ -1,4 +1,7 @@
-from collections import OrderedDict
+try:
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
 
 from .util import valid_identifier
 

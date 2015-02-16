@@ -7,15 +7,12 @@ Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
 
-from collections import OrderedDict
-
 import numpy as np
 
 import param
 from .dimension import Dimension, Dimensioned, ViewableElement
-from .ndmapping import NdMapping
-from .layout import Composable, LayoutTree
 from .ndmapping import UniformNdMapping
+from .layout import Composable, LayoutTree
 
 
 class Overlayable(object):

@@ -1,13 +1,11 @@
-from collections import OrderedDict
 from itertools import groupby
 from matplotlib import ticker
-from matplotlib.font_manager import FontProperties
 import numpy as np
 
 import param
 
 from ..core.options import Store
-from ..core import NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
+from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ..core.util import valid_identifier, find_minmax
 from ..element import Annotation
 from ..operation import Compositor

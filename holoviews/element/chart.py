@@ -1,10 +1,8 @@
-from collections import OrderedDict
-
 import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, Element2D, HoloMap
+from ..core import OrderedDict, Dimension, NdMapping, Element2D, HoloMap
 from .tabular import ItemTable, Table
 
 

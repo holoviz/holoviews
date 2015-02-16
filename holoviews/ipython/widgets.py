@@ -1,5 +1,4 @@
 import os, sys, math, time, uuid, json
-from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np
@@ -23,11 +22,8 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
 
-from ..core import Dimension, Element, NdMapping, NdLayout,AdjointLayout, AxisLayout, LayoutTree
-from ..core import traversal
-from ..core.options import Store
-from ..element import Raster
-from ..plotting import Plot, LayoutPlot, GridPlot, MatrixGridPlot
+from ..core import OrderedDict, NdMapping
+from ..plotting import Plot
 from .magics import ViewMagic
 
 

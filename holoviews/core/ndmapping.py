@@ -5,7 +5,10 @@ also enables slicing over multiple dimension ranges.
 """
 
 from operator import itemgetter
-from collections import OrderedDict
+try:
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
 import numpy as np
 
 import param
