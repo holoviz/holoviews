@@ -11,16 +11,17 @@ holoviews
 Introduction
 ____________
 
-Holoviews is a library that makes analyzing and visualizing scientific
-or engineering data much simpler, more intuitive, and more reproducible.
-Holoviews is based on `Matplotlib <http://http://matplotlib.org/>`_ and
-`IPython Notebook <http://ipython.org/notebook/>`_, making the
-combination of these two packages vastly more usable and powerful.
+Holoviews is a `Python <http://python.org>`_ library that makes
+analyzing and visualizing scientific or engineering data much simpler,
+more intuitive, and more reproducible.  Holoviews is based on
+`Matplotlib <http://matplotlib.org>`_ and `IPython Notebook
+<http://ipython.org/notebook.html>`_, making the combination of these
+two packages vastly more usable and powerful.
 
 First, Holoviews provides a set of completely general sparse
 hierarchical data structures for incrementally collecting results,
 images, etc. from measurements or simulations.  It then defines a set
-of fully customisable Matplotlib-based visualisations for any data
+of fully customizable Matplotlib-based visualizations for any data
 available in that data structure. The data can be sliced, selected,
 combined, re-sorted, sampled, etc. very easily, and whatever you come
 up with will just display itself with no further work from you.  For
