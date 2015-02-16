@@ -422,7 +422,6 @@ class RGB(Matrix):
             raise ValueError("Three dimensional matrices or arrays required")
         elif data.shape[2] == 4:
             sliced = data[:,:,:-1]
-            alpha = data[:,:,-1]
 
         if len(params.get('value_dimensions',[])) == 4:
             alpha_dim = params['value_dimensions'].pop(3)
@@ -431,7 +430,7 @@ class RGB(Matrix):
         super(RGB, self).__init__(data if sliced is None else sliced, **params)
         if sliced is not None:
             self.value_dimensions.append(self.alpha_dimension)
-            self.data = np.dstack([self.data, alpha])
+            self.data = data
 
 
     def __getitem__(self, coords):
