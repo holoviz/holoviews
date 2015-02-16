@@ -1,3 +1,4 @@
+import os
 import copy
 from itertools import product
 
@@ -12,6 +13,21 @@ from ..core import traversal
 from ..element.raster import HeatMap, Matrix, Raster, RGB
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
+
+
+
+path, _ = os.path.split(__file__)
+
+"""
+Penguins example image taken from wikimedia commons, licensed under
+the Creative Commons Attribution 2.0 Generic license.
+
+https://commons.wikimedia.org/wiki/
+File:Aptenodytes_forsteri_-Snow_Hill_Island,_Antarctica_-adults_and_juvenile-8.jpg
+
+Author: Ian Duffy
+"""
+penguins = plt.imread(os.path.join(path,'penguins.png'))
 
 
 class MatrixPlot(ElementPlot):
