@@ -7,10 +7,11 @@ from ..core import OrderedDict, Dimension, NdMapping, Element, HoloMap
 
 class ItemTable(Element):
     """
-    A tabular element type to allow convenient visualization of either a
-    standard Python dictionary or an OrderedDict. If an OrderedDict is
-    used, the headings will be kept in the correct order. Tables store
-    heterogeneous data with different labels.
+    A tabular element type to allow convenient visualization of either
+    a standard Python dictionary, an OrderedDict or a list of tuples
+    (i.e. input suitable for an OrderedDict constructor). If an
+    OrderedDict is used, the headings will be kept in the correct
+    order. Tables store heterogeneous data with different labels.
 
     Dimension objects are also accepted as keys, allowing dimensional
     information (e.g type and units) to be associated per heading.
@@ -40,6 +41,8 @@ class ItemTable(Element):
         # Assume OrderedDict if not a vanilla Python dict
         if type(data) == dict:
             data = OrderedDict(sorted(data.items()))
+        elif type(data) == list:
+            data = OrderedDict(data)
 
         str_keys=dict((k.name if isinstance(k, Dimension)
                        else k ,v) for (k,v) in data.items())
