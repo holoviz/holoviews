@@ -29,9 +29,11 @@ instance, if what you have selected turns out to be a 2D array, it
 will display as an image, but if it is 3D or 4D, it would be an
 animation (automatically), and if you then sliced the 2D array along
 the x axis you'd get a line plot (since you've reduced 2D to 1D).
-I.e., the data just displays itself, in whatever form it is.  With
+I.e., the data just displays itself, in whatever form it is.
+Moreover, the visualizations can easily be grouped into any
+combination to create even complex visualizations with ease.  With
 Holoviews, you can see precisely what you are interested in exploring,
-without time spent on writing or maintaining plotting code.  Check out
+without spending time on writing or maintaining plotting code.  Check out
 how it works in our `Tutorials`_!
 
 Although this functionality can be utilized without IPython Notebook,
