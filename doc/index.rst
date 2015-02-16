@@ -21,7 +21,7 @@ two packages vastly more usable and powerful.
 First, Holoviews provides a set of completely general sparse
 hierarchical data structures for incrementally collecting results,
 images, etc. from measurements or simulations.  It then defines a set
-of fully customizable Matplotlib-based visualizations for any data
+of Matplotlib-based visualizations for any data
 available in that data structure. The data can be sliced, selected,
 combined, re-sorted, sampled, etc. very easily, and whatever you come
 up with will just display itself with no further work from you.  For
@@ -30,7 +30,8 @@ will display as an image, but if it is 3D or 4D, it would be an
 animation (automatically), and if you then sliced the 2D array along
 the x axis you'd get a line plot (since you've reduced 2D to 1D).
 I.e., the data just displays itself, in whatever form it is.
-Moreover, the visualizations can easily be grouped into any
+These visualizations can then easily be customized for specific
+purposes, and can be grouped into any
 combination to create even complex visualizations with ease.  With
 Holoviews, you can see precisely what you are interested in exploring,
 without spending time on writing or maintaining plotting code.  Check out
@@ -62,21 +63,24 @@ detailed examples, and then start enjoying working with your data!
 Installation
 ____________
 
-holoviews requires `Param <http://ioam.github.com/param/>`_,
-`Matplotlib <http://http://matplotlib.org/>`_ and is designed to work
-with `IPython Notebook <http://ipython.org/notebook/>`_.  These
-dependencies can be installed using your operating system's package
-manager, or by using pip:
+holoviews requires `Param <http://ioam.github.com/param/>`_ and
+`Matplotlib <http://http://matplotlib.org/>`_, and is designed to work
+with `IPython Notebook <http://ipython.org/notebook/>`_.  Most
+scientists and engineers using Python will already have Matplotlib
+installed, and Param has no dependencies apart from the Python
+standard library, and so Holoviews should be very straightforward to
+add to any project.
 
-::
+Param, Matplotlib, and IPython Notebook can be installed using your
+operating system's package manager, or by using pip::
 
-pip install matplotlib 'ipython[notebook]'
-pip install --user https://github.com/ioam/param/archive/master.zip
+  pip install matplotlib 'ipython[notebook]'
+  pip install --user https://github.com/ioam/param/archive/master.zip
 
 You can then obtain the latest version of holoviews by cloning the git
 repository::
 
-   git clone git://github.com/ioam/holoviews.git
+  git clone git://github.com/ioam/holoviews.git
 
 |BuildStatus|_
 
