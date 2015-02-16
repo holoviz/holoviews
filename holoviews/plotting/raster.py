@@ -103,7 +103,8 @@ class MatrixPlot(ElementPlot):
         coords = product(dim1_keys, dim2_keys)
         plot_coords = product(xpos, ypos)
         for plot_coord, coord in zip(plot_coords, coords):
-            text = round(view._data.get(coord, np.NaN), 3)
+            val = view._data.get(coord, np.NaN)
+            text = round(val[0] if isinstance(val, tuple) else val, 3)
             if plot_coord not in self.handles['annotations']:
                 annotation = axis.annotate(text, xy=plot_coord,
                                            xycoords='axes fraction',
@@ -127,6 +128,8 @@ class MatrixPlot(ElementPlot):
 
         val_dim = [d.name for d in view.value_dimensions][0]
         im.set_clim(ranges.get(val_dim))
+        xticks, yticks = self._compute_ticks(view)
+        return {'xticks': xticks, 'yticks': yticks}
 
 
 
