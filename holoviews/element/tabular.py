@@ -451,7 +451,7 @@ class TableConversion(object):
     def surface(self, key_dimensions, value_dimensions):
         from .chart3d import Surface
         heatmap = self.to_heatmap(key_dimensions, value_dimensions)
-        return Surface(heatmap.data, **dict(self.table.get_param_values(onlychanged=True)))
+        return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
     def vectorfield(self, key_dimensions, value_dimensions):
         from .chart import VectorField
