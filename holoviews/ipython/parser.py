@@ -149,10 +149,10 @@ class OptsSpec(Parser):
     pathspec = (dotted_path | compositor_ops).setResultsName("pathspec")
 
 
-    spec_group = pp.Group(pathspec
-                          & pp.Optional(norm_options)
-                          & pp.Optional(plot_options)
-                          & pp.Optional(style_options))
+    spec_group = pp.Group(pathspec +
+                          (pp.Optional(norm_options)
+                           & pp.Optional(plot_options)
+                           & pp.Optional(style_options)))
 
     opts_spec = pp.OneOrMore(spec_group)
 
