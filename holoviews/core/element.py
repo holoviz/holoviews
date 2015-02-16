@@ -488,17 +488,18 @@ class HoloMap(UniformNdMapping):
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
                               for k, view in self.items()])
-        return sampled.table().reindex() if sampled.type in [ItemTable, Table] else sampled
+        return sampled.table().reindex() if sampled.type in [ItemTable, Table] else sampled.table()
 
 
-    def reduce(self, **reduce_map):
+    def reduce(self, dimensions=None, function=None, **reduce_map):
         """
         Reduce each Element in the HoloMap using a function supplied
         via the kwargs, where the keyword has to match a particular
         dimension in the Elements.
         """
-        reduced_items = [(k, v.reduce(**reduce_map)) for k, v in self.items()]
-        return self.clone(reduced_items)
+        reduced_items = [(k, v.reduce(dimensions, function, **reduce_map))
+                         for k, v in self.items()]
+        return self.clone(reduced_items).table()
 
 
     @property

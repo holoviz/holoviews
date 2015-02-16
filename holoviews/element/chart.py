@@ -114,16 +114,25 @@ class Chart(Element2D):
         return Table(sample_data, **dict(self.get_param_values(onlychanged=True)))
 
 
-    def reduce(self, **reduce_map):
+    def reduce(self, dimensions=None, function=None, **reduce_map):
         """
         Allows collapsing of Element2D objects using the supplied map of
         dimensions and reduce functions.
         """
-        if len(reduce_map) > 1:
+        dimensions = self._valid_dimensions(dimensions)
+        if dimensions and reduce_map:
+            raise Exception("Pass reduced dimensions either as an argument"
+                            "or as part of the kwargs not both.")
+        elif dimensions:
+           reduce_map = {dimensions[0]: function}
+        elif not reduce_map:
+            reduce_map = {d: function for d in self._cached_index_names}
+
+        if len(reduce_map) > 1 or len(dimensions) > 1:
             raise ValueError("Chart Elements only have one indexable dimension.")
         dim, reduce_fn = list(reduce_map.items())[0]
         if dim in self._cached_index_names:
-            reduced_data = OrderedDict(zip(self.value_dimensions, reduce_fn(self.data[:, 1:], axis=0)))
+            reduced_data = OrderedDict(zip(self.value_dimensions, function(self.data[:, 1:], axis=0)))
         else:
             raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
         params = dict(self.get_param_values(onlychanged=True), value_dimensions=self.value_dimensions,
@@ -294,7 +303,7 @@ class Histogram(Element2D):
         raise NotImplementedError('Cannot sample a Histogram.')
 
 
-    def reduce(self, **dimreduce_map):
+    def reduce(self, dimensions=None, function=None, **reduce_map):
         raise NotImplementedError('Reduction of Histogram not implemented.')
 
 

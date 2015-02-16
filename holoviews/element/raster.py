@@ -114,26 +114,35 @@ class Raster(Element2D):
             return Curve(data, **params)
 
 
-    def reduce(self, **dimreduce_map):
+    def reduce(self, dimensions=None, function=None, **reduce_map):
         """
         Reduces the Raster using functions provided via the
         kwargs, where the keyword is the dimension to be reduced.
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
         """
-        if len(dimreduce_map) == self.ndims:
+        dimensions = self._valid_dimensions(dimensions)
+        if dimensions and reduce_map:
+            raise Exception("Pass reduced dimensions either as an argument"
+                            "or as part of the kwargs not both.")
+        elif dimensions:
+            reduce_map = {d: function for d in dimensions}
+        elif not reduce_map:
+            reduce_map = {d: function for d in self._cached_index_names}
+
+        if len(reduce_map) == self.ndims:
             reduced_view = self
-            for dim, reduce_fn in dimreduce_map.items():
+            for dim, reduce_fn in reduce_map.items():
                 reduced_view = reduced_view.reduce(**{dim: reduce_fn})
             return reduced_view
         else:
-            dimension, reduce_fn = dimreduce_map.items()[0]
+            dimension, reduce_fn = reduce_map.items()[0]
             other_dimension = [d for d in self.key_dimensions if d.name != dimension]
             x_vals = sorted(set(self.dimension_values(dimension)))
             data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           key_dimensions=other_dimension)
-            return Curve(data, **params)
+            return Table(data, **params)
 
     @property
     def depth(self):
@@ -221,7 +230,8 @@ class HeatMap(Raster):
 
         array = np.zeros((len(dim2_keys), len(dim1_keys)))
         for (i1, d1), (i2, d2) in grid_keys:
-            array[len(dim2_keys)-i2-1, i1] = data.get((d1, d2), np.NaN)
+            val = data.get((d1, d2), np.NaN)
+            array[len(dim2_keys)-i2-1, i1] = val[0] if isinstance(val, tuple) else val
 
         return data, array, dimensions
 
@@ -248,7 +258,8 @@ class HeatMap(Raster):
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
         elif dim in self._cached_value_names:
-            return self._data.values()
+            return [v if isinstance(v, tuple) else v
+                    for v in self._data.values()]
         else:
             raise Exception("Dimension %s not found." % dim)
 

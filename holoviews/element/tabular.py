@@ -83,7 +83,7 @@ class ItemTable(Element):
         return self.clone(sampled_data)
 
 
-    def reduce(self, **reduce_map):
+    def reduce(self, dimensions=None, function=None, **reduce_map):
         raise NotImplementedError('ItemTables are for heterogeneous data, which'
                                   'cannot be reduced.')
 
@@ -301,12 +301,19 @@ class Table(Element, NdMapping):
         return Table(sample_data, **dict(self.get_param_values(onlychanged=True)))
 
 
-    def reduce(self, **reduce_map):
+    def reduce(self, dimensions=None, function=None, **reduce_map):
         """
         Allows collapsing the Table down by dimension by passing
         the dimension name and reduce_fn as kwargs. Reduces
         dimensionality of Table until only an ItemTable is left.
         """
+        dimensions = self._valid_dimensions(dimensions)
+        if dimensions and reduce_map:
+            raise Exception("Pass reduced dimensions either as an argument"
+                            "or as part of the kwargs not both.")
+        elif dimensions:
+            reduce_map = {d: function for d in dimensions}
+
         dim_labels = self._cached_index_names
         reduced_table = self
         for dim, reduce_fn in reduce_map.items():
@@ -324,7 +331,8 @@ class Table(Element, NdMapping):
             else:
                 reduced = {vdim: reduce_fn(self.dimension_values(vdim.name))
                            for vdim in self.value_dimensions}
-                reduced_table = ItemTable(reduced)
+                params = dict(value=self.value) if self.value != type(self).__name__ else {}
+                reduced_table = ItemTable(reduced, label=self.label, **params)
         return reduced_table
 
 
@@ -402,18 +410,18 @@ class TableConversion(object):
     """
 
     def __init__(self, table):
-        self.table = table
+        self._table = table
 
     def _conversion(self, key_dimensions=[], value_dimensions=[], new_type=None):
         if not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
         if not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
-        all_dims = self.table.dimensions(label=True)
+        all_dims = self._table.dimensions(label=True)
         invalid = [dim for dim in key_dimensions+value_dimensions if dim not in all_dims]
         if invalid:
             raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
                             (invalid, new_type.__name__))
-        group_dims = [dim for dim in self.table._cached_index_names if not dim in key_dimensions]
-        selected = self.table.select(**{self.table.value: value_dimensions})
+        group_dims = [dim for dim in self._table._cached_index_names if not dim in key_dimensions]
+        selected = self._table.select(**{self._table.value: value_dimensions})
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type)
 
     def bars(self, key_dimensions, value_dimensions):
