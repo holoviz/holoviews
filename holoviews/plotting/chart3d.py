@@ -15,8 +15,6 @@ class Plot3D(ElementPlot):
     plots.
     """
 
-    apply_databounds = param.Boolean(default=False)
-
     azimuth = param.Integer(default=-60, bounds=(-90, 90), doc="""
         Azimuth angle in the x,y plane.""")
 
@@ -68,6 +66,16 @@ class Plot3D(ElementPlot):
         axis.dist = self.distance
         axis.set_axis_bgcolor('white')
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
+
+
+    def get_extents(self, element, ranges):
+        l, b, zmin, r, t, zmax = element.extents if self.rescale_individually else self.map.extents
+        dimensions = element.dimensions(label=True)
+        xdim, ydim, zdim = dimensions[0], dimensions[1], dimensions[2]
+        l, r = (l, r) if ranges is None else ranges.get(xdim, (l, r))
+        b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
+        zmin, max = (zmin, zmax) if ranges is None else ranges.get(zdim, (zmin, zmax))
+        return l, b, zmin, r, t, zmax
 
 
     def update_frame(self, *args, **kwargs):

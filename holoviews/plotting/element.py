@@ -177,7 +177,12 @@ class ElementPlot(Plot):
                 if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
                     extents = self.get_extents(view, ranges)
                     if extents:
-                        l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+                        coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
+                        if self.projection == '3d':
+                            l, b, zmin, r, t, zmax = coords
+                            if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
+                        else:
+                            l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
                         if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
                         if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
 

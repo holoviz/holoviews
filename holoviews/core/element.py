@@ -200,6 +200,7 @@ class Element3D(Element2D):
         l, b, zminus, r, t, zplus = extents
         self.xlim, self.ylim, self.zlim = (l, r), (b, t), (zminus, zplus)
 
+
     @property
     def zlim(self):
         if self._zlim:
@@ -254,13 +255,25 @@ class HoloMap(UniformNdMapping):
             ylim = find_minmax(ylim, data.ylim) if data.ylim and ylim else ylim
         return ylim
 
+    @property
+    def zlim(self):
+        if not isinstance(self.last, Element3D):
+            return (None, None)
+        zlim = self.last.zlim
+        for data in self.values():
+            zlim = find_minmax(zlim, data.zlim) if data.zlim and zlim else zlim
+        return zlim
 
     @property
     def extents(self):
         if self.xlim is None: return np.NaN, np.NaN, np.NaN, np.NaN
         l, r = self.xlim
         b, t = self.ylim
-        return float(l), float(b), float(r), float(t)
+        if isinstance(self.last, Element3D):
+            zmin, zmax = self.zlim
+            return float(l), float(b), float(zmin), float(r), float(t), float(zmax)
+        else:
+            return float(l), float(b), float(r), float(t)
 
 
     def overlay(self, dimensions, **kwargs):
