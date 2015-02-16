@@ -55,7 +55,7 @@ class Plot(param.Parameterized):
     rcparams = param.Dict(default={}, doc="""
         Matplotlib rc parameters to apply to the figure.""")
 
-    size = param.Integer(default=100, bounds=(1, 100), doc="""
+    size = param.Integer(default=100, bounds=(1, None), doc="""
         Size relative to the supplied figure size in percent.""")
 
     show_frame = param.Boolean(default=True, doc="""
