@@ -69,31 +69,40 @@ class Chart(Element2D):
         return [xs[idx] for idx in idxs]
 
 
-    def __getitem__(self, slc):
+    def __getitem__(self, slices):
         """
         Implements slicing or indexing of the data by the data x-value.
         If a single element is indexed reduces the Element2D to a single
         Scatter object.
         """
-        if slc is ():
+        if slices is ():
             return self
-        if isinstance(slc, tuple): slc = slc[0]
-        xvals = self.data[:, 0]
-        if isinstance(slc, slice):
-            start, stop = slc.start, slc.stop
-            lower, upper = self.range(0)
-            if not start: start = lower
-            if not stop: stop = upper
-            start_idx = np.abs((xvals - start)).argmin()
-            start_idx += 0 if start <= xvals[start_idx] else 1
-            stop_idx = np.abs((xvals - stop)).argmin()
-            stop_idx -= 0 if stop > xvals[stop_idx] else 1
-            return self.__class__(self.data[start_idx:stop_idx+1, :],
-                                  **dict(self.get_param_values()))
-        else:
-            index = np.abs((xvals - slc)).argmin()
-            data = {(self.data[index, 0],): self.data[index, 1]}
-            return Table(data, **dict(self.get_param_values(onlychanged=True)))
+        if not isinstance(slices, tuple): slices = (slices,)
+        if len(slices) > self.ndims:
+            raise Exception("Slice must match number of key_dimensions.")
+
+        data = self.data
+        lower_bounds, upper_bounds = [], []
+        for idx, slc in enumerate(slices):
+            if isinstance(slc, slice):
+                start = slc.start if slc.start else -float("inf")
+                stop = slc.stop if slc.stop else float("inf")
+
+                clip_start = start <= data[:, idx]
+                clip_stop = data[:, idx] < stop
+                data = data[np.logical_and(clip_start, clip_stop), :]
+            else:
+                raise IndexError("%s only support slice indexing." % type(self).__name__)
+            lbound = self.extents[idx]
+            ubound = self.extents[self.ndims:][idx]
+            lower_bounds.append(start if slc.start else lbound)
+            upper_bounds.append(stop if slc.stop else ubound)
+        if self.ndims == 1:
+            lower_bounds.append(None)
+            upper_bounds.append(None)
+        print lower_bounds + upper_bounds
+
+        return self.clone(data, extents=tuple(lower_bounds + upper_bounds))
 
 
     @classmethod
