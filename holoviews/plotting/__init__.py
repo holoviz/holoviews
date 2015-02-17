@@ -92,6 +92,10 @@ Store.options.RGB = Options('style', interpolation='nearest')
 # Composites
 Store.options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
                                               'axes.titlesize': 'small'})
+# Annotations
+Store.options.Spline = Options('style', lw=2)
+Store.options.Text = Options('style', fontsize=13)
+Store.options.Arrow = Options('style', color='k', lw=2, fontsize=13)
 # Paths
 Store.options.Contours = Options('style', color=Cycle())
 Store.options.Path = Options('style', color=Cycle())
