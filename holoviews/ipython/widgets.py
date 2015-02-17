@@ -263,7 +263,7 @@ def get_plot_size():
 class NdWidget(param.Parameterized):
     """
     NdWidget is an abstract base class implementing a method to
-    find the dimensions and keys of any ViewableElement, AxisLayout or UniformNdMapping type.
+    find the dimensions and keys of any ViewableElement, GridSpace or UniformNdMapping type.
     In the process it creates a mock_obj to hold the dimensions
     and keys.
     """

@@ -151,7 +151,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
         cls.equality_type_funcs[AdjointLayout] = cls.compare_adjointlayouts
         cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
-        cls.equality_type_funcs[AxisLayout] =    cls.compare_grids
+        cls.equality_type_funcs[GridSpace] =     cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
 
         # Option objects
@@ -494,7 +494,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_grids(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        cls._compare_grids(el1, el2, 'AxisLayout')
+        cls._compare_grids(el1, el2, 'GridSpace')
 
     #=========#
     # Options #

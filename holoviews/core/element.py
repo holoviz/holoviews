@@ -290,19 +290,19 @@ class HoloMap(UniformNdMapping):
 
     def grid(self, dimensions, **kwargs):
         """
-        AxisLayout takes a list of one or two dimensions, and lays out the containing
-        Views along these axes in a AxisLayout.
+        GridSpace takes a list of one or two dimensions, and lays out the containing
+        Views along these axes in a GridSpace.
         """
         dimensions = self._valid_dimensions(dimensions)
         if self.ndims == 1:
-            return AxisLayout(self, **kwargs)
-        return self.groupby(dimensions, container_type=AxisLayout, **kwargs)
+            return GridSpace(self, **kwargs)
+        return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
     def layout(self, dimensions, **kwargs):
         """
-        AxisLayout takes a list of one or two dimensions, and lays out the containing
-        Views along these axes in a AxisLayout.
+        GridSpace takes a list of one or two dimensions, and lays out the containing
+        Views along these axes in a GridSpace.
         """
         dimensions = self._valid_dimensions(dimensions)
         if self.ndims == 1 and dimensions == self._cached_index_names:
@@ -538,7 +538,7 @@ class HoloMap(UniformNdMapping):
 
 
 
-class AxisLayout(UniformNdMapping):
+class GridSpace(UniformNdMapping):
     """
     Grids are distinct from GridLayouts as they ensure all contained elements
     to be of the same type. Unlike GridLayouts, which have integer keys,
@@ -554,13 +554,13 @@ class AxisLayout(UniformNdMapping):
                                 bounds=(1,2))
 
     def __init__(self, initial_items=None, **params):
-        super(AxisLayout, self).__init__(initial_items, **params)
+        super(GridSpace, self).__init__(initial_items, **params)
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
 
 
     def __mul__(self, other):
-        if isinstance(other, AxisLayout):
+        if isinstance(other, GridSpace):
             if set(self.keys()) != set(other.keys()):
                 raise KeyError("Can only overlay two ParameterGrids if their keys match")
             zipped = zip(self.keys(), self.values(), other.values())
@@ -614,11 +614,11 @@ class AxisLayout(UniformNdMapping):
 
     def keys(self, full_grid=False):
         """
-        Returns a complete set of keys on a AxisLayout, even when AxisLayout isn't fully
+        Returns a complete set of keys on a GridSpace, even when GridSpace isn't fully
         populated. This makes it easier to identify missing elements in the
-        AxisLayout.
+        GridSpace.
         """
-        keys = super(AxisLayout, self).keys()
+        keys = super(GridSpace, self).keys()
         if self.ndims == 1 or not full_grid:
             return keys
         dim1_keys = sorted(set(k[0] for k in keys))
@@ -629,7 +629,7 @@ class AxisLayout(UniformNdMapping):
     @property
     def last(self):
         """
-        The last of a AxisLayout is another AxisLayout
+        The last of a GridSpace is another GridSpace
         constituted of the last of the individual elements. To access
         the elements by their X,Y position, either index the position
         directly or use the items() method.
@@ -697,8 +697,8 @@ class AxisLayout(UniformNdMapping):
 
     def dframe(self):
         """
-        Gets a Pandas dframe from each of the items in the AxisLayout, appends the
-        AxisLayout coordinates and concatenates all the dframes.
+        Gets a Pandas dframe from each of the items in the GridSpace, appends the
+        GridSpace coordinates and concatenates all the dframes.
         """
         import pandas
         dframes = []

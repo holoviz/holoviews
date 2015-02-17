@@ -8,7 +8,7 @@ from matplotlib import gridspec, animation
 
 import param
 from ..core import OrderedDict, ViewableElement, HoloMap, \
-    AdjointLayout, NdLayout, AxisLayout, Layout, Element, CompositeOverlay
+    AdjointLayout, NdLayout, GridSpace, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, valid_identifier
@@ -361,7 +361,7 @@ class CompositePlot(Plot):
 
 class GridPlot(CompositePlot):
     """
-    Plot a group of elements in a grid layout based on a AxisLayout element
+    Plot a group of elements in a grid layout based on a GridSpace element
     object.
     """
 
@@ -377,8 +377,8 @@ class GridPlot(CompositePlot):
         Formatting string for the GridPlot ticklabels.""")
 
     def __init__(self, layout, ranges=None, keys=None, dimensions=None, **params):
-        if not isinstance(layout, AxisLayout):
-            raise Exception("GridPlot only accepts AxisLayout.")
+        if not isinstance(layout, GridSpace):
+            raise Exception("GridPlot only accepts GridSpace.")
         self.cols, self.rows = layout.shape
         extra_opts = Store.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
@@ -672,7 +672,7 @@ class LayoutPlot(CompositePlot):
     def _compute_gridspec(self, layout):
         """
         Computes the tallest and widest cell for each row and column
-        by examining the Layouts in the AxisLayout. The GridSpec is then
+        by examining the Layouts in the GridSpace. The GridSpec is then
         instantiated and the LayoutPlots are configured with the
         appropriate embedded layout_types. The first element of the
         returned tuple is a dictionary of all the LayoutPlots indexed
@@ -853,7 +853,7 @@ class LayoutPlot(CompositePlot):
             # Override the plotopts as required
             plotopts.update(override_opts, figure=self.handles['fig'])
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
-            if isinstance(view, AxisLayout):
+            if isinstance(view, GridSpace):
                 raster_fn = lambda x: True if isinstance(x, Raster) or \
                                   (not isinstance(x, Element)) else False
                 all_raster = all(view.traverse(raster_fn))
@@ -907,7 +907,7 @@ class LayoutPlot(CompositePlot):
         return self._finalize_axis(None)
 
 
-Store.defaults.update({AxisLayout: GridPlot,
+Store.defaults.update({GridSpace: GridPlot,
                        NdLayout: LayoutPlot,
                        Layout: LayoutPlot,
                        AdjointLayout: AdjointLayoutPlot})

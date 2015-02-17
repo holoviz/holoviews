@@ -8,7 +8,7 @@ import numpy as np
 import param
 
 from .dimension import ViewableElement
-from .element import Element, HoloMap, AxisLayout
+from .element import Element, HoloMap, GridSpace
 from .layout import NdLayout, Layout
 from .overlay import CompositeOverlay, NdOverlay, Overlay
 from .traversal import unique_dimkeys
@@ -111,9 +111,9 @@ class ElementOperation(Operation):
 
         if isinstance(element, ViewableElement):
             processed = self._process(element)
-        elif isinstance(element, AxisLayout):
+        elif isinstance(element, GridSpace):
             # Initialize an empty axis layout
-            processed = AxisLayout(None, label=element.label)
+            processed = GridSpace(None, label=element.label)
             # Populate the axis layout
             for pos, cell in element.items():
                 processed[pos] = self(cell, **params)

@@ -1,5 +1,5 @@
 import unittest
-from holoviews import AdjointLayout, NdLayout, AxisLayout, Layout, Element
+from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element
 
 
 class CompositeTest(unittest.TestCase):
@@ -57,5 +57,5 @@ class GridTest(CompositeTest):
     def test_grid_init(self):
         vals = [self.view1, self.view2, self.view3, self.view2]
         keys = [(0,0), (0,1), (1,0), (1,1)]
-        grid = AxisLayout(zip(keys, vals))
+        grid = GridSpace(zip(keys, vals))
         self.assertEqual(grid.shape, (2,2))

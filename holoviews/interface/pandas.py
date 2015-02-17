@@ -19,7 +19,7 @@ except:
 import param
 
 from ..core import OrderedDict, Dimension, ViewableElement, NdMapping, NdOverlay,\
- NdLayout, AxisLayout, Element, HoloMap
+ NdLayout, GridSpace, Element, HoloMap
 from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 
 
@@ -179,11 +179,11 @@ class DataFrameView(Element):
 
     def grid(self, dimensions):
         """
-        Splits the supplied the dimensions out into a AxisLayout.
+        Splits the supplied the dimensions out into a GridSpace.
         """
         if len(dimensions) > 2:
             raise Exception('Grids hold a maximum of two dimensions.')
-        return self.groupby(dimensions, AxisLayout)
+        return self.groupby(dimensions, GridSpace)
 
 
     def viewmap(self, key_dimensions=[]):

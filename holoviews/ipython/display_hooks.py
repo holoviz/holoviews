@@ -24,7 +24,7 @@ import param
 
 from ..core.options import Store
 from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
-    NdOverlay, AxisLayout, Layout, Overlay
+    NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
@@ -266,9 +266,9 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 
 @display_hook
 def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
-    if not isinstance(grid, AxisLayout): return None
+    if not isinstance(grid, GridSpace): return None
     max_dim = max(grid.shape)
-    # Reduce plot size as AxisLayout gets larger
+    # Reduce plot size as GridSpace gets larger
     shape_factor = 1. / max_dim
     # Expand small grids to a sensible viewing size
     expand_factor = 1 + (max_dim - 1) * 0.1
@@ -313,4 +313,4 @@ def set_display_hooks(ip):
     html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(NdLayout, layout_display)
-    html_formatter.for_type(AxisLayout, grid_display)
+    html_formatter.for_type(GridSpace, grid_display)

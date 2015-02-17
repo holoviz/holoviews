@@ -173,7 +173,7 @@ class AdjointLayout(Dimensioned):
 class NdLayout(UniformNdMapping):
     """
     A NdLayout is an NdMapping, which unlike a HoloMap lays
-    the individual elements out in a AxisLayout.
+    the individual elements out in a GridSpace.
     """
 
     data_type = (ViewableElement, AdjointLayout, UniformNdMapping)

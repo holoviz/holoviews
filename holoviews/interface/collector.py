@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
- AxisLayout, AttrTree, Layout, HoloMap
+ GridSpace, AttrTree, Layout, HoloMap
 from ..element.raster import Matrix
 from ..ipython.widgets import RunProgress, ProgressBar
 
@@ -139,7 +139,7 @@ class ViewRef(Reference):
 
     @property
     def resolved_type(self):
-        return (ViewableElement, UniformNdMapping, AxisLayout)
+        return (ViewableElement, UniformNdMapping, GridSpace)
 
 
     def _resolve_ref(self, ref, attrtree):
