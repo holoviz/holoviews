@@ -38,11 +38,14 @@ class ItemTable(Element):
 
 
     def __init__(self, data, **params):
-        # Assume OrderedDict if not a vanilla Python dict
         if type(data) == dict:
-            data = OrderedDict(sorted(data.items()))
-        elif type(data) == list:
+            raise ValueError("ItemTable cannot accept a standard Python  dictionary"
+                             "as a well-defined item ordering is required.")
+        elif isinstance(data, OrderedDict): pass
+        elif isinstance(data, list):
             data = OrderedDict(data)
+        else:
+            data = OrderedDict(list(data)) # Python 3
 
         str_keys=dict((k.name if isinstance(k, Dimension)
                        else k ,v) for (k,v) in data.items())
