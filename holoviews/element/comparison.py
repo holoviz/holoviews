@@ -23,7 +23,7 @@ from unittest import TestCase
 from numpy.testing import assert_array_almost_equal
 
 from . import *
-from ..core import Element, AdjointLayout, Overlay, Dimensioned, LayoutTree
+from ..core import Element, AdjointLayout, Overlay, Dimensioned, Layout
 from ..core.options import Options
 from ..interface.pandas import *
 from ..interface.seaborn import *
@@ -110,7 +110,7 @@ class Comparison(ComparisonInterface):
 
         # Composition (+ and *)
         cls.equality_type_funcs[Overlay] =       cls.compare_overlays
-        cls.equality_type_funcs[LayoutTree] =    cls.compare_layouttrees
+        cls.equality_type_funcs[Layout] =    cls.compare_layouttrees
 
         # Annotations
         cls.equality_type_funcs[VLine] =       cls.compare_vline

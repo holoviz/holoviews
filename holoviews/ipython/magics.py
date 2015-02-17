@@ -124,7 +124,7 @@ class ViewMagic(Magics):
                   % cls.defaults['widgets'])
         frames=  ("max_frames   : The max number of frames rendered (default %r)"
                   % cls.defaults['max_frames'])
-        branches=("max_branches : The max number of LayoutTree branches rendered (default %r)"
+        branches=("max_branches : The max number of Layout branches rendered (default %r)"
                   % cls.defaults['max_branches'])
         size =   ("size         : The percentage size of displayed output (default %r)"
                   % cls.defaults['size'])

@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from .dimension import Dimension, ViewableElement
-from .layout import Composable, LayoutTree, AdjointLayout, NdLayout
+from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .util import find_minmax
@@ -421,7 +421,7 @@ class HoloMap(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
+        return Layout.from_values(self) + Layout.from_values(obj)
 
 
     def __lshift__(self, other):
@@ -650,7 +650,7 @@ class AxisLayout(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
+        return Layout.from_values(self) + Layout.from_values(obj)
 
 
     @property

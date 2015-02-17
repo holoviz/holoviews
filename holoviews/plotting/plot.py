@@ -8,7 +8,7 @@ from matplotlib import gridspec, animation
 
 import param
 from ..core import OrderedDict, ViewableElement, HoloMap, \
-    AdjointLayout, NdLayout, AxisLayout, LayoutTree, Element, CompositeOverlay
+    AdjointLayout, NdLayout, AxisLayout, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, valid_identifier
@@ -634,7 +634,7 @@ class AdjointLayoutPlot(CompositePlot):
 
 class LayoutPlot(CompositePlot):
     """
-    A LayoutPlot accepts either a LayoutTree or a NdLayout and
+    A LayoutPlot accepts either a Layout or a NdLayout and
     displays the elements in a cartesian grid in scanline order.
     """
 
@@ -653,8 +653,8 @@ class LayoutPlot(CompositePlot):
       Default value is set conservatively to avoid overlap of subplots.""")
 
     def __init__(self, layout, **params):
-        if not isinstance(layout, (NdLayout, LayoutTree)):
-            raise Exception("LayoutPlot only accepts LayoutTree objects.")
+        if not isinstance(layout, (NdLayout, Layout)):
+            raise Exception("LayoutPlot only accepts Layout objects.")
 
         self.layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         self.subplots = {}
@@ -909,5 +909,5 @@ class LayoutPlot(CompositePlot):
 
 Store.defaults.update({AxisLayout: GridPlot,
                        NdLayout: LayoutPlot,
-                       LayoutTree: LayoutPlot,
+                       Layout: LayoutPlot,
                        AdjointLayout: AdjointLayoutPlot})

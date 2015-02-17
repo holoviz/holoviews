@@ -9,7 +9,7 @@ import param
 
 from .dimension import ViewableElement
 from .element import Element, HoloMap, AxisLayout
-from .layout import NdLayout, LayoutTree
+from .layout import NdLayout, Layout
 from .overlay import CompositeOverlay, NdOverlay, Overlay
 from .traversal import unique_dimkeys
 
@@ -31,10 +31,10 @@ class Operation(param.ParameterizedFunction):
         Helper method that returns a list of elements that match the
         given path pattern of form {type}.{value}.{label}.
 
-        The input may be a LayoutTree, an Overlay type or a single
+        The input may be a Layout, an Overlay type or a single
         Element.
         """
-        if isinstance(element, LayoutTree):
+        if isinstance(element, Layout):
             return [el for cell in element for el in cls.search(cell, pattern)]
         if isinstance(element, (NdOverlay, Overlay)):
             return [el for el in element if el.matches(pattern)]
@@ -163,7 +163,7 @@ class MapOperation(param.ParameterizedFunction):
 class TreeOperation(Operation):
     """
     A TreeOperation is the most general Operation type; it accepts any
-    holoviews datastructure and outputs a LayoutTree containing one or
+    holoviews datastructure and outputs a Layout containing one or
     more elements.
     """
 
@@ -185,25 +185,25 @@ class TreeOperation(Operation):
             return self.process_element(src, None)
         elif isinstance(src, HoloMap):
             values = src.values()
-        elif isinstance(src, LayoutTree):
+        elif isinstance(src, Layout):
             if not src.uniform:
                 raise Exception("TreeOperation can only process uniform LayoutTrees")
             dim_names = [d.name for d in dims]
             values = [src.select(**dict(zip(dim_names, key))) for key in keys]
 
-        tree = LayoutTree()
+        tree = Layout()
         for key, el in zip(keys, values):
-            if not isinstance(el, LayoutTree):
-                result = self._process(LayoutTree.from_values(el), key)
+            if not isinstance(el, Layout):
+                result = self._process(Layout.from_values(el), key)
             else:
                 result = self._process(el, key)
 
             holomaps = [HoloMap([(key,el)], key_dimensions=dims,
                                 value=el.value, label=el.label) for el in result]
             if len(holomaps) == 1:
-                processed_tree = LayoutTree.from_values(holomaps[0])
+                processed_tree = Layout.from_values(holomaps[0])
             else:
-                processed_tree = LayoutTree.from_values(holomaps)
+                processed_tree = Layout.from_values(holomaps)
 
             tree.update(processed_tree)
         return tree
@@ -211,8 +211,8 @@ class TreeOperation(Operation):
 
     def _process(self, tree, key=None):
         """
-        Process a single input LayoutTree, returning a list of
-        elements to be merged with the output LayoutTree.
+        Process a single input Layout, returning a list of
+        elements to be merged with the output Layout.
         """
         raise NotImplementedError
 

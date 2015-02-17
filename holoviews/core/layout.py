@@ -25,7 +25,7 @@ class Composable(object):
     """
 
     def __add__(self, obj):
-        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
+        return Layout.from_values(self) + Layout.from_values(obj)
 
 
     def __lshift__(self, other):
@@ -162,7 +162,7 @@ class AdjointLayout(Dimensioned):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
+        return Layout.from_values(self) + Layout.from_values(obj)
 
 
     def __len__(self):
@@ -216,7 +216,7 @@ class NdLayout(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return LayoutTree.from_values(self) + LayoutTree.from_values(obj)
+        return Layout.from_values(self) + Layout.from_values(obj)
 
 
     @property
@@ -238,12 +238,12 @@ class NdLayout(UniformNdMapping):
 
 
 
-class LayoutTree(AttrTree, Dimensioned):
+class Layout(AttrTree, Dimensioned):
     """
-    A LayoutTree is an AttrTree with ViewableElement objects as leaf
-    values. Unlike AttrTree, a LayoutTree supports a rich display,
+    A Layout is an AttrTree with ViewableElement objects as leaf
+    values. Unlike AttrTree, a Layout supports a rich display,
     displaying leaf items in a grid style layout. In addition to the
-    usual AttrTree indexing, LayoutTree supports indexing of items by
+    usual AttrTree indexing, Layout supports indexing of items by
     their row and column index in the layout.
 
     The maximum number of columns in such a layout may be controlled
@@ -255,9 +255,9 @@ class LayoutTree(AttrTree, Dimensioned):
     be set using the max_branches option of the %view magic.
     """
 
-    value = param.String(default='LayoutTree', constant=True)
+    value = param.String(default='Layout', constant=True)
 
-    style = 'LayoutTree'
+    style = 'Layout'
 
     _deep_indexable = True
 
@@ -299,7 +299,7 @@ class LayoutTree(AttrTree, Dimensioned):
     @classmethod
     def from_values(cls, val):
         """
-        Returns a LayoutTree given a list (or tuple) of viewable
+        Returns a Layout given a list (or tuple) of viewable
         elements or just a single viewable element.
         """
         if isinstance(val, (list, tuple)):
@@ -338,7 +338,7 @@ class LayoutTree(AttrTree, Dimensioned):
 
 
     def display(self, option):
-        "Sets the display policy of the LayoutTree before returning self"
+        "Sets the display policy of the Layout before returning self"
         options = ['auto', 'all']
         if option not in options:
             raise Exception("Display option must be one of %s" %
@@ -360,7 +360,7 @@ class LayoutTree(AttrTree, Dimensioned):
     def group(self, value):
         """
         Assign a new value string to all the elements and return a new
-        LayoutTree.
+        Layout.
         """
         new_items = [el.relabel(value=value) for el in self.data.values()]
         return reduce(lambda x,y: x+y, new_items)
@@ -378,7 +378,7 @@ class LayoutTree(AttrTree, Dimensioned):
             if idx >= len(keys) or col >= self._cols:
                 raise KeyError('Index %s is outside available item range' % str(key))
             key = keys[idx]
-        return super(LayoutTree, self).__getitem__(key)
+        return super(Layout, self).__getitem__(key)
 
 
     def __len__(self):
@@ -388,10 +388,10 @@ class LayoutTree(AttrTree, Dimensioned):
     def __add__(self, other):
         other = self.from_values(other)
         items = list(self.data.items()) + list(other.data.items())
-        return LayoutTree(items=self.relabel_item_paths(items)).display('all')
+        return Layout(items=self.relabel_item_paths(items)).display('all')
 
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
                     if isinstance(_v, type) and (issubclass(_v, Dimensioned)
-                                                 or issubclass(_v, LayoutTree))]))
+                                                 or issubclass(_v, Layout))]))

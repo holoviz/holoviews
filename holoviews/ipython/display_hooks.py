@@ -24,7 +24,7 @@ import param
 
 from ..core.options import Store
 from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
-    NdOverlay, AxisLayout, LayoutTree, Overlay
+    NdOverlay, AxisLayout, Layout, Overlay
 from ..core.traversal import unique_dimkeys
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
@@ -235,8 +235,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
 
 @display_hook
 def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
-    if isinstance(layout, AdjointLayout): layout = LayoutTree.from_values(layout)
-    if not isinstance(layout, (LayoutTree, NdLayout)): return None
+    if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
+    if not isinstance(layout, (Layout, NdLayout)): return None
     nframes = len(unique_dimkeys(layout)[1])
 
     shape = layout.shape
@@ -246,7 +246,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
                  shape[0]*get_plot_size(size)[0])
 
     layoutplot = LayoutPlot(layout, **opts(layout, grid_size))
-    if isinstance(layout, LayoutTree):
+    if isinstance(layout, Layout):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in list(layout.data.keys())]))
             if branches > max_branches:
@@ -306,7 +306,7 @@ render_anim = HTML_video
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
-    html_formatter.for_type(LayoutTree, layout_display)
+    html_formatter.for_type(Layout, layout_display)
     html_formatter.for_type(ViewableElement, view_display)
     html_formatter.for_type(Overlay, view_display)
     html_formatter.for_type(NdOverlay, view_display)

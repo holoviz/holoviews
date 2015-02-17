@@ -12,7 +12,7 @@ import numpy as np
 import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import UniformNdMapping
-from .layout import Composable, LayoutTree
+from .layout import Composable, Layout
 
 
 class Overlayable(object):
@@ -99,17 +99,17 @@ class CompositeOverlay(ViewableElement, Composable):
 
 
 
-class Overlay(LayoutTree, CompositeOverlay):
+class Overlay(Layout, CompositeOverlay):
     """
     An Overlay consists of multiple Views (potentially of
     heterogeneous type) presented one on top each other with a
     particular z-ordering.
 
     Overlays along with Views constitute the only valid leaf types of
-    a LayoutTree and in fact extend the LayoutTree structure. Overlays are
+    a Layout and in fact extend the Layout structure. Overlays are
     constructed using the * operator (building an identical structure
     to the + operator) and are the only objects that inherit both from
-    LayoutTree and CompositeOverlay.
+    Layout and CompositeOverlay.
     """
 
     @classmethod
@@ -119,7 +119,7 @@ class Overlay(LayoutTree, CompositeOverlay):
 
     def __init__(self, items=None, value=None, label=None, **params):
         view_params = ViewableElement.params().keys()
-        LayoutTree.__init__(self, items,
+        Layout.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
         self._value = value
         self._label = label
@@ -128,7 +128,7 @@ class Overlay(LayoutTree, CompositeOverlay):
 
 
     def __add__(self, other):
-        return LayoutTree.from_values(self) + LayoutTree.from_values(other)
+        return Layout.from_values(self) + Layout.from_values(other)
 
 
     def __mul__(self, other):

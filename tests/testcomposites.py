@@ -3,7 +3,7 @@ Test cases for the composite types built with + and * i.e LayoutTree
 and Overlay (does *not* test HoloMaps).
 """
 
-from holoviews import Element, LayoutTree, Overlay
+from holoviews import Element, Layout, Overlay
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -93,11 +93,11 @@ class LayoutTreeTestCase(ElementTestCase):
         self.assertEqual(t2.keys(), t3.keys())
 
     def test_layouttree_from_values1(self):
-        t = LayoutTree.from_values(self.el1)
+        t = Layout.from_values(self.el1)
         self.assertEqual(t.keys(),  [('Element', 'I')])
 
     def test_layouttree_from_values2(self):
-        t = LayoutTree.from_values(self.el8)
+        t = Layout.from_values(self.el8)
         self.assertEqual(t.keys(),  [('ValA', 'LabelB')])
 
     def test_layouttree_group(self):
@@ -110,7 +110,7 @@ class LayoutTreeTestCase(ElementTestCase):
 class OverlayTestCase(ElementTestCase):
     """
     The tests here match those in LayoutTreeTestCase; Overlays inherit
-    from LayoutTree and behave in a very similar way (except for being
+    from Layout and behave in a very similar way (except for being
     associated with * instead of the + operator)
     """
 
@@ -215,7 +215,7 @@ class OverlayTestCase(ElementTestCase):
 
 class CompositeTestCase(ElementTestCase):
     """
-    Test case for trees involving both + (LayoutTree) and * (Overlay)
+    Test case for trees involving both + (Layout) and * (Overlay)
     """
 
     def test_composite1(self):
@@ -298,7 +298,7 @@ class CompositeTestCase(ElementTestCase):
         try:
             t = (self.el1 + self.el2) * (self.el1 + self.el2)
         except TypeError as e:
-            self.assertEqual(str(e), "unsupported operand type(s) for *: 'LayoutTree' and 'LayoutTree'")
+            self.assertEqual(str(e), "unsupported operand type(s) for *: 'Layout' and 'Layout'")
 
 
 if __name__ == "__main__":
