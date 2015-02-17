@@ -163,11 +163,6 @@ class Raster(Element2D):
             raise Exception("Mode cannot be determined from the depth")
 
 
-    @property
-    def N(self):
-        return self.normalize()
-
-
     def dimension_values(self, dim):
         """
         The set of samples available along a particular dimension.
