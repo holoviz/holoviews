@@ -318,7 +318,7 @@ class SideHistogramPlot(HistogramPlot):
         Aspect ratios on SideHistogramPlot should be determined by the
         AdjointLayoutPlot.""")
 
-    offset = param.Number(default=0.2, doc="""
+    offset = param.Number(default=0.2, bounds=(0,1), doc="""
         Histogram value offset for a colorbar.""")
 
     show_grid = param.Boolean(default=True, doc="""
@@ -341,6 +341,7 @@ class SideHistogramPlot(HistogramPlot):
         """
         edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist)
         offset = self.offset * lims[3]
+        hvals *= 1-self.offset
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims
@@ -367,7 +368,8 @@ class SideHistogramPlot(HistogramPlot):
         """
         hist = self._get_frame(key)
         main = self.layout.main
-        offset = self.offset * lims[3] * (1-self.offset)
+        y0, y1 = hist.ylim
+        offset = self.offset * y1
         plot_options = Store.lookup_options(main, 'plot').options
         individually = plot_options.get('normalize_individually', False)
 
@@ -389,7 +391,7 @@ class SideHistogramPlot(HistogramPlot):
                                                              linewidth=1.0,
                                                              color='k')
         elif offset:
-            self._update_separator(lims, offset)
+            self._update_separator(offset)
 
 
         # If .main is an NdOverlay or a HoloMap of Overlays get the correct style
@@ -400,8 +402,8 @@ class SideHistogramPlot(HistogramPlot):
 
         if isinstance(main, (Raster, Points)):
             style = Store.lookup_options(main, 'style')[self.cyclic_index]
-            cmap = cm.get_cmap(style.get('cmap')) if self.offset else None
-            main_range = style.get('clims', main_range) if self.offset else None
+            cmap = cm.get_cmap(style.get('cmap'))
+            main_range = style.get('clims', main_range)
         else:
             cmap = None
 
@@ -429,18 +431,12 @@ class SideHistogramPlot(HistogramPlot):
             bar.set_clip_on(False)
 
 
-    def _update_separator(self, lims, offset):
+    def _update_separator(self, offset):
         """
         Compute colorbar offset and update separator line
         if map is non-zero.
         """
-        _, _, y0, y1 = lims
         offset_line = self.handles['offset_line']
-        full_range = y1 - y0
-        if full_range == 0:
-            full_range = 1.
-            y1 = y0 + 1.
-        offset = (full_range*offset)*(1-offset)
         if y1 == 0:
             offset_line.set_visible(False)
         else:
