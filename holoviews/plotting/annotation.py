@@ -3,7 +3,7 @@ from matplotlib import patches as patches
 from matplotlib.collections import LineCollection
 
 from ..core.options import Store
-from ..element import Contours, VLine, HLine, Arrow, Spline, Text, Path, Box, Ellipse
+from ..element import Contours, VLine, HLine, Arrow, Spline, Text, Path, Box, Bounds, Ellipse
 from .element import ElementPlot
 from .plot import Plot
 
@@ -150,4 +150,5 @@ Store.defaults.update({
     Contours: PathPlot,
     Path:     PathPlot,
     Box:      PathPlot,
+    Bounds:  PathPlot,
     Ellipse:  PathPlot})

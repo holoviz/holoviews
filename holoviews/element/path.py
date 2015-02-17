@@ -99,11 +99,25 @@ class Contours(Path):
 
 class Box(Path):
     """
-    Draw a centered square of a given dimension or an arbitrary
+    Draw a centered box of a given dimension or an arbitrary
     rectangle with the specified (left, bottom, right, top)
     coordinates.
     """
 
+    def __init__(self, width, height=None, x=0, y=0, **params):
+        if height is None: height = width
+        (l,b,r,t) = (x-width/2.0, y-height/2, x+width/2.0, y+height/2)
+        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
+        super(Box, self).__init__([box], **params)
+
+
+
+class Bounds(Path):
+    """
+    Draw a centered square bounds of a given radius or an arbitrary
+    rectangle with the specified (left, bottom, right, top)
+    coordinates.
+    """
     def __init__(self, data, **params):
         if not isinstance(data, (tuple, float)):
             raise ValueError("Input to Box must be either a tuple of format (l,b,r,t) or a radius")
@@ -112,7 +126,7 @@ class Box(Path):
 
         (l,b,r,t) = data
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
-        super(Box, self).__init__([box], **params)
+        super(Bounds, self).__init__([box], **params)
 
 
 
