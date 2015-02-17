@@ -93,6 +93,9 @@ Store.options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize':
                                               'axes.titlesize': 'small'})
 # Paths
 Store.options.Contours = Options('style', color=Cycle())
+Store.options.Path = Options('style', color=Cycle())
+Store.options.Box = Options('style', color=Cycle())
+Store.options.Ellipse = Options('style', color=Cycle())
 # Interface
 Store.options.TimeSeries = Options('style', color=Cycle())
 

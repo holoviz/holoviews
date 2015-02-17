@@ -82,3 +82,43 @@ class Contours(Path):
         data = [] if data is None else data
         super(Contours, self).__init__(data, **params)
 
+
+
+class Box(Path):
+    """
+    Draw a centered square of a given dimension or an arbitrary
+    rectangle with the specified (left, bottom, right, top)
+    coordinates.
+    """
+
+    def __init__(self, data, **params):
+        if not isinstance(data, (tuple, float)):
+            raise ValueError("Input to Box must be either a tuple of format (l,b,r,t) or a radius")
+        elif isinstance(data, float):
+            data = (-data, -data, data, data)
+
+        (l,b,r,t) = data
+        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
+        super(Box, self).__init__([box], **params)
+
+
+
+class Ellipse(Path):
+    """
+    Draw an axis-aligned ellipse at the specified x,y position with
+    the given radius and aspect. By default draws an elipse with an
+    aspect of 2.
+
+    Note that as a subclass of Path, internally an Ellipse is a
+    sequency of (x,y) sample positions. Ellipse could also be
+    implemented as an annotation that uses a more appropriate
+    matplotlib artist.
+    """
+
+    def __init__(self, x, y, radius, aspect=1, samples=100, **params):
+
+        angles = np.linspace(0, 2*np.pi, samples)
+        ellipse = np.array(
+            list(zip(radius*np.sin(angles)+x,
+                     radius*aspect*np.cos(angles)+y)))
+        super(Ellipse, self).__init__([ellipse], **params)
