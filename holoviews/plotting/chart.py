@@ -506,7 +506,7 @@ class PointPlot(ChartPlot):
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
     def _compute_size(self, sizes, opts):
@@ -531,13 +531,6 @@ class PointPlot(ChartPlot):
                 ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
                 ranges = self.match_range(element, ranges)
                 paths.set_clim(ranges[val_dim])
-
-
-    def get_extents(self, element, ranges):
-        l, b, r, t = element.extents if self.rescale_individually else self.map.extents
-        ydim = element.dimensions(label=True)[1]
-        b, t = (b, t) if ranges is None else ranges.get(ydim, (b, t))
-        return l, b, r, t
 
 
 
