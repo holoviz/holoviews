@@ -6,9 +6,9 @@ from ..core import Dimension, ElementOperation, CompositeOverlay, \
                    NdOverlay, Overlay, BoundingBox
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField, Curve
-from ..element.annotation import Contours
 from ..element.raster import Matrix
 from ..element.tabular import ItemTable
+from ..element.path import Contours
 from .normalization import raster_normalization
 
 

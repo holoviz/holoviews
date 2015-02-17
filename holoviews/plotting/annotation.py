@@ -1,9 +1,9 @@
+import matplotlib
 from matplotlib import patches as patches
 from matplotlib.collections import LineCollection
-from matplotlib.path import Path
 
 from ..core.options import Store
-from ..element import Contours, VLine, HLine, Arrow, Spline, Text
+from ..element import Contours, VLine, HLine, Arrow, Spline, Text, Path, Box, Ellipse
 from .element import ElementPlot
 from .plot import Plot
 
@@ -91,7 +91,7 @@ class SplinePlot(AnnotationPlot):
 
     def draw_annotation(self, axis, annotation, data, opts):
         verts, codes = data
-        patch = patches.PathPatch(Path(verts, codes),
+        patch = patches.PathPatch(matplotlib.path.Path(verts, codes),
                                   facecolor='none', edgecolor='b', **opts)
         axis.add_patch(patch)
         return [patch]
@@ -114,13 +114,13 @@ class TextPlot(AnnotationPlot):
 
 
 
-class ContourPlot(ElementPlot):
+class PathPlot(ElementPlot):
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 
     def __init__(self, *args, **params):
         self.aspect = 'equal'
-        super(ContourPlot, self).__init__(*args, **params)
+        super(PathPlot, self).__init__(*args, **params)
 
 
     def __call__(self, ranges=None):
@@ -138,11 +138,16 @@ class ContourPlot(ElementPlot):
         self.handles['line_segments'].set_paths(view.data)
 
 
+
+
 Store.defaults.update({
-    Contours: ContourPlot,
     VLine: VLinePlot,
     HLine: HLinePlot,
     Arrow: ArrowPlot,
     Spline: SplinePlot,
-    Text: TextPlot
-})
+    Text: TextPlot,
+
+    Contours: PathPlot,
+    Path:     PathPlot,
+    Box:      PathPlot,
+    Ellipse:  PathPlot})
