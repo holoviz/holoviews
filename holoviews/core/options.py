@@ -35,6 +35,7 @@ Store:
 
 import param
 from .tree import AttrTree
+from .util import valid_identifier
 
 
 class OptionError(Exception):
@@ -245,6 +246,26 @@ class OptionTree(AttrTree):
         if item in self.groups:
             return self.groups[item]
         return super(OptionTree, self).__getitem__(item)
+
+
+    def __getattr__(self, identifier):
+        """
+        Allows creating sub OptionTree instances using attribute
+        access, inheriting the group options.
+        """
+        try:
+            return super(AttrTree, self).__getattr__(identifier)
+        except AttributeError: pass
+
+        if identifier.startswith('_'):   raise AttributeError(str(identifier))
+        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
+        identifier = valid_identifier(identifier)
+
+        if identifier in self.children:
+            return self.__dict__[identifier]
+
+        self.__setattr__(identifier, self.groups)
+        return self[identifier]
 
 
     def __setattr__(self, identifier, val):
