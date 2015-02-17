@@ -70,7 +70,7 @@ class ArrowPlot(AnnotationPlot):
 
     def draw_annotation(self, axis, annotation, data, opts):
         direction, text, xy, points, arrowstyle = data
-        arrowprops = {'arrowstyle':arrowstyle}
+        arrowprops = {'arrowstyle':arrowstyle, 'lw':opts.pop('lw',2)}
         if 'color' in opts:
             arrowprops['color'] = opts['color']
         if direction in ['v', '^']:
@@ -110,7 +110,8 @@ class TextPlot(AnnotationPlot):
         return [axis.text(x,y, text,
                           horizontalalignment = horizontalalignment,
                           verticalalignment = verticalalignment,
-                          rotation=rotation, fontsize=fontsize, **opts)]
+                          rotation=rotation,
+                          fontsize=opts.pop('fontsize', fontsize), **opts)]
 
 
 
