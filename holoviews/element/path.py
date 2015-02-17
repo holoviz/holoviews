@@ -1,3 +1,16 @@
+"""
+A Path element is a way of drawing arbitrary shapes that can be
+overlayed on top of other elements.
+
+Subclasses of Path are designed to generate certain common shapes
+quickly and condeniently. For instance, the Box path is often useful
+for marking areas of a raster image.
+
+Contours is also a subclass of Path but in addition to simply
+displaying some information, there is a numeric value associated with
+each collection of paths.
+"""
+
 import numpy as np
 
 import param
