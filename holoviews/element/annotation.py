@@ -89,7 +89,7 @@ class Arrow(Annotation):
 
     value = param.String(default='Arrow')
 
-    def __init__(self, xy, text='', direction='<',
+    def __init__(self, x, y, text='', direction='<',
                  points=40, arrowstyle='->', **params):
 
         directions = ['<', '^', '>', 'v']
@@ -103,7 +103,7 @@ class Arrow(Annotation):
             raise ValueError("Valid arrow styles are: %s"
                              % ', '.join(repr(a) for a in arrowstyles))
 
-        info = (direction.lower(), text, xy, points, arrowstyle)
+        info = (direction.lower(), text, (x,y), points, arrowstyle)
         super(Arrow, self).__init__(info, **params)
 
 
