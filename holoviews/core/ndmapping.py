@@ -274,7 +274,7 @@ class MultiDimensionalMapping(Dimensioned):
         return values
 
 
-    def reindex(self, dimension_labels=[]):
+    def reindex(self, dimension_labels=[], force=False):
         """
         Create a new object with a re-ordered or reduced set of key
         dimensions.
@@ -296,10 +296,13 @@ class MultiDimensionalMapping(Dimensioned):
         reduced_dims = set(self._cached_index_names).difference(dimension_labels)
         dimensions = [self.get_dimension(d) for d in dimension_labels if d not in reduced_dims]
 
-        if len(set(keys)) != len(keys):
+        if len(set(keys)) != len(keys) and not force:
             raise Exception("Given dimension labels not sufficient to address all values uniquely")
 
-        constant_dimensions = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
+        if len(keys):
+            constant_dimensions = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
+        else:
+            constant_dimensions = {}
         return self.clone(reindexed_items, key_dimensions=dimensions,
                           constant_dimensions=constant_dimensions)
 
