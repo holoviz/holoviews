@@ -221,9 +221,11 @@ class HeatMap(Raster):
         else:
             raise TypeError('HeatMap only accepts dict or NdMapping types.')
 
-        keys = data.keys()
-        dim1_keys = sorted(set(k[0] for k in keys))
-        dim2_keys = sorted(set(k[1] for k in keys))
+        keys = list(data.keys())
+        dim1_keys = NdMapping([(k[0], None) for k in keys],
+                              key_dimensions=[self.key_dimensions[0]]).keys()
+        dim2_keys = NdMapping([(k[1], None) for k in keys],
+                              key_dimensions=[self.key_dimensions[1]]).keys()
         grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
                      for i2, d2 in enumerate(dim2_keys)]
 
@@ -244,8 +246,10 @@ class HeatMap(Raster):
 
     def dense_keys(self):
         keys = list(self._data.keys())
-        dim1_keys = sorted(set(k[0] for k in keys))
-        dim2_keys = sorted(set(k[1] for k in keys))
+        dim1_keys = NdMapping([(k[0], None) for k in keys],
+                              key_dimensions=[self.key_dimensions[0]]).keys()
+        dim2_keys = NdMapping([(k[1], None) for k in keys],
+                              key_dimensions=[self.key_dimensions[1]]).keys()
         return dim1_keys, dim2_keys
 
 

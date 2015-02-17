@@ -175,15 +175,16 @@ class Table(Element, NdMapping):
     def __setitem__(self, key, value):
         if isinstance(value, ItemTable):
             indices = []
-            if len(value.key_dimensions) != len(self.value_dimensions):
+            if len(value.value_dimensions) != len(self.value_dimensions):
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             for dim in self.value_dimensions:
-                idx = [d.name for d in value.key_dimensions].index(dim.name)
-                if hash(dim) != hash(value.key_dimensions[idx]):
+                idx = [d.name for d in value.value_dimensions].index(dim.name)
+                if hash(dim) != hash(value.value_dimensions[idx]):
                     raise Exception("Input ItemTables dimensions must match value dimensions.")
                 indices.append(idx)
-            value = tuple(value.data.values()[i] for i in indices)
-        self.data[key] = value
+            values = value.data.values()
+            value = tuple(values[i] for i in indices) if len(indices) > 1 else values[0]
+        self.data[key] = np.array([value]) if np.isscalar(value) else np.array(value)
 
 
     def _filter_columns(self, index, col_names):
@@ -218,7 +219,7 @@ class Table(Element, NdMapping):
             items = OrderedDict([(h,v) for (h,v) in subtable.data.items() if h in cols])
             return ItemTable(items, label=self.label)
 
-        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
+        items = [(k, v[indices]) for (k,v) in subtable.items()]
         return subtable.clone(items, value_dimensions=value_dimensions)
 
 
@@ -242,9 +243,7 @@ class Table(Element, NdMapping):
 
 
     def select(self, **selection):
-        val_selection = None
-        if self.value in selection:
-            val_selection = selection.pop(self.value)
+        val_selection = selection.pop('value', None)
         selection = NdMapping.select(self, **selection)
         if val_selection:
             return self._filter_table(selection, val_selection)
@@ -277,8 +276,7 @@ class Table(Element, NdMapping):
         else:
             if col >= ndims:
                 row_values = self.values()[row-1]
-                return (row_values[col - ndims]
-                        if not np.isscalar(row_values) else row_values)
+                return row_values[col - ndims]
             row_data = list(self.data.keys())[row-1]
 
             return row_data[col] if isinstance(row_data, tuple) else row_data
@@ -318,16 +316,15 @@ class Table(Element, NdMapping):
         dim_labels = self._cached_index_names
         reduced_table = self
         for dim, reduce_fn in reduce_map.items():
-            split_dims = [self.get_dimension(d) for d in dim_labels if d != dim]
+            split_dims = [self.get_dimension(d) for d in dim_labels if d == dim]
             if len(split_dims) and reduced_table.ndims > 1:
-                split_map = reduced_table.groupby([dim])
+                split_map = reduced_table.groupby([dim], container_type=HoloMap, group_type=Table)
                 reduced_table = self.clone(shared_data=False, key_dimensions=split_dims)
                 for k, table in split_map.items():
-                    if len(self.value_dimensions) > 1:
-                        reduced = tuple(reduce_fn(table.dimension_values(vdim.name))
-                                        for vdim in self.value_dimensions)
-                    else:
-                        reduced = reduce_fn(table.data.values())
+                    reduced = []
+                    for vdim in self.value_dimensions:
+                        valtable = table.select(value=vdim.name) if len(self.value_dimensions) > 1 else table
+                        reduced = reduce_fn(valtable.data.values())
                     reduced_table[k] = reduced
             else:
                 reduced = {vdim: reduce_fn(self.dimension_values(vdim.name))
@@ -398,7 +395,7 @@ class Table(Element, NdMapping):
             raise Exception("Cannot build a DataFrame without the pandas library.")
         labels = [d.name for d in self.dimensions()]
         return pandas.DataFrame(
-            [dict(zip(labels, k+ (v if isinstance(v, tuple) else (v,))))
+            [dict(zip(labels, np.concatenate([np.array(k),v])))
              for (k, v) in self.data.items()])
 
 
@@ -413,47 +410,56 @@ class TableConversion(object):
     def __init__(self, table):
         self._table = table
 
-    def _conversion(self, key_dimensions=[], value_dimensions=[], new_type=None):
-        if not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
-        if not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
+    def _conversion(self, key_dimensions=None, value_dimensions=None, new_type=None, **kwargs):
+        if key_dimensions is None:
+            key_dimensions = self._table._cached_index_names
+        elif key_dimensions and not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
+        if value_dimensions is None:
+            value_dimensions = self._table._cached_value_names
+        elif value_dimensions and not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
         all_dims = self._table.dimensions(label=True)
         invalid = [dim for dim in key_dimensions+value_dimensions if dim not in all_dims]
         if invalid:
             raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
                             (invalid, new_type.__name__))
         group_dims = [dim for dim in self._table._cached_index_names if not dim in key_dimensions]
-        selected = self._table.select(**{self._table.value: value_dimensions})
+        selected = self._table.select(**{'value': value_dimensions})
+        params = dict(key_dimensions=[self._table.get_dimension(kd) for kd in key_dimensions],
+                      value_dimensions=[self._table.get_dimension(vd) for vd in value_dimensions],
+                      **kwargs)
+        if len(key_dimensions) == self._table.ndims:
+            return new_type(selected, **params)
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type)
 
-    def bars(self, key_dimensions, value_dimensions):
+    def bars(self, key_dimensions, value_dimensions, **kwargs):
         from .chart import Bars
-        return self._conversion(key_dimensions, value_dimensions, Bars)
+        return self._conversion(key_dimensions, value_dimensions, Bars, **kwargs)
 
-    def curve(self, key_dimensions, value_dimensions):
+    def curve(self, key_dimensions, value_dimensions, **kwargs):
         from .chart import Curve
-        return self._conversion(key_dimensions, value_dimensions, Curve)
+        return self._conversion(key_dimensions, value_dimensions, Curve, **kwargs)
 
-    def heatmap(self, key_dimensions, value_dimensions):
+    def heatmap(self, key_dimensions, value_dimensions, **kwargs):
         from .raster import HeatMap
-        return self._conversion(key_dimensions, value_dimensions, HeatMap)
+        return self._conversion(key_dimensions, value_dimensions, HeatMap, **kwargs)
 
-    def points(self, key_dimensions, value_dimensions):
+    def points(self, key_dimensions, value_dimensions, **kwargs):
         from .chart import Points
-        return self._conversion(key_dimensions, value_dimensions, Points)
+        return self._conversion(key_dimensions, value_dimensions, Points, **kwargs)
 
-    def scatter(self, key_dimensions, value_dimensions):
+    def scatter(self, key_dimensions, value_dimensions, **kwargs):
         from .chart import Scatter
-        return self._conversion(key_dimensions, value_dimensions, Scatter)
+        return self._conversion(key_dimensions, value_dimensions, Scatter, **kwargs)
 
-    def scatter3d(self, key_dimensions, value_dimensions):
+    def scatter3d(self, key_dimensions, value_dimensions, **kwargs):
         from .chart3d import Scatter3D
-        return self._conversion(key_dimensions, value_dimensions, Scatter3D)
+        return self._conversion(key_dimensions, value_dimensions, Scatter3D, **kwargs)
 
-    def surface(self, key_dimensions, value_dimensions):
+    def surface(self, key_dimensions, value_dimensions, **kwargs):
         from .chart3d import Surface
-        heatmap = self.to_heatmap(key_dimensions, value_dimensions)
+        heatmap = self.to_heatmap(key_dimensions, value_dimensions, **kwargs)
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
-    def vectorfield(self, key_dimensions, value_dimensions):
+    def vectorfield(self, key_dimensions, value_dimensions, **kwargs):
         from .chart import VectorField
-        return self._conversion(key_dimensions, value_dimensions, VectorField)
+        return self._conversion(key_dimensions, value_dimensions, VectorField, **kwargs)

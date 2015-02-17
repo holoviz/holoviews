@@ -23,6 +23,7 @@ class Chart(Element2D):
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
+    _null_value = np.array([[], []]).T # For when data is None
 
     def __init__(self, data, **params):
         settings = {}
@@ -32,11 +33,14 @@ class Chart(Element2D):
         elif isinstance(data, NdMapping) or (isinstance(data, list) and data
                                            and isinstance(data[0], Element2D)):
             data, settings = self._process_map(data)
-        data = list(data)
+        data = self._null_value if (data is None) or (len(data) == 0) else data
         if len(data) and not isinstance(data, np.ndarray):
             data = np.array(data)
+
         settings.update(params)
         super(Chart, self).__init__(data, **settings)
+        if not data.shape[1] == len(self.dimensions()):
+            raise ValueError("Data has to match number of key and value dimensions")
 
 
     def _process_map(self, ndmap):
@@ -45,8 +49,8 @@ class Chart(Element2D):
         Should return the data and parameters of the new Chart.
         """
         if isinstance(ndmap, Table):
-            data = [tuple(k for k in key) + tuple(v for v in vals)
-                    for key, vals in ndmap.data.items()]
+            data = np.vstack([np.concatenate([key, vals])
+                              for key, vals in ndmap.data.items()])
             settings = dict(ndmap.get_param_values(onlychanged=True))
         else:
             data = np.concatenate([v.data for v in ndmap])
@@ -337,7 +341,7 @@ class Points(Chart):
 
     value_dimensions = param.List(default=[], bounds=(0, 2))
 
-    _null_value = np.array([[], []]).T # For when data is None
+
     _min_dims = 2                      # Minimum number of columns
 
     def __init__(self, data, **params):
@@ -348,22 +352,14 @@ class Points(Chart):
 
             arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
                                               else (len(arr), 1)) for arr in arrays))
-        elif isinstance(data, Table):
-            table_dims = data.dimension_labels('all', True)
-            arr = np.array(zip(*[data.dimension_values(dim) for dim in table_dims]))
-            if 'key_dimensions' not in params:
-                params['key_dimensions'] = data.key_dimensions
-            if 'value_dimensions' not in params:
-                params['value_dimensions'] = data.value_dimensions
         else:
             arr = np.array(data)
 
-        data = self._null_value if (data is None) or (len(arr) == 0) else arr
-        if data.shape[1] <self._min_dims:
+        super(Points, self).__init__(data, **params)
+        if self.data.shape[1] <self._min_dims:
             raise Exception("%s requires a minimum of %s columns."
                             % (self.__class__.__name__, self._min_dims))
 
-        super(Points, self).__init__(data, **params)
 
 
     def __len__(self):
