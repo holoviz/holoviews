@@ -70,11 +70,13 @@ class Plot3D(ElementPlot):
 
     def get_extents(self, element, ranges):
         l, b, r, t = super(Plot3D, self).get_extents(element, ranges)
+        zmin, zmax = self.zlim if self.rescale_individually else self.map.zlim
         zdim = element.get_dimension(2).name
-        zrange = ranges.get(zdim)
-        if not xrange is None:
-            zmin, zmax = (np.min([zrange[0], zmin]) if zmin else zrange[0],
-                          np.max([zrange[1], zmax]) if zmax else zrange[1])
+        if range is not None:
+            zrange = ranges.get(zdim)
+            if not xrange is None:
+                zmin, zmax = (np.min([zrange[0], zmin]) if zmin else zrange[0],
+                              np.max([zrange[1], zmax]) if zmax else zrange[1])
         return l, b, zmin, r, t, zmax
 
 

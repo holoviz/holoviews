@@ -75,13 +75,14 @@ class ChartPlot(ElementPlot):
         b, t = self.ylim if self.rescale_individually else self.map.ylim
         dimensions = element.dimensions(label=True)
         xdim, ydim = dimensions[0], dimensions[1]
-        xrange, yrange = ranges.get(xdim), ranges.get(ydim)
-        if not xrange is None:
-            l, r = (np.min([xrange[0], l]) if l else xrange[0],
-                    np.max([xrange[1], r]) if r else xrange[1])
-        if not yrange is None:
-            b, t = (np.min([yrange[0], b]) if b else yrange[0],
-                    np.max([yrange[1], t]) if t else yrange[1])
+        if ranges is not None:
+            xrange, yrange = ranges.get(xdim), ranges.get(ydim)
+            if not xrange is None:
+                l, r = (np.min([xrange[0], l]) if l else xrange[0],
+                        np.max([xrange[1], r]) if r else xrange[1])
+            if not yrange is None:
+                b, t = (np.min([yrange[0], b]) if b else yrange[0],
+                        np.max([yrange[1], t]) if t else yrange[1])
         return l, b, r, t
 
 

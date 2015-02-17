@@ -129,7 +129,7 @@ class Element2D(Element):
 
     @property
     def xlim(self):
-        if self._xlim:
+        if self._xlim and None not in self._xlim:
             return self._xlim
         else:
             return self.range(0)
@@ -143,7 +143,7 @@ class Element2D(Element):
 
     @property
     def ylim(self):
-        if self._ylim:
+        if self._ylim and None not in self._ylim:
             return self._ylim
         else:
             return self.range(1)
@@ -201,7 +201,7 @@ class Element3D(Element2D):
 
     @property
     def zlim(self):
-        if self._zlim:
+        if self._zlim and None not in self._zlim:
             return self._zlim
         else:
             return self.range(2)
