@@ -100,7 +100,6 @@ class Chart(Element2D):
         if self.ndims == 1:
             lower_bounds.append(None)
             upper_bounds.append(None)
-        print lower_bounds + upper_bounds
 
         return self.clone(data, extents=tuple(lower_bounds + upper_bounds))
 
