@@ -69,10 +69,14 @@ class Plot3D(ElementPlot):
 
 
     def get_extents(self, element, ranges):
-        l, b, r, t = super(Plot3D, self).get_extents(element, ranges)
-        zmin, zmax = self.zlim if self.rescale_individually else self.map.zlim
+        extents = super(Plot3D, self).get_extents(element, ranges)
+        if len(extents) == 4:
+            l, b, r, t = extents
+            zmin, zmax = self.zlim if self.rescale_individually else self.map.zlim
+        else:
+            l, b, zmin, r, t, zmax = extents
         zdim = element.get_dimension(2).name
-        if range is not None:
+        if ranges is not None:
             zrange = ranges.get(zdim)
             if not xrange is None:
                 zmin, zmax = (np.min([zrange[0], zmin]) if zmin else zrange[0],
@@ -165,13 +169,16 @@ class SurfacePlot(Plot3D):
         return self._finalize_axis(key)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        mat = view.data
+    def update_handles(self, axis, element, key, ranges=None):
+        mat = element.data
         rn, cn = mat.shape
-        c = np.outer(np.ones(rn), np.arange(cn * 1.0))
-        r = np.outer(np.arange(rn * 1.0), np.ones(cn))
+        l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
+        c = np.outer(np.ones(cn), np.linspace(l, r, cn))
+        r = np.outer(np.linspace(b, t, rn), np.ones(rn))
 
-        style_opts = Store.lookup_options(view, 'style')[self.cyclic_index]
+        style_opts = Store.lookup_options(element, 'style')[self.cyclic_index]
+        style_opts['vmin'] = zmin
+        style_opts['vmax'] = zmax
         if self.plot_type == "wireframe":
             self.handles['surface'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
         elif self.plot_type == "surface":
