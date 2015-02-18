@@ -122,14 +122,14 @@ def display_widgets(plot):
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
     isuniform = plot.uniform
+    islinear = len(set([len(dimvals) for dimvals in zip(*plot.keys)])) == 1
     if not isuniform and widget_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
                                     % type(plot).__name__)
         widget_format == 'scrubber'
 
     if widget_format == 'auto':
-        dims = plot.dimensions
-        widget_format = 'scrubber' if len(dims) == 1 or not isuniform else 'widgets'
+        widget_format = 'scrubber' if islinear or not isuniform else 'widgets'
 
     if widget_format == 'scrubber':
         return ScrubberWidget(plot)()
