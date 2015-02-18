@@ -2,11 +2,26 @@
 holoviews Tutorials
 *******************
 
-Introductory Tutorials
-______________________
+The best way to learn what Holoviews can do and how to use it is to
+study the HoloViews tutorials:
 
-1. `Tutorial 1: Basic Views, Overlays and styling <http://ioam.github.com/media/holoviews/HoloViews_Tutorial.html>`_
+* `Showcase:<http://ioam.github.com/media/holoviews/HoloViews_Showcase.html>`_  
+  What HoloViews can do for you and your data.
 
-2. `Tutorial 2: NdMappings, Dimensions and Animations <http://ioam.github.com/media/holoviews/NdMapping_UK_Forecast.html>`_
+* `Introduction: <http://ioam.github.com/media/holoviews/HoloViews_Tutorial.html>`_
+  How to use HoloViews -- basic concepts and getting started.
 
-3. `Tutorial 3: Styles and Channels <http://ioam.github.com/media/holoviews/Styles_and_Channels.html>`_
+* `HoloMap:: <http://ioam.github.com/media/holoviews/HoloMap_introduction>`_
+  Introduction to the data structure that flexibly holds all your data
+  ready for selecting, sampling, slicing, viewing, and combining.
+
+* `Advanced HoloMap:: <http://ioam.github.com/media/holoviews/HoloMap_introduction>`_
+  Advanced applications of HoloMap for experienced users.
+
+* `Components: <http://ioam.github.com/media/holoviews/HoloViews_Components.html>`_
+  Examples of all the major HoloViews components and their usage.
+
+
+For more detailed information on particular components, please refer
+to the `Reference Manual: <Reference_Manual>`_ or the online help
+(e.g. type ``Matrix?`` in an IPython Notebook cell).
