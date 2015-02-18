@@ -124,9 +124,10 @@ class Info(object):
         if hasattr(node.last, 'children'):  # Must be an Overlay
             overlay_info = cls.overlay_info(level, node.last, siblings, value_dims=True)
             element_info, additional_lines = overlay_info
-        # NdOverlays, AxisLayout, Ndlayouts
+        # NdOverlays, GridSpace, Ndlayouts
         elif node.last is not None and getattr(node.last, '_deep_indexable'):
-            pass # TODO
+            element_info = cls.dotted(node.last) # Incomplete
+            additional_lines = []
         else:
             _, [info] = cls.element_info(level, node.last, siblings, value_dims=True)
             _, element_info = info
