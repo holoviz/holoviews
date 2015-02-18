@@ -1,3 +1,4 @@
+from itertools import groupby
 import numpy as np
 
 import param
@@ -309,11 +310,11 @@ class Table(Element, NdMapping):
                             "or as part of the kwargs not both.")
         elif dimensions:
             reduce_map = {d: function for d in dimensions}
-
         dim_labels = self._cached_index_names
         reduced_table = self
-        for dim, reduce_fn in reduce_map.items():
-            split_dims = [self.get_dimension(d) for d in dim_labels if d == dim]
+        for reduce_fn, group in groupby(reduce_map.items(), lambda x: x[1]):
+            dims = [dim for dim, _ in group]
+            split_dims = [self.get_dimension(d) for d in dim_labels if d in dims]
             if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.groupby([dim], container_type=HoloMap, group_type=Table)
                 reduced_table = self.clone(shared_data=False, key_dimensions=split_dims)
