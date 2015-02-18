@@ -474,12 +474,14 @@ class RGB(Matrix):
         if len(coords) > self.ndims:
             value = coords[self.ndims:]
             if len(value) > 1:
-                raise KeyError()
+                raise KeyError("Only one value dimension may be indexed at a time")
+
             sliced = super(RGB, self).__getitem__(coords[:self.ndims])
             vidx = self.get_dimension_index(value[0])
-            data = sliced.data[:,:, vidx]
+            val_index = vidx - self.ndims
+            data = sliced.data[:,:, val_index]
             return Matrix(data, **dict(self.get_param_values(onlychanged=True),
-                                       value_dimensions=[self.value_dimensions[vidx-2]]))
+                                       value_dimensions=[self.value_dimensions[val_index]]))
         else:
             return super(RGB, self).__getitem__(coords)
 
