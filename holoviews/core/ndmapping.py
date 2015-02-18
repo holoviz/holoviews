@@ -336,6 +336,8 @@ class MultiDimensionalMapping(Dimensioned):
                 info_str += '%s Dimensions: \n' % group.capitalize()
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
+                if d.formatter:
+                    dmin, dmax = d.formatter(dmin), d.formatter(dmax)
                 info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
         print(info_str)
 

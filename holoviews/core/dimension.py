@@ -36,6 +36,9 @@ class Dimension(param.Parameterized):
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
 
+    formatter = param.Callable(default=None, doc="""
+        Formatting function applied to each value before display.""")
+
     range = param.Tuple(default=(None, None), doc="""
         Specifies the minimum and maximum allowed values for a
         Dimension. None is used to represent an unlimited bound.""")
@@ -88,20 +91,22 @@ class Dimension(param.Parameterized):
         return self.name + unit
 
 
-    def pprint_value(self, value, rounding=2):
+    def pprint_value(self, value):
         """
         Pretty prints the dimension name and value using the
         format_string parameter, including the unit string (if
         set). Numeric types are printed to the stated rounding level.
         """
         unit = '' if self.unit is None else ' ' + self.unit
-        try: # Try formatting numeric types as floats with rounding
-            val = round(float(value), rounding)
-        except:
-            val = value
+        if self.formatter:
+            try:
+                value = self.formatter(value)
+            except:
+                self.warning("Formatting could not be applied for Dimension "
+                             "%s" % self.name)
 
         return self.format_string.format(name=self.name.capitalize(),
-                                         val=val, unit=unit)
+                                         val=value, unit=unit)
 
     def __hash__(self):
         """
