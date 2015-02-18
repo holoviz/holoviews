@@ -147,12 +147,15 @@ class ElementPlot(Plot):
         if frame is None: return None
         type_name = type(frame).__name__
         value = frame.value if frame.value != type_name else ''
-        title = self.title_format.format(label=frame.label,
-                                         value=value,
-                                         type=type_name)
+        if self.layout_dimensions:
+            title = ''
+        else:
+            title = self.title_format.format(label=frame.label,
+                                             value=value,
+                                             type=type_name)
         dim_title = self._frame_title(key, 2)
         title = '' if title.isspace() else title
-        return ' '.join([title, dim_title])
+        return '\n'.join([title, dim_title]) if title else dim_title
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
@@ -427,13 +430,15 @@ class OverlayPlot(ElementPlot):
         type_name = type(frame).__name__
         value = frame.value if frame.value != type_name else ''
         label = frame.label
-
-        title = self.title_format.format(label=label,
-                                         value=value,
-                                         type=type_name)
+        if self.layout_dimensions:
+            title = ''
+        else:
+            title = self.title_format.format(label=label,
+                                             value=value,
+                                             type=type_name)
         dim_title = self._frame_title(key, 2)
         title = '' if title.isspace() else title
-        return ' '.join([title, dim_title])
+        return '\n'.join([title, dim_title]) if title else dim_title
 
 
     def update_frame(self, key, ranges=None):

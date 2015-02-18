@@ -355,7 +355,7 @@ class CompositePlot(Plot):
                                          value=value,
                                          type=type_name)
         title = '' if title.isspace() else title
-        return ' '.join([title, dim_title])
+        return '\n'.join([title, dim_title]) if title else dim_title
 
 
 
