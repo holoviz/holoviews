@@ -668,6 +668,7 @@ class UniformNdMapping(NdMapping):
                                  self.__class__.__name__)
         if self._value is None:
             self._value_check = data.value
+        if self._label is None:
             self._label_check = data.label
         elif self._value_check and data.value != self._value_check:
             raise ValueError("Elements in %s need to have uniform values.")
