@@ -257,8 +257,6 @@ class Layout(AttrTree, Dimensioned):
 
     value = param.String(default='Layout', constant=True)
 
-    style = 'Layout'
-
     _deep_indexable = True
 
     @classmethod
