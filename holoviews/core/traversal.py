@@ -75,6 +75,8 @@ def unique_dimkeys(obj, default_dim='Frame'):
 
 def bijective(keys):
     ndims = len(keys[0])
+    if ndims <= 1:
+        return True
     for idx in range(ndims):
         getter = itemgetter(*(i for i in range(ndims) if i != idx))
         store = []
