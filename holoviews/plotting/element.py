@@ -154,8 +154,12 @@ class ElementPlot(Plot):
                                              value=value,
                                              type=type_name)
         dim_title = self._frame_title(key, 2)
-        title = '' if title.isspace() else title
-        return '\n'.join([title, dim_title]) if title else dim_title
+        if not title or title.isspace():
+            return dim_title
+        elif not dim_title or dim_title.isspace():
+            return title
+        else:
+            return '\n'.join([title, dim_title])
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
@@ -437,8 +441,12 @@ class OverlayPlot(ElementPlot):
                                              value=value,
                                              type=type_name)
         dim_title = self._frame_title(key, 2)
-        title = '' if title.isspace() else title
-        return '\n'.join([title, dim_title]) if title else dim_title
+        if not title or title.isspace():
+            return dim_title
+        elif not dim_title or dim_title.isspace():
+            return title
+        else:
+            return '\n'.join([title, dim_title])
 
 
     def update_frame(self, key, ranges=None):
