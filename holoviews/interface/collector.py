@@ -448,6 +448,11 @@ class Collator(NdMapping):
         List of dimensions to drop when collating data, specified
         as strings.""")
 
+    progress_bar = param.ClassSelector(default=ProgressBar(label='Collation'),
+                                       class_=ProgressBar, allow_None=True, doc="""
+         The progress bar instance used to report progress. Set to
+         None to disable the progress bars. """)
+
     _deep_indexable = False
 
     def __call__(self, path_filters=[], merge=True):
@@ -461,7 +466,6 @@ class Collator(NdMapping):
         constant_dims = self.constant_dimensions
         ndmapping = NdMapping(key_dimensions=self.key_dimensions)
 
-        progressbar = ProgressBar(label='Collation')
         num_elements = len(self)
         for idx, (key, data) in enumerate(self.data.items()):
            attrtree = self._process_data(data).filter(path_filters)
@@ -475,7 +479,8 @@ class Collator(NdMapping):
               attrtree = self._add_dimensions(attrtree, varying_keys,
                                               dict(constant_keys))
            ndmapping[key] = attrtree
-           progressbar(float(idx+1)/num_elements*100)
+           if self.progress_bar is not None:
+               self.progress_bar(float(idx+1)/num_elements*100)
 
         if merge:
             trees = ndmapping.values()
