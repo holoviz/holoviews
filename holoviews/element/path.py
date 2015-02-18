@@ -72,7 +72,7 @@ class Path(Element2D):
         values = []
         for contour in self.data:
             values.append(contour[:, dim_idx])
-        return np.concatenate(values)
+        return np.concatenate(values) if values else []
 
 
 
