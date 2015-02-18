@@ -177,17 +177,11 @@ class Table(Element, NdMapping):
 
     def __setitem__(self, key, value):
         if isinstance(value, ItemTable):
-            indices = []
-            if len(value.value_dimensions) != len(self.value_dimensions):
+            if value.value_dimensions != self.value_dimensions:
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
-            for dim in self.value_dimensions:
-                idx = [d.name for d in value.value_dimensions].index(dim.name)
-                if hash(dim) != hash(value.value_dimensions[idx]):
-                    raise Exception("Input ItemTables dimensions must match value dimensions.")
-                indices.append(idx)
-            values = value.data.values()
-            value = tuple(values[i] for i in indices) if len(indices) > 1 else values[0]
-        self.data[key] = np.array([value]) if np.isscalar(value) else np.array(value)
+            value = value.data.values()
+        value = np.array([value]) if np.isscalar(value) else np.array(value)
+        self.data[key] = np.squeeze(value, 1) if len(value.shape) > 1 else value
 
 
     def _filter_columns(self, index, col_names):
