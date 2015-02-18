@@ -167,11 +167,17 @@ class Element2D(Element):
     @property
     def extents(self):
         """"
-        For Element2D the extents is the 4-tuple (left, bottom, right, top).
+        The extent on Element2D types and its subclasses are a tuple
+        of all the dimension lower bounds followed by the upper bounds.
+        In case of a simple Element2D this takes the form (l, b, r, t).
         """
-        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
-        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
-        return l, b, r, t
+        lbound, ubound = [], []
+        for kd in self._cached_index_names:
+            drange = self.range(kd)
+            lower, upper = drange if drange else (np.NaN, np.NaN)
+            lbound.append(lower)
+            ubound.append(upper)
+        return tuple(lbound+ubound)
 
 
     @extents.setter
