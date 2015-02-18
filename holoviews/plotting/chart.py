@@ -437,7 +437,7 @@ class SideHistogramPlot(HistogramPlot):
         if map is non-zero.
         """
         offset_line = self.handles['offset_line']
-        if y1 == 0:
+        if offset == 0:
             offset_line.set_visible(False)
         else:
             offset_line.set_visible(True)
