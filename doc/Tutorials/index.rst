@@ -23,5 +23,5 @@ study the HoloViews tutorials:
 
 
 For more detailed information on particular components, please refer
-to the `Reference Manual: <Reference_Manual>`_ or the online help
+to the `Reference Manual: <../Reference_Manual>`_ or the online help
 (e.g. type ``Matrix?`` in an IPython Notebook cell).
