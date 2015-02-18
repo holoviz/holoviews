@@ -429,10 +429,19 @@ class Analyze(Collect):
 
 class Collator(NdMapping):
     """
-    Collator is an NdMapping holding Layout objects and
-    provides methods to filter and merge them via the call
-    method. Collation inserts the Collator dimensions on
-    each UniformNdMapping type contained within the Layout objects.
+    Collator is an NdMapping type which can merge any number
+    of HoloViews components with whatever level of nesting
+    by inserting the Collators key_dimensions on the HoloMaps.
+    If the items in the Collator do not contain HoloMaps
+    they will be created. Collator also supports filtering
+    of Tree structures and dropping of constant_dimensions.
+
+    Collator can also be subclassed to dynamically load data
+    from different locations. This only requires subclassing
+    the _process_data method, which should return the data
+    to be merged, e.g. the Collator may contain a number of
+    filenames as values, which the _process_data can
+    dynamically load (and then merge) during the call.
     """
 
     drop = param.List(default=[], doc="""
@@ -470,7 +479,7 @@ class Collator(NdMapping):
 
         if merge:
             trees = ndmapping.values()
-            accumulator = Layout(data=trees[0].data)
+            accumulator = Layout(trees[0].data)
             for tree in trees:
                 accumulator.update(tree)
             return accumulator
@@ -484,8 +493,7 @@ class Collator(NdMapping):
         """
         dimensions = []
         for dim in self.key_dimensions:
-            low, high = self.range(dim.name)
-            if (low is not None and low == high) or set([self.dimension_values(dim.name)]):
+            if len(set(self.dimension_values(dim.name))) == 1:
                 dimensions.append(dim)
         return dimensions
 
@@ -499,17 +507,22 @@ class Collator(NdMapping):
         if isinstance(item, Layout):
             item.fixed = False
 
-        new_item = item.clone({}) if isinstance(item, NdMapping) else item
-        for k in item.keys():
-            v = item[k]
+        dim_vals = [(dim, val) for dim, val in dims[::-1]
+                    if dim not in self.drop]
+        dimensions, key = zip(*dim_vals)
+        new_item = item
+        if isinstance(item, HoloMap):
+            new_item = item.clone(shared_data=False,
+                                  constant_dimensions=constant_keys)
+        for k, v in item.items():
             if isinstance(v, UniformNdMapping):
-                dim_vals = [(dim, val) for dim, val in dims[::-1]
-                            if dim not in self.drop]
                 for dim, val in dim_vals:
                     if dim not in [d.name for d in v.key_dimensions]:
                         v = v.add_dimension(dim, 0, val)
-                if constant_keys: v.constant_keys = constant_keys
                 new_item[k] = v
+            elif isinstance(v, ViewableElement):
+                new_item[k] = HoloMap({key: v}, key_dimensions=dimensions,
+                                      constant_dimensions=constant_keys)
             else:
                 new_item[k] = self._add_dimensions(v, dims, constant_keys)
         if isinstance(new_item, Layout):
