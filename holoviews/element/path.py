@@ -142,7 +142,7 @@ class Ellipse(Path):
     matplotlib artist.
     """
 
-    def __init__(self, x, y, radius, aspect=1, samples=100, **params):
+    def __init__(self, x, y, radius, aspect=2, samples=100, **params):
 
         angles = np.linspace(0, 2*np.pi, samples)
         ellipse = np.array(
