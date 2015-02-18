@@ -25,7 +25,7 @@ import param
 from ..core.options import Store
 from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
-from ..core.traversal import unique_dimkeys
+from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
 from .magics import ViewMagic, OptsMagic
@@ -122,7 +122,7 @@ def display_widgets(plot):
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
     isuniform = plot.uniform
-    islinear = len(set([len(dimvals) for dimvals in zip(*plot.keys)])) == 1
+    islinear = bijective(plot.keys)
     if not isuniform and widget_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
                                     % type(plot).__name__)

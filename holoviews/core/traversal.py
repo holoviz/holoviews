@@ -71,3 +71,16 @@ def unique_dimkeys(obj, default_dim='Frame'):
         return all_dims, list(sorted_keys)
     else:
         return all_dims, [(i,) for i in range(len(unique_keys))]
+
+
+def bijective(keys):
+    ndims = len(keys[0])
+    for idx in range(ndims):
+        getter = itemgetter(*(i for i in range(ndims) if i != idx))
+        store = []
+        for key in keys:
+            subkey = getter(key)
+            if subkey in store:
+                return False
+            store.append(subkey)
+    return True
