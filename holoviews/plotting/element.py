@@ -54,8 +54,12 @@ class ElementPlot(Plot):
     xticks = param.Integer(default=5, doc="""
         Number of ticks along the x-axis.""")
 
+    xrotation = param.Integer(default=0, bounds=(0, 360))
+
     yticks = param.Integer(default=5, doc="""
         Number of ticks along the y-axis.""")
+
+    yrotation = param.Integer(default=0, bounds=(0, 360))
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
@@ -247,6 +251,9 @@ class ElementPlot(Plot):
             else:
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
 
+            for tick in axis.get_xticklabels():
+                tick.set_rotation(self.xrotation)
+
             if yticks:
                 axis.set_yticks(yticks[0])
                 axis.set_yticklabels(yticks[1])
@@ -256,6 +263,9 @@ class ElementPlot(Plot):
                 axis.yaxis.set_major_locator(log_locator)
             else:
                 axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
+
+            for tick in axis.get_yticklabels():
+                tick.set_rotation(self.yrotation)
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
