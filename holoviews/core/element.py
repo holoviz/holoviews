@@ -20,7 +20,16 @@ class Element(ViewableElement, Composable, Overlayable):
 
     value = param.String(default='Element')
 
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+    def hist(self, dimension=None, num_bins=20, bin_range=None,
+             adjoin=True, individually=True, **kwargs):
+        """
+        The hist method generates a histogram to be adjoined to the
+        Element in an AdjointLayout. By default the histogram is
+        computed along the first value dimension of the Element,
+        however any dimension may be selected. The number of bins and
+        the bin_ranges and any kwargs to be passed to the histogram
+        operation may also be supplied.
+        """
         from ..operation import histogram
         return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
                          individually=individually, **kwargs)
