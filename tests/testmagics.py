@@ -23,7 +23,7 @@ class TestOptsMagic(ExtensionTestCase):
     def setUp(self):
         super(TestOptsMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.element import Matrix")
+        self.cell("from holoviews.element import Image")
 
     def tearDown(self):
         Store.custom_options = {}
@@ -32,10 +32,10 @@ class TestOptsMagic(ExtensionTestCase):
 
     def test_cell_opts_style(self):
 
-        self.cell("mat1 = Matrix(np.random.rand(5,5), name='mat1')")
+        self.cell("mat1 = Image(np.random.rand(5,5), name='mat1')")
 
         self.assertEqual(self.get_object('mat1').id, None)
-        self.cell_magic('opts', " Matrix (cmap='hot')", 'mat1')
+        self.cell_magic('opts', " Image (cmap='hot')", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
         assert 0 in Store.custom_options, "Custom OptionTree creation failed"
@@ -45,10 +45,10 @@ class TestOptsMagic(ExtensionTestCase):
 
     def test_cell_opts_plot(self):
 
-        self.cell("mat1 = Matrix(np.random.rand(5,5), name='mat1')")
+        self.cell("mat1 = Image(np.random.rand(5,5), name='mat1')")
 
         self.assertEqual(self.get_object('mat1').id, None)
-        self.cell_magic('opts', " Matrix [show_title=False]", 'mat1')
+        self.cell_magic('opts', " Image [show_title=False]", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
         assert 0 in Store.custom_options, "Custom OptionTree creation failed"
@@ -58,10 +58,10 @@ class TestOptsMagic(ExtensionTestCase):
 
     def test_cell_opts_norm(self):
 
-        self.cell("mat1 = Matrix(np.random.rand(5,5), name='mat1')")
+        self.cell("mat1 = Image(np.random.rand(5,5), name='mat1')")
 
         self.assertEqual(self.get_object('mat1').id, None)
-        self.cell_magic('opts', " Matrix {-groupwise}", 'mat1')
+        self.cell_magic('opts', " Image {-groupwise}", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
         assert 0 in Store.custom_options, "Custom OptionTree creation failed"
@@ -113,7 +113,7 @@ class TestCompositorMagic(ExtensionTestCase):
     def setUp(self):
         super(TestCompositorMagic, self).setUp()
         self.cell("import numpy as np")
-        self.cell("from holoviews.element import Matrix")
+        self.cell("from holoviews.element import Image")
 
 
     def tearDown(self):
@@ -121,12 +121,12 @@ class TestCompositorMagic(ExtensionTestCase):
         super(TestCompositorMagic, self).tearDown()
 
     def test_RGB_compositor_definition(self):
-        self.cell("R = Matrix(np.random.rand(5,5), value='R')")
-        self.cell("G = Matrix(np.random.rand(5,5), value='G')")
-        self.cell("B = Matrix(np.random.rand(5,5), value='B')")
+        self.cell("R = Image(np.random.rand(5,5), value='R')")
+        self.cell("G = Image(np.random.rand(5,5), value='G')")
+        self.cell("B = Image(np.random.rand(5,5), value='B')")
         self.cell("overlay = R * G * B")
 
-        definition = " display toRGB(Matrix * Matrix * Matrix) RGBTEST"
+        definition = " display toRGB(Image * Image * Image) RGBTEST"
         self.line_magic('compositor', definition)
 
         assert len(Compositor.definitions) == 1, "Compositor definition not created"
@@ -135,13 +135,13 @@ class TestCompositorMagic(ExtensionTestCase):
 
 
     def test_HCS_compositor_definition(self):
-        self.cell("H = Matrix(np.random.rand(5,5), value='H')")
-        self.cell("C = Matrix(np.random.rand(5,5), value='C')")
-        self.cell("S = Matrix(np.random.rand(5,5), value='S')")
+        self.cell("H = Image(np.random.rand(5,5), value='H')")
+        self.cell("C = Image(np.random.rand(5,5), value='C')")
+        self.cell("S = Image(np.random.rand(5,5), value='S')")
 
         self.cell("overlay = H * C * S")
 
-        definition = " data toHCS(Matrix * Matrix * Matrix) HCSTEST"
+        definition = " data toHCS(Image * Image * Image) HCSTEST"
         self.line_magic('compositor', definition)
         assert len(Compositor.definitions) == 1, "Compositor definition not created"
         self.assertEqual(Compositor.definitions[0].value, 'HCSTEST')

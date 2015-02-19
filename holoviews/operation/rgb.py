@@ -14,7 +14,7 @@ import numpy as np
 import param
 
 from ..core.operation import ElementOperation
-from ..element import Matrix, RGB
+from ..element import Image, RGB
 from .normalization import raster_normalization
 from .element import split_raster
 
@@ -28,7 +28,7 @@ class toRGB(ElementOperation):
     three layers are the R,G, B channels and the last layer (if
     supplied) is the (optional) alpha channel.
 
-    Note that the values in the input Matrix elements are expected to
+    Note that the values in the input Image elements are expected to
     be bounded between 0.0-1.0. If this isn't the case, the values of
     these channels will be clipped into this range.
     """
@@ -42,15 +42,15 @@ class toRGB(ElementOperation):
     def _process(self, overlay, key=None):
         if len(overlay) not in [3, 4]:
             raise Exception("Requires 3 or 4 layers to convert to RGB(A)")
-        if not all(isinstance(el, Matrix) for el in overlay):
-            raise Exception("All layers must be of type Matrix to convert to RGB")
+        if not all(isinstance(el, Image) for el in overlay):
+            raise Exception("All layers must be of type Image to convert to RGB")
         if not all(el.depth == 1 for el in overlay):
-            raise Exception("All Matrix elements must have single value"
+            raise Exception("All Image elements must have single value"
                             " dimension for conversion to RGB")
         if not all(el.bounds == overlay[0].bounds for el in overlay):
-            raise Exception("All input Matrix elements must have the same bounds.")
+            raise Exception("All input Image elements must have the same bounds.")
         if not all(el.data.shape == overlay[0].data.shape for el in overlay):
-            raise Exception("All input Matrix must have data with matching shape.")
+            raise Exception("All input Image must have data with matching shape.")
 
         normfn = raster_normalization.instance()
         if self.p.input_ranges:
@@ -137,7 +137,7 @@ class toHCS(ElementOperation):
 
 class colormap(ElementOperation):
     """
-    Applies a colormap on a Matrix input, returning the result as an
+    Applies a colormap on a Image input, returning the result as an
     RGB element.
     """
 
@@ -159,7 +159,7 @@ class colormap(ElementOperation):
             matrix = normfn.process_element(matrix, key)
 
         if len(matrix.value_dimensions) != 1:
-            raise Exception("Can only apply colour maps to Matrix"
+            raise Exception("Can only apply colour maps to Image"
                             " with single value dimension.")
 
         return RGB(matplotlib.cm.get_cmap(self.p.cmap)(matrix.data),
@@ -171,7 +171,7 @@ class colormap(ElementOperation):
 
 class alpha_overlay(ElementOperation):
     """
-    Accepts an overlay of a Matrix defined with a cmap and converts it
+    Accepts an overlay of a Image defined with a cmap and converts it
     to an RGB element whereby the alpha channel of the result is
     obtained from the second layer of the overlay.
     """
@@ -192,8 +192,8 @@ class alpha_overlay(ElementOperation):
 
 class colorizeHSV(ElementOperation):
     """
-    Given an Overlay consisting of two Matrix elements, colorize the
-    data in the bottom Matrix with the data in the top Matrix using
+    Given an Overlay consisting of two Image elements, colorize the
+    data in the bottom Image with the data in the top Image using
     the HSV color space.
     """
 
@@ -204,11 +204,11 @@ class colorizeHSV(ElementOperation):
 
     def _process(self, overlay, key=None):
         if len(overlay) != 2:
-            raise Exception("colorizeHSV required an overlay of two Matrix elements as input.")
+            raise Exception("colorizeHSV required an overlay of two Image elements as input.")
         if (len(overlay[0].value_dimensions), len(overlay[1].value_dimensions)) != (1,1):
-            raise Exception("Each Matrix element must have single value dimension.")
+            raise Exception("Each Image element must have single value dimension.")
         if overlay[0].shape != overlay[1].shape:
-            raise Exception("Mismatch in the shapes of the data in the Matrix elements.")
+            raise Exception("Mismatch in the shapes of the data in the Image elements.")
 
 
         hue = overlay[1]
@@ -222,6 +222,6 @@ class colorizeHSV(ElementOperation):
         else:
             S = normfn.process_element(overlay[0], key)
 
-        C = Matrix(np.ones(hue.data.shape),
+        C = Image(np.ones(hue.data.shape),
                    bounds=self.get_overlay_extents(overlay), value='F', label='G')
         return toHCS(H * C * S).clone(value=self.p.value)

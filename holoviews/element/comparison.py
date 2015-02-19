@@ -86,7 +86,7 @@ class Comparison(ComparisonInterface):
     most general being the assertEqual method that is intended to work
     with any input.
 
-    For instance, to test if two Matrix objects are equal you can use:
+    For instance, to test if two Image objects are equal you can use:
 
     Comparison.assertEqual(matrix1, matrix2)
     """
@@ -120,7 +120,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Text] =        cls.compare_text
 
         # Rasters
-        cls.equality_type_funcs[Matrix] =       cls.compare_matrix
+        cls.equality_type_funcs[Image] =       cls.compare_matrix
 
         # Charts
         cls.equality_type_funcs[Curve] =        cls.compare_curve
@@ -400,7 +400,7 @@ class Comparison(ComparisonInterface):
     #=========#
 
     @classmethod
-    def compare_matrix(cls, el1, el2, msg='Matrix data'):
+    def compare_matrix(cls, el1, el2, msg='Image data'):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, msg=msg)
         cls.bounds_check(el1,el2)

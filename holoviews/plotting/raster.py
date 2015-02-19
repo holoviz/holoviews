@@ -9,7 +9,7 @@ import param
 from ..core.options import Store
 from ..core import CompositeOverlay
 from ..core import traversal
-from ..element.raster import HeatMap, Matrix, Raster, RGB
+from ..element.raster import HeatMap, Image, Raster, RGB
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
 
@@ -270,6 +270,6 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
 Store.defaults.update({Raster: MatrixPlot,
                        HeatMap: MatrixPlot,
-                       Matrix: MatrixPlot,
+                       Image: MatrixPlot,
                        RGB: MatrixPlot})
 

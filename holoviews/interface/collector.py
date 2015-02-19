@@ -10,7 +10,7 @@ import param
 
 from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
  GridSpace, AttrTree, Layout, HoloMap
-from ..element.raster import Matrix
+from ..element.raster import Image
 from ..ipython.widgets import RunProgress, ProgressBar
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
@@ -73,8 +73,8 @@ class ViewRef(Reference):
     >>> ref = ViewRef('Example.Path1 * Example.Path2')
 
     >>> tree = Layout()
-    >>> tree.Example.Path1 = Matrix(np.random.rand(5,5))
-    >>> tree.Example.Path2 = Matrix(np.random.rand(5,5))
+    >>> tree.Example.Path1 = Image(np.random.rand(5,5))
+    >>> tree.Example.Path2 = Image(np.random.rand(5,5))
     >>> overlay = ref.resolve(tree)
     >>> len(overlay)
     2
@@ -348,7 +348,7 @@ class Collect(object):
     def _merge_views(self, current_val, val, time):
         """
         Helper for merging views together. For instance, this method
-        will add a Matrix to a HoloMap or merge two ViewMaps.
+        will add a Image to a HoloMap or merge two ViewMaps.
         """
         if isinstance(val, ViewableElement):
             current_val[time] = val

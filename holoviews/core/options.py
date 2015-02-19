@@ -388,7 +388,7 @@ class Compositor(param.Parameterized):
        matrices with values of 'RedChannel', 'GreenChannel' and
        'BlueChannel' respectively:
 
-      'Matrix.RedChannel * Matrix.GreenChannel * Matrix.BlueChannel.
+      'Image.RedChannel * Image.GreenChannel * Image.BlueChannel.
 
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")

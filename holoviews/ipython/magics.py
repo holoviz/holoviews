@@ -491,7 +491,7 @@ class OptsMagic(Magics):
         %%opts [ [path] [normalization] [plotting options] [style options]]+
 
         path:             A dotted type.value.label specification
-                          (e.g. Matrix.Grayscale.Photo)
+                          (e.g. Image.Grayscale.Photo)
 
         normalization:    List of normalization options delimited by braces.
                           One of | -groupwise | -mapwise | +groupwise | +mapwise |

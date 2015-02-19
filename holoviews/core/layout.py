@@ -42,7 +42,7 @@ class AdjointLayout(Dimensioned):
     """
     A AdjointLayout provides a convenient container to lay out a primary plot
     with some additional supplemental plots, e.g. an image in a
-    Matrix annotated with a luminance histogram. AdjointLayout accepts a
+    Image annotated with a luminance histogram. AdjointLayout accepts a
     list of three ViewableElement elements, which are laid out as follows with
     the names 'main', 'top' and 'right':
      ___________ __

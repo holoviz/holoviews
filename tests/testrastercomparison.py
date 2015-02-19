@@ -7,7 +7,7 @@ import numpy as np
 from holoviews.core import BoundingBox, Dimension
 from holoviews.core.element import HoloMap
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import Matrix
+from holoviews import Image
 
 
 class RasterTestCase(ComparisonTestCase):
@@ -17,12 +17,12 @@ class RasterTestCase(ComparisonTestCase):
         self.arr2 = np.array([[10,2], [3,4]])
         self.arr3 = np.array([[10,2], [3,40]])
         # Varying arrays, default bounds
-        self.mat1 = Matrix(self.arr1, BoundingBox())
-        self.mat2 = Matrix(self.arr2, BoundingBox())
-        self.mat3 = Matrix(self.arr3, BoundingBox())
+        self.mat1 = Image(self.arr1, BoundingBox())
+        self.mat2 = Image(self.arr2, BoundingBox())
+        self.mat3 = Image(self.arr3, BoundingBox())
         # Varying arrays, different bounds
-        self.mat4 = Matrix(self.arr1, BoundingBox(radius=0.3))
-        self.mat5 = Matrix(self.arr2, BoundingBox(radius=0.3))
+        self.mat4 = Image(self.arr1, BoundingBox(radius=0.3))
+        self.mat5 = Image(self.arr2, BoundingBox(radius=0.3))
 
 
 class RasterOverlayTestCase(RasterTestCase):
@@ -101,7 +101,7 @@ class BasicRasterComparisonTest(RasterTestCase):
             self.assertEqual(self.mat1, self.mat2)
             raise AssertionError("Array mismatch not detected")
         except AssertionError as e:
-            self.assertEqual(str(e)[:42], 'Matrix data not almost equal to 6 decimals')
+            self.assertEqual(str(e)[:42], 'Image data not almost equal to 6 decimals\n')
 
     def test_bounds_mismatch(self):
         try:
@@ -123,7 +123,7 @@ class RasterOverlayComparisonTest(RasterOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            self.assertEqual(str(e)[:42], 'Matrix data not almost equal to 6 decimals')
+            self.assertEqual(str(e)[:42], 'Image data not almost equal to 6 decimals\n')
 
 
 
@@ -163,7 +163,7 @@ class RasterMapComparisonTest(RasterMapTestCase):
             self.assertEqual(self.map1_1D, self.map4_1D)
             raise AssertionError("Pane mismatch in array data not detected.")
         except AssertionError as e:
-            self.assertEqual(str(e)[:42], 'Matrix data not almost equal to 6 decimals')
+            self.assertEqual(str(e)[:42], 'Image data not almost equal to 6 decimals\n')
 
 
 if __name__ == "__main__":

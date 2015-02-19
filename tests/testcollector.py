@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 
-from holoviews import Matrix, Layout
+from holoviews import Image, Layout
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.interface.collector import ViewRef
 
@@ -115,8 +115,8 @@ class ViewRefTest(ComparisonTestCase):
     def setUp(self):
         super(ViewRefTest, self).setUp()
         tree = Layout()
-        tree.Example.Path1 = Matrix(np.random.rand(5,5))
-        tree.Example.Path2 = Matrix(np.random.rand(5,5))
+        tree.Example.Path1 = Image(np.random.rand(5,5))
+        tree.Example.Path2 = Image(np.random.rand(5,5))
         self.tree = tree
 
     def test_resolve_constructor(self):

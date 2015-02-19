@@ -60,10 +60,10 @@ class Normalization(ElementOperation):
        respectively. This tuple key then uses the dictionary
        value-range specification decribed above.
 
-      For instance, you could normalize only the Matrix elements of
+      For instance, you could normalize only the Image elements of
       value pattern using:
 
-      {('Matrix','Pattern'):{'Luminance':(0,1), , 'Height':(0, 200)}})
+      {('Image','Pattern'):{'Luminance':(0,1), , 'Height':(0, 200)}})
 
 
       Key-wise normalization is possible for all these formats by

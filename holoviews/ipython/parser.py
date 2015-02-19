@@ -90,9 +90,9 @@ class OptsSpec(Parser):
 
     For instance, the following string:
 
-    Matrix (interpolation=None) plot(show_title=False) Curve style(color='r')
+    Image (interpolation=None) plot(show_title=False) Curve style(color='r')
 
-    Would specify an OptionTree where Matrix has "interpolation=None"
+    Would specify an OptionTree where Image has "interpolation=None"
     for style and 'show_title=False' for plot options. The Curve has a
     style set such that color='r'.
 

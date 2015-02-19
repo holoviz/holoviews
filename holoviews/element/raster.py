@@ -285,9 +285,9 @@ class HeatMap(Raster):
         return min(dim2_keys), max(dim2_keys)
 
 
-class Matrix(SheetCoordinateSystem, Raster):
+class Image(SheetCoordinateSystem, Raster):
     """
-    Matrix is the atomic unit as which 2D data is stored, along with
+    Image is the atomic unit as which 2D data is stored, along with
     its bounds object. The input data may be a numpy.matrix object or
     a two-dimensional numpy array.
 
@@ -298,7 +298,7 @@ class Matrix(SheetCoordinateSystem, Raster):
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
-    value = param.String(default='Matrix')
+    value = param.String(default='Image')
 
     value_dimensions = param.List(default=[Dimension('Luminance')],
                                   bounds=(1, 1), doc="""
@@ -332,7 +332,7 @@ class Matrix(SheetCoordinateSystem, Raster):
         """
         Given a single coordinate tuple (or list of coordinates)
         return the coordinate (or coordinatess) needed to address the
-        corresponding Matrix exactly.
+        corresponding Image exactly.
         """
         if isinstance(coords, tuple):
             return self.closest_cell_center(*coords)
@@ -382,7 +382,7 @@ class Matrix(SheetCoordinateSystem, Raster):
             if dim_idx:
                 return self.ylim
             return self.xlim
-        return super(Matrix, self).range(dim, data_range=data_range)
+        return super(Image, self).range(dim, data_range=data_range)
 
 
     def _coord2matrix(self, coord):
@@ -395,13 +395,13 @@ class Matrix(SheetCoordinateSystem, Raster):
         else:
             data = np.dstack([Slice(bounds, self).submatrix(
                 self.data[:, :, i]) for i in range(self.depth)])
-        return Matrix(data, bounds, style=self.style, value=self.value)
+        return Image(data, bounds, style=self.style, value=self.value)
 
 
 
-class RGB(Matrix):
+class RGB(Image):
     """
-    An RGB element is a Matrix containing channel data for the the
+    An RGB element is a Image containing channel data for the the
     red, green, blue and (optionally) the alpha channels. The values
     of each channel must be in the range 0.0 to 1.0.
 
@@ -480,7 +480,7 @@ class RGB(Matrix):
             vidx = self.get_dimension_index(value[0])
             val_index = vidx - self.ndims
             data = sliced.data[:,:, val_index]
-            return Matrix(data, **dict(self.get_param_values(onlychanged=True),
+            return Image(data, **dict(self.get_param_values(onlychanged=True),
                                        value_dimensions=[self.value_dimensions[val_index]]))
         else:
             return super(RGB, self).__getitem__(coords)

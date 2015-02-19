@@ -342,7 +342,7 @@ class Points(Chart):
 
     key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
                                   bounds=(2, 2), constant=True, doc="""
-        The label of the x- and y-dimension of the Matrix in form
+        The label of the x- and y-dimension of the Points in form
         of a string or dimension object.""")
 
     value = param.String(default='Points')

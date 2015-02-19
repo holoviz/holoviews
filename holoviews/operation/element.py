@@ -6,7 +6,7 @@ from ..core import Dimension, ElementOperation, CompositeOverlay, \
                    NdOverlay, Overlay, BoundingBox
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField, Curve
-from ..element.raster import Matrix
+from ..element.raster import Image
 from ..element.tabular import ItemTable
 from ..element.path import Contours
 from .normalization import raster_normalization
@@ -22,7 +22,7 @@ class chain(ElementOperation):
     chain(operations=[collapse.instance(operator=np.add), colormap])
 
     This first sums the data in the input with collapse (using np.add)
-    and then returns an RGB Matrix applying the default colormap of
+    and then returns an RGB Image applying the default colormap of
     the colormap operator.
 
     Instances are only required when arguments need to be passed to
@@ -30,7 +30,7 @@ class chain(ElementOperation):
     argument.
     """
 
-    output_type = param.Parameter(Matrix, doc="""
+    output_type = param.Parameter(Image, doc="""
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 
@@ -52,11 +52,11 @@ class chain(ElementOperation):
 
 class transform(ElementOperation):
     """
-    Generic ElementOperation to transform an input Matrix or RGBA
-    element into an output Matrix. The transformation is defined by
-    the supplied callable that accepts the data of the input Matrix
+    Generic ElementOperation to transform an input Image or RGBA
+    element into an output Image. The transformation is defined by
+    the supplied callable that accepts the data of the input Image
     (typically a numpy array) and returns the transformed data of the
-    output Matrix.
+    output Image.
 
     This operator is extremely versatile; for instance, you could
     implement an alternative to the explict threshold operator with:
@@ -69,7 +69,7 @@ class transform(ElementOperation):
     operator=lambda x: scipy.signal.correlate2d(x, x)
     """
 
-    output_type = Matrix
+    output_type = Image
 
     value = param.String(default='Transform', doc="""
         The value assigned to the result after applying the
@@ -77,13 +77,13 @@ class transform(ElementOperation):
 
     operator = param.Callable(doc="""
        Function of one argument that transforms the data in the input
-       Matrix to the data in the output Matrix. By default, acts as
+       Image to the data in the output Image. By default, acts as
        the identity function such that the output matches the input.""")
 
     def _process(self, matrix, key=None):
         processed = (matrix.data if not self.p.operator
                      else self.p.operator(matrix.data))
-        return Matrix(processed, matrix.bounds, value=self.p.value)
+        return Image(processed, matrix.bounds, value=self.p.value)
 
 
 #==============================#
@@ -116,10 +116,10 @@ class matrix_overlay(ElementOperation):
     spec = param.String(doc="""
        Specification of the output Overlay structure. For instance:
 
-       Matrix.R * Matrix.G * Matrix.B
+       Image.R * Image.G * Image.B
 
        Will ensure an overlay of this structure is created even if
-       (for instance) only (Matrix.R * Matrix.B) is supplied.
+       (for instance) only (Image.R * Image.B) is supplied.
 
        Elements in the input overlay that match are placed in the
        appropriate positions and unavailable specification elements
@@ -135,8 +135,8 @@ class matrix_overlay(ElementOperation):
     def _match(cls, el, spec):
         "Return the strength of the match (None if no match)"
         spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
-        if not isinstance(el, Matrix) or spec_dict['type'] != 'Matrix':
-            raise NotImplementedError("Only Matrix currently supported")
+        if not isinstance(el, Image) or spec_dict['type'] != 'Image':
+            raise NotImplementedError("Only Image currently supported")
 
         strength = 1
         for key in ['value', 'label']:
@@ -180,8 +180,8 @@ class matrix_overlay(ElementOperation):
         for el, spec in zip(ordering, specs):
             if el is None:
                 spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
-                el = Matrix(np.ones(strongest.data.shape) * self.p.fill,
-                            value=spec_dict.get('value','Matrix'),
+                el = Image(np.ones(strongest.data.shape) * self.p.fill,
+                            value=spec_dict.get('value','Image'),
                             label=spec_dict.get('label',''))
             completed.append(el)
         return np.prod(completed)
@@ -193,11 +193,11 @@ class collapse(ElementOperation):
     of the input overlay and returns the result.
 
     As applying collapse operations on arbitrary data works very
-    naturally using arrays, the result is a Matrix containing the
+    naturally using arrays, the result is a Image containing the
     computed result data.
     """
 
-    output_type = Matrix
+    output_type = Image
 
     operator = param.Callable(np.add, doc="""
         The collapsing operator to apply between the data attributes
@@ -235,18 +235,18 @@ class collapse(ElementOperation):
         else:
             new_data = self.p.operator([el.data for el in overlay])
 
-        return Matrix(new_data, bounds=overlay[0].bounds,
+        return Image(new_data, bounds=overlay[0].bounds,
                       label=self.get_overlay_label(overlay))
 
 
 
 class threshold(ElementOperation):
     """
-    Threshold a given Matrix whereby all values higher than a given
+    Threshold a given Image whereby all values higher than a given
     level map to the specified high value and all values lower than
     that level map to the specified low value.
     """
-    output_type = Matrix
+    output_type = Image
 
     level = param.Number(default=0.5, doc="""
        The value at which the threshold is applied. Values lower than
@@ -265,8 +265,8 @@ class threshold(ElementOperation):
 
     def _process(self, matrix, key=None):
 
-        if not isinstance(matrix, Matrix):
-            raise TypeError("The threshold operation requires a Matrix as input.")
+        if not isinstance(matrix, Image):
+            raise TypeError("The threshold operation requires a Image as input.")
 
         arr = matrix.data
         high = np.ones(arr.shape) * self.p.high
@@ -279,13 +279,13 @@ class threshold(ElementOperation):
 
 class gradient(ElementOperation):
     """
-    Compute the gradient plot of the supplied Matrix.
+    Compute the gradient plot of the supplied Image.
 
-    If the Matrix value dimension is cyclic, negative differences will
+    If the Image value dimension is cyclic, negative differences will
     be wrapped into the cyclic range.
     """
 
-    output_type = Matrix
+    output_type = Image
 
     value = param.String(default='Gradient', doc="""
     The value assigned to the output gradient matrix.""")
@@ -328,13 +328,13 @@ class gradient(ElementOperation):
             dx = 0.5 * cyclic_range - np.abs(dx - 0.5 * cyclic_range)
             dy = 0.5 * cyclic_range - np.abs(dy - 0.5 * cyclic_range)
 
-        return Matrix(np.sqrt(dx * dx + dy * dy), matrix.bounds, value=self.p.value)
+        return Image(np.sqrt(dx * dx + dy * dy), matrix.bounds, value=self.p.value)
 
 
 
 class fft_power(ElementOperation):
     """
-    Given a Matrix element, compute the power of the 2D Fast Fourier
+    Given a Image element, compute the power of the 2D Fast Fourier
     Transform (FFT).
     """
 
@@ -363,18 +363,18 @@ class fft_power(ElementOperation):
         density = matrix.xdensity
         bounds = BoundingBox(radius=(density/2)/(r-l))
 
-        return Matrix(spectrum, bounds, label=matrix.label, value=self.p.value)
+        return Image(spectrum, bounds, label=matrix.label, value=self.p.value)
 
 
 
 class convolve(ElementOperation):
     """
     Apply a convolution to an overlay using the top layer as the
-    kernel for convolving the bottom layer. Both Matrix elements in
+    kernel for convolving the bottom layer. Both Image elements in
     the input overlay should have a single value dimension.
     """
 
-    output_type = Matrix
+    output_type = Image
 
     value = param.String(default='Convolution', doc="""
         The value assigned to the convolved output.""")
@@ -406,14 +406,14 @@ class convolve(ElementOperation):
         rolled = np.roll(np.roll(convolved_raw, -(k_cols//2), axis=-1), -(k_rows//2), axis=-2)
         convolved = rolled / float(k.sum())
 
-        return Matrix(convolved, bounds=target.bounds, value=self.p.value)
+        return Image(convolved, bounds=target.bounds, value=self.p.value)
 
 
 
 class split_raster(ElementOperation):
     """
     Given a Raster element, return the individual value dimensions as
-    an overlay of Matrix elements.
+    an overlay of Image elements.
     """
 
     value = param.String(default='', doc="""
@@ -424,7 +424,7 @@ class split_raster(ElementOperation):
     def _process(self, raster, key=None):
         matrices = []
         for i, dim in enumerate(raster.value_dimensions):
-            matrix = Matrix(raster.data[:, :, i],
+            matrix = Image(raster.data[:, :, i],
                             value_dimensions = [dim(name=dim.name+self.p.value)])
             matrices.append(matrix)
         return np.product(matrices)
@@ -433,11 +433,11 @@ class split_raster(ElementOperation):
 
 class contours(ElementOperation):
     """
-    Given a Matrix with a single channel, annotate it with contour
+    Given a Image with a single channel, annotate it with contour
     lines for a given set of contour levels.
 
     The return is an NdOverlay with a Contours layer for each given
-    level, overlaid on top of the input Matrix.
+    level, overlaid on top of the input Image.
     """
 
     output_type = Overlay
@@ -528,9 +528,9 @@ class histogram(ElementOperation):
 
 class vectorfield(ElementOperation):
     """
-    Given a Matrix with a single channel, convert it to a VectorField
+    Given a Image with a single channel, convert it to a VectorField
     object at a given spatial sampling interval. The values in the
-    Matrix are assumed to correspond to the vector angle in radians
+    Image are assumed to correspond to the vector angle in radians
     and the value is assumed to be cyclic.
 
     If supplied with an Overlay, the second sheetview in the overlay
@@ -558,7 +558,7 @@ class vectorfield(ElementOperation):
 
         cyclic_dim = radians.value_dimensions[0]
         if not cyclic_dim.cyclic:
-            raise Exception("First input Matrix must be declared cyclic")
+            raise Exception("First input Image must be declared cyclic")
 
         l, b, r, t = radians.bounds.lbrt()
         X, Y = np.meshgrid(np.linspace(l, r, self.p.cols+2)[1:-1],
@@ -581,12 +581,12 @@ class vectorfield(ElementOperation):
 
 class analyze_roi(ElementOperation):
     """
-    Compute a table of information from a Matrix within the indicated
+    Compute a table of information from a Image within the indicated
     region-of-interest (ROI). The function applied must accept a numpy
     array and return either a single value or a dictionary of values
     which is returned as a ItemTable or HoloMap.
 
-    The roi is specified using a boolean Matrix overlay (e.g as
+    The roi is specified using a boolean Image overlay (e.g as
     generated by threshold) where all zero values are excluded from
     the analysis.
     """
@@ -610,7 +610,7 @@ class analyze_roi(ElementOperation):
     def _process(self, overlay, key=None):
 
         if not isinstance(overlay, CompositeOverlay) or len(overlay) != 2:
-            raise Exception("A CompositeOverlay object of two Matrix elements is required.")
+            raise Exception("A CompositeOverlay object of two Image elements is required.")
 
         matrix, mask = overlay[0], overlay[1]
 

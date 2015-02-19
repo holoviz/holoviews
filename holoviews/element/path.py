@@ -30,7 +30,7 @@ class Path(Element2D):
 
     key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
                                   constant=True, bounds=(2, 2), doc="""
-        The label of the x- and y-dimension of the Matrix in form
+        The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
 
