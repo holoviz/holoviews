@@ -262,7 +262,9 @@ class Layout(AttrTree, Dimensioned):
     @classmethod
     def collate(cls, data, key_dimensions):
         from .element import Collator
-        return Collator(data, key_dimensions=key_dimensions)()
+        layouts = {k:(v if isinstance(v, Layout) else Layout.from_values([v]))
+                      for k,v in data.items()}
+        return Collator(layouts, key_dimensions=key_dimensions)()
 
 
     @classmethod
