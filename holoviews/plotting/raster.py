@@ -247,7 +247,7 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
     def _compute_borders(self):
         ndims = self.layout.ndims
-        width_extents = [self.layout[(xkey, slice()) if ndims > 1 else xkey].extents
+        width_extents = [self.layout[(xkey, slice(None)) if ndims > 1 else xkey].extents
                          for xkey in self._xkeys]
         if ndims > 1:
             height_extents = [self.layout[:, ykey].extents for ykey in self._ykeys]
