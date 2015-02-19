@@ -325,11 +325,14 @@ class OptsCompleter(object):
     def setup_completer(cls):
         "Get the dictionary of valid completions"
         for element in Store.options.keys():
-            options = Store.options[element]
-            plotkws = options['plot'].allowed_keywords
-            stylekws = options['style'].allowed_keywords
-            dotted = '.'.join(element)
-            cls._completions[dotted] = (plotkws, stylekws if stylekws else [])
+            try:
+                options = Store.options[element]
+                plotkws = options['plot'].allowed_keywords
+                stylekws = options['style'].allowed_keywords
+                dotted = '.'.join(element)
+                cls._completions[dotted] = (plotkws, stylekws if stylekws else [])
+            except KeyError:
+                pass
         return cls._completions
 
     @classmethod
