@@ -207,6 +207,7 @@ def view_display(view, size, **kwargs):
     if type(view) == Element:                 return None
     magic_info = process_cell_magics(view)
     if magic_info: return magic_info
+    if view.__class__ not in Store.defaults: return None
     fig = Store.defaults[view.__class__](view,
                                          **opts(view, get_plot_size(size)))()
     return display_figure(fig)
@@ -217,6 +218,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     magic_info = process_cell_magics(vmap)
     if magic_info: return magic_info
+    if vmap.type not in Store.defaults:  return None
     mapplot = Store.defaults[vmap.type](vmap,
                                         **opts(vmap.last, get_plot_size(size)))
     if len(mapplot) == 0:
