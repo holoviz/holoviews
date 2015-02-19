@@ -260,6 +260,12 @@ class Layout(AttrTree, Dimensioned):
     _deep_indexable = True
 
     @classmethod
+    def collate(cls, data, key_dimensions):
+        from .element import Collator
+        return Collator(data, key_dimensions=key_dimensions)()
+
+
+    @classmethod
     def new_path(cls, path, item, paths):
         count = 2
         while path in paths:
