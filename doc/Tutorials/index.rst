@@ -14,10 +14,10 @@ study the HoloViews tutorials:
 * `Introduction: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/HoloViews_Introduction.ipynb>`_
   How to use HoloViews -- basic concepts and getting started.
 
-* `HoloMap:: <http://ioam.github.com/media/holoviews/HoloMap_introduction>`_
+* `HoloMap:: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/HoloMap_introduction.ipynb>`_
   Introduction to the data structure that flexibly holds all your data
   ready for selecting, sampling, slicing, viewing, and
-  combining. (Coming soon!)
+  combining.
 
 * `Advanced HoloMap: <http://ioam.github.com/media/holoviews/HoloMap_introduction>`_
   Advanced applications of HoloMap for experienced users. (Coming soon!)
