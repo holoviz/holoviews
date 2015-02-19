@@ -445,7 +445,7 @@ class OptsMagic(Magics):
         return options
 
     @classmethod
-    def register_custom_spec(cls, spec, obj):
+    def register_custom_spec(cls, spec, cellmagic):
         ids = Store.custom_options.keys()
         max_id = max(ids) if len(ids)>0 else -1
         options = OptionTree(items=Store.options.data.items(),
@@ -453,10 +453,12 @@ class OptsMagic(Magics):
         custom_tree = cls.customize_tree(spec, options)
         if custom_tree is not None:
             Store.custom_options[max_id+1] = custom_tree
+        if cellmagic:
             cls.next_id = max_id+1
             cls.applied_keys += spec.keys()
         else:
             cls.next_id = None
+            cls.applied_keys = []
 
     @classmethod
     def expand_compositor_keys(cls, spec):
@@ -513,7 +515,7 @@ class OptsMagic(Magics):
             display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
             return
 
-        self.register_custom_spec(spec, None)
+        self.register_custom_spec(spec, cell is not None)
         if cell:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
