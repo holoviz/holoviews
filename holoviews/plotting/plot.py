@@ -479,6 +479,7 @@ class GridPlot(CompositePlot):
             layout_axis.set_ylabel(str(layout.key_dimensions[1]))
 
         # Compute and set x- and y-ticks
+        dims = layout.key_dimensions
         keys = layout.keys()
         if layout.ndims == 1:
             dim1_keys = keys
@@ -486,22 +487,38 @@ class GridPlot(CompositePlot):
             layout_axis.get_yaxis().set_visible(False)
         else:
             dim1_keys, dim2_keys = zip(*keys)
-            layout_axis.set_ylabel(str(layout.key_dimensions[1]))
+            layout_axis.set_ylabel(str(dims[1]))
             layout_axis.set_aspect(float(self.rows)/self.cols)
+
+        # Process ticks
         plot_width = 1.0 / self.cols
         xticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
         plot_height = 1.0 / self.rows
         yticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
         layout_axis.set_xticks(xticks)
-        layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys))))
+        layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys)), dims[0]))
+        for tick in layout_axis.get_xticklabels():
+            tick.set_rotation(self.xrotation)
         layout_axis.set_yticks(yticks)
-        layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys))))
+        ydim = dims[1] if layout.ndims > 1 else None
+        layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
+        for tick in layout_axis.get_yticklabels():
+            tick.set_rotation(self.yrotation)
 
         return layout_axis
 
 
-    def _process_ticklabels(self, labels):
-        return [k if isinstance(k, str) else self.tick_format % k for k in labels]
+    def _process_ticklabels(self, labels, dim):
+        formatted_labels = []
+        for k in labels:
+            if dim and dim.formatter:
+                k = dim.formatter(k)
+            elif not isinstance(k, (str, type(None))):
+                k = self.tick_format % k
+            elif k is None:
+                k = ''
+            formatted_labels.append(k)
+        return formatted_labels
 
 
     def _adjust_subplots(self, axis, subaxes):

@@ -157,7 +157,11 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
         self.zorder = 0
         self.overlaid = False
         self.map = {}
-        xkeys, ykeys = zip(*layout.data.keys())
+        if layout.ndims > 1:
+            xkeys, ykeys = zip(*layout.data.keys())
+        else:
+            xkeys = layout.keys()
+            ykeys = [None]
         self._xkeys = sorted(set(xkeys))
         self._ykeys = sorted(set(ykeys))
         self._xticks, self._yticks = [], []
@@ -185,7 +189,10 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             w = widths[xidx]
             for yidx, ykey in enumerate(self._ykeys):
                 h = heights[yidx]
-                vmap = self.layout.get((xkey, ykey), None)
+                if self.layout.ndims > 1:
+                    vmap = self.layout.get((xkey, ykey), None)
+                else:
+                    vmap = self.layout.get(xkey, None)
                 pane = vmap.get(key, None) if vmap else None
                 if pane:
                     if issubclass(vmap.type, CompositeOverlay): pane = pane.values()[-1]
@@ -208,13 +215,17 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
             x += w + b_w
             self._xticks.append(x-b_w-w/2.)
 
+        grid_dims = self.layout.key_dimensions
+        ydim = grid_dims[1] if self.layout.ndims > 1 else None
+        xticks = (self._xticks, self._process_ticklabels(self._xkeys, grid_dims[0]))
+        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
+        ylabel = str(self.layout.key_dimensions[1]) if self.layout.ndims > 1 else ''
 
         return self._finalize_axis(key, ranges=ranges,
                                    title=self._format_title(key),
-                                   xticks=(self._xticks, self._process_ticklabels(self._xkeys)),
-                                   yticks=(self._yticks, self._process_ticklabels(self._ykeys)),
+                                   xticks=xticks, yticks=yticks,
                                    xlabel=str(self.layout.get_dimension(0)),
-                                   ylabel=str(self.layout.get_dimension(1)))
+                                   ylabel=ylabel)
 
 
     def update_frame(self, key, ranges=None):
@@ -235,8 +246,13 @@ class MatrixGridPlot(GridPlot, OverlayPlot):
 
 
     def _compute_borders(self):
-        width_extents = [self.layout[xkey, :].extents for xkey in self._xkeys]
-        height_extents = [self.layout[:, ykey].extents for ykey in self._ykeys]
+        ndims = self.layout.ndims
+        width_extents = [self.layout[(xkey, slice()) if ndims > 1 else xkey].extents
+                         for xkey in self._xkeys]
+        if ndims > 1:
+            height_extents = [self.layout[:, ykey].extents for ykey in self._ykeys]
+        else:
+            height_extents = [self.layout[self._xkeys[0]].extents]
         widths = [extent[2]-extent[0] for extent in width_extents]
         heights = [extent[3]-extent[1] for extent in height_extents]
         width, height = np.sum(widths), np.sum(heights)
