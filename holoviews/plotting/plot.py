@@ -377,6 +377,12 @@ class GridPlot(CompositePlot):
     tick_format = param.String(default="%.2f", doc="""
         Formatting string for the GridPlot ticklabels.""")
 
+    xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
+    yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
     def __init__(self, layout, ranges=None, keys=None, dimensions=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")

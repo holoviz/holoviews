@@ -54,12 +54,14 @@ class ElementPlot(Plot):
     xticks = param.Integer(default=5, doc="""
         Number of ticks along the x-axis.""")
 
-    xrotation = param.Integer(default=0, bounds=(0, 360))
+    xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
 
     yticks = param.Integer(default=5, doc="""
         Number of ticks along the y-axis.""")
 
-    yrotation = param.Integer(default=0, bounds=(0, 360))
+    yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
