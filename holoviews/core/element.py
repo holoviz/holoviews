@@ -343,8 +343,8 @@ class HoloMap(UniformNdMapping):
                     item_maps[key].append((k, el))
 
         maps, keys = [], []
-        for k in item_maps.keys():
-            maps.append(self.clone(item_maps[k]))
+        for k, layermap in item_maps.items():
+            maps.append(self.clone(layermap))
             keys.append(k)
         return keys, maps
 
@@ -594,25 +594,27 @@ class Collator(NdMapping):
 
         num_elements = len(self)
         for idx, (key, data) in enumerate(self.data.items()):
-           attrtree = self._process_data(data).filter(path_filters)
+            if isinstance(data, AttrTree):
+                data = data.filter(path_filters)
+            data = self._process_data(data)
 
-           if merge:
-              dim_keys = zip(self._cached_index_names, key)
-              varying_keys = [(d, k) for d, k in dim_keys
-                              if d not in constant_dims]
-              constant_keys = [(d, k) for d, k in dim_keys
-                               if d in constant_dims]
-              attrtree = self._add_dimensions(attrtree, varying_keys,
-                                              dict(constant_keys))
-           ndmapping[key] = attrtree
-           if self.progress_bar is not None:
-               self.progress_bar(float(idx+1)/num_elements*100)
+            if merge:
+                dim_keys = zip(self._cached_index_names, key)
+                varying_keys = [(d, k) for d, k in dim_keys
+                                if d not in constant_dims]
+                constant_keys = [(d, k) for d, k in dim_keys
+                                 if d in constant_dims]
+                data = self._add_dimensions(data, varying_keys,
+                                            dict(constant_keys))
+            ndmapping[key] = data
+            if self.progress_bar is not None:
+                self.progress_bar(float(idx+1)/num_elements*100)
 
         if merge:
-            trees = ndmapping.values()
-            accumulator = Layout(trees[0].data)
-            for tree in trees:
-                accumulator.update(tree)
+            components = ndmapping.values()
+            accumulator = ndmapping.last.clone(components[0].data)
+            for component in components:
+                accumulator.update(component)
             return accumulator
         return ndmapping
 
@@ -633,7 +635,7 @@ class Collator(NdMapping):
         """
         Recursively descend through an Layout and NdMapping objects
         in order to add the supplied dimension values to all contained
-        UniformNdMapping objects.
+        HoloMaps.
         """
         if isinstance(item, Layout):
             item.fixed = False
@@ -646,10 +648,13 @@ class Collator(NdMapping):
             new_item = item.clone(shared_data=False,
                                   constant_dimensions=constant_keys)
         for k, v in item.items():
-            if isinstance(v, UniformNdMapping):
+            if isinstance(v, HoloMap):
                 for dim, val in dim_vals:
                     if dim not in [d.name for d in v.key_dimensions]:
                         v = v.add_dimension(dim, 0, val)
+                    else:
+                        raise ValueError("Items already contain dimensions %s "
+                                         "and cannot be collated.")
                 new_item[k] = v
             elif isinstance(v, ViewableElement):
                 new_item[k] = HoloMap({key: v}, key_dimensions=dimensions,
