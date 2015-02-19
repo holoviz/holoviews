@@ -22,7 +22,7 @@ class Overlayable(object):
     """
 
     def __mul__(self, other):
-        if isinstance(other, UniformNdMapping):
+        if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
 
