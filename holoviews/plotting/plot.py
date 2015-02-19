@@ -655,7 +655,9 @@ class LayoutPlot(CompositePlot):
 
     def __init__(self, layout, **params):
         if not isinstance(layout, (NdLayout, Layout)):
-            raise Exception("LayoutPlot only accepts Layout objects.")
+            raise ValueError("LayoutPlot only accepts Layout objects.")
+        if len(layout.values()) == 0:
+            raise ValueError("Cannot display empty layout")
 
         self.layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         self.subplots = {}
