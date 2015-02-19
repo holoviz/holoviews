@@ -884,8 +884,8 @@ class LayoutPlot(CompositePlot):
                                   (not isinstance(x, Element)) else False
                 all_raster = all(view.traverse(raster_fn))
                 if all_raster:
-                    from .raster import MatrixGridPlot
-                    plot_type = MatrixGridPlot
+                    from .raster import RasterGridPlot
+                    plot_type = RasterGridPlot
                 else:
                     plot_type = GridPlot
             else:

@@ -128,16 +128,16 @@ class MatrixPlot(ElementPlot):
 
 
 
-class MatrixGridPlot(GridPlot, OverlayPlot):
+class RasterGridPlot(GridPlot, OverlayPlot):
     """
-    MatrixGridPlot evenly spaces out plots of individual projections on
+    RasterGridPlot evenly spaces out plots of individual projections on
     a grid, even when they differ in size. Since this class uses a single
     axis to generate all the individual plots it is much faster than the
     equivalent using subplots.
     """
 
     aspect = param.Parameter(default='auto', doc="""
-        Aspect ratios on MatrixGridPlot should be automatically determined.""")
+        Aspect ratios on RasterGridPlot should be automatically determined.""")
 
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")

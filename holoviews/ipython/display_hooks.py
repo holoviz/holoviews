@@ -27,7 +27,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import LayoutPlot, GridPlot, MatrixGridPlot, Plot
+from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot
 from .magics import ViewMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
@@ -284,7 +284,7 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
     raster_fn = lambda x: True if isinstance(x, Raster) else False
     all_raster = all(grid.traverse(raster_fn, [Element]))
     if all_raster:
-        plot_type = MatrixGridPlot
+        plot_type = RasterGridPlot
     else:
         plot_type = GridPlot
     gridplot = plot_type(grid, **opts(grid, grid_size))
