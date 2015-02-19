@@ -12,7 +12,7 @@ from ..core import OrderedDict, ViewableElement, HoloMap, \
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, valid_identifier
-from ..element.raster import Raster
+from ..element import Raster, Table
 
 
 class Plot(param.Parameterized):
@@ -106,7 +106,8 @@ class Plot(param.Parameterized):
         over the whole animation) and finally compute the dimension
         ranges in each group. The new set of ranges is returned.
         """
-        if obj is None or not self.normalize:
+        all_table = all(isinstance(el, Table) for el in obj.traverse(lambda x: x, [Element]))
+        if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
         ranges = {} if ranges is None else dict(ranges)
