@@ -720,6 +720,7 @@ class GridSpace(UniformNdMapping):
         Transforms indices by snapping to the closest value if
         values are numeric, otherwise applies no transformation.
         """
+        ndims = self.ndims
         if all(not isinstance(el, slice) for el in key):
             dim_inds = []
             for dim in self._cached_index_names:
@@ -730,9 +731,9 @@ class GridSpace(UniformNdMapping):
                             if i not in dim_inds)
             num_keys = []
             if len(dim_inds):
-                keys = list({tuple(k[i] for i in dim_inds)
+                keys = list({tuple(k[i] if ndims > 1 else k for i in dim_inds)
                              for k in self.keys()})
-                q = np.array([tuple(key[i] for i in dim_inds)])
+                q = np.array([tuple(key[i] if ndims > 1 else key for i in dim_inds)])
                 idx = np.argmin([np.inner(q - np.array(x), q - np.array(x))
                                  if len(dim_inds) == 2 else np.abs(q-x)
                                      for x in keys])
