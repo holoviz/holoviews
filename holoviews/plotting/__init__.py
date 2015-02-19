@@ -93,6 +93,8 @@ Store.options.RGB = Options('style', interpolation='nearest')
 Store.options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
                                               'axes.titlesize': 'small'})
 # Annotations
+Store.options.VLine = Options('style', color=Cycle())
+Store.options.HLine = Options('style', color=Cycle())
 Store.options.Spline = Options('style', lw=2)
 Store.options.Text = Options('style', fontsize=13)
 Store.options.Arrow = Options('style', color='k', lw=2, fontsize=13)
