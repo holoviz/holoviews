@@ -309,8 +309,13 @@ class ElementPlot(Plot):
         """
         view = self._get_frame(key)
         axis = self.handles['axis']
-        axis.set_visible(view is not None)
-        if view is None: return
+        axis.set_visible(view is not None or self.overlaid)
+        for hname, handle in self.handles.items():
+            hideable = hasattr(handle, 'set_visible')
+            if hname not in ['axis', 'fig'] and hideable:
+                handle.set_visible(view is not None)
+        if view is None:
+            return
         if self.normalize:
             ranges = self.compute_ranges(self.map, key, ranges)
             ranges = self.match_range(view, ranges)
