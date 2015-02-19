@@ -12,11 +12,16 @@ from .tabular import Table
 
 class Raster(Element2D):
     """
-    Raster is a basic 2D atomic Element type.
+    Raster is a basic 2D element type for presenting numpy arrays as
+    two dimensional raster images.
 
-    Arrays with a shape of (N,M) are valid inputs for Raster wheras
-    subclasses of Raster (e.g. RGB) may also accept 3D arrays
-    containing channel information.
+     Arrays with a shape of (N,M) are valid inputs for Raster wheras
+     subclasses of Raster (e.g. RGB) may also accept 3D arrays
+     containing channel information.
+
+    Raster does not support slicing like the Image or RGB subclasses
+    and the extents are in matrix coordinates if not explicitly
+    specified.
     """
 
     key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
@@ -29,7 +34,10 @@ class Raster(Element2D):
     value_dimensions = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
 
-    def __init__(self, data, extents=(0, 0, 1, 1), **params):
+    def __init__(self, data, extents=None, **params):
+        if extents is None:
+            (d1, d2) = data.shape[:2]
+            extents = (0,0, d2, d1)
         super(Raster, self).__init__(data, extents=extents, **params)
 
 
@@ -199,8 +207,13 @@ class HeatMap(Raster):
     value = param.String(default='HeatMap')
 
     def __init__(self, data, **params):
+        if 'extents' in params:
+            raise KeyError("HeatMap only supports fixed extents of unit size.")
+
         self._data, array, dimensions = self._process_data(data, params)
-        super(HeatMap, self).__init__(array, **dict(params, **dimensions))
+        super(HeatMap, self).__init__(array,
+                                      extents=(0,0,1,1),
+                                      **dict(params, **dimensions))
 
 
     def _process_data(self, data, params):
