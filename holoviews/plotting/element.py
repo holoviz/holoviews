@@ -194,6 +194,12 @@ class ElementPlot(Plot):
                             l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
                         if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
                         if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
+                xdim = view.get_dimension(0)
+                if xdim.formatter:
+                    axis.xaxis.set_major_formatter(xdim.formatter)
+                ydim = view.get_dimension(1)
+                if ydim.formatter:
+                    axis.xaxis.set_major_formatter(ydim.formatter)
 
             if not self.overlaid and not isinstance(self, OverlayPlot):
                 legend = axis.get_legend()
@@ -253,7 +259,7 @@ class ElementPlot(Plot):
                 axis.set_xticklabels(xticks[1])
             elif self.logx:
                 log_locator = ticker.LogLocator(numticks=self.xticks,
-                                            subs=range(1,10))
+                                                subs=range(1,10))
                 axis.xaxis.set_major_locator(log_locator)
             else:
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
