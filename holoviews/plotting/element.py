@@ -317,7 +317,12 @@ class ElementPlot(Plot):
         """
         view = self._get_frame(key)
         axis = self.handles['axis']
-        axis.set_visible(view is not None or self.overlaid)
+
+        axes_visible = view is not None or self.overlaid
+        axis.xaxis.set_visible(axes_visible)
+        axis.yaxis.set_visible(axes_visible)
+        axis.patch.set_alpha(int(axes_visible))
+
         for hname, handle in self.handles.items():
             hideable = hasattr(handle, 'set_visible')
             if hname not in ['axis', 'fig'] and hideable:
