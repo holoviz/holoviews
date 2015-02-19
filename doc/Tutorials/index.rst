@@ -5,20 +5,24 @@ holoviews Tutorials
 The best way to learn what Holoviews can do and how to use it is to
 study the HoloViews tutorials:
 
-* `Showcase: <http://ioam.github.com/media/holoviews/HoloViews_Showcase.html>`_  
+* `Homepage: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/Homepage.ipynb>`_  
+  Images to go on the HoloViews home page.
+
+* `Showcase: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/HoloViews_Showcase.ipynb>`_  
   What HoloViews can do for you and your data.
 
-* `Introduction: <http://ioam.github.com/media/holoviews/HoloViews_Tutorial.html>`_
+* `Introduction: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/HoloViews_Introduction.ipynb>`_
   How to use HoloViews -- basic concepts and getting started.
 
 * `HoloMap:: <http://ioam.github.com/media/holoviews/HoloMap_introduction>`_
   Introduction to the data structure that flexibly holds all your data
-  ready for selecting, sampling, slicing, viewing, and combining.
+  ready for selecting, sampling, slicing, viewing, and
+  combining. (Coming soon!)
 
 * `Advanced HoloMap: <http://ioam.github.com/media/holoviews/HoloMap_introduction>`_
-  Advanced applications of HoloMap for experienced users.
+  Advanced applications of HoloMap for experienced users. (Coming soon!)
 
-* `Components: <http://ioam.github.com/media/holoviews/HoloViews_Components.html>`_
+* `Components: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/HoloViews_Components.ipynb>`_
   Examples of all the major HoloViews components and their usage.
 
 
