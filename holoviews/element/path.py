@@ -99,17 +99,37 @@ class Contours(Path):
 
 class Box(Path):
     """
-    Draw a centered box of a given dimension or an arbitrary
-    rectangle with the specified (left, bottom, right, top)
-    coordinates.
+    Draw a centered box of a given width at the given position with
+    the specified aspect ratio (if any).
     """
 
-    def __init__(self, width, height=None, x=0, y=0, **params):
-        if height is None: height = width
+    def __init__(self, x, y, width,  aspect=1.0, **params):
+        height = width * aspect
         (l,b,r,t) = (x-width/2.0, y-height/2, x+width/2.0, y+height/2)
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         super(Box, self).__init__([box], **params)
 
+
+class Ellipse(Path):
+    """
+    Draw an axis-aligned ellipse at the specified x,y position with
+    the given radius and aspect. By default draws an elipse with an
+    aspect of 2.
+
+    Note that as a subclass of Path, internally an Ellipse is a
+    sequency of (x,y) sample positions. Ellipse could also be
+    implemented as an annotation that uses a more appropriate
+    matplotlib artist.
+    """
+
+    def __init__(self, x, y, diameter, aspect=2, samples=100, **params):
+
+        angles = np.linspace(0, 2*np.pi, samples)
+        radius = diameter / 2.0
+        ellipse = np.array(
+            list(zip(radius*np.sin(angles)+x,
+                     radius*aspect*np.cos(angles)+y)))
+        super(Ellipse, self).__init__([ellipse], **params)
 
 
 class Bounds(Path):
@@ -127,25 +147,3 @@ class Bounds(Path):
         (l,b,r,t) = data
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         super(Bounds, self).__init__([box], **params)
-
-
-
-class Ellipse(Path):
-    """
-    Draw an axis-aligned ellipse at the specified x,y position with
-    the given radius and aspect. By default draws an elipse with an
-    aspect of 2.
-
-    Note that as a subclass of Path, internally an Ellipse is a
-    sequency of (x,y) sample positions. Ellipse could also be
-    implemented as an annotation that uses a more appropriate
-    matplotlib artist.
-    """
-
-    def __init__(self, x, y, radius, aspect=2, samples=100, **params):
-
-        angles = np.linspace(0, 2*np.pi, samples)
-        ellipse = np.array(
-            list(zip(radius*np.sin(angles)+x,
-                     radius*aspect*np.cos(angles)+y)))
-        super(Ellipse, self).__init__([ellipse], **params)
