@@ -7,7 +7,7 @@ import param
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ..core.util import valid_identifier, find_minmax
-from ..element import Annotation
+from ..element import Annotation, Table
 from ..operation import Compositor
 from .plot import Plot
 
@@ -197,10 +197,10 @@ class ElementPlot(Plot):
                         if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
                         if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
                 xdim = view.get_dimension(0)
-                if xdim.formatter:
+                if xdim.formatter and not isinstance(view, Table):
                     axis.xaxis.set_major_formatter(xdim.formatter)
                 ydim = view.get_dimension(1)
-                if ydim.formatter:
+                if ydim.formatter and not isinstance(view, Table):
                     axis.xaxis.set_major_formatter(ydim.formatter)
 
             if not self.overlaid and not isinstance(self, OverlayPlot):
