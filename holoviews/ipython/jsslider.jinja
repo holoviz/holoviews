@@ -61,20 +61,20 @@
 </script>
 
 <div class="animation row row-fluid" style="display: table; table-layout: fixed; height:50%;">
-    <div class="span8 col-xs-8" style="display: table-cell; float:None; vertical-align: middle;">
+    <div class="span9 col-xs-9" style="display: table-cell; float:None; vertical-align: middle;">
        	<div style="margin:auto auto; width:80%">
              <div id="_anim_img{{ id }}"></div>
 	</div>
     </div>
-    <div class="span4 col-xs-4" style="display: table-cell; float:None; vertical-align: middle;">
+    <div class="span4 col-xs-3" style="display: table-cell; float:None; vertical-align: middle;">
         {% for widget_data in widgets %}
 	<div class="control-group">
         {% if widget_data['type'] == 'slider' %}
             <div class="row" style="display: table;">
-                <div class="span8 col-xs-8" for="textInput{{ id }}_{{ widget_data['dim'] }}" style="display: table-cell; float:None; vertical-align: middle;">
+                <div class="span6 col-xs-6" for="textInput{{ id }}_{{ widget_data['dim'] }}" style="display: table-cell; float:None; vertical-align: middle;">
                     <strong>{{ widget_data['dim'] }}:</strong>
                 </div>
-                <div class="span4 col-xs-4" style="display: table-cell; float:None; vertical-align: middle;">
+                <div class="span6 col-xs-6" style="display: table-cell; float:None; vertical-align: middle;">
                     <input type="text" class="form-control input-medium" id="textInput{{ id }}_{{ widget_data['dim'] }}" value="" disabled>
                 </div>
             </div>
@@ -174,10 +174,10 @@
         </script>
         {% elif widget_data['type']=='dropdown' %}
         <div class="row" style="display: table;">
-            <div class="span8 col-xs-8" style="display: table-cell; float:None; vertical-align: middle;">
+            <div class="span6 col-xs-6" style="display: table-cell; float:None; vertical-align: middle;">
                 <strong>{{ widget_data['dim'] }}:</strong>
             </div>
-            <div class="span4 col-xs-4" style="display: table-cell; float:None; vertical-align: middle;">
+            <div class="span6 col-xs-6" style="display: table-cell; float:None; vertical-align: middle;">
                 <select name="select-choice-min" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" >
                 </select>
             </div>
