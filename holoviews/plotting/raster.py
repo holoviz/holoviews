@@ -242,9 +242,12 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             else:
                 plot.set_visible(False)
 
+        xdim = self.layout.key_dimensions[0]
+        ydim = self.layout.key_dimensions[1] if self.layout.ndims > 1 else None
+
         self._finalize_axis(key, ranges=ranges, title=self._format_title(key),
-                            xticks=(self._xticks, self._process_ticklabels(self._xkeys)),
-                            yticks=(self._yticks, self._process_ticklabels(self._ykeys)),)
+                            xticks=(self._xticks, self._process_ticklabels(self._xkeys, xdim)),
+                            yticks=(self._yticks, self._process_ticklabels(self._ykeys, ydim)))
 
 
     def _compute_borders(self):
