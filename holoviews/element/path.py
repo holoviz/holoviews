@@ -113,8 +113,8 @@ class Box(Path):
 class Ellipse(Path):
     """
     Draw an axis-aligned ellipse at the specified x,y position with
-    the given radius and aspect. By default draws an elipse with an
-    aspect of 2.
+    the given width and aspect ratio. By default draws a circle
+    (aspect=1).
 
     Note that as a subclass of Path, internally an Ellipse is a
     sequency of (x,y) sample positions. Ellipse could also be
@@ -122,10 +122,10 @@ class Ellipse(Path):
     matplotlib artist.
     """
 
-    def __init__(self, x, y, diameter, aspect=2, samples=100, **params):
+    def __init__(self, x, y, width, aspect=1, samples=100, **params):
 
         angles = np.linspace(0, 2*np.pi, samples)
-        radius = diameter / 2.0
+        radius = width / 2.0
         ellipse = np.array(
             list(zip(radius*np.sin(angles)+x,
                      radius*aspect*np.cos(angles)+y)))
