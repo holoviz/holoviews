@@ -48,8 +48,8 @@ class ItemTable(Element):
         else:
             data = OrderedDict(list(data)) # Python 3
 
-        str_keys=dict((k.name if isinstance(k, Dimension)
-                       else k ,v) for (k,v) in data.items())
+        str_keys = OrderedDict((k.name if isinstance(k, Dimension)
+                                else k ,v) for (k,v) in data.items())
         params = dict(params, value_dimensions=list(data.keys()))
         super(ItemTable, self).__init__(str_keys, **params)
 
