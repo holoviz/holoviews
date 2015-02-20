@@ -42,8 +42,8 @@ class VLine(Annotation):
 
     value = param.String(default='VLine')
 
-    def __init__(self, position, **params):
-        super(VLine, self).__init__(position, **params)
+    def __init__(self, x, **params):
+        super(VLine, self).__init__(x, **params)
 
 
 
@@ -52,8 +52,8 @@ class HLine(Annotation):
 
     value = param.String(default='HLine')
 
-    def __init__(self, position, **params):
-        super(HLine, self).__init__(position, **params)
+    def __init__(self, y, **params):
+        super(HLine, self).__init__(y, **params)
 
 
 
