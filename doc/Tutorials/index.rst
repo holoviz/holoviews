@@ -8,7 +8,7 @@ study the HoloViews tutorials:
 * `Homepage: <http://nbviewer.ipython.org/url/homepages.inf.ed.ac.uk/jbednar/holoviews/Homepage.ipynb>`_
   Images to go on the HoloViews home page.
 
-* `Showcase: <http://http://ioam.github.io/holoviews/Tutorials/Showcase.html>`_
+* `Showcase: <http://ioam.github.io/holoviews/Tutorials/Showcase.html>`_
   What HoloViews can do for you and your data.
 
 * `Introduction: <http://ioam.github.io/holoviews/Tutorials/Introduction.html>`_
