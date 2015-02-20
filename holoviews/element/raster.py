@@ -87,7 +87,8 @@ class Raster(Element2D):
         if isinstance(samples, tuple):
             X, Y = samples
             samples = zip(X, Y)
-        params = dict(self.get_param_values(onlychanged=True))
+        params = dict(self.get_param_values(onlychanged=True),
+                      value_dimensions=self.value_dimensions)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
