@@ -1,3 +1,4 @@
+import time
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
 except:
@@ -528,7 +529,63 @@ class OptsMagic(Magics):
         OptsMagic.error_message = None
 
 
+
+@magics_class
+class TimerMagic(Magics):
+    """
+    A line magic for measuring the execution time of multiple cells.
+
+    After you start/reset the timer with '%timer start' you may view
+    elapsed time with any subsequent calls to %timer.
+    """
+
+    start_time = None
+
+    @staticmethod
+    def elapsed_time():
+        elapsed = time.time() -  TimerMagic.start_time
+        minutes = elapsed // 60
+        hours = minutes // 60
+        seconds = elapsed % 60
+        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes, seconds)
+
+    @classmethod
+    def option_completer(cls, k,v):
+        return ['start']
+
+    @line_magic
+    def timer(self, line=''):
+        """
+        Timer magic to print initial date/time information and
+        subsequent elapsed time intervals.
+
+        To start the timer, run:
+
+        %timer start
+
+        This will print the start date and time.
+
+        Subsequent calls to %timer will print the elapsed time
+        relative to the time when %timer start was called. Subsequent
+        calls to %timer start may also be used to reset the timer.
+        """
+
+        if line.strip() not in ['', 'start']:
+            print("Invalid argument to %timer. For more information consult %timer?")
+            return
+        elif line.strip() == 'start':
+            TimerMagic.start_time = time.time()
+            timestamp = time.strftime("%Y/%m/%d %H:%M:%S")
+            print("Timer start: %s" % timestamp)
+            return
+        elif self.start_time is None:
+            print("Please start timer with %timer start. For more information consult %timer?")
+        else:
+            print(self.elapsed_time())
+
+
 def load_magics(ip):
+    ip.register_magics(TimerMagic)
     ip.register_magics(ViewMagic)
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
@@ -539,6 +596,7 @@ def load_magics(ip):
 
 
     # Configuring tab completion
+    ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
 
     ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
