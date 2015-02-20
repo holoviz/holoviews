@@ -102,6 +102,7 @@ class RasterPlot(ElementPlot):
         for plot_coord, coord in zip(plot_coords, coords):
             val = view._data.get(coord, np.NaN)
             text = round(val[0] if isinstance(val, tuple) else val, 3)
+            text = '' if val is np.nan else text
             if plot_coord not in self.handles['annotations']:
                 annotation = axis.annotate(text, xy=plot_coord,
                                            xycoords='axes fraction',
