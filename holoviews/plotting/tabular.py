@@ -1,3 +1,4 @@
+from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 
@@ -5,7 +6,6 @@ import param
 
 from ..element import ItemTable, Table
 from .element import ElementPlot
-from .plot import Plot
 from ..core.options import Store
 
 
@@ -46,6 +46,36 @@ class TablePlot(ElementPlot):
     # Disable computing plot bounds from data.
     apply_databounds = False
 
+    def __init__(self, table, **params):
+        super(TablePlot, self).__init__(table, **params)
+        self.cell_values = self._format_table()
+
+
+    def _format_table(self):
+        cell_values = defaultdict(dict)
+        for key in self.keys:
+            frame = self._get_frame(key)
+            if frame is None:
+                continue
+
+            # Mapping from the cell coordinates to the dictionary key.
+            summarize = frame.rows > self.max_rows
+            half_rows = self.max_rows/2
+            rows = min([self.max_rows, frame.rows])
+            for row in range(rows):
+                adjusted_row = row
+                for col in range(frame.cols):
+                    if summarize and row == half_rows:
+                        cell_text = "..."
+                    else:
+                        if summarize and row > half_rows:
+                            adjusted_row = (frame.rows - self.max_rows + row)
+                        value = frame.cell_value(adjusted_row, col)
+                        cell_text = self.pprint_value(value)
+                    cell_values[key][(row, col)] = cell_text
+        return cell_values
+
+
     def pprint_value(self, value):
         """
         Generate the pretty printed representation of a value for
@@ -64,7 +94,7 @@ class TablePlot(ElementPlot):
 
 
     def __call__(self, ranges=None):
-        tableview = self.map.last
+        element = self.map.last
         axis = self.handles['axis']
 
         axis.set_axis_off()
@@ -72,26 +102,21 @@ class TablePlot(ElementPlot):
         table = mpl_Table(axis, bbox=[self.border, self.border,
                                       size_factor, size_factor])
 
-        width = size_factor / tableview.cols
-        height = size_factor / tableview.rows
+        width = size_factor / element.cols
+        height = size_factor / element.rows
 
-        # Mapping from the cell coordinates to the dictionary key.
-        summarize = tableview.rows > self.max_rows
+        summarize = element.rows > self.max_rows
         half_rows = self.max_rows/2
-        rows = min([self.max_rows, tableview.rows])
+        rows = min([self.max_rows, element.rows])
         for row in range(rows):
             adjusted_row = row
-            for col in range(tableview.cols):
-                if summarize and row == half_rows:
-                    cell_text = "..."
-                else:
-                    if summarize and row > half_rows:
-                        adjusted_row = (tableview.rows - self.max_rows + row)
-                    value = tableview.cell_value(adjusted_row, col)
-                    cell_text = self.pprint_value(value)
-                cellfont = self.font_types.get(tableview.cell_type(adjusted_row,col), None)
+            for col in range(element.cols):
+                if summarize and row > half_rows:
+                    adjusted_row = (element.rows - self.max_rows + row)
+                cell_value = self.cell_values[self.keys[-1]][(row, col)]
+                cellfont = self.font_types.get(element.cell_type(adjusted_row,col), None)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
-                table.add_cell(row, col, width, height, text=cell_text,  loc='center',
+                table.add_cell(row, col, width, height, text=cell_value,  loc='center',
                                **font_kwargs)
 
         table.set_fontsize(self.max_font_size)
@@ -107,8 +132,8 @@ class TablePlot(ElementPlot):
         table = self.handles['table']
 
         for coords, cell in table.get_celld().items():
-            value = view.cell_value(*coords)
-            cell.set_text_props(text=self.pprint_value(value))
+            value = self.cell_values[key][coords]
+            cell.set_text_props(text=value)
 
         # Resize fonts across table as necessary
         table.set_fontsize(self.max_font_size)
