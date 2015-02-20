@@ -328,8 +328,8 @@ class Image(SheetCoordinateSystem, Raster):
         data = np.array([[0]]) if data is None else data
         l, b, r, t = bounds.lbrt()
         (dim1, dim2) = data.shape[0], data.shape[1]
-        xdensity = xdensity if xdensity else dim1/(r-l)
-        ydensity = ydensity if ydensity else dim2/(t-b)
+        xdensity = xdensity if xdensity else dim1/float(r-l)
+        ydensity = ydensity if ydensity else dim2/float(t-b)
 
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         Element2D.__init__(self, data, extents=self.lbrt, bounds=bounds, **params)
