@@ -773,9 +773,11 @@ class GridSpace(UniformNdMapping):
         the elements by their X,Y position, either index the position
         directly or use the items() method.
         """
-
-        last_items = [(k, v.clone((list(v.keys())[-1], v.last)))
-                      for (k, v) in self.items()]
+        if self.type == HoloMap:
+            last_items = [(k, v.clone((list(v.keys())[-1], v.last)))
+                          for (k, v) in self.items()]
+        else:
+            last_items = self.data
         return self.clone(last_items)
 
 
