@@ -1,13 +1,9 @@
-.. holoviews documentation master file, created by
-   sphinx-quickstart on Wed May 14 14:25:57 2014.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
+.. holoviews documentation master file
 
 .. notebook:: holoviews index.ipynb
 
 ..
-   # Code used to generate mandlebrot.npy
+   # Code used to generate mandelbrot.npy
    from numpy import *
    import pylab
 
@@ -30,13 +26,16 @@
 Installation
 ____________
 
-holoviews requires `Param <http://ioam.github.com/param/>`_ and
-`Matplotlib <http://http://matplotlib.org/>`_, and is designed to work
-with `IPython Notebook <http://ipython.org/notebook/>`_.  Most
-scientists and engineers using Python will already have Matplotlib
-installed, and Param has no dependencies apart from the Python
-standard library, and so Holoviews should be very straightforward to
-add to any project.
+HoloViews requires `Param <http://ioam.github.com/param/>`_ and
+`Numpy <http://numpy.org>`_, neither of has any required dependencies,
+and so it should be very easy to integrate HoloViews into your
+workflow or as part of another project.
+
+For plotting, HoloViews requires `Matplotlib <http://http://matplotlib.org/>`_,
+which most scientists and engineers using Python will already have
+installed.  HoloViews is designed to work well with `IPython Notebook
+<http://ipython.org/notebook/>`_, although it can also be used
+separately. 
 
 Param, Matplotlib, and IPython Notebook can be installed using your
 operating system's package manager, or by using pip::
@@ -63,11 +62,12 @@ HoloViews is completely open source, available under a BSD license
 freely for both commercial and non-commercial use.  Contributions from
 users are welcome and encouraged.  In particular, HoloViews components
 can be combined in an infinite number of ways, and so it is impossible
-for us to test all conceivable combinations.  Thus we welcome bug
-reports, particularly if they come with pull requests showing how to
-fix the bug!
-
+for us to test all conceivable combinations.  Thus we welcome 
+`bug reports <https://github.com/ioam/holoviews/issues>`_,
+particularly if they come with 
+`pull requests <http://yangsu.github.io/pull-request-tutorial/>`_ 
+showing how to fix the bug!
 
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
-.. _Tutorials: Tutorials/
+
