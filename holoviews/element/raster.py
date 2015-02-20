@@ -438,6 +438,17 @@ class RGB(Image):
         If an alpha channel is supplied, the defined alpha_dimension
         is automatically appended to this list.""")
 
+    @property
+    def rgb(self):
+        """
+        Returns the corresponding RGB element.
+
+        Other than the updating parameter definitions, this is the
+        only change needed to implemented an arbitrary colorspace as a
+        subclass of RGB.
+        """
+        return self
+
 
     @classmethod
     def load_image(cls, filename, height=1, array=False):
