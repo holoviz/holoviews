@@ -454,8 +454,8 @@ class ScrubberWidget(NdWidget):
     # Javascript include options #
     ##############################
 
-    mpld3_url = '//mpld3.github.io/js/mpld3.v0.3git.js'
-    d3_url = '//cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
+    mpld3_url = 'https://mpld3.github.io/js/mpld3.v0.3git.js'
+    d3_url = 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
     def __init__(self, plot, **params):
         super(ScrubberWidget, self).__init__(plot, **params)
