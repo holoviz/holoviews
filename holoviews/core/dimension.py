@@ -10,7 +10,7 @@ import param
 
 from ..core.util import valid_identifier
 from .options import Store
-from pprint import PrettyPrinter
+from .pprint import PrettyPrinter
 
 
 class Dimension(param.Parameterized):
