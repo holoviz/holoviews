@@ -296,7 +296,7 @@ class HoloMap(UniformNdMapping):
         overlays items in the split out Maps.
         """
         dimensions = self._valid_dimensions(dimensions)
-        if self.ndims == 1:
+        if len(dimensions) == self.ndims:
             return NdOverlay(self, **kwargs)
         else:
             dims = [d for d in self._cached_index_names
@@ -310,7 +310,7 @@ class HoloMap(UniformNdMapping):
         Views along these axes in a GridSpace.
         """
         dimensions = self._valid_dimensions(dimensions)
-        if self.ndims == 1:
+        if len(dimensions) == self.ndims:
             return GridSpace(self, **kwargs)
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
@@ -321,7 +321,7 @@ class HoloMap(UniformNdMapping):
         Views along these axes in a GridSpace.
         """
         dimensions = self._valid_dimensions(dimensions)
-        if self.ndims == 1 and dimensions == self._cached_index_names:
+        if len(dimensions) == self.ndims:
             return NdLayout(self, **kwargs)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
