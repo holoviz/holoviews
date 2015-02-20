@@ -14,7 +14,7 @@ from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
 
 
-class MatrixPlot(ElementPlot):
+class RasterPlot(ElementPlot):
 
     normalize_individually = param.Boolean(default=False)
 
@@ -268,8 +268,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         return max([len(self.keys), 1])
 
 
-Store.defaults.update({Raster: MatrixPlot,
-                       HeatMap: MatrixPlot,
-                       Image: MatrixPlot,
-                       RGB: MatrixPlot})
+Store.defaults.update({Raster: RasterPlot,
+                       HeatMap: RasterPlot,
+                       Image: RasterPlot,
+                       RGB: RasterPlot})
 

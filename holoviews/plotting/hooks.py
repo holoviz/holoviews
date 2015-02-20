@@ -13,7 +13,7 @@ from ..core.options import Store
 from ..ipython.magics import ViewMagic
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
-from ..plotting import Plot, CurvePlot, PointPlot, OverlayPlot, MatrixPlot, HistogramPlot
+from ..plotting import Plot, CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot
 
 
 class PlottingHook(param.ParameterizedFunction):
@@ -221,7 +221,7 @@ class LegendPlugin(MplD3Plugin):
 
 if plugins is not None:
     OverlayPlot.finalize_hooks = [LegendPlugin]
-    MatrixPlot.finalize_hooks = [RasterPlugin]
+    RasterPlot.finalize_hooks = [RasterPlugin]
     CurvePlot.finalize_hooks = [CurvePlugin]
     PointPlot.finalize_hooks = [PointPlugin]
     HistogramPlot.finalize_hooks = [BarPlugin]
