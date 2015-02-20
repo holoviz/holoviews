@@ -1,7 +1,7 @@
 {% extends "!page.html" %}
 {# add our custom css and js #}
-{% set css_files = css_files + ["_static/custom.css"] %}
-{% set script_files = script_files + ["_static/custom.js"] %}
+{% set css_files = css_files + ["_static/custom.css", "static/bootstrap.css", "static/codehilite.css",  "static/ipython.min.css",] %}
+{% set script_files = script_files + ["_static/custom.js", "_static/require.js", "_static/bootstrap.js"] %}
 
 {% if 'Tutorial' in pagename %}
 {% set abs_path = "http://ioam.github.io/holoviews/" %}
