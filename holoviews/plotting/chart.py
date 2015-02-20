@@ -630,7 +630,7 @@ class VectorFieldPlot(ElementPlot):
         args = args + (colors,) if colorized else args
 
         if not self.arrow_heads:
-            kwargs['headlength'] = kwargs['headaxislength'] = 0
+            kwargs['headaxislength'] = 0
 
         if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
