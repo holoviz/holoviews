@@ -368,8 +368,6 @@ class Points(Chart):
             raise Exception("%s requires a minimum of %s columns."
                             % (self.__class__.__name__, self._min_dims))
 
-
-
     def __len__(self):
         return self.data.shape[0]
 
@@ -403,7 +401,7 @@ class VectorField(Points):
     A VectorField contains is a collection of vectors where each
     vector has an associated position in sheet coordinates.
 
-    The constructor of VectorField is the same as the constructor of
+    The constructor of VectorField is similar to the constructor of
     Points: the input data can be an NxM Numpy array where the first
     two columns corresponds to the X,Y coordinates in sheet
     coordinates, within the declared bounding region. As with Points,
@@ -411,7 +409,10 @@ class VectorField(Points):
     be cast to arrays (the tuple elements are joined column-wise).
 
     The third column maps to the vector angle which must be specified
-    in radians.
+    in radians. Note that it is possible to supply a collection which
+    isn't a numpy array, whereby each element of the collection is
+    assumed to be an iterable corresponding to a single column of the
+    NxM array.
 
     The visualization of any additional columns is decided by the
     plotting code. For instance, the fourth and fifth columns could
@@ -431,3 +432,10 @@ class VectorField(Points):
 
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns
+
+    def __init__(self, data, **params):
+        if not isinstance(data, np.ndarray):
+            data = np.array([
+                [el for el in (col.flat if isinstance(col,np.ndarray) else col)]
+                for col in data]).T
+        super(VectorField, self).__init__(data, **params)
