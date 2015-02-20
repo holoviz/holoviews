@@ -69,11 +69,11 @@ class CompositeOverlay(ViewableElement, Composable):
         return l, b, r, t
 
 
-    def hist(self, index=None, adjoin=True, **kwargs):
+    def hist(self, index=0, adjoin=True, **kwargs):
         valid_ind = isinstance(index, int) and (0 <= index < len(self))
         valid_label = index in [el.label for el in self]
-        if index is None or not any([valid_ind, valid_label]):
-            raise TypeError("Please supply a suitable index for the histogram data")
+        if not any([valid_ind, valid_label]):
+            raise TypeError("Please supply a suitable index or label for the histogram data")
 
         hist = self[index].hist(adjoin=False, **kwargs)
         if adjoin:
