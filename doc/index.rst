@@ -3,11 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-holoviews
-=========
-
-**Composable, declarative data structures for building even complex visualizations easily.**
-
 
 .. notebook:: imagen index.ipynb
 
