@@ -422,12 +422,12 @@ class TableConversion(object):
                             (invalid, new_type.__name__))
         group_dims = [dim for dim in self._table._cached_index_names if not dim in key_dimensions]
         selected = self._table.select(**{'value': value_dimensions})
-        params = dict(key_dimensions=[self._table.get_dimension(kd) for kd in key_dimensions],
-                      value_dimensions=[self._table.get_dimension(vd) for vd in value_dimensions],
-                      **kwargs)
+        params = dict({'key_dimensions': [self._table.get_dimension(kd) for kd in key_dimensions],
+                       'value_dimensions': [self._table.get_dimension(vd) for vd in value_dimensions]},
+                       **kwargs)
         if len(key_dimensions) == self._table.ndims:
             return new_type(selected, **params)
-        return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type)
+        return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type, **params)
 
     def bars(self, key_dimensions, value_dimensions, **kwargs):
         from .chart import Bars
