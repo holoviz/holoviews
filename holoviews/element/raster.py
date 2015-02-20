@@ -313,7 +313,7 @@ class Image(SheetCoordinateSystem, Raster):
 
     value = param.String(default='Image')
 
-    value_dimensions = param.List(default=[Dimension('Luminance')],
+    value_dimensions = param.List(default=[Dimension('z')],
                                   bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 

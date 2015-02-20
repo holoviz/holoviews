@@ -48,9 +48,9 @@ class Normalization(ElementOperation):
        dimensions to be normalized and the tuple ranges are of form
        (lower-bound, upper-bound). For instance, you could specify:
 
-       {'Luminance':(0,1), 'Height':(0, 200)}
+       {'Height':(0, 200), 'z':(0,1)}
 
-       In this case, any element with a 'Luminance' or 'Height'
+       In this case, any element with a 'Height' or 'z'
        dimension (or both) will be normalized to the supplied ranges.
 
        Finally, element-specific normalization may also be specified
@@ -63,7 +63,7 @@ class Normalization(ElementOperation):
       For instance, you could normalize only the Image elements of
       value pattern using:
 
-      {('Image','Pattern'):{'Luminance':(0,1), , 'Height':(0, 200)}})
+      {('Image','Pattern'):{'Height':(0, 200), 'z':(0,1)}})
 
 
       Key-wise normalization is possible for all these formats by
