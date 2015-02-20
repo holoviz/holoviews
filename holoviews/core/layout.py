@@ -338,6 +338,16 @@ class Layout(AttrTree, Dimensioned):
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
+    def clone(self, *args, **overrides):
+        """
+        Clone method for Layout matches Dimensioned.clone except the
+        display mode is also propagated.
+        """
+        clone = super(Layout, self).clone(*args, **overrides)
+        clone._display = self._display
+        return clone
+
+
     def cols(self, ncols):
         self._max_cols = ncols
         return self
