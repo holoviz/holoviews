@@ -1,6 +1,6 @@
 from itertools import product
 import numpy as np
-
+import colorsys
 import param
 
 from ..core import OrderedDict, Dimension, NdMapping, Element2D
@@ -510,3 +510,41 @@ class RGB(Image):
             return super(RGB, self).__getitem__(coords)
 
 
+class HSV(RGB):
+    """
+    Example of a commonly used color space subclassed from RGB used
+    for working in a HSV (hue, saturation and value) color space.
+    """
+
+    value = param.String(default='HSV')
+
+    alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
+                                          class_=Dimension, instantiate=False,  doc="""
+        The alpha dimension definition to add the value_dimensions if
+        an alpha channel is supplied.""")
+
+    value_dimensions = param.List(
+        default=[Dimension('H', range=(0,1), cyclic=True),
+                 Dimension('S',range=(0,1)),
+                 Dimension('V', range=(0,1))], bounds=(3, 4), doc="""
+        The dimension description of the data held in the array.
+
+        If an alpha channel is supplied, the defined alpha_dimension
+        is automatically appended to this list.""")
+
+    hsv_to_rgb = np.vectorize(colorsys.hsv_to_rgb)
+
+    @property
+    def rgb(self):
+        """
+        Conversion from HSV to RGB.
+        """
+        hsv = self.hsv_to_rgb(self.data[:,:,0],
+                              self.data[:,:,1],
+                              self.data[:,:,2])
+        if len(self.value_dimensions) == 4:
+            hsv += (self.data[:,:,3],)
+
+        return RGB(np.dstack(hsv), bounds=self.bounds,
+                   value=self.value,
+                   label=self.label)

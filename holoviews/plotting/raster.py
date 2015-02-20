@@ -9,7 +9,7 @@ import param
 from ..core.options import Store
 from ..core import CompositeOverlay
 from ..core import traversal
-from ..element.raster import HeatMap, Image, Raster, RGB
+from ..element.raster import HeatMap, Image, Raster, RGB, HSV
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
 
@@ -40,6 +40,8 @@ class RasterPlot(ElementPlot):
         clims = opts.pop('clims', None)
         if view.depth != 1:
             opts.pop('cmap', None)
+        if isinstance(view, RGB):
+            data = view.rgb.data
         elif isinstance(view, HeatMap):
             data = view.data
             data = np.ma.array(data, mask=np.isnan(data))
@@ -271,5 +273,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 Store.defaults.update({Raster: RasterPlot,
                        HeatMap: RasterPlot,
                        Image: RasterPlot,
-                       RGB: RasterPlot})
+                       RGB: RasterPlot,
+                       HSV: RasterPlot})
 
