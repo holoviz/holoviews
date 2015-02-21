@@ -83,7 +83,7 @@ Store.options.Histogram = Options('style', ec='k', fc=Cycle())
 Store.options.Points = Options('style', color=Cycle(), marker='o')
 Store.options.Scatter3D = Options('style', color=Cycle(), marker='o')
 # Rasters
-Store.options.Image = Options('style', cmap='gray', interpolation='nearest')
+Store.options.Image = Options('style', cmap='hot', interpolation='nearest')
 Store.options.Raster = Options('style', cmap='jet', interpolation='nearest')
 Store.options.HeatMap = Options('style', cmap='jet', interpolation='nearest')
 Store.options.HeatMap = Options('plot', xticks=20, yticks=20)
