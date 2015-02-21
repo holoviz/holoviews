@@ -286,10 +286,10 @@ class Comparison(ComparisonInterface):
         cls.compare_dimensioned(el1, el2)
 
         if len(el1) != len(el2):
-            raise cls.failureException("GridLayouts have different sizes.")
+            raise cls.failureException("Layouts have different sizes.")
 
         if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException("GridLayouts have different keys.")
+            raise cls.failureException("Layouts have different keys.")
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1,element2)

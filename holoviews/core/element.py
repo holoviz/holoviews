@@ -678,11 +678,12 @@ class Collator(NdMapping):
 
 class GridSpace(UniformNdMapping):
     """
-    Grids are distinct from GridLayouts as they ensure all contained elements
-    to be of the same type. Unlike GridLayouts, which have integer keys,
-    Grids usually have floating point keys, which correspond to a grid
-    sampling in some two-dimensional space. This two-dimensional space may
-    have to arbitrary dimensions, e.g. for 2D parameter spaces.
+    Grids are distinct from Layouts as they ensure all contained
+    elements to be of the same type. Unlike Layouts, which have
+    integer keys, Grids usually have floating point keys, which
+    correspond to a grid sampling in some two-dimensional space. This
+    two-dimensional space may have to arbitrary dimensions, e.g. for
+    2D parameter spaces.
     """
 
     # NOTE: If further composite types supporting Overlaying and Layout these
