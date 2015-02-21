@@ -290,20 +290,6 @@ class gradient(ElementOperation):
     value = param.String(default='Gradient', doc="""
     The value assigned to the output gradient matrix.""")
 
-
-    @classmethod
-    def wrap(cls, lower, upper, x):
-        """
-        Circularly alias the numeric value x into the range
-        [lower,upper). Corresponds to a function of the same name in
-        the ImaGen project.
-
-        Valid for cyclic quantities.
-        """
-        range_=upper-lower
-        return lower + np.fmod(x-lower + 2*range_*(1-np.floor(x/(2*range_))), range_)
-
-
     def _process(self, matrix, key=None):
 
         if len(matrix.value_dimensions) != 1:
@@ -320,8 +306,8 @@ class gradient(ElementOperation):
         cyclic_range = 1.0 if not matrix_dim.cyclic else matrix_dim.range
         if cyclic_range is not None: # Wrap into the specified range
             # Convert negative differences to an equivalent positive value
-            dx = self.wrap(0, cyclic_range, dx)
-            dy = self.wrap(0, cyclic_range, dy)
+            dx = dx % cyclic_range
+            dy = dy % cyclic_range
             #
             # Make it increase as gradient reaches the halfway point,
             # and decrease from there
