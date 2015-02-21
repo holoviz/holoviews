@@ -30,14 +30,14 @@ ____________
 HoloViews is compatible with Python 2 (2.7+) and Python 3.
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
-`Numpy <http://numpy.org>`_, neither of has any required dependencies,
+`Numpy <http://numpy.org>`_, neither of which has any required dependencies,
 and so it should be very easy to integrate HoloViews into your
 workflow or as part of another project.
 
 For plotting, HoloViews requires `Matplotlib <http://http://matplotlib.org/>`_,
 which most scientists and engineers using Python will already have
 installed.  HoloViews is designed to work well with `IPython Notebook
-<http://ipython.org/notebook/>`_ 1 and 2, although it can also be used
+<http://ipython.org/notebook/>`_ 2 and 3, although it can also be used
 separately. 
 
 Param, Matplotlib, and IPython Notebook can be installed using your
