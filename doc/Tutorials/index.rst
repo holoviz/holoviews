@@ -1,5 +1,5 @@
 *******************
-holoviews Tutorials
+HoloViews Tutorials
 *******************
 
 The HoloViews tutorials are the best way to learn what HoloViews can
