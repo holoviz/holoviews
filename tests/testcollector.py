@@ -8,12 +8,12 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.interface.collector import ViewRef
 
 
-class LayoutTreeTest(ComparisonTestCase):
+class LayoutTest(ComparisonTestCase):
 
     def setUp(self):
         self.fixed_error = ("No attribute 'Test' in this AttrTree,"
                             " and none can be added because fixed=True")
-        super(LayoutTreeTest, self).setUp()
+        super(LayoutTest, self).setUp()
 
     def test_viewgroup_init(self):
         Layout()

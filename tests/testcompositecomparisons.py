@@ -1,7 +1,7 @@
 """
 Test cases for the Comparisons class over the composite types:
 
-LayoutTree (the + operator)
+Layout (the + operator)
 Overlay    (the * operator)
 
 HoloMaps are not tested in this file.
@@ -49,7 +49,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(t1, t2)
         except AssertionError as e:
-            self.assertEqual(str(e), 'LayoutTrees have mismatched paths.')
+            self.assertEqual(str(e), 'Layouts have mismatched paths.')
 
     def test_layouttree_comparison_unequal_sizes(self):
         t1 = self.el1 + self.el2
@@ -57,7 +57,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(t1, t2)
         except AssertionError as e:
-            self.assertEqual(str(e), 'LayoutTrees have mismatched path counts.')
+            self.assertEqual(str(e), 'Layouts have mismatched path counts.')
 
     #=============================#
     # Matching tests for Overlays #
@@ -122,7 +122,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(t1, t2)
         except AssertionError as e:
-            self.assertEqual(str(e), 'LayoutTrees have mismatched paths.')
+            self.assertEqual(str(e), 'Layouts have mismatched paths.')
 
     def test_composite_unequal_paths_inner(self):
         t1 = (self.el1 * self.el2) + (self.el1 * self.el2.relabel(value='ValA'))
@@ -139,7 +139,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(t1, t2)
         except AssertionError as e:
-            self.assertEqual(str(e), 'LayoutTrees have mismatched path counts.')
+            self.assertEqual(str(e), 'Layouts have mismatched path counts.')
 
 
 if __name__ == "__main__":

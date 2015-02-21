@@ -1,5 +1,5 @@
 """
-Test cases for the composite types built with + and * i.e LayoutTree
+Test cases for the composite types built with + and * i.e Layout
 and Overlay (does *not* test HoloMaps).
 """
 
@@ -23,10 +23,10 @@ class ElementTestCase(ComparisonTestCase):
         Element('data1')
 
 
-class LayoutTreeTestCase(ElementTestCase):
+class LayoutTestCase(ElementTestCase):
 
     def setUp(self):
-        super(LayoutTreeTestCase, self).setUp()
+        super(LayoutTestCase, self).setUp()
 
     def test_layouttree_keys(self):
         t = self.el1 + self.el2
@@ -109,7 +109,7 @@ class LayoutTreeTestCase(ElementTestCase):
 
 class OverlayTestCase(ElementTestCase):
     """
-    The tests here match those in LayoutTreeTestCase; Overlays inherit
+    The tests here match those in LayoutTestCase; Overlays inherit
     from Layout and behave in a very similar way (except for being
     associated with * instead of the + operator)
     """

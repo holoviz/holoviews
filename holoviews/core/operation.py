@@ -187,7 +187,7 @@ class TreeOperation(Operation):
             values = src.values()
         elif isinstance(src, Layout):
             if not src.uniform:
-                raise Exception("TreeOperation can only process uniform LayoutTrees")
+                raise Exception("TreeOperation can only process uniform Layouts")
             dim_names = [d.name for d in dims]
             values = [src.select(**dict(zip(dim_names, key))) for key in keys]
 

@@ -584,9 +584,9 @@ class Collator(NdMapping):
     def __call__(self, path_filters=[], merge=True):
         """
         Filter each Layout in the Collator with the supplied
-        path_filters. If merge is set to True all LayoutTrees are
+        path_filters. If merge is set to True all Layouts are
         merged, otherwise an NdMapping containing all the
-        LayoutTrees is returned. Optionally a list of dimensions
+        Layouts is returned. Optionally a list of dimensions
         to be ignored can be supplied.
         """
         constant_dims = self.constant_dimensions

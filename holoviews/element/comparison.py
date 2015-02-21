@@ -251,7 +251,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_layouttrees(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_trees(el1, el2, msg='LayoutTrees')
+        cls.compare_trees(el1, el2, msg='Layouts')
 
     @classmethod
     def compare_overlays(cls, el1, el2, msg=None):
