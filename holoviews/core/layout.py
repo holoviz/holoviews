@@ -21,7 +21,7 @@ from . import traversal
 class Composable(object):
     """
     Composable is a mix-in class to allow Dimensioned object to be
-    embedded within Layouts and AxisLayouts.
+    embedded within Layouts and GridSpaces.
     """
 
     def __add__(self, obj):
