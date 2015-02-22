@@ -5,6 +5,7 @@ ____________
 
 **Composable, declarative data structures for building even complex visualizations easily.**
 
+
 ..
    # Code used to generate mandelbrot.npy, for reference
    from numpy import *
@@ -25,6 +26,7 @@ ____________
    # Wait a long while..then normalize
    arr = mandelbrot(4000,4000, maxit=2000)[400:800, 2500:2900]
 
+
 ..
   # Code needed to run the index.ipynb tutorial (add as two new cells at the top)
   
@@ -33,7 +35,8 @@ ____________
   import holoviews
   %load_ext holoviews.ipython
   %view holomap='widgets'
-  import numpy
+  import numpy as np
+
 
 .. notebook:: holoviews index.ipynb
 
