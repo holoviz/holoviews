@@ -8,10 +8,12 @@ from builder.shared_conf import * # pyflakes:ignore (API import)
 paths = ['../param/', '.', '..']
 add_paths(paths)
 
-# General information about the project.
-project = u'holoviews'
-copyright = u'2014, IOAM: Jean-Luc Stevens and Philipp Rudiger'
+# Declare information specific to this project.
+project = u'HoloViews'
+authors = u'IOAM: Jean-Luc R. Stevens and Philipp Rudiger'
+copyright = u'2014' + authors
 ioam_module = 'holoviews'
+description = 'Composable, declarative data structures for building even complex visualizations easily'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -21,6 +23,10 @@ ioam_module = 'holoviews'
 version = '2014.05.14'
 # The full version, including alpha/beta/rc tags.
 release = '2014.05.14'
+
+
+# -------------------------------------------------------------------------
+# -- The remaining items are less likely to need changing for a new project
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -37,40 +43,30 @@ html_title = project
 html_static_path = ['_static', 'builder/_shared_static']
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'holoviewsdoc'
+htmlhelp_basename = ioam_module+'doc'
 
-
-# -- Options for LaTeX output ---------------------------------------------
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'holoviews.tex', u'holoviews Documentation',
-   u'IOAM: Jean-Luc Stevens and Philipp Rudiger', 'manual'),
+  ('index', ioam_module+'.tex', project+u' Documentation', authors, 'manual'),
 ]
-
-# -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', ioam_module, u'holoviews Documentation',
-     [u'IOAM: Jean-Luc Stevens and Philipp Rudiger'], 1)
+    ('index', ioam_module, project+u' Documentation', [authors], 1)
 ]
-
 # If true, show URL addresses after external links.
 #man_show_urls = False
 
-
-# -- Options for Texinfo output -------------------------------------------
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', project, u'holoviews Documentation',
-   u'IOAM: Jean-Luc Stevens and Philipp Rudiger', project, 'One line description of project.',
+  ('index', project, project+u' Documentation', authors, project, description,
    'Miscellaneous'),
 ]
 
@@ -90,5 +86,5 @@ def setup(app):
         import runipy # pyflakes:ignore (Warning import)
         nbbuild.setup(app)
     except:
-        print('RunIPy could not be imported, pages including the '
+        print('RunIPy could not be imported; pages including the '
               'Notebook directive will not build correctly')
