@@ -1,6 +1,6 @@
 """
 Options and OptionTrees allow different classes of options
-(e.g. matplotlib specific styles and plot specific parameters) to be
+(e.g. matplotlib-specific styles and plot specific parameters) to be
 defined separately from the core data structures and away from
 visualization specific code.
 
@@ -28,7 +28,7 @@ OptionTree:
 Store:
 
    A singleton class that stores all global and custom options and
-   links holoview objects, the chosen plotting backend and the IPython
+   links HoloViews objects, the chosen plotting backend and the IPython
    extension together.
 
 """
@@ -549,7 +549,7 @@ class Store(object):
       each other.
 
     The Store stores the display options (plotting) for data elements
-    as well as the association from holoview objects to the respective
+    as well as the association from HoloViews objects to the respective
     plotting classes.
     """
 

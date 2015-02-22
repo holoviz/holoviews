@@ -1,5 +1,5 @@
 """
-Helper classes for comparing the equality of two holoview objects.
+Helper classes for comparing the equality of two HoloViews objects.
 
 These classes are designed to integrate with unittest.TestCase (see
 the tests directory) while making equality testing easily accessible
@@ -81,7 +81,7 @@ class ComparisonInterface(object):
 
 class Comparison(ComparisonInterface):
     """
-    Class used for comparing two holoview objects, including complex
+    Class used for comparing two HoloViews objects, including complex
     composite objects. Comparisons are available as classmethods, the
     most general being the assertEqual method that is intended to work
     with any input.

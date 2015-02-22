@@ -1,6 +1,6 @@
 """
-The holoviews seaborn interface wraps around a wide range
-of seaborn plot types including time series, kernel density
+The HoloViews Seaborn interface wraps around a wide range
+of Seaborn plot types including time series, kernel density
 estimates, distributions and regression plots.
 """
 
@@ -18,7 +18,7 @@ from .pandas import DFrame as PandasDFrame
 class TimeSeries(Element2D):
     """
     TimeSeries is a container for any set of curves, which the
-    seaborn interface combines into a confidence interval, error
+    Seaborn interface combines into a confidence interval, error
     bar or overlaid plot.
 
     The curves should be supplied as an NxM dimensional array,
@@ -87,7 +87,7 @@ class Distribution(Chart):
     Distribution Views provide a container for data to be
     visualized as a one-dimensional distribution. The data should
     be supplied as a simple one-dimensional array or
-    list. Internally it uses seaborn to make all the conversions.
+    list. Internally it uses Seaborn to make all the conversions.
     """
 
     key_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
@@ -117,7 +117,7 @@ class Distribution(Chart):
 class Regression(Scatter):
     """
     Regression is identical to a Scatter plot but is visualized
-    using the seaborn regplot interface. This allows it to
+    using the Seaborn regplot interface. This allows it to
     implement linear regressions, confidence intervals and a lot
     more.
     """
@@ -128,7 +128,7 @@ class Regression(Scatter):
 class DFrame(PandasDFrame):
     """
     The SNSFrame is largely the same as a DFrame but can only be
-    visualized via seaborn plotting functions. Since most seaborn
+    visualized via Seaborn plotting functions. Since most Seaborn
     plots are two dimensional, the x and y dimensions can be set
     directly on this class to visualize a particular relationship
     in a multi-dimensional Pandas dframe.

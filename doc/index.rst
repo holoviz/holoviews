@@ -63,7 +63,7 @@ operating system's package manager, or by using pip::
   pip install matplotlib 'ipython[notebook]'
   pip install --user https://github.com/ioam/param/archive/master.zip
 
-You can then obtain the latest version of holoviews by cloning the git
+You can then obtain the latest version of HoloViews by cloning the git
 repository::
 
   git clone git://github.com/ioam/holoviews.git

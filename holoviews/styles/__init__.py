@@ -1,7 +1,7 @@
 """
-Defines global matplotlib styles and holoviews specific style options.
+Defines global matplotlib styles and HoloViews-specific style options.
 
-For setting a style see set_style.
+For setting a style, see set_style.
 """
 
 import os

@@ -1,12 +1,12 @@
 """
-The magics offered by the holoviews IPython extension are powerful and
+The magics offered by the HoloViews IPython extension are powerful and
 support rich, compositional specifications. To avoid the the brittle,
 convoluted code that results from trying to support the syntax in pure
 Python, this file defines suitable parsers using pyparsing that are
 cleaner and easier to understand.
 
 Pyparsing is required by matplotlib and will therefore be available if
-holoviews is being used in conjunction with matplotlib.
+HoloViews is being used in conjunction with matplotlib.
 """
 
 import string

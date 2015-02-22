@@ -15,7 +15,7 @@ except: animation = None
 
 all_line_magics = sorted(['%params', '%opts', '%view', '%compositor'])
 all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
-message = """Welcome to the holoviews IPython extension! (http://ioam.github.io/holoviews/)"""
+message = """Welcome to the HoloViews IPython extension! (http://ioam.github.io/holoviews/)"""
 message += '\nAvailable magics: %s' % ', '.join(sorted(all_line_magics)
                                                 + sorted(all_cell_magics))
 

@@ -1,12 +1,12 @@
 """
-Holoviews can be used to build highly-nested data-structures
+HoloViews can be used to build highly-nested data-structures
 containing large amounts of raw data. As a result, it is difficult to
 generate a readable representation that is both informative yet
 concise.
 
-As a result, Holoviews does not attempt to build representations that
+As a result, HoloViews does not attempt to build representations that
 can be evaluated with eval; such representations would typically be
-far too large to be practical. Instead, all Holoviews objects can be
+far too large to be practical. Instead, all HoloViews objects can be
 represented as tree structures, showing the types, values and labels
 where possible.
 """
@@ -72,7 +72,7 @@ class PrintUtils(object):
 class Info(object):
     """
     Methods used to supply the pretty printer with information by
-    holoviews object type in a suitable format.
+    HoloViews object type in a suitable format.
     """
 
     @classmethod

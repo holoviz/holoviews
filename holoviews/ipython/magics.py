@@ -115,9 +115,9 @@ class ViewMagic(Magics):
 
     @classmethod
     def _generate_docstring(cls):
-        intro = ["Magic for setting holoview display options.",
+        intro = ["Magic for setting HoloViews display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
-        backend = "backend      : The backend used by holoviews %r"  % cls.allowed['backend']
+        backend = "backend      : The backend used by HoloViews %r"  % cls.allowed['backend']
         fig =     "fig          : The static figure format %r" % cls.allowed['fig']
         holomap = "holomap      : The display type for holomaps %r" % cls.allowed['holomap']
         widgets = "widgets      : The widget mode for widgets %r" % cls.allowed['widgets']

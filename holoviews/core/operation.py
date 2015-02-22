@@ -163,7 +163,7 @@ class MapOperation(param.ParameterizedFunction):
 class TreeOperation(Operation):
     """
     A TreeOperation is the most general Operation type; it accepts any
-    holoviews datastructure and outputs a Layout containing one or
+    HoloViews datastructure and outputs a Layout containing one or
     more elements.
     """
 

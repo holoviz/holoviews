@@ -74,7 +74,7 @@ def HTML_video(plot):
             except: pass
     msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-        msg = "<b>Python 3 Matplotlib animation support broken &lt;= 1.3</b>"
+        msg = "<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>"
     raise Exception(msg)
 
 

@@ -53,7 +53,7 @@ class Plot(param.Parameterized):
         2D plot, 3D and polar plots are also supported.""")
 
     rcparams = param.Dict(default={}, doc="""
-        Matplotlib rc parameters to apply to the figure.""")
+        matplotlib rc parameters to apply to the figure.""")
 
     size = param.Integer(default=100, bounds=(1, None), doc="""
         Size relative to the supplied figure size in percent.""")
@@ -268,7 +268,7 @@ class Plot(param.Parameterized):
 
     def anim(self, start=0, stop=None, fps=30):
         """
-        Method to return an Matplotlib animation. The start and stop
+        Method to return a matplotlib animation. The start and stop
         frames may be specified as well as the fps.
         """
         figure = self()

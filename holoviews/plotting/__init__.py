@@ -109,7 +109,7 @@ Store.options.TimeSeries = Options('style', color=Cycle())
 
 
 
-# Defining the most common style options for holoviews
+# Defining the most common style options for HoloViews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')
 
 def public(obj):

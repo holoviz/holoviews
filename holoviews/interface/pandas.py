@@ -2,9 +2,9 @@
 The interface subpackage provides View and Plot types to wrap external
 objects with. Currently only a Pandas compatibility wrapper is
 provided, which allows integrating Pandas DataFrames within the
-holoviews compositioning and animation framework. Additionally, it
+HoloViews compositioning and animation framework. Additionally, it
 provides methods to apply operations to the underlying data and
-convert it to standard holoviews View types.
+convert it to standard HoloViews View types.
 """
 
 from __future__ import absolute_import
@@ -29,7 +29,7 @@ class DataFrameView(Element):
     Pandas DataFrames. It provides several core functions:
 
         * Allows integrating several Pandas plot types with the
-          holoviews plotting system (includes plot, boxplot, histogram
+          HoloViews plotting system (includes plot, boxplot, histogram
           and scatter_matrix).
 
         * Provides several convenient wrapper methods to apply

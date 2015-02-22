@@ -517,7 +517,7 @@ class SelectionWidget(ScrubberWidget):
     in an NdMapping. For each dimension in the NdMapping a slider or
     dropdown selection widget is created and can be used to select the
     html output associated with the selected ViewableElement type. Supports
-    selection of any holoviews static output type including png, svg
+    selection of any HoloViews static output type including png, svg
     and mpld3 output. Unlike the IPSelectionWidget, this widget type
     is exportable to a static html.
 

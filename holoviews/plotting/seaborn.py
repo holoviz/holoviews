@@ -50,7 +50,7 @@ class FullRedrawPlot(ElementPlot):
 
 class RegressionPlot(FullRedrawPlot):
     """
-    RegressionPlot visualizes Regression Views using the seaborn
+    RegressionPlot visualizes Regression Views using the Seaborn
     regplot interface, allowing the user to perform and plot
     linear regressions on a set of scatter points. Parameters
     to the replot function can be supplied via the opts magic.
