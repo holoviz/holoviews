@@ -25,6 +25,12 @@ class ElementPlot(Plot):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
+    invert_xaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot x-axis.""")
+
+    invert_yaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot y-axis.""")
+
     logx = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the x-axis of the Chart.""")
 
@@ -281,6 +287,11 @@ class ElementPlot(Plot):
 
             for tick in axis.get_yticklabels():
                 tick.set_rotation(self.yrotation)
+
+            if self.invert_xaxis:
+                axis.invert_xaxis()
+            if self.invert_yaxis:
+                axis.invert_yaxis()
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
