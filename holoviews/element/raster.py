@@ -42,8 +42,14 @@ class Raster(Element2D):
 
 
     def __getitem__(self, slices):
-        return self.clone(self.data.__getitem__(slices))
-
+        slc_types = [isinstance(sl, slice) for sl in slices]
+        data = self.data.__getitem__(slices)
+        if all(slc_types):
+            return self.clone(data)
+        elif not any(slc_types):
+            return data
+        else:
+            return self.clone(np.expand_dims(data, axis=slc_types.index(True)))
 
     def _coord2matrix(self, coord):
         xd, yd = self.data.shape
@@ -139,6 +145,25 @@ class Raster(Element2D):
                           key_dimensions=other_dimension)
             return Table(data, **params)
 
+
+    def dimension_values(self, dim):
+        """
+        The set of samples available along a particular dimension.
+        """
+        dim_idx = self.get_dimension_index(dim)
+        if dim_idx in [0, 1]:
+            (l, r), (b, t) = self.xlim, self.ylim
+            shape = self.data.shape[abs(dim_idx-1)]
+            dim_min, dim_max = [(l, r), (b, t)][dim_idx]
+            linspace = list(range(dim_min, dim_max+1))
+            coords = linspace * shape
+            return coords if dim_idx else sorted(coords)
+        elif dim_idx == 2:
+            return self.data.T.flatten()
+        else:
+            raise Exception("Dimension not found.")
+
+
     @property
     def depth(self):
         return 1 if len(self.data.shape) == 2 else self.data.shape[2]
@@ -158,27 +183,6 @@ class Raster(Element2D):
         else:
             raise Exception("Mode cannot be determined from the depth")
 
-
-    def dimension_values(self, dim):
-        """
-        The set of samples available along a particular dimension.
-        """
-        dim_idx = self.get_dimension_index(dim)
-        if dim_idx in [0, 1]:
-            (l, r), (b, t) = self.xlim, self.ylim
-            shape = self.data.shape[abs(dim_idx-1)]
-            dim_min, dim_max = [(l, r), (b, t)][dim_idx]
-            dim_len = self.data.shape[dim_idx]
-            half_unit = (dim_max - dim_min)/dim_len/2.
-            coord_fn = (lambda v: (0, v)) if dim_idx else (lambda v: (v, 0))
-            linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
-            coords = [self.closest(coord_fn(v))[dim_idx]
-                      for v in linspace] * shape
-            return coords if dim_idx else sorted(coords)
-        elif dim_idx == 2:
-            return np.flipud(self.data).T.flatten()
-        else:
-            raise Exception("Dimension not found.")
 
 
 class HeatMap(Raster):
@@ -390,13 +394,26 @@ class Image(SheetCoordinateSystem, Raster):
         return self.sheet2matrixidx(*coord)
 
 
-    def get_roi(self, bounds):
-        if self.depth == 1:
-            data = Slice(bounds, self).submatrix(self.data)
+    def dimension_values(self, dim):
+        """
+        The set of samples available along a particular dimension.
+        """
+        dim_idx = self.get_dimension_index(dim)
+        if dim_idx in [0, 1]:
+            (l, r), (b, t) = self.xlim, self.ylim
+            shape = self.data.shape[abs(dim_idx-1)]
+            dim_min, dim_max = [(l, r), (b, t)][dim_idx]
+            dim_len = self.data.shape[dim_idx]
+            half_unit = (dim_max - dim_min)/dim_len/2.
+            coord_fn = (lambda v: (0, v)) if dim_idx else (lambda v: (v, 0))
+            linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
+            coords = [self.closest(coord_fn(v))[dim_idx]
+                      for v in linspace] * shape
+            return coords if dim_idx else sorted(coords)
+        elif dim_idx == 2:
+            return np.flipud(self.data).T.flatten()
         else:
-            data = np.dstack([Slice(bounds, self).submatrix(
-                self.data[:, :, i]) for i in range(self.depth)])
-        return Image(data, bounds, style=self.style, value=self.value)
+            raise Exception("Dimension not found.")
 
 
 
