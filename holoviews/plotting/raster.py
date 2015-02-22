@@ -24,6 +24,12 @@ class RasterPlot(ElementPlot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin', 'clims']
 
+
+    def __init__(self, *args, **kwargs):
+        super(RasterPlot, self).__init__(*args, **kwargs)
+        if self.map.type == Raster:
+            self.invert_yaxis = True
+
     def __call__(self, ranges=None):
         view = self.map.last
         axis = self.handles['axis']
