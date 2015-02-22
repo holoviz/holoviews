@@ -1,9 +1,12 @@
 .. holoviews documentation master file
 
-.. notebook:: holoviews index.ipynb
+Introduction
+____________
+
+**Composable, declarative data structures for building even complex visualizations easily.**
 
 ..
-   # Code used to generate mandelbrot.npy
+   # Code used to generate mandelbrot.npy, for reference
    from numpy import *
    import pylab
 
@@ -22,12 +25,23 @@
    # Wait a long while..then normalize
    arr = mandelbrot(4000,4000, maxit=2000)[400:800, 2500:2900]
 
+..
+  # Code needed to run the index.ipynb tutorial (add as two new cells at the top)
+  
+  cd ..
+
+  import holoviews
+  %load_ext holoviews.ipython
+  %view holomap='widgets'
+  import numpy
+
+.. notebook:: holoviews index.ipynb
+
 
 Installation
 ____________
 
-
-HoloViews is compatible with Python 2 (2.7+) and Python 3.
+HoloViews is compatible with Python `2.7, 3.3, and 3.4. <https://travis-ci.org/ioam/holoviews>`_.
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
 `Numpy <http://numpy.org>`_, neither of which has any required dependencies,
