@@ -41,6 +41,8 @@ class Raster(Element2D):
         super(Raster, self).__init__(data, extents=extents, **params)
 
 
+    def __getitem__(self, slices):
+        return self.clone(self.data.__getitem__(slices))
 
 
     def _coord2matrix(self, coord):
