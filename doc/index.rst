@@ -73,17 +73,18 @@ ____________
 
 HoloViews was developed by `Jean-Luc R. Stevens <https://github.com/jlstevens>`_
 and `Philipp Rudiger <https://github.com/philippjfr>`_,
-in collaboration with `James A. Bednar <https://github.com/jbednar>`_.
+in collaboration with `James A. Bednar <http://homepages.inf.ed.ac.uk/jbednar>`_.
 
-HoloViews is completely open source, available under a BSD license
+HoloViews is completely `open source
+<https://github.com/ioam/holoviews>`_, available under a BSD license
 freely for both commercial and non-commercial use.  Contributions from
 users are welcome and encouraged.  In particular, HoloViews components
 can be combined in an infinite number of ways, and so it is impossible
-for us to test all conceivable combinations.  Thus we welcome 
-`bug reports <https://github.com/ioam/holoviews/issues>`_,
-particularly if they come with 
-`pull requests <http://yangsu.github.io/pull-request-tutorial/>`_ 
-showing how to fix the bug!
+for us to test all conceivable combinations.  Thus we welcome `bug
+reports <https://github.com/ioam/holoviews/issues>`_, particularly if
+they come with `pull requests
+<http://yangsu.github.io/pull-request-tutorial/>`_ showing how to fix
+the bug!
 
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
