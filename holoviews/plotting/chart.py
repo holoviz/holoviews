@@ -524,9 +524,10 @@ class PointPlot(ChartPlot):
                 paths.set_sizes(self._compute_size(sz, opts))
             if cs is not None:
                 val_dim = element.dimensions(label=True)[self.color_index]
-                ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+                ranges = self.compute_ranges(self.map, key, ranges)
                 ranges = self.match_range(element, ranges)
                 paths.set_clim(ranges[val_dim])
+                paths.set_array(cs)
 
 
 
