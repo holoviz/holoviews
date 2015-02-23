@@ -108,11 +108,11 @@ class DimensionedComparisonTestCase(ComparisonTestCase):
         self.dimensioned5 = Dimensioned('data5', value_dimensions=self.value_list1,
                                                  key_dimensions=[])
         # Value / Label comparison tests
-        self.dimensioned6 = Dimensioned('data6', value='foo',
+        self.dimensioned6 = Dimensioned('data6', group='foo',
                                         value_dimensions=self.value_list1,
                                         key_dimensions=self.key_list1)
 
-        self.dimensioned7 = Dimensioned('data7', value='foo', label='bar',
+        self.dimensioned7 = Dimensioned('data7', group='foo', label='bar',
                                         value_dimensions=self.value_list1,
                                         key_dimensions=self.key_list1)
 
@@ -149,18 +149,11 @@ class DimensionedComparisonTestCase(ComparisonTestCase):
         except AssertionError as e:
             self.assertEqual(str(e), 'Key dimension list mismatched')
 
-    def test_dimensioned_comparison_unequal_value(self):
+    def test_dimensioned_comparison_unequal_group(self):
         try:
             self.assertEqual(self.dimensioned1, self.dimensioned6)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Value labels mismatched.')
-
-
-    def test_dimensioned_comparison_unequal_value(self):
-        try:
-            self.assertEqual(self.dimensioned1, self.dimensioned6)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Value labels mismatched.')
+            self.assertEqual(str(e), 'Group labels mismatched.')
 
     def test_dimensioned_comparison_unequal_label(self):
         try:

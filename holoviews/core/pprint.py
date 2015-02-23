@@ -28,9 +28,9 @@ class PrintUtils(object):
 
     @classmethod
     def dotted(cls, node):
-        "Return the type.value.label dotted information"
+        "Return the type.group.label dotted information"
         if node is None: return ''
-        components = [str(type(node).__name__), node.value]
+        components = [str(type(node).__name__), node.group]
         if node.label:
             components.append(node.label)
         return ".".join(components)

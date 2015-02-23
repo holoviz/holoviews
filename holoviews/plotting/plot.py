@@ -64,7 +64,7 @@ class Plot(param.Parameterized):
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
 
-    title_format = param.String(default="{label} {value}", doc="""
+    title_format = param.String(default="{label} {group}", doc="""
         The formatting string for the title of this plot.""")
 
     # A list of matplotlib keyword arguments that may be supplied via a
@@ -143,8 +143,8 @@ class Plot(param.Parameterized):
         """
         norm_opts = {}
 
-        # Get all elements' type.value.label specs and ids
-        type_val_fn = lambda x: (x.id, (type(x).__name__, valid_identifier(x.value),
+        # Get all elements' type.group.label specs and ids
+        type_val_fn = lambda x: (x.id, (type(x).__name__, valid_identifier(x.group),
                                         valid_identifier(x.label))) \
             if isinstance(x, Element) else None
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
@@ -200,7 +200,7 @@ class Plot(param.Parameterized):
 
     def _frame_title(self, key, group_size=2):
         """
-        Returns the formatted dimension value strings
+        Returns the formatted dimension group strings
         for a particular frame.
         """
         if self.layout_dimensions is not None:
@@ -351,9 +351,9 @@ class CompositePlot(Plot):
         dim_title = self._frame_title(key, 3)
         layout = self.layout
         type_name = type(self.layout).__name__
-        value = layout.value if layout.value != type_name else ''
+        group = layout.group if layout.group != type_name else ''
         title = self.title_format.format(label=layout.label,
-                                         value=value,
+                                         group=group,
                                          type=type_name)
         title = '' if title.isspace() else title
         return '\n'.join([title, dim_title]) if title else dim_title

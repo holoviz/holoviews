@@ -29,7 +29,7 @@ class Raster(Element2D):
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
 
-    value = param.String(default='Raster')
+    group = param.String(default='Raster')
 
     value_dimensions = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
@@ -196,7 +196,7 @@ class HeatMap(Raster):
     available via the .data property.
     """
 
-    value = param.String(default='HeatMap')
+    group = param.String(default='HeatMap')
 
     def __init__(self, data, **params):
         if 'extents' in params:
@@ -303,7 +303,7 @@ class Image(SheetCoordinateSystem, Raster):
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
-    value = param.String(default='Image')
+    group = param.String(default='Image')
 
     value_dimensions = param.List(default=[Dimension('z')],
                                   bounds=(1, 1), doc="""
@@ -428,7 +428,7 @@ class RGB(Image):
     list of value dimensions.
     """
 
-    value = param.String(default='RGB')
+    group = param.String(default='RGB')
 
     alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
                                           class_=Dimension, instantiate=False,  doc="""
@@ -521,7 +521,7 @@ class HSV(RGB):
     for working in a HSV (hue, saturation and value) color space.
     """
 
-    value = param.String(default='HSV')
+    group = param.String(default='HSV')
 
     alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
                                           class_=Dimension, instantiate=False,  doc="""
@@ -551,5 +551,5 @@ class HSV(RGB):
             hsv += (self.data[:,:,3],)
 
         return RGB(np.dstack(hsv), bounds=self.bounds,
-                   value=self.value,
+                   group=self.group,
                    label=self.label)

@@ -26,9 +26,9 @@ class Overlayable(object):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
 
-        self_item = [((self.value, self.label if self.label else 'I'), self)]
+        self_item = [((self.group, self.label if self.label else 'I'), self)]
         other_items = (other.items() if isinstance(other, Overlay)
-                       else [((other.value, other.label if other.label else 'I'), other)])
+                       else [((other.group, other.label if other.label else 'I'), other)])
         return Overlay(items=Overlay.relabel_item_paths(list(self_item) + list(other_items)))
 
 
@@ -117,11 +117,11 @@ class Overlay(Layout, CompositeOverlay):
         return reduce(lambda x,y: x*y, val).display('auto')
 
 
-    def __init__(self, items=None, value=None, label=None, **params):
+    def __init__(self, items=None, group=None, label=None, **params):
         view_params = ViewableElement.params().keys()
         Layout.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
-        self._value = value
+        self._group = group
         self._label = label
         ViewableElement.__init__(self, self.data,
                       **{k:v for k,v in params.items() if k in view_params})
@@ -136,7 +136,7 @@ class Overlay(Layout, CompositeOverlay):
             items = list(self.data.items()) + list(other.data.items())
         elif isinstance(other, ViewableElement):
             label = other.label if other.label else 'I'
-            items = list(self.data.items()) + [((other.value, label), other)]
+            items = list(self.data.items()) + [((other.group, label), other)]
         elif isinstance(other, UniformNdMapping):
             raise NotImplementedError
 
@@ -146,34 +146,34 @@ class Overlay(Layout, CompositeOverlay):
     def collapse(self, function):
         """
         Collapses all the Elements in the Overlay using the
-        supplied function if they share a common type and value.
+        supplied function if they share a common type and group.
         """
         elements = list(self)
         types = [type(el) for el in elements]
-        values = [el.value for el in elements]
+        values = [el.group for el in elements]
         if not len(set(types)) == 1 and len(set(values)) == 1:
-            raise Exception("Overlay is not homogenous in type or value "
+            raise Exception("Overlay is not homogenous in type or group "
                             "and cannot be collapsed.")
         else:
             return elements[0].clone(types[0].collapse_data([el.data for el in elements],
                                                             function))
 
     @property
-    def value(self):
-        if self._value:
-            return self._value
-        values = {el.value for el in self}
+    def group(self):
+        if self._group:
+            return self._group
+        values = {el.group for el in self}
         types = {type(el) for el in self}
-        value = list(values)[0]
+        group = list(values)[0]
         vtype = list(types)[0].__name__
-        if len(values) == 1 and value != vtype:
-            return value
+        if len(values) == 1 and group != vtype:
+            return group
         else:
             return type(self).__name__
 
-    @value.setter
-    def value(self, value):
-        self._value = value
+    @group.setter
+    def group(self, group):
+        self._group = group
 
     @property
     def label(self):

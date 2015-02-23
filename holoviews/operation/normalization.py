@@ -54,14 +54,14 @@ class Normalization(ElementOperation):
        dimension (or both) will be normalized to the supplied ranges.
 
        Finally, element-specific normalization may also be specified
-       by supplying a match tuple of form (<type>, <value>,
+       by supplying a match tuple of form (<type>, <group>,
        <label>). A 1- or 2-tuple may be supplied by omitting the
-       <value>, <label> or just the <label> components
+       <group>, <label> or just the <label> components
        respectively. This tuple key then uses the dictionary
        value-range specification decribed above.
 
       For instance, you could normalize only the Image elements of
-      value pattern using:
+      group pattern using:
 
       {('Image','Pattern'):{'Height':(0, 200), 'z':(0,1)}})
 
@@ -97,7 +97,7 @@ class Normalization(ElementOperation):
         match_tuple = ()
         match = specs.get((), {})
         for spec in [type(element).__name__,
-                     valid_identifier(element.value),
+                     valid_identifier(element.group),
                      valid_identifier(element.label)]:
             match_tuple += (spec,)
             if match_tuple in specs:

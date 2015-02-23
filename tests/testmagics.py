@@ -121,30 +121,30 @@ class TestCompositorMagic(ExtensionTestCase):
         super(TestCompositorMagic, self).tearDown()
 
     def test_RGB_compositor_definition(self):
-        self.cell("R = Image(np.random.rand(5,5), value='R')")
-        self.cell("G = Image(np.random.rand(5,5), value='G')")
-        self.cell("B = Image(np.random.rand(5,5), value='B')")
+        self.cell("R = Image(np.random.rand(5,5), group='R')")
+        self.cell("G = Image(np.random.rand(5,5), group='G')")
+        self.cell("B = Image(np.random.rand(5,5), group='B')")
         self.cell("overlay = R * G * B")
 
         definition = " display toRGB(Image * Image * Image) RGBTEST"
         self.line_magic('compositor', definition)
 
         assert len(Compositor.definitions) == 1, "Compositor definition not created"
-        self.assertEqual(Compositor.definitions[0].value, 'RGBTEST')
+        self.assertEqual(Compositor.definitions[0].group, 'RGBTEST')
         self.assertEqual(Compositor.definitions[0].mode, 'display')
 
 
     def test_HCS_compositor_definition(self):
-        self.cell("H = Image(np.random.rand(5,5), value='H')")
-        self.cell("C = Image(np.random.rand(5,5), value='C')")
-        self.cell("S = Image(np.random.rand(5,5), value='S')")
+        self.cell("H = Image(np.random.rand(5,5), group='H')")
+        self.cell("C = Image(np.random.rand(5,5), group='C')")
+        self.cell("S = Image(np.random.rand(5,5), group='S')")
 
         self.cell("overlay = H * C * S")
 
         definition = " data toHCS(Image * Image * Image) HCSTEST"
         self.line_magic('compositor', definition)
         assert len(Compositor.definitions) == 1, "Compositor definition not created"
-        self.assertEqual(Compositor.definitions[0].value, 'HCSTEST')
+        self.assertEqual(Compositor.definitions[0].group, 'HCSTEST')
         self.assertEqual(Compositor.definitions[0].mode, 'data')
 
 

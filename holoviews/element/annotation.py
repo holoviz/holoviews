@@ -23,7 +23,7 @@ class Annotation(Element2D):
     key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
                                 bounds=(2,2))
 
-    value = param.String(default='Annotation')
+    group = param.String(default='Annotation')
 
     xlabel, ylabel = "", ""
 
@@ -40,7 +40,7 @@ class Annotation(Element2D):
 class VLine(Annotation):
     "Vertical line annotation at the given position"
 
-    value = param.String(default='VLine')
+    group = param.String(default='VLine')
 
     def __init__(self, x, **params):
         super(VLine, self).__init__(x, **params)
@@ -50,7 +50,7 @@ class VLine(Annotation):
 class HLine(Annotation):
     "Horizontal line annotation at the given position"
 
-    value = param.String(default='HLine')
+    group = param.String(default='HLine')
 
     def __init__(self, y, **params):
         super(HLine, self).__init__(y, **params)
@@ -73,7 +73,7 @@ class Spline(Annotation):
     Path.CLOSEPLOY: 79
     """
 
-    value = param.String(default='Spline')
+    group = param.String(default='Spline')
 
     def __init__(self, spline_points, **params):
         super(Spline, self).__init__(spline_points, **params)
@@ -87,7 +87,7 @@ class Arrow(Annotation):
     specified as well as the arrow head style.
     """
 
-    value = param.String(default='Arrow')
+    group = param.String(default='Arrow')
 
     def __init__(self, x, y, text='', direction='<',
                  points=40, arrowstyle='->', **params):
@@ -114,7 +114,7 @@ class Text(Annotation):
     fontsize, alignment and rotation.
     """
 
-    value = param.String(default='Text')
+    group = param.String(default='Text')
 
     def __init__(self, x,y, text, fontsize=12,
                  horizontalalignment='center',

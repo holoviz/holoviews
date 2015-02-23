@@ -154,12 +154,12 @@ class ElementPlot(Plot):
         frame = self._get_frame(key)
         if frame is None: return None
         type_name = type(frame).__name__
-        value = frame.value if frame.value != type_name else ''
+        group = frame.group if frame.group != type_name else ''
         if self.layout_dimensions:
             title = ''
         else:
             title = self.title_format.format(label=frame.label,
-                                             value=value,
+                                             group=group,
                                              type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
@@ -309,7 +309,7 @@ class ElementPlot(Plot):
         match_tuple = ()
         match = ranges.get((), {})
         for spec in [type(element).__name__,
-                     valid_identifier(element.value),
+                     valid_identifier(element.group),
                      valid_identifier(element.label)]:
             match_tuple += (spec,)
             if match_tuple in ranges:
@@ -373,9 +373,9 @@ class OverlayPlot(ElementPlot):
 
         keys, vmaps = self.map.split_overlays()
         style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(vmaps, lambda s: (s.last.value)))
+                            in groupby(vmaps, lambda s: (s.last.group)))
         for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
-            cyclic_index, _ = next(style_groups[(vmap.last.value)])
+            cyclic_index, _ = next(style_groups[(vmap.last.group)])
             plotopts = Store.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = vmap.last.key_dimensions
@@ -462,13 +462,13 @@ class OverlayPlot(ElementPlot):
         if frame is None: return None
 
         type_name = type(frame).__name__
-        value = frame.value if frame.value != type_name else ''
+        group = frame.group if frame.group != type_name else ''
         label = frame.label
         if self.layout_dimensions:
             title = ''
         else:
             title = self.title_format.format(label=label,
-                                             value=value,
+                                             group=group,
                                              type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():

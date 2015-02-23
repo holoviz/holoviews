@@ -34,8 +34,8 @@ class chain(ElementOperation):
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 
-    value = param.String(default='Chain', doc="""
-        The value assigned to the result after having applied the chain.""")
+    group = param.String(default='Chain', doc="""
+        The group assigned to the result after having applied the chain.""")
 
 
     operations = param.List(default=[], class_=ElementOperation, doc="""
@@ -47,7 +47,7 @@ class chain(ElementOperation):
         for operation in self.p.operations:
             processed = operation.process_element(processed, key, input_ranges=self.p.input_ranges)
 
-        return processed.clone(value=self.p.value)
+        return processed.clone(group=self.p.group)
 
 
 class transform(ElementOperation):
@@ -71,8 +71,8 @@ class transform(ElementOperation):
 
     output_type = Image
 
-    value = param.String(default='Transform', doc="""
-        The value assigned to the result after applying the
+    group = param.String(default='Transform', doc="""
+        The group assigned to the result after applying the
         transform.""")
 
     operator = param.Callable(doc="""
@@ -83,7 +83,7 @@ class transform(ElementOperation):
     def _process(self, matrix, key=None):
         processed = (matrix.data if not self.p.operator
                      else self.p.operator(matrix.data))
-        return Image(processed, matrix.bounds, value=self.p.value)
+        return Image(processed, matrix.bounds, group=self.p.group)
 
 
 #==============================#
@@ -123,23 +123,23 @@ class matrix_overlay(ElementOperation):
 
        Elements in the input overlay that match are placed in the
        appropriate positions and unavailable specification elements
-       are created with the specified fill value.""")
+       are created with the specified fill group.""")
 
     fill = param.Number(default=0)
 
-    value = param.String(default='Transform', doc="""
-        The value assigned to the resulting overlay.""")
+    group = param.String(default='Transform', doc="""
+        The group assigned to the resulting overlay.""")
 
 
     @classmethod
     def _match(cls, el, spec):
         "Return the strength of the match (None if no match)"
-        spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
+        spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
         if not isinstance(el, Image) or spec_dict['type'] != 'Image':
             raise NotImplementedError("Only Image currently supported")
 
         strength = 1
-        for key in ['value', 'label']:
+        for key in ['group', 'label']:
             attr_value = getattr(el, key)
             if key in spec_dict:
                 if spec_dict[key] != attr_value: return None
@@ -179,9 +179,9 @@ class matrix_overlay(ElementOperation):
         strongest = ordering[np.argmax(strengths)]
         for el, spec in zip(ordering, specs):
             if el is None:
-                spec_dict = dict(zip(['type', 'value', 'label'], spec.split('.')))
+                spec_dict = dict(zip(['type', 'group', 'label'], spec.split('.')))
                 el = Image(np.ones(strongest.data.shape) * self.p.fill,
-                            value=spec_dict.get('value','Image'),
+                            group=spec_dict.get('group','Image'),
                             label=spec_dict.get('label',''))
             completed.append(el)
         return np.prod(completed)
@@ -223,8 +223,8 @@ class collapse(ElementOperation):
         lambda x: np.var(x, axis=0)
         """)
 
-    value = param.String(default='Operation', doc="""
-        The value assigned to the result after having applied the operator.""")
+    group = param.String(default='Operation', doc="""
+        The group assigned to the result after having applied the operator.""")
 
     def _process(self, overlay, key=None):
         if not isinstance(overlay, CompositeOverlay):
@@ -260,8 +260,8 @@ class threshold(ElementOperation):
     low = param.Number(default=0.0, doc="""
       The value given to elements below the threshold.""")
 
-    value = param.String(default='Threshold', doc="""
-       The value assigned to the thresholded output.""")
+    group = param.String(default='Threshold', doc="""
+       The group assigned to the thresholded output.""")
 
     def _process(self, matrix, key=None):
 
@@ -273,7 +273,7 @@ class threshold(ElementOperation):
         low = np.ones(arr.shape) * self.p.low
         thresholded = np.where(arr > self.p.level, high, low)
 
-        return matrix.clone(thresholded, value=self.p.value)
+        return matrix.clone(thresholded, group=self.p.group)
 
 
 
@@ -287,8 +287,8 @@ class gradient(ElementOperation):
 
     output_type = Image
 
-    value = param.String(default='Gradient', doc="""
-    The value assigned to the output gradient matrix.""")
+    group = param.String(default='Gradient', doc="""
+    The group assigned to the output gradient matrix.""")
 
     def _process(self, matrix, key=None):
 
@@ -314,7 +314,7 @@ class gradient(ElementOperation):
             dx = 0.5 * cyclic_range - np.abs(dx - 0.5 * cyclic_range)
             dy = 0.5 * cyclic_range - np.abs(dy - 0.5 * cyclic_range)
 
-        return Image(np.sqrt(dx * dx + dy * dy), matrix.bounds, value=self.p.value)
+        return Image(np.sqrt(dx * dx + dy * dy), matrix.bounds, group=self.p.group)
 
 
 
@@ -329,8 +329,8 @@ class fft_power(ElementOperation):
     max_power = param.Number(default=1.0, doc="""
     The maximum power value of the output power spectrum.""")
 
-    value = param.String(default='FFT Power', doc="""
-    The value assigned to the output power spectrum.""")
+    group = param.String(default='FFT Power', doc="""
+    The group assigned to the output power spectrum.""")
 
 
     def _process(self, matrix, key=None):
@@ -349,7 +349,7 @@ class fft_power(ElementOperation):
         density = matrix.xdensity
         bounds = BoundingBox(radius=(density/2)/(r-l))
 
-        return Image(spectrum, bounds, label=matrix.label, value=self.p.value)
+        return Image(spectrum, bounds, label=matrix.label, group=self.p.group)
 
 
 
@@ -362,8 +362,8 @@ class convolve(ElementOperation):
 
     output_type = Image
 
-    value = param.String(default='Convolution', doc="""
-        The value assigned to the convolved output.""")
+    group = param.String(default='Convolution', doc="""
+        The group assigned to the convolved output.""")
 
     kernel_roi = param.NumericTuple(default=(0,0,0,0), length=4, doc="""
         A 2-dimensional slice of the kernel layer to use in the
@@ -392,7 +392,7 @@ class convolve(ElementOperation):
         rolled = np.roll(np.roll(convolved_raw, -(k_cols//2), axis=-1), -(k_rows//2), axis=-2)
         convolved = rolled / float(k.sum())
 
-        return Image(convolved, bounds=target.bounds, value=self.p.value)
+        return Image(convolved, bounds=target.bounds, group=self.p.group)
 
 
 
@@ -402,16 +402,16 @@ class split_raster(ElementOperation):
     an overlay of Image elements.
     """
 
-    value = param.String(default='', doc="""
-       Optional suffix appended to the value dimensions in the
-       components of the output overlay. Default keeps the value
+    group = param.String(default='', doc="""
+       Optional suffix appended to the group dimensions in the
+       components of the output overlay. Default keeps the group
        strings identical to those in the input raster.""")
 
     def _process(self, raster, key=None):
         matrices = []
         for i, dim in enumerate(raster.value_dimensions):
             matrix = Image(raster.data[:, :, i],
-                            value_dimensions = [dim(name=dim.name+self.p.value)])
+                            value_dimensions = [dim(name=dim.name+self.p.group)])
             matrices.append(matrix)
         return np.product(matrices)
 
@@ -431,8 +431,8 @@ class contours(ElementOperation):
     levels = param.NumericTuple(default=(0.5,), doc="""
         A list of scalar values used to specify the contour levels.""")
 
-    value = param.String(default='Level', doc="""
-        The value assigned to the output contours.""")
+    group = param.String(default='Level', doc="""
+        The group assigned to the output contours.""")
 
 
     def _process(self, matrix, key=None):
@@ -447,7 +447,7 @@ class contours(ElementOperation):
         for level, cset in zip(self.p.levels, contour_set.collections):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
-            contours[level] = Contours(lines, value=self.p.value)
+            contours[level] = Contours(lines, group=self.p.group)
 
         plt.close(figure_handle)
         return Overlay.from_values(matrix * contours)
@@ -531,8 +531,8 @@ class vectorfield(ElementOperation):
     cols = param.Integer(default=10, doc="""
        The number of columns in the vector field.""")
 
-    value = param.String(default='Vectors', doc="""
-       The value assigned to the output vector field.""")
+    group = param.String(default='Vectors', doc="""
+       The group assigned to the output vector field.""")
 
 
     def _process(self, view, key=None):
@@ -560,7 +560,7 @@ class vectorfield(ElementOperation):
 
         value_dimensions = [Dimension('Magnitude'),
                             Dimension('Angle', cyclic=True, range=cyclic_dim.range)]
-        return VectorField(vector_data, label=radians.label, value=self.p.value,
+        return VectorField(vector_data, label=radians.label, group=self.p.group,
                            value_dimensions=value_dimensions)
 
 
@@ -590,8 +590,8 @@ class analyze_roi(ElementOperation):
        If the output of the function is not a dictionary, this is the
        row label given to the resulting value.""")
 
-    value = param.String(default='ROI', doc="""
-       The value assigned to the output analysis table.""")
+    group = param.String(default='ROI', doc="""
+       The group assigned to the output analysis table.""")
 
     def _process(self, overlay, key=None):
 
@@ -616,7 +616,7 @@ class analyze_roi(ElementOperation):
 
         return ItemTable(results,
                          label=self.get_overlay_label(overlay),
-                         value=self.p.value)
+                         group=self.p.group)
 
 
 #==================#
@@ -639,8 +639,8 @@ class collapse_curve(ElementOperation):
         The function that is used to collapse the curve y-values for
         each x-value.""")
 
-    value = param.String(default='Collapses', doc="""
-       The value assigned to the collapsed curve output.""")
+    group = param.String(default='Collapses', doc="""
+       The group assigned to the collapsed curve output.""")
 
     def _process(self, overlay, key=None):
 
@@ -655,7 +655,7 @@ class collapse_curve(ElementOperation):
             yval = self.p.fn([c.data[i,1]  for c in overlay])
             data.append((xval, yval))
 
-        return Curve(np.array(data), value=self.p.value,
+        return Curve(np.array(data), group=self.p.group,
                      label=self.get_overlay_label(overlay))
 
 

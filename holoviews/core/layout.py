@@ -56,7 +56,7 @@ class AdjointLayout(Dimensioned):
 
     key_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
 
-    value = param.String(default='AdjointLayout')
+    group = param.String(default='AdjointLayout')
 
     layout_order = ['main', 'right', 'top']
 
@@ -255,7 +255,7 @@ class Layout(AttrTree, Dimensioned):
     be set using the max_branches option of the %view magic.
     """
 
-    value = param.String(default='Layout', constant=True)
+    group = param.String(default='Layout', constant=True)
 
     _deep_indexable = True
 
@@ -313,7 +313,7 @@ class Layout(AttrTree, Dimensioned):
         elif type(val) is cls:
             return val
         else:
-            return cls(items=[((val.value, val.label if val.label else 'I'), val)])
+            return cls(items=[((val.group, val.label if val.label else 'I'), val)])
 
 
     def __init__(self, *args, **kwargs):
@@ -373,12 +373,12 @@ class Layout(AttrTree, Dimensioned):
                 for idx, (path, item) in enumerate(self.items())}
 
 
-    def group(self, value):
+    def regroup(self, group):
         """
-        Assign a new value string to all the elements and return a new
+        Assign a new group string to all the elements and return a new
         Layout.
         """
-        new_items = [el.relabel(value=value) for el in self.data.values()]
+        new_items = [el.relabel(group=group) for el in self.data.values()]
         return reduce(lambda x,y: x+y, new_items)
 
 

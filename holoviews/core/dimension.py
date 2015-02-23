@@ -135,36 +135,36 @@ class Dimension(param.Parameterized):
 
 class LabelledData(param.Parameterized):
     """
-    LabelledData is a mix-in class designed to introduce the value and
+    LabelledData is a mix-in class designed to introduce the group and
     label parameters (and corresponding methods) to any class
     containing data. This class assumes that the core data contents
     will be held in the attribute called 'data'.
 
-    Used together, value and label is designed to allow a simple and
+    Used together, group and label is designed to allow a simple and
     flexible means of addressing data. For instance, if you are
     collecting the heights of people in different demographics, you
     could specify the values of your objects as 'Height' and then use
     the label to specify the (sub)population.
 
     In this scheme, one object may have the parameters set to
-    [value='Height', label='Children'] and another may use
-    [value='Height', label='Adults'].
+    [group='Height', label='Children'] and another may use
+    [group='Height', label='Adults'].
 
     Note: Another level of specification is implict in the type (i.e
     class) of the LabelledData object. A full specification of a
     LabelledData object is therefore given by the tuple
-    (<type>, <value>, label>). This additional level of specification is
+    (<type>, <group>, label>). This additional level of specification is
     used in the traverse method.
     """
 
-    value = param.String(default='LabelledData', constant=True, doc="""
+    group = param.String(default='LabelledData', constant=True, doc="""
        A string describing the type of data contained by the object.
        By default this should mirror the class name. The first letter
-       of a value name should always be capitalized.""")
+       of a group name should always be capitalized.""")
 
     label = param.String(default='', constant=True, doc="""
        Optional label describing the data, typically reflecting where
-       or how it was measured. Together with the value parameter,
+       or how it was measured. Together with the group parameter,
        label should allow a specific measurement or dataset to be
        referenced given the class type. Note that the first letter of
        a label should always be capitalized.""")
@@ -197,12 +197,12 @@ class LabelledData(param.Parameterized):
         return self.__class__(data, *args, **settings)
 
 
-    def relabel(self, label=None, value=None):
+    def relabel(self, label=None, group=None):
         """
-        Assign a new label and/or value to an existing LabelledData
+        Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
         """
-        keywords = [('label',label), ('value',value)]
+        keywords = [('label',label), ('group',group)]
         return self.clone(self.data,
                           **{k:v for k,v in keywords if v is not None})
 
@@ -210,13 +210,13 @@ class LabelledData(param.Parameterized):
         """
         A specification may be a class, a tuple or a string.
         Equivalent to isinstance if a class is supplied, otherwise
-        matching occurs on type, value and label. These may be supplied
+        matching occurs on type, group and label. These may be supplied
         as a tuple of strings or as a single string of form
-        {type}.{value}.{label}. Matching may be done on type alone,
-        type and value or type, value, and label.
+        {type}.{group}.{label}. Matching may be done on type alone,
+        type and group or type, group, and label.
         """
         if isinstance(spec, type): return isinstance(self, spec)
-        specification = (self.__class__.__name__, self.value, self.label)
+        specification = (self.__class__.__name__, self.group, self.label)
         identifier_specification = tuple(valid_identifier(ident) for ident in specification)
         split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
         split_spec, nocompare = zip(*((None, True) if s == '*' or s is None else (s, False)
@@ -360,7 +360,7 @@ class Dimensioned(LabelledData):
        value dimension may be indexed by name after the key
        dimensions.""")
 
-    value = param.String(default='Dimensioned', constant=True, doc="""
+    group = param.String(default='Dimensioned', constant=True, doc="""
        A string describing the data wrapped by the object.""")
 
 
@@ -551,4 +551,4 @@ class ViewableElement(Dimensioned):
 
     __abstract = True
 
-    value = param.String(default='ViewableElement')
+    group = param.String(default='ViewableElement')

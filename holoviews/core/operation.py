@@ -20,8 +20,8 @@ class Operation(param.ParameterizedFunction):
     Base class for all Operation types.
     """
 
-    value = param.String(default='Operation', doc="""
-       The value string used to identify the output of the
+    group = param.String(default='Operation', doc="""
+       The group string used to identify the output of the
        Operation. By default this should match the operation name.""")
 
 
@@ -29,7 +29,7 @@ class Operation(param.ParameterizedFunction):
     def search(cls, element, pattern):
         """
         Helper method that returns a list of elements that match the
-        given path pattern of form {type}.{value}.{label}.
+        given path pattern of form {type}.{group}.{label}.
 
         The input may be a Layout, an Overlay type or a single
         Element.
@@ -122,7 +122,7 @@ class ElementOperation(Operation):
                             for k, el in element.items()]
             refval = mapped_items[0][1]
             processed = element.clone(mapped_items,
-                                      value=refval.value,
+                                      group=refval.group,
                                       label=refval.label)
         else:
             raise ValueError("Cannot process type %r" % type(element).__name__)
@@ -138,8 +138,8 @@ class MapOperation(param.ParameterizedFunction):
     can compute over all the keys and dimensions of the input map.
     """
 
-    value = param.String(default='MapOperation', doc="""
-        The value string to identify the output of the MapOperation.
+    group = param.String(default='MapOperation', doc="""
+        The group string to identify the output of the MapOperation.
         By default this will match the MapOperation name.""")
 
     def __call__(self, vmap, **params):
@@ -199,7 +199,7 @@ class TreeOperation(Operation):
                 result = self._process(el, key)
 
             holomaps = [HoloMap([(key,el)], key_dimensions=dims,
-                                value=el.value, label=el.label) for el in result]
+                                group=el.group, label=el.label) for el in result]
             if len(holomaps) == 1:
                 processed_tree = Layout.from_values(holomaps[0])
             else:

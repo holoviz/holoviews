@@ -89,7 +89,7 @@ class Contours(Path):
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""", bounds=(1,1))
 
-    value = param.String(default='Contours')
+    group = param.String(default='Contours')
 
     def __init__(self, data, **params):
         data = [] if data is None else data

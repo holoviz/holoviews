@@ -211,7 +211,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
-        cls.assertEqual(obj1.value, obj2.value, "Value labels mismatched.")
+        cls.assertEqual(obj1.group, obj2.group, "Group labels mismatched.")
         cls.assertEqual(obj1.label, obj2.label, "Labels mismatched.")
 
     @classmethod

@@ -17,7 +17,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
         self.el1 = Element('data1')
         self.el2 = Element('data2')
         self.el3 = Element('data3')
-        self.el4 = Element('data5', value='ValB')
+        self.el4 = Element('data5', group='ValB')
         self.el5 = Element('data6', label='LabelA')
 
     #========================#
@@ -45,7 +45,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
 
     def test_layouttree_comparison_unequal_paths(self):
         t1 = self.el1 + self.el2
-        t2 = self.el1 + self.el2.relabel(value='ValA')
+        t2 = self.el1 + self.el2.relabel(group='ValA')
         try:
             self.assertEqual(t1, t2)
         except AssertionError as e:
@@ -84,7 +84,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
 
     def test_overlay_comparison_unequal_paths(self):
         t1 = self.el1 * self.el2
-        t2 = self.el1 * self.el2.relabel(value='ValA')
+        t2 = self.el1 * self.el2.relabel(group='ValA')
         try:
             self.assertEqual(t1, t2)
         except AssertionError as e:
@@ -117,7 +117,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
             self.assertEqual(str(e), "'data2' != 'data3'")
 
     def test_composite_unequal_paths_outer(self):
-        t1 = (self.el1 * self.el2) + (self.el1 * self.el2).relabel(value='ValA')
+        t1 = (self.el1 * self.el2) + (self.el1 * self.el2).relabel(group='ValA')
         t2 = (self.el1 * self.el2) + (self.el1 * self.el3)
         try:
             self.assertEqual(t1, t2)
@@ -125,7 +125,7 @@ class CompositeComparisonTestCase(ComparisonTestCase):
             self.assertEqual(str(e), 'Layouts have mismatched paths.')
 
     def test_composite_unequal_paths_inner(self):
-        t1 = (self.el1 * self.el2) + (self.el1 * self.el2.relabel(value='ValA'))
+        t1 = (self.el1 * self.el2) + (self.el1 * self.el2.relabel(group='ValA'))
         t2 = (self.el1 * self.el2) + (self.el1 * self.el3)
         try:
             self.assertEqual(t1, t2)

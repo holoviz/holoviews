@@ -19,7 +19,7 @@ class Element(ViewableElement, Composable, Overlayable):
     the data maps onto the x- and y- and value dimensions.
     """
 
-    value = param.String(default='Element')
+    group = param.String(default='Element')
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, individually=True, **kwargs):
@@ -110,7 +110,7 @@ class Element(ViewableElement, Composable, Overlayable):
                        for dim in self.value_dimensions])
         params = dict(key_dimensions=self.key_dimensions,
                       value_dimensions=self.value_dimensions,
-                      label=self.label, value=self.value, **kwargs)
+                      label=self.label, group=self.group, **kwargs)
         return Table(zip(keys, values), **params)
 
 
@@ -405,10 +405,10 @@ class HoloMap(UniformNdMapping):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items, key_dimensions=dimensions, label=self._label, value=self._value)
+            return self.clone(items, key_dimensions=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.items()]
-            return self.clone(items, label=self._label, value=self._value)
+            return self.clone(items, label=self._label, group=self._group)
         else:
             raise Exception("Can only overlay with {data} or {vmap}.".format(
                 data=self.data_type, vmap=self.__class__.__name__))

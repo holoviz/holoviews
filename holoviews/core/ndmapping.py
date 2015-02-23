@@ -44,7 +44,7 @@ class MultiDimensionalMapping(Dimensioned):
     storage methods helps make both classes easier to understand.
     """
 
-    value = param.String(default='MultiDimensionalMapping')
+    group = param.String(default='MultiDimensionalMapping')
 
     key_dimensions = param.List(default=[Dimension("Default")], constant=True)
 
@@ -57,8 +57,8 @@ class MultiDimensionalMapping(Dimensioned):
             map_type = type(initial_items)
             own_params = self.params()
             new_params = dict(initial_items.get_param_values(onlychanged=True))
-            if new_params.get('value') == map_type.__name__:
-                new_params.pop('value')
+            if new_params.get('group') == map_type.__name__:
+                new_params.pop('group')
             params = dict({name: value for name, value in new_params.items()
                            if name in own_params}, **params)
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
@@ -363,7 +363,7 @@ class MultiDimensionalMapping(Dimensioned):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self._cached_index_names + [self.value]
+        labels = self._cached_index_names + [self.group]
         return pandas.DataFrame(
             [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
@@ -465,7 +465,7 @@ class NdMapping(MultiDimensionalMapping):
     keys that are outside the slice range.
     """
 
-    value = param.String(default='NdMapping')
+    group = param.String(default='NdMapping')
 
     def __getitem__(self, indexslice):
         """
@@ -606,34 +606,34 @@ class UniformNdMapping(NdMapping):
     _abstract = True
     _deep_indexable = True
 
-    def __init__(self, initial_items=None, value=None, label=None, **params):
+    def __init__(self, initial_items=None, group=None, label=None, **params):
         self._type = None
-        self._value_check, self._value = None, value
+        self._group_check, self._group = None, group
         self._label_check, self._label = None, label
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
 
-    def relabel(self, label=None, value=None):
+    def relabel(self, label=None, group=None):
         """
         Relabels the UniformNdMapping and all it's Elements
-        with the supplied value and label.
+        with the supplied group and label.
         """
-        return self.clone([(k, v.relabel(label, value)) for k, v in self.items()],
-                          value=value if value else self.value,
+        return self.clone([(k, v.relabel(label, group)) for k, v in self.items()],
+                          group=group if group else self.group,
                           label=self.label if label is None else label)
 
     @property
-    def value(self):
-        if self._value:
-            return self._value
-        elif self._value_check and self._value_check != self.type.__name__:
-            return self._value_check
+    def group(self):
+        if self._group:
+            return self._group
+        elif self._group_check and self._group_check != self.type.__name__:
+            return self._group_check
         else:
             return type(self).__name__
 
-    @value.setter
-    def value(self, value):
-        self._value = value
+    @group.setter
+    def group(self, group):
+        self._group = group
 
     @property
     def label(self):
@@ -666,11 +666,11 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
-        if self._value is None:
-            self._value_check = data.value
+        if self._group is None:
+            self._group_check = data.group
         if self._label is None:
             self._label_check = data.label
-        elif self._value_check and data.value != self._value_check:
+        elif self._group_check and data.group != self._group_check:
             raise ValueError("Elements in %s need to have uniform values.")
         elif self._label_check and data.label != self._label_check:
             raise ValueError("Elements in %s need to have uniform labels.")

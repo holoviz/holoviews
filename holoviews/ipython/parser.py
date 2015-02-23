@@ -140,7 +140,7 @@ class OptsSpec(Parser):
     norm_options = (norm_options_short | norm_options_long)
 
     compositor_ops = pp.MatchFirst(
-        [pp.Literal(el.value) for el in Compositor.definitions])
+        [pp.Literal(el.group) for el in Compositor.definitions])
 
     dotted_path = pp.Combine( pp.Word(ascii_uppercase, exact=1)
                               + pp.Word(pp.alphanums+'._'))
@@ -244,7 +244,7 @@ class CompositorSpec(Parser):
     The components are:
 
     mode      : Operation mode, either 'data' or 'display'.
-    value     : Value identifier with capitalized initial letter.
+    group     : Value identifier with capitalized initial letter.
     op        : The name of the operation to apply.
     spec      : Overlay specification of form (A * B) where A and B are
                  dotted path specifications.

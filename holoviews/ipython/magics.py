@@ -290,7 +290,7 @@ class CompositorMagic(Magics):
             for definition in CompositorSpec.parse(line.strip()):
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
-                Store.options[type_name + '.' + definition.value] = group
+                Store.options[type_name + '.' + definition.group] = group
                 Compositor.register(definition)
         else:
             print("For help with the %compositor magic, call %compositor?\n")
@@ -375,7 +375,7 @@ class OptsCompleter(object):
         sorted_keys = sorted(completions.keys())
         type_keys = [k for k in sorted_keys if ('.' not in k)]
 
-        compositor_defs = {el.value:el.output_type.__name__
+        compositor_defs = {el.group:el.output_type.__name__
                            for el in Compositor.definitions}
 
         completion_key, suggestions = cls.dotted_completion(line, sorted_keys, compositor_defs)
@@ -467,12 +467,12 @@ class OptsMagic(Magics):
     @classmethod
     def expand_compositor_keys(cls, spec):
         """
-        Expands compositor definition keys into {type}.{value}
-        keys. For instance a compositor operation returning a value
+        Expands compositor definition keys into {type}.{group}
+        keys. For instance a compositor operation returning a group
         string 'Image' of element type RGB expands to 'RGB.Image'.
         """
         expanded_spec={}
-        compositor_defs = {el.value:el.output_type.__name__
+        compositor_defs = {el.group:el.output_type.__name__
                            for el in Compositor.definitions}
         for key, val in spec.items():
             if key not in compositor_defs:
@@ -491,7 +491,7 @@ class OptsMagic(Magics):
 
         %%opts [ [path] [normalization] [plotting options] [style options]]+
 
-        path:             A dotted type.value.label specification
+        path:             A dotted type.group.label specification
                           (e.g. Image.Grayscale.Photo)
 
         normalization:    List of normalization options delimited by braces.

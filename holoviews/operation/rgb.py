@@ -35,8 +35,8 @@ class toRGB(ElementOperation):
 
     output_type = RGB
 
-    value = param.String(default='RGB', doc="""
-        The value string for the output RGB element.""")
+    group = param.String(default='RGB', doc="""
+        The group string for the output RGB element.""")
 
 
     def _process(self, overlay, key=None):
@@ -70,7 +70,7 @@ class toRGB(ElementOperation):
         return RGB(np.dstack(arrays),
                    bounds = self.get_overlay_extents(overlay),
                    label  = self.get_overlay_label(overlay),
-                   value  = self.p.value)
+                   group  = self.p.group)
 
 
 
@@ -100,8 +100,8 @@ class toHCS(ElementOperation):
     flipSC = param.Boolean(default=False, doc="""
         Whether to flip the strength and confidence channels""")
 
-    value = param.String(default='HCS', doc="""
-        The value string for the output (an RGB element).""")
+    group = param.String(default='HCS', doc="""
+        The group string for the output (an RGB element).""")
 
     def _process(self, overlay, key=None):
 
@@ -131,7 +131,7 @@ class toHCS(ElementOperation):
         return RGB(np.dstack(hsv_to_rgb(h,s,v)),
                    bounds = self.get_overlay_extents(overlay),
                    label =  self.get_overlay_label(overlay),
-                   value =  self.p.value)
+                   group =  self.p.group)
 
 
 
@@ -146,8 +146,8 @@ class colormap(ElementOperation):
     cmap = param.String(default='jet', doc="""
         The name of matplotlib color map to apply.""")
 
-    value = param.String(default='Colormap', doc="""
-        The value string for the output (an RGB element).""")
+    group = param.String(default='Colormap', doc="""
+        The group string for the output (an RGB element).""")
 
     def _process(self, matrix, key=None):
         import matplotlib
@@ -165,7 +165,7 @@ class colormap(ElementOperation):
         return RGB(matplotlib.cm.get_cmap(self.p.cmap)(matrix.data),
                    bounds = matrix.bounds,
                    label = matrix.label,
-                   value=self.p.value)
+                   group=self.p.group)
 
 
 
@@ -176,8 +176,8 @@ class alpha_overlay(ElementOperation):
     obtained from the second layer of the overlay.
     """
 
-    value = param.String(default='AlphaOverlay', doc="""
-        The value string for the output (an RGB element).""")
+    group = param.String(default='AlphaOverlay', doc="""
+        The group string for the output (an RGB element).""")
 
     cmap = param.String(default='jet', doc="""
         The name of matplotlib color map to apply.""")
@@ -187,7 +187,7 @@ class alpha_overlay(ElementOperation):
         return RGB(toRGB(R*G*B*overlay[1]).data,
                    bounds=self.get_overlay_extents(overlay),
                    label=self.get_overlay_label(overlay),
-                   value=self.p.value)
+                   group=self.p.group)
 
 
 class colorizeHSV(ElementOperation):
@@ -197,8 +197,8 @@ class colorizeHSV(ElementOperation):
     the HSV color space.
     """
 
-    value = param.String(default='ColorizedHSV', doc="""
-        The value string for the colorized output (an RGB element)""")
+    group = param.String(default='ColorizedHSV', doc="""
+        The group string for the colorized output (an RGB element)""")
 
     output_type = RGB
 
@@ -223,5 +223,5 @@ class colorizeHSV(ElementOperation):
             S = normfn.process_element(overlay[0], key)
 
         C = Image(np.ones(hue.data.shape),
-                   bounds=self.get_overlay_extents(overlay), value='F', label='G')
-        return toHCS(H * C * S).clone(value=self.p.value)
+                   bounds=self.get_overlay_extents(overlay), group='F', label='G')
+        return toHCS(H * C * S).clone(group=self.p.group)

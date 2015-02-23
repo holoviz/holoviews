@@ -11,8 +11,8 @@ from holoviews.core.pprint import PrettyPrinter
 class PrettyPrintTest(ComparisonTestCase):
 
     def setUp(self):
-        self.element1 = Element(None, value='Value', label='Label')
-        self.element2 = Element(None, value='Value', label='')
+        self.element1 = Element(None, group='Value', label='Label')
+        self.element2 = Element(None, group='Value', label='')
 
     def test_element_repr1(self):
         r = PrettyPrinter.pprint(self.element1)

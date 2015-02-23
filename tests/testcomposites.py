@@ -13,11 +13,11 @@ class ElementTestCase(ComparisonTestCase):
         self.el1 = Element('data1')
         self.el2 = Element('data2')
         self.el3 = Element('data3')
-        self.el4 = Element('data4', value='ValA')
-        self.el5 = Element('data5', value='ValB')
+        self.el4 = Element('data4', group='ValA')
+        self.el5 = Element('data5', group='ValB')
         self.el6 = Element('data6', label='LabelA')
-        self.el7 = Element('data7', value='ValA', label='LabelA')
-        self.el8 = Element('data8', value='ValA', label='LabelB')
+        self.el7 = Element('data7', group='ValA', label='LabelA')
+        self.el8 = Element('data8', group='ValA', label='LabelB')
 
     def test_element_init(self):
         Element('data1')
@@ -102,7 +102,7 @@ class LayoutTestCase(ElementTestCase):
 
     def test_layouttree_group(self):
         t1 = (self.el1 + self.el2)
-        t2 = t1.group('NewValue')
+        t2 = t1.regroup('NewValue')
         self.assertEqual(t2.keys(), [('NewValue', 'I'), ('NewValue', 'II')])
 
 
@@ -208,7 +208,7 @@ class OverlayTestCase(ElementTestCase):
 
     def test_overlay_group(self):
         t1 = (self.el1 * self.el2)
-        t2 = t1.group('NewValue')
+        t2 = t1.regroup('NewValue')
         self.assertEqual(t2.keys(), [('NewValue', 'I'), ('NewValue', 'II')])
 
 
@@ -223,34 +223,34 @@ class CompositeTestCase(ElementTestCase):
         self.assertEqual(t.keys(),  [('Overlay', 'I'), ('Overlay', 'II')])
 
     def test_composite_relabelled_value1(self):
-        t = (self.el1 * self.el2) + (self.el1 * self.el2).relabel(value='Val2')
+        t = (self.el1 * self.el2) + (self.el1 * self.el2).relabel(group='Val2')
         self.assertEqual(t.keys(), [('Overlay', 'I'), ('Val2', 'I')])
 
     def test_composite_relabelled_label1(self):
         t = ((self.el1 * self.el2)
-             + (self.el1 * self.el2).relabel(value='Val1', label='Label2'))
+             + (self.el1 * self.el2).relabel(group='Val1', label='Label2'))
         self.assertEqual(t.keys(), [('Overlay', 'I'), ('Val1', 'Label2')])
 
     def test_composite_relabelled_label2(self):
         t = ((self.el1 * self.el2).relabel(label='Label1')
-             + (self.el1 * self.el2).relabel(value='Val1', label='Label2'))
+             + (self.el1 * self.el2).relabel(group='Val1', label='Label2'))
         self.assertEqual(t.keys(), [('Overlay', 'Label1'), ('Val1', 'Label2')])
 
     def test_composite_relabelled_value2(self):
-        t = ((self.el1 * self.el2).relabel(value='Val1')
-             + (self.el1 * self.el2).relabel(value='Val2'))
+        t = ((self.el1 * self.el2).relabel(group='Val1')
+             + (self.el1 * self.el2).relabel(group='Val2'))
         self.assertEqual(t.keys(), [('Val1', 'I'), ('Val2', 'I')])
 
     def test_composite_relabelled_value_and_label(self):
-        t = ((self.el1 * self.el2).relabel(value='Val1', label='Label1')
-             + (self.el1 * self.el2).relabel(value='Val2', label='Label2'))
+        t = ((self.el1 * self.el2).relabel(group='Val1', label='Label1')
+             + (self.el1 * self.el2).relabel(group='Val2', label='Label2'))
         self.assertEqual(t.keys(), [('Val1', 'Label1'), ('Val2', 'Label2')])
 
 
     def test_triple_composite_relabelled_value_and_label_keys(self):
         t = ((self.el1 * self.el2)
-             +(self.el1 * self.el2).relabel(value='Val1', label='Label1')
-             + (self.el1 * self.el2).relabel(value='Val2', label='Label2'))
+             +(self.el1 * self.el2).relabel(group='Val1', label='Label1')
+             + (self.el1 * self.el2).relabel(group='Val2', label='Label2'))
         excepted_keys = [('Overlay', 'I'), ('Val1', 'Label1'), ('Val2', 'Label2')]
         self.assertEqual(t.keys(), excepted_keys)
 

@@ -31,7 +31,7 @@ class TimeSeries(Element2D):
     key_dimensions = param.List(default=[Dimension('x'), Dimension('n')],
                                 bounds=(2, 2))
 
-    value = param.String(default='TimeSeries')
+    group = param.String(default='TimeSeries')
 
     value_dimensions = param.List(default=[Dimension('z')],
                                   bounds=(1, 1))
@@ -78,7 +78,7 @@ class Bivariate(Chart):
 
     value_dimensions = param.List(default=[], bounds=(0,0))
 
-    value = param.String(default="Bivariate")
+    group = param.String(default="Bivariate")
 
 
 
@@ -92,7 +92,7 @@ class Distribution(Chart):
 
     key_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
 
-    value = param.String(default='Distribution')
+    group = param.String(default='Distribution')
 
     value_dimensions = param.List(default=[Dimension('Frequency')])
 
@@ -122,7 +122,7 @@ class Regression(Scatter):
     more.
     """
 
-    value = param.String(default='Regression')
+    group = param.String(default='Regression')
 
 
 class DFrame(PandasDFrame):

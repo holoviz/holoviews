@@ -327,7 +327,7 @@ class OptionTree(AttrTree):
         In addition, closest supports custom options by checking the
         object
         """
-        components = (obj.__class__.__name__, obj.value, obj.label)
+        components = (obj.__class__.__name__, obj.group, obj.label)
         return self.find(components).options(group)
 
 
@@ -393,8 +393,8 @@ class Compositor(param.Parameterized):
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")
 
-    value = param.String(doc="""
-       The value identifier for the output of this particular compositor""")
+    group = param.String(doc="""
+       The group identifier for the output of this particular compositor""")
 
     kwargs = param.Dict(doc="""
        Optional set of parameters to pass to the operation.""")
@@ -430,7 +430,7 @@ class Compositor(param.Parameterized):
         if applicable_op is None: return overlay
 
         output = applicable_op.apply(overlay, ranges, key=key)
-        output = output.relabel(value=applicable_op.value)
+        output = output.relabel(group=applicable_op.group)
         output.id = overlay.id
         return Overlay.from_values(output)
 
@@ -452,15 +452,15 @@ class Compositor(param.Parameterized):
 
     @classmethod
     def register(cls, compositor):
-        defined_values = [op.value for op in cls.definitions]
-        if compositor.value in defined_values:
-            cls.definitions.pop(defined_values.index(compositor.value))
+        defined_groups = [op.group for op in cls.definitions]
+        if compositor.group in defined_groups:
+            cls.definitions.pop(defined_groups.index(compositor.group))
         cls.definitions.append(compositor)
         if compositor.operation not in cls.operations:
             cls.operations.append(compositor.operation)
 
 
-    def __init__(self, pattern, operation, value, mode, **kwargs):
+    def __init__(self, pattern, operation, group, mode, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -477,7 +477,7 @@ class Compositor(param.Parameterized):
         else:
             self.label = ''
 
-        super(Compositor, self).__init__(value=value,
+        super(Compositor, self).__init__(group=group,
                                          pattern=pattern,
                                          operation=operation,
                                          mode=mode,
@@ -514,7 +514,7 @@ class Compositor(param.Parameterized):
             level += 1      # Types match
             if len(spec) == 1: continue
 
-            elif spec[1] == el.value: level += 1  # Values match
+            elif spec[1] == el.group: level += 1  # Values match
             else:                     return None
 
             if len(spec) == 3 and (spec[2] == el.label):

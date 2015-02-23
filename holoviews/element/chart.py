@@ -17,7 +17,7 @@ class Chart(Element2D):
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
-    value = param.String(default='Chart')
+    group = param.String(default='Chart')
 
     value_dimensions = param.List(default=[Dimension('y')], bounds=(1,3), doc="""
         Dimensions on Element2Ds determine the number of indexable
@@ -171,7 +171,7 @@ class Scatter(Chart):
     disconnected points.
     """
 
-    value = param.String(default='Scatter')
+    group = param.String(default='Scatter')
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
@@ -187,7 +187,7 @@ class Curve(Chart):
     the x-axis.
     """
 
-    value = param.String(default='Curve')
+    group = param.String(default='Curve')
 
     def progressive(self):
         """
@@ -211,7 +211,7 @@ class Bars(Chart):
     sorted by x-value and there are no gaps in the bars.
     """
 
-    value = param.String(default='Bars')
+    group = param.String(default='Bars')
 
     def __init__(self, data, width=None, **params):
         super(Bars, self).__init__(data, **params)
@@ -258,7 +258,7 @@ class Histogram(Element2D):
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
-    value = param.String(default='Histogram')
+    group = param.String(default='Histogram')
 
     value_dimensions = param.List(default=[Dimension('Frequency')])
 
@@ -345,7 +345,7 @@ class Points(Chart):
         The label of the x- and y-dimension of the Points in form
         of a string or dimension object.""")
 
-    value = param.String(default='Points')
+    group = param.String(default='Points')
 
     value_dimensions = param.List(default=[], bounds=(0, 2))
 
@@ -425,7 +425,7 @@ class VectorField(Points):
     higher.
     """
 
-    value = param.String(default='VectorField')
+    group = param.String(default='VectorField')
 
     value_dimensions = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
                                            Dimension('Magnitude')], bounds=(2, 2))

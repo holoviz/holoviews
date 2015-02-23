@@ -25,7 +25,7 @@ class ItemTable(Element):
     value_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
        ItemTables should have only index Dimensions.""")
 
-    value = param.String(default="ItemTable")
+    group = param.String(default="ItemTable")
 
 
     @property
@@ -154,9 +154,9 @@ class Table(Element, NdMapping):
     slice over the column names (using alphanumeric ordering).
     """
 
-    value = param.String(default='Table', doc="""
-         The value Dimension is used to describe the table. Example of
-         dimension names include 'Summary' or 'Statistics'. """)
+    group = param.String(default='Table', doc="""
+         The group is used to describe the table. Example of
+         group names include 'Summary' or 'Statistics'. """)
 
     value_dimensions = param.List(default=[Dimension('Data')],
                                   bounds=(1,None), doc="""
@@ -171,7 +171,7 @@ class Table(Element, NdMapping):
     def __init__(self, data=None, **params):
         self._style = None
         NdMapping.__init__(self, data, **dict(params,
-                                              value=params.get('value',self.value)))
+                                              group=params.get('group',self.group)))
         for k, v in self.data.items():
             self[k] = v # Unpacks any ItemTables
 
@@ -327,7 +327,7 @@ class Table(Element, NdMapping):
             else:
                 reduced = {vdim: reduce_fn(self.dimension_values(vdim.name))
                            for vdim in self.value_dimensions}
-                params = dict(value=self.value) if self.value != type(self).__name__ else {}
+                params = dict(group=self.group) if self.value != type(self).__name__ else {}
                 reduced_table = ItemTable(reduced, label=self.label, **params)
         return reduced_table
 
@@ -365,9 +365,7 @@ class Table(Element, NdMapping):
     def dimension_values(self, dim):
         if isinstance(dim, Dimension):
             raise Exception('Dimension to be specified by name')
-        if dim == self.value:
-            return self.values()
-        elif dim in self.dimensions('value', label=True):
+        if dim in self.dimensions('value', label=True):
             if len(self.value_dimensions) == 1: return self.values()
             index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
