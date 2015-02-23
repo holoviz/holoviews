@@ -616,9 +616,6 @@ class AdjointLayoutPlot(CompositePlot):
                 continue
 
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
-            # 'Main' views that should be displayed with square aspect
-            if pos == 'main' and issubclass(vtype, ViewableElement):
-                subplot.aspect='square'
             subplot(ranges=ranges)
         self.drawn = True
 
