@@ -384,6 +384,7 @@ class OverlayPlot(ElementPlot):
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
                             layout_dimensions=self.layout_dimensions, uniform=self.uniform)
             plotype = Store.defaults[type(vmap.last)]
+            if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)
 
         return subplots
