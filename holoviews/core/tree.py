@@ -3,6 +3,7 @@ try:
 except:
     from collections import OrderedDict
 
+from .pprint import PrettyPrinter
 from .util import valid_identifier
 
 
@@ -249,3 +250,7 @@ class AttrTree(object):
             return item
         else:
             return default
+
+
+    def __repr__(self):
+        return PrettyPrinter.pprint(self)
