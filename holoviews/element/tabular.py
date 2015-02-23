@@ -40,7 +40,7 @@ class ItemTable(Element):
 
     def __init__(self, data, **params):
         if type(data) == dict:
-            raise ValueError("ItemTable cannot accept a standard Python  dictionary"
+            raise ValueError("ItemTable cannot accept a standard Python  dictionary "
                              "as a well-defined item ordering is required.")
         elif isinstance(data, OrderedDict): pass
         elif isinstance(data, list):
