@@ -173,8 +173,7 @@ class SurfacePlot(Plot3D):
         mat = element.data
         rn, cn = mat.shape
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
-        c = np.outer(np.ones(cn), np.linspace(l, r, cn))
-        r = np.outer(np.linspace(b, t, rn), np.ones(rn))
+        r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
 
         style_opts = Store.lookup_options(element, 'style')[self.cyclic_index]
         style_opts['vmin'] = zmin
