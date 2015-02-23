@@ -310,7 +310,7 @@ class OptionTree(AttrTree):
 
         for idx, child in enumerate(path):
             matching_children = [c for c in item.children if child.endswith(c)]
-            matching_children = sorted(matching_children, key=lambda x: len(x))
+            matching_children = sorted(matching_children, key=lambda x: -len(x))
             if matching_children:
                 item = item[matching_children[0]]
             else:
