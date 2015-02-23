@@ -256,6 +256,7 @@ class DFrame(DataFrameView):
 
     def surface(self, kdims, vdims, **kwargs):
         heatmap = self.table(kdims, vdims, **dict(view_type=HeatMap, **kwargs))
+        kwargs.pop('reduce_fn')
         return Surface(heatmap.data, **kwargs)
 
     def vectorfield(self, kdims, vdims, **kwargs):
