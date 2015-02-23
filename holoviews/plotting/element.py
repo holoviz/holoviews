@@ -330,8 +330,8 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         axes_visible = view is not None or self.overlaid
-        axis.xaxis.set_visible(axes_visible)
-        axis.yaxis.set_visible(axes_visible)
+        axis.xaxis.set_visible(axes_visible and self.show_xaxis)
+        axis.yaxis.set_visible(axes_visible and self.show_yaxis)
         axis.patch.set_alpha(int(axes_visible))
 
         for hname, handle in self.handles.items():
