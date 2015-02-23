@@ -193,9 +193,9 @@ class ElementPlot(Plot):
                     ylabel = view.ylabel
                 if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
                     extents = self.get_extents(view, ranges)
-                    if extents:
+                    if extents and not self.overlaid:
                         coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                        if self.projection == '3d':
+                        if isinstance(view, Element3D):
                             l, b, zmin, r, t, zmax = coords
                             if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
                         else:
@@ -430,12 +430,12 @@ class OverlayPlot(ElementPlot):
 
 
     def get_extents(self, overlay, ranges):
-        if self.projection == '3d':
-            indexes = ((0, 3), (1, 4), (2, 5))
-        else:
-            indexes = ((0, 2), (1, 3))
         extents = None
         for key, subplot in self.subplots.items():
+            if subplot.projection == '3d':
+                indexes = ((0, 3), (1, 4), (2, 5))
+            else:
+                indexes = ((0, 2), (1, 3))
             layer = overlay.data.get(key, False)
             if layer and not isinstance(layer, Annotation):
                 lextnt = subplot.get_extents(layer, ranges)
@@ -447,7 +447,7 @@ class OverlayPlot(ElementPlot):
                 bounds = [find_minmax((extents[low], extents[high]),
                                       (lextnt[low], lextnt[high]))
                                           for low, high in indexes]
-                if self.projection == '3d':
+                if subplot.projection == '3d':
                     extents = (bounds[0][0], bounds[1][0], bounds[2][0],
                                bounds[0][1], bounds[1][1], bounds[2][1])
                 else:
