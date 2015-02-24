@@ -210,7 +210,7 @@ class Plot(param.Parameterized):
         else:
             key = key if isinstance(key, tuple) else (key,)
             dimensions = self.dimensions
-        dimension_labels = [dim.pprint_value(k) for dim, k in
+        dimension_labels = [dim.pprint_value_string(k) for dim, k in
                             zip(dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]

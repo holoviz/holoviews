@@ -185,12 +185,16 @@ class ElementPlot(Plot):
         view = self._get_frame(key)
         subplots = self.subplots.values() if self.subplots else {}
         if self.zorder == 0 and key is not None:
-            if view is not None:
-                title = None if self.zorder > 0 else self._format_title(key)
+            title = None if self.zorder > 0 else self._format_title(key)
+            if view is not None and not isinstance(view, Table):
+
+                # Axis labels
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
+
+                # Extents
                 if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
                     extents = self.get_extents(view, ranges)
                     if extents and not self.overlaid:
@@ -202,12 +206,23 @@ class ElementPlot(Plot):
                             l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
                         if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
                         if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
-                xdim = view.get_dimension(0)
-                if xdim.formatter and not isinstance(view, Table):
-                    axis.xaxis.set_major_formatter(xdim.formatter)
-                ydim = view.get_dimension(1)
-                if ydim.formatter and not isinstance(view, Table):
-                    axis.xaxis.set_major_formatter(ydim.formatter)
+
+                # Tick formatting
+                xdim, ydim = view.get_dimension(0), view.get_dimension(1)
+                xformat, yformat = None, None
+                if xdim.formatter:
+                    xformat = xdim.formatter
+                elif xdim.default_formatters.get(xdim.type):
+                    xformat = xdim.default_formatters[xdim.type]
+                if xformat:
+                    axis.xaxis.set_major_formatter(xformat)
+
+                if ydim.formatter:
+                    yformat = ydim.formatter
+                elif ydim.default_formatters.get(ydim.type):
+                    yformat = ydim.default_formatters[ydim.type]
+                if yformat:
+                    axis.yaxis.set_major_formatter(yformat)
 
             if not self.overlaid and not isinstance(self, OverlayPlot):
                 legend = axis.get_legend()
@@ -252,7 +267,7 @@ class ElementPlot(Plot):
 
             if self.logx or self.logy:
                 pass
-            if self.aspect == 'square':
+            elif self.aspect == 'square':
                 axis.set_aspect((1./axis.get_data_ratio()))
             elif self.aspect not in [None, 'square']:
                 axis.set_aspect(self.aspect)
@@ -262,6 +277,7 @@ class ElementPlot(Plot):
             elif self.logy:
                 axis.set_yscale('log')
 
+
             if xticks:
                 axis.set_xticks(xticks[0])
                 axis.set_xticklabels(xticks[1])
@@ -269,7 +285,7 @@ class ElementPlot(Plot):
                 log_locator = ticker.LogLocator(numticks=self.xticks,
                                                 subs=range(1,10))
                 axis.xaxis.set_major_locator(log_locator)
-            else:
+            elif self.xticks:
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
 
             for tick in axis.get_xticklabels():
@@ -282,7 +298,7 @@ class ElementPlot(Plot):
                 log_locator = ticker.LogLocator(numticks=self.yticks,
                                                 subs=range(1,10))
                 axis.yaxis.set_major_locator(log_locator)
-            else:
+            elif self.yticks:
                 axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
 
             for tick in axis.get_yticklabels():

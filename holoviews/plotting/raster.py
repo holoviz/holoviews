@@ -100,6 +100,7 @@ class RasterPlot(ElementPlot):
 
     def _annotate_values(self, view):
         axis = self.handles['axis']
+        val_dim = view.value_dimensions[0]
         dim1_keys, dim2_keys = view.dense_keys()
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xstep, ystep = 1.0/num_x, 1.0/num_y
@@ -109,7 +110,9 @@ class RasterPlot(ElementPlot):
         plot_coords = product(xpos, ypos)
         for plot_coord, coord in zip(plot_coords, coords):
             val = view._data.get(coord, np.NaN)
-            text = round(val[0] if isinstance(val, tuple) else val, 3)
+            val = val_dim.type(val) if val_dim.type else val
+            val = val[0] if isinstance(val, tuple) else val
+            text = val_dim.pprint_value(val)
             text = '' if val is np.nan else text
             if plot_coord not in self.handles['annotations']:
                 annotation = axis.annotate(text, xy=plot_coord,

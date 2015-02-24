@@ -58,10 +58,13 @@ class Dimension(param.Parameterized):
         be used to retain a categorical ordering.""")
 
     format_string = param.String(default="{name}: {val}{unit}", doc="""
-        Format string to specify how pprint_value is generated. Valid
+        Format string to specify how pprint_value_string is generated. Valid
         format keys include: 'name' (Dimension name), 'val' (a
         particular dimension value to be presented) and 'unit' (the
         unit string).""")
+
+    # Defines default formatting by type
+    type_formatters = {}
 
     def __init__(self, name, **params):
         """
@@ -93,18 +96,27 @@ class Dimension(param.Parameterized):
 
     def pprint_value(self, value):
         """
+        Applies the defined formatting to the value.
+        """
+        own_type = type(value) if self.type is None else self.type
+        formatter = self.formatter if self.formatter else self.type_formatters.get(own_type)
+        if formatter:
+            try:
+                value = formatter(value)
+            except:
+                self.warning("Formatting could not be applied for Dimension "
+                             "%s" % self.name)
+        return value
+
+
+    def pprint_value_string(self, value):
+        """
         Pretty prints the dimension name and value using the
         format_string parameter, including the unit string (if
         set). Numeric types are printed to the stated rounding level.
         """
         unit = '' if self.unit is None else ' ' + self.unit
-        if self.formatter:
-            try:
-                value = self.formatter(value)
-            except:
-                self.warning("Formatting could not be applied for Dimension "
-                             "%s" % self.name)
-
+        value = self.pprint_value(value)
         return self.format_string.format(name=self.name.capitalize(),
                                          val=value, unit=unit)
 
