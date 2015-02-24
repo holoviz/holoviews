@@ -40,6 +40,12 @@ available:
 * `Pandas and Seaborn: <http://ioam.github.io/media/holoviews/Pandas_Seaborn.html>`_
   Using HoloViews with the external Pandas and Seaborn libraries. (Coming soon!)
 
+There is also a reference tutorial explaining the details of the
+support offered for working with real-world data:
+
+* `Continuous Coordinates: <http://ioam.github.io/media/holoviews/Continuous_Coords.html>`_
+  Support for continuous coordinates offered by HoloViews.
+
 For more detailed information on any component described in the
 tutorials, please refer to the `Reference Manual:
 <../Reference_Manual>`_ or the online help (e.g. type ``Image?`` in an
