@@ -186,7 +186,7 @@ class DataFrameView(Element):
         return self.groupby(dimensions, GridSpace)
 
 
-    def viewmap(self, key_dimensions=[]):
+    def holomap(self, key_dimensions=[]):
         """
         Splits the supplied dimensions out into a HoloMap.
         """
