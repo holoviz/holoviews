@@ -80,14 +80,15 @@ in collaboration with `James A. Bednar <http://homepages.inf.ed.ac.uk/jbednar>`_
 
 HoloViews is completely `open source
 <https://github.com/ioam/holoviews>`_, available under a BSD license
-freely for both commercial and non-commercial use.  Contributions from
+freely for both commercial and non-commercial use.  HoloViews is 
+designed to be easily extensible, and contributions from
 users are welcome and encouraged.  In particular, HoloViews components
 can be combined in an infinite number of ways, and so it is impossible
 for us to test all conceivable combinations.  Thus we welcome `bug
-reports <https://github.com/ioam/holoviews/issues>`_, particularly if
-they come with `pull requests
-<http://yangsu.github.io/pull-request-tutorial/>`_ showing how to fix
-the bug!
+reports and feature requests <https://github.com/ioam/holoviews/issues>`_, 
+particularly if they come with test cases showing how to reproduce the bugs and 
+`pull requests <http://yangsu.github.io/pull-request-tutorial/>`_
+showing how to fix the bug or implement the feature!
 
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
