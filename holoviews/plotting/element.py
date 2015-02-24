@@ -426,8 +426,7 @@ class OverlayPlot(ElementPlot):
         self._adjust_legend(axis)
 
         key = self.keys[-1]
-        return self._finalize_axis(key, ranges=ranges,
-                                   title=self._format_title(key))
+        return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
     def get_extents(self, overlay, ranges):
@@ -439,7 +438,8 @@ class OverlayPlot(ElementPlot):
                 indexes = ((0, 2), (1, 3))
             layer = overlay.data.get(key, False)
             if layer and not isinstance(layer, Annotation):
-                lextnt = subplot.get_extents(layer, ranges)
+                sp_ranges = self.match_range(layer, ranges) if ranges else {}
+                lextnt = subplot.get_extents(layer, sp_ranges)
                 if not extents and lextnt:
                     extents = lextnt
                     continue
