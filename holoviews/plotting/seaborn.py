@@ -312,6 +312,7 @@ class SNSFramePlot(DFrameViewPlot):
             for opt, args in map_opts:
                 plot_fn = getattr(sns, args[0]) if hasattr(sns, args[0]) else getattr(plt, args[0])
                 getattr(g, opt)(plot_fn, *args[1:])
+            plt.close(self.handles['fig'])
             self.handles['fig'] = plt.gcf()
         else:
             super(SNSFramePlot, self)._update_plot(axis, view)
