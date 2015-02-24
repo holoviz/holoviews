@@ -65,6 +65,11 @@ class TimeSeries(Element2D):
         raise NotImplementedError('Reduction of TimeSeries not '
                                   'implemented.')
 
+    @property
+    def ylabel(self):
+        return str(self.value_dimensions[0])
+
+
 
 class Bivariate(Chart):
     """
