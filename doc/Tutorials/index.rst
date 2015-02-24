@@ -38,7 +38,7 @@ available:
   Overview and examples of all the HoloViews container types.
 
 * `Pandas and Seaborn: <http://ioam.github.io/media/holoviews/Pandas_Seaborn.html>`_
-  Using HoloViews with the external Pandas and Seaborn libraries. (Coming soon!)
+  Using HoloViews with the external Pandas and Seaborn libraries.
 
 There is also a reference tutorial explaining the details of the
 support offered for working with real-world data:
