@@ -18,8 +18,8 @@ class RasterPlot(ElementPlot):
 
     normalize_individually = param.Boolean(default=False)
 
-    show_values = param.Boolean(default=True, doc="""
-        Whether to annotate the values when displaying a HeatMap.""")
+    show_values = param.Boolean(default=False, doc="""
+        Whether to annotate each pixel with its value.""")
 
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin', 'clims']
@@ -68,8 +68,9 @@ class RasterPlot(ElementPlot):
         if isinstance(view, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
             self.handles['annotations'] = {}
-            if self.show_values:
-                self._annotate_values(view)
+
+        if self.show_values:
+            self._annotate_values(view)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges,
                                    xticks=xticks, yticks=yticks)

@@ -86,7 +86,7 @@ Store.options.Scatter3D = Options('style', color=Cycle(), marker='o')
 Store.options.Image = Options('style', cmap='hot', interpolation='nearest')
 Store.options.Raster = Options('style', cmap='hot', interpolation='nearest')
 Store.options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
-Store.options.HeatMap = Options('plot', xticks=20, yticks=20)
+Store.options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 Store.options.RGBA = Options('style', interpolation='nearest')
 Store.options.RGB = Options('style', interpolation='nearest')
 # Composites
