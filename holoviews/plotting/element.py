@@ -212,15 +212,15 @@ class ElementPlot(Plot):
                 xformat, yformat = None, None
                 if xdim.formatter:
                     xformat = xdim.formatter
-                elif xdim.default_formatters.get(xdim.type):
-                    xformat = xdim.default_formatters[xdim.type]
+                elif xdim.type_formatters.get(xdim.type):
+                    xformat = xdim.type_formatters[xdim.type]
                 if xformat:
                     axis.xaxis.set_major_formatter(xformat)
 
                 if ydim.formatter:
                     yformat = ydim.formatter
-                elif ydim.default_formatters.get(ydim.type):
-                    yformat = ydim.default_formatters[ydim.type]
+                elif ydim.type_formatters.get(ydim.type):
+                    yformat = ydim.type_formatters[ydim.type]
                 if yformat:
                     axis.yaxis.set_major_formatter(yformat)
 
