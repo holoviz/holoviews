@@ -15,7 +15,7 @@ from .pprint import PrettyPrinter
 
 class Dimension(param.Parameterized):
     """
-    A Dimension objects are used to specify some important general
+    Dimension objects are used to specify some important general
     features that may be associated with a collection of values.
 
     For instance, a Dimension may specify that a set of numeric values
