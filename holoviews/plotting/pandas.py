@@ -24,7 +24,7 @@ class DFrameViewPlot(ElementPlot):
         Aspect ratio defaults to square, 'equal' or numeric values
         are also supported.""")
 
-    show_grid = param.Boolean(default=True, doc="""
+    show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
     plot_type = param.ObjectSelector(default='scatter_matrix',
@@ -50,6 +50,12 @@ class DFrameViewPlot(ElementPlot):
                                          'marker', 'range_padding',
                                          'hist_kwds', 'density_kwds'],
                       'autocorrelation': ['kwds']}
+
+    xticks = param.Number(default=None, doc="""
+        By default we don't mess with Pandas based tickmarks""")
+
+    yticks = param.Number(default=None, doc="""
+        By default we don't mess with Pandas based tickmarks""")
 
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
