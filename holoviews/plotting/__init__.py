@@ -111,9 +111,9 @@ Store.options.TimeSeries = Options('style', color=Cycle())
 from ..core import Dimension
 from matplotlib.ticker import FormatStrFormatter
 Dimension.type_formatters[int] = FormatStrFormatter("%d")
-Dimension.type_formatters[float] = FormatStrFormatter("%3.f")
-Dimension.type_formatters[np.float32] = FormatStrFormatter("%3.f")
-Dimension.type_formatters[np.float64] = FormatStrFormatter("%3.f")
+Dimension.type_formatters[float] = FormatStrFormatter("%.3g")
+Dimension.type_formatters[np.float32] = FormatStrFormatter("%.3g")
+Dimension.type_formatters[np.float64] = FormatStrFormatter("%.3g")
 
 # Defining the most common style options for HoloViews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')
