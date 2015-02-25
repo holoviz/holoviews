@@ -15,7 +15,7 @@ Installation
 ____________
 
 holoviews requires `Param <http://ioam.github.com/param/>`_ and
-`Matplotlib <http://http://matplotlib.org/>`_, and is designed to work
+`Matplotlib <http://matplotlib.org/>`_, and is designed to work
 with `IPython Notebook <http://ipython.org/notebook/>`_.
 
 Please see the `holoviews website <http://ioam.github.com/holoviews/>`_ for
