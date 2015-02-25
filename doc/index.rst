@@ -61,12 +61,20 @@ Param, Matplotlib, and IPython Notebook can be installed using your
 operating system's package manager, or by using pip::
 
   pip install matplotlib 'ipython[notebook]'
-  pip install --user https://github.com/ioam/param/archive/master.zip
+  pip install https://github.com/ioam/param/archive/master.zip
 
 You can then obtain the latest version of HoloViews by cloning the git
 repository::
 
   git clone git://github.com/ioam/holoviews.git
+
+Alternatively, you may install the development version using pip::
+
+  pip install https://github.com/ioam/holoviews/archive/master.zip
+
+We plan to have a full PyPI release of HoloViews within the next week.
+
+
 
 |BuildStatus|_
 
