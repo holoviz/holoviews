@@ -70,7 +70,7 @@ repository::
 
 Alternatively, you may install the development version using pip::
 
-  pip install https://github.com/ioam/holoviews/archive/master.zip
+  pip install https://github.com/ioam/holoviews/archive/v0.8.2.zip
 
 We plan to have a full PyPI release of HoloViews within the next week.
 
