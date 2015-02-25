@@ -50,6 +50,8 @@ def get_plot_size(obj, percent_size):
                 scale_factor * obj.shape[1] * rescale_figure(percent_size)[1])
     else:
         return rescale_figure(percent_size)
+
+
 GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
 VIDEO_TAG = """
 <center><video controls style='max-width:100%'>
@@ -70,6 +72,48 @@ ANIMATION_OPTS = {
             GIF_TAG),
     'scrubber': ('html', None, {'fps': 5}, None, None)
 }
+
+
+def save(obj, basename, fmt='png', size=100, dpi=72, fps=20):
+    """
+    Save a HoloViews object to file, either to image format (png or
+    svg) or animation format (webm, h264, gif).
+
+    Size is specified as a percentage and the fps option only applies
+    to animation formats.
+    """
+    if isinstance(obj, AdjointLayout):
+        obj = Layout.from_values(obj)
+    animation_formats = ['webm','h264', 'gif']
+    figure_formats = ['png', 'svg']
+    formats = animation_formats + figure_formats
+
+    try:
+        plotclass = Store.defaults[type(obj)]
+    except KeyError:
+        raise Exception("No corresponding plot type found for %r" % type(obj))
+
+    if fmt not in formats:
+        raise ValueError("File format must be one of %s" % ','.join(formats))
+
+    filename = '%s.%s' % (basename, fmt)
+    plot = plotclass(obj, **opts(obj,  get_plot_size(obj, size)))
+    if fmt in animation_formats:
+        (writer, mime_type, anim_kwargs, extra_args, tag) = ANIMATION_OPTS[fmt]
+        anim_kwargs = dict(anim_kwargs, **({'fps':fps} if fmt =='gif' else {}))
+        anim = plot.anim(fps)
+        if extra_args != []:
+            anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+        anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
+    else:
+        fig = plot()
+        kw = dict(
+            format=fmt, dpi=dpi,
+            facecolor=fig.get_facecolor(),
+            edgecolor=fig.get_edgecolor())
+        with open(filename, 'w') as f:
+            fig.canvas.print_figure(f, **kw)
+
 
 Store.register_plots()
 
