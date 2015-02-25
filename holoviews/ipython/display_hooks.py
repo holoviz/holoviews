@@ -27,7 +27,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS, opts
+from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS, opts, get_plot_size
 from .magics import ViewMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
@@ -40,12 +40,6 @@ ENABLE_TRACEBACKS=True
 #==================#
 # Helper functions #
 #==================#
-
-
-def get_plot_size(size):
-    factor = size / 100.0
-    return (Plot.figure_size[0] * factor,
-            Plot.figure_size[1] * factor)
 
 
 def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
@@ -211,7 +205,7 @@ def view_display(view, size, **kwargs):
     if magic_info: return magic_info
     if view.__class__ not in Store.defaults: return None
     fig = Store.defaults[view.__class__](view,
-                                         **opts(view, get_plot_size(size)))()
+                                         **opts(view, get_plot_size(view, size)))()
     return display_figure(fig)
 
 
@@ -222,7 +216,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if magic_info: return magic_info
     if vmap.type not in Store.defaults:  return None
     mapplot = Store.defaults[vmap.type](vmap,
-                                        **opts(vmap.last, get_plot_size(size)))
+                                        **opts(vmap.last, get_plot_size(vmap,size)))
     if len(mapplot) == 0:
         return sanitized_repr(vmap)
     elif len(mapplot) > max_frames:
@@ -246,10 +240,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     shape = layout.shape
     magic_info = process_cell_magics(layout)
     if magic_info: return magic_info
-    grid_size = (shape[1]*get_plot_size(size)[1],
-                 shape[0]*get_plot_size(size)[0])
-
-    layoutplot = LayoutPlot(layout, **opts(layout, grid_size))
+    layoutplot = LayoutPlot(layout, **opts(layout, get_plot_size(layout, size)))
     if isinstance(layout, Layout):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in list(layout.data.keys())]))
@@ -271,15 +262,6 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 @display_hook
 def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, GridSpace): return None
-    max_dim = max(grid.shape)
-    # Reduce plot size as GridSpace gets larger
-    shape_factor = 1. / max_dim
-    # Expand small grids to a sensible viewing size
-    expand_factor = 1 + (max_dim - 1) * 0.1
-    scale_factor = expand_factor * shape_factor
-    grid_size = (scale_factor * grid.shape[0] * get_plot_size(size)[0],
-                 scale_factor * grid.shape[1] * get_plot_size(size)[1])
-
     magic_info = process_cell_magics(grid)
     if magic_info: return magic_info
 
@@ -289,7 +271,7 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
         plot_type = RasterGridPlot
     else:
         plot_type = GridPlot
-    gridplot = plot_type(grid, **opts(grid, grid_size))
+    gridplot = plot_type(grid, **opts(grid, get_plot_size(grid, size)))
 
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
