@@ -1,7 +1,7 @@
 import string
 import time
 import os
-import sha
+from hashlib import sha256
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
     from IPython.core.pylabtools import print_figure
@@ -327,7 +327,7 @@ class ViewMagic(Magics):
     @classmethod
     def _digest(cls, data):
         if cls._generate_SHA:
-            hashfn = sha.new()
+            hashfn = sha256()
             hashfn.update(data)
             cls._SHA  = hashfn.hexdigest()
             return True
