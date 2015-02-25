@@ -27,9 +27,12 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot
+from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS
 from .magics import ViewMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
+
+
+ViewMagic.ANIMATION_OPTS = ANIMATION_OPTS
 
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True

@@ -13,6 +13,27 @@ from . import pandas # pyflakes:ignore (API import)
 from . import seaborn # pyflakes:ignore (API import)
 
 
+GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
+VIDEO_TAG = """
+<center><video controls style='max-width:100%'>
+<source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
+Your browser does not support the video tag.
+</video><center/>"""
+
+
+# <format name> : (animation writer, mime_type,  anim_kwargs, extra_args, tag)
+ANIMATION_OPTS = {
+    'webm': ('ffmpeg', 'webm', {},
+             ['-vcodec', 'libvpx', '-b', '1000k'],
+             VIDEO_TAG),
+    'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+             ['-pix_fmt', 'yuv420p'],
+             VIDEO_TAG),
+    'gif': ('imagemagick', 'gif', {'fps': 10}, [],
+            GIF_TAG),
+    'scrubber': ('html', None, {'fps': 5}, None, None)
+}
+
 Store.register_plots()
 
 # Charts
