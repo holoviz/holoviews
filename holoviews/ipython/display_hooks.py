@@ -52,6 +52,7 @@ def get_plot_size(size):
 def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+    ViewMagic.save_anim(anim, mime_type, writer, dpi=dpi, **anim_kwargs)
 
     if not hasattr(anim, '_encoded_video'):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
@@ -106,6 +107,7 @@ def process_cell_magics(obj):
     "Hook into %%opts and %%channels magics to process displayed element"
     invalid_options = OptsMagic.process_view(obj)
     if invalid_options: return invalid_options
+    ViewMagic.register_object(obj)
 
 
 def render(plot):
@@ -152,6 +154,7 @@ def display_figure(fig, message=None, max_width='100%'):
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
+        ViewMagic.save_fig(fig, figure_format, dpi=dpi)
         figdata = print_figure(fig, figure_format, dpi=dpi)
         if figure_format=='svg':
             mime_type = 'svg+xml'

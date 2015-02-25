@@ -1,6 +1,10 @@
+import string
 import time
+import os
+import sha
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
+    from IPython.core.pylabtools import print_figure
 except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -61,6 +65,7 @@ class ViewMagic(Magics):
     # Codec or system-dependent format options
     optional_formats = ['webm','h264', 'gif']
 
+    # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'     : ['mpl','d3'],
                'fig'         : ['svg', 'png'],
                'holomap'     : inbuilt_formats,
@@ -70,7 +75,8 @@ class ViewMagic(Magics):
                'max_branches': (0, float('inf')),
                'size'        : (0, float('inf')),
                'dpi'         : (1, float('inf')),
-               'charwidth'   : (0, float('inf'))}
+               'charwidth'   : (0, float('inf')),
+               'filename'   : {None, '{type}-{group}-{label}'}}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
                             ('fig'         , 'png'),
@@ -81,7 +87,8 @@ class ViewMagic(Magics):
                             ('max_branches', 2),
                             ('size'        , 100),
                             ('dpi'         , 72),
-                            ('charwidth'   , 80)])
+                            ('charwidth'   , 80),
+                            ('filename'    , None)])
 
     options = OrderedDict(defaults.items())
 
@@ -98,6 +105,9 @@ class ViewMagic(Magics):
         'scrubber': ('html', None, {'fps': 5}, None, None)
     }
 
+    _object_handle = None
+    _generate_SHA = False   # For testing. Whether to compute SHA as output
+    _SHA = None             # For testing purposes: the saved output SHA.
 
     def __init__(self, *args, **kwargs):
         super(ViewMagic, self).__init__(*args, **kwargs)
@@ -133,8 +143,9 @@ class ViewMagic(Magics):
                   % cls.defaults['dpi'])
         chars =  ("charwidth    : The max character width view magic options display (default %r)"
                   % cls.defaults['charwidth'])
-
-        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars]
+        fname =  ("filename    : The filename of the saved output, if any (default %r)"
+                  % cls.defaults['filename'])
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname]
         return '\n'.join(intro + descriptions)
 
 
@@ -168,6 +179,20 @@ class ViewMagic(Magics):
                 raise SyntaxError("Could not evaluate keyword: %s" % keyword)
         return items
 
+    @classmethod
+    def _filename_fields(cls, filename):
+        "Returns valid filename format fields otherwise raise exception"
+        if filename is None: return []
+        valid_fields = ['type', 'group', 'label']
+        try:
+            parse = list(string.Formatter().parse(filename))
+            fields = [f for f in zip(*parse)[1] if f is not None]
+        except:
+            raise SyntaxError("Could not parse filename string formatter")
+        if any(f not in valid_fields for f in fields):
+            raise ValueError("Valid formatters for the filename are: %s"
+                             % ','.join(valid_fields))
+        return fields
 
     def _validate(self, options):
         "Validation of edge cases and incompatible options"
@@ -184,6 +209,8 @@ class ViewMagic(Magics):
             and options['widgets']!='embed'
             and options['fig']=='svg'):
             raise ValueError("SVG mode not supported by widgets unless in embed mode")
+
+        self._filename_fields(options['filename'])
         return options
 
 
@@ -194,7 +221,8 @@ class ViewMagic(Magics):
             if keyword in items:
                 value = items[keyword]
                 allowed = self.allowed[keyword]
-                if isinstance(allowed, list) and value not in allowed:
+                if isinstance(allowed, set):  pass
+                elif isinstance(allowed, list) and value not in allowed:
                     raise ValueError("Value %r for key %r not one of %s"
                                      % (value, keyword, allowed))
                 elif isinstance(allowed, tuple):
@@ -268,6 +296,58 @@ class ViewMagic(Magics):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             ViewMagic.options = restore_copy
+        self._object_handle=None
+
+    @classmethod
+    def register_object(cls, obj):
+        cls._object_handle = obj
+
+
+    @classmethod
+    def _basename(cls, formatter):
+        info = {'group':getattr(cls._object_handle, 'group', 'group'),
+                'label':getattr(cls._object_handle, 'label', 'label'),
+                'type':cls._object_handle.__class__.__name__}
+        filtered = {k:v for k,v in info.items()
+                    if k in cls._filename_fields(formatter)}
+        return formatter.format(**filtered)
+
+    @classmethod
+    def _save_filename(cls, fmt):
+        if cls.options['filename'] is None: return None
+        name = cls._basename(cls.options['filename'])
+        filename = '%s.%s' % (name, fmt)
+        counter = 1
+        while os.path.isfile(filename):
+            basename = '%s-%d' % (name, counter)
+            filename = '%s.%s' % (basename, fmt)
+            counter += 1
+        return filename
+
+    @classmethod
+    def _digest(cls, data):
+        if cls._generate_SHA:
+            hashfn = sha.new()
+            hashfn.update(data)
+            cls._SHA  = hashfn.hexdigest()
+            return True
+        else:
+            return False
+
+    @classmethod
+    def save_fig(cls, fig, figure_format, dpi):
+        filename = cls._save_filename(figure_format)
+        if filename is None: return
+        figure_data = print_figure(fig, figure_format, dpi=dpi)
+        if cls._digest(figure_data): return
+        with open(filename, 'w') as f:
+            f.write(figure_data)
+
+    @classmethod
+    def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
+        filename = cls._save_filename(mime_type)
+        if filename is None: return
+        anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
 
 
 
