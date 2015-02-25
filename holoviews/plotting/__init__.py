@@ -13,6 +13,9 @@ from . import pandas # pyflakes:ignore (API import)
 from . import seaborn # pyflakes:ignore (API import)
 
 
+def opts(el, size):
+    "Returns the plot options with supplied size (if not overridden)"
+    return dict(figure_size=size, **Store.lookup_options(el, 'plot').options)
 GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
 VIDEO_TAG = """
 <center><video controls style='max-width:100%'>

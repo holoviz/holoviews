@@ -27,7 +27,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS
+from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS, opts
 from .magics import ViewMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
@@ -40,10 +40,6 @@ ENABLE_TRACEBACKS=True
 #==================#
 # Helper functions #
 #==================#
-
-def opts(el, size):
-    "Returns the plot options with supplied size (if not overridden)"
-    return dict(figure_size=size, **Store.lookup_options(el, 'plot').options)
 
 
 def get_plot_size(size):
