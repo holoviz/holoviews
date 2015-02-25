@@ -11,7 +11,7 @@ add_paths(paths)
 # Declare information specific to this project.
 project = u'HoloViews'
 authors = u'IOAM: Jean-Luc R. Stevens and Philipp Rudiger'
-copyright = u'2014' + authors
+copyright = u'2014 ' + authors
 ioam_module = 'holoviews'
 description = 'Composable, declarative data structures for building even complex visualizations easily'
 
