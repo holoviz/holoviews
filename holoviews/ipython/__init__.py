@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from ..element.comparison import ComparisonTestCase
 from ..styles import set_style
 from . import magics
-from .magics import ViewMagic, load_magics
+from .magics import OutputMagic, load_magics
 from .display_hooks import animate, set_display_hooks
 from .parser import Parser
 
@@ -13,8 +13,8 @@ from param import ipython as param_ext
 try:    from matplotlib import animation
 except: animation = None
 
-all_line_magics = sorted(['%params', '%opts', '%view', '%compositor'])
-all_cell_magics = sorted(['%%view', '%%opts', '%%labels'])
+all_line_magics = sorted(['%params', '%opts', '%output', '%compositor'])
+all_cell_magics = sorted(['%%output', '%%opts', '%%labels'])
 message = """Welcome to the HoloViews IPython extension! (http://ioam.github.io/holoviews/)"""
 message += '\nAvailable magics: %s' % ', '.join(sorted(all_line_magics)
                                                 + sorted(all_cell_magics))
@@ -27,7 +27,7 @@ def supported_formats(optional_formats):
         try:
             anim = animation.FuncAnimation(plt.figure(),
                                            lambda x: x, frames=[0,1])
-            animate(anim, 72, *ViewMagic.ANIMATION_OPTS[fmt])
+            animate(anim, 72, *OutputMagic.ANIMATION_OPTS[fmt])
             supported.append(fmt)
         except: pass
     return supported
@@ -112,8 +112,8 @@ def load_ipython_extension(ip, verbose=True):
         param_ext.load_ipython_extension(ip, verbose=False)
 
         load_magics(ip)
-        valid_formats = supported_formats(ViewMagic.optional_formats)
-        ViewMagic.register_supported_formats(valid_formats)
+        valid_formats = supported_formats(OutputMagic.optional_formats)
+        OutputMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
         update_matplotlib_rc()
         set_style('default')

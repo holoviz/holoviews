@@ -28,11 +28,11 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS, opts, get_plot_size
-from .magics import ViewMagic, OptsMagic
+from .magics import OutputMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
 
-ViewMagic.ANIMATION_OPTS = ANIMATION_OPTS
+OutputMagic.ANIMATION_OPTS = ANIMATION_OPTS
 
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
@@ -45,7 +45,7 @@ ENABLE_TRACEBACKS=True
 def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-    ViewMagic.save_anim(anim, mime_type, writer, dpi=dpi, **anim_kwargs)
+    OutputMagic.save_anim(anim, mime_type, writer, dpi=dpi, **anim_kwargs)
 
     if not hasattr(anim, '_encoded_video'):
         with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
@@ -57,14 +57,14 @@ def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
 
 
 def HTML_video(plot):
-    dpi = ViewMagic.options['dpi']
-    anim = plot.anim(fps=ViewMagic.options['fps'])
+    dpi = OutputMagic.options['dpi']
+    anim = plot.anim(fps=OutputMagic.options['fps'])
     writers = animation.writers.avail
-    current_format = ViewMagic.options['holomap']
-    for fmt in [current_format] + list(ViewMagic.ANIMATION_OPTS.keys()):
-        if ViewMagic.ANIMATION_OPTS[fmt][0] in writers:
+    current_format = OutputMagic.options['holomap']
+    for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
+        if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
-                return animate(anim, dpi, *ViewMagic.ANIMATION_OPTS[fmt])
+                return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
             except: pass
     msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
@@ -93,14 +93,14 @@ def sanitized_repr(obj):
 def max_frame_warning(max_frames):
     sys.stderr.write("Skipping matplotlib display to avoid "
                      "lengthy animation render times\n"
-                     "[Total item frames exceeds max_frames on ViewMagic (%d)]"
+                     "[Total item frames exceeds max_frames on OutputMagic (%d)]"
                      % max_frames)
 
 def process_cell_magics(obj):
     "Hook into %%opts and %%channels magics to process displayed element"
     invalid_options = OptsMagic.process_view(obj)
     if invalid_options: return invalid_options
-    ViewMagic.register_object(obj)
+    OutputMagic.register_object(obj)
 
 
 def render(plot):
@@ -112,8 +112,8 @@ def render(plot):
 
 def display_widgets(plot):
     "Display widgets applicable to the specified view"
-    widget_mode = ViewMagic.options['widgets']
-    widget_format = ViewMagic.options['holomap']
+    widget_mode = OutputMagic.options['widgets']
+    widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
     isuniform = plot.uniform
@@ -138,16 +138,16 @@ def display_widgets(plot):
 
 def display_figure(fig, message=None, max_width='100%'):
     "Display widgets applicable to the specified view"
-    figure_format = ViewMagic.options['fig']
-    dpi = ViewMagic.options['dpi']
-    backend = ViewMagic.options['backend']
+    figure_format = OutputMagic.options['fig']
+    dpi = OutputMagic.options['dpi']
+    backend = OutputMagic.options['backend']
 
     if backend == 'd3' and mpld3:
         fig.dpi = dpi
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        ViewMagic.save_fig(fig, figure_format, dpi=dpi)
+        OutputMagic.save_fig(fig, figure_format, dpi=dpi)
         figdata = print_figure(fig, figure_format, dpi=dpi)
         if figure_format=='svg':
             mime_type = 'svg+xml'
@@ -174,15 +174,15 @@ def display_hook(fn):
         if not ip.display_formatter.formatters['text/plain'].pprint:
             return None
         try:
-            widget_mode = ViewMagic.options['widgets']
-            map_format  = ViewMagic.options['holomap']
+            widget_mode = OutputMagic.options['widgets']
+            map_format  = OutputMagic.options['holomap']
             # If widget_mode is None, widgets are not being used
-            widget_mode = (widget_mode if map_format in ViewMagic.inbuilt_formats else None)
+            widget_mode = (widget_mode if map_format in OutputMagic.inbuilt_formats else None)
             return fn(view,
-                      size=ViewMagic.options['size'],
-                      dpi=ViewMagic.options['dpi'],
-                      max_frames=ViewMagic.options['max_frames'],
-                      max_branches = ViewMagic.options['max_branches'],
+                      size=OutputMagic.options['size'],
+                      dpi=OutputMagic.options['dpi'],
+                      max_frames=OutputMagic.options['max_frames'],
+                      max_branches = OutputMagic.options['max_branches'],
                       map_format = map_format,
                       widget_mode = widget_mode,
                       **kwargs)
@@ -194,7 +194,7 @@ def display_hook(fn):
 
 @display_hook
 def animation_display(anim, map_format, dpi=72, **kwargs):
-    return animate(anim, dpi, *ViewMagic.ANIMATION_OPTS[map_format])
+    return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[map_format])
 
 
 @display_hook

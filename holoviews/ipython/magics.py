@@ -46,10 +46,10 @@ html_blue = '#00008e'
 
 
 @magics_class
-class ViewMagic(Magics):
+class OutputMagic(Magics):
     """
     Magic for easy customising of display options.
-    Consult %%view? for more information.
+    Consult %%output? for more information.
     """
     # Formats that are always available
     inbuilt_formats= ['auto', 'widgets', 'scrubber']
@@ -87,8 +87,8 @@ class ViewMagic(Magics):
     _SHA = None             # For testing purposes: the saved output SHA.
 
     def __init__(self, *args, **kwargs):
-        super(ViewMagic, self).__init__(*args, **kwargs)
-        self.view.__func__.__doc__ = self._generate_docstring()
+        super(OutputMagic, self).__init__(*args, **kwargs)
+        self.output.__func__.__doc__ = self._generate_docstring()
 
 
     @classmethod
@@ -118,7 +118,7 @@ class ViewMagic(Magics):
                   % cls.defaults['size'])
         dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
                   % cls.defaults['dpi'])
-        chars =  ("charwidth    : The max character width view magic options display (default %r)"
+        chars =  ("charwidth    : The max character width for displaying the output magic (default %r)"
                   % cls.defaults['charwidth'])
         fname =  ("filename    : The filename of the saved output, if any (default %r)"
                   % cls.defaults['filename'])
@@ -215,7 +215,7 @@ class ViewMagic(Magics):
     @classmethod
     def option_completer(cls, k,v):
         raw_line = v.text_until_cursor
-        line = raw_line.replace('%view','')
+        line = raw_line.replace('%output','')
 
         # Find the last element class mentioned
         completion_key = None
@@ -236,43 +236,43 @@ class ViewMagic(Magics):
         Pretty print the current view options with a maximum width of
         self.pprint_width.
         """
-        elements = ["%view"]
+        elements = ["%output"]
         lines, current, count = [], '', 0
-        for k,v in ViewMagic.options.items():
+        for k,v in OutputMagic.options.items():
             keyword = '%s=%r' % (k,v)
             if len(current) + len(keyword) > self.options['charwidth']:
-                print(('%view' if count==0 else '      ')  + current)
+                print(('%output' if count==0 else '      ')  + current)
                 count += 1
                 current = keyword
             else:
                 current += ' '+ keyword
         else:
-            print(('%view' if count==0 else '      ')  + current)
+            print(('%output' if count==0 else '      ')  + current)
 
 
     @line_cell_magic
-    def view(self, line, cell=None):
+    def output(self, line, cell=None):
         line = line.split('#')[0].strip()
         if line == '':
             self.pprint()
-            print("\nFor help with the %view magic, call %view?")
+            print("\nFor help with the %output magic, call %output?")
             return
 
-        restore_copy = OrderedDict(ViewMagic.options.items())
+        restore_copy = OrderedDict(OutputMagic.options.items())
         try:
             options = self.get_options(line, OrderedDict())
-            ViewMagic.options = options
+            OutputMagic.options = options
             # Inform writer of chosen fps
             if options['holomap'] in ['gif', 'scrubber']:
                 self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
         except Exception as e:
             print('Error: %s' % str(e))
-            print("For help with the %view magic, call %view?\n")
+            print("For help with the %output magic, call %output?\n")
             return
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            ViewMagic.options = restore_copy
+            OutputMagic.options = restore_copy
         self._object_handle=None
 
     @classmethod
@@ -643,7 +643,7 @@ class TimerMagic(Magics):
 
 def load_magics(ip):
     ip.register_magics(TimerMagic)
-    ip.register_magics(ViewMagic)
+    ip.register_magics(OutputMagic)
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)
@@ -656,8 +656,8 @@ def load_magics(ip):
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
 
-    ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%view')
-    ip.set_hook('complete_command', ViewMagic.option_completer, str_key = '%%view')
+    ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
+    ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
 
     OptsCompleter.setup_completer()
     ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%%opts')

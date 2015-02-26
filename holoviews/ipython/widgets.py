@@ -24,7 +24,7 @@ import param
 
 from ..core import OrderedDict, NdMapping
 from ..plotting import Plot
-from .magics import ViewMagic
+from .magics import OutputMagic
 
 
 class ProgressBar(param.Parameterized):
@@ -255,7 +255,7 @@ def isnumeric(val):
 
 
 def get_plot_size():
-    factor = ViewMagic.options['size'] / 100.0
+    factor = OutputMagic.options['size'] / 100.0
     return (Plot.figure_size[0] * factor,
             Plot.figure_size[1] * factor)
 
@@ -281,7 +281,7 @@ class NdWidget(param.Parameterized):
     def _plot_figure(self, idx):
         from .display_hooks import display_figure
         fig = self.plot[idx]
-        if ViewMagic.options['backend'] == 'd3':
+        if OutputMagic.options['backend'] == 'd3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
@@ -344,8 +344,8 @@ class IPySelectionWidget(NdWidget):
 
     def __call__(self):
         # Initalize image widget
-        if (ViewMagic.options['backend'] == 'mpld3'
-            or ViewMagic.options['fig'] =='svg'):
+        if (OutputMagic.options['backend'] == 'mpld3'
+            or OutputMagic.options['fig'] =='svg'):
             self.image_widget = widgets.HTMLWidget()
         else:
             self.image_widget = widgets.ImageWidget()
@@ -464,7 +464,7 @@ class ScrubberWidget(NdWidget):
 
 
     def get_frames(self, id):
-        use_mpld3 = ViewMagic.options['backend'] == 'd3'
+        use_mpld3 = OutputMagic.options['backend'] == 'd3'
         frames = {idx: frame if use_mpld3 or self.export_json else
                   str(frame) for idx, frame in enumerate(self.frames.values())}
         encoder = {}
@@ -499,13 +499,13 @@ class ScrubberWidget(NdWidget):
         frames = self.get_frames(id)
 
         data = {'id': id, 'Nframes': len(self.plot),
-                'interval': int(1000. / ViewMagic.options['fps']),
+                'interval': int(1000. / OutputMagic.options['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
                 'server': self.server_url,
                 'mpld3_url': self.mpld3_url,
                 'd3_url': self.d3_url[:-3],
-                'mpld3': str(ViewMagic.options['backend'] == 'd3').lower()}
+                'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
 
@@ -587,9 +587,9 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
-                'delay': int(1000./ViewMagic.options['fps']),
+                'delay': int(1000./OutputMagic.options['fps']),
                 'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
-                'mpld3': str(ViewMagic.options['backend'] == 'd3').lower()}
+                'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
 

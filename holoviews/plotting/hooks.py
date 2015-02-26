@@ -10,7 +10,7 @@ except:
 import param
 
 from ..core.options import Store
-from ..ipython.magics import ViewMagic
+from ..ipython.magics import OutputMagic
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
 from ..plotting import Plot, CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot
@@ -60,7 +60,7 @@ class MplD3Plugin(PlottingHook):
     def _applies(self, plot, view):
         types_match = super(MplD3Plugin, self)._applies(plot, view)
         axes3d = plot.projection == '3d'
-        mpld3_backend = ViewMagic.options['backend'] == 'd3'
+        mpld3_backend = OutputMagic.options['backend'] == 'd3'
         return types_match and mpld3_backend and not axes3d
 
 

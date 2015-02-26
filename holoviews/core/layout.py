@@ -252,7 +252,7 @@ class Layout(AttrTree, Dimensioned):
     of the tree for large trees that would otherwise take a long time
     to display wheras a policy of 'all' will always display all the
     available leaves. The detailed settings for the 'auto' policy may
-    be set using the max_branches option of the %view magic.
+    be set using the max_branches option of the %output magic.
     """
 
     group = param.String(default='Layout', constant=True)

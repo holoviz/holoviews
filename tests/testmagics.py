@@ -71,41 +71,41 @@ class TestOptsMagic(ExtensionTestCase):
 
 
 
-class TestViewMagic(ExtensionTestCase):
+class TestOutputMagic(ExtensionTestCase):
 
     def tearDown(self):
-        ipython.ViewMagic.options = ipython.ViewMagic.defaults
-        super(TestViewMagic, self).tearDown()
+        ipython.OutputMagic.options = ipython.OutputMagic.defaults
+        super(TestOutputMagic, self).tearDown()
 
-    def test_view_svg(self):
-        self.line_magic('view', "fig='svg'")
-        self.assertEqual(ipython.ViewMagic.options.get('fig', None), 'svg')
+    def test_output_svg(self):
+        self.line_magic('output', "fig='svg'")
+        self.assertEqual(ipython.OutputMagic.options.get('fig', None), 'svg')
 
-    def test_view_holomap_scrubber(self):
-        self.line_magic('view', "holomap='scrubber'")
-        self.assertEqual(ipython.ViewMagic.options.get('holomap', None), 'scrubber')
+    def test_output_holomap_scrubber(self):
+        self.line_magic('output', "holomap='scrubber'")
+        self.assertEqual(ipython.OutputMagic.options.get('holomap', None), 'scrubber')
 
-    def test_view_holomap_widgets(self):
-        self.line_magic('view', "holomap='widgets'")
-        self.assertEqual(ipython.ViewMagic.options.get('holomap', None), 'widgets')
+    def test_output_holomap_widgets(self):
+        self.line_magic('output', "holomap='widgets'")
+        self.assertEqual(ipython.OutputMagic.options.get('holomap', None), 'widgets')
 
-    def test_view_widgets_live(self):
-        self.line_magic('view', "widgets='live'")
-        self.assertEqual(ipython.ViewMagic.options.get('widgets', None), 'live')
-
-
-    def test_view_fps(self):
-        self.line_magic('view', "fps=100")
-        self.assertEqual(ipython.ViewMagic.options.get('fps', None), 100)
-
-    def test_view_size(self):
-        self.line_magic('view', "size=50")
-        self.assertEqual(ipython.ViewMagic.options.get('size', None), 50)
+    def test_output_widgets_live(self):
+        self.line_magic('output', "widgets='live'")
+        self.assertEqual(ipython.OutputMagic.options.get('widgets', None), 'live')
 
 
-    def test_view_invalid_size(self):
-        self.line_magic('view', "size=-50")
-        self.assertEqual(ipython.ViewMagic.options.get('size', None), 100)
+    def test_output_fps(self):
+        self.line_magic('output', "fps=100")
+        self.assertEqual(ipython.OutputMagic.options.get('fps', None), 100)
+
+    def test_output_size(self):
+        self.line_magic('output', "size=50")
+        self.assertEqual(ipython.OutputMagic.options.get('size', None), 50)
+
+
+    def test_output_invalid_size(self):
+        self.line_magic('output', "size=-50")
+        self.assertEqual(ipython.OutputMagic.options.get('size', None), 100)
 
 
 class TestCompositorMagic(ExtensionTestCase):
