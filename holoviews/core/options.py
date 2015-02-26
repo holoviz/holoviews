@@ -32,6 +32,8 @@ Store:
    extension together.
 
 """
+import os, string
+from hashlib import sha256
 
 import param
 from .tree import AttrTree
@@ -616,3 +618,76 @@ class Store(object):
                                           'plot': Options(),
                                           'norm': Options()})
 
+
+class SaveOptions(object):
+    """
+    Stores save preferences for saving files with automatically
+    generated file and directory names.
+    """
+
+    autosave = param.Boolean(default=False, doc="""
+      Enable or disable autosaving of output with automatically
+      generated file and directory names.""")
+
+    # Support {dimensions} formatter!
+    formatter = param.String('{type}-{group}-{label}')
+
+    directory = param.String('.')
+
+    _format_fields = ['type', 'group', 'label']
+    _generate_SHA = False   # For testing. Whether to compute SHA as output
+    _SHA = None             # For testing purposes: the saved output SHA.
+
+    def __init__(self, **kwargs):
+        super(SaveOptions, self).__init__(**kwargs)
+
+    @classmethod
+    def parse_fields(cls, filename):
+        "Returns valid filename format fields otherwise raise exception"
+        if filename is None: return []
+        try:
+            parse = list(string.Formatter().parse(filename))
+            return  [f for f in zip(*parse)[1] if f is not None]
+        except:
+            raise SyntaxError("Could not parse filename string formatter")
+
+    @classmethod
+    def validate_fields(cls, fields):
+        if any(f not in cls._format_fields for f in fields):
+            raise ValueError("Valid formatters for the filename are: %s"
+                             % ','.join(valid_fields))
+
+
+    @classmethod
+    def _basename(cls, formatter, obj): # cls._object_handle
+        info = {'group':getattr(obj, 'group', 'group'),
+                'label':getattr(obj, 'label', 'label'),
+                'type':obj.__class__.__name__}
+        filtered = {k:v for k,v in info.items()
+                    if k in cls.parse_fields(formatter)}
+        return formatter.format(**filtered)
+
+
+    def filename(self, fmt, obj, default=None):
+        if not self.autosave: return default
+        name = self._basename(self.formatter, obj)
+        filename = '%s.%s' % (name, fmt)
+        counter = 1
+        while os.path.isfile(filename):
+            basename = '%s-%d' % (name, counter)
+            filename = '%s.%s' % (basename, fmt)
+            counter += 1
+        return filename
+
+    @classmethod
+    def _digest(cls, data):
+        if cls._generate_SHA:
+            hashfn = sha256()
+            hashfn.update(data)
+            cls._SHA  = hashfn.hexdigest()
+            return True
+        else:
+            return False
+
+# Global save options object
+save_options = SaveOptions()

@@ -1,7 +1,6 @@
 import string
 import time
 import os
-from hashlib import sha256
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
     from IPython.core.pylabtools import print_figure
@@ -10,7 +9,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import OrderedDict
-from ..core.options import OptionTree, Options, OptionError, Store
+from ..core.options import OptionTree, Options, OptionError, Store, save_options
 
 from IPython.display import display, HTML
 
@@ -67,7 +66,7 @@ class OutputMagic(Magics):
                'size'        : (0, float('inf')),
                'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf')),
-               'filename'   : {None, '{type}-{group}-{label}'}}
+               'filename'   : {None}}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
                             ('fig'         , 'png'),
@@ -82,9 +81,7 @@ class OutputMagic(Magics):
                             ('filename'    , None)])
 
     options = OrderedDict(defaults.items())
-    _object_handle = None
-    _generate_SHA = False   # For testing. Whether to compute SHA as output
-    _SHA = None             # For testing purposes: the saved output SHA.
+    _obj = None
 
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)
@@ -156,21 +153,6 @@ class OutputMagic(Magics):
                 raise SyntaxError("Could not evaluate keyword: %s" % keyword)
         return items
 
-    @classmethod
-    def _filename_fields(cls, filename):
-        "Returns valid filename format fields otherwise raise exception"
-        if filename is None: return []
-        valid_fields = ['type', 'group', 'label']
-        try:
-            parse = list(string.Formatter().parse(filename))
-            fields = [f for f in zip(*parse)[1] if f is not None]
-        except:
-            raise SyntaxError("Could not parse filename string formatter")
-        if any(f not in valid_fields for f in fields):
-            raise ValueError("Valid formatters for the filename are: %s"
-                             % ','.join(valid_fields))
-        return fields
-
     def _validate(self, options):
         "Validation of edge cases and incompatible options"
         if options['backend'] == 'd3':
@@ -187,7 +169,9 @@ class OutputMagic(Magics):
             and options['fig']=='svg'):
             raise ValueError("SVG mode not supported by widgets unless in embed mode")
 
-        self._filename_fields(options['filename'])
+        if save_options.parse_fields(options['filename']) != []:
+            raise ValueError("Please specify a valid filename without any format fields "
+                             "(no braces allowed)")
         return options
 
 
@@ -273,56 +257,27 @@ class OutputMagic(Magics):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             OutputMagic.options = restore_copy
-        self._object_handle=None
+        self._obj=None
 
     @classmethod
     def register_object(cls, obj):
-        cls._object_handle = obj
-
-
-    @classmethod
-    def _basename(cls, formatter):
-        info = {'group':getattr(cls._object_handle, 'group', 'group'),
-                'label':getattr(cls._object_handle, 'label', 'label'),
-                'type':cls._object_handle.__class__.__name__}
-        filtered = {k:v for k,v in info.items()
-                    if k in cls._filename_fields(formatter)}
-        return formatter.format(**filtered)
+        cls._obj = obj
 
     @classmethod
-    def _save_filename(cls, fmt):
-        if cls.options['filename'] is None: return None
-        name = cls._basename(cls.options['filename'])
-        filename = '%s.%s' % (name, fmt)
-        counter = 1
-        while os.path.isfile(filename):
-            basename = '%s-%d' % (name, counter)
-            filename = '%s.%s' % (basename, fmt)
-            counter += 1
-        return filename
-
-    @classmethod
-    def _digest(cls, data):
-        if cls._generate_SHA:
-            hashfn = sha256()
-            hashfn.update(data)
-            cls._SHA  = hashfn.hexdigest()
-            return True
-        else:
-            return False
-
-    @classmethod
-    def save_fig(cls, fig, figure_format, dpi):
-        filename = cls._save_filename(figure_format)
+    def save_fig(cls, fig, fig_format, dpi):
+        filename = save_options.filename(fig_format, cls._obj,
+                                         default=cls.options['filename'])
         if filename is None: return
-        figure_data = print_figure(fig, figure_format, dpi=dpi)
-        if cls._digest(figure_data): return
+
+        figure_data = print_figure(fig, fig_format, dpi=dpi)
+        if save_options._digest(figure_data): return
         with open(filename, 'w') as f:
             f.write(figure_data)
 
     @classmethod
     def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
-        filename = cls._save_filename(mime_type)
+        filename = save_options.filename(mime_type,cls._obj,
+                                         default=cls.options['filename'])
         if filename is None: return
         anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
 
