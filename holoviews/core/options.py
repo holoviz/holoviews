@@ -32,7 +32,7 @@ Store:
    extension together.
 
 """
-import os, string
+import os, string, time
 from hashlib import sha256
 
 import param
@@ -619,27 +619,55 @@ class Store(object):
                                           'norm': Options()})
 
 
-class SaveOptions(object):
+class SaveOptions(param.Parameterized):
     """
-    Stores save preferences for saving files with automatically
-    generated file and directory names.
+    Stores preferences for saving output to disk, including file
+    format preferences.
+
+    In addition, this class offers utilities for saving files with
+    automatically generated file- and directory names.
     """
 
-    autosave = param.Boolean(default=False, doc="""
-      Enable or disable autosaving of output with automatically
+    auto = param.Boolean(default=False, doc="""
+      Enable or disable automatic saving of output using dynamically
       generated file and directory names.""")
 
     # Support {dimensions} formatter!
-    formatter = param.String('{type}-{group}-{label}')
+    formatter = param.String('{group}-{label}', doc="""
+      A string formatter for output filename based on the HoloViews
+      object that is being rendered to disk. Available fields are
+      {type}, {group}, {label} and {timestamp}.""")
 
-    directory = param.String('.')
+    timestamp_format = param.String("%Y_%m_%d-%H_%M_%S", doc="""
+       The timestamp format that will be substituted for the
+       {timestamp} field.""")
 
-    _format_fields = ['type', 'group', 'label']
+    time = param.Tuple((0,)*9, length=9, doc="""
+        The time used in the timestamp field. If not set, the time of
+        instantiation (or the time of setting the options with
+        set_options) is used.""")
+
+    directory = param.String('./{timestamp}', doc="""
+        The absolute or relative directory path in which output is to
+        be saved.""")
+
+    filename_fields = ['type', 'group', 'label', 'timestamp']
+    directory_fields = ['timestamp']
     _generate_SHA = False   # For testing. Whether to compute SHA as output
     _SHA = None             # For testing purposes: the saved output SHA.
 
     def __init__(self, **kwargs):
         super(SaveOptions, self).__init__(**kwargs)
+        if self.time == (0,)*9:
+            self.time = tuple(time.localtime())
+        self.timestamp = time.strftime(self.timestamp_format, self.time)
+
+    def set_options(self, **kwargs):
+        self.timestamp = time.strftime(self.timestamp_format)
+        params = self.params()
+        for k, v in kwargs.items():
+            if k in params:
+                setattr(self, k, v)
 
     @classmethod
     def parse_fields(cls, filename):
@@ -652,25 +680,35 @@ class SaveOptions(object):
             raise SyntaxError("Could not parse filename string formatter")
 
     @classmethod
-    def validate_fields(cls, fields):
-        if any(f not in cls._format_fields for f in fields):
-            raise ValueError("Valid formatters for the filename are: %s"
-                             % ','.join(valid_fields))
+    def validate_fields(cls, fields, component):
+        assert component in ['filename', 'directory']
+        allowed = cls.filename_fields if component=='filename' else cls.directory_fields
+        if any(f not in allowed for f in fields):
+            raise ValueError("Valid formatters for the %s are: %s"
+                             % (component, ', '.join(allowed)))
 
-
-    @classmethod
-    def _basename(cls, formatter, obj): # cls._object_handle
+    def _format(self, formatter, obj):
         info = {'group':getattr(obj, 'group', 'group'),
                 'label':getattr(obj, 'label', 'label'),
-                'type':obj.__class__.__name__}
+                'type':obj.__class__.__name__,
+                'timestamp': self.timestamp}
         filtered = {k:v for k,v in info.items()
-                    if k in cls.parse_fields(formatter)}
+                    if k in self.parse_fields(formatter)}
         return formatter.format(**filtered)
 
 
-    def filename(self, fmt, obj, default=None):
-        if not self.autosave: return default
-        name = self._basename(self.formatter, obj)
+    def filename(self, fmt, obj, override=None):
+        """
+        Find an appropriate filename for a given file format and
+        object if no explicit override supplied.
+        """
+        if override:      return override
+        if not self.auto: return None
+        directory = os.path.abspath(self._format(self.directory, obj))
+        if not os.path.isdir(directory):
+            os.makedirs(directory)
+        fname = self._format(self.formatter, obj)
+        name = os.path.join(directory, fname)
         filename = '%s.%s' % (name, fmt)
         counter = 1
         while os.path.isfile(filename):
