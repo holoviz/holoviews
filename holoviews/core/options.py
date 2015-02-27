@@ -642,7 +642,7 @@ class SaveOptions(param.Parameterized):
        The timestamp format that will be substituted for the
        {timestamp} field.""")
 
-    time = param.Tuple((0,)*9, length=9, doc="""
+    time = param.Tuple(None, length=9, allow_None=True, doc="""
         The time used in the timestamp field. If not set, the time of
         instantiation (or the time of setting the options with
         set_options) is used.""")
@@ -658,7 +658,7 @@ class SaveOptions(param.Parameterized):
 
     def __init__(self, **kwargs):
         super(SaveOptions, self).__init__(**kwargs)
-        if self.time == (0,)*9:
+        if self.time is None:
             self.time = tuple(time.localtime())
         self.timestamp = time.strftime(self.timestamp_format, self.time)
 
