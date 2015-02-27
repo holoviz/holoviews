@@ -222,8 +222,10 @@ class SaveOptsMagic(OptionsMagic):
             if '{timestamp}' in save_options.directory + save_options.formatter:
                 timestamp = time.strftime(save_options.timestamp_format, current_time)
                 suffix = ' using timestamp=%r' % timestamp
-            print("Automatic saving is %s%s" %
-                  (('ON' if options['auto'] else 'OFF'), suffix))
+            if options['auto']:
+                print("Automatic saving is ON%s" % suffix)
+            else:
+                print("Automatic saving is OFF")
         except Exception as e:
             print('Error: %s' % str(e))
             print("For help with the %saveopts magic, call %saveopts?\n")
