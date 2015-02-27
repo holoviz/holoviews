@@ -44,8 +44,117 @@ html_red = '#980f00'
 html_blue = '#00008e'
 
 
+
+class OptionsMagic(Magics):
+    """
+    Base class for magics that are used to specified collections of
+    keyword options.
+    """
+    # Dictionary from keywords to allowed bounds/values
+    allowed = {'charwidth'   : (0, float('inf'))}
+    defaults = OrderedDict([('charwidth'   , 80)])  # Default keyword values.
+    options =  OrderedDict(defaults.items()) # Current options
+
+
+    @classmethod
+    def get_options(cls, line, options):
+        "Given a keyword specification line, validated and compute options"
+        items = cls._extract_keywords(line, OrderedDict())
+        for keyword in cls.defaults:
+            if keyword in items:
+                value = items[keyword]
+                allowed = cls.allowed[keyword]
+                if isinstance(allowed, set):  pass
+                elif isinstance(allowed, list) and value not in allowed:
+                    raise ValueError("Value %r for key %r not one of %s"
+                                     % (value, keyword, allowed))
+                elif isinstance(allowed, tuple):
+                    if not (allowed[0] <= value <= allowed[1]):
+                        info = (keyword,value)+allowed
+                        raise ValueError("Value %r for key %r not between %s and %s" % info)
+                options[keyword] = value
+            else:
+                options[keyword] = cls.defaults[keyword]
+        return cls._validate(options)
+
+    @classmethod
+    def _validate(cls, options):
+        "Allows subclasses to check options are valid."
+        raise NotImplementedError("OptionsMagic is an abstract base class.")
+
+    @classmethod
+    def option_completer(cls, k,v):
+        raw_line = v.text_until_cursor
+        line = raw_line.replace('%output','')
+
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
+
+        for token in tokens:
+            if token.strip() in cls.allowed:
+                completion_key = token.strip()
+                break
+        values = [repr(el) for el in cls.allowed.get(completion_key, [])
+                  if not isinstance(el, tuple)]
+
+        return values + [el+'=' for el in cls.allowed.keys()]
+
+    @classmethod
+    def pprint(cls):
+        """
+        Pretty print the current view options with a maximum width of
+        cls.pprint_width.
+        """
+        elements = ["%output"]
+        lines, current, count = [], '', 0
+        for k,v in cls.options.items():
+            keyword = '%s=%r' % (k,v)
+            if len(current) + len(keyword) > cls.options['charwidth']:
+                print(('%output' if count==0 else '      ')  + current)
+                count += 1
+                current = keyword
+            else:
+                current += ' '+ keyword
+        else:
+            print(('%output' if count==0 else '      ')  + current)
+
+
+    @classmethod
+    def _extract_keywords(cls, line, items):
+        """
+        Given the keyword string, parse a dictionary of options.
+        """
+        unprocessed = list(reversed(line.split('=')))
+        while unprocessed:
+            chunk = unprocessed.pop()
+            key = None
+            if chunk.strip() in cls.allowed:
+                key = chunk.strip()
+            else:
+                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
+            # The next chunk may end in a subsequent keyword
+            value = unprocessed.pop().strip()
+            if len(unprocessed) != 0:
+                # Check if a new keyword has begun
+                for option in cls.allowed:
+                    if value.endswith(option):
+                        value = value[:-len(option)].strip()
+                        unprocessed.append(option)
+                        break
+                else:
+                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
+            keyword = '%s=%s' % (key, value)
+            try:
+                items.update(eval('dict(%s)' % keyword))
+            except:
+                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
+        return items
+
+
+
 @magics_class
-class OutputMagic(Magics):
+class OutputMagic(OptionsMagic):
     """
     Magic for easy customising of display options.
     Consult %%output? for more information.
@@ -123,37 +232,8 @@ class OutputMagic(Magics):
         return '\n'.join(intro + descriptions)
 
 
-    def _extract_keywords(self, line, items):
-        """
-        Given the keyword string, parse a dictionary of options.
-        """
-        unprocessed = list(reversed(line.split('=')))
-        while unprocessed:
-            chunk = unprocessed.pop()
-            key = None
-            if chunk.strip() in self.allowed:
-                key = chunk.strip()
-            else:
-                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
-            # The next chunk may end in a subsequent keyword
-            value = unprocessed.pop().strip()
-            if len(unprocessed) != 0:
-                # Check if a new keyword has begun
-                for option in self.allowed:
-                    if value.endswith(option):
-                        value = value[:-len(option)].strip()
-                        unprocessed.append(option)
-                        break
-                else:
-                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
-            keyword = '%s=%s' % (key, value)
-            try:
-                items.update(eval('dict(%s)' % keyword))
-            except:
-                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
-        return items
-
-    def _validate(self, options):
+    @classmethod
+    def _validate(cls, options):
         "Validation of edge cases and incompatible options"
         if options['backend'] == 'd3':
             try:      import mpld3 # pyflakes:ignore (Testing optional import)
@@ -173,65 +253,6 @@ class OutputMagic(Magics):
             raise ValueError("Please specify a valid filename without any format fields "
                              "(no braces allowed)")
         return options
-
-
-    def get_options(self, line, options):
-        "Given a keyword specification line, validated and compute options"
-        items = self._extract_keywords(line, OrderedDict())
-        for keyword in self.defaults:
-            if keyword in items:
-                value = items[keyword]
-                allowed = self.allowed[keyword]
-                if isinstance(allowed, set):  pass
-                elif isinstance(allowed, list) and value not in allowed:
-                    raise ValueError("Value %r for key %r not one of %s"
-                                     % (value, keyword, allowed))
-                elif isinstance(allowed, tuple):
-                    if not (allowed[0] <= value <= allowed[1]):
-                        info = (keyword,value)+allowed
-                        raise ValueError("Value %r for key %r not between %s and %s" % info)
-                options[keyword] = value
-            else:
-                options[keyword] = self.defaults[keyword]
-        return self._validate(options)
-
-
-    @classmethod
-    def option_completer(cls, k,v):
-        raw_line = v.text_until_cursor
-        line = raw_line.replace('%output','')
-
-        # Find the last element class mentioned
-        completion_key = None
-        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
-
-        for token in tokens:
-            if token.strip() in cls.allowed:
-                completion_key = token.strip()
-                break
-        values = [repr(el) for el in cls.allowed.get(completion_key, [])
-                  if not isinstance(el, tuple)]
-
-        return values + [el+'=' for el in cls.allowed.keys()]
-
-
-    def pprint(self):
-        """
-        Pretty print the current view options with a maximum width of
-        self.pprint_width.
-        """
-        elements = ["%output"]
-        lines, current, count = [], '', 0
-        for k,v in OutputMagic.options.items():
-            keyword = '%s=%r' % (k,v)
-            if len(current) + len(keyword) > self.options['charwidth']:
-                print(('%output' if count==0 else '      ')  + current)
-                count += 1
-                current = keyword
-            else:
-                current += ' '+ keyword
-        else:
-            print(('%output' if count==0 else '      ')  + current)
 
 
     @line_cell_magic
