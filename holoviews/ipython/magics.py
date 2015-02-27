@@ -154,6 +154,83 @@ class OptionsMagic(Magics):
 
 
 @magics_class
+class SaveOptsMagic(OptionsMagic):
+    """
+    Implements the %saveopts magic for automatically saving HoloViews
+    output from notebooks.
+    """
+    save_options_dflts = [(k,v) for (k,v)
+                          in save_options.get_param_values()
+                          if k not in ['name', 'time']]
+
+    allowed = dict({k:{v} for k,v in save_options_dflts},
+                   **{'auto'     : [True, False],
+                      'charwidth'   :  (0, float('inf'))})
+
+    defaults = OrderedDict(save_options_dflts
+                           + [('auto' , True),
+                              ('charwidth'   , 80)])
+
+    options =  OrderedDict(defaults.items()) # Current options
+
+    def __init__(self, *args, **kwargs):
+        super(SaveOptsMagic, self).__init__(*args, **kwargs)
+
+    @classmethod
+    def _validate(cls, options):
+        formatter = options['formatter']
+        save_options.validate_fields(save_options.parse_fields(formatter), 'filename')
+        directory = options['directory']
+        save_options.validate_fields(save_options.parse_fields(directory), 'directory')
+        return options
+
+    @classmethod
+    def option_completer(cls, k,v):
+        raw_line = v.text_until_cursor
+        line = raw_line.replace('%output','')
+
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
+
+        for token in tokens:
+            if token.strip() in cls.allowed:
+                completion_key = token.strip()
+                break
+        values = [repr(el) for el in cls.allowed.get(completion_key, [])
+                  if not isinstance(el, tuple)]
+
+        return values + [el+'=' for el in cls.allowed.keys()]
+
+    @line_magic
+    def saveopts(self, line):
+        """
+        See the parameter documentation of SaveOptions for information
+        on the allowed keywords and their semantics.
+        """
+        line = line.split('#')[0].strip()
+        if line == '':
+            self.pprint()
+            print("\nFor help with the %saveopts magic, call %saveopts?")
+            return
+        try:
+            options = self.get_options(line, OrderedDict())
+            SaveOptsMagic.options = options
+            current_time = tuple(time.localtime())
+            save_options.set_options(**dict(options, time=current_time))
+            suffix = ''
+            if '{timestamp}' in save_options.directory + save_options.formatter:
+                timestamp = time.strftime(save_options.timestamp_format, current_time)
+                suffix = ' using timestamp=%r' % timestamp
+            print("Automatic saving is %s%s" %
+                  (('ON' if options['auto'] else 'OFF'), suffix))
+        except Exception as e:
+            print('Error: %s' % str(e))
+            print("For help with the %saveopts magic, call %saveopts?\n")
+            return
+
+
+@magics_class
 class OutputMagic(OptionsMagic):
     """
     Magic for easy customising of display options.
@@ -287,7 +364,7 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def save_fig(cls, fig, fig_format, dpi):
         filename = save_options.filename(fig_format, cls._obj,
-                                         default=cls.options['filename'])
+                                         override=cls.options['filename'])
         if filename is None: return
 
         figure_data = print_figure(fig, fig_format, dpi=dpi)
@@ -298,7 +375,7 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
         filename = save_options.filename(mime_type,cls._obj,
-                                         default=cls.options['filename'])
+                                         override=cls.options['filename'])
         if filename is None: return
         anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
 
@@ -602,7 +679,6 @@ class TimerMagic(Magics):
         relative to the time when %timer start was called. Subsequent
         calls to %timer start may also be used to reset the timer.
         """
-
         if line.strip() not in ['', 'start']:
             print("Invalid argument to %timer. For more information consult %timer?")
             return
@@ -620,6 +696,7 @@ class TimerMagic(Magics):
 def load_magics(ip):
     ip.register_magics(TimerMagic)
     ip.register_magics(OutputMagic)
+    ip.register_magics(SaveOptsMagic)
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)
@@ -631,6 +708,7 @@ def load_magics(ip):
     # Configuring tab completion
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
+    ip.set_hook('complete_command', SaveOptsMagic.option_completer, str_key = '%saveopts')
 
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
