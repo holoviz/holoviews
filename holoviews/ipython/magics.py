@@ -85,7 +85,7 @@ class OptionsMagic(Magics):
     @classmethod
     def option_completer(cls, k,v):
         raw_line = v.text_until_cursor
-        line = raw_line.replace('%output','')
+        line = raw_line.replace(cls.magic_name,'')
 
         # Find the last element class mentioned
         completion_key = None
@@ -106,18 +106,18 @@ class OptionsMagic(Magics):
         Pretty print the current view options with a maximum width of
         cls.pprint_width.
         """
-        elements = ["%output"]
+        elements = [cls.magic_name]
         lines, current, count = [], '', 0
         for k,v in cls.options.items():
             keyword = '%s=%r' % (k,v)
             if len(current) + len(keyword) > cls.options['charwidth']:
-                print(('%output' if count==0 else '      ')  + current)
+                print((cls.magic_name if count==0 else '      ')  + current)
                 count += 1
                 current = keyword
             else:
                 current += ' '+ keyword
         else:
-            print(('%output' if count==0 else '      ')  + current)
+            print((cls.magic_name if count==0 else '      ')  + current)
 
 
     @classmethod
@@ -160,6 +160,7 @@ class SaveOptsMagic(OptionsMagic):
     output from notebooks.
     """
 
+    magic_name = '%saveopts'
 
     def __init__(self, *args, **kwargs):
         super(SaveOptsMagic, self).__init__(*args, **kwargs)
@@ -248,6 +249,7 @@ class OutputMagic(OptionsMagic):
     Magic for easy customising of display options.
     Consult %%output? for more information.
     """
+    magic_name = '%output'
     # Formats that are always available
     inbuilt_formats= ['auto', 'widgets', 'scrubber']
     # Codec or system-dependent format options
