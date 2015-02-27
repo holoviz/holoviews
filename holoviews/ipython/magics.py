@@ -9,7 +9,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import OrderedDict
-from ..core.options import OptionTree, Options, OptionError, Store, save_options
+from ..core.options import OptionTree, Options, OptionError, Store, SaveOptions, save_options
 
 from IPython.display import display, HTML
 
@@ -159,22 +159,32 @@ class SaveOptsMagic(OptionsMagic):
     Implements the %saveopts magic for automatically saving HoloViews
     output from notebooks.
     """
-    save_options_dflts = [(k,v) for (k,v)
-                          in save_options.get_param_values()
-                          if k not in ['name', 'time']]
 
-    allowed = dict({k:{v} for k,v in save_options_dflts},
-                   **{'auto'     : [True, False],
-                      'charwidth'   :  (0, float('inf'))})
-
-    defaults = OrderedDict(save_options_dflts
-                           + [('auto' , True),
-                              ('charwidth'   , 80)])
-
-    options =  OrderedDict(defaults.items()) # Current options
 
     def __init__(self, *args, **kwargs):
         super(SaveOptsMagic, self).__init__(*args, **kwargs)
+        self.refresh_defaults()
+
+    @classmethod
+    def refresh_defaults(cls):
+        """
+        Sets the defaults and tab auto-completion based on the
+        parameter defaults of the SaveOptions class.
+
+        In the class parameter defaults of SaveOptions are customize,
+        this method needs to be called in order to update the
+        tab-completion behaviour appropriately.
+        """
+        dflts = [(k,p.default) for (k,p) in SaveOptions.params().items()
+                 if k not in ['name', 'time']]
+        cls.allowed = dict({k:{v} for k,v in dflts},
+                           **{'auto'     : [True, False],
+                              'charwidth'   :  (0, float('inf'))})
+        cls.defaults = OrderedDict(dflts
+                               + [('auto' , True),
+                                  ('charwidth'   , 80)])
+        cls.options =  OrderedDict(cls.defaults.items())
+
 
     @classmethod
     def _validate(cls, options):
