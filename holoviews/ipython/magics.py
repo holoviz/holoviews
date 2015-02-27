@@ -152,97 +152,6 @@ class OptionsMagic(Magics):
         return items
 
 
-
-@magics_class
-class SaveOptsMagic(OptionsMagic):
-    """
-    Implements the %saveopts magic for automatically saving HoloViews
-    output from notebooks.
-    """
-
-    magic_name = '%saveopts'
-
-    def __init__(self, *args, **kwargs):
-        super(SaveOptsMagic, self).__init__(*args, **kwargs)
-        self.refresh_defaults()
-
-    @classmethod
-    def refresh_defaults(cls):
-        """
-        Sets the defaults and tab auto-completion based on the
-        parameter defaults of the SaveOptions class.
-
-        In the class parameter defaults of SaveOptions are customize,
-        this method needs to be called in order to update the
-        tab-completion behaviour appropriately.
-        """
-        dflts = [(k,p.default) for (k,p) in SaveOptions.params().items()
-                 if k not in ['name', 'time']]
-        cls.allowed = dict({k:{v} for k,v in dflts},
-                           **{'auto'     : [True, False],
-                              'charwidth'   :  (0, float('inf'))})
-        cls.defaults = OrderedDict(dflts
-                               + [('auto' , True),
-                                  ('charwidth'   , 80)])
-        cls.options =  OrderedDict(cls.defaults.items())
-
-
-    @classmethod
-    def _validate(cls, options):
-        formatter = options['formatter']
-        save_options.validate_fields(save_options.parse_fields(formatter), 'filename')
-        directory = options['directory']
-        save_options.validate_fields(save_options.parse_fields(directory), 'directory')
-        return options
-
-    @classmethod
-    def option_completer(cls, k,v):
-        raw_line = v.text_until_cursor
-        line = raw_line.replace('%output','')
-
-        # Find the last element class mentioned
-        completion_key = None
-        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
-
-        for token in tokens:
-            if token.strip() in cls.allowed:
-                completion_key = token.strip()
-                break
-        values = [repr(el) for el in cls.allowed.get(completion_key, [])
-                  if not isinstance(el, tuple)]
-
-        return values + [el+'=' for el in cls.allowed.keys()]
-
-    @line_magic
-    def saveopts(self, line):
-        """
-        See the parameter documentation of SaveOptions for information
-        on the allowed keywords and their semantics.
-        """
-        line = line.split('#')[0].strip()
-        if line == '':
-            self.pprint()
-            print("\nFor help with the %saveopts magic, call %saveopts?")
-            return
-        try:
-            options = self.get_options(line, OrderedDict())
-            SaveOptsMagic.options = options
-            current_time = tuple(time.localtime())
-            save_options.set_options(**dict(options, time=current_time))
-            suffix = ''
-            if '{timestamp}' in save_options.directory + save_options.formatter:
-                timestamp = time.strftime(save_options.timestamp_format, current_time)
-                suffix = ' using timestamp=%r' % timestamp
-            if options['auto']:
-                print("Automatic saving is ON%s" % suffix)
-            else:
-                print("Automatic saving is OFF")
-        except Exception as e:
-            print('Error: %s' % str(e))
-            print("For help with the %saveopts magic, call %saveopts?\n")
-            return
-
-
 @magics_class
 class OutputMagic(OptionsMagic):
     """
@@ -281,7 +190,6 @@ class OutputMagic(OptionsMagic):
                             ('filename'    , None)])
 
     options = OrderedDict(defaults.items())
-    _obj = None
 
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)
@@ -369,7 +277,97 @@ class OutputMagic(OptionsMagic):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             OutputMagic.options = restore_copy
-        self._obj=None
+
+
+
+@magics_class
+class SaveOptsMagic(OptionsMagic):
+    """
+    Implements the %saveopts magic for automatically saving HoloViews
+    output from notebooks.
+    """
+    magic_name = '%saveopts'
+    _obj = None           # Handle on the HoloViews object that may be saved
+
+    def __init__(self, *args, **kwargs):
+        super(SaveOptsMagic, self).__init__(*args, **kwargs)
+        self.refresh_defaults()
+
+    @classmethod
+    def refresh_defaults(cls):
+        """
+        Sets the defaults and tab auto-completion based on the
+        parameter defaults of the SaveOptions class.
+
+        In the class parameter defaults of SaveOptions are customize,
+        this method needs to be called in order to update the
+        tab-completion behaviour appropriately.
+        """
+        dflts = [(k,p.default) for (k,p) in SaveOptions.params().items()
+                 if k not in ['name', 'time']]
+        cls.allowed = dict({k:{v} for k,v in dflts},
+                           **{'auto'     : [True, False],
+                              'charwidth'   :  (0, float('inf'))})
+        cls.defaults = OrderedDict(dflts
+                               + [('auto' , True),
+                                  ('charwidth'   , 80)])
+        cls.options =  OrderedDict(cls.defaults.items())
+
+
+    @classmethod
+    def _validate(cls, options):
+        formatter = options['formatter']
+        save_options.validate_fields(save_options.parse_fields(formatter), 'filename')
+        directory = options['directory']
+        save_options.validate_fields(save_options.parse_fields(directory), 'directory')
+        return options
+
+    @classmethod
+    def option_completer(cls, k,v):
+        raw_line = v.text_until_cursor
+        line = raw_line.replace('%output','')
+
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
+
+        for token in tokens:
+            if token.strip() in cls.allowed:
+                completion_key = token.strip()
+                break
+        values = [repr(el) for el in cls.allowed.get(completion_key, [])
+                  if not isinstance(el, tuple)]
+
+        return values + [el+'=' for el in cls.allowed.keys()]
+
+    @line_magic
+    def saveopts(self, line):
+        """
+        See the parameter documentation of SaveOptions for information
+        on the allowed keywords and their semantics.
+        """
+        line = line.split('#')[0].strip()
+        if line == '':
+            self.pprint()
+            print("\nFor help with the %saveopts magic, call %saveopts?")
+            return
+        try:
+            options = self.get_options(line, OrderedDict())
+            SaveOptsMagic.options = options
+            current_time = tuple(time.localtime())
+            save_options.set_options(**dict(options, time=current_time))
+            suffix = ''
+            if '{timestamp}' in save_options.directory + save_options.formatter:
+                timestamp = time.strftime(save_options.timestamp_format, current_time)
+                suffix = ' using timestamp=%r' % timestamp
+            if options['auto']:
+                print("Automatic saving is ON%s" % suffix)
+            else:
+                print("Automatic saving is OFF")
+        except Exception as e:
+            print('Error: %s' % str(e))
+            print("For help with the %saveopts magic, call %saveopts?\n")
+            return
 
     @classmethod
     def register_object(cls, obj):
@@ -377,22 +375,25 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def save_fig(cls, fig, fig_format, dpi):
+        fname, fmt = OutputMagic.options['filename'], OutputMagic.options['fig']
         filename = save_options.filename(cls._obj, fig_format,
-                                         override=cls.options['filename'])
+                                         override='%s.%s' % (fname, fmt) if fname else None)
         if filename is None: return
 
         figure_data = print_figure(fig, fig_format, dpi=dpi)
         if save_options._digest(figure_data): return
         with open(filename, 'w') as f:
             f.write(figure_data)
+        cls._obj=None
 
     @classmethod
     def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
+        fname, fmt = OutputMagic.options['filename'], OutputMagic.options['holomap']
         filename = save_options.filename(cls._obj, mime_type,
-                                         override=cls.options['filename'])
+                                         override='%s.%s' % (fname, fmt) if fname else None)
         if filename is None: return
         anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
-
+        cls._obj=None
 
 
 @magics_class
