@@ -377,7 +377,7 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def save_fig(cls, fig, fig_format, dpi):
-        filename = save_options.filename(fig_format, cls._obj,
+        filename = save_options.filename(cls._obj, fig_format,
                                          override=cls.options['filename'])
         if filename is None: return
 
@@ -388,7 +388,7 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
-        filename = save_options.filename(mime_type,cls._obj,
+        filename = save_options.filename(cls._obj, mime_type,
                                          override=cls.options['filename'])
         if filename is None: return
         anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
