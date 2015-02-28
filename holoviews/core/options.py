@@ -670,7 +670,7 @@ class SaveOptions(param.Parameterized):
         if filename is None: return []
         try:
             parse = list(string.Formatter().parse(filename))
-            return  [f for f in zip(*parse)[1] if f is not None]
+            return  [f for f in list(zip(*parse))[1] if f is not None]
         except:
             raise SyntaxError("Could not parse filename string formatter")
 
