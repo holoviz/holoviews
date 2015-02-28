@@ -408,7 +408,7 @@ class SaverMagic(OptionsMagic):
         if filename is None: return
 
         figure_data = print_figure(fig, fig_format, dpi=dpi)
-        if save_options._digest(figure_data): return
+        if save_options._digest(figure_data) == 1: return
         with open(filename, 'w') as f:
             f.write(figure_data)
         cls._obj=None

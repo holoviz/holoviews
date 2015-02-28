@@ -647,8 +647,9 @@ class SaveOptions(param.Parameterized):
 
     filename_fields = ['type', 'group', 'label', 'timestamp']
     directory_fields = ['timestamp']
-    _generate_SHA = False   # For testing. Whether to compute SHA as output
-    _SHA = None             # For testing purposes: the saved output SHA.
+    _SHA = None         # For testing purposes: the saved output SHA.
+    _SHA_mode = False   # 0: No SHA, 1: SHA (not saved), 2: SHA (saved)
+
 
     def __init__(self, **kwargs):
         super(SaveOptions, self).__init__(**kwargs)
@@ -711,13 +712,15 @@ class SaveOptions(param.Parameterized):
 
     @classmethod
     def _digest(cls, data):
-        if cls._generate_SHA:
+        """
+        Gets the SHA hexdigest for the data. Returns whether saving
+        should continue based on the _SHA_mode.
+        """
+        if cls._SHA_mode != 0:
             hashfn = sha256()
             hashfn.update(data)
             cls._SHA  = hashfn.hexdigest()
-            return True
-        else:
-            return False
+        return cls._SHA_mode
 
 # Global save options object
 save_options = SaveOptions()
