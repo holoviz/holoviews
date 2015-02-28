@@ -481,7 +481,7 @@ class NdMapping(MultiDimensionalMapping):
         map_slice = self._transform_indices(map_slice)
         map_slice = self._expand_slice(map_slice)
 
-        if all(not isinstance(el, (slice, list)) for el in map_slice):
+        if all(not isinstance(el, (slice, set, list, tuple)) for el in map_slice):
             return self._dataslice(self.data[map_slice], data_slice)
         else:
             conditions = self._generate_conditions(map_slice)
@@ -543,11 +543,12 @@ class NdMapping(MultiDimensionalMapping):
                     conditions.append(self._from_condition(dim))
                 else:
                     conditions.append(self._range_condition(dim))
-            elif isinstance(dim, list):
+            elif isinstance(dim, set):
                 conditions.append(self._values_condition(dim))
             elif dim is Ellipsis:
                 conditions.append(self._all_condition())
-            else:
+            elif isinstance(dim, (list, tuple)):
+                raise ValueError("Keys may only be selected with sets, not lists or tuples.")
                 conditions.append(self._value_condition(dim))
         return conditions
 
