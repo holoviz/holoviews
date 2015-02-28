@@ -96,11 +96,10 @@ def max_frame_warning(max_frames):
                      "[Total item frames exceeds max_frames on OutputMagic (%d)]"
                      % max_frames)
 
-def process_cell_magics(obj):
-    "Hook into %%opts and %%channels magics to process displayed element"
+def process_object(obj):
+    "Hook to process the object currently being displayed."
     invalid_options = OptsMagic.process_view(obj)
     if invalid_options: return invalid_options
-    SaverMagic.register_object(obj)
 
 
 def render(plot):
@@ -201,8 +200,8 @@ def animation_display(anim, map_format, dpi=72, **kwargs):
 def view_display(view, size, **kwargs):
     if not isinstance(view, ViewableElement): return None
     if type(view) == Element:                 return None
-    magic_info = process_cell_magics(view)
-    if magic_info: return magic_info
+    info = process_object(view)
+    if info: return info
     if view.__class__ not in Store.defaults: return None
     fig = Store.defaults[view.__class__](view,
                                          **opts(view, get_plot_size(view, size)))()
@@ -212,8 +211,8 @@ def view_display(view, size, **kwargs):
 @display_hook
 def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
-    magic_info = process_cell_magics(vmap)
-    if magic_info: return magic_info
+    info = process_object(vmap)
+    if info: return info
     if vmap.type not in Store.defaults:  return None
     mapplot = Store.defaults[vmap.type](vmap,
                                         **opts(vmap.last, get_plot_size(vmap,size)))
@@ -238,8 +237,8 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     nframes = len(unique_dimkeys(layout)[1])
 
     shape = layout.shape
-    magic_info = process_cell_magics(layout)
-    if magic_info: return magic_info
+    info = process_object(layout)
+    if info: return info
     layoutplot = LayoutPlot(layout, **opts(layout, get_plot_size(layout, size)))
     if isinstance(layout, Layout):
         if layout._display == 'auto':
@@ -262,8 +261,8 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 @display_hook
 def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
     if not isinstance(grid, GridSpace): return None
-    magic_info = process_cell_magics(grid)
-    if magic_info: return magic_info
+    info = process_object(grid)
+    if info: return info
 
     raster_fn = lambda x: True if isinstance(x, Raster) else False
     all_raster = all(grid.traverse(raster_fn, [Element]))
