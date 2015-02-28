@@ -25,6 +25,14 @@ version = '2014.05.14'
 release = '2014.05.14'
 
 
+# Override IOAM theme
+import sphinx_rtd_theme
+
+html_theme = "sphinx_rtd_theme"
+
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+
 # -------------------------------------------------------------------------
 # -- The remaining items are less likely to need changing for a new project
 
