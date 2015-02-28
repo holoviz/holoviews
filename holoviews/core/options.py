@@ -32,7 +32,7 @@ Store:
    extension together.
 
 """
-import os, string, time
+import os, string, time, pickle
 
 import param
 from .tree import AttrTree
@@ -565,6 +565,29 @@ class Store(object):
 
     # A dictionary of custom OptionTree by custom object id
     custom_options = {}
+    load_counter_offset = None
+    save_option_state = False
+
+    @classmethod
+    def load(cls, filename):
+        """
+        Equivalent to pickle.load except that the appropriate
+        HoloViews trees is restored appropriately.
+        """
+        cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
+        val = pickle.load(filename)
+        load_counter_offset = None
+        return val
+
+    @classmethod
+    def dump(cls, obj, filename, protocol=0):
+        """
+        Equivalent to pickle.dump except that the HoloViews option
+        tree is saved appropriately.
+        """
+        cls.save_option_state = True
+        val = pickle.dump(obj, filename, protocol=protocol)
+        cls.save_option_state = False
 
 
     @classmethod
