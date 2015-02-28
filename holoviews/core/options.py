@@ -657,11 +657,11 @@ class SaveOptions(param.Parameterized):
         self.timestamp = time.strftime(self.timestamp_format, self.time)
 
     def set_options(self, **kwargs):
-        self.timestamp = time.strftime(self.timestamp_format)
         params = self.params()
         for k, v in kwargs.items():
             if k in params:
                 setattr(self, k, v)
+        self.timestamp = time.strftime(self.timestamp_format, self.time)
 
     @classmethod
     def parse_fields(cls, filename):
