@@ -305,13 +305,21 @@ class SaveOptsMagic(OptionsMagic):
         """
         dflts = [(k,p.default) for (k,p) in SaveOptions.params().items()
                  if k not in ['name', 'time']]
-        cls.allowed = dict({k:{v} for k,v in dflts},
-                           **{'auto'     : [True, False],
-                              'charwidth'   :  (0, float('inf'))})
+
+        # Options that are not SaveOption parameters
+        cls.additional = {'auto'            : [True, False],
+                          'charwidth'       : (0, float('inf')),
+                          'reset_timestamp' : [True, False]}
+
+        # All allowed options.
+        cls.allowed = dict({k:{v} for k,v in dflts}, **cls.additional)
+
         cls.defaults = OrderedDict(dflts
                                    + [('auto' , None),
-                                      ('charwidth'   , 80)])
+                                      ('charwidth'   , 80),
+                                      ('reset_timestamp', None)])
         cls.options =  OrderedDict(cls.defaults.items())
+        cls._time = None
 
 
     @classmethod
@@ -352,16 +360,20 @@ class SaveOptsMagic(OptionsMagic):
             print("\nFor help with the %saveopts magic, call %saveopts?")
             return
         try:
-            current_time = tuple(time.localtime())
             options = self.get_options(line, OrderedDict())
-            if options['auto'] is None: # Enable autosaving, first time magic is called.
+            if options['auto'] is None:  # Enable autosaving, first time magic is called.
                 options['auto'] = True
             SaveOptsMagic.options = options
-            filtered = {k:v for k,v in options.items() if k not in ['auto', 'charwidth']}
-            save_options.set_options(**dict(filtered, time=current_time))
+            filtered = {k:v for k,v in options.items() if k not in self.additional.keys()}
+
+            save_options.set_options(**filtered)
             suffix = ''
             if '{timestamp}' in save_options.directory + save_options.formatter:
-                timestamp = time.strftime(save_options.timestamp_format, current_time)
+                current_time = tuple(time.localtime())
+                if options['reset_timestamp'] or self._time is None:
+                    self._time = current_time
+                save_options.set_options(time=self._time)
+                timestamp = time.strftime(save_options.timestamp_format, self._time)
                 suffix = ' using timestamp=%r' % timestamp
             if options['auto']:
                 print("Automatic saving is ON%s" % suffix)
