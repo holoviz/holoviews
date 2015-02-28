@@ -61,9 +61,9 @@ def HTML_video(plot):
     current_format = OutputMagic.options['holomap']
     for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
         if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
-            #try:
-            return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
-            #except: pass
+            try:
+                return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
+            except: pass
     msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
         msg = "<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>"
