@@ -1,0 +1,31 @@
+.wy-menu-vertical ul {
+    margin: 0 0 0 0 !important;
+}
+
+div.affix {
+    position: relative !important;
+}
+
+body {
+    font-family: "Lato","proxima-nova","Helvetica Neue",Arial,sans-serif !important;
+}
+
+.a:hover {
+    color: #b3b3b3 !important;
+}
+
+a.fa {
+    font-size: 200%;
+}
+
+div.wy-nav-content {
+    max-width: 80%;
+}
+
+input {
+    height: 30px !important;
+}
+
+code {
+    font-size: inherit !important;
+}
