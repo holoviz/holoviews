@@ -108,7 +108,7 @@ showing how to fix the bug or implement the feature!
    :hidden:
    :maxdepth: 2
 
-   self
+   self <Home>
    Tutorials <Tutorials/index>
    Reference Manual <Reference_Manual/index>
    Github source <http://github.com/ioam/holoviews>
