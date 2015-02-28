@@ -98,6 +98,15 @@ class Export(object):
     SHA = None     # For testing purposes: the output SHA.
     SHA_mode = 0   # 0: No SHA, 1: SHA (file not saved), 2: SHA (file saved)
 
+    @classmethod
+    def register_object(cls, obj):
+        """
+        Public interface for registering an object at the class
+        level. This functionality may be used if the HoloViews object
+        is not available when a matplotlib figure or animation is
+        saved (e.g. in the IPython display hooks).
+        """
+        cls.obj = obj
 
     @classmethod
     def save(cls, obj, basename=None, fmt=None,
@@ -164,7 +173,8 @@ class Export(object):
 
         A filename may be automatically generated from the supplied
         object (if auto is enabled). If auto is enabled and no object
-        is supplied, cls.obj is consulted.
+        is supplied, any object registered at the class level is
+        consulted.
 
         If dpi is None, the default dpi is taken from matplotlib
         rcParams.
@@ -189,7 +199,8 @@ class Export(object):
 
         A filename may be automatically generated from the supplied
         object (if auto is enabled). If auto is enabled and no object
-        is supplied, cls.obj is consulted.
+        is supplied, any object registered at the class level is
+        consulted.
 
         The writer argument is the matplotlib animation writer and the
         anim_kwargs.
