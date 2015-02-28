@@ -364,12 +364,8 @@ class SaverMagic(OptionsMagic):
         parameter that is not supported.
         """
         line = line.split('#')[0].strip()
-        if line == '':
-            self.pprint()
-            print("\nFor help with the %export magic, call %export?")
-            return
         try:
-            options = self.get_options(line, OrderedDict())
+            options = self.defaults if line.strip() == '' else  self.get_options(line, OrderedDict())
             if options['enabled'] is None:  # Enable autosaving, first time magic is called.
                 options['enabled'] = True
             SaverMagic.options = options
