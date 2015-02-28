@@ -40,6 +40,7 @@ ____________
 
 .. notebook:: holoviews index.ipynb
 
+------------
 
 Installation
 ____________
@@ -78,6 +79,7 @@ We plan to have a full PyPI release of HoloViews within the next week.
 
 |BuildStatus|_
 
+------------
 
 Contributors
 ____________
@@ -101,3 +103,11 @@ showing how to fix the bug or implement the feature!
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
 
+.. toctree::
+   :titlesonly:
+   :maxdepth: 2
+
+   self
+   Tutorials <Tutorials/index>
+   Reference Manual <Reference_Manual/index>
+   Find us on Github <http://github.com/ioam/holoviews>
