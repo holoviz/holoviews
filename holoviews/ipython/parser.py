@@ -28,6 +28,7 @@ class Parser(object):
     of keyword lists.
     """
 
+    # Static namespace set in __init__.py of the extension
     namespace = {}
 
     @classmethod
@@ -54,10 +55,13 @@ class Parser(object):
         return tokens
 
     @classmethod
-    def todict(cls, parseresult, mode='parens'):
+    def todict(cls, parseresult, mode='parens', ns={}):
         """
         Helper function to return dictionary given the parse results
         from a pyparsing.nestedExpr object (containing keywords).
+
+        The ns is a dynamic namespace (typically the IPython Notebook
+        namespace) used to update the class-level namespace.
         """
         grouped, kwargs = [], {}
         tokens = cls.collect_tokens(parseresult, mode)
@@ -70,7 +74,7 @@ class Parser(object):
                 grouped[-1] += ''.join(items)
 
         for keyword in grouped:
-            try:     kwargs.update(eval('dict(%s)' % keyword, cls.namespace))
+            try:     kwargs.update(eval('dict(%s)' % keyword, dict(cls.namespace, **ns)))
             except:  raise SyntaxError("Could not evaluate keyword: %r" % keyword)
         return kwargs
 
@@ -201,7 +205,7 @@ class OptsSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line):
+    def parse(cls, line, ns={}):
         """
         Parse an options specification, returning a dictionary with
         path keys and {'plot':<options>, 'style':<options>} values.
@@ -225,11 +229,11 @@ class OptsSpec(Parser):
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
-                options['plot'] = Options(**cls.todict(plotopts, 'brackets'))
+                options['plot'] = Options(**cls.todict(plotopts, 'brackets', ns=ns))
 
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
-                options['style'] = Options(**cls.todict(styleopts, 'parens'))
+                options['style'] = Options(**cls.todict(styleopts, 'parens', ns=ns))
             parse[group['pathspec']] = options
         return parse
 
@@ -273,7 +277,7 @@ class CompositorSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line):
+    def parse(cls, line, ns={}):
         """
         Parse compositor specifications, returning a list Compositors
         """
@@ -302,7 +306,7 @@ class CompositorSpec(Parser):
                 raise SyntaxError("Operation %s not available for use with compositors."
                                   % group['op'])
             if  'op_settings' in group:
-                kwargs = cls.todict(group['op_settings'][0], 'brackets')
+                kwargs = cls.todict(group['op_settings'][0], 'brackets', ns=ns)
 
             definition = Compositor(str(spec), operation, str(group['value']), mode, **kwargs)
             definitions.append(definition)

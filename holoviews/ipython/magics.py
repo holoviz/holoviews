@@ -406,7 +406,7 @@ class CompositorMagic(Magics):
     @line_magic
     def compositor(self, line):
         if line.strip():
-            for definition in CompositorSpec.parse(line.strip()):
+            for definition in CompositorSpec.parse(line.strip(), ns=self.shell.user_ns):
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
                 Store.options[type_name + '.' + definition.group] = group
@@ -632,7 +632,7 @@ class OptsMagic(Magics):
         """
         get_object = None
         try:
-            spec = OptsSpec.parse(line)
+            spec = OptsSpec.parse(line, ns=self.shell.user_ns)
             spec = self.expand_compositor_keys(spec)
         except SyntaxError:
             display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
