@@ -3,6 +3,7 @@ from hashlib import sha256
 import numpy as np
 from io import BytesIO
 
+from holoviews import HoloMap
 from holoviews.element import Image
 from holoviews.plotting import Export
 from holoviews.core.options import SaveOptions
@@ -31,6 +32,7 @@ class ExportTest(ComparisonTestCase):
     def setUp(self):
         self.image1 = Image(np.array([[0,1],[2,3]]))
         self.image2 = Image(np.array([[1,0],[4,-2]]))
+        self.map1 = HoloMap({1:self.image1, 2:self.image2})
 
     def test_simple_export_png1(self):
         Export.save(self.image1, fmt='png')
@@ -41,6 +43,11 @@ class ExportTest(ComparisonTestCase):
         Export.save(self.image2, fmt='png')
         self.assertEqual(digest_data(Export.captured_data),
                         'e47fca35d069cdbf5ab0f3337c408ed7ed3e366baba7ec650abb8711394e8b1d')
+
+    def test_simple_export_gif(self):
+        Export.save(self.map1, fmt='gif')
+        self.assertEqual(digest_data(Export.captured_data),
+                        '8b225c069ba56fb67774996e4a07dd8e3ac11f4df6566a2513d1cf489003159f')
 
 
 
