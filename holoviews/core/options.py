@@ -640,9 +640,13 @@ class SaveOptions(param.Parameterized):
         instantiation (or the time of setting the options with
         set_options) is used.""")
 
-    directory = param.String('./{timestamp}', doc="""
-        The absolute or relative directory path in which output is to
-        be saved.""")
+    directory = param.String('{timestamp}', doc="""
+        The name of the directory path in which output is to be
+        saved that may include the {timestamp} field.""")
+
+    root = param.String('.', doc="""
+       The root directory in which the output directory is
+       located. May be an absolute or relative path.""")
 
     filename_fields = ['type', 'group', 'label', 'timestamp']
     directory_fields = ['timestamp']
@@ -693,7 +697,8 @@ class SaveOptions(param.Parameterized):
         Find an appropriate filename for a given file format and
         object if no explicit override supplied.
         """
-        directory = os.path.abspath(self._format(self.directory, obj))
+        directory = os.path.join(os.path.abspath(self.root),
+                                 self._format(self.directory, obj))
         if not os.path.isdir(directory):
             os.makedirs(directory)
         fname = self._format(self.formatter, obj)
