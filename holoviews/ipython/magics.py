@@ -308,17 +308,17 @@ class SaverMagic(OptionsMagic):
                  if k not in ['name', 'time']]
 
         # Options that are not SaveOption parameters
-        cls.additional = {'auto'            : [True, False],
-                          'charwidth'       : (0, float('inf')),
-                          'reset_timestamp' : [True, False]}
+        cls.additional = {'enabled'   : [True, False],
+                          'charwidth' : (0, float('inf')),
+                          'reset'     : [True, False]}
 
         # All allowed options.
         cls.allowed = dict({k:{v} for k,v in dflts}, **cls.additional)
 
         cls.defaults = OrderedDict(dflts
-                                   + [('auto' , None),
+                                   + [('enabled' , None),
                                       ('charwidth'   , 80),
-                                      ('reset_timestamp', None)])
+                                      ('reset', None)])
         cls.options =  OrderedDict(cls.defaults.items())
         cls._time = None
 
@@ -362,8 +362,8 @@ class SaverMagic(OptionsMagic):
             return
         try:
             options = self.get_options(line, OrderedDict())
-            if options['auto'] is None:  # Enable autosaving, first time magic is called.
-                options['auto'] = True
+            if options['enabled'] is None:  # Enable autosaving, first time magic is called.
+                options['enabled'] = True
             SaverMagic.options = options
             filtered = {k:v for k,v in options.items() if k not in self.additional.keys()}
 
@@ -371,15 +371,15 @@ class SaverMagic(OptionsMagic):
             suffix = ''
             if '{timestamp}' in save_options.directory + save_options.formatter:
                 current_time = tuple(time.localtime())
-                if options['reset_timestamp'] or self._time is None:
+                if options['reset'] or self._time is None:
                     self._time = current_time
                 save_options.set_options(time=self._time)
                 timestamp = time.strftime(save_options.timestamp_format, self._time)
-                suffix = ' using timestamp=%r' % timestamp
-            if options['auto']:
-                print("Automatic saving is ON%s" % suffix)
+                suffix = ' using the timestamp %r' % timestamp
+            if options['enabled']:
+                print("Automatic export is ON%s" % suffix)
             else:
-                print("Automatic saving is OFF")
+                print("Automatic export is OFF")
         except Exception as e:
             print('Error: %s' % str(e))
             print("For help with the %export magic, call %export?\n")
@@ -393,7 +393,7 @@ class SaverMagic(OptionsMagic):
     def save_fig(cls, fig, fig_format, dpi):
         fname, fmt = OutputMagic.options['filename'], OutputMagic.options['fig']
         filename ='%s.%s' % (fname, fmt) if fname else None
-        if not filename and cls.options['auto']:
+        if not filename and cls.options['enabled']:
             filename = save_options.filename(cls._obj, fig_format)
         if filename is None: return
 
@@ -407,7 +407,7 @@ class SaverMagic(OptionsMagic):
     def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
         fname, fmt = OutputMagic.options['filename'], OutputMagic.options['holomap']
         filename ='%s.%s' % (fname, fmt) if fname else None
-        if not filename and cls.options['auto']:
+        if not filename and cls.options['enabled']:
             filename = save_options.filename(cls._obj, mime_type)
         if filename is None: return
 
