@@ -11,18 +11,18 @@ it out live for yourself, using the notebook files in
 The explanatory tutorials are meant to be viewed and worked through in
 this order:
 
-* `Showcase: <http://ioam.github.io/media/holoviews/Showcase.html>`_
+* `Showcase: <Showcase>`_
   Brief demonstration of what HoloViews can do for you and your data.
 
-* `Introduction: <http://ioam.github.io/media/holoviews/Introduction.html>`_
+* `Introduction: <Introduction>`_
   How to use HoloViews -- basic concepts and getting started.
 
-* `Exploring Data: <http://ioam.github.io/media/holoviews/Exploring_Data.html>`_
+* `Exploring Data: <Exploring_Data>`_
   How to use HoloViews containers to flexibly hold all your data
   ready for selecting, sampling, slicing, viewing, combining, and
   animating.
 
-* `Transforming Data: <http://ioam.github.io/media/holoviews/Transforming_Data.html>`_
+* `Transforming Data: <Transforming_Data>`_
   How to transform data within HoloViews containers, e.g. by
   collapsing across dimensions. (Coming soon!)
 
@@ -30,20 +30,20 @@ At any point, you can look through these more comprehensive but less
 explanatory overview tutorials that list each of the objects
 available:
 
-* `Elements: <http://ioam.github.io/media/holoviews/Elements.html>`_
+* `Elements: <Elements>`_
   Overview and examples of all HoloViews element types, the atomic items
   that can be combined together.
 
-* `Containers: <http://ioam.github.io/media/holoviews/Containers.html>`_
+* `Containers: <Containers>`_
   Overview and examples of all the HoloViews container types.
 
-* `Pandas and Seaborn: <http://ioam.github.io/media/holoviews/Pandas_Seaborn.html>`_
+* `Pandas and Seaborn: <Pandas_Seaborn>`_
   Using HoloViews with the external Pandas and Seaborn libraries.
 
 There is also a reference tutorial explaining the details of the
 support offered for working with real-world data:
 
-* `Continuous Coordinates: <http://ioam.github.io/media/holoviews/Continuous_Coords.html>`_
+* `Continuous Coordinates: <Continuous_Coords>`_
   Support for continuous coordinates offered by HoloViews.
 
 For more detailed information on any component described in the
@@ -55,11 +55,11 @@ IPython Notebook cell).
    :maxdepth: 2
    :hidden:
 
-   Showcase <http://ioam.github.io/media/holoviews/Showcase.html>
-   Introduction <http://ioam.github.io/media/holoviews/Introduction.html>
-   Exploring Data <http://ioam.github.io/media/holoviews/Exploring_Data.html>
-   Transforming Data <http://ioam.github.io/media/holoviews/Transforming_Data.html>
-   Elements <http://ioam.github.io/media/holoviews/Elements.html>
-   Containers <http://ioam.github.io/media/holoviews/Containers.html>
-   Pandas and Seaborn <http://ioam.github.io/media/holoviews/Pandas_Seaborn.html>
-   Continuous Coordinates <http://ioam.github.io/media/holoviews/Continuous Coordinates.html>
+   Showcase
+   Introduction
+   Exploring Data <Exploring_Data>
+   Transforming Data <Transforming_Data>
+   Elements
+   Containers
+   Pandas and Seaborn <Pandas_Seaborn>
+   Continuous Coordinates <Continuous_Coords>
