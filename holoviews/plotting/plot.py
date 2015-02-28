@@ -231,6 +231,7 @@ class Plot(param.Parameterized):
                 self.handles['fig'] = fig
                 l, b, r, t = self.figure_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
+                fig.patch.set_alpha(0)
                 fig.set_size_inches(list(self.figure_size))
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
