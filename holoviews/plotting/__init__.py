@@ -1,7 +1,6 @@
 import os
 from io import BytesIO
 from tempfile import NamedTemporaryFile
-from hashlib import sha256
 
 import param
 
@@ -93,10 +92,11 @@ class Export(object):
     figure and animation objects respectively (typically the return
     types from plotting class using matplotlib).
     """
-
     obj = None
-    SHA = None     # For testing purposes: the output SHA.
-    SHA_mode = 0   # 0: No SHA, 1: SHA (file not saved), 2: SHA (file saved)
+    captured_data = None # For testing purposes: the display data
+    capture_mode = 0     # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
+
+    save_options = save_options  # Default save_options object
 
     @classmethod
     def register_object(cls, obj):
@@ -111,7 +111,7 @@ class Export(object):
     @classmethod
     def save(cls, obj, basename=None, fmt=None,
              fig_default='svg', holomap_default='gif',
-             size=100, fps=20, dpi=None, save_options=save_options):
+             size=100, fps=20, dpi=None, save_options=None):
         """
         Save a HoloViews object to file, either to image format (png or
         svg) or animation format (webm, h264, gif).
@@ -135,6 +135,7 @@ class Export(object):
         figure_formats = ['png', 'svg']
         formats = animation_formats + figure_formats
 
+        save_options = cls.save_options if save_options is None else save_options
         if not isinstance(save_options, SaveOptions):
             raise Exception("The save_options argument must be an instance of SaveOptions.")
         elif (save_options is None) and (basename is None):
@@ -167,7 +168,8 @@ class Export(object):
             cls.save_fig(plot(), fmt, basename=basename, obj=obj, dpi=dpi, auto=True)
 
     @classmethod
-    def save_fig(cls, figure, fmt, basename=None, dpi=None, obj=None, auto=True):
+    def save_fig(cls, figure, fmt, basename=None, dpi=None, obj=None,
+                 auto=True, save_options=None):
         """
         Save a matplotlib figure object in the specified format.
 
@@ -181,19 +183,26 @@ class Export(object):
         """
         obj = cls.obj if obj is None else obj
         filename ='%s.%s' % (basename, fmt) if basename else None
+        save_options = cls.save_options if save_options is None else save_options
         if not filename and auto:
             filename = save_options.filename(obj, fmt)
         if filename is None: return
 
         figure_data = cls.figure_data(figure, fmt,
                                       **({'dpi':dpi} if dpi else {}))
-        if cls.digest(figure_data) == 1: return
+        if cls.capture(figure_data) == 1: return
         with open(filename, 'w') as f:
             f.write(figure_data)
 
     @classmethod
+    def capture(cls, data):
+        cls.captured_data = (data if cls.capture_mode != 0 else None)
+        return cls.capture_mode
+
+
+    @classmethod
     def save_anim(cls, anim, fmt, writer,  basename=None, dpi=None,
-                  obj=None, auto=True, **anim_kwargs):
+                  obj=None, auto=True, save_options=None, **anim_kwargs):
         """
         Save a matplotlib animation object in the specified format.
 
@@ -210,17 +219,18 @@ class Export(object):
         """
         obj = cls.obj if obj is None else obj
         filename ='%s.%s' % (basename, fmt) if basename else None
+        save_options = cls.save_options if save_options is None else save_options
         if not filename and auto:
             filename = save_options.filename(obj, fmt)
         if filename is None: return
 
         if dpi is not None:
             anim_kwargs['dpi'] = dpi
-        if cls.SHA_mode == 0:
+        if cls.capture_mode == 0:
             anim.save(filename, writer=writer, **anim_kwargs)
         else:
             anim_data = cls.anim_data(anim, fmt, writer, dpi, **anim_kwargs)
-            if cls.digest(anim_data) == 1: return
+            if cls.capture(anim_data) == 1: return
             with open(filename, 'w') as f:
                 f.write(anim_data)
 
@@ -260,22 +270,6 @@ class Export(object):
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
-
-
-    @classmethod
-    def digest(cls, data):
-        """
-        Sets the SHA hexdigest for the data to cls.SHA and returns the
-        SHA_mode.
-        """
-        if cls.SHA_mode != 0:
-            hashfn = sha256()
-            hashfn.update(data)
-            cls.SHA  = hashfn.hexdigest()
-        else:
-            cls.SHA = None
-        return cls.SHA_mode
-
 
 
 
