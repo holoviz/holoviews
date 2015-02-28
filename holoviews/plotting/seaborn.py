@@ -198,7 +198,9 @@ class SNSFramePlot(DFrameViewPlot):
                                               'hist', 'scatter_matrix',
                                               'autocorrelation_plot',
                                               'pairgrid', 'facetgrid',
-                                              'pairplot', 'violinplot'],
+                                              'pairplot', 'violinplot',
+                                              'factorplot'
+                                          ],
                                      doc="""
         Selects which Seaborn plot type to use, when visualizing the
         SNSFrame. The options that can be passed to the plot_type are
@@ -206,6 +208,11 @@ class SNSFramePlot(DFrameViewPlot):
 
     dframe_options = dict(DFrameViewPlot.dframe_options,
                           **{'regplot':   RegressionPlot.style_opts,
+                             'factorplot': ['kind', 'col', 'aspect', 'row',
+                                            'col_wrap', 'ci', 'linestyles',
+                                            'markers', 'palette', 'dodge',
+                                            'join', 'size', 'legend',
+                                            'sharex', 'sharey', 'hue', 'estimator'],
                              'boxplot':   [],
                              'violinplot':['groupby', 'positions',
                                            'inner', 'bw', 'cut'],
@@ -282,7 +289,10 @@ class SNSFramePlot(DFrameViewPlot):
 
 
     def _update_plot(self, axis, view):
-        if self.plot_type == 'regplot':
+        if self.plot_type == 'factorplot':
+            opts = dict(self.style, **({'hue': view.x2} if view.x2 else {}))
+            sns.factorplot(x=view.x, y=view.y, data=view.data, **opts)
+        elif self.plot_type == 'regplot':
             sns.regplot(x=view.x, y=view.y, data=view.data,
                         ax=axis, **self.style)
         elif self.plot_type == 'boxplot':
