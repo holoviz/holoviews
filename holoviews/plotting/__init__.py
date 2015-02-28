@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 import param
 
 from ..core.options import Cycle, Options, Store,  SaveOptions, save_options
-from ..core import Layout, NdLayout, GridSpace
+from ..core import Layout, NdLayout, GridSpace, HoloMap
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .chart3d import * # pyflakes:ignore (API import)
@@ -144,8 +144,10 @@ class Export(object):
 
         if isinstance(obj, AdjointLayout):
             obj = Layout.from_values(obj)
+
+        element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
         try:
-            plotclass = Store.defaults[type(obj)]
+            plotclass = Store.defaults[element_type]
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
 
