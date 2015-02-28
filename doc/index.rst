@@ -1,5 +1,8 @@
 .. holoviews documentation master file
 
+.. raw:: html
+  :file: latest_news.html
+
 Introduction
 ____________
 
