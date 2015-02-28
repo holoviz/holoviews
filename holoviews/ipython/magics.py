@@ -281,7 +281,7 @@ class OutputMagic(OptionsMagic):
 
 
 @magics_class
-class SaveOptsMagic(OptionsMagic):
+class SaverMagic(OptionsMagic):
     """
     Implements the %saveopts magic for automatically saving HoloViews
     output from notebooks.
@@ -290,7 +290,7 @@ class SaveOptsMagic(OptionsMagic):
     _obj = None           # Handle on the HoloViews object that may be saved
 
     def __init__(self, *args, **kwargs):
-        super(SaveOptsMagic, self).__init__(*args, **kwargs)
+        super(SaverMagic, self).__init__(*args, **kwargs)
         self.refresh_defaults()
 
     @classmethod
@@ -363,7 +363,7 @@ class SaveOptsMagic(OptionsMagic):
             options = self.get_options(line, OrderedDict())
             if options['auto'] is None:  # Enable autosaving, first time magic is called.
                 options['auto'] = True
-            SaveOptsMagic.options = options
+            SaverMagic.options = options
             filtered = {k:v for k,v in options.items() if k not in self.additional.keys()}
 
             save_options.set_options(**filtered)
@@ -729,7 +729,7 @@ class TimerMagic(Magics):
 def load_magics(ip):
     ip.register_magics(TimerMagic)
     ip.register_magics(OutputMagic)
-    ip.register_magics(SaveOptsMagic)
+    ip.register_magics(SaverMagic)
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)
@@ -741,7 +741,7 @@ def load_magics(ip):
     # Configuring tab completion
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
-    ip.set_hook('complete_command', SaveOptsMagic.option_completer, str_key = '%saveopts')
+    ip.set_hook('complete_command', SaverMagic.option_completer, str_key = '%saveopts')
 
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
