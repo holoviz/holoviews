@@ -50,3 +50,16 @@ For more detailed information on any component described in the
 tutorials, please refer to the `Reference Manual:
 <../Reference_Manual>`_ or the online help (e.g. type ``Image?`` in an
 IPython Notebook cell).
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+
+   Showcase <http://ioam.github.io/media/holoviews/Showcase.html>
+   Introduction <http://ioam.github.io/media/holoviews/Introduction.html>
+   Exploring Data <http://ioam.github.io/media/holoviews/Exploring_Data.html>
+   Transforming Data <http://ioam.github.io/media/holoviews/Transforming_Data.html>
+   Elements <http://ioam.github.io/media/holoviews/Elements.html>
+   Containers <http://ioam.github.io/media/holoviews/Containers.html>
+   Pandas and Seaborn <http://ioam.github.io/media/holoviews/Pandas_Seaborn.html>
+   Continuous Coordinates <http://ioam.github.io/media/holoviews/Continuous Coordinates.html>
