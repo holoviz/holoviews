@@ -40,11 +40,58 @@ ANIMATION_OPTS = {
 }
 
 
+def opts(el, size):
+    "Returns the plot options with supplied size (if not overridden)"
+    return dict(figure_size=size, **Store.lookup_options(el, 'plot').options)
+
+
+def get_plot_size(obj, percent_size):
+    """
+    Given a holoviews object and a percentage size, apply heuristics
+    to compute a suitable figure size. For instance, scaling layouts
+    and grids linearly can result in unwieldy figure sizes when there
+    are a large number of elements. As ad hoc heuristics are used,
+    this functionality is kept separate from the plotting classes
+    themselves.
+
+    Used by the IPython Notebook display hooks and the save
+    utility. Note that this can be overridden explicitly per object
+    using the figure_size and size plot options.
+    """
+    def rescale_figure(percent_size):
+        factor = percent_size / 100.0
+        return (Plot.figure_size[0] * factor,
+                Plot.figure_size[1] * factor)
+
+    if isinstance(obj, (Layout, NdLayout)):
+        return (obj.shape[1]*rescale_figure(percent_size)[1],
+                obj.shape[0]*rescale_figure(percent_size)[0])
+    elif isinstance(obj, GridSpace):
+        max_dim = max(obj.shape)
+        # Reduce plot size as GridSpace gets larger
+        shape_factor = 1. / max_dim
+        # Expand small grids to a sensible viewing size
+        expand_factor = 1 + (max_dim - 1) * 0.1
+        scale_factor = expand_factor * shape_factor
+        return (scale_factor * obj.shape[0] * rescale_figure(percent_size)[0],
+                scale_factor * obj.shape[1] * rescale_figure(percent_size)[1])
+    else:
+        return rescale_figure(percent_size)
+
+
 
 class Export(object):
     """
     Collection of class methods used for rendering data from
-    matplotlib, either to a stream or directly to file.
+    matplotlib, either to a stream or directly to file. Includes
+    facilities to enable automated testing.
+
+    The save classmethod is particularly useful for saving HoloViews
+    objects to disk, including filename generation via SaveOptions.
+
+    The save_fig and save_anim methods are used to save matplotlib
+    figure and animation objects respectively (typically the return
+    types from plotting class using matplotlib).
     """
 
     obj = None
@@ -219,44 +266,6 @@ class Export(object):
         return cls.SHA_mode
 
 
-
-def opts(el, size):
-    "Returns the plot options with supplied size (if not overridden)"
-    return dict(figure_size=size, **Store.lookup_options(el, 'plot').options)
-
-
-def get_plot_size(obj, percent_size):
-    """
-    Given a holoviews object and a percentage size, apply heuristics
-    to compute a suitable figure size. For instance, scaling layouts
-    and grids linearly can result in unwieldy figure sizes when there
-    are a large number of elements. As ad hoc heuristics are used,
-    this functionality is kept separate from the plotting classes
-    themselves.
-
-    Used by the IPython Notebook display hooks and the save
-    utility. Note that this can be overridden explicitly per object
-    using the figure_size and size plot options.
-    """
-    def rescale_figure(percent_size):
-        factor = percent_size / 100.0
-        return (Plot.figure_size[0] * factor,
-                Plot.figure_size[1] * factor)
-
-    if isinstance(obj, (Layout, NdLayout)):
-        return (obj.shape[1]*rescale_figure(percent_size)[1],
-                obj.shape[0]*rescale_figure(percent_size)[0])
-    elif isinstance(obj, GridSpace):
-        max_dim = max(obj.shape)
-        # Reduce plot size as GridSpace gets larger
-        shape_factor = 1. / max_dim
-        # Expand small grids to a sensible viewing size
-        expand_factor = 1 + (max_dim - 1) * 0.1
-        scale_factor = expand_factor * shape_factor
-        return (scale_factor * obj.shape[0] * rescale_figure(percent_size)[0],
-                scale_factor * obj.shape[1] * rescale_figure(percent_size)[1])
-    else:
-        return rescale_figure(percent_size)
 
 
 Store.register_plots()
