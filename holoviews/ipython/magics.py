@@ -309,8 +309,8 @@ class SaveOptsMagic(OptionsMagic):
                            **{'auto'     : [True, False],
                               'charwidth'   :  (0, float('inf'))})
         cls.defaults = OrderedDict(dflts
-                               + [('auto' , True),
-                                  ('charwidth'   , 80)])
+                                   + [('auto' , None),
+                                      ('charwidth'   , 80)])
         cls.options =  OrderedDict(cls.defaults.items())
 
 
@@ -352,10 +352,13 @@ class SaveOptsMagic(OptionsMagic):
             print("\nFor help with the %saveopts magic, call %saveopts?")
             return
         try:
-            options = self.get_options(line, OrderedDict())
-            SaveOptsMagic.options = options
             current_time = tuple(time.localtime())
-            save_options.set_options(**dict(options, time=current_time))
+            options = self.get_options(line, OrderedDict())
+            if options['auto'] is None: # Enable autosaving, first time magic is called.
+                options['auto'] = True
+            SaveOptsMagic.options = options
+            filtered = {k:v for k,v in options.items() if k not in ['auto', 'charwidth']}
+            save_options.set_options(**dict(filtered, time=current_time))
             suffix = ''
             if '{timestamp}' in save_options.directory + save_options.formatter:
                 timestamp = time.strftime(save_options.timestamp_format, current_time)
@@ -376,8 +379,9 @@ class SaveOptsMagic(OptionsMagic):
     @classmethod
     def save_fig(cls, fig, fig_format, dpi):
         fname, fmt = OutputMagic.options['filename'], OutputMagic.options['fig']
-        filename = save_options.filename(cls._obj, fig_format,
-                                         override='%s.%s' % (fname, fmt) if fname else None)
+        filename ='%s.%s' % (fname, fmt) if fname else None
+        if not filename and cls.options['auto']:
+            filename = save_options.filename(cls._obj, fig_format)
         if filename is None: return
 
         figure_data = print_figure(fig, fig_format, dpi=dpi)
@@ -389,9 +393,11 @@ class SaveOptsMagic(OptionsMagic):
     @classmethod
     def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
         fname, fmt = OutputMagic.options['filename'], OutputMagic.options['holomap']
-        filename = save_options.filename(cls._obj, mime_type,
-                                         override='%s.%s' % (fname, fmt) if fname else None)
+        filename ='%s.%s' % (fname, fmt) if fname else None
+        if not filename and cls.options['auto']:
+            filename = save_options.filename(cls._obj, mime_type)
         if filename is None: return
+
         anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
         cls._obj=None
 

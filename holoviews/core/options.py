@@ -627,11 +627,6 @@ class SaveOptions(param.Parameterized):
     In addition, this class offers utilities for saving files with
     automatically generated file- and directory names.
     """
-
-    auto = param.Boolean(default=False, doc="""
-      Enable or disable automatic saving of output using dynamically
-      generated file and directory names.""")
-
     formatter = param.String('{group}-{label}', doc="""
       A string formatter for output filename based on the HoloViews
       object that is being rendered to disk. Available fields are
@@ -696,13 +691,11 @@ class SaveOptions(param.Parameterized):
         return formatter.format(**filtered)
 
 
-    def filename(self, obj, fmt=None, override=None):
+    def filename(self, obj, fmt=None):
         """
         Find an appropriate filename for a given file format and
         object if no explicit override supplied.
         """
-        if override:      return override
-        if not self.auto: return None
         directory = os.path.abspath(self._format(self.directory, obj))
         if not os.path.isdir(directory):
             os.makedirs(directory)
