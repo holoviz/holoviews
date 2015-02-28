@@ -576,6 +576,21 @@ class Store(object):
         else:
             raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
+    @classmethod
+    def lookup(cls, obj):
+        """
+        Given an object, lookup the corresponding customized option
+        tree if a single custom tree is applicable.
+        """
+        ids = set([el for el in obj.traverse(lambda x: x.id) if el is not None])
+        if len(ids) == 0:
+            raise Exception("Object does not own a custom options tree")
+        elif len(ids) != 1:
+            idlist = ",".join([str(el) for el in sorted(ids)])
+            raise Exception("Object contains elements combined across "
+                            "multiple custom trees (ids %s)" % idlist)
+        return cls.custom_options[list(ids)[0]]
+
 
     @classmethod
     def register_plots(cls):
