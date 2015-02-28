@@ -1,4 +1,7 @@
 import os
+from io import BytesIO
+from tempfile import NamedTemporaryFile
+from hashlib import sha256
 
 import param
 
@@ -35,6 +38,97 @@ ANIMATION_OPTS = {
             GIF_TAG),
     'scrubber': ('html', None, {'fps': 5}, None, None)
 }
+
+
+
+class Export(object):
+    """
+    Collection of class methods used for rendering data from
+    matplotlib, either to a stream or directly to file.
+    """
+
+    obj = None
+    SHA = None     # For testing purposes: the output SHA.
+    SHA_mode = 0   # 0: No SHA, 1: SHA (file not saved), 2: SHA (file saved)
+
+
+    @classmethod
+    def save_fig(cls, figure, fmt, basename=None, dpi=72, auto=True):
+        filename ='%s.%s' % (basename, fmt) if basename else None
+        if not filename and auto:
+            filename = save_options.filename(cls.obj, fmt)
+        if filename is None: return
+
+        figure_data = cls.figure_data(figure, fmt, dpi=dpi)
+        if cls.digest(figure_data) == 1: return
+        with open(filename, 'w') as f:
+            f.write(figure_data)
+
+    @classmethod
+    def save_anim(cls, anim, fmt, writer, basename=None, dpi=72, auto=True, **anim_kwargs):
+        filename ='%s.%s' % (basename, fmt) if basename else None
+        if not filename and auto:
+            filename = save_options.filename(cls.obj, fmt)
+        if filename is None: return
+        if cls.SHA_mode == 0:
+            anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
+        else:
+            anim_data = cls.anim_data(anim, fmt, writer, dpi, **anim_kwargs)
+            if cls.digest(anim_data) == 1: return
+            with open(filename, 'w') as f:
+                f.write(anim_data)
+
+    @classmethod
+    def anim_data(cls, anim, fmt, writer, dpi, **anim_kwargs):
+        """
+        Render an animation and return the resulting data.
+        """
+        if not hasattr(anim, '_encoded_video'):
+            with NamedTemporaryFile(suffix='.%s' % fmt) as f:
+                anim.save(f.name, writer=writer, dpi=dpi, **anim_kwargs)
+                video = open(f.name, "rb").read()
+        return video
+
+
+    @classmethod
+    def figure_data(cls, fig, fmt='png', bbox_inches='tight', **kwargs):
+        """
+        Render figure to image and return the resulting data.
+
+        Similar to IPython.core.pylabtools.print_figure but without
+        requiring IPython.
+        """
+        from matplotlib import rcParams
+        kw = dict(
+            format=fmt,
+            facecolor=fig.get_facecolor(),
+            edgecolor=fig.get_edgecolor(),
+            dpi=rcParams['savefig.dpi'],
+            bbox_inches=bbox_inches,
+        )
+        kw.update(kwargs)
+
+        bytes_io = BytesIO()
+        fig.canvas.print_figure(bytes_io, **kw)
+        data = bytes_io.getvalue()
+        if fmt == 'svg':
+            data = data.decode('utf-8')
+        return data
+
+
+    @classmethod
+    def digest(cls, data):
+        """
+        Sets the SHA hexdigest for the data to cls.SHA and returns the
+        SHA_mode.
+        """
+        if cls.SHA_mode != 0:
+            hashfn = sha256()
+            hashfn.update(data)
+            cls.SHA  = hashfn.hexdigest()
+        else:
+            cls.SHA = None
+        return cls.SHA_mode
 
 
 

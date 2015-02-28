@@ -8,9 +8,6 @@ import matplotlib.pyplot as plt
 try:    from matplotlib import animation
 except: animation = None
 
-from IPython.core.pylabtools import print_figure
-
-from tempfile import NamedTemporaryFile
 from functools import wraps
 import sys, traceback, base64
 
@@ -27,7 +24,8 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot, ANIMATION_OPTS, opts, get_plot_size
+from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot
+from ..plotting import ANIMATION_OPTS, Export, opts, get_plot_size
 from .magics import OutputMagic, OptsMagic, SaverMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
@@ -37,6 +35,7 @@ OutputMagic.ANIMATION_OPTS = ANIMATION_OPTS
 # To assist with debugging of display hooks
 ENABLE_TRACEBACKS=True
 
+
 #==================#
 # Helper functions #
 #==================#
@@ -45,15 +44,14 @@ ENABLE_TRACEBACKS=True
 def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-    SaverMagic.save_anim(anim, mime_type, writer, dpi=dpi, **anim_kwargs)
+    # OutputMagic.options['holomap']
+    Export.save_anim(anim, mime_type, writer, dpi=dpi,
+                     basename=OutputMagic.options['filename'],
+                     auto=SaverMagic.options['enabled'], **anim_kwargs)
 
-    if not hasattr(anim, '_encoded_video'):
-        with NamedTemporaryFile(suffix='.%s' % mime_type) as f:
-            anim.save(f.name, writer=writer, dpi=dpi, **anim_kwargs)
-            video = open(f.name, "rb").read()
-        anim._encoded_video = base64.b64encode(video).decode("utf-8")
-    return tag.format(b64=anim._encoded_video,
-                      mime_type=mime_type)
+    data = Export.anim_data(anim, mime_type, writer, dpi, **anim_kwargs)
+    b64data = base64.b64encode(data).decode("utf-8")
+    return tag.format(b64=b64data, mime_type=mime_type)
 
 
 def HTML_video(plot):
@@ -63,9 +61,9 @@ def HTML_video(plot):
     current_format = OutputMagic.options['holomap']
     for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
         if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
-            try:
-                return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
-            except: pass
+            #try:
+            return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
+            #except: pass
     msg = "<b>Could not generate %s animation</b>" % current_format
     if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
         msg = "<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>"
@@ -100,7 +98,7 @@ def process_object(obj):
     "Hook to process the object currently being displayed."
     invalid_options = OptsMagic.process_view(obj)
     if invalid_options: return invalid_options
-
+    Export.obj = obj
 
 def render(plot):
     try:
@@ -146,8 +144,11 @@ def display_figure(fig, message=None, max_width='100%'):
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        SaverMagic.save_fig(fig, figure_format, dpi=dpi)
-        figdata = print_figure(fig, figure_format, dpi=dpi)
+        Export.save_fig(fig, figure_format, dpi=dpi,
+                        basename=OutputMagic.options['filename'],
+                        auto=SaverMagic.options['enabled'])
+
+        figdata = Export.figure_data(fig, figure_format, dpi=dpi)
         if figure_format=='svg':
             mime_type = 'svg+xml'
             figdata = figdata.encode("utf-8")

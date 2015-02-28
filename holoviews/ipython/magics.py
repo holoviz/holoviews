@@ -3,7 +3,6 @@ import time
 import os
 try:
     from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
-    from IPython.core.pylabtools import print_figure
 except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -290,7 +289,6 @@ class SaverMagic(OptionsMagic):
     Consult %export? for more information.
     """
     magic_name = '%export'
-    _obj = None           # Handle on the HoloViews object that may be saved
 
     def __init__(self, *args, **kwargs):
         super(SaverMagic, self).__init__(*args, **kwargs)
@@ -394,35 +392,6 @@ class SaverMagic(OptionsMagic):
             print('Error: %s' % str(e))
             print("For help with the %export magic, call %export?\n")
             return
-
-    @classmethod
-    def register_object(cls, obj):
-        cls._obj = obj
-
-    @classmethod
-    def save_fig(cls, fig, fig_format, dpi):
-        fname, fmt = OutputMagic.options['filename'], OutputMagic.options['fig']
-        filename ='%s.%s' % (fname, fmt) if fname else None
-        if not filename and cls.options['enabled']:
-            filename = save_options.filename(cls._obj, fig_format)
-        if filename is None: return
-
-        figure_data = print_figure(fig, fig_format, dpi=dpi)
-        if save_options._digest(figure_data) == 1: return
-        with open(filename, 'w') as f:
-            f.write(figure_data)
-        cls._obj=None
-
-    @classmethod
-    def save_anim(cls, anim, mime_type, writer, dpi, **anim_kwargs):
-        fname, fmt = OutputMagic.options['filename'], OutputMagic.options['holomap']
-        filename ='%s.%s' % (fname, fmt) if fname else None
-        if not filename and cls.options['enabled']:
-            filename = save_options.filename(cls._obj, mime_type)
-        if filename is None: return
-
-        anim.save(filename, writer=writer, dpi=dpi, **anim_kwargs)
-        cls._obj=None
 
 
 @magics_class
