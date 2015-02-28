@@ -286,6 +286,8 @@ class SaverMagic(OptionsMagic):
     Implements the %export magic for automatically saving HoloViews
     output from notebooks and includes the machinery to automatically
     export content from notebooks.
+
+    Consult %export? for more information.
     """
     magic_name = '%export'
     _obj = None           # Handle on the HoloViews object that may be saved
@@ -352,8 +354,16 @@ class SaverMagic(OptionsMagic):
     @line_magic
     def export(self, line):
         """
-        See the parameter documentation of SaveOptions for information
-        on the allowed keywords and their semantics.
+        Magic for setting HoloViews export options for saving files to disk.
+        Arguments are supplied as a series of keywords in any order:
+
+        enabled   : Whether automatic export is enabled
+        reset     : Whether to reset the timestamp used by the magic
+        charwidth : The max character width for displaying the output magic (default 80)
+
+        The remaining options correspond to the parameters of the
+        holoviews.core.options.SaveOptions except for the time
+        parameter that is not supported.
         """
         line = line.split('#')[0].strip()
         if line == '':
