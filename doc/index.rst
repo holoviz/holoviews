@@ -105,9 +105,10 @@ showing how to fix the bug or implement the feature!
 
 .. toctree::
    :titlesonly:
+   :hidden:
    :maxdepth: 2
 
-   self
-   Tutorials <Tutorials/index>
-   Reference Manual <Reference_Manual/index>
+   Introduction <http://ioam.github.io/holoviews>
+   Tutorials <http://ioam.github.io/holoviews/Tutorials/index.html>
+   Reference Manual <http://ioam.github.io/holoviews/Reference_Manual/index.html>
    Find us on Github <http://github.com/ioam/holoviews>
