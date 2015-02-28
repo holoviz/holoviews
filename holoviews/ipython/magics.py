@@ -283,10 +283,11 @@ class OutputMagic(OptionsMagic):
 @magics_class
 class SaverMagic(OptionsMagic):
     """
-    Implements the %saveopts magic for automatically saving HoloViews
-    output from notebooks.
+    Implements the %export magic for automatically saving HoloViews
+    output from notebooks and includes the machinery to automatically
+    export content from notebooks.
     """
-    magic_name = '%saveopts'
+    magic_name = '%export'
     _obj = None           # Handle on the HoloViews object that may be saved
 
     def __init__(self, *args, **kwargs):
@@ -349,7 +350,7 @@ class SaverMagic(OptionsMagic):
         return values + [el+'=' for el in cls.allowed.keys()]
 
     @line_magic
-    def saveopts(self, line):
+    def export(self, line):
         """
         See the parameter documentation of SaveOptions for information
         on the allowed keywords and their semantics.
@@ -357,7 +358,7 @@ class SaverMagic(OptionsMagic):
         line = line.split('#')[0].strip()
         if line == '':
             self.pprint()
-            print("\nFor help with the %saveopts magic, call %saveopts?")
+            print("\nFor help with the %export magic, call %export?")
             return
         try:
             options = self.get_options(line, OrderedDict())
@@ -381,7 +382,7 @@ class SaverMagic(OptionsMagic):
                 print("Automatic saving is OFF")
         except Exception as e:
             print('Error: %s' % str(e))
-            print("For help with the %saveopts magic, call %saveopts?\n")
+            print("For help with the %export magic, call %export?\n")
             return
 
     @classmethod
@@ -741,7 +742,7 @@ def load_magics(ip):
     # Configuring tab completion
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
-    ip.set_hook('complete_command', SaverMagic.option_completer, str_key = '%saveopts')
+    ip.set_hook('complete_command', SaverMagic.option_completer, str_key = '%export')
 
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
