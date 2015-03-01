@@ -2,10 +2,14 @@ import os
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 
+import matplotlib.pyplot as plt
+from matplotlib import rc_params_from_file
+from matplotlib.ticker import FormatStrFormatter
+
 import param
 
 from ..core.options import Cycle, Options, Store,  SaveOptions, save_options
-from ..core import Layout, NdLayout, GridSpace, HoloMap
+from ..core import Dimension, Layout, NdLayout, GridSpace, HoloMap
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .chart3d import * # pyflakes:ignore (API import)
@@ -274,7 +278,37 @@ class Export(object):
         return data
 
 
+# Define default type formatters
+Dimension.type_formatters[int] = FormatStrFormatter("%d")
+Dimension.type_formatters[float] = FormatStrFormatter("%.3g")
+Dimension.type_formatters[np.float32] = FormatStrFormatter("%.3g")
+Dimension.type_formatters[np.float64] = FormatStrFormatter("%.3g")
 
+def set_style(key):
+    """
+    Select a style by name, e.g. set_style('default'). To revert to the
+    previous style use the key 'unset' or False.
+    """
+    if key is None:
+        return
+    elif not key or key in ['unset', 'backup']:
+        if 'backup' in styles:
+            plt.rcParams.update(styles['backup'])
+        else:
+            raise Exception('No style backed up to restore')
+    elif key not in styles:
+        raise KeyError('%r not in available styles.')
+    else:
+        path = os.path.join(os.path.dirname(__file__), styles[key])
+        new_style = rc_params_from_file(path)
+        styles['backup'] = dict(plt.rcParams)
+
+        plt.rcParams.update(new_style)
+
+styles = {'default': './default.mplstyle'}
+set_style('default')
+
+# Register default Element options
 Store.register_plots()
 
 # Charts
@@ -308,14 +342,6 @@ Store.options.Bounds = Options('style', color=Cycle())
 Store.options.Ellipse = Options('style', color=Cycle())
 # Interface
 Store.options.TimeSeries = Options('style', color=Cycle())
-
-
-from ..core import Dimension
-from matplotlib.ticker import FormatStrFormatter
-Dimension.type_formatters[int] = FormatStrFormatter("%d")
-Dimension.type_formatters[float] = FormatStrFormatter("%.3g")
-Dimension.type_formatters[np.float32] = FormatStrFormatter("%.3g")
-Dimension.type_formatters[np.float64] = FormatStrFormatter("%.3g")
 
 # Defining the most common style options for HoloViews
 GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')

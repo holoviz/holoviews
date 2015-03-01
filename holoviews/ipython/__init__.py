@@ -2,7 +2,6 @@ from unittest import SkipTest
 import matplotlib.pyplot as plt
 
 from ..element.comparison import ComparisonTestCase
-from ..styles import set_style
 from . import magics
 from .magics import OutputMagic, load_magics
 from .display_hooks import animate, set_display_hooks
@@ -116,7 +115,6 @@ def load_ipython_extension(ip, verbose=True):
         OutputMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
         update_matplotlib_rc()
-        set_style('default')
 
 def unload_ipython_extension(ip):
     global _loaded
