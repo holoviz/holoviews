@@ -89,7 +89,6 @@ from nbpublisher import nbbuild
 
 
 def setup(app):
-    app.add_javascript("https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML")
     app.connect('autodoc-process-docstring', param_formatter)
     try:
         import runipy # pyflakes:ignore (Warning import)
