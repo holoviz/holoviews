@@ -514,7 +514,7 @@ class NdMapping(MultiDimensionalMapping):
                 else:
                     condition = self._range_condition(dim_ind)
                 dim_vals = unique_iterator(k[idx] for k in keys)
-                expanded.append([k for k in dim_vals if condition(k)][::int(ind.step)])
+                expanded.append(set([k for k in dim_vals if condition(k)][::int(ind.step)]))
             else:
                 expanded.append(ind)
         return tuple(expanded)
@@ -549,6 +549,7 @@ class NdMapping(MultiDimensionalMapping):
                 conditions.append(self._all_condition())
             elif isinstance(dim, (list, tuple)):
                 raise ValueError("Keys may only be selected with sets, not lists or tuples.")
+            else:
                 conditions.append(self._value_condition(dim))
         return conditions
 
