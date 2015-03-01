@@ -43,7 +43,7 @@ available:
 There is also a reference tutorial explaining the details of the
 support offered for working with real-world data:
 
-* `Continuous Coordinates: <Continuous_Coords>`_
+* `Continuous Coordinates: <Continuous_Coordinates>`_
   Support for continuous coordinates offered by HoloViews.
 
 For more detailed information on any component described in the
@@ -62,4 +62,4 @@ IPython Notebook cell).
    Elements
    Containers
    Pandas and Seaborn <Pandas_Seaborn>
-   Continuous Coordinates <Continuous_Coords>
+   Continuous Coordinates <Continuous_Coordinates>
