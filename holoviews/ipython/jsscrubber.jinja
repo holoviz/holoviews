@@ -144,7 +144,7 @@
 <div class="animation" align="center">
     <div id="_anim_img{{ id }}"></div>
     <br>
-    <input id="_anim_slider{{ id }}" type="range" style="width:350px" name="points" min="0" max="1" step="1" value="0" onchange="anim{{ id }}.set_frame(parseInt(this.value));"></input>
+    <input id="_anim_slider{{ id }}" type="range" style="width:350px" name="points" min="0" max="1" step="1" value="0" oninput="anim{{ id }}.set_frame(parseInt(this.value));"></input>
     <br>
     <button onclick="anim{{ id }}.slower()" style="text-align: center">&#8211;</button>
     <button onclick="anim{{ id }}.first_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;&#9664;</button>
