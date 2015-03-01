@@ -37,8 +37,6 @@ HoloViews subpackages
  Operations applied to transform existing Elements or other data structures.
 `plotting`_
  Matplotlib-based implementations of plotting for each component type.
-`styles`_
- Default Matplotlib styles for the various Elements.
 `ipython`_
  Interface to IPython notebook, including magics and display hooks.
 `interface`_
@@ -57,8 +55,6 @@ HoloViews subpackages
    ipython <holoviews.ipython>
    operation <holoviews.operation>
    plotting <holoviews.plotting>
-   style <holoviews.styles>
-
 
 .. _User Manual: ../User_Manual/index.html
 .. _Tutorials: ../Tutorials/index.html
@@ -71,5 +67,4 @@ HoloViews subpackages
 .. _ipython: holoviews.ipython.html
 .. _operation: holoviews.operation.html
 .. _plotting: holoviews.plotting.html
-.. _styles: holoviews.styles.html
 .. _testing: holoviews.html#module-holoviews.testing
