@@ -288,12 +288,15 @@ class LabelledData(param.Parameterized):
         plotting options as well.
         """
         obj_dict = self.__dict__.copy()
-        if Store.save_option_state and (obj_dict.get('id', None) is not None):
-            custom_key = '_custom_option_%d' % obj_dict['id']
-            if custom_key not in obj_dict:
-                obj_dict[custom_key] = Store.custom_options[obj_dict['id']]
-        else:
-            obj_dict['id'] = None
+        try:
+            if Store.save_option_state and (obj_dict.get('id', None) is not None):
+                custom_key = '_custom_option_%d' % obj_dict['id']
+                if custom_key not in obj_dict:
+                    obj_dict[custom_key] = Store.custom_options[obj_dict['id']]
+            else:
+                obj_dict['id'] = None
+        except:
+            self.warning("Could not pickle custom style information.")
         return obj_dict
 
 
@@ -302,17 +305,20 @@ class LabelledData(param.Parameterized):
         When unpickled, restore the saved style and plotting options
         to ViewableElement.options.
         """
-        load_options = Store.load_counter_offset is not None
-        if load_options:
-            matches = [k for k in d if k.startswith('_custom_option')]
-            for match in matches:
-                custom_id = int(match.split('_')[-1])
-                Store.custom_options[Store.load_counter_offset + custom_id] = d[match]
-                d.pop(match)
-            if d['id'] is not None:
-                d['id'] += Store.load_counter_offset
-        else:
-            d['id'] = None
+        try:
+            load_options = Store.load_counter_offset is not None
+            if load_options:
+                matches = [k for k in d if k.startswith('_custom_option')]
+                for match in matches:
+                    custom_id = int(match.split('_')[-1])
+                    Store.custom_options[Store.load_counter_offset + custom_id] = d[match]
+                    d.pop(match)
+                if d['id'] is not None:
+                    d['id'] += Store.load_counter_offset
+            else:
+                d['id'] = None
+        except:
+            self.warning("Could not unpickle custom style information.")
         self.__dict__.update(d)
 
 
