@@ -111,8 +111,8 @@ class OptsSpec(Parser):
                                        content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
                                    ).setResultsName('plot_options')
 
-    plot_options_long = pp.nestedExpr('plot(',
-                                      ')',
+    plot_options_long = pp.nestedExpr(opener='plot[',
+                                      closer=']',
                                       ignoreExpr=None,
                                   ).setResultsName('plot_options')
 
@@ -136,8 +136,8 @@ class OptsSpec(Parser):
                                        ignoreExpr=None
                                    ).setResultsName("norm_options")
 
-    norm_options_long = pp.nestedExpr(opener='norm(',
-                                      closer=')',
+    norm_options_long = pp.nestedExpr(opener='norm{',
+                                      closer='}',
                                       ignoreExpr=None
                                   ).setResultsName("norm_options")
 

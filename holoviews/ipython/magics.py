@@ -435,6 +435,7 @@ class CompositorMagic(Magics):
             return [']']
 
 
+
 class OptsCompleter(object):
     """
     Implements the TAB-completion for the %%opts magic.
@@ -486,6 +487,11 @@ class OptsCompleter(object):
         return completion_key, suggestions
 
     @classmethod
+    def _inside_delims(cls, line, opener, closer):
+        return (line.endswith(closer)
+                or (line.count(opener) - line.count(closer)) % 2)
+
+    @classmethod
     def option_completer(cls, k,v):
         "Tab completion hook for the %%opts cell magic."
         line = v.text_until_cursor
@@ -499,22 +505,23 @@ class OptsCompleter(object):
 
         completion_key, suggestions = cls.dotted_completion(line, sorted_keys, compositor_defs)
 
+        verbose_openers = ['style(', 'plot[', 'norm{']
         if suggestions and line.endswith('.'):
             return ['.'.join([completion_key, el]) for el in suggestions]
         elif not completion_key:
-            return type_keys + compositor_defs.keys()
+            return type_keys + compositor_defs.keys() + verbose_openers
 
-        if line.endswith(']') or (line.count('[') - line.count(']')) % 2:
-            kws = completions[completion_key][0]
-            return [kw+'=' for kw in kws]
+        if cls._inside_delims(line, '[', ']') or cls._inside_delims(line, 'plot[', ']'):
+            return [kw+'=' for kw in completions[completion_key][0]]
 
-        if line.endswith('}') or (line.count('{') - line.count('}')) % 2:
+        if cls._inside_delims(line, '{', '}') or cls._inside_delims(line, 'norm{', '}'):
             return ['-groupwise', '-mapwise']
 
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
-        if line.endswith(')') or (line.count('(') - line.count(')')) % 2:
+        if cls._inside_delims(line, '(', ')') or cls._inside_delims(line, 'style(', ')'):
             return style_completions
-        return style_completions + type_keys + compositor_defs.keys()
+
+        return style_completions + type_keys + compositor_defs.keys() + verbose_openers
 
 
 
