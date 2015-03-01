@@ -34,7 +34,8 @@ code {
 .rst-content dl:not(.docutils) dt {
     margin: 0;
     color: black;
-    background: white;
+    background: none;
+    border-top: none;
 }
 
 .rst-content dd {
