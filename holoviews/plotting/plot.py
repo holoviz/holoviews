@@ -316,8 +316,8 @@ class CompositePlot(Plot):
     subplots to form a Layout.
     """
 
-    def update_frame(self, key):
-        ranges = self.compute_ranges(self.layout, key, None)
+    def update_frame(self, key, ranges=None):
+        ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
@@ -897,10 +897,10 @@ class LayoutPlot(CompositePlot):
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, **plotopts)
-            if subplots[pos].map != {}:
-                adjoint_clone[pos] = subplots[pos].map
-            else:
+            if issubclass(plot_type, CompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
+            else:
+                adjoint_clone[pos] = subplots[pos].map
         return subplots, adjoint_clone
 
 
