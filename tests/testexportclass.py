@@ -9,6 +9,7 @@ from holoviews.plotting import Export
 from holoviews.core.options import SaveOptions
 from holoviews.element.comparison import ComparisonTestCase
 
+from nose.plugins.attrib import attr
 
 def digest_data(data):
     hashfn = sha256()
@@ -23,6 +24,7 @@ Export.save_options = SaveOptions(time=(0,0,0,0,0,0,0,0,0),
                                   directory = '{timestamp}',
                                   timestamp_format = "%Y_%m_%d-%H_%M_%S")
 
+@attr(optional=1)
 class ExportTest(ComparisonTestCase):
     """
     Note if not possible to compare the hashes of SVG and WebM formats
