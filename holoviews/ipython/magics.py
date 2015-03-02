@@ -280,117 +280,6 @@ class OutputMagic(OptionsMagic):
 
 
 @magics_class
-class SaverMagic(OptionsMagic):
-    """
-    Implements the %export magic for automatically saving HoloViews
-    output from notebooks and includes the machinery to automatically
-    export content from notebooks.
-
-    Consult %export? for more information.
-    """
-    magic_name = '%export'
-
-    def __init__(self, *args, **kwargs):
-        super(SaverMagic, self).__init__(*args, **kwargs)
-        self.refresh_defaults()
-
-    @classmethod
-    def refresh_defaults(cls):
-        """
-        Sets the defaults and tab auto-completion based on the
-        parameter defaults of the SaveOptions class.
-
-        In the class parameter defaults of SaveOptions are customize,
-        this method needs to be called in order to update the
-        tab-completion behaviour appropriately.
-        """
-        dflts = [(k,p.default) for (k,p) in SaveOptions.params().items()
-                 if k not in ['name', 'time']]
-
-        # Options that are not SaveOption parameters
-        cls.additional = {'enabled'   : [True, False],
-                          'charwidth' : (0, float('inf')),
-                          'reset'     : [True, False]}
-
-        # All allowed options.
-        cls.allowed = dict({k:{v} for k,v in dflts}, **cls.additional)
-
-        cls.defaults = OrderedDict(dflts
-                                   + [('enabled' , None),
-                                      ('charwidth'   , 80),
-                                      ('reset', None)])
-        cls.options =  OrderedDict(cls.defaults.items())
-        cls._time = None
-
-
-    @classmethod
-    def _validate(cls, options):
-        formatter = options['formatter']
-        save_options.validate_fields(save_options.parse_fields(formatter), 'filename')
-        directory = options['directory']
-        save_options.validate_fields(save_options.parse_fields(directory), 'directory')
-        return options
-
-    @classmethod
-    def option_completer(cls, k,v):
-        raw_line = v.text_until_cursor
-        line = raw_line.replace('%output','')
-
-        # Find the last element class mentioned
-        completion_key = None
-        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
-
-        for token in tokens:
-            if token.strip() in cls.allowed:
-                completion_key = token.strip()
-                break
-        values = [repr(el) for el in cls.allowed.get(completion_key, [])
-                  if not isinstance(el, tuple)]
-
-        return values + [el+'=' for el in cls.allowed.keys()]
-
-    @line_magic
-    def export(self, line):
-        """
-        Magic for setting HoloViews export options for saving files to disk.
-        Arguments are supplied as a series of keywords in any order:
-
-        enabled   : Whether automatic export is enabled
-        reset     : Whether to reset the timestamp used by the magic
-        charwidth : The max character width for displaying the output magic (default 80)
-
-        The remaining options correspond to the parameters of the
-        holoviews.core.options.SaveOptions except for the time
-        parameter that is not supported.
-        """
-        line = line.split('#')[0].strip()
-        try:
-            options = self.defaults if line.strip() == '' else  self.get_options(line, OrderedDict())
-            if options['enabled'] is None:  # Enable autosaving, first time magic is called.
-                options['enabled'] = True
-            SaverMagic.options = options
-            filtered = {k:v for k,v in options.items() if k not in self.additional.keys()}
-
-            save_options.set_options(**filtered)
-            suffix = ''
-            if '{timestamp}' in save_options.directory + save_options.formatter:
-                current_time = tuple(time.localtime())
-                if options['reset'] or self._time is None:
-                    self._time = current_time
-                save_options.set_options(time=self._time)
-                timestamp = time.strftime(save_options.timestamp_format, self._time)
-                suffix = ' using the timestamp %r' % timestamp
-            if options['enabled']:
-                print("Automatic export is ON%s" % suffix)
-            else:
-                print("Automatic export is OFF")
-        except Exception as e:
-            print('Error: %s' % str(e))
-            print("For help with the %export magic, call %export?\n")
-            return
-
-
-@magics_class
 class CompositorMagic(Magics):
     """
     Magic allowing easy definition of compositor operations.
@@ -712,7 +601,6 @@ class TimerMagic(Magics):
 def load_magics(ip):
     ip.register_magics(TimerMagic)
     ip.register_magics(OutputMagic)
-    ip.register_magics(SaverMagic)
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)
@@ -724,7 +612,6 @@ def load_magics(ip):
     # Configuring tab completion
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
-    ip.set_hook('complete_command', SaverMagic.option_completer, str_key = '%export')
 
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
     ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
