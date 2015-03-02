@@ -8,7 +8,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import OrderedDict
-from ..core.options import OptionTree, Options, OptionError, Store, SaveOptions, save_options
+from ..core.options import OptionTree, Options, OptionError, Store
 
 from IPython.display import display, HTML
 
@@ -246,10 +246,6 @@ class OutputMagic(OptionsMagic):
             and options['widgets']!='embed'
             and options['fig']=='svg'):
             raise ValueError("SVG mode not supported by widgets unless in embed mode")
-
-        if save_options.parse_fields(options['filename']) != []:
-            raise ValueError("Please specify a valid filename without any format fields "
-                             "(no braces allowed)")
         return options
 
 

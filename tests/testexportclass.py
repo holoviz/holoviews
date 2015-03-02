@@ -6,7 +6,6 @@ from io import BytesIO
 from holoviews import HoloMap
 from holoviews.element import Image
 from holoviews.plotting import Export
-from holoviews.core.options import SaveOptions
 from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
@@ -16,13 +15,8 @@ def digest_data(data):
     hashfn.update(data)
     return hashfn.hexdigest()
 
-
 Export.capture_mode = 1 # Use mode 2 to see the saved files, 1 otherwise (capture only)
 
-# If capture_mode is 2, output will be in directory: 2000_01_01-00_00_00
-Export.save_options = SaveOptions(time=(0,0,0,0,0,0,0,0,0),
-                                  directory = '{timestamp}',
-                                  timestamp_format = "%Y_%m_%d-%H_%M_%S")
 
 @attr(optional=1)
 class ExportTest(ComparisonTestCase):
