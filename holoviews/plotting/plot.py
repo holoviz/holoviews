@@ -384,7 +384,8 @@ class GridPlot(CompositePlot):
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
-    def __init__(self, layout, ranges=None, keys=None, dimensions=None, **params):
+    def __init__(self, layout, axis=None, create_axes=True, ranges=None, keys=None,
+                 dimensions=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
         self.cols, self.rows = layout.shape
@@ -397,11 +398,16 @@ class GridPlot(CompositePlot):
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
                                        **dict(extra_opts, **params))
         # Compute ranges layoutwise
-        self._layoutspec = gridspec.GridSpec(self.rows, self.cols)
-        self.subplots, self.subaxes, self.layout = self._create_subplots(layout, ranges)
+        grid_kwargs = {}
+        if axis is not None:
+            bbox = axis.get_position()
+            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
+            grid_kwargs = {'left': l, 'right': l+w, 'bottom': b, 'top': b+h}
+        self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
+        self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)
 
 
-    def _create_subplots(self, layout, ranges=None, create_axis=True):
+    def _create_subplots(self, layout, axis, ranges=None, create_axes=True):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         subplots, subaxes = OrderedDict(), OrderedDict()
 
@@ -412,10 +418,11 @@ class GridPlot(CompositePlot):
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
             # Create axes
-            if create_axis:
+            if create_axes:
                 subax = plt.subplot(self._layoutspec[r, c])
                 subax.axis('off')
                 subaxes[(r, c)] = subax
+                subax.patch.set_visible(False)
             else:
                 subax = None
 
@@ -426,7 +433,7 @@ class GridPlot(CompositePlot):
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 subplot = Store.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
-                                                subplot=not create_axis, ranges=frame_ranges,
+                                                subplot=not create_axes, ranges=frame_ranges,
                                                 uniform=self.uniform)
                 collapsed_layout[coord] = subplot.map
                 subplots[(r, c)] = subplot
@@ -435,8 +442,8 @@ class GridPlot(CompositePlot):
             else:
                 r = 0
                 c += 1
-        if create_axis:
-            self.handles['axis'] = self._layout_axis(layout)
+        if create_axes:
+            self.handles['axis'] = self._layout_axis(layout, axis)
             self._adjust_subplots(self.handles['axis'], subaxes)
 
         return subplots, subaxes, collapsed_layout
@@ -454,6 +461,10 @@ class GridPlot(CompositePlot):
         if self.show_title:
             self.handles['title'] = axis.set_title(self._format_title(key))
 
+        if self.subplot:
+            plt.draw()
+            self._adjust_subplots(self.handles['axis'], self.subaxes)
+
         self.drawn = True
         if self.subplot: return self.handles['axis']
         plt.close(self.handles['fig'])
@@ -469,9 +480,14 @@ class GridPlot(CompositePlot):
             self.handles['title'] = axis.set_title(self._format_title(key))
 
 
-    def _layout_axis(self, layout):
+    def _layout_axis(self, layout, axis):
         fig = self.handles['fig']
         layout_axis = fig.add_subplot(111)
+        if axis:
+            axis.set_visible(False)
+            bbox = axis.get_position()
+            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
+            layout_axis.set_position((l, b, w, h))
         layout_axis.patch.set_visible(False)
 
         # Set labels
@@ -618,6 +634,8 @@ class AdjointLayoutPlot(CompositePlot):
 
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             subplot(ranges=ranges)
+        if self.subplot:
+            self.adjust_positions()
         self.drawn = True
 
 
@@ -630,7 +648,7 @@ class AdjointLayoutPlot(CompositePlot):
         used to position all the Layouts together. This method allows
         LayoutPlots to make final adjustments to the axis positions.
         """
-        main_ax = self.subaxes['main']
+        main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
         if 'right' in self.view_positions:
             ax = self.subaxes['right']
@@ -645,7 +663,8 @@ class AdjointLayoutPlot(CompositePlot):
 
 
     def update_frame(self, key, ranges=None):
-        for pos, subplot in self.subplots.items():
+        for pos in self.view_positions:
+            subplot = self.subplots.get(pos)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
 
@@ -886,6 +905,7 @@ class LayoutPlot(CompositePlot):
                     plot_type = RasterGridPlot
                 else:
                     plot_type = GridPlot
+                plotopts['create_axes'] = ax is not None
             else:
                 if pos == 'main':
                     plot_type = Store.defaults[vtype]
