@@ -488,7 +488,7 @@ class histogram(ElementOperation):
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
-            selected_dim = [d.name for d in view.value_dimensions][0]
+            selected_dim = [d.name for d in view.value_dimensions + view.key_dimensions][0]
         data = np.array(view.dimension_values(selected_dim))
         range = find_minmax((np.min(data), np.max(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
