@@ -68,7 +68,7 @@
     </div>
     <div class="span4 col-xs-3" style="display: table-cell; float:None; width:25%; vertical-align: middle;">
         {% for widget_data in widgets %}
-	<div class="control-group">
+	<div class="control-group" style="{{ widget_data['visibility'] }}">
         {% if widget_data['type'] == 'slider' %}
             <div class="row" style="display: table;">
                 <div class="span6 col-xs-6" for="textInput{{ id }}_{{ widget_data['dim'] }}" style="display: table-cell; float:None; vertical-align: middle;">

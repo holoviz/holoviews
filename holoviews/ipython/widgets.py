@@ -555,8 +555,9 @@ class SelectionWidget(ScrubberWidget):
                 widget_type = 'dropdown'
             init_dim_vals.append(dim_vals[0])
             dim_str = dim.name.replace(' ', '_')
+            visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
             widgets.append(dict(dim=dim_str, dim_idx=idx, vals=repr(dim_vals),
-                                type=widget_type))
+                                type=widget_type, visibility=visibility))
             dimensions.append(dim_str)
         return widgets, dimensions, init_dim_vals
 
