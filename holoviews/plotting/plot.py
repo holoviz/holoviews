@@ -403,11 +403,12 @@ class GridPlot(CompositePlot):
             bbox = axis.get_position()
             l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
             grid_kwargs = {'left': l, 'right': l+w, 'bottom': b, 'top': b+h}
+            self.position = (l, b, w, h)
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
         self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)
 
 
-    def _create_subplots(self, layout, axis, ranges=None, create_axes=True):
+    def _create_subplots(self, layout, axis, ranges, create_axes):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         subplots, subaxes = OrderedDict(), OrderedDict()
 
@@ -461,14 +462,19 @@ class GridPlot(CompositePlot):
         if self.show_title:
             self.handles['title'] = axis.set_title(self._format_title(key))
 
-        if self.subplot:
-            plt.draw()
-            self._adjust_subplots(self.handles['axis'], self.subaxes)
-
+        self._readjust_axes(axis)
         self.drawn = True
         if self.subplot: return self.handles['axis']
         plt.close(self.handles['fig'])
         return self.handles['fig']
+
+
+    def _readjust_axes(self, axis):
+        if self.subplot:
+            axis.set_position(self.position)
+            axis.set_aspect(float(self.rows)/self.cols)
+            plt.draw()
+            self._adjust_subplots(self.handles['axis'], self.subaxes)
 
 
     def update_handles(self, axis, view, key, ranges=None):
@@ -482,12 +488,11 @@ class GridPlot(CompositePlot):
 
     def _layout_axis(self, layout, axis):
         fig = self.handles['fig']
-        layout_axis = fig.add_subplot(111)
+        axkwargs = {'gid': str(self.position)} if axis else {}
+        layout_axis = fig.add_subplot(1,1,1, **axkwargs)
         if axis:
             axis.set_visible(False)
-            bbox = axis.get_position()
-            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
-            layout_axis.set_position((l, b, w, h))
+            layout_axis.set_position(self.position)
         layout_axis.patch.set_visible(False)
 
         # Set labels
