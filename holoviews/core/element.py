@@ -716,6 +716,15 @@ class GridSpace(UniformNdMapping):
         return self.clone(overlayed_items)
 
 
+    def __lshift__(self, other):
+        if isinstance(other, (ViewableElement, UniformNdMapping)):
+            return AdjointLayout([self, other])
+        elif isinstance(other, AdjointLayout):
+            return AdjointLayout(other.data+[self])
+        else:
+            raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
+
+
     def _transform_indices(self, key):
         """
         Transforms indices by snapping to the closest value if
