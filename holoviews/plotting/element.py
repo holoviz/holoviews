@@ -270,7 +270,7 @@ class ElementPlot(Plot):
             elif self.aspect == 'square':
                 axis.set_aspect((1./axis.get_data_ratio()))
             elif self.aspect not in [None, 'square']:
-                axis.set_aspect(self.aspect)
+                axis.set_aspect(((1./axis.get_data_ratio()))/self.aspect)
 
             if self.logx:
                 axis.set_xscale('log')
