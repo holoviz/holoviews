@@ -50,7 +50,7 @@ class RasterPlot(ElementPlot):
             data = view.rgb.data
         elif isinstance(view, HeatMap):
             data = view.data
-            data = np.ma.array(data, mask=np.isnan(data))
+            data = np.ma.array(data, mask=np.isfinite(data))
             cmap_name = opts.pop('cmap', None)
             cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
             cmap.set_bad('w', 1.)
