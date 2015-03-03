@@ -162,8 +162,7 @@ class Table(Element, NdMapping):
          The group is used to describe the table. Example of
          group names include 'Summary' or 'Statistics'. """)
 
-    value_dimensions = param.List(default=[Dimension('Data')],
-                                  bounds=(1,None), doc="""
+    value_dimensions = param.List(default=[Dimension('Data')], doc="""
         The dimension description(s) of the values held in data tuples
         that map to the value columns of the table.
 
@@ -174,19 +173,25 @@ class Table(Element, NdMapping):
 
     def __init__(self, data=None, **params):
         self._style = None
-        NdMapping.__init__(self, data, **dict(params,
-                                              group=params.get('group',self.group)))
+        NdMapping.__init__(self, data, **dict(params, group=params.get('group',self.group)))
         for k, v in self.data.items():
             self[k] = v # Unpacks any ItemTables
 
 
     def __setitem__(self, key, value):
+        if isinstance(value, (dict, OrderedDict)):
+            if all(isinstance(k, str) for k in keys):
+                value = ItemTable(value)
+            else:
+                raise ValueError("Tables only supports string inner"
+                                 "keys when supplied nested dictionary")
         if isinstance(value, ItemTable):
             if value.value_dimensions != self.value_dimensions:
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             value = value.data.values()
-        value = np.array([value]) if np.isscalar(value) else np.array(value)
-        self.data[key] = np.squeeze(value, 1) if len(value.shape) > 1 else value
+        value = (value,) if np.isscalar(value) else tuple(value)
+        key = key if isinstance(key, tuple) else (key,)
+        self.data[key] = value
 
 
     def _filter_columns(self, index, col_names):
@@ -198,7 +203,7 @@ class Table(Element, NdMapping):
             if index.stop:
                 cols = [col for col in cols if col < index.stop]
             cols = cols[::index.step] if index.step else cols
-        elif isinstance(index, list):
+        elif isinstance(index, (set, list)):
             nomatch = [val for val in index if val not in col_names]
             if nomatch:
                 raise KeyError("No columns with dimension labels %r" % nomatch)
@@ -221,7 +226,7 @@ class Table(Element, NdMapping):
             items = OrderedDict([(h,v) for (h,v) in subtable.data.items() if h in cols])
             return ItemTable(items, label=self.label)
 
-        items = [(k, v[indices]) for (k,v) in subtable.items()]
+        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
         return subtable.clone(items, value_dimensions=value_dimensions)
 
 
@@ -280,8 +285,7 @@ class Table(Element, NdMapping):
                 row_values = self.values()[row-1]
                 return row_values[col - ndims]
             row_data = list(self.data.keys())[row-1]
-
-            return row_data[col] if isinstance(row_data, tuple) else row_data
+            return row_data[col]
 
 
     def cell_type(self, row, col):
@@ -318,15 +322,15 @@ class Table(Element, NdMapping):
         reduced_table = self
         for reduce_fn, group in groupby(reduce_map.items(), lambda x: x[1]):
             dims = [dim for dim, _ in group]
-            split_dims = [self.get_dimension(d) for d in dim_labels if d in dims]
+            split_dims = [self.get_dimension(d) for d in dim_labels if d not in dims]
             if len(split_dims) and reduced_table.ndims > 1:
-                split_map = reduced_table.groupby([dim], container_type=HoloMap, group_type=Table)
+                split_map = reduced_table.groupby([d.name for d in split_dims] , container_type=HoloMap, group_type=Table)
                 reduced_table = self.clone(shared_data=False, key_dimensions=split_dims)
                 for k, table in split_map.items():
                     reduced = []
                     for vdim in self.value_dimensions:
                         valtable = table.select(value=vdim.name) if len(self.value_dimensions) > 1 else table
-                        reduced = reduce_fn(valtable.data.values())
+                        reduced.append(reduce_fn(valtable.data.values()))
                     reduced_table[k] = reduced
             else:
                 reduced = {vdim: reduce_fn(self.dimension_values(vdim.name))
@@ -346,11 +350,8 @@ class Table(Element, NdMapping):
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
-        if not function:
-            raise Exception("Must provide function to collapse %s data." % cls.__name__)
-        groups = zip(*[(np.array([values]) if np.isscalar(values) else np.array(values)
-                        for values in odict.values()) for odict in data])
-        return OrderedDict((key, function(np.vstack(group), axis=-1, **kwargs)
+        groups = zip(*[(np.array(values) for values in odict.values()) for odict in data])
+        return OrderedDict((key, np.squeeze(function(np.dstack(group), axis=-1, **kwargs), 0)
                                   if group[0].shape[0] > 1 else
                                   function(np.concatenate(group), **kwargs))
                              for key, group in zip(data[0].keys(), groups))
