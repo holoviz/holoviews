@@ -83,7 +83,7 @@ def get_plot_size(obj, percent_size):
 
 
 
-class Export(object):
+class Render(object):
     """
     Collection of class methods used for rendering data from
     matplotlib, either to a stream or directly to file. Includes
@@ -320,5 +320,5 @@ def public(obj):
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 
-_public = ["PlotSaver", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = ["Render", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public
