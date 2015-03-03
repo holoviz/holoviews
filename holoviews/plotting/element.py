@@ -7,7 +7,7 @@ import param
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ..core.util import valid_identifier, find_minmax
-from ..element import Annotation, Table
+from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
 
@@ -186,7 +186,7 @@ class ElementPlot(Plot):
         subplots = self.subplots.values() if self.subplots else {}
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            if view is not None and not isinstance(view, Table):
+            if view is not None and not isinstance(view, (Table, ItemTable)):
 
                 # Axis labels
                 if hasattr(view, 'xlabel') and xlabel is None:
