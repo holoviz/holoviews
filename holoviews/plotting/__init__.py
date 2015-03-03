@@ -147,9 +147,9 @@ class Render(object):
             if extra_args != []:
                 anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
             cls.save_anim(anim, fmt, writer, basename=basename, dpi=dpi,
-                          obj=obj, auto=True, **anim_kwargs)
+                          obj=obj, **anim_kwargs)
         else:
-            cls.save_fig(plot(), fmt, basename=basename, obj=obj, dpi=dpi, auto=True)
+            cls.save_fig(plot(), fmt, basename=basename, obj=obj, dpi=dpi)
 
     @classmethod
     def save_fig(cls, figure, fmt, basename=None, dpi=None, obj=None):
