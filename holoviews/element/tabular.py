@@ -42,15 +42,15 @@ class ItemTable(Element):
         if type(data) == dict:
             raise ValueError("ItemTable cannot accept a standard Python  dictionary "
                              "as a well-defined item ordering is required.")
-        elif isinstance(data, OrderedDict): pass
+        elif isinstance(data, dict): pass
         elif isinstance(data, list):
             data = OrderedDict(data)
         else:
             data = OrderedDict(list(data)) # Python 3
-
+        if not 'value_dimensions' in params:
+            params['value_dimensions'] = list(data.keys())
         str_keys = OrderedDict((k.name if isinstance(k, Dimension)
                                 else k ,v) for (k,v) in data.items())
-        params = dict(params, value_dimensions=list(data.keys()))
         super(ItemTable, self).__init__(str_keys, **params)
 
 
@@ -60,9 +60,9 @@ class ItemTable(Element):
         """
         if heading is ():
             return self
-        if heading not in self._cached_index_names:
+        if heading not in self._cached_value_names:
             raise IndexError("%r not in available headings." % heading)
-        return self.data[heading]
+        return self.data.get(heading, np.NaN)
 
 
     @classmethod
@@ -76,7 +76,7 @@ class ItemTable(Element):
     def dimension_values(self, dimension):
         if isinstance(dimension, int):
             dimension = self._cached_index_names[dimension]
-        return [self.data[dimension]]
+        return [self.data.get(dimension, np.NaN)]
 
 
     def sample(self, samples=[]):
@@ -84,7 +84,7 @@ class ItemTable(Element):
             sampled_data = OrderedDict(item for item in self.data.items()
                                        if samples(item))
         else:
-            sampled_data = OrderedDict((s, self.data[s]) for s in samples)
+            sampled_data = OrderedDict((s, self.data.get(s, np.NaN)) for s in samples)
         return self.clone(sampled_data)
 
 
@@ -104,8 +104,8 @@ class ItemTable(Element):
         elif col == 0:
             return str(self.dimensions('value')[row])
         else:
-            heading = self.dimensions('value', label=True)[row]
-            return self.data[heading]
+            heading = self._cached_value_names[row]
+            return self.data.get(heading, np.NaN)
 
 
     def hist(self, *args, **kwargs):
@@ -132,8 +132,12 @@ class ItemTable(Element):
 
 
     def table(self):
-        return Table(OrderedDict([((), self.data.values())]),
-                     value_dimensions=self.value_dimensions, key_dimensions=[])
+        return Table(OrderedDict([((), self.values())]), key_dimensions=[],
+                     value_dimensions=self.value_dimensions)
+
+    def values(self):
+        return tuple(self.data.get(k, np.NaN)
+                     for k in self._cached_value_names)
 
 
 class Table(Element, NdMapping):
