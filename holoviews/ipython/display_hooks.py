@@ -44,7 +44,9 @@ ENABLE_TRACEBACKS=True
 def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-    data = PlotRenderer.anim_data(anim, mime_type, writer, dpi, **anim_kwargs)
+
+    renderer = PlotRenderer.instance(dpi=dpi)
+    data = renderer.anim_data(anim, mime_type, writer, **anim_kwargs)
     b64data = base64.b64encode(data).decode("utf-8")
     return tag.format(b64=b64data, mime_type=mime_type)
 
@@ -139,13 +141,14 @@ def display_figure(fig, message=None, max_width='100%'):
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
+        renderer = PlotRenderer.instance(dpi=dpi)
+        figdata = renderer.figure_data(fig, figure_format)
         if figure_format=='svg':
             mime_type = 'svg+xml'
             figdata = figdata.encode("utf-8")
         else:
             mime_type = 'png'
         prefix = 'data:image/%s;base64,' % mime_type
-        figdata = PlotRenderer.figure_data(fig, figure_format, dpi=dpi)
         b64 = prefix + base64.b64encode(figdata).decode("utf-8")
         html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
     plt.close(fig)

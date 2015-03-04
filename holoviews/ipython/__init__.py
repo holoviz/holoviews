@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 
 from ..element.comparison import ComparisonTestCase
 from . import magics
-from .magics import OutputMagic, load_magics
-from .display_hooks import animate, set_display_hooks
+from .magics import load_magics
+from .display_hooks import animate, set_display_hooks, OutputMagic
 from .parser import Parser
 
 from param import ipython as param_ext

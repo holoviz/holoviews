@@ -83,38 +83,63 @@ def get_plot_size(obj, percent_size):
 
 
 
-class PlotRenderer(object):
+class PlotRenderer(param.ParameterizedFunction):
     """
-    Collection of class methods used for rendering data from
-    matplotlib, either to a stream or directly to file. Includes
-    facilities to enable automated testing.
+    Exporter used to render data from matplotlib, either to a stream
+    or directly to file. Includes capture facilities to enable
+    automated testing.
 
-    The save classmethod is particularly useful for saving HoloViews
-    objects to disk.
+    The __call__ method renders an HoloViews component to raw data of
+    a specified matplotlib format.  The save method is the
+    corresponding method for saving a HoloViews objects to disk.
 
     The save_fig and save_anim methods are used to save matplotlib
-    figure and animation objects respectively (typically the return
-    types from plotting class using matplotlib).
+    figure and animation objects. These match the two primary return
+    types of plotting class implemented with matplotlib.
     """
-    obj = None
-    captured_data = None # For testing purposes: the display data
-    capture_mode = 0     # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
 
+    fig = param.ObjectSelector(default='svg',
+                               objects=['png', 'svg'], doc="""
+       Output render format for static figures.""")
 
-    @classmethod
-    def save(cls, obj, basename, fmt, fig_default='svg', holomap_default='gif',
-             size=100, fps=20, dpi=None):
+    holomap = param.ObjectSelector(default='gif',
+                                   objects=['webm','h264', 'gif'], doc="""
+       Output render multi-frame (typically animated) format""")
+
+    size=param.Integer(100, doc="""
+       The rendered size as a percentage size""")
+
+    fps=param.Integer(20, doc="""
+       Rendered fps (frames per second) for animated formats.""")
+
+    dpi=param.Integer(None, allow_None=True, doc="""
+       The render resolution in dpi (dots per inch)""")
+
+    # For testing purposes: the display data
+    captured_data = None
+    # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
+    capture_mode = 0
+
+    def __call__(self, obj, fmt=None):
         """
-        Save a HoloViews object to file, either to image format (png or
-        svg) or animation format (webm, h264, gif).
-
-        The remaining options are size (specified as a percentage), a
-        custom dpi (resolution in dots per inch) and the fps (frames
-        per second) option for animated formats.
+        Render the supplied HoloViews component using matplotlib.
         """
-        animation_formats = ['webm','h264', 'gif']
-        figure_formats = ['png', 'svg']
-        formats = animation_formats + figure_formats
+        return self._render(obj, fmt)[0]
+
+
+    def save(self, obj, basename, fmt=None):
+        """
+        Save a HoloViews object to file, either using an explicitly
+        supplied format or to the appropriate deafult.
+        """
+        data, fmt = self._render(obj, fmt)
+        filename ='%s.%s' % (basename, fmt)
+        if self.capture_mode == 1: return
+        with open(filename, 'w') as f:
+            f.write(data)
+
+
+    def _render(self, obj, fmt=None):
         if isinstance(obj, AdjointLayout):
             obj = Layout.from_values(obj)
 
@@ -124,97 +149,45 @@ class PlotRenderer(object):
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
 
-        plot = plotclass(obj, **opts(obj,  get_plot_size(obj, size)))
+        plot = plotclass(obj, **opts(obj,  get_plot_size(obj, self.size)))
 
         if fmt is None:
-            fmt = holomap_default if len(plot) > 1 else fig_default
-        if fmt not in formats:
-            raise ValueError("File format must be one of %s" % ','.join(formats))
+            fmt = self.holomap if len(plot) > 1 else self.fig
 
-        if fmt in animation_formats:
+        if len(plot) > 1:
             (writer, mime_type, anim_kwargs, extra_args, tag) = ANIMATION_OPTS[fmt]
-            anim_kwargs = dict(anim_kwargs, **({'fps':fps} if fmt =='gif' else {}))
             anim = plot.anim(fps)
             if extra_args != []:
                 anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-            cls.save_anim(anim, fmt, writer, basename=basename, dpi=dpi,
-                          obj=obj, **anim_kwargs)
+
+            data = self.anim_data(anim, fmt, writer, **anim_kwargs)
         else:
-            cls.save_fig(plot(), fmt, basename=basename, obj=obj, dpi=dpi)
+            data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
-    @classmethod
-    def save_fig(cls, figure, fmt, basename=None, dpi=None):
+        self.captured_data = (data if self.capture_mode != 0 else None)
+        return data, fmt
+
+
+    def anim_data(self, anim, fmt, writer, **anim_kwargs):
         """
-        Save a matplotlib figure object in the specified format.
-
-        A filename may be automatically generated from the supplied
-        object (if auto is enabled). If auto is enabled and no object
-        is supplied, any object registered at the class level is
-        consulted.
-
-        If dpi is None, the default dpi is taken from matplotlib
-        rcParams.
+        Render a matplotlib animation object and return the corresponding data.
         """
-        filename ='%s.%s' % (basename, fmt)
-        figure_data = cls.figure_data(figure, fmt,
-                                      **({'dpi':dpi} if dpi else {}))
-        if cls.capture(figure_data) == 1: return
-        with open(filename, 'w') as f:
-            f.write(figure_data)
-
-    @classmethod
-    def capture(cls, data):
-        cls.captured_data = (data if cls.capture_mode != 0 else None)
-        return cls.capture_mode
-
-
-    @classmethod
-    def save_anim(cls, anim, fmt, writer,  basename=None, dpi=None, **anim_kwargs):
-        """
-        Save a matplotlib animation object in the specified format.
-
-        A filename may be automatically generated from the supplied
-        object (if auto is enabled). If auto is enabled and no object
-        is supplied, any object registered at the class level is
-        consulted.
-
-        The writer argument is the matplotlib animation writer and the
-        anim_kwargs.
-
-        If dpi is None, the default dpi is taken from matplotlib
-        rcParams.
-        """
-        filename ='%s.%s' % (basename, fmt)
-
-        if dpi is not None:
-            anim_kwargs['dpi'] = dpi
-        if cls.capture_mode == 0:
-            anim.save(filename, writer=writer, **anim_kwargs)
-        else:
-            anim_data = cls.anim_data(anim, fmt, writer, dpi, **anim_kwargs)
-            if cls.capture(anim_data) == 1: return
-            with open(filename, 'w') as f:
-                f.write(anim_data)
-
-    @classmethod
-    def anim_data(cls, anim, fmt, writer, dpi, **anim_kwargs):
-        """
-        Render an animation and return the resulting data.
-        """
+        anim_kwargs = dict(anim_kwargs, **({'dpi':self.dpi} if self.dpi is not None else {}))
+        anim_kwargs = dict(anim_kwargs, **({'fps':self.fps} if fmt =='gif' else {}))
         if not hasattr(anim, '_encoded_video'):
             with NamedTemporaryFile(suffix='.%s' % fmt) as f:
-                anim.save(f.name, writer=writer, dpi=dpi, **anim_kwargs)
+                anim.save(f.name, writer=writer,
+                          **dict(anim_kwargs, **({'dpi':self.dpi} if self.dpi else {})))
                 video = open(f.name, "rb").read()
         return video
 
 
-    @classmethod
-    def figure_data(cls, fig, fmt='png', bbox_inches='tight', **kwargs):
+    def figure_data(self, fig, fmt='png', bbox_inches='tight', **kwargs):
         """
-        Render figure to image and return the resulting data.
+        Render matplotlib figure object and return the corresponding data.
 
         Similar to IPython.core.pylabtools.print_figure but without
-        requiring IPython.
+        any IPython dependency.
         """
         from matplotlib import rcParams
         kw = dict(
