@@ -100,20 +100,20 @@ class PlotRenderer(Exporter):
 
     fig = param.ObjectSelector(default='svg',
                                objects=['png', 'svg'], doc="""
-       Output render format for static figures.""")
+        Output render format for static figures.""")
 
     holomap = param.ObjectSelector(default='gif',
                                    objects=['webm','h264', 'gif'], doc="""
-       Output render multi-frame (typically animated) format""")
+        Output render multi-frame (typically animated) format""")
 
     size=param.Integer(100, doc="""
-       The rendered size as a percentage size""")
+        The rendered size as a percentage size""")
 
     fps=param.Integer(20, doc="""
-       Rendered fps (frames per second) for animated formats.""")
+        Rendered fps (frames per second) for animated formats.""")
 
     dpi=param.Integer(None, allow_None=True, doc="""
-       The render resolution in dpi (dots per inch)""")
+        The render resolution in dpi (dots per inch)""")
 
     # For testing purposes: the display data
     _captured_data = None
