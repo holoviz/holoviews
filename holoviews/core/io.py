@@ -37,6 +37,15 @@ class Exporter(param.ParameterizedFunction):
         """
         raise NotImplementedError("Exporter not implemented.")
 
+    def save(self, obj, basename, fmt=None):
+        """
+        Similar to the call method except saves exporter data to disk
+        into a file with specified basename. For exporters that
+        support multiple formats, the fmt argument may also be
+        supplied (which typically corresponds to the file-extension).
+        """
+        raise NotImplementedError("Exporter save method not implemented.")
+
 
 class Pickler(Exporter):
     """
@@ -49,6 +58,10 @@ class Pickler(Exporter):
 
     def __call__(self, obj):
         return pickle.dumps(obj, protocol=self.protocol)
+
+    def save(self, obj, basename):
+        with open(basename+'.pkl', 'w') as f:
+            pickle.dump(obj, f, protocol=self.protocol)
 
 
 
