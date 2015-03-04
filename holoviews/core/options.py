@@ -157,8 +157,6 @@ class Options(param.Parameterized):
         if not filter_cycles: return [kwargs]
 
         filter_names, filter_values = list(zip(*filter_cycles))
-        if not all(len(c)==len(filter_values[0]) for c in filter_values):
-            raise Exception("Cycle objects supplied with different lengths")
 
         cyclic_tuples = list(zip(*[val.elements for val in filter_values]))
         return [dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
