@@ -94,16 +94,6 @@ class TestCycle(ComparisonTestCase):
             self.assertEqual(str(e), "The options property may only be used with non-cyclic Options.")
 
 
-    def test_cycle_mismatch(self):
-        cycle1 = Cycle(['a', 'b',])
-        cycle2 = Cycle([1, 2, 3])
-        try:
-            Options('test', one=cycle1, two=cycle2)
-            raise AssertionError("Cycle length mismatch not detected")
-        except Exception as e:
-            self.assertEqual(str(e), 'Cycle objects supplied with different lengths')
-
-
 
 class TestOptionTree(ComparisonTestCase):
 
