@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Dimension, NdMapping, Element2D, HoloMap
+from ..core import OrderedDict, Dimension, NdMapping, Element2D, NdElement, HoloMap
 from .tabular import ItemTable, Table
 
 
@@ -205,46 +205,25 @@ class Curve(Chart):
         return vmap
 
 
-class Bars(Chart):
+
+class Bars(NdElement):
     """
-    A bar is a simple Chart element, which assumes that the data is
-    sorted by x-value and there are no gaps in the bars.
+    Bars is an Element type, representing a number of stacked and
+    grouped bars, depending the dimensionality of the key and value
+    dimensions. Bars is useful for categorical data, which may be
+    laid via groups, categories and stacks. Internally Bars is
+    a NdElement with up to three key dimensions and a single value
+    dimension.
     """
 
     group = param.String(default='Bars')
 
-    def __init__(self, data, width=None, **params):
-        super(Bars, self).__init__(data, **params)
-        self._width = width
+    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,3))
 
-    @property
-    def width(self):
-        if self._width == None:
-            try:
-                return list(set(np.diff(self.data[:, 0])))[0]
-            except:
-                return None
-        else:
-            return self._width
+    value_dimensions = param.List(default=[Dimension('y')], bounds=(1,1))
 
-    @property
-    def edges(self):
-        try:
-            return list(self.data[:, 0] - self.width) + [self.data[-1, 0] + self.width]
-        except:
-            return range(len(self)+1)
-
-    @property
-    def values(self):
-        return np.array(self.data[:, 1], dtype=np.float64)
-
-    @width.setter
-    def width(self, width):
-        if np.isscalar(width) or len(width) == len(self):
-            self._width = width
-        else:
-            raise ValueError('width should be either a scalar or '
-                             'match the number of bars in length.')
+    xlim = (np.NaN, np.NaN)
+    ylim = (np.NaN, np.NaN)
 
 
 

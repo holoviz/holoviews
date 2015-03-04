@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from itertools import product
+from collections import defaultdict
 
 import numpy as np
 from matplotlib import cm
@@ -8,7 +10,7 @@ from matplotlib import ticker
 import param
 
 from ..core.options import Store
-from ..core import ViewableElement, CompositeOverlay, HoloMap
+from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
 from .element import ElementPlot
 from .plot import Plot
@@ -672,9 +674,218 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_clim(view.range)
 
 
+class BarPlot(ElementPlot):
+
+    group_index = param.Integer(default=0, doc="""
+       Index of the dimension in the supplied MultiBars
+       Element, which will be laid out into groups.""")
+
+    category_index = param.Integer(default=1, doc="""
+       Index of the dimension in the supplied MultiBars
+       Element, which will be laid out into categories.""")
+
+    stack_index = param.Integer(default=2, doc="""
+       Index of the dimension in the supplied MultiBars
+       Element, which will stacked.""")
+
+    padding = param.Number(default=0.2, doc="""
+       Defines the padding between groups.""")
+
+    color_by = param.List(default=['category'], doc="""
+       Defines how the Bar elements colored. Valid options include
+       any permutation of 'group', 'category' and 'stack'.""")
+
+    xticks = param.Integer(0, precedence=-1)
+
+    style_opts = ['alpha', 'color', 'align', 'visible',
+                  'edgecolor', 'log', 'ecolor', 'capsize',
+                  'error_kw', 'hatch', 'fc', 'ec']
+
+    _dimensions = OrderedDict([('group', 0),
+                               ('category',1),
+                               ('stack',2)])
+
+    def __init__(self, element, **params):
+        super(BarPlot, self).__init__(element, **params)
+        self.values = self._get_values()
+        self.overlaid = True
+
+    def _get_values(self):
+        """
+        Get unique index value for each bar
+        """
+        gi, ci, si =self.group_index, self.category_index, self.stack_index
+        ndims = self.map.last.ndims
+        dims = self.map.last.dimensions('key', label=True)
+        values = {}
+        for vidx, vtype in zip([gi, ci, si], self._dimensions):
+            if vidx < ndims:
+                vals = self.map.dimension_values(dims[vidx])
+            else:
+                vals = [None]
+            values[vtype] = NdMapping({v:None for v in vals}).keys()
+        return values
+
+
+    def _compute_styles(self, element, style_groups):
+        """
+        Computes color and hatch combinations by
+        any combination of the 'group', 'category'
+        and 'stack'.
+        """
+        style = Store.lookup_options(element, 'style')[self.cyclic_index]
+        sopts = []
+        for sopt in ['color', 'hatch']:
+            if sopt in style:
+                style.pop(sopt, None)
+                sopts.append(sopt)
+        style.pop('hatch', None)
+        color_groups = []
+        for sg in style_groups:
+            color_groups.append(self.values[sg])
+        color_groups = {k:tuple(Store.lookup_options(element, 'style')[n][sopt]
+                                for sopt in sopts)
+                        for n,k in enumerate(product(*color_groups))}
+        return style, color_groups, sopts
+
+
+    def get_extents(self, element, ranges):
+        vdim = element.dimensions('value', label=True)[0]
+        l, r, (b, t) = 0, len(self.values['group']), ranges.get(vdim, (np.NaN, np.NaN))
+        return l, b, r, t
+
+
+    def __call__(self, ranges=None):
+        element = self.map.last
+        vdim = element.value_dimensions[0]
+        axis = self.handles['axis']
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.match_range(element, ranges)
+
+        ndims = element.ndims
+        dims = element.dimensions('key', label=True)
+
+
+        self.handles['bars'], xticks = self._create_bars(axis, element)
+        self._set_ticks(axis, dims, xticks)
+
+        return self._finalize_axis(key, ranges=ranges, ylabel=str(vdim))
+
+
+    def _set_ticks(self, axis, dims, xticks):
+        """
+        Apply ticks with appropriate offsets.
+        """
+        ndims = len(dims)
+        idx = self.group_index if self.group_index < ndims else self.category_index
+        ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
+        axis.set_xlabel(dims[idx], labelpad=-0.15 if idx < ndims else -0.05)
+        axis.set_xticks(ticks)
+        axis.set_xticklabels(labels)
+        for t, y in zip(axis.get_xticklabels(), yalignments):
+            t.set_y(y)
+
+
+    def _create_bars(self, axis, element):
+        # Get style and dimension information
+        values = self.values
+        gi, ci, si = self.group_index, self.category_index, self.stack_index
+        gdim, cdim, sdim = [element.key_dimensions[i] if i < element.ndims else None
+                            for i in (gi, ci, si) ]
+        indices = dict(zip(self._dimensions, (gi, ci, si)))
+        style_groups = [sg for sg in self.color_by if indices[sg] < element.ndims]
+        style, color_groups, sopts = self._compute_styles(element, style_groups)
+        dims = element.dimensions('key', label=True)
+        ndims = len(dims)
+
+        # Compute widths
+        total_width = len(values['group'])
+        width = (1-(2.*self.padding)) / len(values['category'])
+
+        # Initialize variables
+        xticks = []
+        val_key = [None] * ndims
+        style_key = [None] * len(style_groups)
+        label_key = [None] * len(style_groups)
+        prev = defaultdict(int)
+        labels = []
+        bars = {}
+
+        # Iterate over group, category and stack dimension values
+        # computing xticks and drawing bars and applying styles
+        for gidx, grp_name in enumerate(values['group']):
+            if grp_name is not None:
+                if 'group' in style_groups:
+                    idx = style_groups.index('group')
+                    label_key[idx] = str(gdim.pprint_value(grp_name))
+                    style_key[idx] = grp_name
+                val_key[gi] = grp_name
+                if ci < ndims:
+                    yalign = -0.125
+                    xticks.append((gidx+0.5, dims[ci], -0.05))
+                else:
+                    yalign = 0
+                xticks.append((gidx+0.5, grp_name, yalign))
+            for cidx, cat_name in enumerate(values['category']):
+                xpos = gidx+self.padding+(cidx*width)
+                if cat_name is not None:
+                    if 'category' in style_groups:
+                        idx = style_groups.index('category')
+                        label_key[idx] = str(gdim.pprint_value(cat_name))
+                        style_key[idx] = cat_name
+                    val_key[ci] = cat_name
+                    xticks.append((xpos+width/2., cat_name, 0))
+                prev = 0
+                for sidx, stk_name in enumerate(values['stack']):
+                    if stk_name is not None:
+                        if 'stack' in style_groups:
+                            idx = style_groups.index('stack')
+                            label_key[idx] = str(gdim.pprint_value(stk_name))
+                            style_key[idx] = stk_name
+                        val_key[si] = stk_name
+                    val = element.get(tuple(val_key), (np.NaN,))
+                    label = ', '.join(label_key)
+                    style = dict(style, label='' if label in labels else label,
+                                 **dict(zip(sopts, color_groups[tuple(style_key)])))
+                    bar = axis.bar([xpos], val, width=width , bottom=prev,
+                                   **style)
+
+                    # Update variables
+                    bars[tuple(val_key)] = bar
+                    prev += val[0] if np.isfinite(val[0]) else 0
+                    labels.append(label)
+        title = [str(element.key_dimensions[self._dimensions[cg]])
+                 for cg in self.color_by if indices[cg] < ndims]
+        axis.legend(title=', '.join(title))
+        return bars, xticks
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        dims = element.dimensions('key', label=True)
+        ndims = len(dims)
+        ci, gi, si = self.category_index, self.group_index, self.stack_index
+        val_key = [None] * ndims
+        for g in self.values['group']:
+            if g is not None: val_key[gi] = g
+            for c in self.values['category']:
+                if c is not None: val_key[ci] = c
+                prev = 0
+                for s in self.values['stack']:
+                    if s is not None: val_key[si] = s
+                    bar = self.handles['bars'].get(tuple(val_key))
+                    if bar:
+                        height = element.get(tuple(val_key), np.NaN)
+                        height = height if np.isscalar(height) else height[0]
+                        bar[0].set_height(height)
+                        bar[0].set_y(prev)
+                        prev += height if np.isfinite(height) else 0
+
+
 Store.defaults.update({Curve: CurvePlot,
                        Scatter: PointPlot,
-                       Bars: HistogramPlot,
+                       Bars: BarPlot,
                        Histogram: HistogramPlot,
                        Points: PointPlot,
                        VectorField: VectorFieldPlot})
