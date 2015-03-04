@@ -100,15 +100,6 @@ class Render(object):
     captured_data = None # For testing purposes: the display data
     capture_mode = 0     # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
 
-    @classmethod
-    def register_object(cls, obj):
-        """
-        Public interface for registering an object at the class
-        level. This functionality may be used if the HoloViews object
-        is not available when a matplotlib figure or animation is
-        saved (e.g. in the IPython display hooks).
-        """
-        cls.obj = obj
 
     @classmethod
     def save(cls, obj, basename, fmt, fig_default='svg', holomap_default='gif',
@@ -152,7 +143,7 @@ class Render(object):
             cls.save_fig(plot(), fmt, basename=basename, obj=obj, dpi=dpi)
 
     @classmethod
-    def save_fig(cls, figure, fmt, basename=None, dpi=None, obj=None):
+    def save_fig(cls, figure, fmt, basename=None, dpi=None):
         """
         Save a matplotlib figure object in the specified format.
 
@@ -164,7 +155,6 @@ class Render(object):
         If dpi is None, the default dpi is taken from matplotlib
         rcParams.
         """
-        obj = cls.obj if obj is None else obj
         filename ='%s.%s' % (basename, fmt)
         figure_data = cls.figure_data(figure, fmt,
                                       **({'dpi':dpi} if dpi else {}))
@@ -179,8 +169,7 @@ class Render(object):
 
 
     @classmethod
-    def save_anim(cls, anim, fmt, writer,  basename=None, dpi=None,
-                  obj=None, **anim_kwargs):
+    def save_anim(cls, anim, fmt, writer,  basename=None, dpi=None, **anim_kwargs):
         """
         Save a matplotlib animation object in the specified format.
 
@@ -195,7 +184,6 @@ class Render(object):
         If dpi is None, the default dpi is taken from matplotlib
         rcParams.
         """
-        obj = cls.obj if obj is None else obj
         filename ='%s.%s' % (basename, fmt)
 
         if dpi is not None:
