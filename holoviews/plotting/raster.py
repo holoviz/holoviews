@@ -92,8 +92,8 @@ class RasterPlot(ElementPlot):
                 ysamples = np.linspace(0, len(ypos)-1, self.yticks, dtype=int)
                 ypos = ypos[ysamples]
                 dim2_keys = [dim2_keys[i] for i in ysamples]
-            xlabels = [xdim.formatter(k) for k in dim1_keys] if xdim.formatter else dim1_keys
-            ylabels = [ydim.formatter(k) for k in dim2_keys] if ydim.formatter else dim2_keys
+            xlabels = [xdim.pprint_value(k) for k in dim1_keys] if xdim.formatter else dim1_keys
+            ylabels = [ydim.pprint_value(k) for k in dim2_keys] if ydim.formatter else dim2_keys
             return (xpos, xlabels), (ypos, ylabels)
         else:
             return None, None
