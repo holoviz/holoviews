@@ -87,8 +87,7 @@ def get_plot_size(obj, percent_size):
 class PlotRenderer(Exporter):
     """
     Exporter used to render data from matplotlib, either to a stream
-    or directly to file. Includes capture facilities to enable
-    automated testing.
+    or directly to file.
 
     The __call__ method renders an HoloViews component to raw data of
     a specified matplotlib format.  The save method is the
@@ -117,9 +116,9 @@ class PlotRenderer(Exporter):
        The render resolution in dpi (dots per inch)""")
 
     # For testing purposes: the display data
-    captured_data = None
+    _captured_data = None
     # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
-    capture_mode = 0
+    _capture_mode = 0
 
     def __call__(self, obj, fmt=None):
         """
@@ -135,7 +134,7 @@ class PlotRenderer(Exporter):
         """
         data, fmt = self._render(obj, fmt)
         filename ='%s.%s' % (basename, fmt)
-        if self.capture_mode == 1: return
+        if self._capture_mode == 1: return
         with open(filename, 'w') as f:
             f.write(data)
 
@@ -165,7 +164,7 @@ class PlotRenderer(Exporter):
         else:
             data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
-        self.captured_data = (data if self.capture_mode != 0 else None)
+        self._captured_data = (data if self._capture_mode != 0 else None)
         return data, fmt
 
 
