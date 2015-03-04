@@ -10,6 +10,7 @@ import param
 
 from ..core.options import Cycle, Options, Store
 from ..core import Dimension, Layout, NdLayout, GridSpace, HoloMap
+from ..core.io import Exporter
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .chart3d import * # pyflakes:ignore (API import)
@@ -83,7 +84,7 @@ def get_plot_size(obj, percent_size):
 
 
 
-class PlotRenderer(param.ParameterizedFunction):
+class PlotRenderer(Exporter):
     """
     Exporter used to render data from matplotlib, either to a stream
     or directly to file. Includes capture facilities to enable
