@@ -1,9 +1,8 @@
-from itertools import groupby
 import numpy as np
 
 import param
 
-from ..core import OrderedDict, Dimension, NdMapping, Element, HoloMap
+from ..core import OrderedDict, Dimension, Element, NdElement, HoloMap
 
 
 class ItemTable(Element):
@@ -140,47 +139,19 @@ class ItemTable(Element):
                      for k in self._cached_value_names)
 
 
-class Table(Element, NdMapping):
+
+class Table(NdElement):
     """
-    A Table is an NdMapping that is rendered in tabular form. In
-    addition to the usual multi-dimensional keys of NdMappings
-    (rendered as columns), Tables also support multi-dimensional
-    values also rendered as columns. The values held in a multi-valued
-    Table are tuples, where each component of the tuple maps to a
-    column as described by the value_dimensions parameter.
-
-    In other words, the columns of a table are partitioned into two
-    groups: the columns based on the key and the value columns that
-    contain the components of the value tuple.
-
-    One feature of Tables is that they support an additional level of
-    index over NdMappings: the last index may be a column name or a
-    slice over the column names (using alphanumeric ordering).
+    Table is an NdElement type, which gets displayed in a tabular
+    format and is convertible to most other Element types.
     """
 
     group = param.String(default='Table', doc="""
-         The group is used to describe the table. Example of
-         group names include 'Summary' or 'Statistics'. """)
-
-    value_dimensions = param.List(default=[Dimension('Data')], doc="""
-        The dimension description(s) of the values held in data tuples
-        that map to the value columns of the table.
-
-        Note: String values may be supplied in the constructor which
-        will then be promoted to Dimension objects.""")
-
-    _deep_indexable = False
-
-    def __init__(self, data=None, **params):
-        self._style = None
-        NdMapping.__init__(self, data, **dict(params, group=params.get('group',self.group)))
-        for k, v in self.data.items():
-            self[k] = v # Unpacks any ItemTables
-
+         The group is used to describe the Table.""")
 
     def __setitem__(self, key, value):
         if isinstance(value, (dict, OrderedDict)):
-            if all(isinstance(k, str) for k in keys):
+            if all(isinstance(k, str) for k in key):
                 value = ItemTable(value)
             else:
                 raise ValueError("Tables only supports string inner"
@@ -189,74 +160,7 @@ class Table(Element, NdMapping):
             if value.value_dimensions != self.value_dimensions:
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             value = value.data.values()
-        value = (value,) if np.isscalar(value) else tuple(value)
-        key = key if isinstance(key, tuple) else (key,)
-        self.data[key] = value
-
-
-    def _filter_columns(self, index, col_names):
-        "Returns the column names specified by index (which may be a slice)"
-        if isinstance(index, slice):
-            cols  = [col for col in sorted(col_names)]
-            if index.start:
-                cols = [col for col in cols if col > index.start]
-            if index.stop:
-                cols = [col for col in cols if col < index.stop]
-            cols = cols[::index.step] if index.step else cols
-        elif isinstance(index, (set, list)):
-            nomatch = [val for val in index if val not in col_names]
-            if nomatch:
-                raise KeyError("No columns with dimension labels %r" % nomatch)
-            cols = [col for col in col_names if col in index]
-        elif index not in col_names:
-            raise KeyError("No column with dimension label %r" % index)
-        else:
-            cols= [index]
-        if cols==[]:
-            raise KeyError("No columns selected in the given slice")
-        return cols
-
-
-    def _filter_table(self, subtable, value_dimensions):
-        col_names = self.dimensions('value', label=True)
-        cols = self._filter_columns(value_dimensions, col_names)
-        indices = [col_names.index(col) for col in cols]
-        value_dimensions = [self.value_dimensions[i] for i in indices]
-        if isinstance(subtable, ItemTable):
-            items = OrderedDict([(h,v) for (h,v) in subtable.data.items() if h in cols])
-            return ItemTable(items, label=self.label)
-
-        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
-        return subtable.clone(items, value_dimensions=value_dimensions)
-
-
-    def __getitem__(self, args):
-        """
-        In addition to usual NdMapping indexing, Tables can be indexed
-        by column name (or a slice over column names)
-        """
-        ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
-        subtable = NdMapping.__getitem__(self, ndmap_index)
-
-        if len(self.value_dimensions) > 1 and not isinstance(subtable, Table):
-            # If a value tuple, turn into an ItemTable
-            subtable = ItemTable(OrderedDict(zip(self.value_dimensions, subtable)),
-                                 label=self.label)
-
-        if not isinstance(args, tuple) or len(args) <= self.ndims:
-            return subtable
-
-        return self._filter_table(subtable, args[-1])
-
-
-    def select(self, **selection):
-        val_selection = selection.pop('value', None)
-        selection = NdMapping.select(self, **selection)
-        if val_selection:
-            return self._filter_table(selection, val_selection)
-        else:
-            return selection
-
+        super(Table, self).__setitem__(key, value)
 
     @property
     def rows(self):
@@ -296,90 +200,6 @@ class Table(Element, NdMapping):
         return 'heading' if row == 0 else 'data'
 
 
-    def sample(self, samples=[]):
-        """
-        Allows sampling of the Table with a list of samples.
-        """
-        sample_data = OrderedDict()
-        for sample in samples:
-            sample_data[sample] = self[sample]
-        return Table(sample_data, **dict(self.get_param_values(onlychanged=True)))
-
-
-    def reduce(self, dimensions=None, function=None, **reduce_map):
-        """
-        Allows collapsing the Table down by dimension by passing
-        the dimension name and reduce_fn as kwargs. Reduces
-        dimensionality of Table until only an ItemTable is left.
-        """
-        dimensions = self._valid_dimensions(dimensions)
-        if dimensions and reduce_map:
-            raise Exception("Pass reduced dimensions either as an argument"
-                            "or as part of the kwargs not both.")
-        elif dimensions:
-            reduce_map = {d: function for d in dimensions}
-        dim_labels = self._cached_index_names
-        reduced_table = self
-        for reduce_fn, group in groupby(reduce_map.items(), lambda x: x[1]):
-            dims = [dim for dim, _ in group]
-            split_dims = [self.get_dimension(d) for d in dim_labels if d not in dims]
-            if len(split_dims) and reduced_table.ndims > 1:
-                split_map = reduced_table.groupby([d.name for d in split_dims] , container_type=HoloMap, group_type=Table)
-                reduced_table = self.clone(shared_data=False, key_dimensions=split_dims)
-                for k, table in split_map.items():
-                    reduced = []
-                    for vdim in self.value_dimensions:
-                        valtable = table.select(value=vdim.name) if len(self.value_dimensions) > 1 else table
-                        reduced.append(reduce_fn(valtable.data.values()))
-                    reduced_table[k] = reduced
-            else:
-                reduced = {vdim: reduce_fn(self.dimension_values(vdim.name))
-                           for vdim in self.value_dimensions}
-                params = dict(group=self.group) if self.value != type(self).__name__ else {}
-                reduced_table = ItemTable(reduced, label=self.label, **params)
-        return reduced_table
-
-
-    def _item_check(self, dim_vals, data):
-        if isinstance(data, tuple):
-            for el in data:
-                self._item_check(dim_vals, el)
-            return
-        super(Table, self)._item_check(dim_vals, data)
-
-
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        groups = zip(*[(np.array(values) for values in odict.values()) for odict in data])
-        return OrderedDict((key, np.squeeze(function(np.dstack(group), axis=-1, **kwargs), 0)
-                                  if group[0].shape[0] > 1 else
-                                  function(np.concatenate(group), **kwargs))
-                             for key, group in zip(data[0].keys(), groups))
-
-
-    def tablemap(self, dimensions):
-        if len(dimensions) < self.ndims:
-            return self.groupby(dimensions, container_type=HoloMap)
-        else:
-            vmap = HoloMap(key_dimensions=[self.get_dimension(d) for d in dimensions])
-            for k, v in self.items():
-                vmap[k] = ItemTable(dict(zip(self.value_dimensions, v)))
-            return vmap
-
-
-    def dimension_values(self, dim):
-        if isinstance(dim, Dimension):
-            raise Exception('Dimension to be specified by name')
-        if dim in self.dimensions('value', label=True):
-            if len(self.value_dimensions) == 1: return self.values()
-            index = [v.name for v in self.value_dimensions].index(dim)
-            return [v[index] for v in self.values()]
-        elif dim in self._cached_index_names:
-            return NdMapping.dimension_values(self, dim)
-        else:
-            raise Exception('Dimension not found.')
-
-
     @property
     def to(self):
         """
@@ -387,17 +207,6 @@ class Table(Element, NdMapping):
         to any type.
         """
         return TableConversion(self)
-
-
-    def dframe(self, value_label='data'):
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = [d.name for d in self.dimensions()]
-        return pandas.DataFrame(
-            [dict(zip(labels, np.concatenate([np.array(k),v])))
-             for (k, v) in self.data.items()])
 
 
 
