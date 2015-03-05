@@ -290,9 +290,9 @@ class FileArchive(Archive):
             os.makedirs(output_dir)
             for (basename, ext), entry in files:
                 (data, info) = entry
-                filename = os.path.join(output_dir, basename,
-                                        ('.%s' % ext) if ext else '')
-                with open(filename, 'w') as f: f.write(data)
+                filename = '%s.%s' % (basename, ext) if ext else basename
+                fpath = os.path.join(output_dir, filename)
+                with open(fpath, 'w') as f: f.write(data)
         elif len(files) == 1:
             ((_, ext), entry) = files[0]
             (data, info) = entry
