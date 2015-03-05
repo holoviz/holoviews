@@ -44,7 +44,7 @@ class Exporter(param.ParameterizedFunction):
         metadata should include:
 
         'file-ext' : The file extension if applicable (else empty string)
-        'mime-type': The mime-type of the data.
+        'mime_type': The mime-type of the data.
         'size'     : Size in bytes of the returned data.
 
         The fmt argument may be used with exporters that support multiple
@@ -76,7 +76,7 @@ class Pickler(Exporter):
         data = pickle.dumps(obj, protocol=self.protocol)
         return data, {'file-ext':'pkl',
                       'size':len(data),
-                      'mime-type':'application/python-pickle'}
+                      'mime_type':'application/python-pickle'}
 
     def save(self, obj, basename):
         with open(basename+'.pkl', 'w') as f:
@@ -252,7 +252,7 @@ class FileArchive(Archive):
 
     def _encoding(self, entry):
         (data, info) = entry
-        if info['mime-type'] in self._utf8_mime_types:
+        if info['mime_type'] in self._utf8_mime_types:
             return data.encode('utf-8')
         else:
             return data

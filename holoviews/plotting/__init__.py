@@ -37,11 +37,11 @@ Your browser does not support the video tag.
 
 HTML_TAGS = {
     'base64': 'data:{mime_type};base64,{b64}', # Use to embed data
-    'svg': ('image/svg+xml', IMAGE_TAG),
-    'png': ('image/png',     IMAGE_TAG),
-    'gif': ('image/gif',     IMAGE_TAG),
+    'svg':  ('image/svg+xml', IMAGE_TAG),
+    'png':  ('image/png',     IMAGE_TAG),
+    'gif':  ('image/gif',     IMAGE_TAG),
     'webm': ('video/webm',   VIDEO_TAG),
-    'mp4': ('video/mp4',    VIDEO_TAG)
+    'mp4':  ('video/mp4',    VIDEO_TAG)
 }
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
@@ -163,7 +163,7 @@ class PlotRenderer(Exporter):
         self._captured_data = (data if self._capture_mode != 0 else None)
         return data, {'file-ext':fmt,
                       'size':len(data),
-                      'mime-type':HTML_TAGS[fmt][0]}
+                      'mime_type':HTML_TAGS[fmt][0]}
 
 
     def save(self, obj, basename, fmt=None):
