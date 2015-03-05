@@ -34,6 +34,8 @@ Store:
 """
 import os, string, time, pickle
 
+import numpy as np
+
 import param
 from .tree import AttrTree
 from .util import valid_identifier
@@ -70,38 +72,115 @@ class Cycle(param.Parameterized):
     """
     A simple container class that specifies cyclic options. A typical
     example would be to cycle the curve colors in an Overlay composed
-    of an arbitrary number of curves.
-
-    A Cycles object accepts either a list of items to cycle over or an
-    rckey string used to look up the elements in the matplotlib
-    rcParams dictionary.
+    of an arbitrary number of curves. The values may be supplied as
+    an explicit list or a key to look up in the default cycles
+    attribute.
     """
 
-    items = param.List(default=None, allow_None=True,  doc="""
-        If supplied, the explicit list of items to be cycled over.""")
+    key = param.String(default='grayscale', doc="""
+       Palettes look up the Palette values based on some key.""")
 
-    rckey = param.String(default='axes.color_cycle', doc="""
-       If elements is None, this is the key in the matplotlib rcParams
-       to use to get the cycle elements""")
+    values = param.List(default=[], doc="""
+       The values the cycle will iterate over.""")
 
-    def __init__(self, items=None, **params):
-        super(Cycle, self).__init__(items=items, **params)
+    default_cycles = {}
 
-    @property
-    def elements(self):
-        if self.items is None:
-            from matplotlib import rcParams
-            return rcParams[self.rckey]
+    def __init__(self, **params):
+        super(Cycle, self).__init__(**params)
+        self.values = self._get_values()
+
+
+    def __getitem__(self, num):
+        return self(values=self.values[:num])
+
+
+    def _get_values(self):
+        if self.values: return self.values
+        elif self.key:
+            return self.default_cycles[self.key]
         else:
-            return self.items
+            raise ValueError("Supply either a key or explicit values.")
+
+
+    def __call__(self, values=None, **params):
+        values = values if values else self.values
+        return self.__class__(**dict(self.get_param_values(), values=values, **params))
 
 
     def __len__(self):
-        return len(self.elements)
+        return len(self.values)
 
 
     def __repr__(self):
-        return "Cycle(%s)" % self.elements
+        return "%s(%s)" % (type(self).__name__, self.values)
+
+
+
+def grayscale(val):
+    return (val, val, val, 1.0)
+
+
+class Palette(Cycle):
+    """
+    Palettes allow easy specifying a discrete sampling
+    of an existing colormap. Palettes may be supplied a key
+    to look up a function function in the colormap class
+    attribute. The function should accept a float scalar
+    in the specified range and return a RGB(A) tuple.
+    The number of samples may also be specified as a
+    parameter.
+
+    The range and samples may conveniently be overridden
+    with the __getitem__ method.
+    """
+
+    range = param.NumericTuple(default=(0, 1), doc="""
+        The range from which the Palette values are sampled.""")
+
+    samples = param.Integer(default=32, doc="""
+        The number of samples in the given range to supply to
+        the sample_fn.""")
+
+    sample_fn = param.Callable(default=np.linspace, doc="""
+        The function to generate the samples, by default linear.""")
+
+    reverse = param.Boolean(default=False, doc="""
+        Whether to reverse the palette.""")
+
+    # A list of available colormaps
+    colormaps = {'grayscale': grayscale}
+
+    def __init__(self, key, **params):
+        super(Cycle, self).__init__(key=key, **params)
+        self.values = self._get_values()
+
+
+    def __getitem__(self, slc):
+        """
+        Provides a convenient interface to override the
+        range and samples parameters of the Cycle.
+        Supplying a slice step or index overrides the
+        number of samples. Unsupplied slice values will be
+        inherited.
+        """
+        (start, stop), step = self.range, self.samples
+        if isinstance(slc, slice):
+            if slc.start is not None:
+                start = slc.start
+            if slc.stop is not None:
+                stop = slc.stop
+            if slc.step is not None:
+                step = slc.step
+        else:
+            step = slc
+        return self(range=(start, stop), samples=step)
+
+
+    def _get_values(self):
+        cmap = self.colormaps[self.key]
+        (start, stop), steps = self.range, self.samples
+        samples = [cmap(n) for n in self.sample_fn(start, stop, steps)]
+        return samples[::-1] if self.reverse else samples
 
 
 
@@ -158,13 +237,24 @@ class Options(param.Parameterized):
 
         filter_names, filter_values = list(zip(*filter_cycles))
 
-        cyclic_tuples = list(zip(*[val.elements for val in filter_values]))
+        cyclic_tuples = list(zip(*[val.values for val in filter_values]))
         return [dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
 
 
     def keys(self):
         "The keyword names across the supplied options."
         return sorted(list(self.kwargs.keys()))
+
+
+    def max_cycles(self, num):
+        """
+        Truncates all contained Cycle objects to a maximum number
+        of Cycles and returns a new Options object with the
+        truncated or resampled Cycles.
+        """
+        kwargs = {kw: (arg[num] if isinstance(arg, Cycle) else arg)
+                  for kw, arg in self.kwargs.items()}
+        return self(**kwargs)
 
 
     def __getitem__(self, index):

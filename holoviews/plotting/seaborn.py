@@ -70,7 +70,7 @@ class RegressionPlot(FullRedrawPlot):
     def _update_plot(self, axis, view):
         sns.regplot(view.data[:, 0], view.data[:, 1],
                     ax=axis, label=' ',
-                    **Store.lookup_options(view, 'style')[self.cyclic_index])
+                    **self.style[self.cyclic_index])
 
 
 
@@ -97,7 +97,7 @@ class BivariatePlot(FullRedrawPlot):
     def __call__(self, ranges=None):
         kdeview = self.map.last
         axis = self.handles['axis']
-        self.style = Store.lookup_options(kdeview, 'style')[self.cyclic_index]
+        self.style = self.style[self.cyclic_index]
         if self.joint and self.subplot:
             raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(axis, kdeview)
@@ -140,7 +140,7 @@ class TimeSeriesPlot(FullRedrawPlot):
     def __call__(self, ranges=None):
         curveview = self.map.last
         axis = self.handles['axis']
-        self.style = Store.lookup_options(curveview, 'style')[self.cyclic_index]
+        self.style = self.style[self.cyclic_index]
         self._update_plot(axis, curveview)
 
         return self._finalize_axis(self.keys[-1])
@@ -171,7 +171,7 @@ class DistributionPlot(FullRedrawPlot):
     def __call__(self, ranges=None):
         distview = self.map.last
         axis = self.handles['axis']
-        self.style = Store.lookup_options(distview, 'style')[self.cyclic_index]
+        self.style = self.style[self.cyclic_index]
         self._update_plot(axis, distview)
 
         return self._finalize_axis(self.keys[-1])
@@ -245,17 +245,13 @@ class SNSFramePlot(DFrameViewPlot):
         if self.plot_type in ['pairgrid', 'pairplot', 'facetgrid']:
             self._create_fig = False
         super(SNSFramePlot, self).__init__(view, **params)
-
+        self.style = self._process_style(self.style)
 
 
     def __call__(self, ranges=None):
         dfview = self.map.last
         axis = self.handles['axis']
         self._validate(dfview)
-
-        # Process styles
-        style = self.style = Store.lookup_options(dfview, 'style')[self.cyclic_index]
-        self.style = self._process_style(style)
 
         self._update_plot(axis, dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():

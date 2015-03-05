@@ -80,10 +80,11 @@ class ElementPlot(Plot):
     style_opts = []
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
-                 cyclic_index=0, zorder=0, **params):
+                 cyclic_index=0, style=None, zorder=0, **params):
         self.map = self._check_map(element, ranges, keys)
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
+        self.style = Store.lookup_options(self.map.last, 'style') if style is None else style
         self.zorder = zorder
         dimensions = self.map.key_dimensions if dimensions is None else dimensions
         keys = keys if keys else list(self.map.data.keys())
@@ -387,6 +388,10 @@ class OverlayPlot(ElementPlot):
     OverlayPlot supports compositors processing of Overlays across maps.
     """
 
+    style_group = param.List(['group'], bounds=(1, 2), doc="""Which Element parts of the
+        Element specification the Elements will be grouped by for styling.
+        Accepts any combination of label and group.""")
+
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
@@ -399,14 +404,19 @@ class OverlayPlot(ElementPlot):
         subplots = OrderedDict()
 
         keys, vmaps = self.map.split_overlays()
-        style_groups = dict((k, enumerate(list(v))) for k,v
-                            in groupby(vmaps, lambda s: (s.last.group)))
+        group_fn = lambda s: tuple(getattr(s.last, sg) for sg in self.style_group)
+        style_groups = {k: list(v) for k,v in groupby(vmaps, group_fn)}
+        style_lengths = {k: len(v) for k, v, in style_groups.items()}
+        style_iter = {k: enumerate(v) for k, v, in style_groups.items()}
         for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
-            cyclic_index, _ = next(style_groups[(vmap.last.group)])
+            style_key = group_fn(vmap)
+            cyclic_index,  _ = next(style_iter[style_key])
+            length = style_lengths[style_key]
+            style = Store.lookup_options(vmap.last, 'style').max_cycles(length)
             plotopts = Store.lookup_options(vmap.last, 'plot').options
             if issubclass(vmap.type, NdOverlay):
                 plotopts['dimensions'] = vmap.last.key_dimensions
-            plotopts = dict(keys=self.keys, axis=self.handles['axis'],
+            plotopts = dict(keys=self.keys, axis=self.handles['axis'], style=style,
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
                             layout_dimensions=self.layout_dimensions, uniform=self.uniform)

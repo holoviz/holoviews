@@ -21,7 +21,7 @@ class AnnotationPlot(ElementPlot):
     def __call__(self, ranges=None):
         annotation = self.map.last
         axis = self.handles['axis']
-        opts = Store.lookup_options(annotation, 'style')[self.cyclic_index]
+        opts = self.style[self.cyclic_index]
         handles = self.draw_annotation(axis, annotation, annotation.data, opts)
         self.handles['annotations'] = handles
         return self._finalize_axis(self.keys[-1])
@@ -33,7 +33,7 @@ class AnnotationPlot(ElementPlot):
             element.remove()
 
         self.handles['annotations']=[]
-        opts = Store.lookup_options(annotation, 'style')[self.cyclic_index]
+        opts = self.style[self.cyclic_index]
         self.handles['annotations'] = self.draw_annotation(axis, annotation,
                                                            annotation.data, opts)
 
@@ -127,7 +127,7 @@ class PathPlot(ElementPlot):
     def __call__(self, ranges=None):
         lines = self.map.last
 
-        style = Store.lookup_options(lines, 'style')[self.cyclic_index]
+        style = self.style[self.cyclic_index]
         line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
         self.handles['axis'].add_collection(line_segments)

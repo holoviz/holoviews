@@ -142,7 +142,7 @@ class CurvePlot(ChartPlot):
             xticks = self._cyclic_reduce_ticks(self.xvalues)
 
         # Create line segments and apply style
-        style = Store.lookup_options(curveview, 'style')[self.cyclic_index]
+        style = self.style[self.cyclic_index]
         line_segment = axis.plot(curveview.data[:, 0], curveview.data[:, 1],
                                  zorder=self.zorder, label=" ",
                                  **style)[0]
@@ -403,7 +403,7 @@ class SideHistogramPlot(HistogramPlot):
             main = main.values()[0]
 
         if isinstance(main, (Raster, Points)):
-            style = Store.lookup_options(main, 'style')[self.cyclic_index]
+            style = self.style[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
         else:
@@ -490,7 +490,7 @@ class PointPlot(ChartPlot):
         sz = points.data[:, self.size_index] if self.size_index < ndims else None
         cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
-        style = Store.lookup_options(points, 'style')[self.cyclic_index]
+        style = self.style[self.cyclic_index]
         if sz is not None and self.scaling_factor > 1:
             style['s'] = self._compute_size(sz, style)
         if cs is not None:
@@ -520,7 +520,7 @@ class PointPlot(ChartPlot):
         if ndims > 2:
             sz = element.data[:, self.size_index] if self.size_index < ndims else None
             cs = element.data[:, self.color_index] if self.color_index < ndims else None
-            opts = Store.lookup_options(element, 'style')[0]
+            opts = self.style[0]
 
             if sz is not None and self.scaling_factor > 1:
                 paths.set_sizes(self._compute_size(sz, opts))
@@ -625,7 +625,7 @@ class VectorFieldPlot(ElementPlot):
         axis = self.handles['axis']
 
         colorized = self.color_dim is not None
-        kwargs = Store.lookup_options(vfield, 'style')[self.cyclic_index]
+        kwargs = self.style[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
 
@@ -740,18 +740,16 @@ class BarPlot(ElementPlot):
         any combination of the 'group', 'category'
         and 'stack'.
         """
-        style = Store.lookup_options(element, 'style')[self.cyclic_index]
+        style = Store.lookup_options(element, 'style').max_cycles(len(style_groups))
         sopts = []
         for sopt in ['color', 'hatch']:
-            if sopt in style:
-                style.pop(sopt, None)
+            if sopt in style.kwargs:
                 sopts.append(sopt)
-        style.pop('hatch', None)
+                style.kwargs.pop(sopt, None)
         color_groups = []
         for sg in style_groups:
             color_groups.append(self.values[sg])
-        color_groups = {k:tuple(Store.lookup_options(element, 'style')[n][sopt]
-                                for sopt in sopts)
+        color_groups = {k:tuple(style[n][sopt] for sopt in sopts)
                         for n,k in enumerate(product(*color_groups))}
         return style, color_groups, sopts
 
@@ -801,7 +799,7 @@ class BarPlot(ElementPlot):
                             for i in (gi, ci, si) ]
         indices = dict(zip(self._dimensions, (gi, ci, si)))
         style_groups = [sg for sg in self.color_by if indices[sg] < element.ndims]
-        style, color_groups, sopts = self._compute_styles(element, style_groups)
+        style_opts, color_groups, sopts = self._compute_styles(element, style_groups)
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
 
@@ -852,7 +850,7 @@ class BarPlot(ElementPlot):
                         val_key[si] = stk_name
                     val = element.get(tuple(val_key), (np.NaN,))
                     label = ', '.join(label_key)
-                    style = dict(style, label='' if label in labels else label,
+                    style = dict(style_opts[0], label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
                     bar = axis.bar([xpos], val, width=width , bottom=prev,
                                    **style)
