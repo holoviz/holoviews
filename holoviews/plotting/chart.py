@@ -695,6 +695,9 @@ class BarPlot(ElementPlot):
        Defines how the Bar elements colored. Valid options include
        any permutation of 'group', 'category' and 'stack'.""")
 
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
     xticks = param.Integer(0, precedence=-1)
 
     style_opts = ['alpha', 'color', 'align', 'visible',
@@ -708,7 +711,7 @@ class BarPlot(ElementPlot):
     def __init__(self, element, **params):
         super(BarPlot, self).__init__(element, **params)
         self.values = self._get_values()
-        self.overlaid = True
+
 
     def _get_values(self):
         """
@@ -716,14 +719,18 @@ class BarPlot(ElementPlot):
         """
         gi, ci, si =self.group_index, self.category_index, self.stack_index
         ndims = self.map.last.ndims
-        dims = self.map.last.dimensions('key', label=True)
+        dims = self.map.last.key_dimensions
         values = {}
         for vidx, vtype in zip([gi, ci, si], self._dimensions):
             if vidx < ndims:
-                vals = self.map.dimension_values(dims[vidx])
+                dim = dims[vidx]
+                vals = self.map.dimension_values(dim.name)
+                params = dict(key_dimensions=[dim])
             else:
                 vals = [None]
-            values[vtype] = NdMapping({v:None for v in vals}).keys()
+                params = {}
+            values[vtype] = NdMapping([(v, None) for v in vals],
+                                      **params).keys()
         return values
 
 
@@ -751,7 +758,7 @@ class BarPlot(ElementPlot):
 
     def get_extents(self, element, ranges):
         vdim = element.dimensions('value', label=True)[0]
-        l, r, (b, t) = 0, len(self.values['group']), ranges.get(vdim, (np.NaN, np.NaN))
+        l, r, b, t = 0, len(self.values['group']), 0, ranges.get(vdim, (np.NaN, np.NaN))[1]
         return l, b, r, t
 
 
@@ -767,10 +774,8 @@ class BarPlot(ElementPlot):
         ndims = element.ndims
         dims = element.dimensions('key', label=True)
 
-
         self.handles['bars'], xticks = self._create_bars(axis, element)
         self._set_ticks(axis, dims, xticks)
-
         return self._finalize_axis(key, ranges=ranges, ylabel=str(vdim))
 
 
@@ -858,7 +863,8 @@ class BarPlot(ElementPlot):
                     labels.append(label)
         title = [str(element.key_dimensions[self._dimensions[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
-        axis.legend(title=', '.join(title))
+        if any(len(l) for l in labels):
+            axis.legend(title=', '.join(title))
         return bars, xticks
 
 
