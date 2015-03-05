@@ -53,7 +53,7 @@ class Dimension(param.Parameterized):
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
 
-    values = param.ClassSelector(class_=(basestring, list), default=[], doc="""
+    values = param.ClassSelector(class_=(str, list), default=[], doc="""
         Optional set of allowed values for the dimension that can also
         be used to retain a categorical ordering. Setting values to
         'initial' indicates that the values will be added during construction.""")
