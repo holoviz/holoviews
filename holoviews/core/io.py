@@ -12,8 +12,17 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-
+from __future__ import absolute_import
+import os
+import time
+import string
 import pickle
+import zipfile
+import tarfile
+
+from io import BytesIO
+from hashlib import sha256
+from collections import OrderedDict
 import param
 
 
@@ -101,3 +110,211 @@ class Archive(param.Parameterized):
         Finalize and close the archive.
         """
         raise NotImplementedError
+
+
+
+def name_generator(obj):
+    return '_'.join(obj.traverse(lambda x: x.group+'-'+str(x.__class__.__name__)))
+
+
+class FileArchive(Archive):
+    """
+    A file archive stores files on disk, either unpacked in a
+    directory or in an archive format (e.g. a zip file).
+    """
+
+    exporter= param.Callable(default=Pickler, doc="""
+        The exporter function used to convert HoloViews objects into the
+        appropriate format.""")
+
+    object_formatter = param.Callable(default=name_generator, doc="""
+       Callable that given an object returns a string suitable for
+       inclusion in file and directory names. This is what generates
+       the value used in the {obj} field of the filename
+       formatter.""")
+
+    filename_formatter = param.String('{group}-{label}-{obj}', doc="""
+         A string formatter for output filename based on the HoloViews
+         object that is being rendered to disk.
+
+         The available fields are the {type}, {group}, {label}, {obj}
+         of the holoviews object added to the archive as well as
+         {timestamp}, {obj} and {SHA}. The {timestamp} is the export
+         timestamp using timestamp_format, {obj} is the object
+         representation as returned by object_formatter and {SHA} is
+         the SHA of the {obj} value used to compress it into a shorter
+         string.""")
+
+    timestamp_format = param.String("%Y_%m_%d-%H_%M_%S", doc="""
+        The timestamp format that will be substituted for the
+        {timestamp} field in the export name.""")
+
+    root = param.String('.', doc="""
+        The root directory in which the output directory is
+        located. May be an absolute or relative path.""")
+
+    archive_format = param.ObjectSelector('zip', objects=['zip', 'tar'], doc="""
+        The archive format to use if there are multiple files and pack
+        is set to True """)
+
+    pack = param.Boolean(default=True, doc="""
+        Whether or not to pack to contents into the specified archive
+        format. If pack is False, the contents will be output to a
+        directory.
+
+        Note that if there is only a single file in the archive, no
+        packing will occur and no directory is created. Instead, the
+        file is treated as a single-file archive. """)
+
+    export_name = param.String(default='{timestamp}', doc="""
+        The name assigned to the overall export. If an archive file is
+        used, this is the correspond filename (e.g of the exporter zip
+        file). Alternatively, if unpack=False, this is the name of the
+        output directory. Lastly, for archives of a single file, this
+        is the basename of the output file.
+
+        The {timestamp} field is available to include the timestamp at
+        the time of export in the chosen timestamp format.""")
+
+    @classmethod
+    def parse_fields(cls, formatter):
+        "Returns the format fields otherwise raise exception"
+        if formatter is None: return []
+        try:
+            parse = list(string.Formatter().parse(formatter))
+            return  set(f for f in list(zip(*parse))[1] if f is not None)
+        except:
+            raise SyntaxError("Could not parse formatter %r" % formatter)
+
+    # Mime-types that need encoding as utf-8 before archiving.
+    _utf8_mime_types = ['image/svg+xml']
+
+    def __init__(self, **params):
+        super(FileArchive, self).__init__(**params)
+        #  Items with key: (basename,ext) and value: (data, info)
+        self._files = OrderedDict()
+        self._validate_formatters()
+
+
+    def _validate_formatters(self):
+        ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp'}
+        efields = {'timestamp'}
+        if not self.parse_fields(self.filename_formatter).issubset(ffields):
+            raise Exception("Valid filename fields are: %s" % ','.join(sorted(ffields)))
+        elif not self.parse_fields(self.export_name).issubset(efields):
+            raise Exception("Valid export fields are: %s" % ','.join(sorted(efields)))
+        try: time.strftime(self.timestamp_format, tuple(time.localtime()))
+        except: raise Exception("Timestamp format invalid")
+
+
+    def add(self, obj=None, filename=None, data=None):
+        """
+        If a filename is supplied, it will be used. Otherwise, a
+        filename will be generated from the supplied object. Note that
+        if the explicit filename uses the {timestamp} field, it will
+        be formatted upon export.
+
+        The data to be archived is either supplied explicitly as
+        'data' or automatically rendered from the object.
+        """
+        if [filename, obj] == [None, None]:
+            raise Exception("Either filename or a HoloViews object is "
+                            "needed to create an entry in the archive.")
+        elif obj is None and not (self.parse_fields(filename) in [{}, {'timestamp'}]):
+            raise Exception("Only the {timestamp} formatter may be used unless an object is supplied.")
+        elif [obj, data] == [None, None]:
+            raise Exception("Either an object or explicit data must be "
+                            "supplied to create an entry in the archive.")
+
+        (data, info) =  self.exporter(obj) if (data is None) else (data,{})
+        self._validate_formatters()
+        obj_str = self.object_formatter(obj)
+        hashfn = sha256()
+        hashfn.update(obj_str.encode('utf-8'))
+        format_values = {'timestamp': '{timestamp}',
+                         'group':   getattr(obj, 'group', 'no-group'),
+                         'label':   getattr(obj, 'label', 'no-label'),
+                         'type':    obj.__class__.__name__,
+                         'obj':     obj_str,
+                         'SHA':     hashfn.hexdigest()}
+
+        if filename is None:
+            filename = self._format(self.filename_formatter, format_values)
+
+        ext = info.get('file-ext', '')
+        if (filename, ext) in self._files:
+            counter = 1
+            while (filename+'-'+str(counter), ext) in self._files:
+                counter += 1
+            self._files[(filename+'-'+str(counter), ext)] = (data, info)
+        else:
+            self._files[(filename, ext)] = (data, info)
+
+    def _encoding(self, entry):
+        (data, info) = entry
+        if info['mime-type'] in self._utf8_mime_types:
+            return data.encode('utf-8')
+        else:
+            return data
+
+    def _zip_archive(self, export_name, files):
+        archname = "%s.zip" % export_name
+        with zipfile.ZipFile(archname, 'w') as zipf:
+            for (basename, ext), entry in files:
+                filename = '%s.%s' % (basename, ext) if ext else basename
+                zipf.writestr(filename, self._encoding(entry))
+
+    def _tar_archive(self, export_name, files):
+        archname = "%s.tar" % export_name
+        with tarfile.TarFile(archname, 'w') as tarf:
+            for (basename, ext), entry in files:
+                filename = '%s.%s' % (basename, ext) if ext else basename
+                tarinfo = tarfile.TarInfo(filename)
+                filedata = self._encoding(entry)
+                tarinfo.size = len(filedata)
+                tarf.addfile(tarinfo, BytesIO(filedata))
+
+    def export(self):
+        """
+        Export the archive, directory or file.
+        """
+        timestamp = time.strftime(self.timestamp_format,
+                                  tuple(time.localtime()))
+        export_name = self._format(self.export_name, {'timestamp':timestamp})
+        files = [((self._format(base, {'timestamp':timestamp}), ext), val)
+                 for ((base, ext), val) in self._files.items()]
+        root = os.path.abspath(self.root)
+        # Make directory and populate if multiple files and not packed
+        if len(self) > 1 and not self.pack:
+            output_dir = os.path.join(root, export_name)
+            os.makedirs(output_dir)
+            for (basename, ext), entry in files:
+                (data, info) = entry
+                filename = os.path.join(output_dir, basename,
+                                        ('.%s' % ext) if ext else '')
+                with open(filename, 'w') as f: f.write(data)
+        elif len(files) == 1:
+            ((_, ext), entry) = files[0]
+            (data, info) = entry
+            filename = ('%s.%s' % (export_name, ext)) if ext else export_name
+            fpath = os.path.join(root, filename)
+            with open(fpath, 'w') as f: f.write(data)
+        elif self.archive_format == 'zip':
+            self._zip_archive(export_name, files)
+        elif self.archive_format == 'tar':
+            self._tar_archive(export_name, files)
+
+    def _format(self, formatter, info):
+        filtered = {k:v for k,v in info.items()
+                    if k in self.parse_fields(formatter)}
+        return formatter.format(**filtered)
+
+    def __len__(self):
+        "The number of files currently specified in the archive"
+        return len(self._files)
+
+    def __str__(self):
+        return '- '+'\n- '.join(['.'.join(k) for k in self._files.keys()])
+
+    def __repr__(self):
+        return self.pprint()
