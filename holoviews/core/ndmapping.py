@@ -491,9 +491,11 @@ class NdMapping(MultiDimensionalMapping):
             return self._dataslice(self.data[map_slice], data_slice)
         else:
             conditions = self._generate_conditions(map_slice)
+            index_vals = self._cached_index_values
             items = self.data.items()
-            for cidx, condition in enumerate(conditions):
-                items = [(k, v) for k, v in items if condition(k[cidx])]
+            for cidx, (condition, dim) in enumerate(zip(conditions, self.key_dimensions)):
+                values = self._cached_index_values.get(dim.name, None)
+                items = [(k, v) for k, v in items if condition(values.index(k[cidx]) if values else k[cidx])]
             items = [(k, self._dataslice(v, data_slice)) for k, v in items]
             if self.ndims == 1:
                 items = [(k[0], v) for (k, v) in items]
@@ -539,24 +541,29 @@ class NdMapping(MultiDimensionalMapping):
         Generates filter conditions used for slicing the data structure.
         """
         conditions = []
-        for dim in map_slice:
-            if isinstance(dim, slice):
-                if dim == slice(None):
+        for dim, dim_slice in zip(self.key_dimensions, map_slice):
+            if isinstance(dim_slice, slice):
+                start, stop = dim_slice.start, dim_slice.stop
+                if dim.values:
+                    values = self._cached_index_values[dim.name]
+                    dim_slice = slice(None if start is None else values.index(start),
+                                      None if stop is None else values.index(stop))
+                if dim_slice == slice(None):
                     conditions.append(self._all_condition())
-                elif dim.start is None:
-                    conditions.append(self._upto_condition(dim))
-                elif dim.stop is None:
-                    conditions.append(self._from_condition(dim))
+                elif start is None:
+                    conditions.append(self._upto_condition(dim_slice))
+                elif stop is None:
+                    conditions.append(self._from_condition(dim_slice))
                 else:
-                    conditions.append(self._range_condition(dim))
-            elif isinstance(dim, set):
-                conditions.append(self._values_condition(dim))
-            elif dim is Ellipsis:
+                    conditions.append(self._range_condition(dim_slice))
+            elif isinstance(dim_slice, set):
+                conditions.append(self._values_condition(dim_slice))
+            elif dim_slice is Ellipsis:
                 conditions.append(self._all_condition())
-            elif isinstance(dim, (list, tuple)):
+            elif isinstance(dim_slice, (list, tuple)):
                 raise ValueError("Keys may only be selected with sets, not lists or tuples.")
             else:
-                conditions.append(self._value_condition(dim))
+                conditions.append(self._value_condition(dim_slice))
         return conditions
 
 
