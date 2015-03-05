@@ -666,6 +666,8 @@ class AdjointLayoutPlot(CompositePlot):
         used to position all the Layouts together. This method allows
         LayoutPlots to make final adjustments to the axis positions.
         """
+        if not 'main' in self.subplots:
+            return
         main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
         if 'right' in self.view_positions:
