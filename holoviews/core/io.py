@@ -275,14 +275,14 @@ class FileArchive(Archive):
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
-    def export(self):
+    def export(self, timestamp=None):
         """
         Export the archive, directory or file.
         """
-        timestamp = time.strftime(self.timestamp_format,
-                                  tuple(time.localtime()))
-        export_name = self._format(self.export_name, {'timestamp':timestamp})
-        files = [((self._format(base, {'timestamp':timestamp}), ext), val)
+        tval = tuple(time.localtime()) if timestamp is None else timestamp
+        tstamp = time.strftime(self.timestamp_format, tval)
+        export_name = self._format(self.export_name, {'timestamp':tstamp})
+        files = [((self._format(base, {'timestamp':tstamp}), ext), val)
                  for ((base, ext), val) in self._files.items()]
         root = os.path.abspath(self.root)
         # Make directory and populate if multiple files and not packed
