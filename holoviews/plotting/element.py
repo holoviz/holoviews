@@ -2,6 +2,10 @@ from itertools import groupby
 from matplotlib import ticker
 import numpy as np
 
+# Python3 compatibility
+try: basestring = basestring
+except: basestring = str
+
 import param
 
 from ..core.options import Store
@@ -274,7 +278,7 @@ class ElementPlot(Plot):
             elif self.aspect == 'square':
                 axis.set_aspect((1./axis.get_data_ratio()))
             elif self.aspect not in [None, 'square']:
-                if isinstance(self.aspect, str):
+                if isinstance(self.aspect, basestring):
                     axis.set_aspect(self.aspect)
                 else:
                     axis.set_aspect(((1./axis.get_data_ratio()))/self.aspect)
