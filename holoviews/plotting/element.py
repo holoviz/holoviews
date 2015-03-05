@@ -46,6 +46,9 @@ class ElementPlot(Plot):
     rescale_individually = param.Boolean(default=False, doc="""
         Whether to use redraw the axes per map or per element.""")
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
@@ -171,7 +174,7 @@ class ElementPlot(Plot):
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
-                       xlabel=None, ylabel=None):
+                       xlabel=None, ylabel=None, zlabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
         Only plots with zorder 0 get to apply their settings.
@@ -186,13 +189,15 @@ class ElementPlot(Plot):
         subplots = self.subplots.values() if self.subplots else {}
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            if view is not None and not isinstance(view, (Table, ItemTable)):
+            if view is not None and not type(view) in [Table, ItemTable]:
 
                 # Axis labels
                 if hasattr(view, 'xlabel') and xlabel is None:
                     xlabel = view.xlabel
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
+                if hasattr(view, 'zlabel') and zlabel is None:
+                    ylabel = view.zlabel
 
                 # Extents
                 if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
@@ -224,10 +229,9 @@ class ElementPlot(Plot):
                 if yformat:
                     axis.yaxis.set_major_formatter(yformat)
 
-            if not self.overlaid and not isinstance(self, OverlayPlot):
+            if not self.show_legend:
                 legend = axis.get_legend()
-                if legend:
-                    legend.set_visible(False)
+                if legend: legend.set_visible(False)
 
             if self.show_grid:
                 axis.get_xaxis().grid(True)

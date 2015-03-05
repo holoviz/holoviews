@@ -157,8 +157,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     border = param.Number(default=10, doc="""
         Aggregate border as a fraction of total plot size.""")
 
-    show_frame = param.Boolean(default=False)
-
     show_title = param.Boolean(default=True)
 
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
