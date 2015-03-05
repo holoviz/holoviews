@@ -29,6 +29,7 @@ from ..plotting import ANIMATION_OPTS, HTML_TAGS, PlotRenderer, opts, get_plot_s
 from .magics import OutputMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
+from .archive import notebook_archive
 
 OutputMagic.ANIMATION_OPTS = ANIMATION_OPTS
 
@@ -172,7 +173,7 @@ def display_hook(fn):
             map_format  = OutputMagic.options['holomap']
             # If widget_mode is None, widgets are not being used
             widget_mode = (widget_mode if map_format in OutputMagic.inbuilt_formats else None)
-            return fn(view,
+            html = fn(view,
                       size=OutputMagic.options['size'],
                       dpi=OutputMagic.options['dpi'],
                       max_frames=OutputMagic.options['max_frames'],
@@ -180,6 +181,8 @@ def display_hook(fn):
                       map_format = map_format,
                       widget_mode = widget_mode,
                       **kwargs)
+            notebook_archive.add(view, html=html)
+            return html
         except:
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
