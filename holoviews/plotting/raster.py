@@ -164,7 +164,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin']
 
-    def __init__(self, layout, keys=None, dimensions=None, ranges=None, **params):
+    def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None, **params):
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
@@ -181,7 +181,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self._ykeys = sorted(set(ykeys))
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
-        _, _, self.layout = self._create_subplots(layout, ranges, create_axis=False)
+        _, _, self.layout = self._create_subplots(layout, None, ranges, create_axes=False)
 
 
     def get_extents(self, view, ranges):
