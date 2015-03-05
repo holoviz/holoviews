@@ -85,12 +85,12 @@ class TestCycle(ComparisonTestCase):
         self.assertEqual(opts[4], {'one': 'b', 'two': 2})
         self.assertEqual(opts[5], {'one': 'c', 'two': 3})
 
+
     def test_cycle_slice(self):
         cycle1 = Cycle(values=['a', 'b', 'c'])[2]
         cycle2 = Cycle(values=[1, 2, 3])
 
         opts = Options('test', one=cycle1, two=cycle2)
-        for i in range(4): print opts[i]
         self.assertEqual(opts[0], {'one': 'a', 'two': 1})
         self.assertEqual(opts[1], {'one': 'b', 'two': 2})
         self.assertEqual(opts[2], {'one': 'a', 'two': 1})
