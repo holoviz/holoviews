@@ -69,10 +69,12 @@ class MultiDimensionalMapping(Dimensioned):
         self._cached_index_values = {d.name:d.values for d in self.key_dimensions}
         self._cached_categorical = any(d.values for d in self.key_dimensions)
 
+        self._instantiated = False
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif initial_items is not None:
             self.update(OrderedDict(initial_items))
+        self._instantiated = True
 
 
     def _item_check(self, dim_vals, data):
@@ -113,12 +115,16 @@ class MultiDimensionalMapping(Dimensioned):
             valid_vals = zip(self._cached_index_names, dim_vals)
         else:
             valid_vals = []
+
         for dim, val in valid_vals:
             vals = self._cached_index_values[dim]
-            if vals and val not in vals:
+            if vals == 'initial': self._cached_index_values[dim] = []
+            if not self._instantiated and self.get_dimension(dim).values == 'initial':
+                if val not in vals:
+                    self._cached_index_values[dim].append(val)
+            elif vals and val not in vals:
                 raise KeyError('%s Dimension value %s not in'
                                ' specified Dimension values.' % (dim, repr(val)))
-
 
         # Updates nested data structures rather than simply overriding them.
         if ((dim_vals in self.data)
@@ -192,9 +198,9 @@ class MultiDimensionalMapping(Dimensioned):
         sortkws = {}
         dimensions = self.key_dimensions
         if self._cached_categorical:
-            sortkws['key'] = lambda x: tuple(dimensions[i].values.index(x[0][i])
-                                             if dimensions[i].values else x[0][i]
-                                             for i in range(self.ndims))
+            sortkws['key'] = lambda x: tuple(self._cached_index_values[d.name].index(x[0][i])
+                                             if d.values else x[0][i]
+                                             for i, d in enumerate(dimensions))
         self.data = OrderedDict(sorted(self.data.items(), **sortkws))
 
 

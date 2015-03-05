@@ -53,9 +53,10 @@ class Dimension(param.Parameterized):
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
 
-    values = param.List(default=[], doc="""
+    values = param.ClassSelector(class_=(basestring, list), default=[], doc="""
         Optional set of allowed values for the dimension that can also
-        be used to retain a categorical ordering.""")
+        be used to retain a categorical ordering. Setting values to
+        'initial' indicates that the values will be added during construction.""")
 
     format_string = param.String(default="{name}: {val}{unit}", doc="""
         Format string to specify how pprint_value_string is generated. Valid
