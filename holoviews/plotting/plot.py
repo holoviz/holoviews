@@ -370,10 +370,20 @@ class GridPlot(CompositePlot):
     aspect = param.Parameter(default='auto', doc="""
         Aspect ratios on GridPlot should be automatically determined.""")
 
+    show_frame = param.Boolean(default=False)
+
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
     show_title = param.Boolean(default=False)
+
+    show_xaxis = param.ObjectSelector(default='bottom',
+                                      objects=['top', 'bottom', None], doc="""
+        Whether and where to display the xaxis.""")
+
+    show_yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', None], doc="""
+        Whether and where to display the yaxis.""")
 
     tick_format = param.String(default="%.2f", doc="""
         Formatting string for the GridPlot ticklabels.""")
@@ -524,6 +534,9 @@ class GridPlot(CompositePlot):
         layout_axis.set_yticks(yticks)
         ydim = dims[1] if layout.ndims > 1 else None
         layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
+        if not self.show_frame:
+            layout_axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
+            layout_axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
 
