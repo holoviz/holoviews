@@ -64,7 +64,10 @@ class Pickler(Exporter):
       versions and 2 is efficient for new style classes.""")
 
     def __call__(self, obj):
-        return pickle.dumps(obj, protocol=self.protocol)
+        data = pickle.dumps(obj, protocol=self.protocol)
+        return data, {'file-ext':'pkl',
+                      'size':len(data),
+                      'mime-type':'application/python-pickle'}
 
     def save(self, obj, basename):
         with open(basename+'.pkl', 'w') as f:
