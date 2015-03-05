@@ -25,7 +25,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot
-from ..plotting import ANIMATION_OPTS, PlotRenderer, opts, get_plot_size
+from ..plotting import ANIMATION_OPTS, HTML_TAGS, PlotRenderer, opts, get_plot_size
 from .magics import OutputMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
 
@@ -41,14 +41,16 @@ ENABLE_TRACEBACKS=True
 #==================#
 
 
-def animate(anim, dpi, writer, mime_type, anim_kwargs, extra_args, tag):
+def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
     renderer = PlotRenderer.instance(dpi=dpi)
-    data = renderer.anim_data(anim, mime_type, writer, **anim_kwargs)
+    data = renderer.anim_data(anim, fmt, writer, **anim_kwargs)
     b64data = base64.b64encode(data).decode("utf-8")
-    return tag.format(b64=b64data, mime_type=mime_type)
+    (mime_type, tag) = HTML_TAGS[fmt]
+    src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)
+    return  tag.format(src=src, mime_type=mime_type)
 
 
 def HTML_video(plot):
@@ -144,13 +146,11 @@ def display_figure(fig, message=None, max_width='100%'):
         renderer = PlotRenderer.instance(dpi=dpi)
         figdata = renderer.figure_data(fig, figure_format)
         if figure_format=='svg':
-            mime_type = 'svg+xml'
             figdata = figdata.encode("utf-8")
-        else:
-            mime_type = 'png'
-        prefix = 'data:image/%s;base64,' % mime_type
-        b64 = prefix + base64.b64encode(figdata).decode("utf-8")
-        html = "<center><img src='%s' style='max-width:%s'/><center/>" % (b64, max_width)
+        b64 = base64.b64encode(figdata).decode("utf-8")
+        (mime_type, tag) = HTML_TAGS[figure_format]
+        src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+        html = tag.format(src=src)
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 

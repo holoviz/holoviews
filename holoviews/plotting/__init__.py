@@ -28,25 +28,31 @@ from . import seaborn # pyflakes:ignore (API import)
 
 
 # Tags used when matplotlib output is to be embedded in HTML
-GIF_TAG = "<center><img src='data:image/gif;base64,{b64}' style='max-width:100%'/><center/>"
+IMAGE_TAG = "<center><img src='{src}' style='max-width:100%'/><center/>"
 VIDEO_TAG = """
 <center><video controls style='max-width:100%'>
-<source src="data:video/{mime_type};base64,{b64}" type="video/{mime_type}">
+<source src='{src}' type='{mime_type}'>
 Your browser does not support the video tag.
 </video><center/>"""
 
+HTML_TAGS = {
+    'base64': 'data:{mime_type};base64,{b64}', # Use to embed data
+    'svg': ('image/svg+xml', IMAGE_TAG),
+    'png': ('image/png',     IMAGE_TAG),
+    'gif': ('image/gif',     IMAGE_TAG),
+    'webm': ('video/webm',   VIDEO_TAG),
+    'h264': ('video/mp4',    VIDEO_TAG), # To be removed
+    'mp4': ('video/mp4',    VIDEO_TAG)
+}
 
-# <format name> : (animation writer, mime_type,  anim_kwargs, extra_args, tag)
+# <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
     'webm': ('ffmpeg', 'webm', {},
-             ['-vcodec', 'libvpx', '-b', '1000k'],
-             VIDEO_TAG),
+             ['-vcodec', 'libvpx', '-b', '1000k']),
     'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
-             ['-pix_fmt', 'yuv420p'],
-             VIDEO_TAG),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, [],
-            GIF_TAG),
-    'scrubber': ('html', None, {'fps': 5}, None, None)
+             ['-pix_fmt', 'yuv420p']),
+    'gif': ('imagemagick', 'gif', {'fps': 10}, []),
+    'scrubber': ('html', None, {'fps': 5}, None)
 }
 
 
@@ -126,8 +132,6 @@ class PlotRenderer(Exporter):
     # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
     _capture_mode = 0
 
-    mime_types = {'svg':'image/svg+xml',
-                  'png':'image/png'}
 
     def __call__(self, obj, fmt=None):
         """
@@ -148,8 +152,8 @@ class PlotRenderer(Exporter):
             fmt = self.holomap if len(plot) > 1 else self.fig
 
         if len(plot) > 1:
-            (writer, mime_type, anim_kwargs, extra_args, tag) = ANIMATION_OPTS[fmt]
-            anim = plot.anim(fps)
+            (writer, _, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
+            anim = plot.anim(fps=self.fps)
             if extra_args != []:
                 anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
@@ -160,7 +164,7 @@ class PlotRenderer(Exporter):
         self._captured_data = (data if self._capture_mode != 0 else None)
         return data, {'file-ext':fmt,
                       'size':len(data),
-                      'mime-type':self.mime_types[fmt]}
+                      'mime-type':HTML_TAGS[fmt][0]}
 
 
     def save(self, obj, basename, fmt=None):
