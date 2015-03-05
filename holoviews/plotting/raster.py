@@ -3,6 +3,7 @@ from itertools import product
 
 import numpy as np
 from matplotlib import pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import param
 
@@ -15,6 +16,9 @@ from .plot import Plot, GridPlot
 
 
 class RasterPlot(ElementPlot):
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a colorbar to the plot.""")
 
     normalize_individually = param.Boolean(default=False)
 
@@ -64,6 +68,10 @@ class RasterPlot(ElementPlot):
             clims = ranges.get(val_dim)
         im.set_clim(clims)
         self.handles['im'] = im
+        if self.colorbar:
+            divider = make_axes_locatable(axis)
+            self.handles['cax'] = divider.append_axes('right', size="5%", pad=0.05)
+            plt.colorbar(im, cax=self.handles['cax'])
 
         if isinstance(view, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
