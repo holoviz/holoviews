@@ -22,7 +22,7 @@ import tarfile
 
 from io import BytesIO
 from hashlib import sha256
-from collections import OrderedDict
+from .ndmapping import OrderedDict
 import param
 
 
@@ -207,7 +207,7 @@ class FileArchive(Archive):
         except: raise Exception("Timestamp format invalid")
 
 
-    def add(self, obj=None, filename=None, data=None):
+    def add(self, obj=None, filename=None, data=None, info={}):
         """
         If a filename is supplied, it will be used. Otherwise, a
         filename will be generated from the supplied object. Note that
@@ -220,16 +220,17 @@ class FileArchive(Archive):
         if [filename, obj] == [None, None]:
             raise Exception("Either filename or a HoloViews object is "
                             "needed to create an entry in the archive.")
-        elif obj is None and not (self.parse_fields(filename) in [{}, {'timestamp'}]):
+        elif obj is None and not self.parse_fields(filename).issubset({'timestamp'}):
             raise Exception("Only the {timestamp} formatter may be used unless an object is supplied.")
         elif [obj, data] == [None, None]:
             raise Exception("Either an object or explicit data must be "
                             "supplied to create an entry in the archive.")
 
-        (data, info) =  self.exporter(obj) if (data is None) else (data,{})
+        (data, info) =  self.exporter(obj) if (data is None) else (data, info)
         self._validate_formatters()
-        obj_str = self.object_formatter(obj)
+
         hashfn = sha256()
+        obj_str = 'None' if obj is None else self.object_formatter(obj)
         hashfn.update(obj_str.encode('utf-8'))
         format_values = {'timestamp': '{timestamp}',
                          'group':   getattr(obj, 'group', 'no-group'),
