@@ -740,17 +740,19 @@ class BarPlot(ElementPlot):
         any combination of the 'group', 'category'
         and 'stack'.
         """
-        style = Store.lookup_options(element, 'style').max_cycles(len(style_groups))
+        style = Store.lookup_options(element, 'style')[0]
         sopts = []
         for sopt in ['color', 'hatch']:
-            if sopt in style.kwargs:
+            if sopt in style:
                 sopts.append(sopt)
-                style.kwargs.pop(sopt, None)
+                style.pop(sopt, None)
         color_groups = []
         for sg in style_groups:
             color_groups.append(self.values[sg])
-        color_groups = {k:tuple(style[n][sopt] for sopt in sopts)
-                        for n,k in enumerate(product(*color_groups))}
+        style_product = list(product(*color_groups))
+        wrapped_style = Store.lookup_options(element, 'style').max_cycles(len(style_product))
+        color_groups = {k:tuple(wrapped_style[n][sopt] for sopt in sopts)
+                        for n,k in enumerate(style_product)}
         return style, color_groups, sopts
 
 
@@ -850,7 +852,7 @@ class BarPlot(ElementPlot):
                         val_key[si] = stk_name
                     val = element.get(tuple(val_key), (np.NaN,))
                     label = ', '.join(label_key)
-                    style = dict(style_opts[0], label='' if label in labels else label,
+                    style = dict(style_opts, label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
                     bar = axis.bar([xpos], val, width=width , bottom=prev,
                                    **style)
