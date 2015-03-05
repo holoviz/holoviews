@@ -161,7 +161,7 @@ class OutputMagic(OptionsMagic):
     # Formats that are always available
     inbuilt_formats= ['auto', 'widgets', 'scrubber']
     # Codec or system-dependent format options
-    optional_formats = ['webm','h264', 'gif']
+    optional_formats = ['webm','mp4', 'gif']
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'     : ['mpl','d3'],

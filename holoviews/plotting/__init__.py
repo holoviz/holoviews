@@ -41,7 +41,6 @@ HTML_TAGS = {
     'png': ('image/png',     IMAGE_TAG),
     'gif': ('image/gif',     IMAGE_TAG),
     'webm': ('video/webm',   VIDEO_TAG),
-    'h264': ('video/mp4',    VIDEO_TAG), # To be removed
     'mp4': ('video/mp4',    VIDEO_TAG)
 }
 
@@ -49,7 +48,7 @@ HTML_TAGS = {
 ANIMATION_OPTS = {
     'webm': ('ffmpeg', 'webm', {},
              ['-vcodec', 'libvpx', '-b', '1000k']),
-    'h264': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+    'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
              ['-pix_fmt', 'yuv420p']),
     'gif': ('imagemagick', 'gif', {'fps': 10}, []),
     'scrubber': ('html', None, {'fps': 5}, None)
