@@ -94,10 +94,10 @@ class IPTestCase(ComparisonTestCase):
 
 
 # Populating the namespace for keyword evaluation
-from ..core.options import Cycle         # pyflakes:ignore (namespace import)
-import numpy as np                       # pyflakes:ignore (namespace import)
+from ..core.options import Cycle, Palette # pyflakes:ignore (namespace import)
+import numpy as np                        # pyflakes:ignore (namespace import)
 
-Parser.namespace = {'np':np, 'Cycle':Cycle}
+Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
 _loaded = False
 def load_ipython_extension(ip, verbose=True):
