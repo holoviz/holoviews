@@ -120,26 +120,13 @@ class PlotRenderer(Exporter):
     # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
     _capture_mode = 0
 
+    mime_types = {'svg':'image/svg+xml',
+                  'png':'image/png'}
+
     def __call__(self, obj, fmt=None):
         """
         Render the supplied HoloViews component using matplotlib.
         """
-        return self._render(obj, fmt)[0]
-
-
-    def save(self, obj, basename, fmt=None):
-        """
-        Save a HoloViews object to file, either using an explicitly
-        supplied format or to the appropriate deafult.
-        """
-        data, fmt = self._render(obj, fmt)
-        filename ='%s.%s' % (basename, fmt)
-        if self._capture_mode == 1: return
-        with open(filename, 'w') as f:
-            f.write(data)
-
-
-    def _render(self, obj, fmt=None):
         if isinstance(obj, AdjointLayout):
             obj = Layout.from_values(obj)
 
@@ -165,8 +152,21 @@ class PlotRenderer(Exporter):
             data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
         self._captured_data = (data if self._capture_mode != 0 else None)
-        return data, fmt
+        return data, {'file-ext':fmt,
+                      'size':len(data),
+                      'mime-type':self.mime_types[fmt]}
 
+
+    def save(self, obj, basename, fmt=None):
+        """
+        Save a HoloViews object to file, either using an explicitly
+        supplied format or to the appropriate deafult.
+        """
+        data, info = self(obj, fmt)
+        filename ='%s.%s' % (basename, fmt)
+        if self._capture_mode == 1: return
+        with open(filename, 'w') as f:
+            f.write(data)
 
     def anim_data(self, anim, fmt, writer, **anim_kwargs):
         """
