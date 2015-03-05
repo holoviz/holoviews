@@ -30,8 +30,15 @@ class Exporter(param.ParameterizedFunction):
 
     def __call__(self, obj, fmt=None):
         """
-        Given a HoloViews object return the raw exported data. The fmt
-        argument may be used with exporters that support multiple
+        Given a HoloViews object return the raw exported data and
+        corresponding metadata as the tuple (data, metadata). The
+        metadata should include:
+
+        'file-ext' : The file extension if applicable (else empty string)
+        'mime-type': The mime-type of the data.
+        'size'     : Size in bytes of the returned data.
+
+        The fmt argument may be used with exporters that support multiple
         output formats. If not supplied, the exporter is to pick an
         appropriate format automatically.
         """
