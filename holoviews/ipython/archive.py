@@ -138,8 +138,8 @@ class NotebookArchive(FileArchive):
             html += traceback.format_exc()
 
         try:
-            filename = self.snapshot_name if (filename is None) else filename
-            super(NotebookArchive, self).add(filename=filename,
+            html_filename = self.snapshot_name
+            super(NotebookArchive, self).add(filename=html_filename,
                                              data=html, info={'file-ext':'html',
                                                               'mime_type':'text/html'})
             # If store cleared_notebook... save here
