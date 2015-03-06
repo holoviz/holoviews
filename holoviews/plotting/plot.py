@@ -958,9 +958,7 @@ class LayoutPlot(CompositePlot):
         self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        rcopts = Store.lookup_options(self.layout, 'style').options
         for subplot in self.subplots.values():
-            with matplotlib.rc_context(rcopts):
                 subplot(ranges=ranges)
         plt.draw()
 
