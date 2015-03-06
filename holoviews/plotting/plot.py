@@ -395,10 +395,11 @@ class GridPlot(CompositePlot):
         Rotation angle of the xticks.""")
 
     def __init__(self, layout, axis=None, create_axes=True, ranges=None, keys=None,
-                 dimensions=None, **params):
+                 dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
         self.cols, self.rows = layout.shape
+        self.layout_num = layout_num
         extra_opts = Store.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
