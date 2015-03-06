@@ -770,8 +770,6 @@ class BarPlot(ElementPlot):
 
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = self.match_range(element, ranges)
-
-        ndims = element.ndims
         dims = element.dimensions('key', label=True)
 
         self.handles['bars'], xticks = self._create_bars(axis, element)
@@ -806,7 +804,6 @@ class BarPlot(ElementPlot):
         ndims = len(dims)
 
         # Compute widths
-        total_width = len(values['group'])
         width = (1-(2.*self.padding)) / len(values['category'])
 
         # Initialize variables
@@ -814,7 +811,6 @@ class BarPlot(ElementPlot):
         val_key = [None] * ndims
         style_key = [None] * len(style_groups)
         label_key = [None] * len(style_groups)
-        prev = defaultdict(int)
         labels = []
         bars = {}
 
