@@ -48,22 +48,22 @@ class PlotRendererTest(ComparisonTestCase):
                          '44fee52c887a6a3a4116cf6d9a0a0f4451849e1aaef1d03a9a1a6c098681771b')
 
     def test_simple_export_png1_double_size(self):
-        self.renderer.save(self.image1, basename=self.basename, fmt='png', size=200)
+        self.renderer.instance(size=200).save(self.image1, basename=self.basename, fmt='png')
         self.assertEqual(digest_data(self.renderer._captured_data),
                          '577a2f8eb63cd5189a536895bd4f8f2d358b901ee808d2b2c976dffac14e27f4')
 
     def test_simple_export_gif_double_size(self):
-        self.renderer.save(self.map1, basename=self.basename, fmt='gif', size=200)
+        self.renderer.instance(size=200).save(self.map1, basename=self.basename, fmt='gif')
         self.assertEqual(digest_data(self.renderer._captured_data),
                          'e73cb85ecf8876eef4bd22caf86685e97b7f6d990da16d93a36cc215a0c4072f')
 
     def test_simple_export_gif_half_fps(self):
-        self.renderer.save(self.map1, basename=self.basename, fmt='gif', fps=10)
+        self.renderer.instance(fps=10).save(self.map1, basename=self.basename, fmt='gif', )
         self.assertEqual(digest_data(self.renderer._captured_data),
                          '1f329070e9d2c70f1fc6e4254ff3c346887079c2d09e951d1742e81f3d7815ba')
 
     def test_simple_export_png1_double_size(self):
-        self.renderer.save(self.image1, basename=self.basename, fmt='png', size=200)
+        self.renderer.instance(size=200).save(self.image1, basename=self.basename, fmt='png')
         self.assertEqual(digest_data(self.renderer._captured_data),
                          '577a2f8eb63cd5189a536895bd4f8f2d358b901ee808d2b2c976dffac14e27f4')
 

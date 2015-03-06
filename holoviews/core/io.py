@@ -314,8 +314,5 @@ class FileArchive(Archive):
         "The number of files currently specified in the archive"
         return len(self._files)
 
-    def __str__(self):
-        return '- '+'\n- '.join(['.'.join(k) for k in self._files.keys()])
-
     def __repr__(self):
         return self.pprint()
