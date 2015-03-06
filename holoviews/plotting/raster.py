@@ -175,7 +175,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             dimensions, keys = traversal.unique_dimkeys(layout)
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
         self.cyclic_index = 0
-        self.style = Store.lookup_options(pane, 'style')[0]
         self.zorder = 0
         self.overlaid = False
         self.map = {}
@@ -223,7 +222,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
                 ranges = self.compute_ranges(vmap, key, ranges)
-                opts = self.style[self.cyclic_index]
+                opts = Store.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
                 plot.set_clim(valrange)
