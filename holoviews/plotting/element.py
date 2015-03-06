@@ -475,7 +475,10 @@ class OverlayPlot(ElementPlot):
                 indexes = ((0, 2), (1, 3))
             layer = overlay.data.get(key, False)
             if layer and not isinstance(layer, Annotation):
-                sp_ranges = self.match_range(layer, ranges) if ranges else {}
+                if isinstance(layer, CompositeOverlay):
+                    sp_ranges = ranges
+                else:
+                    sp_ranges = self.match_range(layer, ranges) if ranges else {}
                 lextnt = subplot.get_extents(layer, sp_ranges)
                 if not extents and lextnt:
                     extents = lextnt
@@ -522,7 +525,8 @@ class OverlayPlot(ElementPlot):
 
         for plot in self.subplots.values():
             plot.update_frame(key, ranges)
-        self._finalize_axis(key, ranges)
+
+        self._finalize_axis(key, ranges=ranges)
 
 
 Store.defaults.update({NdOverlay: OverlayPlot,
