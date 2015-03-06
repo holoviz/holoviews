@@ -110,12 +110,14 @@ class PlotRenderer(Exporter):
     """
 
     fig = param.ObjectSelector(default='svg',
-                               objects=['png', 'svg'], doc="""
-        Output render format for static figures.""")
+                               objects=['png', 'svg', None], doc="""
+        Output render format for static figures. If None, no figure
+        rendering will occur. """)
 
     holomap = param.ObjectSelector(default='gif',
-                                   objects=['webm','h264', 'gif'], doc="""
-        Output render multi-frame (typically animated) format""")
+                                   objects=['webm','h264', 'gif', None], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
 
     size=param.Integer(100, doc="""
         The rendered size as a percentage size""")
@@ -149,6 +151,7 @@ class PlotRenderer(Exporter):
 
         if fmt is None:
             fmt = self.holomap if len(plot) > 1 else self.fig
+            if fmt is None: return
 
         if len(plot) > 1:
             (writer, _, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
@@ -171,11 +174,12 @@ class PlotRenderer(Exporter):
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate deafult.
         """
-        data, info = self(obj, fmt)
+        rendered = self(obj, fmt)
+        if rendered is None: return
         filename ='%s.%s' % (basename, fmt)
         if self._capture_mode == 1: return
         with open(filename, 'w') as f:
-            f.write(data)
+            f.write(rendered[0])
 
     def anim_data(self, anim, fmt, writer, **anim_kwargs):
         """

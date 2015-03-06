@@ -23,7 +23,7 @@ class NotebookArchive(FileArchive):
        run and when the export process begins. Note that a few more
        seconds may elapse before the files actually appear on disk.""")
 
-    exporter = param.Callable(default=PlotRenderer)
+    exporter = param.Callable(default=PlotRenderer.instance(holomap=None))
 
     namespace = param.String('holoviews.archive', doc="""
         The name of the current in the NotebookArchive instance in the
@@ -97,10 +97,13 @@ class NotebookArchive(FileArchive):
 
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
+
+        initial_last_key = self._files.keys()[-1] if len(self) else None
         if self.auto:
             super(NotebookArchive, self).add(obj, filename, data, info)
-            last_key = self._files.keys()[-1]
-            self._replacements[last_key] = html
+            new_last_key = self._files.keys()[-1] if len(self) else None
+            if new_last_key != initial_last_key:
+                self._replacements[new_last_key] = html
 
 
     def _export_with_html(self):
@@ -112,7 +115,8 @@ class NotebookArchive(FileArchive):
             substitutions = {}
             for (basename, ext), entry in self._files.items():
                 (_, info) = entry
-                html_key = self._replacements[(basename, ext)]
+                html_key = self._replacements.get((basename, ext), None)
+                if html_key is None: continue
                 filename = self._format(basename, {'timestamp':tstamp})
                 fpath = filename+(('.%s' % ext) if ext else '')
                 msg = "<center><b>%s</b><center/>"

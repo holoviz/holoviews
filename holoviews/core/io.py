@@ -225,8 +225,10 @@ class FileArchive(Archive):
         elif [obj, data] == [None, None]:
             raise Exception("Either an object or explicit data must be "
                             "supplied to create an entry in the archive.")
-
-        (data, info) =  self.exporter(obj) if (data is None) else (data, info)
+        if data is None:
+            rendered = self.exporter(obj)
+            if rendered is None: return
+            (data, info) = rendered
         self._validate_formatters()
 
         hashfn = sha256()
