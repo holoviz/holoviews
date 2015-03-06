@@ -119,7 +119,8 @@ class RasterPlot(ElementPlot):
         plot_coords = product(xpos, ypos)
         for plot_coord, coord in zip(plot_coords, coords):
             if isinstance(view, HeatMap):
-                val = view._data.get(coord, np.NaN)[0]
+                val = view._data.get(coord, np.NaN)
+                val = val[0] if isinstance(val, tuple) else val
             else:
                 val = view[coord]
             val = val_dim.type(val) if val_dim.type else val
