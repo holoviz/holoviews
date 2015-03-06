@@ -18,7 +18,7 @@ import threading
 
 class NotebookArchive(FileArchive):
 
-    export_timeout = param.Integer(default=3, doc="""
+    export_timeout = param.Integer(default=None, allow_None=True,  doc="""
        A timeout in seconds between when the export method is run and
        when export actually occurs.
 
@@ -63,7 +63,8 @@ class NotebookArchive(FileArchive):
         notebook. This method helps ensure the exported data isn't
         stale and generates a warning if the timeout is exceeded.
         """
-        for i in range(self.export_timeout):
+        if parent.export_timeout is None: return
+        for i in range(parent.export_timeout):
             time.sleep(1)
             if parent._exported: break
         else:
