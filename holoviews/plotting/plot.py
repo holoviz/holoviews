@@ -792,7 +792,7 @@ class LayoutPlot(CompositePlot):
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         layout_subplots, layout_axes = {}, {}
-        for (r, c) in self.coords:
+        for num, (r, c) in enumerate(self.coords):
             # Compute the layout type from shape
             wsplits = len(width_ratios[c])
             hsplits = len(height_ratios[r])
@@ -825,7 +825,8 @@ class LayoutPlot(CompositePlot):
                        for ind, proj in zip(gsinds, projs)]
             subplots, adjoint_layout = self._create_subplots(layouts[(r, c)], positions,
                                                              layout_dimensions, frame_ranges,
-                                                             dict(zip(positions, subaxes)))
+                                                             dict(zip(positions, subaxes)),
+                                                             num=num+1)
             layout_axes[(r, c)] = subaxes
 
             # Generate the AdjointLayoutsPlot which will coordinate
@@ -882,7 +883,7 @@ class LayoutPlot(CompositePlot):
         return start, inds, projs
 
 
-    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}):
+    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}, num=1):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -936,7 +937,8 @@ class LayoutPlot(CompositePlot):
                                       dimensions=self.dimensions,
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
-                                      uniform=self.uniform, **plotopts)
+                                      uniform=self.uniform, layout_num=num,
+                                      **plotopts)
             if issubclass(plot_type, CompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
             else:

@@ -10,7 +10,7 @@ import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import valid_identifier, find_minmax
+from ..core.util import valid_identifier, find_minmax, int_to_roman
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -28,6 +28,8 @@ class ElementPlot(Plot):
         the plot as an element of a grid). The modes 'auto' and
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
+
+    labels = param.ObjectSelector(default=None, objects=['Alpha', 'alpha', 'numeric', 'roman'])
 
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
@@ -80,8 +82,9 @@ class ElementPlot(Plot):
     style_opts = []
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
-                 cyclic_index=0, style=None, zorder=0, **params):
+                 cyclic_index=0, style=None, zorder=0, layout_num=1, **params):
         self.map = self._check_map(element, ranges, keys)
+        self.layout_num = layout_num
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
         self.style = Store.lookup_options(self.map.last, 'style') if style is None else style
@@ -233,6 +236,20 @@ class ElementPlot(Plot):
                     yformat = ydim.type_formatters[ydim.type]
                 if yformat:
                     axis.yaxis.set_major_formatter(yformat)
+
+            if self.labels:
+                from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
+                if self.labels == 'Alpha':
+                    ax_label = chr(self.layout_num).upper()
+                elif self.labels == 'alpha':
+                    ax_label = chr(self.layout_num)
+                elif self.labels == 'numeric':
+                    ax_label = self.layout_num
+                elif self.labels == 'roman':
+                    ax_label = int_to_roman(self.layout_num)
+                at = AnchoredText("%s)" % ax_label, loc=3, bbox_to_anchor=(-0.2, 1.),
+                                  bbox_transform=axis.transAxes)
+                axis.add_artist(at)
 
             if not self.show_legend:
                 legend = axis.get_legend()
