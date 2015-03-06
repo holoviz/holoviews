@@ -447,7 +447,8 @@ class contours(ElementOperation):
         for level, cset in zip(self.p.levels, contour_set.collections):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
-            contours[level] = Contours(lines, group=self.p.group)
+            contours[level] = Contours(lines, group=self.p.group,
+                                       label=matrix.label)
 
         plt.close(figure_handle)
         return matrix * contours
