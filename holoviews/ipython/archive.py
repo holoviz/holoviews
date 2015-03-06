@@ -14,8 +14,19 @@ import param
 from ..core.io import FileArchive
 from ..plotting import PlotRenderer, HTML_TAGS
 
+import threading
 
 class NotebookArchive(FileArchive):
+
+    export_timeout = param.Integer(default=3, doc="""
+       A timeout in seconds between when the export method is run and
+       when export actually occurs.
+
+       When 'Run All' is used in the notebook, all cells have to
+       either execute or an Exception has to occurs before the export
+       can occur. This timeout helps avoid exporting stale or partial
+       notebooks and can be avoided by making sure the call to export
+       is the last code cell in your notebook.""")
 
     exporter = param.Callable(default=PlotRenderer)
 
@@ -36,13 +47,34 @@ class NotebookArchive(FileArchive):
         self.notebook = BytesIO()
         self.nbversion = None
         self._replacements = {}
+        self._exported, self._cancel = False, False
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
+
+    def _timeout(self, parent):
+        """
+        Timeout run in a separate thread to allow the notebook to keep
+        running after export is called.
+
+        If you click 'Run All' in the notebook, all code cells are
+        queued which means export may never actually happen (e.g. if
+        an Exception occurs between the export and the end of the
+        notebook. This method helps ensure the exported data isn't
+        stale and generates a warning if the timeout is exceeded.
+        """
+        for i in range(self.export_timeout):
+            time.sleep(1)
+            if parent._exported: break
+        else:
+            parent._cancel = True
+            parent.warning("Export cancelled: export_timeout exceed.\n"
+                           "Make sure to export at the end of your notebook.")
 
     def export(self):
         """
         Get the current notebook data and export.
         """
+        self._cancel, self._exported = False, False
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
         cmd = (r'var kernel = IPython.notebook.kernel;'
@@ -52,6 +84,8 @@ class NotebookArchive(FileArchive):
                + "var pycmd = command + ';%s._export_with_html()';" % name
                + r"kernel.execute(pycmd)")
         display(Javascript(cmd))
+        t = threading.Thread(target=self._timeout, args=(self,))
+        t.start()
 
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
@@ -63,6 +97,7 @@ class NotebookArchive(FileArchive):
 
     def _export_with_html(self):
         "Use nbconvert with Substitute preprocessor"
+        self._exported = True
         try:
             tval = tuple(time.localtime())
             tstamp = time.strftime(self.timestamp_format, tval)
@@ -89,7 +124,8 @@ class NotebookArchive(FileArchive):
             exporter = HTMLExporter()
             exporter.register_preprocessor(Substitute(self.nbversion,
                                                       substitutions))
-            html,_ = exporter.from_notebook_node(node)
+            if not self._cancel:
+                html,_ = exporter.from_notebook_node(node)
         except Exception as e:
             html = "Exception: " + str(e)
             html += traceback.format_exc()
