@@ -84,7 +84,7 @@ class NotebookArchive(FileArchive):
         cmd = (r'var kernel = IPython.notebook.kernel;'
                r'var json_data = IPython.notebook.toJSON();'
                r'var json_string = JSON.stringify(json_data);'
-               + (r"var command = '%s.notebook.write(r\"\"\"'+json_string+'\"\"\".encode(\'utf-16\'))';" % name)
+               + (r"var command = '%s.notebook.write(r\"\"\"'+json_string+'\"\"\".encode(\'utf-8\'))';" % name)
                + "var pycmd = command + ';%s._export_with_html()';" % name
                + r"kernel.execute(pycmd)")
 
@@ -146,8 +146,7 @@ class NotebookArchive(FileArchive):
         try:
             html_filename = self.snapshot_name
             super(NotebookArchive, self).add(filename=html_filename,
-                                             data=html, info={'file-ext':'html',
-                                                              'mime_type':'text/html'})
+                                             data=html, info={'file-ext':'html', 'mime_type':'text/html'})
             # If store cleared_notebook... save here
             super(NotebookArchive, self).export(timestamp=self._timestamp)
         except Exception as e:
@@ -161,7 +160,7 @@ class NotebookArchive(FileArchive):
         if size == 0:
             raise Exception("Captured buffer size for notebook node is zero.")
         self.notebook.seek(0)
-        node = reader.reads(self.notebook.read().decode('utf-16'))
+        node = reader.reads(self.notebook.read().decode('utf-8'))
         self.nbversion = reader.get_version(node)
         self.notebook.close()
         return node
