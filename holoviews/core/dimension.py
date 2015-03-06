@@ -373,7 +373,7 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    constant_dimensions = param.Dict(doc="""
+    constant_dimensions = param.Dict(default={}, doc="""
        A dictionary of Dimension : value providing additional
        dimension information about the object.""")
 
@@ -440,14 +440,15 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
+        lambdas = {'key': (lambda x: x.key_dimensions, {'full_breadth': False}),
+                   'value': (lambda x: x.value_dimensions, {}),
+                   'constant': (lambda x: x.constant_dimensions, {})}
         if selection == 'all':
             dims = [dim for group in self._dim_groups
                     for dim in getattr(self, group)]
-        elif selection == 'key':
-            key_traversal = self.traverse(lambda x: x.key_dimensions, full_breadth=False)
-            dims = [dim for keydims in key_traversal for dim in keydims]
-        elif selection == 'value':
-            key_traversal = self.traverse(lambda x: x.value_dimensions)
+        elif selection in ['key', 'value', 'constant']:
+            lmbd, kwargs = lambdas[selection]
+            key_traversal = self.traverse(lmbd, **kwargs)
             dims = [dim for keydims in key_traversal for dim in keydims]
         else:
             raise KeyError("Invalid selection %r, valid selections include"
