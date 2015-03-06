@@ -243,13 +243,8 @@ class FileArchive(Archive):
             filename = self._format(self.filename_formatter, format_values)
 
         ext = info.get('file-ext', '')
-        if (filename, ext) in self._files:
-            counter = 1
-            while (filename+'-'+str(counter), ext) in self._files:
-                counter += 1
-            self._files[(filename+'-'+str(counter), ext)] = (data, info)
-        else:
-            self._files[(filename, ext)] = (data, info)
+        (unique_key, ext) = self._unique_name(filename, ext, self._files.keys())
+        self._files[(unique_key, ext)] = (data, info)
 
     def _encoding(self, entry):
         (data, info) = entry
@@ -258,22 +253,41 @@ class FileArchive(Archive):
         else:
             return data
 
-    def _zip_archive(self, export_name, files):
-        archname = "%s.zip" % export_name
-        with zipfile.ZipFile(archname, 'w') as zipf:
+    def _zip_archive(self, export_name, files, root):
+        archname = self._unique_name(export_name, 'zip', root, True)
+        with zipfile.ZipFile(os.path.join(root, archname), 'w') as zipf:
             for (basename, ext), entry in files:
                 filename = '%s.%s' % (basename, ext) if ext else basename
                 zipf.writestr(filename, self._encoding(entry))
 
-    def _tar_archive(self, export_name, files):
-        archname = "%s.tar" % export_name
-        with tarfile.TarFile(archname, 'w') as tarf:
+    def _tar_archive(self, export_name, files, root):
+        archname = self._unique_name(export_name, 'tar', root, True)
+        with tarfile.TarFile(os.path.join(root, archname), 'w') as tarf:
             for (basename, ext), entry in files:
                 filename = '%s.%s' % (basename, ext) if ext else basename
                 tarinfo = tarfile.TarInfo(filename)
                 filedata = self._encoding(entry)
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
+
+
+    def _unique_name(self, basename, ext, existing, tostr=False):
+        """
+        Find a unique basename for a new file/key where existing is
+        either a list of (basename, ext) pairs or an absolute path to
+        a directory.
+        """
+        ext = '' if ext is None else ext
+        if isinstance(existing, str):
+            existing = [os.path.splitext(el)
+                        for el in os.listdir(os.path.abspath(existing))]
+        new_name, counter = basename, 1
+        while (new_name, ext) in existing:
+            new_name = basename+'-'+str(counter)
+            counter += 1
+        return ((('%s.%s' % (new_name, ext)) if ext else new_name)
+                if tostr else (new_name, ext))
+
 
     def export(self, timestamp=None):
         """
@@ -287,7 +301,8 @@ class FileArchive(Archive):
         root = os.path.abspath(self.root)
         # Make directory and populate if multiple files and not packed
         if len(self) > 1 and not self.pack:
-            output_dir = os.path.join(root, export_name)
+            output_dir = os.path.join(root,
+                                      self._unique_name(export_name,'', root, True))
             os.makedirs(output_dir)
             for (basename, ext), entry in files:
                 (data, info) = entry
@@ -297,13 +312,13 @@ class FileArchive(Archive):
         elif len(files) == 1:
             ((_, ext), entry) = files[0]
             (data, info) = entry
-            filename = ('%s.%s' % (export_name, ext)) if ext else export_name
+            filename = self._unique_name(export_name, ext, root, True)
             fpath = os.path.join(root, filename)
             with open(fpath, 'w') as f: f.write(data)
         elif self.archive_format == 'zip':
-            self._zip_archive(export_name, files)
+            self._zip_archive(export_name, files, root)
         elif self.archive_format == 'tar':
-            self._tar_archive(export_name, files)
+            self._tar_archive(export_name, files, root)
 
     def _format(self, formatter, info):
         filtered = {k:v for k,v in info.items()
