@@ -63,9 +63,10 @@ class NotebookArchive(FileArchive):
             time.sleep(0.5)
         if not parent._exported:
             parent._cancel = True
-            msg = ("Export \'{export_name}\' cancelled."
-                   "\n\nTimeout of {export_timeout} seconds exceeded"
-                   "\n\nPlease make sure to call export at the very end of your notebook.")
+            msg = (("%s:\n\n" %  self.namespace)
+                + "Export \'{export_name}\' cancelled."
+                + "\n\nTimeout of {export_timeout} seconds exceeded"
+                + "\n\nPlease make sure to call export at the very end of your notebook.")
             msg = msg.format(export_name=export_name, export_timeout=parent.export_timeout)
             display(Javascript("alert({msg});".format(msg=repr(msg))))
 
