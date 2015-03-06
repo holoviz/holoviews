@@ -34,7 +34,7 @@ class NotebookArchive(FileArchive):
         The name of the current in the NotebookArchive instance in the
         IPython namespace that must be available.""")
 
-    snapshot_name = param.String('snapshot', doc="""
+    snapshot_name = param.String('{timestamp}-snapshot', doc="""
         The basename of the exported notebook snapshot (html)""")
 
     auto = param.Boolean(False)
