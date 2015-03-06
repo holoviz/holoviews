@@ -71,9 +71,6 @@ class DFrameViewPlot(ElementPlot):
         dfview = self.map.last
         self._validate(dfview)
 
-        style = self.style[self.cyclic_index]
-        self.style = self._process_style(style)
-
         self._update_plot(dfview)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
@@ -81,19 +78,19 @@ class DFrameViewPlot(ElementPlot):
         return self._finalize_axis(self.keys[-1])
 
 
-    def _process_style(self, styles):
-        style_keys = styles.keys()
+    def _process_style(self, style):
+        style_keys = style.keys()
         for k in style_keys:
             if k not in self.dframe_options[self.plot_type]:
                 self.warning('Plot option %s does not apply to %s plot type.' % (k, self.plot_type))
-                styles.pop(k)
+                style.pop(k)
         if self.plot_type not in ['autocorrelation_plot']:
-            styles['figsize'] = self.size
+            style['figsize'] = self.size
 
         # Legacy fix for Pandas, can be removed for Pandas >0.14
         if self.plot_type == 'boxplot':
-            styles['return_type'] = 'axes'
-        return styles
+            style['return_type'] = 'axes'
+        return style
 
 
     def _validate(self, dfview):
@@ -104,15 +101,16 @@ class DFrameViewPlot(ElementPlot):
 
 
     def _update_plot(self, axis, view):
+        style = self._process_style(self.style[self.cyclic_index])
         if self.plot_type == 'scatter_matrix':
-            pd.scatter_matrix(view.data, ax=axis, **self.style)
+            pd.scatter_matrix(view.data, ax=axis, **style)
         elif self.plot_type == 'autocorrelation_plot':
-            pd.tools.plotting.autocorrelation_plot(view.data, ax=axis, **self.style)
+            pd.tools.plotting.autocorrelation_plot(view.data, ax=axis, **style)
         elif self.plot_type == 'plot':
-            opts = dict({'x': view.x, 'y': view.y}, **self.style)
+            opts = dict({'x': view.x, 'y': view.y}, **style)
             view.data.plot(ax=self.handles['axis'], **opts)
         else:
-            getattr(view.data, self.plot_type)(ax=axis, **self.style)
+            getattr(view.data, self.plot_type)(ax=axis, **style)
 
 
     def update_handles(self, axis, view, key, ranges=None):

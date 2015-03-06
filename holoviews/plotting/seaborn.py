@@ -245,7 +245,6 @@ class SNSFramePlot(DFrameViewPlot):
         if self.plot_type in ['pairgrid', 'pairplot', 'facetgrid']:
             self._create_fig = False
         super(SNSFramePlot, self).__init__(view, **params)
-        self.style = self._process_style(self.style)
 
 
     def __call__(self, ranges=None):
@@ -285,36 +284,37 @@ class SNSFramePlot(DFrameViewPlot):
 
 
     def _update_plot(self, axis, view):
+        style = self._process_style(self.style[self.cyclic_index])
         if self.plot_type == 'factorplot':
-            opts = dict(self.style, **({'hue': view.x2} if view.x2 else {}))
+            opts = dict(style, **({'hue': view.x2} if view.x2 else {}))
             sns.factorplot(x=view.x, y=view.y, data=view.data, **opts)
         elif self.plot_type == 'regplot':
             sns.regplot(x=view.x, y=view.y, data=view.data,
-                        ax=axis, **self.style)
+                        ax=axis, **style)
         elif self.plot_type == 'boxplot':
-            self.style.pop('return_type', None)
-            self.style.pop('figsize', None)
+            style.pop('return_type', None)
+            style.pop('figsize', None)
             sns.boxplot(view.data[view.y], view.data[view.x], ax=axis,
-                        **self.style)
+                        **style)
         elif self.plot_type == 'violinplot':
             sns.violinplot(view.data[view.y], view.data[view.x], ax=axis,
-                           **self.style)
+                           **style)
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
-                             data=view.data, ax=axis, **self.style)
+                             data=view.data, ax=axis, **style)
         elif self.plot_type == 'corrplot':
-            sns.corrplot(view.data, ax=axis, **self.style)
+            sns.corrplot(view.data, ax=axis, **style)
         elif self.plot_type == 'lmplot':
             sns.lmplot(x=view.x, y=view.y, data=view.data,
-                       ax=axis, **self.style)
+                       ax=axis, **style)
         elif self.plot_type in ['pairplot', 'pairgrid', 'facetgrid']:
-            map_opts = [(k, self.style.pop(k)) for k in self.style.keys() if 'map' in k]
+            map_opts = [(k, style.pop(k)) for k in style.keys() if 'map' in k]
             if self.plot_type == 'pairplot':
-                g = sns.pairplot(view.data, **self.style)
+                g = sns.pairplot(view.data, **style)
             elif self.plot_type == 'pairgrid':
-                g = sns.PairGrid(view.data, **self.style)
+                g = sns.PairGrid(view.data, **style)
             elif self.plot_type == 'facetgrid':
-                g = sns.FacetGrid(view.data, **self.style)
+                g = sns.FacetGrid(view.data, **style)
             for opt, args in map_opts:
                 plot_fn = getattr(sns, args[0]) if hasattr(sns, args[0]) else getattr(plt, args[0])
                 getattr(g, opt)(plot_fn, *args[1:])
