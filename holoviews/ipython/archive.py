@@ -18,15 +18,10 @@ import threading
 
 class NotebookArchive(FileArchive):
 
-    export_timeout = param.Integer(default=None, allow_None=True,  doc="""
-       A timeout in seconds between when the export method is run and
-       when export actually occurs.
-
-       When 'Run All' is used in the notebook, all cells have to
-       either execute or an Exception has to occurs before the export
-       can occur. This timeout helps avoid exporting stale or partial
-       notebooks and can be avoided by making sure the call to export
-       is the last code cell in your notebook.""")
+    export_timeout = param.Integer(default=15, doc="""
+       A timeout limit (in seconds) between when the export method is
+       run and when the export process begins. Note that a few more
+       seconds may elapse before the files actually appear on disk.""")
 
     exporter = param.Callable(default=PlotRenderer)
 
@@ -52,7 +47,7 @@ class NotebookArchive(FileArchive):
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
 
-    def _timeout(self, parent):
+    def _timeout(self, parent, export_name):
         """
         Timeout run in a separate thread to allow the notebook to keep
         running after export is called.
@@ -63,14 +58,17 @@ class NotebookArchive(FileArchive):
         notebook. This method helps ensure the exported data isn't
         stale and generates a warning if the timeout is exceeded.
         """
-        if parent.export_timeout is None: return
-        for i in range(parent.export_timeout):
-            time.sleep(1)
-            if parent._exported: break
-        else:
+        timeout = time.time() + (parent.export_timeout if parent.export_timeout else float('inf'))
+        while (time.time() < timeout or parent._exported):
+            time.sleep(0.5)
+        if not parent._exported:
             parent._cancel = True
-            parent.warning("Export cancelled: export_timeout exceed.\n"
-                           "Make sure to export at the end of your notebook.")
+            msg = ("Export \'{export_name}\' cancelled."
+                   "\n\nTimeout of {export_timeout} seconds exceeded"
+                   "\n\nPlease make sure to call export at the very end of your notebook.")
+            msg = msg.format(export_name=export_name, export_timeout=parent.export_timeout)
+            display(Javascript("alert({msg});".format(msg=repr(msg))))
+
 
     def export(self, export_timeout=None, timestamp=None):
         """
@@ -87,13 +85,15 @@ class NotebookArchive(FileArchive):
                + (r"var command = '%s.notebook.write(r\"\"\"'+json_string+'\"\"\".encode(\'utf-16\'))';" % name)
                + "var pycmd = command + ';%s._export_with_html()';" % name
                + r"kernel.execute(pycmd)")
-        display(Javascript(cmd))
-        t = threading.Thread(target=self._timeout, args=(self,))
-        t.start()
+
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp})
-        print('Attempting export %r to %r' % (export_name,
-                                              os.path.join(os.path.abspath(self.root))))
+        info = (export_name, os.path.join(os.path.abspath(self.root)), self.export_timeout)
+        print('Export name:  %r\nDirectory     %r\nTimeout limit: %d seconds' % info)
+        display(Javascript(cmd))
+        t = threading.Thread(target=self._timeout, args=(self,export_name))
+        t.start()
+
 
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
