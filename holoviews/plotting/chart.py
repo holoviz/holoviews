@@ -403,7 +403,7 @@ class SideHistogramPlot(HistogramPlot):
             main = main.values()[0]
 
         if isinstance(main, (Raster, Points)):
-            style = self.style[self.cyclic_index]
+            style = Store.lookup_options(main, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
         else:
