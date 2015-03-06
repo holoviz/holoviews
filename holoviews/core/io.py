@@ -187,7 +187,7 @@ class FileArchive(Archive):
             raise SyntaxError("Could not parse formatter %r" % formatter)
 
     # Mime-types that need encoding as utf-8 before archiving.
-    _utf8_mime_types = ['image/svg+xml']
+    _utf16_mime_types = ['image/svg+xml', 'text/html']
 
     def __init__(self, **params):
         super(FileArchive, self).__init__(**params)
@@ -231,7 +231,7 @@ class FileArchive(Archive):
 
         hashfn = sha256()
         obj_str = 'None' if obj is None else self.object_formatter(obj)
-        hashfn.update(obj_str.encode('utf-8'))
+        hashfn.update(obj_str.encode('utf-16'))
         format_values = {'timestamp': '{timestamp}',
                          'group':   getattr(obj, 'group', 'no-group'),
                          'label':   getattr(obj, 'label', 'no-label'),
@@ -253,8 +253,8 @@ class FileArchive(Archive):
 
     def _encoding(self, entry):
         (data, info) = entry
-        if info['mime_type'] in self._utf8_mime_types:
-            return data.encode('utf-8')
+        if info['mime_type'] in self._utf16_mime_types:
+            return data.encode('utf-16')
         else:
             return data
 
