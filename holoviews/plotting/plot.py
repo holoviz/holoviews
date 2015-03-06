@@ -446,7 +446,7 @@ class GridPlot(CompositePlot):
                                                 dimensions=self.dimensions, show_title=False,
                                                 subplot=not create_axes, ranges=frame_ranges,
                                                 uniform=self.uniform)
-                collapsed_layout[coord] = subplot.map
+                collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
                 r += 1
