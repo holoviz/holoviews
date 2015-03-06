@@ -388,10 +388,11 @@ class Layout(AttrTree, Dimensioned):
                 return self.data.values()[key]
             raise KeyError("Element out of range.")
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
+            if key == (slice(None), slice(None)): return self
             row, col = key
-            idx = row * self._cols + col
+            idx = row * self._max_cols + col
             keys = list(self.data.keys())
-            if idx >= len(keys) or col >= self._cols:
+            if idx >= len(keys) or col >= self._max_cols:
                 raise KeyError('Index %s is outside available item range' % str(key))
             key = keys[idx]
         return super(Layout, self).__getitem__(key)
