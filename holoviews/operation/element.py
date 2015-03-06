@@ -450,7 +450,7 @@ class contours(ElementOperation):
             contours[level] = Contours(lines, group=self.p.group)
 
         plt.close(figure_handle)
-        return Overlay.from_values(matrix * contours)
+        return matrix * contours
 
 
 
