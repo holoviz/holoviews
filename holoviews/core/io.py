@@ -133,7 +133,7 @@ class FileArchive(Archive):
        the value used in the {obj} field of the filename
        formatter.""")
 
-    filename_formatter = param.String('{group}-{label}-{obj}', doc="""
+    filename_formatter = param.String('{group}-{label}-{obj:.40}', doc="""
          A string formatter for output filename based on the HoloViews
          object that is being rendered to disk.
 
