@@ -260,14 +260,14 @@ class FileArchive(Archive):
         with zipfile.ZipFile(os.path.join(root, archname), 'w') as zipf:
             for (basename, ext), entry in files:
                 filename = '%s.%s' % (basename, ext) if ext else basename
-                zipf.writestr(filename, self._encoding(entry))
+                zipf.writestr(('%s/%s' % (export_name, filename)), self._encoding(entry))
 
     def _tar_archive(self, export_name, files, root):
         archname = self._unique_name(export_name, 'tar', root, True)
         with tarfile.TarFile(os.path.join(root, archname), 'w') as tarf:
             for (basename, ext), entry in files:
                 filename = '%s.%s' % (basename, ext) if ext else basename
-                tarinfo = tarfile.TarInfo(filename)
+                tarinfo = tarfile.TarInfo('%s/%s' % (export_name, filename))
                 filedata = self._encoding(entry)
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
