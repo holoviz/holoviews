@@ -48,6 +48,7 @@ class NotebookArchive(FileArchive):
         self.nbversion = None
         self._replacements = {}
         self._exported, self._cancel = False, False
+        self._timestamp = None
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
 
@@ -70,10 +71,12 @@ class NotebookArchive(FileArchive):
             parent.warning("Export cancelled: export_timeout exceed.\n"
                            "Make sure to export at the end of your notebook.")
 
-    def export(self):
+    def export(self, export_timeout=None, timestamp=None):
         """
         Get the current notebook data and export.
         """
+        self.export_timeout = export_timeout if export_timeout else self.export_timeout
+        self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
         self._cancel, self._exported = False, False
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
@@ -86,6 +89,10 @@ class NotebookArchive(FileArchive):
         display(Javascript(cmd))
         t = threading.Thread(target=self._timeout, args=(self,))
         t.start()
+        tstamp = time.strftime(self.timestamp_format, self._timestamp)
+        export_name = self._format(self.export_name, {'timestamp':tstamp})
+        print('Attempting export %r to %r' % (export_name,
+                                              os.path.join(os.path.abspath(self.root))))
 
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
@@ -99,8 +106,7 @@ class NotebookArchive(FileArchive):
         "Use nbconvert with Substitute preprocessor"
         self._exported = True
         try:
-            tval = tuple(time.localtime())
-            tstamp = time.strftime(self.timestamp_format, tval)
+            tstamp = time.strftime(self.timestamp_format, self._timestamp)
 
             substitutions = {}
             for (basename, ext), entry in self._files.items():
@@ -136,7 +142,7 @@ class NotebookArchive(FileArchive):
                                              data=html, info={'file-ext':'html',
                                                               'mime_type':'text/html'})
             # If store cleared_notebook... save here
-            super(NotebookArchive, self).export(timestamp=tval)
+            super(NotebookArchive, self).export(timestamp=self._timestamp)
         except Exception as e:
             self.traceback = traceback.format_exc()
 
