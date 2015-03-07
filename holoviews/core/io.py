@@ -114,7 +114,8 @@ class Archive(param.Parameterized):
 
 
 def name_generator(obj):
-    return '_'.join(obj.traverse(lambda x: x.group+'-'+str(x.__class__.__name__)))
+    return ','.join(obj.traverse(lambda x: (x.group
+                                            + ('-'  +x.label if x.label else ''))))
 
 
 class FileArchive(Archive):
