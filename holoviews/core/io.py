@@ -102,6 +102,14 @@ class Archive(param.Parameterized):
       The exporter function used to convert HoloViews objects into the
       appropriate format."""  )
 
+    def __call__(self, **kwargs):
+        """
+        Convenience method for setting multiple parameters on an
+        Archive instance.
+        """
+        for k, v in kwargs.items():
+            self.set_param(k,v)
+
     def add(self, obj, *args, **kwargs):
         """
         Add a HoloViews object to the archive.
