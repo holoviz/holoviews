@@ -1,7 +1,9 @@
-import time
-import os
-import json
-import traceback
+"""
+Implements NotebookArchive used to automatically capture notebook data
+and export it to disk via the display hooks.
+"""
+
+import time, os, json, traceback, threading
 from io import BytesIO
 
 from IPython.nbformat import reader
@@ -14,9 +16,14 @@ import param
 from ..core.io import FileArchive
 from ..plotting import PlotRenderer, HTML_TAGS
 
-import threading
+
 
 class NotebookArchive(FileArchive):
+    """
+    FileArchive that can automatically capture notebook data via the
+    display hooks and automatically adds a notebook HTML snapshot to
+    the archive upon export.
+    """
 
     export_timeout = param.Integer(default=15, doc="""
        A timeout limit (in seconds) between when the export method is
@@ -52,13 +59,12 @@ class NotebookArchive(FileArchive):
         """
         Timeout run in a separate thread to allow the notebook to keep
         running after export is called.
-
-        If you click 'Run All' in the notebook, all code cells are
-        queued which means export may never actually happen (e.g. if
-        an Exception occurs between the export and the end of the
-        notebook. This method helps ensure the exported data isn't
-        stale and generates a warning if the timeout is exceeded.
         """
+        # If you click 'Run All' in the notebook, all code cells are
+        # queued which means export may never actually happen (e.g. if
+        # an Exception occurs between the export and the end of the
+        # notebook. This method makes sure the user knows if the
+        # export has not occured (via an alert) using a timeout.
         timeout = time.time() + (parent.export_timeout if parent.export_timeout else float('inf'))
         while (time.time() < timeout or parent._exported):
             time.sleep(0.5)
@@ -81,11 +87,13 @@ class NotebookArchive(FileArchive):
         self._cancel, self._exported = False, False
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
+        capture_cmd = ((r"var capture = '%s.notebook.write(r\"\"\"'" % name)
+                       + r"+json_string+'\"\"\".encode(\'utf-8\'))';")
         cmd = (r'var kernel = IPython.notebook.kernel;'
                r'var json_data = IPython.notebook.toJSON();'
                r'var json_string = JSON.stringify(json_data);'
-               + (r"var command = '%s.notebook.write(r\"\"\"'+json_string+'\"\"\".encode(\'utf-8\'))';" % name)
-               + "var pycmd = command + ';%s._export_with_html()';" % name
+               + capture_cmd
+               + "var pycmd = capture + ';%s._export_with_html()';" % name
                + r"kernel.execute(pycmd)")
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
@@ -97,19 +105,19 @@ class NotebookArchive(FileArchive):
         t.start()
 
 
-
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
-
+        "Similar to FileArchive.add but accepts html strings for substitution"
         initial_last_key = self._files.keys()[-1] if len(self) else None
         if self.auto:
             super(NotebookArchive, self).add(obj, filename, data, info)
+            # Only add substitution if file successfully added to archive.
             new_last_key = self._files.keys()[-1] if len(self) else None
             if new_last_key != initial_last_key:
                 self._replacements[new_last_key] = html
 
 
     def _export_with_html(self):
-        "Use nbconvert with Substitute preprocessor"
+        "Computes substitions before using nbconvert with preprocessors"
         self._exported = True
         try:
             tstamp = time.strftime(self.timestamp_format, self._timestamp)
