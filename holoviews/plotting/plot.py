@@ -120,14 +120,14 @@ class Plot(param.Parameterized):
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
         return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, (groupwise, mapwise) in norm_opts.items():
+        for group, (axiswise, framewise) in norm_opts.items():
             if group in ranges:
                 continue # Skip if ranges are already computed
-            elif mapwise: # Traverse to get all elements
+            elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 elements = self._get_frame(key).traverse(return_fn, [group])
-            if groupwise or (mapwise and isinstance(obj, HoloMap)): # Compute new ranges
+            if not axiswise or (not framewise and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
         return ranges
 
@@ -166,11 +166,11 @@ class Plot(param.Parameterized):
                               for i in range(1, 4))
                 if applies and 'norm' in opts.groups:
                     nopts = opts['norm'].options
-                    if 'groupwise' in nopts or 'mapwise' in nopts:
-                        norm_opts.update({path: (opts['norm'].options.get('groupwise', True),
-                                                 opts['norm'].options.get('mapwise', True))})
+                    if 'axiswise' in nopts or 'framewise' in nopts:
+                        norm_opts.update({path: (opts['norm'].options.get('axiswise', False),
+                                                 opts['norm'].options.get('framewise', False))})
         element_specs = [spec for eid, spec in element_specs]
-        norm_opts.update({spec: (True, True) for spec in element_specs
+        norm_opts.update({spec: (False, False) for spec in element_specs
                           if not any(spec[1:i] in norm_opts.keys() for i in range(1, 3))})
         return norm_opts
 

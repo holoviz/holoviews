@@ -733,9 +733,9 @@ class Store(object):
 
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                 opt_groups.update({'style': Options(allowed_keywords=style_opts),
-                                   'norm':  Options(mapwise=True, groupwise=True,
-                                                    allowed_keywords=['groupwise',
-                                                                      'mapwise'])})
+                                   'norm':  Options(framewise=False, axiswise=False,
+                                                    allowed_keywords=['framewise',
+                                                                      'axiswise'])})
             path_items[name] = opt_groups
 
         cls.options = OptionTree(sorted(path_items.items()),

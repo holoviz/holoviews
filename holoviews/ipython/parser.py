@@ -172,7 +172,7 @@ class OptsSpec(Parser):
         opts = parse_group['norm_options'][0].asList()
         if opts == []: return None
 
-        options = ['+mapwise', '-mapwise', '+groupwise', '-groupwise']
+        options = ['+framewise', '-framewise', '+axiswise', '-axiswise']
 
         for normopt in options:
             if opts.count(normopt) > 1:
@@ -182,25 +182,25 @@ class OptsSpec(Parser):
         if not all(opt in options for opt in opts):
             raise SyntaxError("Normalization option not one of %s"
                               % ", ".join(options))
-        excluded = [('+mapwise', '-mapwise'), ('+groupwise', '-groupwise')]
+        excluded = [('+framewise', '-framewise'), ('+axiswise', '-axiswise')]
         for pair in excluded:
             if all(exclude in opts for exclude in pair):
                 raise SyntaxError("Normalization specification cannot"
                                   " contain both %s and %s" % (pair[0], pair[1]))
 
-        # If unspecified, default is +groupwise and +mapwise
-        if len(opts) == 1 and opts[0].endswith('mapwise'):
-            groupwise = True
-            mapwise =   True if '+mapwise' in opts else False
-        elif len(opts) == 1 and opts[0].endswith('groupwise'):
-            mapwise = True
-            groupwise = True if '+groupwise' in opts else False
+        # If unspecified, default is -axiswise and framewise
+        if len(opts) == 1 and opts[0].endswith('framewise'):
+            axiswise = False
+            framewise = True if '+framewise' in opts else False
+        elif len(opts) == 1 and opts[0].endswith('axiswise'):
+            framewise = False
+            axiswise = True if '+axiswise' in opts else False
         else:
-            groupwise = True if '+groupwise' in opts else False
-            mapwise =   True if '+mapwise' in opts else False
+            axiswise = True if '+axiswise' in opts else False
+            framewise =   True if '+framewise' in opts else False
 
-        return dict(groupwise=groupwise,
-                    mapwise=mapwise)
+        return dict(axiswise=axiswise,
+                    framewise=framewise)
 
 
 

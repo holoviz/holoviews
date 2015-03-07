@@ -400,7 +400,7 @@ class OptsCompleter(object):
             return [kw+'=' for kw in completions[completion_key][0]]
 
         if cls._inside_delims(line, '{', '}') or cls._inside_delims(line, 'norm{', '}'):
-            return ['-groupwise', '-mapwise']
+            return ['+axiswise', '+framewise']
 
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
         if cls._inside_delims(line, '(', ')') or cls._inside_delims(line, 'style(', ')'):
@@ -506,8 +506,8 @@ class OptsMagic(Magics):
                           (e.g. Image.Grayscale.Photo)
 
         normalization:    List of normalization options delimited by braces.
-                          One of | -groupwise | -mapwise | +groupwise | +mapwise |
-                          E.g. { -groupwise -mapwise }
+                          One of | -axiswise | -framewise | +axiswise | +framewise |
+                          E.g. { +axiswise +framewise }
 
         plotting options: List of plotting option keywords delimited by
                           square brackets. E.g. [show_title=False]
