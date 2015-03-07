@@ -357,9 +357,9 @@ class NdElement(Element, NdMapping):
     def dimension_values(self, dim):
         if isinstance(dim, Dimension):
             raise Exception('Dimension to be specified by name')
-        if dim in self.dimensions('value', label=True):
-            if len(self.value_dimensions) == 1: return self.values()
-            index = [v.name for v in self.value_dimensions].index(dim)
+        value_dims = self.dimensions('value', label=True)
+        if dim in value_dims:
+            index = value_dims.index(dim)
             return [v[index] for v in self.values()]
         else:
             return NdMapping.dimension_values(self, dim)
