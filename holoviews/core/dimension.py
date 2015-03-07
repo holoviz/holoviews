@@ -6,6 +6,11 @@ baseclass for classes that accept Dimension values.
 from operator import itemgetter
 import numpy as np
 
+try:
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
+
 import param
 
 from ..core.util import valid_identifier
@@ -373,7 +378,7 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    constant_dimensions = param.Dict(default={}, doc="""
+    constant_dimensions = param.Dict(default=OrderedDict(), doc="""
        A dictionary of Dimension : value providing additional
        dimension information about the object.""")
 
@@ -402,11 +407,17 @@ class Dimensioned(LabelledData):
     def __init__(self, data, **params):
         for group in self._dim_groups[0:2]:
             if group in params:
-                dimensions = [Dimension(d) if not isinstance(d, Dimension) else d
-                              for d in params.pop(group)]
+                if 'constant' in group:
+                    dimensions = {d if isinstance(d, Dimension) else Dimension(d): val
+                                  for d, val in params.pop(group)}
+                else:
+                    dimensions = [d if isinstance(d, Dimension) else Dimension(d)
+                                  for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(data, **params)
         self.ndims = len(self.key_dimensions)
+        constant_dimensions = [(d.name, val) for d, val in self.constant_dimensions.items()]
+        self._cached_constants = OrderedDict(constant_dimensions)
         self._cached_index_names = [d.name for d in self.key_dimensions]
         self._cached_value_names = [d.name for d in self.value_dimensions]
         self._settings = None
@@ -536,7 +547,12 @@ class Dimensioned(LabelledData):
         Returns the values along the specified dimension. This method
         must be implemented for all Dimensioned type.
         """
-        raise NotImplementedError
+        val = self._cached_constants.get(dimension, None)
+        if val:
+            return val
+        else:
+            raise Exception("Dimension %s not found in %s." %
+                            (dimension, self.__class__.__name__))
 
 
     def range(self, dim, data_range=True):

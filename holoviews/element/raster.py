@@ -161,7 +161,7 @@ class Raster(Element2D):
         elif dim_idx == 2:
             return self.data.T.flatten()
         else:
-            raise Exception("Dimension not found.")
+            return super(Raster, self).dimension_values(dim)
 
 
     @property
@@ -264,7 +264,7 @@ class HeatMap(Raster):
             return [v if isinstance(v, tuple) else v
                     for v in self._data.values()]
         else:
-            raise Exception("Dimension %s not found." % dim)
+            return super(HeatMap, self).dimension_values(dim)
 
 
     def dframe(self, dense=False):
@@ -413,7 +413,7 @@ class Image(SheetCoordinateSystem, Raster):
         elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
         else:
-            raise Exception("Dimension not found.")
+            super(Image, self).dimension_values(dim)
 
 
 

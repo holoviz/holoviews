@@ -33,8 +33,13 @@ class Annotation(Element2D):
         self._ylim = (0, 1) if self._ylim is None else self._ylim
 
     def dimension_values(self, dimension):
-        return []
-
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return [self.data if np.isscalar(self.data) else self.data[index]]
+        elif index == 1:
+            return [] if np.isscalar(self.data) else [self.data[1]]
+        else:
+            return super(Annotation, self).dimension_values(dimension)
 
 
 class VLine(Annotation):

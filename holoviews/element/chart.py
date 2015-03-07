@@ -156,7 +156,11 @@ class Chart(Element2D):
 
     def dimension_values(self, dim):
         index = self.get_dimension_index(dim)
-        return self.data[:, index]
+        if index < len(self.dimensions()):
+            return self.data[:, index]
+        else:
+            return super(Chart, self).dimension_values(dim)
+
 
     def dframe(self):
         import pandas as pd
@@ -285,7 +289,7 @@ class Histogram(Element2D):
         elif dim in self._cached_index_names:
             return self.edges
         else:
-            raise Exception("Could not find dimension.")
+            return super(Histogram, self).dimension_values(dim)
 
 
     def sample(self, **samples):
@@ -370,8 +374,7 @@ class Points(Chart):
             else:
                 return [np.NaN] * len(self)
         else:
-            raise Exception("Dimension %s not found in %s." %
-                            (dim, self.__class__.__name__))
+            return super(Points, self).dimension_values(dim)
 
 
 

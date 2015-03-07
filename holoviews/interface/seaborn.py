@@ -55,6 +55,8 @@ class TimeSeries(Element2D):
             return self.data.flatten()
         elif dim_idx == 2:
             return range(self.data.shape[1])
+        else:
+            return super(TimeSeries, self).dimension_values(dimension)
 
 
     def sample(self, **samples):
@@ -116,7 +118,7 @@ class Distribution(Chart):
         elif dim_idx == 1:
             return []
         else:
-            raise KeyError("Dimension %s not found" % str(dimension))
+            return super(Distribution, self).dimension_values(dimension)
 
 
 class Regression(Scatter):

@@ -93,7 +93,7 @@ class CompositeOverlay(ViewableElement, Composable):
                 values.append(el.dimension_values(dimension))
                 found = True
         if not found:
-            raise KeyError("Dimension %s was not found." % dimension)
+            return super(CompositeOverlay, self).dimension_values(dimension)
         values = [v for v in values if v is not None and len(v)]
         return np.concatenate(values) if len(values) else []
 

@@ -361,10 +361,8 @@ class NdElement(Element, NdMapping):
             if len(self.value_dimensions) == 1: return self.values()
             index = [v.name for v in self.value_dimensions].index(dim)
             return [v[index] for v in self.values()]
-        elif dim in self._cached_index_names:
-            return NdMapping.dimension_values(self, dim)
         else:
-            raise Exception('Dimension not found.')
+            return NdMapping.dimension_values(self, dim)
 
 
     def dframe(self, value_label='data'):

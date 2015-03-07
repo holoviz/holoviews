@@ -5,16 +5,12 @@ also enables slicing over multiple dimension ranges.
 """
 
 from operator import itemgetter
-try:
-    from cyordereddict import OrderedDict
-except:
-    from collections import OrderedDict
 import numpy as np
 
 import param
 
 from . import traversal
-from .dimension import Dimension, Dimensioned, ViewableElement
+from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import unique_iterator
 
 
@@ -270,14 +266,13 @@ class MultiDimensionalMapping(Dimensioned):
             dimension = all_dims[dimension]
 
         if dimension in self._cached_index_names:
-            values = [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
+            return [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
         elif dimension in all_dims:
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
-            values = np.concatenate(values)
+            return np.concatenate(values)
         else:
-            raise Exception('Dimension %s not found.' % dimension)
-        return values
+            return super(NdIndexableMapping, self).dimension_values(dimension)
 
 
     def reindex(self, dimension_labels=[], force=False):

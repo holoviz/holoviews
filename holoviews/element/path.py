@@ -68,7 +68,7 @@ class Path(Element2D):
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx >= len(self.dimensions()):
-            raise KeyError('Dimension %s not found' % str(dimension))
+            return super(Path, self).dimension_values(dimension)
         values = []
         for contour in self.data:
             values.append(contour[:, dim_idx])
