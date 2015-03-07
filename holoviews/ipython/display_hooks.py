@@ -182,6 +182,14 @@ def display_hook(fn):
                       widget_mode = widget_mode,
                       **kwargs)
             notebook_archive.add(view, html=html)
+            keys = ['fig', 'holomap', 'size', 'fps', 'dpi']
+            filename = OutputMagic.options['filename']
+            if filename:
+                options = {k:OutputMagic.options[k] for k in keys}
+                if options['holomap']  in OutputMagic.inbuilt_formats:
+                    options['holomap'] = None
+                PlotRenderer.instance(**options).save(view, filename)
+
             return html
         except:
             if ENABLE_TRACEBACKS:
