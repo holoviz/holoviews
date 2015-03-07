@@ -348,6 +348,17 @@ class Layout(AttrTree, Dimensioned):
         return clone
 
 
+    def dimension_values(self, dimension):
+        "Returns the values along the specified dimension."
+        all_dims = [d.name for d in self.dimensions()]
+        if dimension in all_dims:
+            values = [el.dimension_values(dimension) for el in self
+                      if dimension in el.dimensions(label=True)]
+            return np.concatenate(values)
+        else:
+            return super(Layout, self).dimension_values(dimension)
+
+
     def cols(self, ncols):
         self._max_cols = ncols
         return self
