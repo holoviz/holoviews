@@ -188,7 +188,7 @@ class OptsSpec(Parser):
                 raise SyntaxError("Normalization specification cannot"
                                   " contain both %s and %s" % (pair[0], pair[1]))
 
-        # If unspecified, default is -axiswise and framewise
+        # If unspecified, default is -axiswise and -framewise
         if len(opts) == 1 and opts[0].endswith('framewise'):
             axiswise = False
             framewise = True if '+framewise' in opts else False
@@ -197,7 +197,7 @@ class OptsSpec(Parser):
             axiswise = True if '+axiswise' in opts else False
         else:
             axiswise = True if '+axiswise' in opts else False
-            framewise =   True if '+framewise' in opts else False
+            framewise = True if '+framewise' in opts else False
 
         return dict(axiswise=axiswise,
                     framewise=framewise)
