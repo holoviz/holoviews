@@ -4,9 +4,10 @@ and export it to disk via the display hooks.
 """
 
 import time, os, json, traceback, threading
-from io import BytesIO
+import io
 
 from IPython.nbformat import reader
+from IPython.nbformat import convert
 from IPython.display import Javascript, display
 
 from IPython.nbconvert.preprocessors import Preprocessor
@@ -16,6 +17,25 @@ import param
 from ..core.io import FileArchive
 from ..plotting import PlotRenderer, HTML_TAGS
 
+try:  # IPython 3
+    from IPython.nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
+    from IPython.nbconvert import NotebookExporter
+except:
+    # IPython 2
+    from IPython.nbformat import current
+    NotebookExporter, ClearOutputPreprocessor = None, None
+
+    def v3_strip_output(nb):
+        """strip the outputs from a notebook object"""
+        nb["nbformat"] = 3
+        nb["nbformat_minor"] = 0
+        nb.metadata.pop('signature', None)
+        for cell in nb.worksheets[0].cells:
+            if 'outputs' in cell:
+                cell['outputs'] = []
+            if 'prompt_number' in cell:
+                cell['prompt_number'] = None
+        return nb
 
 
 class NotebookArchive(FileArchive):
@@ -88,7 +108,7 @@ class NotebookArchive(FileArchive):
         self.export_timeout = export_timeout if export_timeout else self.export_timeout
         self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
         self._cancel, self._exported = False, False
-        self.notebook = BytesIO()
+        self.notebook = io.BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
         capture_cmd = ((r"var capture = '%s.notebook.write(r\"\"\"'" % name)
@@ -122,6 +142,25 @@ class NotebookArchive(FileArchive):
                 self._replacements[new_last_key] = html
 
 
+    def _generate_html(self, node, substitutions):
+        exporter = HTMLExporter()
+        exporter.register_preprocessor(Substitute(self.nbversion,
+                                                  substitutions))
+        html,_ = exporter.from_notebook_node(node)
+        return html
+
+
+    def _clear_notebook(self, node):
+        if NotebookExporter is not None:
+            exporter = NotebookExporter()
+            exporter.register_preprocessor(ClearOutputPreprocessor(enabled=True))
+            cleared,_ = exporter.from_notebook_node(node)
+        else:
+            stripped_node = v3_strip_output(node)
+            cleared = current.writes(node, 'ipynb')
+        return cleared
+
+
     def _export_with_html(self):
         "Computes substitions before using nbconvert with preprocessors"
         self._exported = True
@@ -146,21 +185,24 @@ class NotebookArchive(FileArchive):
                                          {'src':fpath, 'mime_type':info['mime_type']})
                 substitutions[html_key] = (link_html, fpath)
 
-
             node = self._get_notebook_node()
-            exporter = HTMLExporter()
-            exporter.register_preprocessor(Substitute(self.nbversion,
-                                                      substitutions))
             if not self._cancel:
-                html,_ = exporter.from_notebook_node(node)
+                html = self._generate_html(node, substitutions)
         except Exception as e:
             html = "Exception: " + str(e)
             html += traceback.format_exc()
 
         try:
-            html_filename = self.snapshot_name
-            super(NotebookArchive, self).add(filename=html_filename,
-                                             data=html, info={'file-ext':'html', 'mime_type':'text/html'})
+            export_filename = self.snapshot_name
+            # Add the html snapshot
+            super(NotebookArchive, self).add(filename=export_filename,
+                                             data=html, info={'file-ext':'html',
+                                                              'mime_type':'text/html'})
+            # Add cleared notebook
+            cleared = self._clear_notebook(node)
+            super(NotebookArchive, self).add(filename=export_filename,
+                                             data=cleared, info={'file-ext':'ipynb',
+                                                                 'mime_type':'text/json'})
             # If store cleared_notebook... save here
             super(NotebookArchive, self).export(timestamp=self._timestamp)
         except Exception as e:
