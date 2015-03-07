@@ -176,10 +176,11 @@ class PlotRenderer(Exporter):
         """
         rendered = self(obj, fmt)
         if rendered is None: return
-        filename ='%s.%s' % (basename, fmt)
+        (data, info) = rendered
+        filename ='%s.%s' % (basename, info['file-ext'])
         if self._capture_mode == 1: return
         with open(filename, 'w') as f:
-            f.write(rendered[0])
+            f.write(data)
 
     def anim_data(self, anim, fmt, writer, **anim_kwargs):
         """
