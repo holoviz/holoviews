@@ -47,7 +47,7 @@ class NotebookArchive(FileArchive):
 
     def __init__(self, **params):
         super(NotebookArchive, self).__init__(**params)
-        self.notebook = BytesIO()
+        self.notebook = None
         self.nbversion = None
         self._replacements = {}
         self._exported, self._cancel = False, False
@@ -87,6 +87,7 @@ class NotebookArchive(FileArchive):
         self.export_timeout = export_timeout if export_timeout else self.export_timeout
         self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
         self._cancel, self._exported = False, False
+        self.notebook = BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
         capture_cmd = ((r"var capture = '%s.notebook.write(r\"\"\"'" % name)
