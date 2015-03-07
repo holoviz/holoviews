@@ -354,10 +354,13 @@ class FileArchive(Archive):
             counter += 1
         return (new_name, ext)
 
-    def _normalize_name(self, basename, ext=''):
-        max_len = 100-(len(ext)+1)
+
+    def _normalize_name(self, basename, ext='', tail=10, join='...', maxlen=100):
+        max_len = maxlen-len(ext)
         if len(basename) > max_len:
-            basename = basename[:max_len]
+            start = basename[:max_len-(tail + len(join))]
+            end = basename[-tail:]
+            basename = start + join + end
         filename = '%s.%s' % (basename, ext) if ext else basename
         return filename.replace(' ', '_')
 
