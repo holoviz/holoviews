@@ -66,8 +66,10 @@ class NotebookArchive(FileArchive):
         # notebook. This method makes sure the user knows if the
         # export has not occured (via an alert) using a timeout.
         timeout = time.time() + (parent.export_timeout if parent.export_timeout else float('inf'))
-        while (time.time() < timeout or parent._exported):
+        while (time.time() < timeout):
             time.sleep(0.5)
+            if parent._exported: return
+
         if not parent._exported:
             parent._cancel = True
             msg = (("%s:\n\n" %  self.namespace)
