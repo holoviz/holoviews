@@ -61,12 +61,12 @@ class TestOptsMagic(ExtensionTestCase):
         self.cell("mat1 = Image(np.random.rand(5,5), name='mat1')")
 
         self.assertEqual(self.get_object('mat1').id, None)
-        self.cell_magic('opts', " Image {-groupwise}", 'mat1')
+        self.cell_magic('opts', " Image {+axiswise}", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
         assert 0 in Store.custom_options, "Custom OptionTree creation failed"
         self.assertEqual(
-            Store.lookup_options(self.get_object('mat1'), 'norm').options.get('groupwise',True), False)
+            Store.lookup_options(self.get_object('mat1'), 'norm').options.get('axiswise',True), True)
 
 
 
