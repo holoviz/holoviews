@@ -52,6 +52,7 @@ class NotebookArchive(FileArchive):
         self._replacements = {}
         self._exported, self._cancel = False, False
         self._timestamp = None
+        self._thread = None
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
 
@@ -104,8 +105,10 @@ class NotebookArchive(FileArchive):
         info = (export_name, os.path.join(os.path.abspath(self.root)), self.export_timeout)
         print('Export name:  %r\nDirectory     %r\nTimeout limit: %d seconds' % info)
         display(Javascript(cmd))
-        t = threading.Thread(target=self._timeout, args=(self,export_name))
-        t.start()
+        self._thread = threading.Thread(target=self._timeout,
+                             name=str(self._timestamp),
+                             args=(self,export_name))
+        self._thread.start()
 
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
