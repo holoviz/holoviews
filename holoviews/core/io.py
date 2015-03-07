@@ -25,6 +25,9 @@ from hashlib import sha256
 from .ndmapping import OrderedDict
 import param
 
+from holoviews.core.util import unique_iterator
+
+
 
 class Exporter(param.ParameterizedFunction):
     """
@@ -117,7 +120,6 @@ def name_generator(obj):
     return ','.join(obj.traverse(lambda x: (x.group
                                             + ('-'  +x.label if x.label else ''))))
 
-
 class FileArchive(Archive):
     """
     A file archive stores files on disk, either unpacked in a
@@ -134,7 +136,7 @@ class FileArchive(Archive):
        the value used in the {obj} field of the filename
        formatter.""")
 
-    filename_formatter = param.String('{group}-{label}-{obj}', doc="""
+    filename_formatter = param.String('{dimensions}-{group}-{label}-{obj}', doc="""
          A string formatter for output filename based on the HoloViews
          object that is being rendered to disk.
 
@@ -145,6 +147,11 @@ class FileArchive(Archive):
          representation as returned by object_formatter and {SHA} is
          the SHA of the {obj} value used to compress it into a shorter
          string.""")
+
+    dimension_formatter = param.String("{dim}_{lower}-{upper}", doc="""
+       Format the objects dimensions using the set of optional format
+       fields {dim}, {lower} and {upper}. Used to set the {dimensions}
+       field in the filename formatter.""")
 
     timestamp_format = param.String("%Y_%m_%d-%H_%M_%S", doc="""
         The timestamp format that will be substituted for the
@@ -197,8 +204,18 @@ class FileArchive(Archive):
         self._validate_formatters()
 
 
+    def _dim_formatter(self, obj):
+        dims = unique_iterator(obj.dimensions('key', label=True)
+                               + obj.dimensions('constant', label=True))
+        dim_strings = []
+        for dim in dims:
+            dim_range = obj.range(dim)
+            info = dict(dim=dim, lower=dim_range[0], upper=dim_range[1])
+            dim_strings.append(self._format(self.dimension_formatter, info))
+        return '_'.join(dim_strings)
+
     def _validate_formatters(self):
-        ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp'}
+        ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
         efields = {'timestamp'}
         if not self.parse_fields(self.filename_formatter).issubset(ffields):
             raise Exception("Valid filename fields are: %s" % ','.join(sorted(ffields)))
@@ -234,8 +251,12 @@ class FileArchive(Archive):
 
         hashfn = sha256()
         obj_str = 'None' if obj is None else self.object_formatter(obj)
+        try:     dimensions = self._dim_formatter(obj)
+        except:  dimensions = 'no-dimensions'
+
         hashfn.update(obj_str.encode('utf-8'))
         format_values = {'timestamp': '{timestamp}',
+                         'dimensions': dimensions,
                          'group':   getattr(obj, 'group', 'no-group'),
                          'label':   getattr(obj, 'label', 'no-label'),
                          'type':    obj.__class__.__name__,
