@@ -22,11 +22,11 @@ import tarfile
 
 from io import BytesIO
 from hashlib import sha256
-from .ndmapping import OrderedDict
+
 import param
 
-from holoviews.core.util import unique_iterator
-
+from .util import unique_iterator
+from .ndmapping import OrderedDict, UniformNdMapping
 
 
 class Exporter(param.ParameterizedFunction):
@@ -148,11 +148,6 @@ class FileArchive(Archive):
          the SHA of the {obj} value used to compress it into a shorter
          string.""")
 
-    dimension_formatter = param.String("{dim}_{lower}-{upper}", doc="""
-       Format the objects dimensions using the set of optional format
-       fields {dim}, {lower} and {upper}. Used to set the {dimensions}
-       field in the filename formatter.""")
-
     timestamp_format = param.String("%Y_%m_%d-%H_%M_%S", doc="""
         The timestamp format that will be substituted for the
         {timestamp} field in the export name.""")
@@ -205,14 +200,25 @@ class FileArchive(Archive):
 
 
     def _dim_formatter(self, obj):
-        dims = unique_iterator(obj.dimensions('key', label=True)
-                               + obj.dimensions('constant', label=True))
+        if not obj: return ''
+        key_dims = obj.traverse(lambda x: x.key_dimensions, [UniformNdMapping])
+        constant_dims = obj.traverse(lambda x: x.constant_dimensions)
+        dims = []
+        map(dims.extend, key_dims + constant_dims)
+        dims = unique_iterator(dims)
         dim_strings = []
         for dim in dims:
-            dim_range = obj.range(dim)
-            info = dict(dim=dim, lower=dim_range[0], upper=dim_range[1])
-            dim_strings.append(self._format(self.dimension_formatter, info))
+            dim_str = [dim.name]
+            lower, upper = obj.range(dim.name)
+            lower, upper = (dim.pprint_value(lower),
+                            dim.pprint_value(upper))
+            if lower == upper:
+                dim_str.append(dim.pprint_value(lower))
+            else:
+                dim_str.append("%s-%s" % (lower, upper))
+            dim_strings.append('_'.join(dim_str))
         return '_'.join(dim_strings)
+
 
     def _validate_formatters(self):
         ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
@@ -251,8 +257,8 @@ class FileArchive(Archive):
 
         hashfn = sha256()
         obj_str = 'None' if obj is None else self.object_formatter(obj)
-        try:     dimensions = self._dim_formatter(obj)
-        except:  dimensions = 'no-dimensions'
+        dimensions = self._dim_formatter(obj)
+        dimensions = dimensions if dimensions else 'no-dimensions'
 
         hashfn.update(obj_str.encode('utf-8'))
         format_values = {'timestamp': '{timestamp}',
