@@ -179,6 +179,11 @@ class FileArchive(Archive):
         The {timestamp} field is available to include the timestamp at
         the time of export in the chosen timestamp format.""")
 
+    unique_name = param.Boolean(default=True, doc="""
+       Whether the export name should be made unique with a numeric
+       suffix. If set to False, any existing export of the same name
+       will be removed and replaced.""")
+
     @classmethod
     def parse_fields(cls, formatter):
         "Returns the format fields otherwise raise exception"
@@ -273,7 +278,8 @@ class FileArchive(Archive):
             filename = self._format(self.filename_formatter, format_values)
 
         ext = info.get('file-ext', '')
-        (unique_key, ext) = self._unique_name(filename, ext, self._files.keys())
+        (unique_key, ext) = self._unique_name(filename, ext,
+                                              self._files.keys(), force=True)
         self._files[(unique_key, ext)] = (data, info)
 
     def _encoding(self, entry):
@@ -302,12 +308,20 @@ class FileArchive(Archive):
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
 
-    def _unique_name(self, basename, ext, existing):
+    def _unique_name(self, basename, ext, existing, force=False):
         """
         Find a unique basename for a new file/key where existing is
         either a list of (basename, ext) pairs or an absolute path to
         a directory.
+
+        By default, uniqueness is enforced dependning on the state of
+        the unique_name parameter (for export names). If force is
+        True, this parameter is ignored and uniqueness is guaranteed.
         """
+        skip = False if force else (not self.unique_name)
+        if skip: return (basename, ext)
+        ext = '' if ext is None else ext
+
         ext = '' if ext is None else ext
         if isinstance(existing, str):
             split = [os.path.splitext(el)
