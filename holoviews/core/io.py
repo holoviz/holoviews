@@ -130,23 +130,29 @@ class FileArchive(Archive):
         The exporter function used to convert HoloViews objects into the
         appropriate format.""")
 
+    dimension_formatter = param.String("{name}_{range}", doc="""
+        A string formatter for the output file based on the
+        supplied HoloViews objects dimension names and values.
+        Valid fields are the {name}, {range} and {unit} of the
+        dimensions.""")
+
     object_formatter = param.Callable(default=name_generator, doc="""
-       Callable that given an object returns a string suitable for
-       inclusion in file and directory names. This is what generates
-       the value used in the {obj} field of the filename
-       formatter.""")
+        Callable that given an object returns a string suitable for
+        inclusion in file and directory names. This is what generates
+        the value used in the {obj} field of the filename
+        formatter.""")
 
     filename_formatter = param.String('{dimensions}-{group}-{label}-{obj}', doc="""
-         A string formatter for output filename based on the HoloViews
-         object that is being rendered to disk.
+        A string formatter for output filename based on the HoloViews
+        object that is being rendered to disk.
 
-         The available fields are the {type}, {group}, {label}, {obj}
-         of the holoviews object added to the archive as well as
-         {timestamp}, {obj} and {SHA}. The {timestamp} is the export
-         timestamp using timestamp_format, {obj} is the object
-         representation as returned by object_formatter and {SHA} is
-         the SHA of the {obj} value used to compress it into a shorter
-         string.""")
+        The available fields are the {type}, {group}, {label}, {obj}
+        of the holoviews object added to the archive as well as
+        {timestamp}, {obj} and {SHA}. The {timestamp} is the export
+        timestamp using timestamp_format, {obj} is the object
+        representation as returned by object_formatter and {SHA} is
+        the SHA of the {obj} value used to compress it into a shorter
+        string.""")
 
     timestamp_format = param.String("%Y_%m_%d-%H_%M_%S", doc="""
         The timestamp format that will be substituted for the
@@ -213,15 +219,16 @@ class FileArchive(Archive):
         dims = unique_iterator(dims)
         dim_strings = []
         for dim in dims:
-            dim_str = [dim.name]
             lower, upper = obj.range(dim.name)
             lower, upper = (dim.pprint_value(lower),
                             dim.pprint_value(upper))
             if lower == upper:
-                dim_str.append(dim.pprint_value(lower))
+                range = dim.pprint_value(lower)
             else:
-                dim_str.append("%s-%s" % (lower, upper))
-            dim_strings.append('_'.join(dim_str))
+                range = "%s-%s" % (lower, upper)
+            formatters = {'name': dim.name, 'range': range,
+                          'unit': dim.unit}
+            dim_strings.append(self.dimension_formatter.format(**formatters))
         return '_'.join(dim_strings)
 
 
