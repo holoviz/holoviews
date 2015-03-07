@@ -310,8 +310,9 @@ class FileArchive(Archive):
         """
         ext = '' if ext is None else ext
         if isinstance(existing, str):
-            existing = [os.path.splitext(el)
-                        for el in os.listdir(os.path.abspath(existing))]
+            split = [os.path.splitext(el)
+                     for el in os.listdir(os.path.abspath(existing))]
+            existing = [(n, ex if not ex else ex[1:]) for (n, ex) in split]
         new_name, counter = basename, 1
         while (new_name, ext) in existing:
             new_name = basename+'-'+str(counter)
