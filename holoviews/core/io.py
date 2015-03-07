@@ -133,7 +133,7 @@ class FileArchive(Archive):
        the value used in the {obj} field of the filename
        formatter.""")
 
-    filename_formatter = param.String('{group}-{label}-{obj:.40}', doc="""
+    filename_formatter = param.String('{group}-{label}-{obj}', doc="""
          A string formatter for output filename based on the HoloViews
          object that is being rendered to disk.
 
@@ -257,24 +257,24 @@ class FileArchive(Archive):
             return data
 
     def _zip_archive(self, export_name, files, root):
-        archname = self._unique_name(export_name, 'zip', root, True)
+        archname = '.'.join(self._unique_name(export_name, 'zip', root))
         with zipfile.ZipFile(os.path.join(root, archname), 'w') as zipf:
             for (basename, ext), entry in files:
-                filename = '%s.%s' % (basename, ext) if ext else basename
+                filename = self._normalize_name(basename, ext)
                 zipf.writestr(('%s/%s' % (export_name, filename)), self._encoding(entry))
 
     def _tar_archive(self, export_name, files, root):
-        archname = self._unique_name(export_name, 'tar', root, True)
+        archname = '.'.join(self._unique_name(export_name, 'tar', root))
         with tarfile.TarFile(os.path.join(root, archname), 'w') as tarf:
             for (basename, ext), entry in files:
-                filename = '%s.%s' % (basename, ext) if ext else basename
+                filename = self._normalize_name(basename, ext)
                 tarinfo = tarfile.TarInfo('%s/%s' % (export_name, filename))
                 filedata = self._encoding(entry)
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
 
-    def _unique_name(self, basename, ext, existing, tostr=False):
+    def _unique_name(self, basename, ext, existing):
         """
         Find a unique basename for a new file/key where existing is
         either a list of (basename, ext) pairs or an absolute path to
@@ -288,8 +288,14 @@ class FileArchive(Archive):
         while (new_name, ext) in existing:
             new_name = basename+'-'+str(counter)
             counter += 1
-        return ((('%s.%s' % (new_name, ext)) if ext else new_name)
-                if tostr else (new_name, ext))
+        return (new_name, ext)
+
+    def _normalize_name(self, basename, ext=''):
+        max_len = 100-(len(ext)+1)
+        if len(basename) > max_len:
+            basename = basename[:max_len]
+        filename = '%s.%s' % (basename, ext) if ext else basename
+        return filename.replace(' ', '_')
 
 
     def export(self, timestamp=None):
@@ -305,17 +311,19 @@ class FileArchive(Archive):
         # Make directory and populate if multiple files and not packed
         if len(self) > 1 and not self.pack:
             output_dir = os.path.join(root,
-                                      self._unique_name(export_name,'', root, True))
+                                      self._unique_name(export_name,'', root)[0])
             os.makedirs(output_dir)
             for (basename, ext), entry in files:
                 (data, info) = entry
+
                 filename = '%s.%s' % (basename, ext) if ext else basename
                 fpath = os.path.join(output_dir, filename)
                 with open(fpath, 'w') as f: f.write(data)
         elif len(files) == 1:
             ((_, ext), entry) = files[0]
             (data, info) = entry
-            filename = self._unique_name(export_name, ext, root, True)
+            unique_name = self._unique_name(export_name, ext, root)
+            filename = self._normalize_name(*unique_name)
             fpath = os.path.join(root, filename)
             with open(fpath, 'w') as f: f.write(data)
         elif self.archive_format == 'zip':
