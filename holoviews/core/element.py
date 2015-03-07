@@ -779,7 +779,7 @@ class Collator(NdMapping):
         Layouts is returned. Optionally a list of dimensions
         to be ignored can be supplied.
         """
-        constant_dims = self.constant_dimensions
+        constant_dims = self.static_dimensions
         ndmapping = NdMapping(key_dimensions=self.key_dimensions)
 
         num_elements = len(self)
@@ -810,7 +810,7 @@ class Collator(NdMapping):
 
 
     @property
-    def constant_dimensions(self):
+    def static_dimensions(self):
         """
         Return all constant dimensions.
         """
