@@ -102,6 +102,12 @@ class Archive(param.Parameterized):
       The exporter function used to convert HoloViews objects into the
       appropriate format."""  )
 
+    def __init__(self, **params):
+        super(Archive, self).__init__(**params)
+        keywords = ['%s=%s' % (k, v.__class__.__name__) for k,v in self.params().items()]
+        self.__call__.__func__.__doc__ = '__call__(%s)' % ', '.join(keywords)
+
+
     def __call__(self, **kwargs):
         """
         Convenience method for setting multiple parameters on an
