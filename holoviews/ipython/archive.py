@@ -60,17 +60,30 @@ class NotebookArchive(FileArchive):
         The basename of the exported notebook snapshot (html). It may
         optionally use the {timestamp} formatter.""")
 
+    filename_formatter = param.String(default='{notebook}-{dimensions}-{obj}', doc="""
+        Similar to FileArchive.filename_formatter except with support
+        for the notebook name field as {notebook}.""")
+
+    export_name = param.String(default='{notebook}-{timestamp}', doc="""
+        Similar to FileArchive.filename_formatter except with support
+        for the notebook name field as {notebook}.""")
+
+
     auto = param.Boolean(False)
 
     # Used for debugging to view Exceptions raised from Javascript
     traceback = None
 
+    ffields = FileArchive.ffields.union({'notebook'})
+    efields = FileArchive.efields.union({'notebook'})
+
     def __init__(self, **params):
         super(NotebookArchive, self).__init__(**params)
-        self._notebook_data = None
         self.nbversion = None
         self._replacements = {}
         self._exported, self._cancel = False, False
+        self._notebook_data = None
+        self._notebook_name = None
         self._timestamp = None
         self._thread = None
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
@@ -112,16 +125,19 @@ class NotebookArchive(FileArchive):
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
         capture_cmd = ((r"var capture = '%s._notebook_data.write(r\"\"\"'" % name)
-                       + r"+json_string+'\"\"\".encode(\'utf-8\'))';")
-        cmd = (r'var kernel = IPython.notebook.kernel;'
-               r'var json_data = IPython.notebook.toJSON();'
-               r'var json_string = JSON.stringify(json_data);'
+                       + r"+json_string+'\"\"\".encode(\'utf-8\'))'; ")
+        nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
+        nbcmd = (r"var nbcmd = '%s._notebook_name = \"' + nbname + '\"'; " % name)
+        cmd = (r'var kernel = IPython.notebook.kernel; '
+               + nbname + nbcmd + "kernel.execute(nbcmd); "
+               + r'var json_data = IPython.notebook.toJSON(); '
+               + r'var json_string = JSON.stringify(json_data); '
                + capture_cmd
-               + "var pycmd = capture + ';%s._export_with_html()';" % name
+               + "var pycmd = capture + ';%s._export_with_html()'; " % name
                + r"kernel.execute(pycmd)")
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
-        export_name = self._format(self.export_name, {'timestamp':tstamp})
+        export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':'{notebook}'})
         info = (export_name, os.path.join(os.path.abspath(self.root)), self.export_timeout)
         print(('Export name:  %r\nDirectory     %r\nTimeout limit: %d seconds' % info)
                + '\n\nIf no output appears, please check holoviews.archive.traceback')
@@ -136,7 +152,8 @@ class NotebookArchive(FileArchive):
         "Similar to FileArchive.add but accepts html strings for substitution"
         initial_last_key = self._files.keys()[-1] if len(self) else None
         if self.auto:
-            super(NotebookArchive, self).add(obj, filename, data, info)
+            super(NotebookArchive, self).add(obj, filename, data,
+                                             info=dict(info, notebook='{notebook}'))
             # Only add substitution if file successfully added to archive.
             new_last_key = self._files.keys()[-1] if len(self) else None
             if new_last_key != initial_last_key:
@@ -173,7 +190,8 @@ class NotebookArchive(FileArchive):
                 (_, info) = entry
                 html_key = self._replacements.get((basename, ext), None)
                 if html_key is None: continue
-                filename = self._format(basename, {'timestamp':tstamp})
+                filename = self._format(basename, {'timestamp':tstamp,
+                                                   'notebook':self._notebook_name})
                 fpath = filename+(('.%s' % ext) if ext else '')
                 msg = "<center><b>%s</b><center/>"
                 if 'mime_type' not in info:
@@ -191,17 +209,22 @@ class NotebookArchive(FileArchive):
                 html = self._generate_html(node, substitutions)
 
             export_filename = self.snapshot_name
+
+            notebook =  self._notebook_name if self._notebook_name else '-no-notebook-name-'
             # Add the html snapshot
             super(NotebookArchive, self).add(filename=export_filename,
                                              data=html, info={'file-ext':'html',
-                                                              'mime_type':'text/html'})
+                                                              'mime_type':'text/html',
+                                                              'notebook':notebook})
             # Add cleared notebook
             cleared = self._clear_notebook(node)
             super(NotebookArchive, self).add(filename=export_filename,
                                              data=cleared, info={'file-ext':'ipynb',
-                                                                 'mime_type':'text/json'})
+                                                                 'mime_type':'text/json',
+                                                                 'notebook':notebook})
             # If store cleared_notebook... save here
-            super(NotebookArchive, self).export(timestamp=self._timestamp)
+            super(NotebookArchive, self).export(timestamp=self._timestamp,
+                                                info={'notebook':notebook})
         except Exception as e:
             self.traceback = traceback.format_exc()
 

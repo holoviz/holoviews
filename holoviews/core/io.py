@@ -219,6 +219,9 @@ class FileArchive(Archive):
        suffix. If set to False, any existing export of the same name
        will be removed and replaced.""")
 
+    ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
+    efields = {'timestamp'}
+
     @classmethod
     def parse_fields(cls, formatter):
         "Returns the format fields otherwise raise exception"
@@ -262,12 +265,10 @@ class FileArchive(Archive):
 
 
     def _validate_formatters(self):
-        ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
-        efields = {'timestamp'}
-        if not self.parse_fields(self.filename_formatter).issubset(ffields):
-            raise Exception("Valid filename fields are: %s" % ','.join(sorted(ffields)))
-        elif not self.parse_fields(self.export_name).issubset(efields):
-            raise Exception("Valid export fields are: %s" % ','.join(sorted(efields)))
+        if not self.parse_fields(self.filename_formatter).issubset(self.ffields):
+            raise Exception("Valid filename fields are: %s" % ','.join(sorted(self.ffields)))
+        elif not self.parse_fields(self.export_name).issubset(self.efields):
+            raise Exception("Valid export fields are: %s" % ','.join(sorted(self.efields)))
         try: time.strftime(self.timestamp_format, tuple(time.localtime()))
         except: raise Exception("Timestamp format invalid")
 
@@ -293,7 +294,8 @@ class FileArchive(Archive):
         if data is None:
             rendered = self.exporter(obj)
             if rendered is None: return
-            (data, info) = rendered
+            (data, new_info) = rendered
+            info = dict(info, **new_info)
         self._validate_formatters()
 
         hashfn = sha256()
@@ -311,7 +313,8 @@ class FileArchive(Archive):
                          'SHA':     hashfn.hexdigest()}
 
         if filename is None:
-            filename = self._format(self.filename_formatter, format_values)
+            filename = self._format(self.filename_formatter,
+                                    dict(info, **format_values))
 
         filename = self._normalize_name(filename)
 
@@ -388,14 +391,17 @@ class FileArchive(Archive):
         return basename.replace(' ', '_')
 
 
-    def export(self, timestamp=None):
+    def export(self, timestamp=None, info={}):
         """
         Export the archive, directory or file.
         """
+
         tval = tuple(time.localtime()) if timestamp is None else timestamp
         tstamp = time.strftime(self.timestamp_format, tval)
-        export_name = self._format(self.export_name, {'timestamp':tstamp})
-        files = [((self._format(base, {'timestamp':tstamp}), ext), val)
+
+        info = dict(info, timestamp=tstamp)
+        export_name = self._format(self.export_name, info)
+        files = [((self._format(base, info), ext), val)
                  for ((base, ext), val) in self._files.items()]
         root = os.path.abspath(self.root)
         # Make directory and populate if multiple files and not packed
