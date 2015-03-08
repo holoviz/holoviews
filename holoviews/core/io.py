@@ -442,3 +442,11 @@ class FileArchive(Archive):
 
     def __repr__(self):
         return self.pprint()
+
+    def __str__(self):
+        lines = []
+        max_len = max([len('.'.join(k)) for k in self._files])
+        for k,v in self._files.items():
+            mime_type = v[1].get('mime_type', 'no mime type')
+            lines.append('- %s : %s' % ('.'.join(k).ljust(max_len), mime_type))
+        return '\n'.join(lines)
