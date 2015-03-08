@@ -4,7 +4,7 @@ except:
     from collections import OrderedDict
 
 from .pprint import PrettyPrinter
-from .util import valid_identifier
+from .util import sanitize_identifier, unescape_identifier
 
 
 class AttrTree(object):
@@ -41,7 +41,7 @@ class AttrTree(object):
         require an identifier.
         """
         self.__dict__['parent'] = parent
-        self.__dict__['identifier'] = valid_identifier(identifier)
+        self.__dict__['identifier'] = sanitize_identifier(identifier, escape=False)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
 
@@ -176,7 +176,6 @@ class AttrTree(object):
 
 
     def __setattr__(self, identifier, val):
-        identifier = valid_identifier(identifier)
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
         if identifier[0].isupper() and self.fixed and shallow:
@@ -185,6 +184,7 @@ class AttrTree(object):
         super(AttrTree, self).__setattr__(identifier, val)
 
         if identifier[0].isupper():
+            identifier = unescape_identifier(identifier)
             if not identifier in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
@@ -199,14 +199,15 @@ class AttrTree(object):
             return super(AttrTree, self).__getattr__(identifier)
         except AttributeError: pass
 
-        if identifier.startswith('_'):   raise AttributeError(str(identifier))
-        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
-        identifier = valid_identifier(identifier)
+        if self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
+        identifier = sanitize_identifier(identifier)
 
-        if identifier in self.children:
-            return self.__dict__[identifier]
+        unescaped_identifier = unescape_identifier(identifier)
+        if unescaped_identifier in self.children:
+            return self.__dict__[unescaped_identifier]
 
         if identifier[0].isupper():
+            identifier = unescaped_identifier
             self.children.append(identifier)
             child_tree = self.__class__(identifier=identifier, parent=self)
             self.__dict__[identifier] = child_tree

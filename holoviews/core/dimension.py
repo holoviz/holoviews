@@ -13,7 +13,7 @@ except:
 
 import param
 
-from ..core.util import valid_identifier
+from ..core.util import allowable, sanitize_identifier
 from .options import Store
 from .pprint import PrettyPrinter
 
@@ -202,6 +202,12 @@ class LabelledData(param.Parameterized):
         self.data = data
         self.id = id
         super(LabelledData, self).__init__(**params)
+        if not allowable(self.group):
+            raise ValueError("Supplied group %s contains invalid characters." %
+                             self.group)
+        elif not allowable(self.label):
+            raise ValueError("Supplied label %s contains invalid characters." %
+                             self.label)
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
@@ -238,7 +244,8 @@ class LabelledData(param.Parameterized):
         """
         if isinstance(spec, type): return isinstance(self, spec)
         specification = (self.__class__.__name__, self.group, self.label)
-        identifier_specification = tuple(valid_identifier(ident) for ident in specification)
+        identifier_specification = tuple(sanitize_identifier(ident, escape=False)
+                                         for ident in specification)
         split_spec = tuple(spec.split('.')) if not isinstance(spec, tuple) else spec
         split_spec, nocompare = zip(*((None, True) if s == '*' or s is None else (s, False)
                                     for s in split_spec))

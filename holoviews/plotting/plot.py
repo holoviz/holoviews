@@ -11,7 +11,7 @@ from ..core import OrderedDict, ViewableElement, HoloMap, \
     AdjointLayout, NdLayout, GridSpace, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
-from ..core.util import find_minmax, valid_identifier
+from ..core.util import find_minmax, sanitize_identifier
 from ..element import Raster, Table
 
 
@@ -144,8 +144,8 @@ class Plot(param.Parameterized):
         norm_opts = {}
 
         # Get all elements' type.group.label specs and ids
-        type_val_fn = lambda x: (x.id, (type(x).__name__, valid_identifier(x.group),
-                                        valid_identifier(x.label))) \
+        type_val_fn = lambda x: (x.id, (type(x).__name__, sanitize_identifier(x.group, escape=False),
+                                        sanitize_identifier(x.label, escape=False))) \
             if isinstance(x, Element) else None
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
                          if idspec is not None}

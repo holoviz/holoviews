@@ -17,8 +17,7 @@ import param
 from ..core.operation import ElementOperation
 from ..element import Raster
 from ..core import Overlay
-from ..core.util import valid_identifier
-
+from ..core.util import sanitize_identifier
 
 
 class Normalization(ElementOperation):
@@ -96,9 +95,8 @@ class Normalization(ElementOperation):
         if not any(isinstance(el, tuple) for el in specs): return specs
         match_tuple = ()
         match = specs.get((), {})
-        for spec in [type(element).__name__,
-                     valid_identifier(element.group),
-                     valid_identifier(element.label)]:
+        for spec in [type(element).__name__, sanitize_identifier(element.group, escape=False),
+                     sanitize_identifier(element.label, escape=True)]:
             match_tuple += (spec,)
             if match_tuple in specs:
                 match = specs[match_tuple]

@@ -11,7 +11,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator
+from .util import unique_iterator, allowable
 
 
 class MultiDimensionalMapping(Dimensioned):
@@ -618,8 +618,8 @@ class UniformNdMapping(NdMapping):
 
     def __init__(self, initial_items=None, group=None, label=None, **params):
         self._type = None
-        self._group_check, self._group = None, group
-        self._label_check, self._label = None, label
+        self._group_check, self.group = None, group
+        self._label_check, self.label = None, label
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
 
@@ -643,6 +643,9 @@ class UniformNdMapping(NdMapping):
 
     @group.setter
     def group(self, group):
+        if group is not None and not allowable(group):
+            raise ValueError("Supplied group %s contains invalid "
+                             "characters." % self.group)
         self._group = group
 
     @property
@@ -656,6 +659,9 @@ class UniformNdMapping(NdMapping):
 
     @label.setter
     def label(self, label):
+        if label is not None and not allowable(label):
+            raise ValueError("Supplied group %s contains invalid "
+                             "characters." % self.group)
         self._label = label
 
     @property

@@ -38,7 +38,7 @@ import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import valid_identifier
+from .util import allowable, sanitize_identifier
 
 
 class OptionError(Exception):
@@ -334,6 +334,11 @@ class OptionTree(AttrTree):
     def __getitem__(self, item):
         if item in self.groups:
             return self.groups[item]
+        elif not any(allowable(it) for it in item) :
+            item = tuple(sanitize_identifier(it, escape=False)
+                         for it in item)
+            if item in self.groups:
+                return self.groups[item]
         return super(OptionTree, self).__getitem__(item)
 
 
@@ -348,16 +353,17 @@ class OptionTree(AttrTree):
 
         if identifier.startswith('_'):   raise AttributeError(str(identifier))
         elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
-        identifier = valid_identifier(identifier)
 
-        if identifier in self.children:
-            return self.__dict__[identifier]
+        valid_id = sanitize_identifier(identifier, escape=False)
+        if valid_id in self.children:
+            return self.__dict__[valid_id]
 
         self.__setattr__(identifier, self.groups)
         return self[identifier]
 
 
     def __setattr__(self, identifier, val):
+        identifier = sanitize_identifier(identifier, escape=False)
         new_groups = {}
         if isinstance(val, dict):
             group_items = val

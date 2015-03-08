@@ -10,7 +10,7 @@ import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import valid_identifier, find_minmax, int_to_roman
+from ..core.util import sanitize_identifier, find_minmax, int_to_roman
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -354,8 +354,8 @@ class ElementPlot(Plot):
         match_tuple = ()
         match = ranges.get((), {})
         for spec in [type(element).__name__,
-                     valid_identifier(element.group),
-                     valid_identifier(element.label)]:
+                     sanitize_identifier(element.group, escape=False),
+                     sanitize_identifier(element.label, escape=False)]:
             match_tuple += (spec,)
             if match_tuple in ranges:
                 match = ranges[match_tuple]

@@ -1,3 +1,4 @@
+import string
 import numpy as np
 
 def find_minmax(lims, olims):
@@ -30,18 +31,38 @@ def int_to_roman(input):
    return result
 
 
-def valid_identifier(identifier):
+UNDERSCORE_TOKEN = 'UNDERSCORE'
+
+def sanitize_identifier(name, escape=True):
     """
-    Replace spaces with underscores and returns value after
-    checking validity.
+    Sanitizes group/label values for use in AttrTree
+    attribute access
     """
-    if not identifier: return
-    identifier = identifier.replace(' ', '_')
-    invalid_chars = any(not el.isalnum() and el!='_' for el in identifier)
-    valid_first_char = identifier[0].isalpha() or identifier[0]=='_'
-    if invalid_chars or not valid_first_char:
-        raise SyntaxError("Invalid Python identifier: %r" % identifier)
-    return identifier
+    if name is None: return ''
+    valid_chars = string.ascii_letters+string.digits+'_'
+    name = name.replace(' ', '_')
+    chars = []
+    if name and name[0].islower():
+        name = string.upper(name[0])+name[1:]
+    for c in name:
+        if c not in valid_chars:
+            chars.append('_%s_' % hex(ord(c)))
+        else:
+            chars.append(c)
+    if escape and len(chars) and chars[0][0] == '_':
+        chars[0] = UNDERSCORE_TOKEN + chars[0][1:]
+    return ''.join(chars)
+
+
+def unescape_identifier(identifier):
+    return identifier.replace(UNDERSCORE_TOKEN, '_')
+
+
+def allowable(name):
+    valid_second_chars= string.ascii_letters+string.digits
+    if len(name) >= 2 and name.startswith('_') and (name[1] not in valid_second_chars):
+        return False
+    return True
 
 
 def unique_iterator(seq):

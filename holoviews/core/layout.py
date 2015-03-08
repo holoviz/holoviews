@@ -14,7 +14,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import int_to_roman
+from .util import int_to_roman, sanitize_identifier
 from . import traversal
 
 
@@ -278,6 +278,7 @@ class Layout(AttrTree, Dimensioned):
             else:
                 path = path[:-1] + (int_to_roman(count),)
             count += 1
+        path = tuple(sanitize_identifier(p) for p in path)
         return path
 
 
@@ -313,7 +314,8 @@ class Layout(AttrTree, Dimensioned):
         elif type(val) is cls:
             return val
         else:
-            return cls(items=[((val.group, val.label if val.label else 'I'), val)])
+            return cls(items=[((sanitize_identifier(val.group),
+                                sanitize_identifier(val.label if val.label else 'I')), val)])
 
 
     def __init__(self, *args, **kwargs):

@@ -13,6 +13,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout
+from .util import allowable, sanitize_identifier
 
 
 class Overlayable(object):
@@ -119,12 +120,13 @@ class Overlay(Layout, CompositeOverlay):
 
     def __init__(self, items=None, group=None, label=None, **params):
         view_params = ViewableElement.params().keys()
+        self.__dict__['_fixed'] = False
+        self.__dict__['_group'] = group
+        self.__dict__['_label'] = label
         Layout.__init__(self, items,
                           **{k:v for k,v in params.items() if k not in view_params})
-        self._group = group
-        self._label = label
         ViewableElement.__init__(self, self.data,
-                      **{k:v for k,v in params.items() if k in view_params})
+                                 **{k:v for k,v in params.items() if k in view_params})
 
 
     def __add__(self, other):
@@ -164,8 +166,11 @@ class Overlay(Layout, CompositeOverlay):
             return self._group
         values = {el.group for el in self}
         types = {type(el) for el in self}
-        group = list(values)[0]
-        vtype = list(types)[0].__name__
+        if values:
+            group = list(values)[0]
+            vtype = list(types)[0].__name__
+        else:
+            group, vtype = [], ''
         if len(values) == 1 and group != vtype:
             return group
         else:
@@ -173,7 +178,11 @@ class Overlay(Layout, CompositeOverlay):
 
     @group.setter
     def group(self, group):
-        self._group = group
+        if not allowable(group):
+            raise ValueError("Supplied group %s contains invalid characters." %
+                             group)
+        else:
+            self._group = group
 
     @property
     def label(self):
@@ -187,6 +196,9 @@ class Overlay(Layout, CompositeOverlay):
 
     @label.setter
     def label(self, label):
+        if not allowable(label):
+            raise ValueError("Supplied group %s contains invalid characters." %
+                             label)
         self._label = label
 
     @property
