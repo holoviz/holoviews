@@ -218,6 +218,12 @@ class FileArchive(Archive):
        suffix. If set to False, any existing export of the same name
        will be removed and replaced.""")
 
+    max_filename = param.Integer(default=100, bounds=(0,None), doc="""
+       Maximum length to enforce on generated filenames.  100 is the
+       practical maximum for zip and tar file generation, but you may
+       wish to use a lower value to avoid long filenames.""")
+
+
     ffields = {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
     efields = {'timestamp'}
 
@@ -395,7 +401,8 @@ class FileArchive(Archive):
         return (new_name, ext)
 
 
-    def _truncate_name(self, basename, ext='', tail=10, join='...', maxlen=100):
+    def _truncate_name(self, basename, ext='', tail=10, join='...', maxlen=None):
+        maxlen = self.max_filename if maxlen is None else maxlen
         max_len = maxlen-len(ext)
         if len(basename) > max_len:
             start = basename[:max_len-(tail + len(join))]
