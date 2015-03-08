@@ -62,7 +62,7 @@ class NotebookArchive(FileArchive):
 
     auto = param.Boolean(False)
 
-    # Used for debugging to view Exceptions raised from Javascript!
+    # Used for debugging to view Exceptions raised from Javascript
     traceback = None
 
     def __init__(self, **params):
@@ -123,7 +123,8 @@ class NotebookArchive(FileArchive):
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp})
         info = (export_name, os.path.join(os.path.abspath(self.root)), self.export_timeout)
-        print('Export name:  %r\nDirectory     %r\nTimeout limit: %d seconds' % info)
+        print(('Export name:  %r\nDirectory     %r\nTimeout limit: %d seconds' % info)
+               + '\n\nIf no output appears, please check holoviews.archive.traceback')
         display(Javascript(cmd))
         self._thread = threading.Thread(target=self._timeout,
                              name=str(self._timestamp),
@@ -188,11 +189,7 @@ class NotebookArchive(FileArchive):
             node = self._get_notebook_node()
             if not self._cancel:
                 html = self._generate_html(node, substitutions)
-        except Exception as e:
-            html = "Exception: " + str(e)
-            html += traceback.format_exc()
 
-        try:
             export_filename = self.snapshot_name
             # Add the html snapshot
             super(NotebookArchive, self).add(filename=export_filename,
