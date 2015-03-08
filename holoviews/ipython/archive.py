@@ -75,7 +75,7 @@ class NotebookArchive(FileArchive):
         super(NotebookArchive, self).__init__(**params)
         self.nbversion = None
         self._replacements = {}
-        self.export_success = False
+        self.export_success = None
         self._notebook_data = None
         self._notebook_name = None
         self._timestamp = None
@@ -84,8 +84,12 @@ class NotebookArchive(FileArchive):
 
     def last_export_status(self):
         "Helper to show the status of the last call to the export method."
-        if self.export_success:
+        if self.export_success is True:
             print("The last call to holoviews.archive.export was successful.")
+            return
+        elif self.export_success is None:
+            print("Status of the last call to holoviews.archive.export is unknown."
+                  "\n(Re-execute this method once kernel status is idle.)")
             return
         print("The last call to holoviews.archive.export was unsuccessful.")
         if self.traceback is None:
@@ -99,7 +103,7 @@ class NotebookArchive(FileArchive):
         Get the current notebook data and export.
         """
         self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
-        self.export_success = False
+        self.export_success = None
         self._notebook_data = io.BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
