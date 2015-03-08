@@ -363,7 +363,7 @@ class FileArchive(Archive):
 
         for (basename, ext), entry in files:
             (data, info) = entry
-            filename = '%s.%s' % (basename, ext) if ext else basename
+            filename = self._truncate_name(basename, ext)
             fpath = os.path.join(output_dir, filename)
             with open(fpath, 'w') as f:
                 f.write(self._encoding(entry))
