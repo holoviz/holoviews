@@ -132,10 +132,9 @@ def simple_name_generator(obj):
 
     Objects are labeled with {group}-{label} for each nested
     object, based on a depth-first search.  Adjacent objects with
-    identical representations yeild only a single copy of the
+    identical representations yield only a single copy of the
     representation, to avoid long names for the common case of
-    a container of one element where they both share the same
-    group and label.
+    a container whose element(s) share the same group and label.
     """
 
     if isinstance(obj, LabelledData):
@@ -171,7 +170,7 @@ class FileArchive(Archive):
         the value used in the {obj} field of the filename
         formatter.""")
 
-    filename_formatter = param.String('{dimensions}-{obj}', doc="""
+    filename_formatter = param.String('{dimensions},{obj}', doc="""
         A string formatter for output filename based on the HoloViews
         object that is being rendered to disk.
 
@@ -387,7 +386,7 @@ class FileArchive(Archive):
 
     def _normalize_name(self, basename):
         basename=re.sub('-+','-',basename)
-        basename=re.sub('^-','',basename)
+        basename=re.sub('^[-,_]','',basename)
         return basename.replace(' ', '_')
 
 
