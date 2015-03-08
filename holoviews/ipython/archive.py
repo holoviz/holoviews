@@ -75,7 +75,7 @@ class NotebookArchive(FileArchive):
         super(NotebookArchive, self).__init__(**params)
         self.nbversion = None
         self._replacements = {}
-        self._exported = False
+        self.export_success = False
         self._notebook_data = None
         self._notebook_name = None
         self._timestamp = None
@@ -88,7 +88,7 @@ class NotebookArchive(FileArchive):
         Get the current notebook data and export.
         """
         self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
-        self._exported = False
+        self.export_success = False
         self._notebook_data = io.BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
@@ -189,7 +189,7 @@ class NotebookArchive(FileArchive):
                                                 info={'notebook':notebook})
         except Exception as e:
             self.traceback = traceback.format_exc()
-        self._exported = True
+        self.export_success = True
 
     def _get_notebook_node(self):
         "Load captured notebook node"
