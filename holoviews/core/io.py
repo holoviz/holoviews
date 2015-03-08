@@ -419,9 +419,9 @@ class FileArchive(Archive):
         root = os.path.abspath(self.root)
         # Make directory and populate if multiple files and not packed
         if len(self) > 1 and not self.pack:
-            self._directory_archive(self, export_name, files, root)
+            self._directory_archive(export_name, files, root)
         elif len(files) == 1:
-            self._single_file_archive(self, export_name, files, root)
+            self._single_file_archive(export_name, files, root)
         elif self.archive_format == 'zip':
             self._zip_archive(export_name, files, root)
         elif self.archive_format == 'tar':
