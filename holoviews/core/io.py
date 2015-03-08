@@ -406,7 +406,8 @@ class FileArchive(Archive):
         if len(self) > 1 and not self.pack:
             output_dir = os.path.join(root,
                                       self._unique_name(export_name,'', root)[0])
-            os.makedirs(output_dir)
+            if not os.path.isdir(output_dir):
+                os.makedirs(output_dir)
             for (basename, ext), entry in files:
                 (data, info) = entry
 
