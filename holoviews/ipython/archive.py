@@ -67,7 +67,7 @@ class NotebookArchive(FileArchive):
 
     def __init__(self, **params):
         super(NotebookArchive, self).__init__(**params)
-        self.notebook = None
+        self._notebook_data = None
         self.nbversion = None
         self._replacements = {}
         self._exported, self._cancel = False, False
@@ -108,10 +108,10 @@ class NotebookArchive(FileArchive):
         self.export_timeout = export_timeout if export_timeout else self.export_timeout
         self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
         self._cancel, self._exported = False, False
-        self.notebook = io.BytesIO()
+        self._notebook_data = io.BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
-        capture_cmd = ((r"var capture = '%s.notebook.write(r\"\"\"'" % name)
+        capture_cmd = ((r"var capture = '%s._notebook_data.write(r\"\"\"'" % name)
                        + r"+json_string+'\"\"\".encode(\'utf-8\'))';")
         cmd = (r'var kernel = IPython.notebook.kernel;'
                r'var json_data = IPython.notebook.toJSON();'
@@ -208,14 +208,14 @@ class NotebookArchive(FileArchive):
 
     def _get_notebook_node(self):
         "Load captured notebook node"
-        self.notebook.seek(0, os.SEEK_END)
-        size = self.notebook.tell()
+        self._notebook_data.seek(0, os.SEEK_END)
+        size = self._notebook_data.tell()
         if size == 0:
             raise Exception("Captured buffer size for notebook node is zero.")
-        self.notebook.seek(0)
-        node = reader.reads(self.notebook.read().decode('utf-8'))
+        self._notebook_data.seek(0)
+        node = reader.reads(self._notebook_data.read().decode('utf-8'))
         self.nbversion = reader.get_version(node)
-        self.notebook.close()
+        self._notebook_data.close()
         return node
 
 
