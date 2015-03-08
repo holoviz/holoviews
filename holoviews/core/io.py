@@ -413,14 +413,16 @@ class FileArchive(Archive):
 
                 filename = '%s.%s' % (basename, ext) if ext else basename
                 fpath = os.path.join(output_dir, filename)
-                with open(fpath, 'w') as f: f.write(data)
+                with open(fpath, 'w') as f:
+                    f.write(self._encoding(entry))
         elif len(files) == 1:
             ((_, ext), entry) = files[0]
             (data, info) = entry
             unique_name = self._unique_name(export_name, ext, root)
             filename = self._truncate_name(self._normalize_name(*unique_name))
             fpath = os.path.join(root, filename)
-            with open(fpath, 'w') as f: f.write(data)
+            with open(fpath, 'w') as f:
+                f.write(self._encoding(entry))
         elif self.archive_format == 'zip':
             self._zip_archive(export_name, files, root)
         elif self.archive_format == 'tar':
