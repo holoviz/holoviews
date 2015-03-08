@@ -2,15 +2,19 @@ from unittest import SkipTest
 import matplotlib.pyplot as plt
 
 from ..element.comparison import ComparisonTestCase
+from ..interface.collector import Collector
 from . import magics
 from .magics import load_magics
 from .display_hooks import animate, set_display_hooks, OutputMagic
 from .parser import Parser
+from .widgets import RunProgress
 
 from param import ipython as param_ext
 
 try:    from matplotlib import animation
 except: animation = None
+
+Collector.interval_hook = RunProgress
 
 all_line_magics = sorted(['%params', '%opts', '%output', '%compositor'])
 all_cell_magics = sorted(['%%output', '%%opts', '%%labels'])

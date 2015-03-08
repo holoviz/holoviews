@@ -8,10 +8,10 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ViewableElement, NdMapping, UniformNdMapping,\
+from ..core import Dimension, ViewableElement, UniformNdMapping,\
  GridSpace, AttrTree, Layout, HoloMap
+from ..core.util import ProgressIndicator
 from ..element.raster import Image
-from ..ipython.widgets import RunProgress, ProgressBar
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
@@ -467,7 +467,7 @@ class Collector(AttrTree):
     # batch of collection tasks is executed. If set to a subclass of
     # RunProgress, the class will be instantiated and precent_range
     # updated to allow a progress bar to be displayed
-    interval_hook = RunProgress
+    interval_hook = param.Dynamic.time_fn.advance
 
 
     # A callable that returns the time where the time may be the
@@ -562,7 +562,7 @@ class Collector(AttrTree):
             completion = 100 * (times - times.min()) / (times.max() - times.min())
 
         update_progress = (isinstance(self.interval_hook, type)
-                           and issubclass(self.interval_hook, RunProgress))
+                           and issubclass(self.interval_hook, ProgressIndicator))
 
         # If an instance of RunProgress, instantiate the progress bar
         interval_hook = (self.interval_hook(label=self.progress_label)
