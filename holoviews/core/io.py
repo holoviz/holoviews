@@ -68,8 +68,8 @@ class Pickler(Exporter):
     """
 
     protocol = param.Integer(default=2, doc="""
-      The pickling protocol where 0 is ASCII, 1 supports old Python
-      versions and 2 is efficient for new style classes.""")
+        The pickling protocol where 0 is ASCII, 1 supports old Python
+        versions and 2 is efficient for new style classes.""")
 
     def __call__(self, obj):
         data = pickle.dumps(obj, protocol=self.protocol)
@@ -95,8 +95,8 @@ class Archive(param.Parameterized):
     """
 
     exporter= param.ClassSelector(class_=Exporter, doc="""
-      The exporter function used to convert HoloViews objects into the
-      appropriate format."""  )
+        The exporter function used to convert HoloViews objects into the
+        appropriate format."""  )
 
     def __init__(self, **params):
         super(Archive, self).__init__(**params)
@@ -194,14 +194,14 @@ class FileArchive(Archive):
         The archive format to use if there are multiple files and pack
         is set to True """)
 
-    pack = param.Boolean(default=True, doc="""
+    pack = param.Boolean(default=False, doc="""
         Whether or not to pack to contents into the specified archive
         format. If pack is False, the contents will be output to a
         directory.
 
         Note that if there is only a single file in the archive, no
         packing will occur and no directory is created. Instead, the
-        file is treated as a single-file archive. """)
+        file is treated as a single-file archive.""")
 
     export_name = param.String(default='{timestamp}', doc="""
         The name assigned to the overall export. If an archive file is
@@ -213,12 +213,12 @@ class FileArchive(Archive):
         The {timestamp} field is available to include the timestamp at
         the time of export in the chosen timestamp format.""")
 
-    unique_name = param.Boolean(default=True, doc="""
+    unique_name = param.Boolean(default=False, doc="""
        Whether the export name should be made unique with a numeric
        suffix. If set to False, any existing export of the same name
        will be removed and replaced.""")
 
-    ffields =   {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
+    ffields = {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
     efields = {'timestamp'}
 
     @classmethod

@@ -60,11 +60,11 @@ class NotebookArchive(FileArchive):
         The basename of the exported notebook snapshot (html). It may
         optionally use the {timestamp} formatter.""")
 
-    filename_formatter = param.String(default='{notebook}-{dimensions}-{obj}', doc="""
+    filename_formatter = param.String(default='{dimensions},{obj}', doc="""
         Similar to FileArchive.filename_formatter except with support
         for the notebook name field as {notebook}.""")
 
-    export_name = param.String(default='{notebook}-{timestamp}', doc="""
+    export_name = param.String(default='{notebook}', doc="""
         Similar to FileArchive.filename_formatter except with support
         for the notebook name field as {notebook}.""")
 
