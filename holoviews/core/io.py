@@ -13,12 +13,14 @@ Archives: A collection of HoloViews objects that are first collected
           HoloViews objects to dump to HDF5.
 """
 from __future__ import absolute_import
+import re
 import os
 import time
 import string
 import pickle
 import zipfile
 import tarfile
+import itertools
 
 from io import BytesIO
 from hashlib import sha256
@@ -131,8 +133,24 @@ class Archive(param.Parameterized):
 
 
 def name_generator(obj):
-    return ','.join(obj.traverse(lambda x: (x.group
-                                            + ('-'  +x.label if x.label else ''))))
+    """
+    Simple name_generator designed for HoloViews objects.
+
+    Objects are labeled with {group}-{label} for each nested
+    object, based on a depth-first search.  Adjacent objects with
+    identical representations yeild only a single copy of the 
+    representation, to avoid long names for the common case of 
+    a container of one element where they both share the same
+    group and label.
+    """
+    labels = obj.traverse(lambda x: 
+        (x.group + ('-'  +x.label if x.label else '')))
+
+    labels=[l[0] for l in itertools.groupby(labels)]
+
+    return ','.join(labels)
+
+
 
 class FileArchive(Archive):
     """
@@ -156,7 +174,7 @@ class FileArchive(Archive):
         the value used in the {obj} field of the filename
         formatter.""")
 
-    filename_formatter = param.String('{dimensions}-{group}-{label}-{obj}', doc="""
+    filename_formatter = param.String('{dimensions}-{obj}', doc="""
         A string formatter for output filename based on the HoloViews
         object that is being rendered to disk.
 
@@ -284,7 +302,7 @@ class FileArchive(Archive):
         hashfn = sha256()
         obj_str = 'None' if obj is None else self.object_formatter(obj)
         dimensions = self._dim_formatter(obj)
-        dimensions = dimensions if dimensions else 'no-dimensions'
+        dimensions = dimensions if dimensions else ''
 
         hashfn.update(obj_str.encode('utf-8'))
         format_values = {'timestamp': '{timestamp}',
@@ -297,6 +315,8 @@ class FileArchive(Archive):
 
         if filename is None:
             filename = self._format(self.filename_formatter, format_values)
+            
+        filename = self._normalize_name(filename)
 
         ext = info.get('file-ext', '')
         (unique_key, ext) = self._unique_name(filename, ext,
@@ -315,14 +335,14 @@ class FileArchive(Archive):
         archname = '.'.join(self._unique_name(export_name, 'zip', root))
         with zipfile.ZipFile(os.path.join(root, archname), 'w') as zipf:
             for (basename, ext), entry in files:
-                filename = self._normalize_name(basename, ext)
+                filename = self._truncate_name(basename, ext)
                 zipf.writestr(('%s/%s' % (export_name, filename)), self._encoding(entry))
 
     def _tar_archive(self, export_name, files, root):
         archname = '.'.join(self._unique_name(export_name, 'tar', root))
         with tarfile.TarFile(os.path.join(root, archname), 'w') as tarf:
             for (basename, ext), entry in files:
-                filename = self._normalize_name(basename, ext)
+                filename = self._truncate_name(basename, ext)
                 tarinfo = tarfile.TarInfo('%s/%s' % (export_name, filename))
                 filedata = self._encoding(entry)
                 tarinfo.size = len(filedata)
@@ -355,14 +375,21 @@ class FileArchive(Archive):
         return (new_name, ext)
 
 
-    def _normalize_name(self, basename, ext='', tail=10, join='...', maxlen=100):
+    def _truncate_name(self, basename, ext='', tail=10, join='...', maxlen=100):
         max_len = maxlen-len(ext)
         if len(basename) > max_len:
             start = basename[:max_len-(tail + len(join))]
             end = basename[-tail:]
             basename = start + join + end
         filename = '%s.%s' % (basename, ext) if ext else basename
-        return filename.replace(' ', '_')
+
+        return filename
+
+
+    def _normalize_name(self, basename):
+        basename=re.sub('-+','-',basename)
+        basename=re.sub('^-','',basename)
+        return basename.replace(' ', '_')
 
 
     def export(self, timestamp=None):
@@ -390,7 +417,7 @@ class FileArchive(Archive):
             ((_, ext), entry) = files[0]
             (data, info) = entry
             unique_name = self._unique_name(export_name, ext, root)
-            filename = self._normalize_name(*unique_name)
+            filename = self._truncate_name(self._normalize_name(*unique_name))
             fpath = os.path.join(root, filename)
             with open(fpath, 'w') as f: f.write(data)
         elif self.archive_format == 'zip':
