@@ -82,6 +82,17 @@ class NotebookArchive(FileArchive):
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
 
+    def last_export_status(self):
+        "Helper to show the status of the last call to the export method."
+        if self.export_success:
+            print("The last call to holoviews.archive.export was successful.")
+            return
+        print("The last call to holoviews.archive.export was unsuccessful.")
+        if self.traceback is None:
+            print("\n<No traceback captured>")
+        else:
+            print("\n"+self.traceback)
+
 
     def export(self, timestamp=None):
         """
@@ -108,7 +119,7 @@ class NotebookArchive(FileArchive):
         export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':'{notebook}'})
         print(('Export name: %r\nDirectory    %r' % (export_name,
                                                      os.path.join(os.path.abspath(self.root))))
-               + '\n\nIf no output appears, please check holoviews.archive.traceback')
+               + '\n\nIf no output appears, please check holoviews.archive.last_export_status()')
         display(Javascript(cmd))
 
 
