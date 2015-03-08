@@ -205,7 +205,9 @@ class NotebookArchive(FileArchive):
                 substitutions[html_key] = (link_html, fpath)
 
             node = self._get_notebook_node()
-            if not self._cancel:
+            if self._cancel:
+                return
+            else:
                 html = self._generate_html(node, substitutions)
 
             export_filename = self.snapshot_name
