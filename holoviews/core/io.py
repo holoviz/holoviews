@@ -13,14 +13,8 @@ Archives: A collection of HoloViews objects that are first collected
           HoloViews objects to dump to HDF5.
 """
 from __future__ import absolute_import
-import re
-import os
-import time
-import string
-import pickle
-import zipfile
-import tarfile
-import itertools
+
+import re, os, time, string, pickle, zipfile, tarfile, shutil, itertools
 
 from io import BytesIO
 from hashlib import sha256
@@ -408,8 +402,10 @@ class FileArchive(Archive):
         if len(self) > 1 and not self.pack:
             output_dir = os.path.join(root,
                                       self._unique_name(export_name,'', root)[0])
-            if not os.path.isdir(output_dir):
-                os.makedirs(output_dir)
+            if os.path.isdir(output_dir):
+                shutil.rmtree(output_dir)
+            os.makedirs(output_dir)
+
             for (basename, ext), entry in files:
                 (data, info) = entry
 
