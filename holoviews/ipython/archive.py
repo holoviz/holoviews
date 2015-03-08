@@ -3,7 +3,7 @@ Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
 
-import time, os, json, traceback, threading
+import time, os, json, traceback
 import io
 
 from IPython.nbformat import reader
@@ -44,12 +44,6 @@ class NotebookArchive(FileArchive):
     display hooks and automatically adds a notebook HTML snapshot to
     the archive upon export.
     """
-
-    export_timeout = param.Integer(default=15, doc="""
-       A timeout limit (in seconds) between when the export method is
-       run and when the export process begins. Note that a few more
-       seconds may elapse before the files actually appear on disk.""")
-
     exporter = param.Callable(default=PlotRenderer.instance(holomap=None))
 
     namespace = param.String('holoviews.archive', doc="""
@@ -81,46 +75,20 @@ class NotebookArchive(FileArchive):
         super(NotebookArchive, self).__init__(**params)
         self.nbversion = None
         self._replacements = {}
-        self._exported, self._cancel = False, False
+        self._exported = False
         self._notebook_data = None
         self._notebook_name = None
         self._timestamp = None
-        self._thread = None
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
 
-    def _timeout(self, parent, export_name):
-        """
-        Timeout run in a separate thread to allow the notebook to keep
-        running after export is called.
-        """
-        # If you click 'Run All' in the notebook, all code cells are
-        # queued which means export may never actually happen (e.g. if
-        # an Exception occurs between the export and the end of the
-        # notebook. This method makes sure the user knows if the
-        # export has not occured (via an alert) using a timeout.
-        timeout = time.time() + (parent.export_timeout if parent.export_timeout else float('inf'))
-        while (time.time() < timeout):
-            time.sleep(0.5)
-            if parent._exported: return
 
-        if not parent._exported:
-            parent._cancel = True
-            msg = (("%s:\n\n" %  self.namespace)
-                + "Export \'{export_name}\' cancelled."
-                + "\n\nTimeout of {export_timeout} seconds exceeded"
-                + "\n\nPlease make sure to call export at the very end of your notebook.")
-            msg = msg.format(export_name=export_name, export_timeout=parent.export_timeout)
-            display(Javascript("alert({msg});".format(msg=repr(msg))))
-
-
-    def export(self, export_timeout=None, timestamp=None):
+    def export(self, timestamp=None):
         """
         Get the current notebook data and export.
         """
-        self.export_timeout = export_timeout if export_timeout else self.export_timeout
         self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
-        self._cancel, self._exported = False, False
+        self._exported = False
         self._notebook_data = io.BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
@@ -138,14 +106,10 @@ class NotebookArchive(FileArchive):
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
         export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':'{notebook}'})
-        info = (export_name, os.path.join(os.path.abspath(self.root)), self.export_timeout)
-        print(('Export name:  %r\nDirectory     %r\nTimeout limit: %d seconds' % info)
+        print(('Export name: %r\nDirectory    %r' % (export_name,
+                                                     os.path.join(os.path.abspath(self.root))))
                + '\n\nIf no output appears, please check holoviews.archive.traceback')
         display(Javascript(cmd))
-        self._thread = threading.Thread(target=self._timeout,
-                             name=str(self._timestamp),
-                             args=(self,export_name))
-        self._thread.start()
 
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
@@ -181,7 +145,6 @@ class NotebookArchive(FileArchive):
 
     def _export_with_html(self):
         "Computes substitions before using nbconvert with preprocessors"
-        self._exported = True
         try:
             tstamp = time.strftime(self.timestamp_format, self._timestamp)
 
@@ -205,10 +168,7 @@ class NotebookArchive(FileArchive):
                 substitutions[html_key] = (link_html, fpath)
 
             node = self._get_notebook_node()
-            if self._cancel:
-                return
-            else:
-                html = self._generate_html(node, substitutions)
+            html = self._generate_html(node, substitutions)
 
             export_filename = self.snapshot_name
 
@@ -229,7 +189,7 @@ class NotebookArchive(FileArchive):
                                                 info={'notebook':notebook})
         except Exception as e:
             self.traceback = traceback.format_exc()
-
+        self._exported = True
 
     def _get_notebook_node(self):
         "Load captured notebook node"
