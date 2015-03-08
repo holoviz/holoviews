@@ -1,6 +1,8 @@
 import string
 import numpy as np
 
+import param
+
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns
@@ -75,3 +77,23 @@ def unique_iterator(seq):
         if item not in seen:
             seen.add(item)
             yield item
+
+
+
+class ProgressIndicator(param.Parameterized):
+    """
+    Baseclass for any ProgressIndicator that indicates progress
+    as a completion percentage.
+    """
+
+    percent_range = param.NumericTuple(default=(0.0, 100.0), doc="""
+        The total percentage spanned by the progress bar when called
+        with a value between 0% and 100%. This allows an overall
+        completion in percent to be broken down into smaller sub-tasks
+        that individually complete to 100 percent.""")
+
+    label = param.String(default='Progress', allow_None=True, doc="""
+        The label of the current progress bar.""")
+
+    def __call__(self, completion):
+        raise NotImplementedError

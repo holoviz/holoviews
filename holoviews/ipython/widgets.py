@@ -23,11 +23,12 @@ ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 import param
 
 from ..core import OrderedDict, NdMapping
+from ..core.util import ProgressIndicator
 from ..plotting import Plot
 from .magics import OutputMagic
 
 
-class ProgressBar(param.Parameterized):
+class ProgressBar(ProgressIndicator):
     """
     A simple text progress bar suitable for both the IPython notebook
     and the IPython interactive prompt.
@@ -44,9 +45,6 @@ class ProgressBar(param.Parameterized):
        RemoteProgress class may then be used to view the progress from
        a different process.""")
 
-    label = param.String(default='Progress', allow_None=True, doc="""
-        The label of the current progress bar.""")
-
     width = param.Integer(default=70, doc="""
         The width of the progress bar as the number of chararacters""")
 
@@ -55,12 +53,6 @@ class ProgressBar(param.Parameterized):
 
     blank_char = param.String(default=' ', doc="""
         The character for the blank portion of the progress bar.""")
-
-    percent_range = param.NumericTuple(default=(0.0,100.0), doc="""
-        The total percentage spanned by the progress bar when called
-        with a value between 0% and 100%. This allows an overall
-        completion in percent to be broken down into smaller sub-tasks
-        that individually complete to 100 percent.""")
 
     elapsed_time = param.Boolean(default=True, doc="""
         If enabled, the progress bar will disappear and display the
