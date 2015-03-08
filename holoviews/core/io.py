@@ -440,14 +440,16 @@ class FileArchive(Archive):
     def __repr__(self):
         return self.pprint()
 
-    def contents(self):
+    def contents(self, maxlen=40):
         "Print the current (unexported) contents of the archive"
         lines = []
         if len(self._files) == 0:
             print("Empty %s" % self.__class__.__name__)
             return
-        max_len = max([len('.'.join(k)) for k in self._files])
-        for k,v in self._files.items():
+
+        fnames = [self._truncate_name(maxlen=maxlen, *k) for k in self._files]
+        max_len = max([len(f) for f in fnames])
+        for name,v in zip(fnames, self._files.values()):
             mime_type = v[1].get('mime_type', 'no mime type')
-            lines.append('- %s : %s' % ('.'.join(k).ljust(max_len), mime_type))
+            lines.append('- %s : %s' % (name.ljust(max_len), mime_type))
         print('\n'.join(lines))
