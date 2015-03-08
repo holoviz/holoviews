@@ -160,6 +160,7 @@ class NotebookArchive(FileArchive):
 
     def _export_with_html(self):
         "Computes substitions before using nbconvert with preprocessors"
+        self.export_success = True
         try:
             tstamp = time.strftime(self.timestamp_format, self._timestamp)
 
@@ -204,7 +205,8 @@ class NotebookArchive(FileArchive):
                                                 info={'notebook':notebook})
         except Exception as e:
             self.traceback = traceback.format_exc()
-        self.export_success = True
+            self.export_success = False
+
 
     def _get_notebook_node(self):
         "Load captured notebook node"
