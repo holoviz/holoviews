@@ -450,10 +450,12 @@ class OverlayPlot(ElementPlot):
         labels = []
         title = ''
         if issubclass(self.map.type, NdOverlay):
+            dimensions = self.map.last.key_dimensions
             for key in self.map.last.data.keys():
+                key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
                 labels.append(','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
-                                        zip(self.map.last.key_dimensions, key)]))
-            title = ', '.join([d.name for d in self.map.last.key_dimensions])
+                                        zip(dimensions, key)]))
+            title = ', '.join([d.name for d in dimensions])
         else:
             for key, subplot in self.subplots.items():
                 layer = self.map.last.data.get(key, False)
