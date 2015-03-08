@@ -346,6 +346,28 @@ class FileArchive(Archive):
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
+    def _single_file_archive(self, export_name, files, root):
+        ((_, ext), entry) = files[0]
+        (data, info) = entry
+        unique_name = self._unique_name(export_name, ext, root)
+        filename = self._truncate_name(self._normalize_name(*unique_name))
+        fpath = os.path.join(root, filename)
+        with open(fpath, 'w') as f:
+            f.write(self._encoding(entry))
+
+    def _directory_archive(self, export_name, files, root):
+        output_dir = os.path.join(root, self._unique_name(export_name,'', root)[0])
+        if os.path.isdir(output_dir):
+            shutil.rmtree(output_dir)
+        os.makedirs(output_dir)
+
+        for (basename, ext), entry in files:
+            (data, info) = entry
+            filename = '%s.%s' % (basename, ext) if ext else basename
+            fpath = os.path.join(output_dir, filename)
+            with open(fpath, 'w') as f:
+                f.write(self._encoding(entry))
+
 
     def _unique_name(self, basename, ext, existing, force=False):
         """
@@ -394,7 +416,6 @@ class FileArchive(Archive):
         """
         Export the archive, directory or file.
         """
-
         tval = tuple(time.localtime()) if timestamp is None else timestamp
         tstamp = time.strftime(self.timestamp_format, tval)
 
@@ -405,27 +426,9 @@ class FileArchive(Archive):
         root = os.path.abspath(self.root)
         # Make directory and populate if multiple files and not packed
         if len(self) > 1 and not self.pack:
-            output_dir = os.path.join(root,
-                                      self._unique_name(export_name,'', root)[0])
-            if os.path.isdir(output_dir):
-                shutil.rmtree(output_dir)
-            os.makedirs(output_dir)
-
-            for (basename, ext), entry in files:
-                (data, info) = entry
-
-                filename = '%s.%s' % (basename, ext) if ext else basename
-                fpath = os.path.join(output_dir, filename)
-                with open(fpath, 'w') as f:
-                    f.write(self._encoding(entry))
+            self._directory_archive(self, export_name, files, root)
         elif len(files) == 1:
-            ((_, ext), entry) = files[0]
-            (data, info) = entry
-            unique_name = self._unique_name(export_name, ext, root)
-            filename = self._truncate_name(self._normalize_name(*unique_name))
-            fpath = os.path.join(root, filename)
-            with open(fpath, 'w') as f:
-                f.write(self._encoding(entry))
+            self._single_file_archive(self, export_name, files, root)
         elif self.archive_format == 'zip':
             self._zip_archive(export_name, files, root)
         elif self.archive_format == 'tar':
