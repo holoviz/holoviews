@@ -103,6 +103,8 @@ class Box(Path):
     the specified aspect ratio (if any).
     """
 
+    group = param.String(default='Box')
+
     def __init__(self, x, y, height, aspect=1.0, **params):
         width = height * aspect
         (l,b,r,t) = (x-width/2.0, y-height/2, x+width/2.0, y+height/2)
@@ -122,6 +124,8 @@ class Ellipse(Path):
     matplotlib artist.
     """
 
+    group = param.String(default='Ellipse')
+
     def __init__(self, x, y, height, aspect=1, samples=100, **params):
 
         angles = np.linspace(0, 2*np.pi, samples)
@@ -138,6 +142,9 @@ class Bounds(Path):
     rectangle with the specified (left, bottom, right, top)
     coordinates.
     """
+
+    group = param.String(default='Bounds')
+
     def __init__(self, data, **params):
         if not isinstance(data, (tuple, float)):
             raise ValueError("Input to Box must be either a tuple of format (l,b,r,t) or a radius")
