@@ -29,7 +29,7 @@ import param
 
 from .util import unique_iterator
 from .ndmapping import OrderedDict, UniformNdMapping
-
+from .dimension import LabelledData
 
 class Exporter(param.ParameterizedFunction):
     """
@@ -132,7 +132,7 @@ class Archive(param.Parameterized):
 
 
 
-def name_generator(obj):
+def simple_name_generator(obj):
     """
     Simple name_generator designed for HoloViews objects.
 
@@ -143,12 +143,15 @@ def name_generator(obj):
     a container of one element where they both share the same
     group and label.
     """
-    labels = obj.traverse(lambda x:
-        (x.group + ('-'  +x.label if x.label else '')))
 
-    labels=[l[0] for l in itertools.groupby(labels)]
-
-    return ','.join(labels)
+    if isinstance(obj, LabelledData):
+        labels = obj.traverse(lambda x:
+                              (x.group + ('-'  +x.label if x.label else '')))
+        labels=[l[0] for l in itertools.groupby(labels)]
+        obj_str = ','.join(labels)
+    else:
+        obj_str = repr(obj)
+    return obj_str
 
 
 
@@ -168,7 +171,7 @@ class FileArchive(Archive):
         Valid fields are the {name}, {range} and {unit} of the
         dimensions.""")
 
-    object_formatter = param.Callable(default=name_generator, doc="""
+    object_formatter = param.Callable(default=simple_name_generator, doc="""
         Callable that given an object returns a string suitable for
         inclusion in file and directory names. This is what generates
         the value used in the {obj} field of the filename
