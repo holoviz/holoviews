@@ -138,12 +138,12 @@ def name_generator(obj):
 
     Objects are labeled with {group}-{label} for each nested
     object, based on a depth-first search.  Adjacent objects with
-    identical representations yeild only a single copy of the 
-    representation, to avoid long names for the common case of 
+    identical representations yeild only a single copy of the
+    representation, to avoid long names for the common case of
     a container of one element where they both share the same
     group and label.
     """
-    labels = obj.traverse(lambda x: 
+    labels = obj.traverse(lambda x:
         (x.group + ('-'  +x.label if x.label else '')))
 
     labels=[l[0] for l in itertools.groupby(labels)]
@@ -315,7 +315,7 @@ class FileArchive(Archive):
 
         if filename is None:
             filename = self._format(self.filename_formatter, format_values)
-            
+
         filename = self._normalize_name(filename)
 
         ext = info.get('file-ext', '')
@@ -326,8 +326,7 @@ class FileArchive(Archive):
     def _encoding(self, entry):
         (data, info) = entry
         if info['mime_type'] in self._utf8_mime_types:
-            utf_data = data.encode('utf-8')
-            return utf_data
+            return data.encode('utf-8')
         else:
             return data
 
