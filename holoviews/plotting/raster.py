@@ -174,12 +174,14 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'origin']
 
-    def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None, **params):
+    def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
+                 layout_num=1, **params):
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
         self.cyclic_index = 0
         self.zorder = 0
+        self.layout_num = layout_num
         self.overlaid = False
         self.map = {}
         if layout.ndims > 1:
