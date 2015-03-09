@@ -941,7 +941,7 @@ class GridSpace(UniformNdMapping):
             index_ind = [idx for idx, el in enumerate(key)
                          if not isinstance(el, (slice, str))][0]
             dim_keys = np.array([k[index_ind] for k in self.keys()])
-            snapped_val = dim_keys[np.argmin(dim_keys-key[index_ind])]
+            snapped_val = dim_keys[np.argmin(np.abs(dim_keys-key[index_ind]))]
             key = list(key)
             key[index_ind] = snapped_val
             key = tuple(key)
