@@ -21,6 +21,7 @@ from hashlib import sha256
 
 import param
 
+from .options import Store
 from .util import unique_iterator
 from .ndmapping import OrderedDict, UniformNdMapping
 from .dimension import LabelledData
@@ -89,7 +90,7 @@ class Pickler(Exporter):
         versions and 2 is efficient for new style classes.""")
 
     def __call__(self, obj):
-        data = pickle.dumps(obj, protocol=self.protocol)
+        data = Store.dumps(obj, protocol=self.protocol)
         return data, {'file-ext':'pkl',
                       'size':len(data),
                       'mime_type':'application/python-pickle'}
