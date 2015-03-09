@@ -334,10 +334,11 @@ class fft_power(ElementOperation):
 
 
     def _process(self, matrix, key=None):
-
+        normfn = raster_normalization.instance()
         if self.p.input_ranges:
-            normfn = raster_normalization.instance()
             matrix = normfn.process_element(matrix, key, *self.p.input_ranges)
+        else:
+            matrix = normfn.process_element(matrix, key)
 
         fft_spectrum = abs(np.fft.fftshift(np.fft.fft2(matrix.data - 0.5, s=None, axes=(-2, -1))))
         fft_spectrum = 1 - fft_spectrum # Inverted spectrum by convention
