@@ -194,16 +194,16 @@ class NotebookArchive(FileArchive):
                 filename = self._format(basename, {'timestamp':tstamp,
                                                    'notebook':self.notebook_name})
                 fpath = filename+(('.%s' % ext) if ext else '')
-                msg = "<center><b>%s</b><center/>"
-                if 'mime_type' not in info:
-                    link_html = msg % "Could not determine data mime-type"
-                if info['mime_type'] not in self._tags:
-                    link_html = msg % 'Could not determine HTML tag from mime-type'
-
                 info = {'src':fpath, 'mime_type':info['mime_type']}
-                link_html = self._format(self._tags[info['mime_type']],
-                                         {'src':fpath, 'mime_type':info['mime_type']})
-                substitutions[html_key] = (link_html, fpath)
+                msg = "<center><b>%s</b><center/>"
+                # No mime type
+                if 'mime_type' not in info: pass
+                # Not displayable in an HTML tag
+                elif info['mime_type'] not in self._tags: pass
+                else:
+                    link_html = self._format(self._tags[info['mime_type']],
+                                             {'src':fpath, 'mime_type':info['mime_type']})
+                    substitutions[html_key] = (link_html, fpath)
 
             node = self._get_notebook_node()
             html = self._generate_html(node, substitutions)
