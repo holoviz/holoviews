@@ -142,7 +142,7 @@ class NotebookArchive(FileArchive):
                + r"kernel.execute(pycmd)")
 
         tstamp = time.strftime(self.timestamp_format, self._timestamp)
-        export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':'{notebook}'})
+        export_name = self._format(self.export_name, {'timestamp':tstamp, 'notebook':self.notebook_name})
         print(('Export name: %r\nDirectory    %r' % (export_name,
                                                      os.path.join(os.path.abspath(self.root))))
                + '\n\nIf no output appears, please check holoviews.archive.last_export_status()')
@@ -154,7 +154,7 @@ class NotebookArchive(FileArchive):
         initial_last_key = self._files.keys()[-1] if len(self) else None
         if self._auto:
             super(NotebookArchive, self).add(obj, filename, data,
-                                             info=dict(info, notebook='{notebook}'))
+                                             info=dict(info, notebook=self.notebook_name))
             # Only add substitution if file successfully added to archive.
             new_last_key = self._files.keys()[-1] if len(self) else None
             if new_last_key != initial_last_key:
@@ -220,10 +220,10 @@ class NotebookArchive(FileArchive):
             super(NotebookArchive, self).add(filename=export_filename,
                                              data=cleared, info={'file-ext':'ipynb',
                                                                  'mime_type':'text/json',
-                                                                 'notebook':notebook})
+                                                                 'notebook':self.notebook_name})
             # If store cleared_notebook... save here
             super(NotebookArchive, self).export(timestamp=self._timestamp,
-                                                info={'notebook':notebook})
+                                                info={'notebook':self.notebook_name})
         except Exception as e:
             self.traceback = traceback.format_exc()
             self.export_success = False
