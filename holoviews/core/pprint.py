@@ -19,6 +19,13 @@ class PrintUtils(object):
     tab = '   '
 
     @classmethod
+    def serialize(cls, lines):
+        accumulator = []
+        for level, line in lines:
+            accumulator.append((level *cls.tab) + line)
+        return "\n".join(accumulator)
+
+    @classmethod
     def shift(cls, lines, shift=0):
         return [(lvl+shift, line) for (lvl, line) in lines]
 
@@ -151,11 +158,7 @@ class PrettyPrinter(Info, PrintUtils):
 
     @classmethod
     def pprint(cls, node):
-        accumulator = []
-        for level, line in cls.recurse(node):
-            accumulator.append((level *cls.tab) + line)
-        return "\n".join(accumulator)
-
+        return cls.serialize(cls.recurse(node))
 
     @classmethod
     def recurse(cls, node, node_name=None, level=0, siblings=[], node_names=[]):
