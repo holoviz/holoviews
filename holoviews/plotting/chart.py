@@ -209,7 +209,7 @@ class HistogramPlot(ChartPlot):
         # Plot bars and make any adjustments
         style = Store.lookup_options(hist, 'style')[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
-        self.handles['bars'] = self._update_plot(self.keys[-1], bars, lims) # Indexing top
+        self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims) # Indexing top
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -274,7 +274,7 @@ class HistogramPlot(ChartPlot):
         return axis_settings
 
 
-    def _update_plot(self, key, bars, lims):
+    def _update_plot(self, key, hist, bars, lims):
         """
         Process bars can be subclassed to manually adjust bars
         after being plotted.
@@ -282,7 +282,7 @@ class HistogramPlot(ChartPlot):
         return bars
 
 
-    def _update_artists(self, key, edges, hvals, widths, lims):
+    def _update_artists(self, key, hist, edges, hvals, widths, lims):
         """
         Update all the artists in the histogram. Subclassable to
         allow updating of further artists.
@@ -309,7 +309,7 @@ class HistogramPlot(ChartPlot):
 
         ticks = self._compute_ticks(view, edges, widths, lims)
         ax_settings = self._process_axsettings(view, lims, ticks)
-        self._update_artists(key, edges, hvals, widths, lims)
+        self._update_artists(key, view, edges, hvals, widths, lims)
         return ax_settings
 
 
@@ -333,10 +333,6 @@ class SideHistogramPlot(HistogramPlot):
         Whether to show the x-label of the plot. Disabled by default
         because plots are often too cramped to fit the title correctly.""")
 
-    def __init__(self, *args, **params):
-        self.layout = params.pop('layout', None)
-        super(SideHistogramPlot, self).__init__(*args, **params)
-
     def _process_hist(self, hist):
         """
         Subclassed to offset histogram by defined amount.
@@ -356,20 +352,20 @@ class SideHistogramPlot(HistogramPlot):
         return axsettings
 
 
-    def _update_artists(self, n, edges, hvals, widths, lims):
-        super(SideHistogramPlot, self)._update_artists(n, edges, hvals, widths, lims)
-        self._update_plot(n, self.handles['bars'], lims)
+    def _update_artists(self, n, view, edges, hvals, widths, lims):
+        super(SideHistogramPlot, self)._update_artists(n, view, edges, hvals, widths, lims)
+        self._update_plot(n, view, self.handles['bars'], lims)
 
 
-    def _update_plot(self, key, bars, lims):
+    def _update_plot(self, key, view, bars, lims):
         """
         Process the bars and draw the offset line as necessary. If a
         color map is set in the style of the 'main' ViewableElement object, color
         the bars appropriately, respecting the required normalization
         settings.
         """
-        hist = self._get_frame(key)
-        main = self.layout.main
+        hist = view
+        main = self.adjoined.main
         y0, y1 = hist.ylim
         offset = self.offset * y1
         plot_options = Store.lookup_options(main, 'plot').options

@@ -331,12 +331,12 @@ class CompositePlot(Plot):
         """
         layout_frame = self.layout.clone(shared_data=False)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
-                                  list(x.data.keys())[max([key, len(x)-1])])
+                                  list(x.data.keys())[min([key[0], len(x)-1])])
         for path, item in self.layout.items():
             if self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions], key)
             else:
-                dim_keys = item.traverse(nthkey_fn, ('HoloMap',))
+                dim_keys = item.traverse(nthkey_fn, ('HoloMap',))[0]
             if dim_keys:
                 layout_frame[path] = item.select(**dict(dim_keys))
             else:
@@ -894,7 +894,7 @@ class LayoutPlot(CompositePlot):
         """
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
-        subplot_opts = dict(show_title=False, layout=layout)
+        subplot_opts = dict(show_title=False, adjoined=layout)
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             view = layout.get(pos, None)
@@ -933,7 +933,6 @@ class LayoutPlot(CompositePlot):
                     plot_type = Store.defaults[vtype]
                 else:
                     plot_type = Plot.sideplots[vtype]
-
             subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
                                       dimensions=self.dimensions,
                                       layout_dimensions=layout_dimensions,

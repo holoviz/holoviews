@@ -82,8 +82,9 @@ class ElementPlot(Plot):
     style_opts = []
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
-                 cyclic_index=0, style=None, zorder=0, layout_num=1, **params):
+                 cyclic_index=0, style=None, zorder=0, layout_num=1, adjoined=None, **params):
         self.map = self._check_map(element, ranges, keys)
+        self.adjoined = adjoined
         self.layout_num = layout_num
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
