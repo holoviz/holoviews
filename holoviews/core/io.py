@@ -297,37 +297,54 @@ class FileArchive(Archive):
         elif [obj, data] == [None, None]:
             raise Exception("Either an object or explicit data must be "
                             "supplied to create an entry in the archive.")
+
+        self._validate_formatters()
+
+        entries = []
         if data is None:
             rendered = self.exporter(obj)
             if rendered is None: return
             (data, new_info) = rendered
             info = dict(info, **new_info)
-        self._validate_formatters()
+            entries.append((data, info))
+        else:
+            entries.append((data, info))
 
-        hashfn = sha256()
-        obj_str = 'None' if obj is None else self.object_formatter(obj)
-        dimensions = self._dim_formatter(obj)
-        dimensions = dimensions if dimensions else ''
+        for (data, info) in entries:
+            self._add_content(obj, data, info, filename=filename)
 
-        hashfn.update(obj_str.encode('utf-8'))
-        format_values = {'timestamp': '{timestamp}',
-                         'dimensions': dimensions,
-                         'group':   getattr(obj, 'group', 'no-group'),
-                         'label':   getattr(obj, 'label', 'no-label'),
-                         'type':    obj.__class__.__name__,
-                         'obj':     obj_str,
-                         'SHA':     hashfn.hexdigest()}
 
+    def _add_content(self, obj, data, info, filename=None):
+        (unique_key, ext) = self._compute_filename(obj, info, filename=filename)
+        self._files[(unique_key, ext)] = (data, info)
+
+
+    def _compute_filename(self, obj, info, filename=None):
         if filename is None:
+            hashfn = sha256()
+            obj_str = 'None' if obj is None else self.object_formatter(obj)
+            dimensions = self._dim_formatter(obj)
+            dimensions = dimensions if dimensions else ''
+
+            hashfn.update(obj_str.encode('utf-8'))
+            format_values = {'timestamp': '{timestamp}',
+                             'dimensions': dimensions,
+                             'group':   getattr(obj, 'group', 'no-group'),
+                             'label':   getattr(obj, 'label', 'no-label'),
+                             'type':    obj.__class__.__name__,
+                             'obj':     obj_str,
+                             'SHA':     hashfn.hexdigest()}
+
             filename = self._format(self.filename_formatter,
                                     dict(info, **format_values))
 
         filename = self._normalize_name(filename)
-
         ext = info.get('file-ext', '')
         (unique_key, ext) = self._unique_name(filename, ext,
                                               self._files.keys(), force=True)
-        self._files[(unique_key, ext)] = (data, info)
+        return (unique_key, ext)
+
+
 
     def _zip_archive(self, export_name, files, root):
         archname = '.'.join(self._unique_name(export_name, 'zip', root))
