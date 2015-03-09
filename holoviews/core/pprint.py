@@ -91,10 +91,14 @@ class Info(object):
     def overlay_info(cls, level, node, siblings, value_dims=True):
         overlay_info, siblings = [], node.values()
         for el in siblings:
-            _, element_info = cls.element_info(level, el, siblings, value_dims=True)
-            element_info = [(lvl,'*--'+line) for (lvl,line) in element_info]
-            overlay_info += element_info
-
+            # HoloMap type element (e.g. NdOverlay)
+            if getattr(el, '_deep_indexable', False):
+                level, ndoverlay_info =  cls.ndmapping_info(level, el, el.values())
+                overlay_info += [(lvl,'*--'+line) for (lvl,line) in ndoverlay_info]
+            else:
+                _, element_info = cls.element_info(level, el, siblings, value_dims=True)
+                element_info = [(lvl,'*--'+line) for (lvl,line) in element_info]
+                overlay_info += element_info
         return cls.dotted(node), overlay_info
 
 
