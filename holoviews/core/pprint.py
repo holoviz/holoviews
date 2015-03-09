@@ -126,13 +126,15 @@ class Info(object):
         if len(node.data) == 0:
             return level, lines
 
-        if hasattr(node.last, 'children'):  # Must be an Overlay
-            overlay_info = cls.overlay_info(level, node.last, siblings, value_dims=True)
+        # .last has different semantics for GridSpace
+        last = node.data.values()[-1]
+        if hasattr(last, 'children'):  # Must be an Overlay
+            overlay_info = cls.overlay_info(level, last, siblings, value_dims=True)
             element_info, additional_lines = overlay_info
         # NdOverlays, GridSpace, Ndlayouts
-        elif node.last is not None and getattr(node.last, '_deep_indexable'):
-            element_info = cls.dotted(node.last) # Incomplete
-            additional_lines = []
+        elif last is not None and getattr(last, '_deep_indexable'):
+            element_info = cls.dotted(last)
+            level, additional_lines = cls.ndmapping_info(level, last, [])
         else:
             _, [info] = cls.element_info(level, node.last, siblings, value_dims=True)
             _, element_info = info
