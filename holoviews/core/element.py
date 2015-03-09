@@ -725,7 +725,7 @@ class HoloMap(UniformNdMapping):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = HoloMap(key_dimensions=self.key_dimensions)
+        histmap = self.clone(shared_data=False)
 
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
