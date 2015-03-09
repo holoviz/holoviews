@@ -121,11 +121,12 @@ class Plot(param.Parameterized):
         # Traverse displayed object if normalization applies
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
+        elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
             if group in ranges:
                 continue # Skip if ranges are already computed
-            elif not framewise: # Traverse to get all elements
+            elif not framewise and not self.adjoined: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 elements = self._get_frame(key).traverse(return_fn, [group])
@@ -336,7 +337,8 @@ class CompositePlot(Plot):
                                   list(x.data.keys())[min([key[0], len(x)-1])])
         for path, item in self.layout.items():
             if self.uniform:
-                dim_keys = zip([d.name for d in self.dimensions], key)
+                dim_keys = zip([d.name for d in self.dimensions
+                                if d in item.key_dimensions], key)
             else:
                 dim_keys = item.traverse(nthkey_fn, ('HoloMap',))[0]
             if dim_keys:
@@ -400,6 +402,7 @@ class GridPlot(CompositePlot):
                  dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
+        self.layout = layout
         self.cols, self.rows = layout.shape
         self.layout_num = layout_num
         extra_opts = Store.lookup_options(layout, 'plot').options
@@ -448,7 +451,7 @@ class GridPlot(CompositePlot):
                 subplot = Store.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
                                                 subplot=not create_axes, ranges=frame_ranges,
-                                                uniform=self.uniform)
+                                                uniform=self.uniform, keys=self.keys)
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:

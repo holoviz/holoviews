@@ -82,9 +82,18 @@ class ElementPlot(Plot):
     style_opts = []
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
-                 cyclic_index=0, style=None, zorder=0, layout_num=1, adjoined=None, **params):
+                 cyclic_index=0, style=None, zorder=0, layout_num=1, adjoined=None,
+                 uniform=True, **params):
+        self.dimensions = dimensions
+        self.keys = keys
+        if not isinstance(element, HoloMap):
+            self.map = HoloMap(initial_items=(0, element),
+                               key_dimensions=['Frame'], id=element.id)
+        else:
+            self.map = element
+        self.uniform = uniform
         self.adjoined = adjoined
-        self.map = self._check_map(element, ranges, keys)
+        self.map = self._check_map(ranges, keys)
         self.layout_num = layout_num
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
@@ -94,7 +103,7 @@ class ElementPlot(Plot):
         keys = keys if keys else list(self.map.data.keys())
         plot_opts = Store.lookup_options(self.map.last, 'plot').options
         super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions, adjoined=adjoined,
-                                          **dict(params, **plot_opts))
+                                          uniform=uniform, **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
@@ -118,13 +127,13 @@ class ElementPlot(Plot):
         return selection.last if isinstance(selection, HoloMap) else selection
 
 
-    def _check_map(self, holomap, ranges=None, keys=None):
+    def _check_map(self, ranges=None, keys=None):
         """
         Helper method that ensures a given element is always returned as
         an HoloMap object.
         """
         # Apply data collapse
-        holomap = holomap.map(Compositor.collapse_element, [CompositeOverlay])
+        holomap = self.map.map(Compositor.collapse_element, [CompositeOverlay])
 
         # Compute framewise normalization
         mapwise_ranges = self.compute_ranges(holomap, None, None)
@@ -138,10 +147,6 @@ class ElementPlot(Plot):
                                         for key in (keys if keys else holomap.keys())])
             ranges = frame_ranges.values()
             keys = holomap.keys()
-        else:
-            holomap = HoloMap(initial_items=(0, holomap), key_dimensions=['Frame'], id=holomap.id)
-            ranges = [mapwise_ranges]
-            keys = [(0,)]
 
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
@@ -437,7 +442,8 @@ class OverlayPlot(ElementPlot):
             plotopts = dict(keys=self.keys, axis=self.handles['axis'], style=style,
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
-                            layout_dimensions=self.layout_dimensions, uniform=self.uniform)
+                            layout_dimensions=self.layout_dimensions,
+                            dimensions=self.dimensions, uniform=self.uniform)
             plotype = Store.defaults[type(vmap.last)]
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)

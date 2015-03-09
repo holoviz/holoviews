@@ -179,6 +179,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
+        self.layout = layout
         self.cyclic_index = 0
         self.zorder = 0
         self.layout_num = layout_num
@@ -220,7 +221,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     vmap = self.layout.get((xkey, ykey), None)
                 else:
                     vmap = self.layout.get(xkey, None)
-                pane = vmap.get(key, None) if vmap else None
+                pane = vmap.select({d: val for d, val in zip(self.dimensions, key)
+                                    if d in vmap.key_dimensions}).last
                 if pane:
                     if issubclass(vmap.type, CompositeOverlay): pane = pane.values()[-1]
                     data = pane.data if pane else None
@@ -232,7 +234,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
                 plot.set_clim(valrange)
-                if key not in vmap:
+                if data is None:
                     plot.set_visible(False)
                 self.handles['projs'].append(plot)
                 y += h + b_h
