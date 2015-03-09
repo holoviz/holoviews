@@ -200,7 +200,7 @@ class AttrTree(object):
         except AttributeError: pass
 
         if self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
-        identifier = sanitize_identifier(identifier)
+        identifier = sanitize_identifier(identifier, escape=False)
 
         unescaped_identifier = unescape_identifier(identifier)
         if unescaped_identifier in self.children:
