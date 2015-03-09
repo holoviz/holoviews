@@ -335,7 +335,7 @@ class Collect(object):
                 raise Exception("Return value is not a Layout and mode is 'merge'.")
 
         if self.path not in attrtree:
-            if not isinstance(val, UniformNdMapping):
+            if not isinstance(val, (UniformNdMapping, Layout)):
                 val = HoloMap([((time,), val)], key_dimensions=[Time])
         else:
             current_val = attrtree.data[self.path]
