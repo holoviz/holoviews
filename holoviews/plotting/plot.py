@@ -76,8 +76,10 @@ class Plot(param.Parameterized):
     sideplots = {}
 
 
-    def __init__(self, figure=None, axis=None, dimensions=None, layout_dimensions=None,
-                 subplots=None, uniform=True, keys=None, subplot=False, **params):
+    def __init__(self, figure=None, axis=None, dimensions=None, subplots=None,
+                 layout_dimensions=None, uniform=True, keys=None, subplot=False,
+                 adjoined=None, **params):
+        self.adjoined = adjoined
         self.subplots = subplots
         self.subplot = figure is not None or subplot
         self.dimensions = dimensions
@@ -110,7 +112,7 @@ class Plot(param.Parameterized):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = {} if ranges is None else dict(ranges)
+        ranges = {} if ranges is None or self.adjoined else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options

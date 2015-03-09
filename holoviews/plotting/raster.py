@@ -175,11 +175,10 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                   'filterrad', 'origin']
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
-                 layout_num=1, adjoined=None, **params):
+                 layout_num=1, **params):
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
         Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
-        self.adjoined = adjoined
         self.cyclic_index = 0
         self.zorder = 0
         self.layout_num = layout_num

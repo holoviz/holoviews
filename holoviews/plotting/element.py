@@ -83,8 +83,8 @@ class ElementPlot(Plot):
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
                  cyclic_index=0, style=None, zorder=0, layout_num=1, adjoined=None, **params):
-        self.map = self._check_map(element, ranges, keys)
         self.adjoined = adjoined
+        self.map = self._check_map(element, ranges, keys)
         self.layout_num = layout_num
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
@@ -93,7 +93,7 @@ class ElementPlot(Plot):
         dimensions = self.map.key_dimensions if dimensions is None else dimensions
         keys = keys if keys else list(self.map.data.keys())
         plot_opts = Store.lookup_options(self.map.last, 'plot').options
-        super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions,
+        super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions, adjoined=adjoined,
                                           **dict(params, **plot_opts))
 
 
