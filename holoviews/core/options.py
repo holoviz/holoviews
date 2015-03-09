@@ -609,13 +609,16 @@ class Compositor(param.Parameterized):
             level += 1      # Types match
             if len(spec) == 1: continue
 
-            elif spec[1] == el.group: level += 1  # Values match
+            group = [el.group, sanitize_identifier(el.group, escape=False)]
+            if spec[1] in group: level += 1  # Values match
             else:                     return None
 
-            if len(spec) == 3 and (spec[2] == el.label):
-                level += 1  # Labels match
-            elif len(spec) == 3:
-                return None
+            if len(spec) == 3:
+                group = [el.label, sanitize_identifier(el.label, escape=False)]
+                if (spec[2] in group):
+                    level += 1  # Labels match
+                else:
+                    return None
         return level
 
 
