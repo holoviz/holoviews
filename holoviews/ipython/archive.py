@@ -74,13 +74,18 @@ class NotebookArchive(FileArchive):
     def __init__(self, **params):
         super(NotebookArchive, self).__init__(**params)
         self.nbversion = None
-        self._replacements = {}
+        self.notebook_name = None
         self.export_success = None
+
+        self._replacements = {}
         self._notebook_data = None
-        self._notebook_name = None
         self._timestamp = None
         self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
                       if isinstance(val, tuple) and len(val)==2}
+
+        keywords = ['%s=%s' % (k, v.__class__.__name__) for k,v in self.params().items()]
+        self.auto.__func__.__doc__ = 'auto(enabled=Boolean, %s)' % ', '.join(keywords)
+
 
     def last_export_status(self):
         "Helper to show the status of the last call to the export method."
@@ -98,21 +103,38 @@ class NotebookArchive(FileArchive):
             print("\n"+self.traceback)
 
 
+    def auto(self, enabled=True, **kwargs):
+        """
+        Method to enable or disable automatic capture, allowing you to
+        simultaneously set the instance parameters.
+        """
+        self.notebook_name = "{notebook}"
+        self._timestamp = tuple(time.localtime())
+        kernel = r'var kernel = IPython.notebook.kernel; '
+        nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
+        nbcmd = (r"var name_cmd = '%s.notebook_name = \"' + nbname + '\"'; " % self.namespace)
+        cmd = (kernel + nbname + nbcmd + "kernel.execute(name_cmd); ")
+        display(Javascript(cmd))
+        time.sleep(0.5)
+        self._auto=enabled
+        self.set_param(**kwargs)
+
+        tstamp = time.strftime(" [%Y-%m-%d %H:%M:%S]", self._timestamp)
+        print("Automatic capture is now %s.%s"
+              % ('enabled' if enabled else 'disabled',
+                 tstamp if enabled else ''))
+
     def export(self, timestamp=None):
         """
         Get the current notebook data and export.
         """
-        self._timestamp = timestamp if (timestamp is not None) else tuple(time.localtime())
         self.export_success = None
         self._notebook_data = io.BytesIO()
         name = self.namespace
         # Unfortunate javascript hacks to get at notebook data
         capture_cmd = ((r"var capture = '%s._notebook_data.write(r\"\"\"'" % name)
                        + r"+json_string+'\"\"\".encode(\'utf-8\'))'; ")
-        nbname = r"var nbname = IPython.notebook.get_notebook_name(); "
-        nbcmd = (r"var nbcmd = '%s._notebook_name = \"' + nbname + '\"'; " % name)
         cmd = (r'var kernel = IPython.notebook.kernel; '
-               + nbname + nbcmd + "kernel.execute(nbcmd); "
                + r'var json_data = IPython.notebook.toJSON(); '
                + r'var json_string = JSON.stringify(json_data); '
                + capture_cmd
@@ -130,7 +152,7 @@ class NotebookArchive(FileArchive):
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
         "Similar to FileArchive.add but accepts html strings for substitution"
         initial_last_key = self._files.keys()[-1] if len(self) else None
-        if self.auto:
+        if self._auto:
             super(NotebookArchive, self).add(obj, filename, data,
                                              info=dict(info, notebook='{notebook}'))
             # Only add substitution if file successfully added to archive.
@@ -170,7 +192,7 @@ class NotebookArchive(FileArchive):
                 html_key = self._replacements.get((basename, ext), None)
                 if html_key is None: continue
                 filename = self._format(basename, {'timestamp':tstamp,
-                                                   'notebook':self._notebook_name})
+                                                   'notebook':self.notebook_name})
                 fpath = filename+(('.%s' % ext) if ext else '')
                 msg = "<center><b>%s</b><center/>"
                 if 'mime_type' not in info:
@@ -188,12 +210,11 @@ class NotebookArchive(FileArchive):
 
             export_filename = self.snapshot_name
 
-            notebook =  self._notebook_name if self._notebook_name else '-no-notebook-name-'
             # Add the html snapshot
             super(NotebookArchive, self).add(filename=export_filename,
                                              data=html, info={'file-ext':'html',
                                                               'mime_type':'text/html',
-                                                              'notebook':notebook})
+                                                              'notebook':self.notebook_name})
             # Add cleared notebook
             cleared = self._clear_notebook(node)
             super(NotebookArchive, self).add(filename=export_filename,
