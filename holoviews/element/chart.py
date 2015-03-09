@@ -50,7 +50,7 @@ class Chart(Element2D):
         """
         if isinstance(ndmap, Table):
             data = np.vstack([np.concatenate([key, vals])
-                              for key, vals in ndmap.data.items()])
+                              for key, vals in ndmap.data.items()]).astype(np.float)
             settings = dict(ndmap.get_param_values(onlychanged=True))
         else:
             data = np.concatenate([v.data for v in ndmap])
