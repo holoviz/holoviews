@@ -180,7 +180,7 @@ class PlotRenderer(Exporter):
         filename ='%s.%s' % (basename, info['file-ext'])
         if self._capture_mode == 1: return
         with open(filename, 'w') as f:
-            f.write(self.encode(data))
+            f.write(self.encode(rendered))
 
     def anim_data(self, anim, fmt, writer, **anim_kwargs):
         """
