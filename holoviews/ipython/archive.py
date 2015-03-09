@@ -77,6 +77,7 @@ class NotebookArchive(FileArchive):
         self.notebook_name = None
         self.export_success = None
 
+        self._auto = False
         self._replacements = {}
         self._notebook_data = None
         self._timestamp = None
