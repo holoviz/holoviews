@@ -971,7 +971,7 @@ class GridSpace(UniformNdMapping):
         directly or use the items() method.
         """
         if self.type == HoloMap:
-            last_items = [(k, v.clone((list(v.keys())[-1], v.last)))
+            last_items = [(k, v.last if isinstance(v, HoloMap) else v)
                           for (k, v) in self.items()]
         else:
             last_items = self.data
