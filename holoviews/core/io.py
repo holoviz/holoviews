@@ -112,9 +112,9 @@ class Archive(param.Parameterized):
     * Storing a collection of HoloViews objects to a database or HDF5.
     """
 
-    exporter= param.ClassSelector(class_=Exporter, doc="""
-        The exporter function used to convert HoloViews objects into the
-        appropriate format."""  )
+    exporters= param.List(default=[], doc="""
+        The exporter functions used to convert HoloViews objects into the
+        appropriate format(s)."""  )
 
     def add(self, obj, *args, **kwargs):
         """
@@ -158,9 +158,9 @@ class FileArchive(Archive):
     directory or in an archive format (e.g. a zip file).
     """
 
-    exporter= param.Callable(default=Pickler, doc="""
-        The exporter function used to convert HoloViews objects into the
-        appropriate format.""")
+    exporters= param.List(default=[Pickler], doc="""
+        The exporter functions used to convert HoloViews objects into
+        the appropriate format(s).""")
 
     dimension_formatter = param.String("{name}_{range}", doc="""
         A string formatter for the output file based on the
@@ -302,11 +302,12 @@ class FileArchive(Archive):
 
         entries = []
         if data is None:
-            rendered = self.exporter(obj)
-            if rendered is None: return
-            (data, new_info) = rendered
-            info = dict(info, **new_info)
-            entries.append((data, info))
+            for exporter in self.exporters:
+                rendered = exporter(obj)
+                if rendered is None: continue
+                (data, new_info) = rendered
+                info = dict(info, **new_info)
+                entries.append((data, info))
         else:
             entries.append((data, info))
 
