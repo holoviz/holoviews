@@ -36,6 +36,23 @@ class Exporter(param.ParameterizedFunction):
     Storage:    Databases (e.g SQL), HDF5 etc.
     """
 
+    # Mime-types that need encoding as utf-8 upon export
+    utf8_mime_types = ['image/svg+xml', 'text/html']
+
+    @classmethod
+    def encode(cls, entry):
+        """
+        Classmethod that applies conditional encoding based on
+        mime-type. Given an entry as returned by __call__ return the
+        data in the appropriate encoding.
+        """
+        (data, info) = entry
+        if info['mime_type'] in cls.utf8_mime_types:
+            return data.encode('utf-8')
+        else:
+            return data
+
+
     def __call__(self, obj, fmt=None):
         """
         Given a HoloViews object return the raw exported data and
@@ -223,9 +240,6 @@ class FileArchive(Archive):
         except:
             raise SyntaxError("Could not parse formatter %r" % formatter)
 
-    # Mime-types that need encoding as utf-8 before archiving.
-    _utf8_mime_types = ['image/svg+xml', 'text/html']
-
     def __init__(self, **params):
         super(FileArchive, self).__init__(**params)
         #  Items with key: (basename,ext) and value: (data, info)
@@ -314,19 +328,12 @@ class FileArchive(Archive):
                                               self._files.keys(), force=True)
         self._files[(unique_key, ext)] = (data, info)
 
-    def _encoding(self, entry):
-        (data, info) = entry
-        if info['mime_type'] in self._utf8_mime_types:
-            return data.encode('utf-8')
-        else:
-            return data
-
     def _zip_archive(self, export_name, files, root):
         archname = '.'.join(self._unique_name(export_name, 'zip', root))
         with zipfile.ZipFile(os.path.join(root, archname), 'w') as zipf:
             for (basename, ext), entry in files:
                 filename = self._truncate_name(basename, ext)
-                zipf.writestr(('%s/%s' % (export_name, filename)), self._encoding(entry))
+                zipf.writestr(('%s/%s' % (export_name, filename)),Exporter.encode(entry))
 
     def _tar_archive(self, export_name, files, root):
         archname = '.'.join(self._unique_name(export_name, 'tar', root))
@@ -334,7 +341,7 @@ class FileArchive(Archive):
             for (basename, ext), entry in files:
                 filename = self._truncate_name(basename, ext)
                 tarinfo = tarfile.TarInfo('%s/%s' % (export_name, filename))
-                filedata = self._encoding(entry)
+                filedata = Exporter.encode(entry)
                 tarinfo.size = len(filedata)
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
@@ -345,7 +352,7 @@ class FileArchive(Archive):
         filename = self._truncate_name(self._normalize_name(*unique_name))
         fpath = os.path.join(root, filename)
         with open(fpath, 'w') as f:
-            f.write(self._encoding(entry))
+            f.write(Exporter.encode(entry))
 
     def _directory_archive(self, export_name, files, root):
         output_dir = os.path.join(root, self._unique_name(export_name,'', root)[0])
@@ -358,7 +365,7 @@ class FileArchive(Archive):
             filename = self._truncate_name(basename, ext)
             fpath = os.path.join(output_dir, filename)
             with open(fpath, 'w') as f:
-                f.write(self._encoding(entry))
+                f.write(Exporter.encode(entry))
 
 
     def _unique_name(self, basename, ext, existing, force=False):
