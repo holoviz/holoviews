@@ -410,6 +410,11 @@ class SideHistogramPlot(HistogramPlot):
         return bars
 
 
+    def get_extents(self, element, ranges):
+        (x0, x1), (y0, y1) = element.xlim, element.ylim
+        return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+
+
     def _colorize_bars(self, cmap, bars, main_range):
         """
         Use the given cmap to color the bars, applying the correct
