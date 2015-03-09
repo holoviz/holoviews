@@ -183,10 +183,9 @@ class NotebookArchive(FileArchive):
 
     def _export_with_html(self):
         "Computes substitions before using nbconvert with preprocessors"
-        self.export_success = True
+        self.export_success = False
         try:
             tstamp = time.strftime(self.timestamp_format, self._timestamp)
-
             substitutions = {}
             for (basename, ext), entry in self._files.items():
                 (_, info) = entry
@@ -227,7 +226,8 @@ class NotebookArchive(FileArchive):
                                                 info={'notebook':self.notebook_name})
         except Exception as e:
             self.traceback = traceback.format_exc()
-            self.export_success = False
+        else:
+            self.export_success = True
 
 
     def _get_notebook_node(self):
