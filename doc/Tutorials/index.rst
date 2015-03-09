@@ -26,6 +26,10 @@ this order:
   How to transform data within HoloViews containers, e.g. by
   collapsing across dimensions. (Coming soon!)
 
+* `Exporting: <Exporting>`_
+  How to save HoloViews output for use in reports and publications, 
+  as part of a reproducible yet interactive scientific workflow.
+
 At any point, you can look through these more comprehensive but less
 explanatory overview tutorials that list each of the objects
 available:
