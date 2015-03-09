@@ -668,13 +668,25 @@ class Store(object):
     @classmethod
     def load(cls, filename):
         """
-        Equivalent to pickle.load except that the appropriate
-        HoloViews trees is restored appropriately.
+        Equivalent to pickle.load except that the HoloViews trees is
+        restored appropriately.
         """
         cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
         val = pickle.load(filename)
         load_counter_offset = None
         return val
+
+    @classmethod
+    def loads(cls, obj, pickle_string, protocol=0):
+        """
+        Equivalent to pickle.loads except that the HoloViews trees is
+        restored appropriately.
+        """
+        cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
+        val = pickle.load(pickle_string)
+        load_counter_offset = None
+        return val
+
 
     @classmethod
     def dump(cls, obj, filename, protocol=0):
@@ -683,8 +695,19 @@ class Store(object):
         tree is saved appropriately.
         """
         cls.save_option_state = True
-        val = pickle.dump(obj, filename, protocol=protocol)
+        pickle.dump(obj, filename, protocol=protocol)
         cls.save_option_state = False
+
+    @classmethod
+    def dumps(cls, obj, protocol=0):
+        """
+        Equivalent to pickle.dumps except that the HoloViews option
+        tree is saved appropriately.
+        """
+        cls.save_option_state = True
+        val = pickle.dumps(obj, protocol=protocol)
+        cls.save_option_state = False
+        return val
 
 
     @classmethod
