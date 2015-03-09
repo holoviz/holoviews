@@ -27,6 +27,11 @@ class PrintUtils(object):
         return hasattr(node, 'children') and hasattr(node, '__mul__')
 
     @classmethod
+    def islayout(cls, node):
+        return hasattr(node, 'children') and not hasattr(node, '__mul__')
+
+
+    @classmethod
     def dotted(cls, node):
         "Return the type.group.label dotted information"
         if node is None: return ''
