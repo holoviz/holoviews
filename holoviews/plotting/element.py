@@ -29,8 +29,6 @@ class ElementPlot(Plot):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
-    labels = param.ObjectSelector(default=None, objects=['Alpha', 'alpha', 'numeric', 'roman'])
-
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -82,8 +80,7 @@ class ElementPlot(Plot):
     style_opts = []
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
-                 cyclic_index=0, style=None, zorder=0, layout_num=1, adjoined=None,
-                 uniform=True, **params):
+                 cyclic_index=0, style=None, zorder=0, adjoined=None, uniform=True, **params):
         self.dimensions = dimensions
         self.keys = keys
         if not isinstance(element, HoloMap):
@@ -94,7 +91,6 @@ class ElementPlot(Plot):
         self.uniform = uniform
         self.adjoined = adjoined
         self.map = self._check_map(ranges, keys)
-        self.layout_num = layout_num
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
         self.style = Store.lookup_options(self.map.last, 'style') if style is None else style
@@ -245,16 +241,20 @@ class ElementPlot(Plot):
 
             if self.labels:
                 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
-                if self.labels == 'Alpha':
-                    ax_label = chr(self.layout_num).upper()
-                elif self.labels == 'alpha':
-                    ax_label = chr(self.layout_num)
-                elif self.labels == 'numeric':
-                    ax_label = self.layout_num
-                elif self.labels == 'roman':
-                    ax_label = int_to_roman(self.layout_num)
-                at = AnchoredText("%s)" % ax_label, loc=3, bbox_to_anchor=(-0.2, 1.),
+                labels = {}
+                if '{Alpha}' in self.labels:
+                    labels['Alpha'] = chr(self.layout_num).upper()
+                elif '{alpha}' in self.labels:
+                    labels['alpha'] = chr(self.layout_num)
+                elif '{numeric}' in self.labels:
+                    labels['numeric'] = self.layout_num
+                elif '{roman}' in self.labels:
+                    labels['roman'] = int_to_roman(self.layout_num)
+                at = AnchoredText(self.labels.format(**labels), loc=3,
+                                  bbox_to_anchor=(-0.25, 1.), frameon=False,
+                                  prop=dict(size=12, weight='bold'),
                                   bbox_transform=axis.transAxes)
+                at.patch.set_visible(False)
                 axis.add_artist(at)
 
             if not self.show_legend:

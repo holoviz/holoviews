@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 
 import param
-from ..core import OrderedDict, ViewableElement, HoloMap, \
-    AdjointLayout, NdLayout, GridSpace, Layout, Element, CompositeOverlay
+from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
+    GridSpace, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, sanitize_identifier
@@ -38,6 +38,10 @@ class Plot(param.Parameterized):
         Optional list of hooks called when finalizing an axis.
         The hook is passed the full set of plot handles and the
         displayed object.""")
+
+    labels = param.String(default=None, doc="""
+        Allows labeling the subaxes in each plot with various formatters
+        including {Alpha}, {alpha}, {numeric} and {roman}.""")
 
     latex = param.Boolean(default=False, doc="""
         Whether to use LaTeX text.""")
@@ -78,11 +82,12 @@ class Plot(param.Parameterized):
 
     def __init__(self, figure=None, axis=None, dimensions=None, subplots=None,
                  layout_dimensions=None, uniform=True, keys=None, subplot=False,
-                 adjoined=None, **params):
+                 adjoined=None, layout_num=0, **params):
         self.adjoined = adjoined
         self.subplots = subplots
         self.subplot = figure is not None or subplot
         self.dimensions = dimensions
+        self.layout_num = layout_num
         self.layout_dimensions = layout_dimensions
         self.keys = keys
         self.uniform = uniform
@@ -208,7 +213,7 @@ class Plot(param.Parameterized):
         """
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or self.subplot:
+        elif not self.uniform or len(self) == 1 or self.layout_num:
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
@@ -850,7 +855,7 @@ class LayoutPlot(CompositePlot):
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
 
-        if self.show_title:
+        if self.show_title and len(self.coords) > 1:
             self.handles['title'] = self.handles['fig'].suptitle('', fontsize=16)
 
         return layout_subplots, layout_axes, collapsed_layout
@@ -944,12 +949,13 @@ class LayoutPlot(CompositePlot):
                     plot_type = Store.defaults[vtype]
                 else:
                     plot_type = Plot.sideplots[vtype]
+            num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
                                       dimensions=self.dimensions,
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, layout_num=num,
-                                      **plotopts)
+                                      labels=self.labels, **plotopts)
             if issubclass(plot_type, CompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
             else:
@@ -962,7 +968,7 @@ class LayoutPlot(CompositePlot):
         Should be called by the update_frame class to update
         any handles on the plot.
         """
-        if self.show_title and 'title' in self.handles:
+        if self.show_title and 'title' in self.handles and len(self.coords) > 1:
             self.handles['title'].set_text(self._format_title(key))
 
 
