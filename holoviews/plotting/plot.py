@@ -39,7 +39,7 @@ class Plot(param.Parameterized):
         The hook is passed the full set of plot handles and the
         displayed object.""")
 
-    labels = param.String(default=None, doc="""
+    labels = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
 
