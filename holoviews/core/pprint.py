@@ -76,7 +76,7 @@ class PrettyPrinter(object):
         if attrpath is not None:
             padding = cls.padding(attrpaths)
             (fst_lvl, fst_line) = lines[0]
-            lines[0] = (fst_lvl, attrpath.ljust(padding) +' ' + fst_line)
+            lines[0] = (fst_lvl, '.'+attrpath.ljust(padding) +' ' + fst_line)
         return (lvl, lines)
 
 
