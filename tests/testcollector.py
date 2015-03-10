@@ -15,14 +15,14 @@ class LayoutTest(ComparisonTestCase):
                             " and none can be added because fixed=True")
         super(LayoutTest, self).setUp()
 
-    def test_viewgroup_init(self):
+    def test_layout_init(self):
         Layout()
 
-    def test_viewgroup_getter(self):
+    def test_layout_getter(self):
         tr = Layout()
         self.assertEqual(isinstance(tr.Test.Path, Layout), True)
 
-    def test_viewgroup_getter_fixed(self):
+    def test_layout_getter_fixed(self):
         tr = Layout()
         tr.fixed = True
         try:
@@ -31,12 +31,12 @@ class LayoutTest(ComparisonTestCase):
         except AttributeError as e:
             self.assertEqual(str(e), self.fixed_error)
 
-    def test_viewgroup_setter(self):
+    def test_layout_setter(self):
         tr = Layout()
         tr.Test.Path = 42
         self.assertEqual(tr.Test.Path, 42)
 
-    def test_viewgroup_setter_fixed(self):
+    def test_layout_setter_fixed(self):
         tr = Layout()
         tr.fixed = True
         try:
@@ -45,7 +45,7 @@ class LayoutTest(ComparisonTestCase):
         except AttributeError as e:
             self.assertEqual(str(e), self.fixed_error)
 
-    def test_viewgroup_shallow_fixed_setter(self):
+    def test_layout_shallow_fixed_setter(self):
         tr = Layout()
         tr.fixed = True
         try:
@@ -54,7 +54,7 @@ class LayoutTest(ComparisonTestCase):
         except AttributeError as e:
             self.assertEqual(str(e), self.fixed_error)
 
-    def test_viewgroup_toggle_fixed(self):
+    def test_layout_toggle_fixed(self):
         tr = Layout()
         tr.fixed = True
         try:
@@ -65,13 +65,13 @@ class LayoutTest(ComparisonTestCase):
         tr.fixed = False
         tr.Test = 42
 
-    def test_viewgroup_set_path(self):
+    def test_layout_set_path(self):
         tr = Layout()
         tr.set_path(('Test', 'Path'), -42)
         self.assertEqual(tr.Test.Path, -42)
 
 
-    def test_viewgroup_update(self):
+    def test_layout_update(self):
         tr1 = Layout()
         tr2 = Layout()
         tr1.Test1.Path1 = 42
