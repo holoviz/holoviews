@@ -524,8 +524,8 @@ class Compositor(param.Parameterized):
         values = overlay.values()
         sliced = Overlay.from_values(values[start:stop])
         result = applicable_op.apply(sliced, ranges, key=key)
+        result = result.relabel(group=applicable_op.group)
         output = Overlay.from_values(values[:start]+[result]+values[stop:])
-        output = output.relabel(group=applicable_op.group)
         output.id = overlay.id
         return output
 
