@@ -436,14 +436,12 @@ class OverlayPlot(ElementPlot):
             cyclic_index,  _ = next(style_iter[style_key])
             length = style_lengths[style_key]
             style = Store.lookup_options(vmap.last, 'style').max_cycles(length)
-            plotopts = Store.lookup_options(vmap.last, 'plot').options
-            if issubclass(vmap.type, NdOverlay):
-                plotopts['dimensions'] = vmap.last.key_dimensions
             plotopts = dict(keys=self.keys, axis=self.handles['axis'], style=style,
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
                             layout_dimensions=self.layout_dimensions,
-                            dimensions=self.dimensions, uniform=self.uniform)
+                            show_title=self.show_title, dimensions=self.dimensions,
+                            uniform=self.uniform, show_legend=False)
             plotype = Store.defaults[type(vmap.last)]
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)

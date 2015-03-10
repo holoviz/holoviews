@@ -451,7 +451,8 @@ class GridPlot(CompositePlot):
                 subplot = Store.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
                                                 subplot=not create_axes, ranges=frame_ranges,
-                                                uniform=self.uniform, keys=self.keys)
+                                                uniform=self.uniform, keys=self.keys,
+                                                show_legend=False)
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
