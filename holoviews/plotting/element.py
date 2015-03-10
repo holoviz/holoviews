@@ -146,7 +146,7 @@ class ElementPlot(Plot):
             frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
                                         for key in (keys if keys else holomap.keys())])
             ranges = frame_ranges.values()
-            keys = holomap.keys()
+            keys = holomap.data.keys()
 
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
