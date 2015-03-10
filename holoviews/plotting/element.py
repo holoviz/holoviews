@@ -248,8 +248,10 @@ class ElementPlot(Plot):
                     labels['alpha'] = str(chr(self.layout_num+96))
                 elif '{numeric}' in self.labels:
                     labels['numeric'] = self.layout_num
+                elif '{Roman}' in self.labels:
+                    labels['Roman'] = int_to_roman(self.layout_num)
                 elif '{roman}' in self.labels:
-                    labels['roman'] = int_to_roman(self.layout_num)
+                    labels['roman'] = int_to_roman(self.layout_num).lower()
                 at = AnchoredText(self.labels.format(**labels), loc=3,
                                   bbox_to_anchor=(-0.25, 1.), frameon=False,
                                   prop=dict(size='xx-large', weight='bold'),
