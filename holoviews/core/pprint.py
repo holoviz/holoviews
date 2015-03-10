@@ -20,6 +20,8 @@ class PrettyPrinter(object):
 
     tab = '   '
 
+    type_formatter= ':{type}'
+
     @classmethod
     def pprint(cls, node):
         return  cls.serialize(cls.recurse(node))
@@ -43,8 +45,7 @@ class PrettyPrinter(object):
     def component_type(cls, node):
         "Return the type.group.label dotted information"
         if node is None: return ''
-        components = [':'+str(type(node).__name__)]
-        return ".".join(components)
+        return cls.type_formatter.format(type=str(type(node).__name__))
 
     @classmethod
     def recurse(cls, node, attrpath=None, attrpaths=[], siblings=[], level=0, value_dims=True):
