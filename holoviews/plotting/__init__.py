@@ -128,11 +128,6 @@ class PlotRenderer(Exporter):
     dpi=param.Integer(None, allow_None=True, doc="""
         The render resolution in dpi (dots per inch)""")
 
-    # For testing purposes: the display data
-    _captured_data = None
-    # 0: No capture, 1: capture (file not saved), 2: capture (file saved)
-    _capture_mode = 0
-
 
     def __call__(self, obj, fmt=None):
         """
@@ -163,7 +158,6 @@ class PlotRenderer(Exporter):
         else:
             data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
-        self._captured_data = (data if self._capture_mode != 0 else None)
         return data, {'file-ext':fmt,
                       'size':len(data),
                       'mime_type':HTML_TAGS[fmt][0]}
@@ -178,7 +172,6 @@ class PlotRenderer(Exporter):
         if rendered is None: return
         (data, info) = rendered
         filename ='%s.%s' % (basename, info['file-ext'])
-        if self._capture_mode == 1: return
         with open(filename, 'w') as f:
             f.write(self.encode(rendered))
 
