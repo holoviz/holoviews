@@ -48,6 +48,10 @@ class Dimension(param.Parameterized):
         Specifies the minimum and maximum allowed values for a
         Dimension. None is used to represent an unlimited bound.""")
 
+    soft_range = param.Tuple(default=(None, None), doc="""
+        Specifies a minimum and maximum reference value, which
+        may be overridden by the data.""")
+
     type = param.Parameter(default=None, doc="""
         Optional type associated with the Dimension values. The type
         may be an inbuilt constructor (such as int, str, float) or a
@@ -575,8 +579,11 @@ class Dimensioned(LabelledData):
             return dimension.range
         elif not data_range:
             return (None, None)
+        soft_range = [r for r in dimension.soft_range
+                      if r is not None]
         dim_vals = self.dimension_values(dimension.name)
         try:
+            dim_vals = np.concatenate([dim_vals, soft_range])
             return np.min(dim_vals), np.max(dim_vals)
         except:
             if dim in self.dimensions() and len(dim_vals):
