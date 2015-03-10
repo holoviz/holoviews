@@ -14,7 +14,7 @@ from IPython.nbconvert.preprocessors import Preprocessor
 from IPython.nbconvert import HTMLExporter
 
 import param
-from ..core.io import FileArchive
+from ..core.io import FileArchive, Pickler
 from ..plotting import PlotRenderer, HTML_TAGS
 
 try:  # IPython 3
@@ -44,7 +44,7 @@ class NotebookArchive(FileArchive):
     display hooks and automatically adds a notebook HTML snapshot to
     the archive upon export.
     """
-    exporters = param.List(default=[PlotRenderer.instance(holomap=None)])
+    exporters = param.List(default=[PlotRenderer.instance(holomap=None),Pickler])
 
     namespace = param.String('holoviews.archive', doc="""
         The name of the current in the NotebookArchive instance in the
