@@ -50,6 +50,11 @@ class NotebookArchive(FileArchive):
         The name of the current in the NotebookArchive instance in the
         IPython namespace that must be available.""")
 
+    skip_notebook_export = param.Boolean(default=False, doc="""
+        Whether to skip JavaScript capture of notebook data which may
+        be unreliable. Also disabled automatic capture of notebook
+        name.""")
+
     snapshot_name = param.String('index', doc="""
         The basename of the exported notebook snapshot (html). It may
         optionally use the {timestamp} formatter.""")
@@ -129,6 +134,11 @@ class NotebookArchive(FileArchive):
         """
         Get the current notebook data and export.
         """
+        if self.skip_notebook_export:
+            super(NotebookArchive, self).export(timestamp=self._timestamp,
+                                                info={'notebook':self.notebook_name})
+            return
+
         self.export_success = None
         self._notebook_data = io.BytesIO()
         name = self.namespace
