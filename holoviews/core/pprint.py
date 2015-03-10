@@ -11,12 +11,18 @@ represented as tree structures, showing the types, values and labels
 where possible.
 """
 
-class PrintUtils(object):
+
+class PrettyPrinter(object):
     """
-    Utilities used to assist the pretty printing process.
+    The PrettyPrinter used to print all HoloView objects via the
+    pprint classmethod.
     """
 
     tab = '   '
+
+    @classmethod
+    def pprint(cls, node):
+        return  cls.serialize(cls.recurse(node))
 
     @classmethod
     def serialize(cls, lines):
@@ -30,165 +36,86 @@ class PrintUtils(object):
         return [(lvl+shift, line) for (lvl, line) in lines]
 
     @classmethod
-    def isoverlay(cls, node):
-        return hasattr(node, 'children') and hasattr(node, '__mul__')
+    def padding(cls, items):
+        return max(len(p) for p in items) if len(items) > 1 else len(items[0])
 
     @classmethod
-    def islayout(cls, node):
-        return hasattr(node, 'children') and not hasattr(node, '__mul__')
-
-
-    @classmethod
-    def dotted(cls, node):
+    def component_type(cls, node):
         "Return the type.group.label dotted information"
         if node is None: return ''
-        components = [str(type(node).__name__), node.group]
-        if node.label:
-            components.append(node.label)
+        components = [':'+str(type(node).__name__)]
         return ".".join(components)
 
     @classmethod
-    def leaf_padding(cls, siblings, line):
+    def recurse(cls, node, attrpath=None, attrpaths=[], siblings=[], level=0, value_dims=True):
         """
-        Given the collection of sibling leaf names, return the padding
-        for the entire group.
-
-        For instance, if you have the tree (Pattern.Gaussian +
-        Pattern.Disk) then the padding is the length of 'Gaussian'.
+        Recursive function that builds up an ASCII tree given an
+        AttrTree node.
         """
-        return max(len(el) for el in siblings) if siblings != [] else len(line)
+        level, lines = cls.node_info(node, attrpath, attrpaths, siblings, level, value_dims)
+        attrpaths = ['.'.join(k) for k in node.keys()] if  hasattr(node, 'children') else []
+        siblings = [node[child] for child in attrpaths]
+        for index, attrpath in enumerate(attrpaths):
+            lines += cls.recurse(node[attrpath], attrpath, attrpaths=attrpaths,
+                                 siblings=siblings, level=level+1, value_dims=value_dims)
+        return lines
 
     @classmethod
-    def dotted_padding(cls, node, siblings):
-        """
-        Compute the appropriate padding based on the longest dotted
-        name among the supplied siblings.
-        """
-        if siblings == []: return len(cls.dotted(node))
-        return max([len(cls.dotted(sibling)) for sibling in siblings])
-
-    @classmethod
-    def layoutree_annotation(cls, level, lines, node_name, node_names):
-        "Annotate the first line with the leaf label as appropriate"
-        if node_name:
-            tree_leaf = node_name.ljust(cls.leaf_padding(node_names, node_name))
-            if lines:
-                first_level, first_line, = lines[0]
-                lines[0] = (first_level, tree_leaf + ' : ' + first_line)
-            else:
-                lines = [(level, tree_leaf)]
-        return level, lines
-
-
-
-class Info(object):
-    """
-    Methods used to supply the pretty printer with information by
-    HoloViews object type in a suitable format.
-    """
-
-    @classmethod
-    def overlay_info(cls, level, node, siblings, value_dims=True):
-        overlay_info, siblings = [], node.values()
-        for el in siblings:
-            # HoloMap type element (e.g. NdOverlay)
-            if getattr(el, '_deep_indexable', False):
-                level, ndoverlay_info =  cls.ndmapping_info(level, el, el.values())
-                overlay_info += [(lvl,'*--'+line) for (lvl,line) in ndoverlay_info]
-            else:
-                _, element_info = cls.element_info(level, el, siblings, value_dims=True)
-                element_info = [(lvl,'*--'+line) for (lvl,line) in element_info]
-                overlay_info += element_info
-        return cls.dotted(node), overlay_info
-
-
-    @classmethod
-    def node_info(cls, level, node, siblings, value_dims=True):
+    def node_info(cls, node, attrpath, attrpaths, siblings, level, value_dims):
         """
         Given a node, return relevant information.
         """
         if hasattr(node, 'children'):
-            return level, []
+            (lvl, lines) = (level, [(level, cls.component_type(node))])
         elif getattr(node, '_deep_indexable', False):
-            return cls.ndmapping_info(level, node, siblings)
+            (lvl, lines) = cls.ndmapping_info(node, siblings, level, value_dims)
         else:
-            return cls.element_info(level, node, siblings)
+            (lvl, lines) = cls.element_info(node, siblings, level, value_dims)
+
+        # The attribute access path acts as a prefix (if applicable)
+        if attrpath is not None:
+            padding = cls.padding(attrpaths)
+            (fst_lvl, fst_line) = lines[0]
+            lines[0] = (fst_lvl, attrpath.ljust(padding) +' ' + fst_line)
+        return (lvl, lines)
+
 
     @classmethod
-    def element_info(cls, level, node, siblings, value_dims=True):
+    def element_info(cls, node, siblings, level, value_dims):
         """
         Return the information summary for an Element. This consists
         of the dotted name followed by an value dimension names.
         """
-        dotted_padding = cls.dotted_padding(node, siblings)
-        info =  cls.dotted(node).ljust(dotted_padding)
-        if node is not None and value_dims and len(node.value_dimensions) >= 1:
+        info =  cls.component_type(node)
+        if siblings:
+            padding = cls.padding([cls.component_type(el) for el in siblings])
+            info.ljust(padding)
+        if len(node.key_dimensions) >= 1:
+            info += cls.tab + '[%s]' % ','.join(d.name for d in node.key_dimensions)
+        if value_dims and len(node.value_dimensions) >= 1:
             info += cls.tab + '(%s)' % ','.join(d.name for d in node.value_dimensions)
         return level, [(level, info)]
 
 
     @classmethod
-    def ndmapping_info(cls, level, node, siblings, value_dims=True):
+    def ndmapping_info(cls, node, siblings, level, value_dims):
+
         key_dim_info = '[%s]' % ','.join(d.name for d in node.key_dimensions)
-        first_line = cls.dotted(node) + cls.tab + key_dim_info
+        first_line = cls.component_type(node) + cls.tab + key_dim_info
         lines = [(level, first_line)]
 
         additional_lines = []
         if len(node.data) == 0:
             return level, lines
-
         # .last has different semantics for GridSpace
         last = node.data.values()[-1]
-        if hasattr(last, 'children'):  # Must be an Overlay
-            overlay_info = cls.overlay_info(level, last, siblings, value_dims=True)
-            element_info, additional_lines = overlay_info
+        if hasattr(last, 'children'):
+            element_info, additional_lines = None, cls.recurse(last, level=level)
         # NdOverlays, GridSpace, Ndlayouts
         elif last is not None and getattr(last, '_deep_indexable'):
-            element_info = cls.dotted(last)
-            level, additional_lines = cls.ndmapping_info(level, last, [])
+            element_info = cls.component_type(last)
+            level, additional_lines = cls.ndmapping_info(last, [], level, value_dims)
         else:
-            _, [info] = cls.element_info(level, node.last, siblings, value_dims=True)
-            _, element_info = info
-        lines += [(level+1, '|_ %s' % element_info)] + cls.shift(additional_lines, 2)
+            _, additional_lines = cls.element_info(last, siblings, level, value_dims)
+        lines += cls.shift(additional_lines, 1)
         return level, lines
-
-
-
-class PrettyPrinter(Info, PrintUtils):
-    """
-    The PrettyPrinter used to print all HoloView objects via the
-    pprint classmethod.
-    """
-
-    @classmethod
-    def pprint(cls, node):
-        return cls.serialize(cls.recurse(node))
-
-    @classmethod
-    def recurse(cls, node, node_name=None, level=0, siblings=[], node_names=[]):
-        """
-        Recursive function that builds up an ASCII tree given an
-        AttrTree node.
-        """
-        if cls.isoverlay(node):
-            header, lines = cls.overlay_info(level, node, siblings, value_dims=True)
-            lines = [(level, header)] + lines
-            children = []
-            siblings = node.values()
-
-        else:
-            info = cls.process_node(node, level, node_name, node_names, siblings)
-            (level, lines, children, siblings) = info
-
-        for index, child_name in enumerate(children):
-            lines += cls.recurse(node[child_name], child_name,
-                                 level=level+1, siblings=siblings, node_names=children)
-        return lines
-
-    @classmethod
-    def process_node(cls, node, level, node_name, node_names, siblings):
-        level, lines = cls.node_info(level, node, siblings)
-        level, lines = cls.layoutree_annotation(level, lines, node_name, node_names)
-        children = node.children if  hasattr(node, 'children') else []
-        siblings = [node[child] for child in children]
-        return level, lines, children, siblings
