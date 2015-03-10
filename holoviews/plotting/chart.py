@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ..core.options import Store
-from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
+from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, Element, HoloMap
 from ..core.util import match_spec
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
 from .element import ElementPlot
@@ -374,7 +374,8 @@ class SideHistogramPlot(HistogramPlot):
         range_item = main
         if isinstance(main, HoloMap):
             if issubclass(main.type, CompositeOverlay):
-                range_item = main.split_overlays()[1][0]
+                range_item = [hm for hm in main.split_overlays()[1]
+                              if hist_dim in hm.dimensions('value', label=True)][0]
                 if individually:
                     range_item = range_item[key]
             else:
@@ -392,13 +393,11 @@ class SideHistogramPlot(HistogramPlot):
 
 
         # If .main is an NdOverlay or a HoloMap of Overlays get the correct style
-        if isinstance(main, HoloMap):
-            main = main.last
-        if isinstance(main, CompositeOverlay):
-            main = main.values()[0]
+        if isinstance(range_item, HoloMap):
+            range_item = range_item.last
 
-        if isinstance(main, (Raster, Points)):
-            style = Store.lookup_options(main, 'style')[self.cyclic_index]
+        if isinstance(range_item, (Raster, Points)):
+            style = Store.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
         else:
