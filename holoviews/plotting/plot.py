@@ -656,11 +656,9 @@ class AdjointLayoutPlot(CompositePlot):
             if None in [view, pos, subplot]:
                 ax.set_axis_off()
                 continue
-
-            vtype = view.type if isinstance(view, HoloMap) else view.__class__
             subplot(ranges=ranges)
-        if self.subplot:
-            self.adjust_positions()
+
+        self.adjust_positions()
         self.drawn = True
 
 
@@ -675,18 +673,25 @@ class AdjointLayoutPlot(CompositePlot):
         """
         if not 'main' in self.subplots:
             return
+        plt.draw()
         main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
         if 'right' in self.view_positions:
             ax = self.subaxes['right']
+            subplot = self.subplots['right']
             ax.set_position([bbox.x1 + bbox.width * self.border_size,
                              bbox.y0,
                              bbox.width * self.subplot_size, bbox.height])
+            if isinstance(subplot, GridPlot):
+                ax.set_aspect('equal')
         if 'top' in self.view_positions:
             ax = self.subaxes['top']
+            subplot = self.subplots['top']
             ax.set_position([bbox.x0,
                              bbox.y1 + bbox.height * self.border_size,
                              bbox.width, bbox.height * self.subplot_size])
+            if isinstance(subplot, GridPlot):
+                ax.set_aspect('equal')
 
 
     def update_frame(self, key, ranges=None):
@@ -968,11 +973,6 @@ class LayoutPlot(CompositePlot):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         for subplot in self.subplots.values():
                 subplot(ranges=ranges)
-        plt.draw()
-
-        # Adjusts the AdjointLayout subplot positions
-        for (r, c) in self.coords:
-            self.subplots.get((r, c), None).adjust_positions()
 
         return self._finalize_axis(None)
 
