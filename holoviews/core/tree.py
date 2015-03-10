@@ -199,7 +199,9 @@ class AttrTree(object):
             return super(AttrTree, self).__getattr__(identifier)
         except AttributeError: pass
 
-        if self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
+        if identifier.startswith('__'):
+            raise AttributeError('Attribute %s not found.' % identifier)
+        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
         identifier = sanitize_identifier(identifier, escape=False)
 
         unescaped_identifier = unescape_identifier(identifier)
