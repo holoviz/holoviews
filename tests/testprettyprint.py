@@ -19,8 +19,7 @@ class PrettyPrintTest(ComparisonTestCase):
         self.assertEqual(r, ':Element')
 
     def test_overlay_repr1(self):
-        # Pointless trailing space...
-        expected = ':Overlay\n   Value.Label :Element\n   Value.I     :Element'
+        expected = ':Overlay\n   .Value.Label :Element\n   .Value.I     :Element'
         o = self.element1 * self.element2
         r = PrettyPrinter.pprint(o)
         self.assertEqual(r, expected)
