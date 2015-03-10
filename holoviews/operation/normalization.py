@@ -116,7 +116,7 @@ class Normalization(ElementOperation):
         else:
             raise ValueError("Key list length must match length of supplied ranges")
 
-        return match_spec(specs, element)
+        return match_spec(element, specs)
 
 
     def _process(self, view, key=None):
