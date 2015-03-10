@@ -17,7 +17,7 @@ import param
 from ..core.operation import ElementOperation
 from ..element import Raster
 from ..core import Overlay
-from ..core.util import sanitize_identifier
+from ..core.util import match_spec
 
 
 class Normalization(ElementOperation):
@@ -90,19 +90,6 @@ class Normalization(ElementOperation):
         return self._process(element, key)
 
 
-    @classmethod
-    def matches(cls, specs, element):
-        if not any(isinstance(el, tuple) for el in specs): return specs
-        match_tuple = ()
-        match = specs.get((), {})
-        for spec in [type(element).__name__, sanitize_identifier(element.group, escape=False),
-                     sanitize_identifier(element.label, escape=True)]:
-            match_tuple += (spec,)
-            if match_tuple in specs:
-                match = specs[match_tuple]
-        return match
-
-
     def get_ranges(self, element, key):
         """
         Method to get the appropriate normalization range dictionary
@@ -129,7 +116,7 @@ class Normalization(ElementOperation):
         else:
             raise ValueError("Key list length must match length of supplied ranges")
 
-        return self.matches(specs, element)
+        return match_spec(specs, element)
 
 
     def _process(self, view, key=None):

@@ -4,6 +4,7 @@ from matplotlib import ticker
 import param
 
 from ..core.options import Store
+from ..core.util import match_spec
 from ..element.chart3d import Scatter3D, Surface
 from .element import ElementPlot
 from .chart import PointPlot
@@ -139,7 +140,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
             ranges = self.compute_ranges(self.map, key, ranges)
-            ranges = self.match_range(points, ranges)
+            ranges = match_spec(points, ranges)
             scatterplot.set_clim(ranges[val_dim])
 
 

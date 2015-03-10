@@ -1,16 +1,15 @@
 from __future__ import unicode_literals
 from itertools import product
-from collections import defaultdict
 
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
-from matplotlib import ticker
 
 import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
+from ..core.util import match_spec
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
 from .element import ElementPlot
 from .plot import Plot
@@ -131,7 +130,7 @@ class CurvePlot(ChartPlot):
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, key, ranges)
-        ranges = self.match_range(curveview, ranges)
+        ranges = match_spec(curveview, ranges)
 
         # Create xticks and reorder data if cyclic
         xticks = None
@@ -483,7 +482,7 @@ class PointPlot(ChartPlot):
         axis = self.handles['axis']
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
-        ranges = self.match_range(points, ranges)
+        ranges = match_spec(points, ranges)
 
         ndims = points.data.shape[1]
         xs = points.data[:, 0] if len(points.data) else []
@@ -528,7 +527,7 @@ class PointPlot(ChartPlot):
             if cs is not None:
                 val_dim = element.dimensions(label=True)[self.color_index]
                 ranges = self.compute_ranges(self.map, key, ranges)
-                ranges = self.match_range(element, ranges)
+                ranges = match_spec(element, ranges)
                 paths.set_clim(ranges[val_dim])
                 paths.set_array(cs)
 
@@ -770,7 +769,7 @@ class BarPlot(ElementPlot):
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, key, ranges)
-        ranges = self.match_range(element, ranges)
+        ranges = match_spec(element, ranges)
         dims = element.dimensions('key', label=True)
 
         self.handles['bars'], xticks = self._create_bars(axis, element)

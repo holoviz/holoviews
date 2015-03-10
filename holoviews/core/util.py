@@ -79,6 +79,22 @@ def unique_iterator(seq):
             yield item
 
 
+def match_spec(element, specification):
+    """
+    Matches the group.label specification of the supplied
+    element against the supplied specification dictionary
+    returning the value of the best match.
+    """
+    match_tuple = ()
+    match = specification.get((), {})
+    for spec in [type(element).__name__,
+                 sanitize_identifier(element.group, escape=False),
+                 sanitize_identifier(element.label, escape=False)]:
+        match_tuple += (spec,)
+        if match_tuple in specification:
+            match = specification[match_tuple]
+    return match
+
 
 class ProgressIndicator(param.Parameterized):
     """

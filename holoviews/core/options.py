@@ -334,11 +334,6 @@ class OptionTree(AttrTree):
     def __getitem__(self, item):
         if item in self.groups:
             return self.groups[item]
-        elif not any(allowable(it) for it in item) :
-            item = tuple(sanitize_identifier(it, escape=False)
-                         for it in item)
-            if item in self.groups:
-                return self.groups[item]
         return super(OptionTree, self).__getitem__(item)
 
 

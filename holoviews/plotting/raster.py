@@ -10,6 +10,7 @@ import param
 from ..core.options import Store
 from ..core import CompositeOverlay
 from ..core import traversal
+from ..core.util import match_spec
 from ..element.raster import HeatMap, Image, Raster, RGB, HSV
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
@@ -39,7 +40,7 @@ class RasterPlot(ElementPlot):
         axis = self.handles['axis']
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
-        ranges = self.match_range(view, ranges)
+        ranges = match_spec(view, ranges)
 
         (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
             else self.map.last.extents
@@ -232,7 +233,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = Store.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
-                valrange = self.match_range(pane, ranges)[pane.value_dimensions[0].name]
+                valrange = match_spec(pane, ranges)[pane.value_dimensions[0].name]
                 plot.set_clim(valrange)
                 if data is None:
                     plot.set_visible(False)

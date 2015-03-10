@@ -10,7 +10,7 @@ import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import sanitize_identifier, find_minmax, int_to_roman
+from ..core.util import find_minmax, int_to_roman, match_spec
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -356,18 +356,6 @@ class ElementPlot(Plot):
         return super(ElementPlot, self)._finalize_axis(key)
 
 
-    def match_range(self, element, ranges):
-        match_tuple = ()
-        match = ranges.get((), {})
-        for spec in [type(element).__name__,
-                     sanitize_identifier(element.group, escape=False),
-                     sanitize_identifier(element.label, escape=False)]:
-            match_tuple += (spec,)
-            if match_tuple in ranges:
-                match = ranges[match_tuple]
-        return match
-
-
     def update_frame(self, key, ranges=None):
         """
         Set the plot(s) to the given frame number.  Operates by
@@ -393,7 +381,7 @@ class ElementPlot(Plot):
             return
         if self.normalize:
             ranges = self.compute_ranges(self.map, key, ranges)
-            ranges = self.match_range(view, ranges)
+            ranges = match_spec(view, ranges)
         axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
@@ -502,7 +490,7 @@ class OverlayPlot(ElementPlot):
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
                 else:
-                    sp_ranges = self.match_range(layer, ranges) if ranges else {}
+                    sp_ranges = match_spec(layer, ranges) if ranges else {}
                 lextnt = subplot.get_extents(layer, sp_ranges)
                 if not extents and lextnt:
                     extents = lextnt
