@@ -97,7 +97,7 @@ class Pickler(Exporter):
 
     def save(self, obj, basename):
         with open(basename+'.pkl', 'w') as f:
-            pickle.dump(obj, f, protocol=self.protocol)
+            Store.dump(obj, f, protocol=self.protocol)
 
 
 
