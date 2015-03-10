@@ -55,6 +55,7 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
 
 
 def HTML_video(plot):
+    if OutputMagic.options['holomap'] == 'text': return None
     dpi = OutputMagic.options['dpi']
     anim = plot.anim(fps=OutputMagic.options['fps'])
     writers = animation.writers.avail
@@ -109,9 +110,11 @@ def render(plot):
 
 def display_widgets(plot):
     "Display widgets applicable to the specified element"
+    if OutputMagic.options['holomap'] == 'text': return None
     widget_mode = OutputMagic.options['widgets']
     widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
+
 
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
@@ -135,6 +138,8 @@ def display_widgets(plot):
 
 def display_figure(fig, message=None, max_width='100%'):
     "Display widgets applicable to the specified element"
+    if OutputMagic.options['fig'] == 'text': return None
+
     figure_format = OutputMagic.options['fig']
     dpi = OutputMagic.options['dpi']
     backend = OutputMagic.options['backend']
@@ -166,8 +171,6 @@ def display_hook(fn):
     def wrapped(element, **kwargs):
         # If pretty printing is off, return None (will fallback to repr)
         ip = get_ipython()
-        if not ip.display_formatter.formatters['text/plain'].pprint:
-            return None
         try:
             widget_mode = OutputMagic.options['widgets']
             map_format  = OutputMagic.options['holomap']
