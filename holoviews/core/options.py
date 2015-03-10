@@ -504,17 +504,17 @@ class Compositor(param.Parameterized):
     @classmethod
     def strongest_match(cls, overlay, mode):
         """
-        Returns the strongest matching compositor operation given an
-        overlay. If no matches are found, None is returned.
+        Returns the single strongest matching compositor operation
+        given an overlay. If no matches are found, None is returned.
 
         The best match is defined as the compositor operation with the
         highest match value as returned by the match_level method.
         """
         match_strength = [(op.match_level(overlay), op) for op in cls.definitions
                           if op.mode == mode]
-        matches = [(lvl, op) for (lvl, op) in match_strength if lvl is not None]
+        matches = [(match[0], op, match[1]) for (match, op) in match_strength if match is not None]
         if matches == []: return None
-        else:             return sorted(matches)[0][1]
+        else:             return sorted(matches)[0]
 
 
     @classmethod
@@ -523,13 +523,16 @@ class Compositor(param.Parameterized):
         Finds any applicable compositor and applies it.
         """
         from .overlay import Overlay
-        applicable_op = cls.strongest_match(overlay, mode)
-        if applicable_op is None: return overlay
-
-        output = applicable_op.apply(overlay, ranges, key=key)
+        match = cls.strongest_match(overlay, mode)
+        if match is None: return overlay
+        (_, applicable_op, (start, stop)) = match
+        values = overlay.values()
+        sliced = Overlay.from_values(values[start:stop])
+        result = applicable_op.apply(sliced, ranges, key=key)
+        output = Overlay.from_values(values[:start]+[result]+values[stop:])
         output = output.relabel(group=applicable_op.group)
         output.id = overlay.id
-        return Overlay.from_values(output)
+        return output
 
 
     @classmethod
@@ -593,19 +596,13 @@ class Compositor(param.Parameterized):
             return self.operation.output_type
 
 
-    def match_level(self, overlay):
+    def _slice_match_level(self, overlay_items):
         """
-        Given an overlay, return an integer if there is a match or
-        None if there is no match.
-
-        The returned integer is the number of matching
-        components. Higher values indicate a stronger match.
+        Find the match strength for a list of overlay items that must
+        be exactly the same length as the pattern specification.
         """
         level = 0
-        if len(self._pattern_spec) != len(overlay):
-            return None
-
-        for spec, el in zip(self._pattern_spec, overlay):
+        for spec, el in zip(self._pattern_spec, overlay_items):
             if spec[0] != type(el).__name__:
                 return None
             level += 1      # Types match
@@ -622,6 +619,31 @@ class Compositor(param.Parameterized):
                 else:
                     return None
         return level
+
+
+    def match_level(self, overlay):
+        """
+        Given an overlay, return the match level and applicable slice
+        of the overall overlay. The level an integer if there is a
+        match or None if there is no match.
+
+        The level integer is the number of matching components. Higher
+        values indicate a stronger match.
+        """
+        slice_width = len(self._pattern_spec)
+        if slice_width > len(overlay): return None
+
+        # Check all the possible slices and return the best matching one
+        best_lvl, match_slice = (0, None)
+        for i in range(len(overlay)-slice_width+1):
+            overlay_slice = overlay.values()[i:i+slice_width]
+            lvl = self._slice_match_level(overlay_slice)
+            if lvl is None: continue
+            if lvl > best_lvl:
+                best_lvl = lvl
+                match_slice = (i, i+slice_width)
+
+        return (best_lvl, match_slice) if best_lvl != 0 else None
 
 
     def apply(self, value, input_ranges, key=None):
