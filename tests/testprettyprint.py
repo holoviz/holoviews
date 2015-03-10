@@ -16,15 +16,11 @@ class PrettyPrintTest(ComparisonTestCase):
 
     def test_element_repr1(self):
         r = PrettyPrinter.pprint(self.element1)
-        self.assertEqual(r, 'Element.Value.Label')
-
-    def test_element_repr2(self):
-        r = PrettyPrinter.pprint(self.element2)
-        self.assertEqual(r, 'Element.Value')
+        self.assertEqual(r, ':Element')
 
     def test_overlay_repr1(self):
         # Pointless trailing space...
-        expected = 'Overlay.Value\n*--Element.Value.Label\n*--Element.Value      '
+        expected = ':Overlay\n   Value.Label :Element\n   Value.I     :Element'
         o = self.element1 * self.element2
         r = PrettyPrinter.pprint(o)
         self.assertEqual(r, expected)
