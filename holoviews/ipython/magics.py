@@ -102,7 +102,7 @@ class OptionsMagic(Magics):
     @classmethod
     def pprint(cls):
         """
-        Pretty print the current view options with a maximum width of
+        Pretty print the current element options with a maximum width of
         cls.pprint_width.
         """
         elements = [cls.magic_name]
@@ -421,7 +421,7 @@ class OptsMagic(Magics):
     applied_keys = []    # Path specs selecting the objects to be given a new id
 
     @classmethod
-    def process_view(cls, obj):
+    def process_element(cls, obj):
         """
         To be called by the display hook which supplies the element to
         be displayed. Any customisation of the object can then occur

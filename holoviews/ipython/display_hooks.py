@@ -84,7 +84,7 @@ def last_frame(plot):
     return display_figure(plot[len(plot)])
 
 
-def sanitized_repr(obj):
+def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
     return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
 
@@ -96,7 +96,7 @@ def max_frame_warning(max_frames):
 
 def process_object(obj):
     "Hook to process the object currently being displayed."
-    invalid_options = OptsMagic.process_view(obj)
+    invalid_options = OptsMagic.process_element(obj)
     if invalid_options: return invalid_options
 
 
@@ -108,7 +108,7 @@ def render(plot):
 
 
 def display_widgets(plot):
-    "Display widgets applicable to the specified view"
+    "Display widgets applicable to the specified element"
     widget_mode = OutputMagic.options['widgets']
     widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
@@ -134,7 +134,7 @@ def display_widgets(plot):
 
 
 def display_figure(fig, message=None, max_width='100%'):
-    "Display widgets applicable to the specified view"
+    "Display widgets applicable to the specified element"
     figure_format = OutputMagic.options['fig']
     dpi = OutputMagic.options['dpi']
     backend = OutputMagic.options['backend']
@@ -163,7 +163,7 @@ def display_figure(fig, message=None, max_width='100%'):
 
 def display_hook(fn):
     @wraps(fn)
-    def wrapped(view, **kwargs):
+    def wrapped(element, **kwargs):
         # If pretty printing is off, return None (will fallback to repr)
         ip = get_ipython()
         if not ip.display_formatter.formatters['text/plain'].pprint:
@@ -173,7 +173,7 @@ def display_hook(fn):
             map_format  = OutputMagic.options['holomap']
             # If widget_mode is None, widgets are not being used
             widget_mode = (widget_mode if map_format in OutputMagic.inbuilt_formats else None)
-            html = fn(view,
+            html = fn(element,
                       size=OutputMagic.options['size'],
                       dpi=OutputMagic.options['dpi'],
                       max_frames=OutputMagic.options['max_frames'],
@@ -181,14 +181,14 @@ def display_hook(fn):
                       map_format = map_format,
                       widget_mode = widget_mode,
                       **kwargs)
-            notebook_archive.add(view, html=html)
+            notebook_archive.add(element, html=html)
             keys = ['fig', 'holomap', 'size', 'fps', 'dpi']
             filename = OutputMagic.options['filename']
             if filename:
                 options = {k:OutputMagic.options[k] for k in keys}
                 if options['holomap']  in OutputMagic.inbuilt_formats:
                     options['holomap'] = None
-                PlotRenderer.instance(**options).save(view, filename)
+                PlotRenderer.instance(**options).save(element, filename)
 
             return html
         except:
@@ -203,14 +203,14 @@ def animation_display(anim, map_format, dpi=72, **kwargs):
 
 
 @display_hook
-def view_display(view, size, **kwargs):
-    if not isinstance(view, ViewableElement): return None
-    if type(view) == Element:                 return None
-    info = process_object(view)
+def element_display(element, size, **kwargs):
+    if not isinstance(element, ViewableElement): return None
+    if type(element) == Element:                 return None
+    info = process_object(element)
     if info: return info
-    if view.__class__ not in Store.defaults: return None
-    fig = Store.defaults[view.__class__](view,
-                                         **opts(view, get_plot_size(view, size)))()
+    if element.__class__ not in Store.defaults: return None
+    fig = Store.defaults[element.__class__](element,
+                                         **opts(element, get_plot_size(element, size)))()
     return display_figure(fig)
 
 
@@ -223,10 +223,10 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     mapplot = Store.defaults[vmap.type](vmap,
                                         **opts(vmap.last, get_plot_size(vmap,size)))
     if len(mapplot) == 0:
-        return sanitized_repr(vmap)
+        return sanitize_HTML(vmap)
     elif len(mapplot) > max_frames:
         max_frame_warning(max_frames)
-        return sanitized_repr(vmap)
+        return sanitize_HTML(vmap)
     elif len(mapplot) == 1:
         fig = mapplot()
         return display_figure(fig)
@@ -250,10 +250,10 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
         if layout._display == 'auto':
             branches = len(set([path[0] for path in list(layout.data.keys())]))
             if branches > max_branches:
-                return '<tt>'+ sanitized_repr(layout) + '</tt>'
+                return '<tt>'+ sanitize_HTML(layout) + '</tt>'
             elif len(layout.data) * nframes > max_frames:
                 max_frame_warning(max_frames)
-                return '<tt>'+ sanitized_repr(layout) + '</tt>'
+                return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
     if nframes == 1:
         fig = layoutplot()
@@ -280,7 +280,7 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
 
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
-        return sanitized_repr(grid)
+        return sanitize_HTML(grid)
     elif len(gridplot) == 1:
         fig = gridplot()
         return display_figure(fig)
@@ -298,9 +298,9 @@ def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
     html_formatter.for_type(Layout, layout_display)
-    html_formatter.for_type(ViewableElement, view_display)
-    html_formatter.for_type(Overlay, view_display)
-    html_formatter.for_type(NdOverlay, view_display)
+    html_formatter.for_type(ViewableElement, element_display)
+    html_formatter.for_type(Overlay, element_display)
+    html_formatter.for_type(NdOverlay, element_display)
     html_formatter.for_type(HoloMap, map_display)
     html_formatter.for_type(AdjointLayout, layout_display)
     html_formatter.for_type(NdLayout, layout_display)
