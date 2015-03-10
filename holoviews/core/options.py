@@ -675,7 +675,7 @@ class Store(object):
         """
         cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
         val = pickle.load(filename)
-        load_counter_offset = None
+        cls.load_counter_offset = None
         return val
 
     @classmethod
@@ -685,8 +685,8 @@ class Store(object):
         restored appropriately.
         """
         cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
-        val = pickle.load(pickle_string)
-        load_counter_offset = None
+        val = pickle.loads(pickle_string)
+        cls.load_counter_offset = None
         return val
 
 
