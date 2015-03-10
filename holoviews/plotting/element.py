@@ -243,16 +243,16 @@ class ElementPlot(Plot):
                 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
                 labels = {}
                 if '{Alpha}' in self.labels:
-                    labels['Alpha'] = chr(self.layout_num).upper()
+                    labels['Alpha'] = str(chr(self.layout_num+64))
                 elif '{alpha}' in self.labels:
-                    labels['alpha'] = chr(self.layout_num)
+                    labels['alpha'] = str(chr(self.layout_num+96))
                 elif '{numeric}' in self.labels:
                     labels['numeric'] = self.layout_num
                 elif '{roman}' in self.labels:
                     labels['roman'] = int_to_roman(self.layout_num)
                 at = AnchoredText(self.labels.format(**labels), loc=3,
                                   bbox_to_anchor=(-0.25, 1.), frameon=False,
-                                  prop=dict(size=12, weight='bold'),
+                                  prop=dict(size='xx-large', weight='bold'),
                                   bbox_transform=axis.transAxes)
                 at.patch.set_visible(False)
                 axis.add_artist(at)
