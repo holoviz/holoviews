@@ -871,7 +871,11 @@ class StoreOptions(object):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
-        obj.traverse(lambda o: setattr(o, 'id', new_id), specs=applied_keys)
+        obj.traverse(lambda o: setattr(o, 'id', new_id), specs=set(applied_keys))
+
+
+
+
 def set_options(obj, spec):
     """
     Pure Python alternative to the %opts and %%opts magic for
@@ -909,3 +913,4 @@ def set_options(obj, spec):
     spec, compositor_applied = StoreOptions.expand_compositor_keys(spec)
     new_id = StoreOptions.add_custom_options(spec)
     StoreOptions.propagate_ids(obj, new_id, compositor_applied+spec.keys())
+    return obj
