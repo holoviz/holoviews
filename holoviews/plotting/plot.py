@@ -25,6 +25,9 @@ class Plot(param.Parameterized):
     animation via the anim() method.
     """
 
+    background_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
+        Alpha of the figure background.""")
+
     figure_bounds = param.NumericTuple(default=(0.15, 0.15, 0.85, 0.85),
                                        doc="""
         The bounds of the figure as a 4-tuple of the form
@@ -239,7 +242,7 @@ class Plot(param.Parameterized):
                 self.handles['fig'] = fig
                 l, b, r, t = self.figure_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-                fig.patch.set_alpha(0)
+                fig.patch.set_alpha(self.background_alpha)
                 fig.set_size_inches(list(self.figure_size))
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
