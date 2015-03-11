@@ -245,7 +245,7 @@ class ElementPlot(Plot):
                 if yformat:
                     axis.yaxis.set_major_formatter(yformat)
 
-            if self.labels and not self.adjoined:
+            if self.labels and not self.adjoined and self.layout_num > 0:
                 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
                 labels = {}
                 if '{Alpha}' in self.labels:
