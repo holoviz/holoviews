@@ -91,15 +91,17 @@ class Chart(Element2D):
                 clip_start = start <= data[:, idx]
                 clip_stop = data[:, idx] < stop
                 data = data[np.logical_and(clip_start, clip_stop), :]
+                lbound = self.extents[idx]
+                ubound = self.extents[self.ndims:][idx]
+                lower_bounds.append(start if slc.start else lbound)
+                upper_bounds.append(stop if slc.stop else ubound)
             else:
                 data_index = data[:, idx] == slc
                 if not any(data_index):
                     raise IndexError("Value %s not found in data." % slc)
                 data = data[data_index, :]
-            lbound = self.extents[idx]
-            ubound = self.extents[self.ndims:][idx]
-            lower_bounds.append(start if slc.start else lbound)
-            upper_bounds.append(stop if slc.stop else ubound)
+        if not any(isinstance(slc, slice) for slc in slices):
+            return data
         if self.ndims == 1:
             lower_bounds.append(None)
             upper_bounds.append(None)
