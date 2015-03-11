@@ -878,18 +878,18 @@ class StoreOptions(object):
 
 def set_options(obj, spec):
     """
-    Pure Python alternative to the %opts and %%opts magic for
-    customizing the display and render options of a HoloViews object.
+    Pure Python function for customize HoloViews objects in terms of
+    their style, plot and normalization options.
 
     Given an object, the specification is a dictionary containing the
-    target component for customization as {type}.{group}.{label}
-    keys. An example of such a key is 'Image' which would customize
-    all Image components in the object. The key 'Image.Channel' would
-    only customize Images in the object that have the group 'Channel'.
+    target for customization as a {type}.{group}.{label} keys. An
+    example of such a key is 'Image' which would customize all Image
+    components in the object. The key 'Image.Channel' would only
+    customize Images in the object that have the group 'Channel'.
 
-    The values are then typically list of Option objects specified
-    with the appropriate category ('plot', 'style' or 'norm'). For
-    instance, for the keys above you could specify spec as:
+    The corresponding value is then a list of Option objects specified
+    with an appropriate category ('plot', 'style' or 'norm'). For
+    instance, using the keys described above, the specs could be:
 
     {'Image:[Options('style', cmap='jet')]}
 
@@ -898,18 +898,28 @@ def set_options(obj, spec):
     {'Image.Channel:[Options('plot', size=50),
                     Options('style', cmap='Blues')]}
 
-    Note this is equivalent to a more verbose and less highly
-    recommended alternative:
 
-    {'Image.Channel:{'plot':  Options(size=50),
-                     'style': Options('style', cmap='Blues')]}
+    Relationship to the %%opts magic
+    ----------------------------------
 
-    Lastly, if you have pyparsing installed, you can use the syntax of
-    the %opts magic syntax directly as follows:
+    This function matches the functionality supplied by the %%opts
+    cell magic in the IPython extension. In fact, you can use the same
+    syntax as the IPython cell magic to achieve the same customization
+    as shown above:
 
     from holoviews.ipython.parser import OptsSpec
-    set_options(my_image, OptsSpec.parse("Image (cmap='Blues')"))
+    set_options(my_image, OptsSpec.parse("Image (cmap='jet')"))
+
+    Then setting both plot and style options:
+
+    set_options(my_image, OptsSpec.parse("Image [size=50] (cmap='Blues')"))
     """
+    # Note that an alternate, more verbose and less recommended
+    # syntax can also be used:
+
+    # {'Image.Channel:{'plot':  Options(size=50),
+    #                  'style': Options('style', cmap='Blues')]}
+
     spec, compositor_applied = StoreOptions.expand_compositor_keys(spec)
     new_id = StoreOptions.add_custom_options(spec)
     StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))
