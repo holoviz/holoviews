@@ -454,7 +454,7 @@ class OptsMagic(Magics):
 
         if cellmagic:
             cls.next_id = new_id
-            cls.applied_keys = applied_keys + spec.keys()
+            cls.applied_keys = applied_keys + list(spec.keys())
         else:
             cls.next_id = None
             cls.applied_keys = []
