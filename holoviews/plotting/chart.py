@@ -143,10 +143,10 @@ class CurvePlot(ChartPlot):
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
         line_segment = axis.plot(curveview.data[:, 0], curveview.data[:, 1],
-                                 zorder=self.zorder, label=" ",
-                                 **style)[0]
+                                 zorder=self.zorder, **style)[0]
 
         self.handles['line_segment'] = line_segment
+        self.handles['legend_handle'] = line_segment
         return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
@@ -209,6 +209,7 @@ class HistogramPlot(ChartPlot):
         style = Store.lookup_options(hist, 'style')[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims) # Indexing top
+        self.handles['legend_handle'] = bars
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -498,8 +499,9 @@ class PointPlot(ChartPlot):
         if cs is not None:
             style['c'] = cs
             style.pop('color', None)
-        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=' ', **style)
+        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, **style)
         self.handles['paths'] = scatterplot
+        self.handles['legend_handle'] = scatterplot
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
@@ -639,7 +641,7 @@ class VectorFieldPlot(ElementPlot):
 
         if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
-        quiver = axis.quiver(*args, zorder=self.zorder, units='x', label=' ',
+        quiver = axis.quiver(*args, zorder=self.zorder, units='x',
                               scale_units='x', scale = scale, angles = angles ,
                               **({k:v for k,v in kwargs.items() if k!='color'}
                                  if colorized else kwargs))
@@ -654,6 +656,7 @@ class VectorFieldPlot(ElementPlot):
 
         self.handles['axis'].add_collection(quiver)
         self.handles['quiver'] = quiver
+        self.handles['legend_handle'] = quiver
         self.handles['input_scale'] = input_scale
 
         return self._finalize_axis(self.keys[-1])
@@ -775,6 +778,7 @@ class BarPlot(ElementPlot):
         dims = element.dimensions('key', label=True)
 
         self.handles['bars'], xticks = self._create_bars(axis, element)
+        self.handles['legend_handle'] = self.handles['bars']
         self._set_ticks(axis, dims, xticks)
         return self._finalize_axis(key, ranges=ranges, ylabel=str(vdim))
 

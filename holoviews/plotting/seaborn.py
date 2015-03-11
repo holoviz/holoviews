@@ -68,8 +68,9 @@ class RegressionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
+        label = view.label if self.overlaid == 1 else ''
         sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=axis, label=' ',
+                    ax=axis, label=label,
                     **self.style[self.cyclic_index])
 
 
@@ -112,7 +113,8 @@ class BivariatePlot(FullRedrawPlot):
                                                 view.data[:,1],
                                                 **self.style).fig
         else:
-            sns.kdeplot(view.data, ax=axis, label=' ',
+            label = view.label if self.overlaid == 1 else ''
+            sns.kdeplot(view.data, ax=axis, label=label,
                         zorder=self.zorder, **self.style)
 
 
@@ -178,7 +180,8 @@ class DistributionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
-        sns.distplot(view.data, ax=axis, label=' ', **self.style)
+        label = view.label if self.overlaid == 1 else ''
+        sns.distplot(view.data, ax=axis, label=label, **self.style)
 
 
 

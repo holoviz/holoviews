@@ -85,7 +85,7 @@ class ElementPlot(Plot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=False,
+    def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=0,
                  cyclic_index=0, style=None, zorder=0, adjoined=None, uniform=True, **params):
         self.dimensions = dimensions
         self.keys = keys
@@ -427,6 +427,7 @@ class OverlayPlot(ElementPlot):
         style_groups = {k: list(v) for k,v in groupby(vmaps, group_fn)}
         style_lengths = {k: len(v) for k, v, in style_groups.items()}
         style_iter = {k: enumerate(v) for k, v, in style_groups.items()}
+        overlay_type = 1 if self.map.type == Overlay else 2
         for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
             style_key = group_fn(vmap)
             cyclic_index,  _ = next(style_iter[style_key])
@@ -434,7 +435,7 @@ class OverlayPlot(ElementPlot):
             style = Store.lookup_options(vmap.last, 'style').max_cycles(length)
             plotopts = dict(keys=self.keys, axis=self.handles['axis'], style=style,
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
-                            zorder=self.zorder+zorder, ranges=ranges, overlaid=True,
+                            zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
                             uniform=self.uniform, show_legend=False)
@@ -446,33 +447,54 @@ class OverlayPlot(ElementPlot):
 
 
     def _adjust_legend(self, axis):
-        # If legend enabled update handles and labels
-        handles, _ = axis.get_legend_handles_labels()
-        labels = []
+        """
+        Accumulate the legend handles and labels for all subplots
+        and set up the legend
+        """
+
         title = ''
+        legend_data = []
         if issubclass(self.map.type, NdOverlay):
             dimensions = self.map.last.key_dimensions
             for key in self.map.last.data.keys():
+                subplot = self.subplots[key]
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
-                labels.append(','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
-                                        zip(dimensions, key)]))
+                label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
+                                  zip(dimensions, key)])
+                handle = subplot.handles.get('legend_handle', False)
+                if handle:
+                    legend_data.append((handle, label))
             title = ', '.join([d.name for d in dimensions])
         else:
             for key, subplot in self.subplots.items():
-                layer = self.map.last.data.get(key, False)
-                if layer: labels.append(layer.label)
-                else: labels.append('')
-        if not any(len(l) for l in labels) or not len(handles) > 1 or not self.show_legend:
+                if isinstance(subplot, OverlayPlot):
+                    legend_data += subplot.handles.get('legend_data', {}).items()
+                else:
+                    layer = self.map.last.data.get(key, False)
+                    handle = subplot.handles.get('legend_handle', False)
+                    if layer and layer.label and handle:
+                        legend_data.append((handle, layer.label))
+        autohandles, autolabels = axis.get_legend_handles_labels()
+        legends = zip(*legend_data) if legend_data else ([], [])
+        all_handles = list(legends[0]) + list(autohandles)
+        all_labels = list(legends[1]) + list(autolabels)
+        data = OrderedDict()
+        for handle, label in zip(all_handles, all_labels):
+            if handle and (handle not in data) and label:
+                data[handle] = label
+        if not len(data) > 1 or not self.show_legend:
             legend = axis.get_legend()
             if legend:
                 legend.set_visible(False)
         else:
-            leg = axis.legend(handles, labels, title=title)
+            leg = axis.legend(data.keys(), data.values(),
+                              title=title, scatterpoints=1)
             frame = leg.get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
             frame.set_linewidth('1.0')
             self.handles['legend'] = leg
+        self.handles['legend_data'] = data
 
 
     def __call__(self, ranges=None):

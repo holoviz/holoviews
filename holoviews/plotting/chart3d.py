@@ -132,10 +132,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
         if cs is not None:
             style['c'] = cs
             style.pop('color', None)
-        scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, label=' ', **style)
+        scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, **style)
 
         self.handles['axis'].add_collection(scatterplot)
         self.handles['scatter'] = scatterplot
+        self.handles['legend_handle'] = scatterplot
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
@@ -185,6 +186,7 @@ class SurfacePlot(Plot3D):
             self.handles['surface'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
         elif self.plot_type == "contour":
             self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
+        self.handles['legend_handle'] = self.handles['surface']
 
 
 Store.defaults.update({Surface: SurfacePlot,
