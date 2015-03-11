@@ -37,7 +37,7 @@ ____________
 
   import holoviews
   %load_ext holoviews.ipython
-  %view holomap='widgets'
+  %output holomap='widgets'
   import numpy as np
 
 
