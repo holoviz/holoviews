@@ -3,7 +3,7 @@ import numpy as np
 import colorsys
 import param
 
-from ..core import OrderedDict, Dimension, NdMapping, Element2D
+from ..core import OrderedDict, Dimension, NdMapping, Element2D, Overlay
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
@@ -486,6 +486,16 @@ class RGB(Image):
 
 
     def __init__(self, data, **params):
+
+        if isinstance(data, Overlay):
+            images = data.values()
+            if not all(isinstance(im, Image) for im in images):
+                raise ValueError("Input overlay must only contain Image elements")
+            shapes = [im.shape for im in images]
+            if not all(shape==shapes[0] for shape in shapes):
+                raise ValueError("Images in the input overlays must contain data of the consistent shape")
+            data = np.dstack([im.data for im in images])
+
         sliced = None
         if len(data.shape) != 3:
             raise ValueError("Three dimensional matrices or arrays required")
