@@ -14,7 +14,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 import param
 
-from ..core.options import Cycle, Palette, Options, Store
+from ..core.options import Cycle, Palette, Options, Store, StoreOptions
 from ..core import Dimension, Layout, NdLayout, GridSpace, HoloMap
 from ..core.io import Exporter
 from .annotation import * # pyflakes:ignore (API import)
@@ -163,12 +163,13 @@ class PlotRenderer(Exporter):
                       'mime_type':HTML_TAGS[fmt][0]}
 
 
-    def save(self, obj, basename, fmt=None):
+    def save(self, obj, basename, fmt=None, options=None):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate deafult.
         """
-        rendered = self(obj, fmt)
+        with StoreOptions.options(obj, options):
+            rendered = self(obj, fmt)
         if rendered is None: return
         (data, info) = rendered
         filename ='%s.%s' % (basename, info['file-ext'])
