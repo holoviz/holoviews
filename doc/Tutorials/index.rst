@@ -30,9 +30,9 @@ this order:
   How to save HoloViews output for use in reports and publications, 
   as part of a reproducible yet interactive scientific workflow.
 
-At any point, you can look through these more comprehensive but less
-explanatory overview tutorials that list each of the objects
-available:
+At any point, you can look through these comprehensive but less
+explanatory overview tutorials that simply list each of the objects
+available and show examples:
 
 * `Elements: <Elements>`_
   Overview and examples of all HoloViews element types, the atomic items
@@ -44,11 +44,15 @@ available:
 * `Pandas and Seaborn: <Pandas_Seaborn>`_
   Using HoloViews with the external Pandas and Seaborn libraries.
 
-There is also a reference tutorial explaining the details of the
-support offered for working with real-world data:
+There are also more detailed tutorials with reference material:
 
 * `Continuous Coordinates: <Continuous_Coordinates>`_
-  Support for continuous coordinates offered by HoloViews.
+  Support for continuous coordinates offered by HoloViews, for use
+  with real-world data.
+
+* `Composing Data: <Composing_Data>`_
+  Complete example of the full range of hierarchical, multidimensional
+  discrete and continuous data structures provided by HoloViews.
 
 For more detailed information on any component described in the
 tutorials, please refer to the `Reference Manual:
