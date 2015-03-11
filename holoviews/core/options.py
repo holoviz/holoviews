@@ -795,7 +795,7 @@ class StoreOptions(object):
     A collection of utilities for advanced users for creating and
     setting customized option tress on the Store. Designed for use by
     either advanced users or the %opts line and cell magics which use
-    this machinery to operate.
+    this machinery.
     """
 
     @classmethod
@@ -868,6 +868,23 @@ class StoreOptions(object):
                                  " a tree with id %d" % new_id)
         obj.traverse(lambda o: setattr(o, 'id', new_id), specs=set(applied_keys))
 
+    @classmethod
+    def capture_ids(cls, obj):
+        """
+        Given an list of ids, capture a list of ids that can be
+        restored using the restore_ids.
+        """
+        return obj.traverse(lambda o: getattr(o, 'id'))
+
+    @classmethod
+    def restore_ids(cls, obj, ids):
+        """
+        Given an list of ids as captured with capture_ids, restore the
+        ids. Note the structure of an object must not change between
+        the calls to capture_ids and restore_ids.
+        """
+        ids = iter(ids)
+        obj.traverse(lambda o: setattr(o, 'id', ids.next()))
 
 
 
