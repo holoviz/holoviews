@@ -119,7 +119,7 @@ class Dimension(param.Parameterized):
         return value
 
     def __repr__(self):
-        return self.script_repr()
+        return self.pprint()
 
 
     def pprint_value_string(self, value):
