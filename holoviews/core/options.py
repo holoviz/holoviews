@@ -889,10 +889,39 @@ class StoreOptions(object):
         obj.traverse(lambda o: setattr(o, 'id', ids.next()))
 
 
+    @classmethod
+    def merge_options(cls, options=None, **kwargs):
+        """
+        Given a full options dictionary and options groups specified
+        as a keywords such as return the full set of merged options:
+
+        >>> options={'Curve':{'style':dict(color='b')}}
+        >>> style={'Curve':{'linewidth':10 }}
+        >>> merged = StoreOptions.merge_options(options, style=style)
+        >>> sorted(merged['Curve']['style'].items())
+        [('color', 'b'), ('linewidth', 10)]
+        """
+        options = {} if (options is None) else dict(**options)
+        all_keys = set(k for d in kwargs.values() for k in d)
+        for spec_key in all_keys:
+            additions = {}
+            for k, d in kwargs.items():
+                if spec_key in d:
+                    kws = d[spec_key]
+                    additions.update({k:kws})
+            if spec_key not in options:
+                options[spec_key] = {}
+            for key in additions:
+                if key in options[spec_key]:
+                    options[spec_key][key].update(additions[key])
+                else:
+                    options[spec_key][key] = additions[key]
+        return options
+
 
     @classmethod
     @contextmanager
-    def options(cls, obj, options):
+    def options(cls, obj, options=None, **kwargs):
         """
         Context-manager for temporarily setting options on an object
         (if options is None, no options will be set) . Once the
@@ -903,8 +932,9 @@ class StoreOptions(object):
         See holoviews.core.options.set_options function for more
         information on the options specification format.
         """
-        if options is None: yield
+        if (options is None) and kwargs == {}: yield
         else:
+            options = cls.merge_options(options, **kwargs)
             ids = cls.capture_ids(obj)
             original_custom_keys = set(Store.custom_options.keys())
             cls.set_options(obj, options)
@@ -917,7 +947,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def set_options(cls, obj, options):
+    def set_options(cls, obj, options=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
         their style, plot and normalization options.
@@ -960,7 +990,7 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-
+        options = cls.merge_options(options, **kwargs)
         spec, compositor_applied = StoreOptions.expand_compositor_keys(options)
         new_id = StoreOptions.add_custom_options(spec)
         StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))

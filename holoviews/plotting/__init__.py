@@ -163,12 +163,12 @@ class PlotRenderer(Exporter):
                       'mime_type':HTML_TAGS[fmt][0]}
 
 
-    def save(self, obj, basename, fmt=None, options=None):
+    def save(self, obj, basename, fmt=None, options=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate deafult.
         """
-        with StoreOptions.options(obj, options):
+        with StoreOptions.options(obj, options, **kwargs):
             rendered = self(obj, fmt)
         if rendered is None: return
         (data, info) = rendered
