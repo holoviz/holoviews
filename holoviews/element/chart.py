@@ -92,7 +92,10 @@ class Chart(Element2D):
                 clip_stop = data[:, idx] < stop
                 data = data[np.logical_and(clip_start, clip_stop), :]
             else:
-                raise IndexError("%s only support slice indexing." % type(self).__name__)
+                data_index = data[:, idx] == slc
+                if not any(data_index):
+                    raise IndexError("Value %s not found in data." % slc)
+                data = data[data_index, :]
             lbound = self.extents[idx]
             ubound = self.extents[self.ndims:][idx]
             lower_bounds.append(start if slc.start else lbound)
