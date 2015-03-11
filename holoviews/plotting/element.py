@@ -35,6 +35,12 @@ class ElementPlot(Plot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
+    label_position = param.NumericTuple(default=(-0.35, 0.85), doc="""
+         Position relative to the plot for placing the optional subfigure label.""")
+
+    label_size = param.Number(default=18, doc="""
+         Size of optional subfigure label.""")
+
     logx = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the x-axis of the Chart.""")
 
@@ -253,8 +259,8 @@ class ElementPlot(Plot):
                 elif '{roman}' in self.labels:
                     labels['roman'] = int_to_roman(self.layout_num).lower()
                 at = AnchoredText(self.labels.format(**labels), loc=3,
-                                  bbox_to_anchor=(-0.25, 1.), frameon=False,
-                                  prop=dict(size='xx-large', weight='bold'),
+                                  bbox_to_anchor=self.label_position, frameon=False,
+                                  prop=dict(size=self.label_size, weight='bold'),
                                   bbox_transform=axis.transAxes)
                 at.patch.set_visible(False)
                 axis.add_artist(at)
