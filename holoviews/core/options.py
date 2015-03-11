@@ -889,7 +889,6 @@ class StoreOptions(object):
 
 
 
-def set_options(obj, spec):
 @contextmanager
 def options(obj, options):
     """
@@ -910,15 +909,18 @@ def options(obj, options):
         del Store.custom_options[key]
     StoreOptions.restore_ids(obj, ids)
 
+
+
+def set_options(obj, options):
     """
     Pure Python function for customize HoloViews objects in terms of
     their style, plot and normalization options.
 
-    Given an object, the specification is a dictionary containing the
-    target for customization as a {type}.{group}.{label} keys. An
-    example of such a key is 'Image' which would customize all Image
-    components in the object. The key 'Image.Channel' would only
-    customize Images in the object that have the group 'Channel'.
+    The options specification is a dictionary containing the target
+    for customization as a {type}.{group}.{label} keys. An example of
+    such a key is 'Image' which would customize all Image components
+    in the object. The key 'Image.Channel' would only customize Images
+    in the object that have the group 'Channel'.
 
     The corresponding value is then a list of Option objects specified
     with an appropriate category ('plot', 'style' or 'norm'). For
@@ -953,7 +955,7 @@ def options(obj, options):
     # {'Image.Channel:{'plot':  Options(size=50),
     #                  'style': Options('style', cmap='Blues')]}
 
-    spec, compositor_applied = StoreOptions.expand_compositor_keys(spec)
+    spec, compositor_applied = StoreOptions.expand_compositor_keys(options)
     new_id = StoreOptions.add_custom_options(spec)
     StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))
     return obj
