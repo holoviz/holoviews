@@ -657,18 +657,13 @@ class Compositor(param.Parameterized):
 
 class Store(object):
     """
-    The Store is what links up HoloViews objects and elements to both
-    the IPython extension and to the plotting/display backend.
+    The Store is what links up HoloViews objects to their
+    corresponding options and to the appropriate classes of the chosen
+    backend (e.g for rendering).
 
-    * Data objects are independent of plotting and the IPython
-      extension.
-
-    * Plotting and the IPython extension are likewise independent from
-      each other.
-
-    The Store stores the display options (plotting) for data elements
-    as well as the association from HoloViews objects to the respective
-    plotting classes.
+    In addition, Storesupports pickle operations that automatically
+    pickle and unpickle the corresponding options for a HoloViews
+    object.
     """
 
     # A mapping from ViewableElement types to their corresponding plot
