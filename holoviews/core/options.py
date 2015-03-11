@@ -893,22 +893,26 @@ class StoreOptions(object):
     @contextmanager
     def options(cls, obj, options):
         """
-        Context-manager for temporarily setting options on an object. Once
-        the context manager exits, both the object and the Store will be
+        Context-manager for temporarily setting options on an object
+        (if options is None, no options will be set) . Once the
+        context manager exits, both the object and the Store will be
         left in exactly the same state they were in before the context
         manager was used.
 
         See holoviews.core.options.set_options function for more
         information on the options specification format.
         """
-        ids = cls.capture_ids(obj)
-        original_custom_keys = set(Store.custom_options.keys())
-        cls.set_options(obj, options)
-        yield
-        current_custom_keys = set(Store.custom_options.keys())
-        for key in current_custom_keys.difference(original_custom_keys):
-            del Store.custom_options[key]
-        cls.restore_ids(obj, ids)
+        if options is None: yield
+        else:
+            ids = cls.capture_ids(obj)
+            original_custom_keys = set(Store.custom_options.keys())
+            cls.set_options(obj, options)
+            yield
+        if options is not None:
+            current_custom_keys = set(Store.custom_options.keys())
+            for key in current_custom_keys.difference(original_custom_keys):
+                del Store.custom_options[key]
+                cls.restore_ids(obj, ids)
 
 
     @classmethod
