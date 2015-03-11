@@ -72,4 +72,4 @@ IPython Notebook cell).
    Containers
    Pandas and Seaborn <Pandas_Seaborn>
    Continuous Coordinates <Continuous_Coordinates>
-   Continuous Coordinates <Composing_Data>
+   Composing Data <Composing_Data>
