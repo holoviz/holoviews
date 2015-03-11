@@ -17,16 +17,18 @@ methods on all objects as comparison opertors only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
-
+import numpy as np
 from unittest.util import safe_repr
 from unittest import TestCase
 from numpy.testing import assert_array_almost_equal
 
-from . import *
-from ..core import Element, AdjointLayout, Overlay, Dimensioned, Layout
+from . import *    # pyflakes:ignore (All Elements need to support comparison)
+from ..core import Element, AdjointLayout, Overlay, Dimension, HoloMap, \
+                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace
 from ..core.options import Options
-from ..interface.pandas import *
-from ..interface.seaborn import *
+from ..interface.pandas import DFrame, DataFrameView
+from ..interface.seaborn import PandasDFrame, Bivariate, Distribution, \
+                                Regression, TimeSeries
 
 
 class ComparisonInterface(object):

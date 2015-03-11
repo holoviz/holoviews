@@ -116,7 +116,7 @@ class DataFrameView(Element):
         if dim in self.data.columns:
             return np.array(self.data[dim])
         else:
-            return super(DFrameView, self).dimension_values(dim)
+            return super(DataFrameView, self).dimension_values(dim)
 
 
     def apply(self, name, *args, **kwargs):

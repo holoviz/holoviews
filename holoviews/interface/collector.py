@@ -11,7 +11,6 @@ import param
 from ..core import Dimension, ViewableElement, UniformNdMapping,\
  GridSpace, AttrTree, Layout, HoloMap
 from ..core.util import ProgressIndicator
-from ..element.raster import Image
 
 Time = Dimension("Time", type=param.Dynamic.time_fn.time_type)
 
@@ -70,6 +69,7 @@ class ViewRef(Reference):
     ViewRefs compose with the * operator to specify Overlays and also
     support slicing of the referenced elements:
 
+    >>> from ..element.raster import Image
     >>> ref = ViewRef('Example.Path1 * Example.Path2')
 
     >>> tree = Layout()

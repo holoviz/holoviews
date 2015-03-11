@@ -14,7 +14,7 @@ each collection of paths.
 import numpy as np
 
 import param
-from ..core import Dimension, Element, Element2D
+from ..core import Dimension, Element2D
 
 
 class Path(Element2D):
