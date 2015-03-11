@@ -808,7 +808,8 @@ class StoreOptions(object):
             if isinstance(spec[key], (list, tuple)):
                 customization = {v.key:v for v in spec[key]}
             else:
-                customization = spec[key]
+                customization = {k:(Options(**v) if isinstance(v, dict) else v)
+                                 for k,v in spec[key].items()}
             options[str(key)] = customization
         return options
 
