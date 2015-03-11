@@ -27,7 +27,7 @@ this order:
   collapsing across dimensions. (Coming soon!)
 
 * `Exporting: <Exporting>`_
-  How to save HoloViews output for use in reports and publications, 
+  How to save HoloViews output for use in reports and publications,
   as part of a reproducible yet interactive scientific workflow.
 
 At any point, you can look through these comprehensive but less
@@ -67,7 +67,9 @@ IPython Notebook cell).
    Introduction
    Exploring Data <Exploring_Data>
    Transforming Data <Transforming_Data>
+   Exporting
    Elements
    Containers
    Pandas and Seaborn <Pandas_Seaborn>
    Continuous Coordinates <Continuous_Coordinates>
+   Continuous Coordinates <Composing_Data>
