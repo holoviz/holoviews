@@ -340,25 +340,8 @@ class Points(Chart):
 
     _min_dims = 2                      # Minimum number of columns
 
-    def __init__(self, data, **params):
-        if isinstance(data, tuple):
-            arrays = [np.array(d) for d in data]
-            if not all(len(arr)==len(arrays[0]) for arr in arrays):
-                raise Exception("All input arrays must have the same length.")
-
-            arr = np.hstack(tuple(arr.reshape(arr.shape if len(arr.shape)==2
-                                              else (len(arr), 1)) for arr in arrays))
-        else:
-            arr = np.array(data)
-
-        super(Points, self).__init__(data, **params)
-        if self.data.shape[1] <self._min_dims:
-            raise Exception("%s requires a minimum of %s columns."
-                            % (self.__class__.__name__, self._min_dims))
-
     def __len__(self):
         return self.data.shape[0]
-
 
     def __iter__(self):
         i = 0
