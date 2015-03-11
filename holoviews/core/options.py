@@ -889,73 +889,74 @@ class StoreOptions(object):
 
 
 
-@contextmanager
-def options(obj, options):
-    """
-    Context-manager for temporarily setting options on an object. Once
-    the context manager exits, both the object and the Store will be
-    left in exactly the same state they were in before the context
-    manager was used.
+    @classmethod
+    @contextmanager
+    def options(cls, obj, options):
+        """
+        Context-manager for temporarily setting options on an object. Once
+        the context manager exits, both the object and the Store will be
+        left in exactly the same state they were in before the context
+        manager was used.
 
-    See holoviews.core.options.set_options function for more
-    information on the options specification format.
-    """
-    ids = StoreOptions.capture_ids(obj)
-    original_custom_keys = set(Store.custom_options.keys())
-    set_options(obj, options)
-    yield
-    current_custom_keys = set(Store.custom_options.keys())
-    for key in current_custom_keys.difference(original_custom_keys):
-        del Store.custom_options[key]
-    StoreOptions.restore_ids(obj, ids)
-
-
-
-def set_options(obj, options):
-    """
-    Pure Python function for customize HoloViews objects in terms of
-    their style, plot and normalization options.
-
-    The options specification is a dictionary containing the target
-    for customization as a {type}.{group}.{label} keys. An example of
-    such a key is 'Image' which would customize all Image components
-    in the object. The key 'Image.Channel' would only customize Images
-    in the object that have the group 'Channel'.
-
-    The corresponding value is then a list of Option objects specified
-    with an appropriate category ('plot', 'style' or 'norm'). For
-    instance, using the keys described above, the specs could be:
-
-    {'Image:[Options('style', cmap='jet')]}
-
-    Or setting two types of option at once:
-
-    {'Image.Channel:[Options('plot', size=50),
-                    Options('style', cmap='Blues')]}
+        See holoviews.core.options.set_options function for more
+        information on the options specification format.
+        """
+        ids = cls.capture_ids(obj)
+        original_custom_keys = set(Store.custom_options.keys())
+        cls.set_options(obj, options)
+        yield
+        current_custom_keys = set(Store.custom_options.keys())
+        for key in current_custom_keys.difference(original_custom_keys):
+            del Store.custom_options[key]
+        cls.restore_ids(obj, ids)
 
 
-    Relationship to the %%opts magic
-    ----------------------------------
+    @classmethod
+    def set_options(cls, obj, options):
+        """
+        Pure Python function for customize HoloViews objects in terms of
+        their style, plot and normalization options.
 
-    This function matches the functionality supplied by the %%opts
-    cell magic in the IPython extension. In fact, you can use the same
-    syntax as the IPython cell magic to achieve the same customization
-    as shown above:
+        The options specification is a dictionary containing the target
+        for customization as a {type}.{group}.{label} keys. An example of
+        such a key is 'Image' which would customize all Image components
+        in the object. The key 'Image.Channel' would only customize Images
+        in the object that have the group 'Channel'.
 
-    from holoviews.ipython.parser import OptsSpec
-    set_options(my_image, OptsSpec.parse("Image (cmap='jet')"))
+        The corresponding value is then a list of Option objects specified
+        with an appropriate category ('plot', 'style' or 'norm'). For
+        instance, using the keys described above, the specs could be:
 
-    Then setting both plot and style options:
+        {'Image:[Options('style', cmap='jet')]}
 
-    set_options(my_image, OptsSpec.parse("Image [size=50] (cmap='Blues')"))
-    """
-    # Note that an alternate, more verbose and less recommended
-    # syntax can also be used:
+        Or setting two types of option at once:
 
-    # {'Image.Channel:{'plot':  Options(size=50),
-    #                  'style': Options('style', cmap='Blues')]}
+        {'Image.Channel:[Options('plot', size=50),
+                        Options('style', cmap='Blues')]}
 
-    spec, compositor_applied = StoreOptions.expand_compositor_keys(options)
-    new_id = StoreOptions.add_custom_options(spec)
-    StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))
-    return obj
+
+        Relationship to the %%opts magic
+        ----------------------------------
+
+        This function matches the functionality supplied by the %%opts
+        cell magic in the IPython extension. In fact, you can use the same
+        syntax as the IPython cell magic to achieve the same customization
+        as shown above:
+
+        from holoviews.ipython.parser import OptsSpec
+        set_options(my_image, OptsSpec.parse("Image (cmap='jet')"))
+
+        Then setting both plot and style options:
+
+        set_options(my_image, OptsSpec.parse("Image [size=50] (cmap='Blues')"))
+        """
+        # Note that an alternate, more verbose and less recommended
+        # syntax can also be used:
+
+        # {'Image.Channel:{'plot':  Options(size=50),
+        #                  'style': Options('style', cmap='Blues')]}
+
+        spec, compositor_applied = StoreOptions.expand_compositor_keys(options)
+        new_id = StoreOptions.add_custom_options(spec)
+        StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))
+        return obj

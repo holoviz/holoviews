@@ -9,7 +9,7 @@ __version__ = param.Version(release=(0,8,1), fpath=__file__,
 
 from .core.dimension import Dimension                   # pyflakes:ignore (API import)
 from .core.boundingregion import BoundingBox            # pyflakes:ignore (API import)
-from .core.options import Options, Store, set_options   # pyflakes:ignore (API import)
+from .core.options import Options, Store, StoreOptions  # pyflakes:ignore (API import)
 from .core.layout import *                              # pyflakes:ignore (API import)
 from .core.element import *                             # pyflakes:ignore (API import)
 from .core.overlay import *                             # pyflakes:ignore (API import)
