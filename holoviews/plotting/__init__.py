@@ -13,6 +13,7 @@ from matplotlib.ticker import FormatStrFormatter
 from matplotlib.colors import LinearSegmentedColormap
 
 import param
+from param.parameterized import bothmethod
 
 from ..core.options import Cycle, Palette, Options, Store, StoreOptions
 from ..core import Dimension, Layout, NdLayout, GridSpace, HoloMap
@@ -163,18 +164,19 @@ class PlotRenderer(Exporter):
                       'mime_type':HTML_TAGS[fmt][0]}
 
 
-    def save(self, obj, basename, fmt=None, options=None, **kwargs):
+    @bothmethod
+    def save(self_or_cls, obj, basename, fmt=None, options=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate deafult.
         """
         with StoreOptions.options(obj, options, **kwargs):
-            rendered = self(obj, fmt)
+            rendered = self_or_cls(obj, fmt)
         if rendered is None: return
         (data, info) = rendered
         filename ='%s.%s' % (basename, info['file-ext'])
         with open(filename, 'w') as f:
-            f.write(self.encode(rendered))
+            f.write(self_or_cls.encode(rendered))
 
     def anim_data(self, anim, fmt, writer, **anim_kwargs):
         """
