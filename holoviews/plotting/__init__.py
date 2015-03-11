@@ -8,9 +8,8 @@ except: basestring = str
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import rc_params_from_file, rcParams
+from matplotlib import rc_params_from_file
 from matplotlib.ticker import FormatStrFormatter
-from matplotlib.colors import LinearSegmentedColormap
 
 import param
 from param.parameterized import bothmethod

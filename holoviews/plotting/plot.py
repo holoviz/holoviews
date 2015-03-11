@@ -1,7 +1,6 @@
 from itertools import product, groupby
 
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
@@ -766,7 +765,7 @@ class LayoutPlot(CompositePlot):
         layout_items = layout.grid_items()
         layout_dimensions = layout.key_dimensions if isinstance(layout, NdLayout) else None
 
-        layouts, grid_indices = {}, {}
+        layouts = {}
         row_heightratios, col_widthratios = {}, {}
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout

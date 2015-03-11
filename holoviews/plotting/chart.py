@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ..core.options import Store
-from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, Element, HoloMap
+from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
 from ..core.util import match_spec
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
 from .element import ElementPlot
@@ -413,7 +413,7 @@ class SideHistogramPlot(HistogramPlot):
 
 
     def get_extents(self, element, ranges):
-        (x0, x1), (y0, y1) = element.xlim, element.ylim
+        (x0, x1), y1 = element.xlim, element.ylim[1]
         return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
 

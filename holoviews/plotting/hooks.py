@@ -13,7 +13,7 @@ from ..core.options import Store
 from ..ipython.magics import OutputMagic
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
-from ..plotting import Plot, CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot
+from ..plotting import CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot
 
 
 class PlottingHook(param.ParameterizedFunction):
