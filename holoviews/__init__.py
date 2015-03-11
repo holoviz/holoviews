@@ -7,14 +7,14 @@ import param
 __version__ = param.Version(release=(0,8,1), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
-from .core.dimension import Dimension         # pyflakes:ignore (API import)
-from .core.boundingregion import BoundingBox  # pyflakes:ignore (API import)
-from .core.options import Options, Store      # pyflakes:ignore (API import)
-from .core.layout import *                    # pyflakes:ignore (API import)
-from .core.element import *                   # pyflakes:ignore (API import)
-from .core.overlay import *                   # pyflakes:ignore (API import)
-from .core.sheetcoords import *               # pyflakes:ignore (API import)
-from .core.tree import *                      # pyflakes:ignore (API import)
+from .core.dimension import Dimension                   # pyflakes:ignore (API import)
+from .core.boundingregion import BoundingBox            # pyflakes:ignore (API import)
+from .core.options import Options, Store, set_options   # pyflakes:ignore (API import)
+from .core.layout import *                              # pyflakes:ignore (API import)
+from .core.element import *                             # pyflakes:ignore (API import)
+from .core.overlay import *                             # pyflakes:ignore (API import)
+from .core.sheetcoords import *                         # pyflakes:ignore (API import)
+from .core.tree import *                                # pyflakes:ignore (API import)
 from .core.io import FileArchive
 
 from .interface import *                                             # pyflakes:ignore (API import)
