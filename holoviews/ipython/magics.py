@@ -8,7 +8,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import OrderedDict
-from ..core.options import OptionTree, Options, OptionError, Store, StoreOptions
+from ..core.options import Options, OptionError, Store, StoreOptions
 
 from IPython.display import display, HTML
 
@@ -498,7 +498,7 @@ class OptsMagic(Magics):
         if cell:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            retval = StoreOptions.apply_customization(spec, Store.options)
+            retval = StoreOptions.apply_customizations(spec, Store.options)
             if retval is None:
                 display(HTML(OptsMagic.error_message))
         OptsMagic.error_message = None
