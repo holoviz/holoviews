@@ -794,3 +794,118 @@ class Store(object):
                                   groups={'style': Options(),
                                           'plot': Options(),
                                           'norm': Options()})
+
+class StoreOptions(object):
+    """
+    A collection of utilities for advanced users for creating and
+    setting customized option tress on the Store. Designed for use by
+    either advanced users or the %opts line and cell magics which use
+    this machinery to operate.
+    """
+
+    @classmethod
+    def apply_customizations(cls, spec, options):
+        """
+        Apply the given option specs to the supplied options tree.
+        """
+        for key in sorted(spec.keys()):
+            if isinstance(spec[key], (list, tuple)):
+                customization = {v.key:v for v in spec[key]}
+            else:
+                customization = spec[key]
+            options[str(key)] = customization
+        return options
+
+    @classmethod
+    def expand_compositor_keys(cls, spec):
+        """
+        Expands compositor definition keys into {type}.{group}
+        keys. For instance a compositor operation returning a group
+        string 'Image' of element type RGB expands to 'RGB.Image'.
+        """
+        expanded_spec={}
+        applied_keys = []
+        compositor_defs = {el.group:el.output_type.__name__
+                           for el in Compositor.definitions}
+        for key, val in spec.items():
+            if key not in compositor_defs:
+                expanded_spec[key] = val
+            else:
+                # Send id to Overlays
+                applied_keys = ['Overlay']
+                type_name = compositor_defs[key]
+                expanded_spec[str(type_name+'.'+key)] = val
+        return expanded_spec, applied_keys
+
+
+    @classmethod
+    def get_custom_tree(cls, spec):
+        """
+        Get a tree that is based on the default Store.options tree but
+        has been customized by the specified specs.
+        """
+        options = OptionTree(items=Store.options.data.items(),
+                             groups=Store.options.groups)
+        return cls.apply_customizations(spec, options)
+
+    @classmethod
+    def add_custom_options(cls, spec):
+        """
+        Sets a new tree in Store.custom_options based on the supplied
+        customization specification. Returns the id of the new tree.
+        """
+        ids = Store.custom_options.keys()
+        max_id = max(ids) if len(ids)>0 else -1
+        custom_tree = cls.get_custom_tree(spec)
+        Store.custom_options[max_id+1] = custom_tree
+        return max_id+1
+
+    @classmethod
+    def propagate_ids(cls, obj, new_id, applied_keys):
+        """
+        Recursively propagate an id through an object for components
+        matching the applied_keys. This method can only be called if
+        there is a tree with a matching id in Store.custom_options
+        """
+        if not new_id in Store.custom_options:
+            raise AssertionError("The set_ids method requires "
+                                 "Store.custom_options to contain"
+                                 " a tree with id %d" % new_id)
+        obj.traverse(lambda o: setattr(o, 'id', new_id), specs=applied_keys)
+def set_options(obj, spec):
+    """
+    Pure Python alternative to the %opts and %%opts magic for
+    customizing the display and render options of a HoloViews object.
+
+    Given an object, the specification is a dictionary containing the
+    target component for customization as {type}.{group}.{label}
+    keys. An example of such a key is 'Image' which would customize
+    all Image components in the object. The key 'Image.Channel' would
+    only customize Images in the object that have the group 'Channel'.
+
+    The values are then typically list of Option objects specified
+    with the appropriate category ('plot', 'style' or 'norm'). For
+    instance, for the keys above you could specify spec as:
+
+    {'Image:[Options('style', cmap='jet')]}
+
+    Or setting two types of option at once:
+
+    {'Image.Channel:[Options('plot', size=50),
+                    Options('style', cmap='Blues')]}
+
+    Note this is equivalent to a more verbose and less highly
+    recommended alternative:
+
+    {'Image.Channel:{'plot':  Options(size=50),
+                     'style': Options('style', cmap='Blues')]}
+
+    Lastly, if you have pyparsing installed, you can use the syntax of
+    the %opts magic syntax directly as follows:
+
+    >>> from holoviews.ipython.parser import OptsSpec
+    set_options(my_image, OptsSpec.parse("Image (cmap='Blues')"))
+    """
+    spec, compositor_applied = StoreOptions.expand_compositor_keys(spec)
+    new_id = StoreOptions.add_custom_options(spec)
+    StoreOptions.propagate_ids(obj, new_id, compositor_applied+spec.keys())
