@@ -8,7 +8,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import OrderedDict
-from ..core.options import OptionTree, Options, OptionError, Store
+from ..core.options import OptionTree, Options, OptionError, Store, StoreOptions
 
 from IPython.display import display, HTML
 
@@ -432,9 +432,7 @@ class OptsMagic(Magics):
         if cls.error_message:
             return cls.error_message
         if cls.next_id is not None:
-            assert cls.next_id in Store.custom_options, 'RealityError'
-            obj.traverse(lambda o: setattr(o, 'id', cls.next_id),
-                         specs=cls.applied_keys)
+            StoreOptions.propagate_ids(obj, cls.next_id, cls.applied_keys)
             cls.next_id = None
             cls.applied_keys = []
         return None
@@ -445,54 +443,21 @@ class OptsMagic(Magics):
         info = (err.invalid_keyword, err.group_name, ', '.join(err.allowed_keywords))
         return "Keyword <b>%r</b> not one of following %s options:<br><br><b>%s</b>" % info
 
-
-    @classmethod
-    def customize_tree(cls, spec, options):
-        """
-        Returns a customized copy of the Store.options OptionsTree object.
-        """
-        for key in sorted(spec.keys()):
-            try:
-                options[str(key)] = spec[key]
-            except OptionError as e:
-                cls.error_message = cls._format_options_error(e)
-                return None
-        return options
-
     @classmethod
     def register_custom_spec(cls, spec, cellmagic):
-        ids = Store.custom_options.keys()
-        max_id = max(ids) if len(ids)>0 else -1
-        options = OptionTree(items=Store.options.data.items(),
-                             groups=Store.options.groups)
-        custom_tree = cls.customize_tree(spec, options)
-        if custom_tree is not None:
-            Store.custom_options[max_id+1] = custom_tree
+        spec, applied_keys = StoreOptions.expand_compositor_keys(spec)
+        try:
+            new_id = StoreOptions.add_custom_options(spec)
+        except OptionError as e:
+            cls.error_message = cls._format_options_error(e)
+            return None
+
         if cellmagic:
-            cls.next_id = max_id+1
-            cls.applied_keys += spec.keys()
+            cls.next_id = new_id
+            cls.applied_keys = applied_keys + spec.keys()
         else:
             cls.next_id = None
             cls.applied_keys = []
-
-    @classmethod
-    def expand_compositor_keys(cls, spec):
-        """
-        Expands compositor definition keys into {type}.{group}
-        keys. For instance a compositor operation returning a group
-        string 'Image' of element type RGB expands to 'RGB.Image'.
-        """
-        expanded_spec={}
-        compositor_defs = {el.group:el.output_type.__name__
-                           for el in Compositor.definitions}
-        for key, val in spec.items():
-            if key not in compositor_defs:
-                expanded_spec[key] = val
-            else:
-                cls.applied_keys = ['Overlay'] # Send id to Overlays
-                type_name = compositor_defs[key]
-                expanded_spec[str(type_name+'.'+key)] = val
-        return expanded_spec
 
 
     @line_cell_magic
@@ -525,7 +490,6 @@ class OptsMagic(Magics):
         get_object = None
         try:
             spec = OptsSpec.parse(line, ns=self.shell.user_ns)
-            spec = self.expand_compositor_keys(spec)
         except SyntaxError:
             display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
             return
@@ -534,7 +498,7 @@ class OptsMagic(Magics):
         if cell:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            retval = self.customize_tree(spec, Store.options)
+            retval = StoreOptions.apply_customization(spec, Store.options)
             if retval is None:
                 display(HTML(OptsMagic.error_message))
         OptsMagic.error_message = None
