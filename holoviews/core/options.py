@@ -33,6 +33,7 @@ Store:
 
 """
 import os, string, time, pickle
+from contextlib import contextmanager
 
 import numpy as np
 
@@ -889,6 +890,26 @@ class StoreOptions(object):
 
 
 def set_options(obj, spec):
+@contextmanager
+def options(obj, options):
+    """
+    Context-manager for temporarily setting options on an object. Once
+    the context manager exits, both the object and the Store will be
+    left in exactly the same state they were in before the context
+    manager was used.
+
+    See holoviews.core.options.set_options function for more
+    information on the options specification format.
+    """
+    ids = StoreOptions.capture_ids(obj)
+    original_custom_keys = set(Store.custom_options.keys())
+    set_options(obj, options)
+    yield
+    current_custom_keys = set(Store.custom_options.keys())
+    for key in current_custom_keys.difference(original_custom_keys):
+        del Store.custom_options[key]
+    StoreOptions.restore_ids(obj, ids)
+
     """
     Pure Python function for customize HoloViews objects in terms of
     their style, plot and normalization options.
