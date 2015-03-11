@@ -903,7 +903,7 @@ def set_options(obj, spec):
     Lastly, if you have pyparsing installed, you can use the syntax of
     the %opts magic syntax directly as follows:
 
-    >>> from holoviews.ipython.parser import OptsSpec
+    from holoviews.ipython.parser import OptsSpec
     set_options(my_image, OptsSpec.parse("Image (cmap='Blues')"))
     """
     spec, compositor_applied = StoreOptions.expand_compositor_keys(spec)
