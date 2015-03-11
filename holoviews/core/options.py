@@ -912,5 +912,5 @@ def set_options(obj, spec):
     """
     spec, compositor_applied = StoreOptions.expand_compositor_keys(spec)
     new_id = StoreOptions.add_custom_options(spec)
-    StoreOptions.propagate_ids(obj, new_id, compositor_applied+spec.keys())
+    StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))
     return obj
