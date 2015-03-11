@@ -458,25 +458,31 @@ class RGB(Image):
     @classmethod
     def load_image(cls, filename, height=1, array=False):
         """
-        Returns an RGB element or raw numpy array from a PNG image
+        Returns an raster element or raw numpy array from a PNG image
         file, using matplotlib.
 
-        The specified height determines the bounds of the RGB object
-        in sheet coordinates: by default the height is 1 unit with the
-        width scaled appropriately by the image aspect ratio.
+        The specified height determines the bounds of the raster
+        object in sheet coordinates: by default the height is 1 unit
+        with the width scaled appropriately by the image aspect ratio.
+
+        Note that as PNG images are encoded as RGBA, the red component
+        maps to the first channel, the green component maps to the
+        second component etc. For RGB elements, this mapping is
+        trivial but may be important for subclasses e.g. for HSV
+        elements.
         """
         try:
             from matplotlib import pyplot as plt
         except:
             raise ImportError("RGB.load_image requires matplotlib.")
 
-        rgb = plt.imread(filename)
-        if array:  return rgb
+        data = plt.imread(filename)
+        if array:  return data
 
-        (h, w, channels) = rgb.shape
+        (h, w, channels) = data.shape
         f = float(height) / h
         xoffset, yoffset = w*f/2, h*f/2
-        return cls(rgb, bounds=(-xoffset, -yoffset, xoffset, yoffset))
+        return cls(data, bounds=(-xoffset, -yoffset, xoffset, yoffset))
 
 
     def __init__(self, data, **params):
