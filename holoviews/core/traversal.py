@@ -55,7 +55,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
 
     ndims = len(all_dims)
     unique_keys = []
-    for group, keys in key_dims:
+    for group, keys in zip(dim_groups, keys):
         dim_idxs = [all_dims.index(dim) for dim in group]
         for key in keys:
             padded_key = create_ndkey(ndims, dim_idxs, key)
