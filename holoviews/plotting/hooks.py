@@ -159,9 +159,8 @@ class RasterPlugin(MplD3Plugin):
             l, b, r, t = (0, 0, 1, 1)
             data = np.flipud(data)
         else:
-            df = view.dframe().sort([d.name for d in view.dimensions()[0:2]])[::-1]
+            df = view.dframe().sort(['y','x'], ascending=(1,1))[::-1]
             l, b, r, t = (0, 0, cols, rows)
-            data = data[::-1,:]
 
         # Generate color mesh to label each point
         cols+=1; rows+=1
