@@ -44,7 +44,7 @@ class NotebookArchive(FileArchive):
     display hooks and automatically adds a notebook HTML snapshot to
     the archive upon export.
     """
-    exporters = param.List(default=[Store.PlotRenderer.instance(holomap=None),Pickler])
+    exporters = param.List(default=[Store.renderer.instance(holomap=None),Pickler])
 
     namespace = param.String('holoviews.archive', doc="""
         The name of the current in the NotebookArchive instance in the

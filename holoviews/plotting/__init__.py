@@ -216,7 +216,7 @@ class MPLPlotRenderer(Exporter):
         return data
 
 
-Store.PlotRenderer = MPLPlotRenderer
+Store.renderer = MPLPlotRenderer
 
 # Define default type formatters
 Dimension.type_formatters[int] = FormatStrFormatter("%d")

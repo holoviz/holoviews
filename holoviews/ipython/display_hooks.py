@@ -45,7 +45,7 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
-    renderer = Store.PlotRenderer.instance(dpi=dpi)
+    renderer = Store.renderer.instance(dpi=dpi)
     data = renderer.anim_data(anim, fmt, writer, **anim_kwargs)
     b64data = base64.b64encode(data).decode("utf-8")
     (mime_type, tag) = HTML_TAGS[fmt]
@@ -148,7 +148,7 @@ def display_figure(fig, message=None, max_width='100%'):
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
     else:
-        renderer = Store.PlotRenderer.instance(dpi=dpi)
+        renderer = Store.renderer.instance(dpi=dpi)
         figdata = renderer.figure_data(fig, figure_format)
         if figure_format=='svg':
             figdata = figdata.encode("utf-8")
@@ -192,7 +192,7 @@ def display_hook(fn):
                 options = {k:OutputMagic.options[k] for k in keys}
                 if options['holomap']  in OutputMagic.inbuilt_formats:
                     options['holomap'] = None
-                Store.PlotRenderer.instance(**options).save(element, filename)
+                Store.renderer.instance(**options).save(element, filename)
 
             return html
         except:

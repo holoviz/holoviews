@@ -26,7 +26,7 @@ class MPLPlotRendererTest(ComparisonTestCase):
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
 
-        self.renderer = Store.PlotRenderer.instance()
+        self.renderer = Store.renderer.instance()
 
     def test_simple_export_png1(self):
         data = self.renderer(self.image1, fmt='png')[0]
