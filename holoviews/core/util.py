@@ -130,7 +130,7 @@ def dimension_sort(odict, dimensions, categorical, cached_values):
         sortkws['key'] = lambda x: tuple(cached_values[d.name].index(x[0][i])
                                          if d.values else x[0][i]
                                          for i, d in enumerate(dimensions))
-    if sys.version_info.major:
+    if sys.version_info.major == 3:
         return python2sort(odict.items(), **sortkws)
     else:
         return sorted(odict.items(), **sortkws)
