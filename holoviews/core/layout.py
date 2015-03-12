@@ -6,6 +6,7 @@ to act as supplementary elements.
 """
 
 from functools import reduce
+from itertools import chain
 
 import numpy as np
 
@@ -354,8 +355,8 @@ class Layout(AttrTree, Dimensioned):
 
     def dimension_values(self, dimension):
         "Returns the values along the specified dimension."
-        all_dims = [d.name for d in self.dimensions()]
-        if dimension in all_dims:
+        all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
+        if dimension in chain.from_iterable(all_dims):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions(label=True)]
             return np.concatenate(values)
