@@ -28,12 +28,12 @@ class LayoutTestCase(ElementTestCase):
     def setUp(self):
         super(LayoutTestCase, self).setUp()
 
-    def test_layouttree_keys(self):
+    def test_layouttree_keys_1(self):
         t = self.el1 + self.el2
         self.assertEqual(t.keys(),
                          [('Element', 'I'), ('Element', 'II')])
 
-    def test_layouttree_keys(self):
+    def test_layouttree_keys_2(self):
         t = self.el1 + self.el2
         self.assertEqual(t.values(), [self.el1, self.el2])
 
@@ -296,7 +296,7 @@ class CompositeTestCase(ElementTestCase):
 
     def test_invalid_tree_structure(self):
         try:
-            t = (self.el1 + self.el2) * (self.el1 + self.el2)
+            (self.el1 + self.el2) * (self.el1 + self.el2)
         except TypeError as e:
             self.assertEqual(str(e), "unsupported operand type(s) for *: 'Layout' and 'Layout'")
 

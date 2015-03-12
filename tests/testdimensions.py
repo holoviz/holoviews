@@ -1,8 +1,6 @@
 """
 Test cases for Dimension and Dimensioned object behaviour.
 """
-
-import unittest
 from holoviews.core import Dimensioned
 from holoviews.element.comparison import ComparisonTestCase
 

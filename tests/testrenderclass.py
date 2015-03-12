@@ -1,7 +1,5 @@
-import sys
 from hashlib import sha256
 import numpy as np
-from io import BytesIO
 
 from holoviews import HoloMap
 from holoviews.element import Image

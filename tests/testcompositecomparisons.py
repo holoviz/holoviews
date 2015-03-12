@@ -7,7 +7,7 @@ Overlay    (the * operator)
 HoloMaps are not tested in this file.
 """
 
-from holoviews import Element, Layout, Overlay
+from holoviews import Element
 from holoviews.element.comparison import ComparisonTestCase
 
 

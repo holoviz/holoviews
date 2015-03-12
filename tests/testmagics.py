@@ -1,9 +1,10 @@
-from holoviews.core.options import Store # Options
+from holoviews.core.options import Store
 
 from holoviews import ipython
 from holoviews.ipython import IPTestCase
 
-from holoviews.operation import Compositor, toRGB, toHCS
+from holoviews.operation import Compositor
+from holoviews.operation import toRGB, toHCS # pyflakes:ignore (Cell execution)
 
 class ExtensionTestCase(IPTestCase):
 

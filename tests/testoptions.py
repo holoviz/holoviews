@@ -1,4 +1,4 @@
-from holoviews.core.options import OptionError, Cycle, Options, OptionTree, Store
+from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -60,7 +60,7 @@ class TestOptions(ComparisonTestCase):
         opts = Options('test', allowed_keywords=['kw3', 'kw2'], **original_kws)
         new_kws = dict(kw4='val4', kw5='val5')
         try:
-            new_opts = opts(**new_kws)
+            opts(**new_kws)
         except OptionError as e:
             self.assertEqual(str(e), "Invalid option 'kw4', valid options are: ['kw2', 'kw3']")
 
@@ -69,8 +69,8 @@ class TestOptions(ComparisonTestCase):
 class TestCycle(ComparisonTestCase):
 
     def test_cycle_init(self):
-        cycle1 = Cycle(values=['a', 'b', 'c'])
-        cycle2 = Cycle(values=[1, 2, 3])
+        Cycle(values=['a', 'b', 'c'])
+        Cycle(values=[1, 2, 3])
 
 
     def test_cycle_expansion(self):
@@ -110,8 +110,8 @@ class TestCycle(ComparisonTestCase):
 class TestOptionTree(ComparisonTestCase):
 
     def test_optiontree_init(self):
-        options = OptionTree(groups={'group1':  Options(),
-                                     'group2': Options()})
+        OptionTree(groups={'group1':  Options(),
+                           'group2': Options()})
 
     def test_optiontree_setter_getter(self):
         options = OptionTree(groups={'group1':  Options(),
