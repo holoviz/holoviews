@@ -358,8 +358,8 @@ class ElementPlot(Plot):
         for hook in self.finalize_hooks:
             try:
                 hook(self, view)
-            except:
-                self.warning("Plotting hook %r could not be applied." % hook)
+            except Exception as e:
+                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
         return super(ElementPlot, self)._finalize_axis(key)
 
