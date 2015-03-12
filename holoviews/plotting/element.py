@@ -379,7 +379,7 @@ class ElementPlot(Plot):
         axes_visible = view is not None or self.overlaid
         axis.xaxis.set_visible(axes_visible and self.show_xaxis)
         axis.yaxis.set_visible(axes_visible and self.show_yaxis)
-        axis.patch.set_alpha(int(axes_visible))
+        axis.patch.set_alpha(np.min([int(axes_visible), 1]))
 
         for hname, handle in self.handles.items():
             hideable = hasattr(handle, 'set_visible')
