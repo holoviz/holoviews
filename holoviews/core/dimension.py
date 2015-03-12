@@ -510,7 +510,7 @@ class Dimensioned(LabelledData):
         None is returned.
         """
         dim_obj = self.get_dimension(dim)
-        if dim_obj.type is not None:
+        if dim_obj and dim_obj.type is not None:
             return dim_obj.type
         dim_vals = [type(v) for v in self.dimension_values(dim)]
         if len(set(dim_vals)) == 1:
