@@ -414,6 +414,23 @@ class OverlayPlot(ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
+    legend_position = param.ObjectSelector(objects=['inner', 'right',
+                                                    'bottom', 'top',
+                                                    'left'],
+                                           default='inner', doc="""
+        Allows selecting between a number of predefined legend position
+        options. The predefined options may be customized in the
+        legend_specs class attribute.""")
+
+    legend_specs = {'inner': {},
+                    'left':   dict(bbox_to_anchor=(-.15, 1)),
+                    'right':  dict(bbox_to_anchor=(1.25, 1)),
+                    'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
+                                   ncol=3, mode="expand", borderaxespad=0.),
+                    'bottom': dict(ncol=3, mode="expand",
+                                   bbox_to_anchor=(0., -0.25, 1., .102),
+                                   borderaxespad=0.1)}
+
     def __init__(self, overlay, ranges=None, **params):
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
         self.subplots = self._create_subplots(ranges)
@@ -487,8 +504,10 @@ class OverlayPlot(ElementPlot):
             if legend:
                 legend.set_visible(False)
         else:
+            leg_spec = self.legend_specs[self.legend_position]
             leg = axis.legend(data.keys(), data.values(),
-                              title=title, scatterpoints=1)
+                              title=title, scatterpoints=1,
+                              **leg_spec)
             frame = leg.get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
