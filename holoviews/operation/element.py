@@ -6,10 +6,27 @@ from ..core import Dimension, ElementOperation, CompositeOverlay, \
                    NdOverlay, Overlay, BoundingBox
 from ..core.util import find_minmax
 from ..element.chart import Histogram, VectorField, Curve
-from ..element.raster import Image
+from ..element.raster import Image, RGB
 from ..element.tabular import ItemTable
 from ..element.path import Contours
 from .normalization import raster_normalization
+
+
+class factory(ElementOperation):
+    """
+    Simple operation that constructs any element that accepts some
+    other element as input. For instance, RGB and HSV elements can be
+    created from overlays of Image elements.
+    """
+
+    output_type = param.Parameter(RGB, doc="""
+        The output type of the factor operation.
+
+        By default, if three overlaid Images elements are supplied,
+        the corresponding RGB element will be returned. """)
+
+    def _process(self, view, key=None):
+        return self.p.output_type(view)
 
 
 class chain(ElementOperation):
