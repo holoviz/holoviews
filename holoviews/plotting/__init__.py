@@ -174,7 +174,7 @@ class MPLPlotRenderer(Exporter):
         if rendered is None: return
         (data, info) = rendered
         filename ='%s.%s' % (basename, info['file-ext'])
-        with open(filename, 'w') as f:
+        with open(filename, 'wb') as f:
             f.write(self_or_cls.encode(rendered))
 
     def anim_data(self, anim, fmt, writer, **anim_kwargs):
