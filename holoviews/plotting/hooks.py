@@ -146,24 +146,29 @@ class RasterPlugin(MplD3Plugin):
                 if k in valid_opts}
 
         data = view.data
+        rows, cols = view.data.shape
         if isinstance(view, HeatMap):
             data = np.ma.array(data, mask=np.isnan(data))
             cmap = copy.copy(plt.cm.get_cmap(opts.get('cmap', 'gray')))
             cmap.set_bad('w', 1.)
             for ann in plot.handles['annotations'].values():
                 ann.set_visible(False)
+            opts['cmap'] = cmap
             df = view.dframe(True).fillna(0)
             df = df.sort([d.name for d in view.dimensions()[1:2]])[::-1]
+            l, b, r, t = (0, 0, 1, 1)
+            data = np.flipud(data)
         else:
-            df = view.dframe().sort([d.name for d in view.dimensions()[0:2]][::-1])[::-1]
+            df = view.dframe().sort([d.name for d in view.dimensions()[0:2]])[::-1]
+            l, b, r, t = (0, 0, cols, rows)
+            data = data[::-1,:]
 
         # Generate color mesh to label each point
-        l, b, r, t = view.extents
-        rows, cols = view.data.shape
+        cols+=1; rows+=1
         cmin, cmax = view.range(2)
-        x, y = np.meshgrid(np.linspace(l, r, cols+1), np.linspace(b, t, rows+1))
+        x, y = np.meshgrid(np.linspace(l, r, cols), np.linspace(b, t, rows))
         plot.handles['im'].set_visible(False)
-        mesh = ax.pcolormesh(x, y, data[::-1,:], vmin=cmin, vmax=cmax, **opts)
+        mesh = ax.pcolormesh(x, y, data, vmin=cmin, vmax=cmax, **opts)
         ax.invert_yaxis() # Doesn't work uninverted
         df.index = range(len(df))
         labels = []
