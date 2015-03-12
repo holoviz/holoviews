@@ -37,9 +37,9 @@ class Element(ViewableElement, Composable, Overlayable):
                          individually=individually, **kwargs)
 
 
-    ########################
+    #======================#
     # Subclassable methods #
-    ########################
+    #======================#
 
     def __init__(self, data, **params):
         super(Element, self).__init__(data, **params)

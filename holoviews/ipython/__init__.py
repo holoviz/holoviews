@@ -68,8 +68,7 @@ class IPTestCase(ComparisonTestCase):
         self.addTypeEqualityFunc(HTML, self.skip_comparison)
         self.addTypeEqualityFunc(SVG,  self.skip_comparison)
 
-    def skip_comparison(self, obj1, obj2, msg):
-        pass
+    def skip_comparison(self, obj1, obj2, msg): pass
 
     def get_object(self, name):
         obj = self.ip._object_find(name).obj
