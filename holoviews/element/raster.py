@@ -486,16 +486,20 @@ class RGB(Image):
 
     def __init__(self, data, **params):
 
+        sliced = None
         if isinstance(data, Overlay):
             images = data.values()
             if not all(isinstance(im, Image) for im in images):
                 raise ValueError("Input overlay must only contain Image elements")
-            shapes = [im.shape for im in images]
+            shapes = [im.data.shape for im in images]
             if not all(shape==shapes[0] for shape in shapes):
                 raise ValueError("Images in the input overlays must contain data of the consistent shape")
-            data = np.dstack([im.data for im in images])
+            ranges = [im.value_dimensions[0].range for im in images]
+            if any(None in r for r in ranges):
+                raise ValueError("Ranges must be defined on all the value_dimensions of all the Images")
+            arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
+            data = np.dstack(arrays)
 
-        sliced = None
         if len(data.shape) != 3:
             raise ValueError("Three dimensional matrices or arrays required")
         elif data.shape[2] == 4:
