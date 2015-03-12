@@ -11,7 +11,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, allowable
+from .util import unique_iterator, allowable, dimension_sort
 
 
 class MultiDimensionalMapping(Dimensioned):
@@ -187,17 +187,10 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        """
-        Sorts data by key using usual Python tuple sorting semantics
-        or sorts in categorical order for any categorical Dimensions.
-        """
-        sortkws = {}
-        dimensions = self.key_dimensions
-        if self._cached_categorical:
-            sortkws['key'] = lambda x: tuple(self._cached_index_values[d.name].index(x[0][i])
-                                             if d.values else x[0][i]
-                                             for i, d in enumerate(dimensions))
-        self.data = OrderedDict(sorted(self.data.items(), **sortkws))
+        resorted = dimension_sort(self.data, self.key_dimensions,
+                                  self._cached_categorical,
+                                  self._cached_index_values)
+        self.data = OrderedDict(resorted)
 
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):

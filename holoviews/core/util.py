@@ -1,4 +1,9 @@
+import sys
+import numbers
+import itertools
 import string
+from collections import OrderedDict
+
 import numpy as np
 
 import param
@@ -94,6 +99,52 @@ def match_spec(element, specification):
         if match_tuple in specification:
             match = specification[match_tuple]
     return match
+
+
+def python2sort(x,key=None):
+    it = iter(x)
+    groups = [[next(it)]]
+    for item in it:
+        for group in groups:
+            try:
+                item_precedence = item if key is None else key(item)
+                group_precedence = group[0] if key is None else key(group[0])
+                item_precedence < group_precedence  # exception if not comparable
+                group.append(item)
+                break
+            except TypeError:
+                continue
+        else:  # did not break, make new group
+            groups.append([item])
+    return itertools.chain.from_iterable(sorted(group, key=key) for group in groups)
+
+
+def dimension_sort(odict, dimensions, categorical, cached_values):
+    """
+    Sorts data by key using usual Python tuple sorting semantics
+    or sorts in categorical order for any categorical Dimensions.
+    """
+    sortkws = {}
+    dim_names = [d.name for d in dimensions]
+    if categorical:
+        sortkws['key'] = lambda x: tuple(cached_values[d.name].index(x[0][i])
+                                         if d.values else x[0][i]
+                                         for i, d in enumerate(dimensions))
+    if sys.version_info.major:
+        return python2sort(odict.items(), **sortkws)
+    else:
+        return sorted(odict.items(), **sortkws)
+
+
+# Copied from param should make param version public
+def is_number(obj):
+    if isinstance(obj, numbers.Number): return True
+    # The extra check is for classes that behave like numbers, such as those
+    # found in numpy, gmpy, etc.
+    elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
+    # This is for older versions of gmpy
+    elif hasattr(obj, 'qdiv'): return True
+    else: return False
 
 
 class ProgressIndicator(param.Parameterized):
