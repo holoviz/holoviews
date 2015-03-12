@@ -492,7 +492,7 @@ class OverlayPlot(ElementPlot):
                     if layer and layer.label and handle:
                         legend_data.append((handle, layer.label))
         autohandles, autolabels = axis.get_legend_handles_labels()
-        legends = zip(*legend_data) if legend_data else ([], [])
+        legends = list(zip(*legend_data)) if legend_data else ([], [])
         all_handles = list(legends[0]) + list(autohandles)
         all_labels = list(legends[1]) + list(autolabels)
         data = OrderedDict()

@@ -162,12 +162,12 @@ class NotebookArchive(FileArchive):
 
     def add(self, obj=None, filename=None, data=None, info={}, html=None):
         "Similar to FileArchive.add but accepts html strings for substitution"
-        initial_last_key = self._files.keys()[-1] if len(self) else None
+        initial_last_key = list(self._files.keys())[-1] if len(self) else None
         if self._auto:
             super(NotebookArchive, self).add(obj, filename, data,
                                              info=dict(info, notebook=self.notebook_name))
             # Only add substitution if file successfully added to archive.
-            new_last_key = self._files.keys()[-1] if len(self) else None
+            new_last_key = list(self._files.keys())[-1] if len(self) else None
             if new_last_key != initial_last_key:
                 self._replacements[new_last_key] = html
 

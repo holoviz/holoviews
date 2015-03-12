@@ -586,12 +586,14 @@ class Dimensioned(LabelledData):
             dim_vals = np.concatenate([dim_vals, soft_range])
             return np.min(dim_vals), np.max(dim_vals)
         except:
-            if dim in self.dimensions() and len(dim_vals):
-                if not self._sorted:
-                    dim_vals = sorted(dim_vals)
-                return (dim_vals[0], dim_vals[-1])
-            else:
-                return (None, None)
+            try:
+                if dim in self.dimensions() and len(dim_vals):
+                    if not self._sorted:
+                        dim_vals = sorted(dim_vals)
+                    return (dim_vals[0], dim_vals[-1])
+            except:
+                pass
+            return (None, None)
 
 
     def __repr__(self):

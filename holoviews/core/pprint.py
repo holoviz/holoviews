@@ -109,7 +109,7 @@ class PrettyPrinter(object):
         if len(node.data) == 0:
             return level, lines
         # .last has different semantics for GridSpace
-        last = node.data.values()[-1]
+        last = list(node.data.values())[-1]
         if hasattr(last, 'children'):
             additional_lines = cls.recurse(last, level=level)
         # NdOverlays, GridSpace, Ndlayouts

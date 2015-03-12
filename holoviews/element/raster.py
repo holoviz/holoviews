@@ -93,7 +93,7 @@ class Raster(Element2D):
             params['key_dimensions'] = self.key_dimensions
             return Table(table_data, **params)
         else:
-            dimension, sample_coord = sample_values.items()[0]
+            dimension, sample_coord = list(sample_values.items())[0]
             if isinstance(sample_coord, slice):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
@@ -110,7 +110,7 @@ class Raster(Element2D):
 
             # Sample data
             x_vals = sorted(set(self.dimension_values(dimension)))
-            data = zip(x_vals, self.data[sample])
+            data = list(zip(x_vals, self.data[sample]))
             params['key_dimensions'] = other_dimension
             return Curve(data, **params)
 

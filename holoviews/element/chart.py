@@ -33,6 +33,7 @@ class Chart(Element2D):
         elif isinstance(data, NdMapping) or (isinstance(data, list) and data
                                            and isinstance(data[0], Element2D)):
             data, settings = self._process_map(data)
+        data = list(data)
         data = self._null_value if (data is None) or (len(data) == 0) else data
         if len(data) and not isinstance(data, np.ndarray):
             data = np.array(data)

@@ -311,7 +311,8 @@ class SNSFramePlot(DFrameViewPlot):
             sns.lmplot(x=view.x, y=view.y, data=view.data,
                        ax=axis, **style)
         elif self.plot_type in ['pairplot', 'pairgrid', 'facetgrid']:
-            map_opts = [(k, style.pop(k)) for k in style.keys() if 'map' in k]
+            style_keys = list(style.keys())
+            map_opts = [(k, style.pop(k)) for k in style_keys if 'map' in k]
             if self.plot_type == 'pairplot':
                 g = sns.pairplot(view.data, **style)
             elif self.plot_type == 'pairgrid':
