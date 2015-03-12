@@ -95,7 +95,7 @@ def get_plot_size(obj, percent_size):
 
 
 
-class PlotRenderer(Exporter):
+class MPLPlotRenderer(Exporter):
     """
     Exporter used to render data from matplotlib, either to a stream
     or directly to file.
@@ -216,6 +216,8 @@ class PlotRenderer(Exporter):
         return data
 
 
+Store.PlotRenderer = MPLPlotRenderer
+
 # Define default type formatters
 Dimension.type_formatters[int] = FormatStrFormatter("%d")
 Dimension.type_formatters[float] = FormatStrFormatter("%.3g")
@@ -294,5 +296,5 @@ def public(obj):
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 
-_public = ["PlotRenderer", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = ["MPLPlotRenderer", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public

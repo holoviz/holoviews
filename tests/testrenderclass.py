@@ -1,9 +1,8 @@
 from hashlib import sha256
 import numpy as np
 
-from holoviews import HoloMap
+from holoviews import HoloMap, Store
 from holoviews.element import Image
-from holoviews.plotting import PlotRenderer
 from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
@@ -15,7 +14,7 @@ def digest_data(data):
 
 
 @attr(optional=1)
-class PlotRendererTest(ComparisonTestCase):
+class MPLPlotRendererTest(ComparisonTestCase):
     """
     Note if not possible to compare the hashes of SVG and WebM formats
     as the hashes are not stable across exports.
@@ -27,7 +26,7 @@ class PlotRendererTest(ComparisonTestCase):
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
 
-        self.renderer = PlotRenderer.instance()
+        self.renderer = Store.PlotRenderer.instance()
 
     def test_simple_export_png1(self):
         data = self.renderer(self.image1, fmt='png')[0]
