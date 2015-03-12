@@ -14,7 +14,7 @@ except:
 import param
 
 from ..core.util import allowable, sanitize_identifier
-from .options import Store
+from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
 
@@ -596,6 +596,16 @@ class Dimensioned(LabelledData):
 
     def __repr__(self):
         return PrettyPrinter.pprint(self)
+
+
+    def __call__(self, options=None, **kwargs):
+        """
+        Apply the supplied options to a clone of the object which is
+        then returned.
+        """
+        deep_clone = self.map(lambda x: x.clone(id=x.id))
+        StoreOptions.set_options(deep_clone, options, **kwargs)
+        return deep_clone
 
 
 

@@ -122,6 +122,21 @@ class Element(ViewableElement, Composable, Overlayable):
         return pandas.DataFrame(dim_vals, columns=column_names)
 
 
+    def __call__(self, **kwargs):
+        """
+        Sets the options in the same way as applicable to all
+        Dimensioned objects except there is no need to specify the
+        match key at the level of an individual Element (there is only
+        one possible match).
+        """
+        identifier = '%s.%s' % (self.__class__.__name__, self.group)
+        identifier += ('.%s' % self.label) if self.label else ''
+        options = {identifier:{}}
+        for k,d in kwargs.items():
+            options[identifier][k] = d
+        return super(Element, self).__call__(options)
+
+
 
 class Element2D(Element):
 
