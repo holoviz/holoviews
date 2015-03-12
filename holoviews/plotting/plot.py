@@ -2,6 +2,7 @@ from itertools import product, groupby
 
 import numpy as np
 import matplotlib
+from mpl_toolkits.mplot3d import Axes3D  # pyflakes:ignore (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 
