@@ -108,19 +108,19 @@ class transform(ElementOperation):
 #==============================#
 
 
-class matrix_overlay(ElementOperation):
+class image_overlay(ElementOperation):
     """
-    Operation to build a matrix overlay to a specification from a
+    Operation to build a overlay of images to a specification from a
     subset of the required elements.
 
     This is useful for reordering the elements of an overlay,
-    duplicating layers of an overlay or creating blank matrix elements
+    duplicating layers of an overlay or creating blank image elements
     in the appropriate positions.
 
-    For instance, matrix_overlay may build a three layered input
-    suitable for the toRGB operation even if supplied with one or two
-    of the required channels (creating blank channels for the missing
-    elements).
+    For instance, image_overlay may build a three layered input
+    suitable for the RGB factory operation even if supplied with one
+    or two of the required channels (creating blank channels for the
+    missing elements).
 
     Note that if there is any ambiguity regarding the match, the
     strongest match will be used. In the case of a tie in match
@@ -190,7 +190,7 @@ class matrix_overlay(ElementOperation):
         specs = tuple(el.strip() for el in self.p.spec.split('*'))
         ordering, strengths = self._match_overlay(raster, specs)
         if all(el is None for el in ordering):
-            raise Exception("The matrix_overlay operation requires at least one match")
+            raise Exception("The image_overlay operation requires at least one match")
 
         completed = []
         strongest = ordering[np.argmax(strengths)]
