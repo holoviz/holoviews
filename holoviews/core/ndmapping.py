@@ -1,5 +1,5 @@
 """
-Supplies NdIndexableMapping and NdMapping which are multi-dimensional
+Supplies MultiDimensionalMapping and NdMapping which are multi-dimensional
 map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
@@ -272,7 +272,7 @@ class MultiDimensionalMapping(Dimensioned):
                       if dimension in el.dimensions()]
             return np.concatenate(values)
         else:
-            return super(NdIndexableMapping, self).dimension_values(dimension)
+            return super(MultiDimensionalMapping, self).dimension_values(dimension)
 
 
     def reindex(self, dimension_labels=[], force=False):
@@ -486,7 +486,6 @@ class NdMapping(MultiDimensionalMapping):
             return self._dataslice(self.data[map_slice], data_slice)
         else:
             conditions = self._generate_conditions(map_slice)
-            index_vals = self._cached_index_values
             items = self.data.items()
             for cidx, (condition, dim) in enumerate(zip(conditions, self.key_dimensions)):
                 values = self._cached_index_values.get(dim.name, None)

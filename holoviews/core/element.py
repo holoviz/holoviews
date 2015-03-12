@@ -692,8 +692,8 @@ class HoloMap(UniformNdMapping):
 
                 xedges = np.linspace(l, r, cols+1)
                 yedges = np.linspace(b, t, rows+1)
-                xsamples = [(l+u)/2.0 for l,u in zip(xedges[:-1], xedges[1:])]
-                ysamples = [(l+u)/2.0 for l,u in zip(yedges[:-1], yedges[1:])]
+                xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
+                ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
 
                 X,Y = np.meshgrid(xsamples, ysamples)
                 linsamples = zip(X.flat, Y.flat)

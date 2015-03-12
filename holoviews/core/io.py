@@ -14,7 +14,7 @@ Archives: A collection of HoloViews objects that are first collected
 """
 from __future__ import absolute_import
 
-import re, os, time, string, pickle, zipfile, tarfile, shutil, itertools
+import re, os, time, string, zipfile, tarfile, shutil, itertools
 
 from io import BytesIO
 from hashlib import sha256

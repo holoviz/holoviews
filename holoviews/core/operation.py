@@ -2,15 +2,12 @@
 Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
-
-import numpy as np
-
 import param
 
 from .dimension import ViewableElement
 from .element import Element, HoloMap, GridSpace
-from .layout import NdLayout, Layout
-from .overlay import CompositeOverlay, NdOverlay, Overlay
+from .layout import Layout
+from .overlay import NdOverlay, Overlay
 from .traversal import unique_dimkeys
 
 

@@ -111,10 +111,9 @@ class PrettyPrinter(object):
         # .last has different semantics for GridSpace
         last = node.data.values()[-1]
         if hasattr(last, 'children'):
-            element_info, additional_lines = None, cls.recurse(last, level=level)
+            additional_lines = cls.recurse(last, level=level)
         # NdOverlays, GridSpace, Ndlayouts
         elif last is not None and getattr(last, '_deep_indexable'):
-            element_info = cls.component_type(last)
             level, additional_lines = cls.ndmapping_info(last, [], level, value_dims)
         else:
             _, additional_lines = cls.element_info(last, siblings, level, value_dims)

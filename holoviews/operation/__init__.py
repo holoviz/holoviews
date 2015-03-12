@@ -7,7 +7,7 @@ from ..core import Overlay  # pyflakes:ignore (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False
-    baseclasses = [ElementOperation, MapOperation]
+    baseclasses = [ElementOperation, MapOperation, TreeOperation]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 

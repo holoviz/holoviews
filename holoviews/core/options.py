@@ -32,14 +32,14 @@ Store:
    extension together.
 
 """
-import os, string, time, pickle
+import pickle
 from contextlib import contextmanager
 
 import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import allowable, sanitize_identifier
+from .util import sanitize_identifier
 
 
 class OptionError(Exception):

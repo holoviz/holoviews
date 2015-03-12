@@ -13,7 +13,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout
-from .util import allowable, sanitize_identifier
+from .util import allowable
 
 
 class Overlayable(object):
