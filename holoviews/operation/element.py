@@ -144,6 +144,10 @@ class image_overlay(ElementOperation):
 
     fill = param.Number(default=0)
 
+    default_range = param.Tuple(default=(0,1), doc="""
+        The default range that will be set on the value_dimension of
+        any automatically created blank image elements.""")
+
     group = param.String(default='Transform', doc="""
         The group assigned to the resulting overlay.""")
 
@@ -200,6 +204,7 @@ class image_overlay(ElementOperation):
                 el = Image(np.ones(strongest.data.shape) * self.p.fill,
                             group=spec_dict.get('group','Image'),
                             label=spec_dict.get('label',''))
+                el.value_dimensions[0].range = self.p.default_range
             completed.append(el)
         return np.prod(completed)
 
