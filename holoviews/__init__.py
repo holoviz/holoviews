@@ -1,3 +1,4 @@
+from __future__ import print_function, absolute_import
 import os, sys
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
