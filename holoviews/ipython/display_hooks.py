@@ -13,7 +13,6 @@ import sys, traceback, base64
 
 try:
     import mpld3
-    from ..plotting import hooks
 except:
     mpld3 = None
 
@@ -24,7 +23,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import LayoutPlot, GridPlot, RasterGridPlot, Plot
+from ..plotting import LayoutPlot, GridPlot, RasterGridPlot
 from ..plotting import ANIMATION_OPTS, HTML_TAGS, PlotRenderer, opts, get_plot_size
 from .magics import OutputMagic, OptsMagic
 from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
@@ -245,7 +244,6 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
     if not isinstance(layout, (Layout, NdLayout)): return None
     nframes = len(unique_dimkeys(layout)[1])
 
-    shape = layout.shape
     info = process_object(layout)
     if info: return info
     layoutplot = LayoutPlot(layout, **opts(layout, get_plot_size(layout, size)))

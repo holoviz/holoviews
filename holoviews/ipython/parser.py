@@ -8,15 +8,11 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
-
-import string
-from holoviews.core.options import Options
-
 from itertools import groupby
 import pyparsing as pp
 
+from holoviews.core.options import Options
 from ..operation import Compositor
-from ..plotting import Plot
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
@@ -221,7 +217,7 @@ class OptsSpec(Parser):
 
         parse = {}
         for group in cls.opts_spec.parseString(line):
-            options, plot_options = {}, {}
+            options = {}
 
             normalization = cls.process_normalization(group)
             if normalization is not None:

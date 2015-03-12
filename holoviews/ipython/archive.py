@@ -3,11 +3,10 @@ Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
 
-import time, os, json, traceback
+import time, os, traceback
 import io
 
 from IPython.nbformat import reader
-from IPython.nbformat import convert
 from IPython.display import Javascript, display
 
 from IPython.nbconvert.preprocessors import Preprocessor
@@ -187,7 +186,7 @@ class NotebookArchive(FileArchive):
             cleared,_ = exporter.from_notebook_node(node)
         else:
             stripped_node = v3_strip_output(node)
-            cleared = current.writes(node, 'ipynb')
+            cleared = current.writes(stripped_node, 'ipynb')
         return cleared
 
 
@@ -205,7 +204,6 @@ class NotebookArchive(FileArchive):
                                                    'notebook':self.notebook_name})
                 fpath = filename+(('.%s' % ext) if ext else '')
                 info = {'src':fpath, 'mime_type':info['mime_type']}
-                msg = "<center><b>%s</b><center/>"
                 # No mime type
                 if 'mime_type' not in info: pass
                 # Not displayable in an HTML tag
@@ -234,7 +232,7 @@ class NotebookArchive(FileArchive):
             # If store cleared_notebook... save here
             super(NotebookArchive, self).export(timestamp=self._timestamp,
                                                 info={'notebook':self.notebook_name})
-        except Exception as e:
+        except:
             self.traceback = traceback.format_exc()
         else:
             self.export_success = True

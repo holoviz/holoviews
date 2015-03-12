@@ -1,8 +1,7 @@
-import string
 import time
-import os
+
 try:
-    from IPython.core.magic import Magics, magics_class, cell_magic, line_magic, line_cell_magic
+    from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
 except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
@@ -105,8 +104,7 @@ class OptionsMagic(Magics):
         Pretty print the current element options with a maximum width of
         cls.pprint_width.
         """
-        elements = [cls.magic_name]
-        lines, current, count = [], '', 0
+        current, count = '', 0
         for k,v in cls.options.items():
             keyword = '%s=%r' % (k,v)
             if len(current) + len(keyword) > cls.options['charwidth']:
@@ -383,7 +381,7 @@ class OptsCompleter(object):
 
         completions = cls.setup_completer()
         sorted_keys = sorted(completions.keys())
-        type_keys = [k for k in sorted_keys if ('.' not in k)]
+        type_keys = [key for key in sorted_keys if ('.' not in key)]
 
         compositor_defs = {el.group:el.output_type.__name__
                            for el in Compositor.definitions}
@@ -487,7 +485,6 @@ class OptsMagic(Magics):
         More information may be found in the class docstring of
         ipython.parser.OptsSpec.
         """
-        get_object = None
         try:
             spec = OptsSpec.parse(line, ns=self.shell.user_ns)
         except SyntaxError:

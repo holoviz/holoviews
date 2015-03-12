@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting import Plot
-from . import magics
 from .magics import load_magics
 from .display_hooks import animate, set_display_hooks, OutputMagic
 from .parser import Parser
