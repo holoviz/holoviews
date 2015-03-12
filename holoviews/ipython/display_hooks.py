@@ -169,7 +169,9 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(element, **kwargs):
         # If pretty printing is off, return None (will fallback to repr)
-        ip = get_ipython()
+        ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
+        if not ip.display_formatter.formatters['text/plain'].pprint:
+            return None
         try:
             widget_mode = OutputMagic.options['widgets']
             map_format  = OutputMagic.options['holomap']
