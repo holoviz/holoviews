@@ -62,6 +62,7 @@ class RasterPlot(ElementPlot):
             opts['cmap'] = cmap
         elif type(view) == Raster:
             b, t = t, b
+            r+=1; b+=1
 
         im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:

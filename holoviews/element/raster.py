@@ -152,10 +152,9 @@ class Raster(Element2D):
         """
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
-            (l, r), (b, t) = self.xlim, self.ylim
-            shape = self.data.shape[abs(dim_idx-1)]
-            dim_min, dim_max = [(l, r), (b, t)][dim_idx]
-            linspace = list(range(dim_min, dim_max+1))
+            shape = self.data.shape[abs(dim_idx)]
+            dim_max = self.data.shape[abs(dim_idx-1)]
+            linspace = list(range(0, dim_max))
             coords = linspace * shape
             return coords if dim_idx else sorted(coords)
         elif dim_idx == 2:
