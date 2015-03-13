@@ -19,14 +19,14 @@ class ChartPlot(ElementPlot):
 
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
-        val_dim = self.map.last.get_dimension(1)
-        self.cyclic_range = val_dim.range if val_dim.cyclic else None
+        key_dim = self.map.last.get_dimension(0)
+        self.cyclic_range = key_dim.range if key_dim.cyclic else None
 
 
     def _cyclic_format_x_tick_label(self, x):
         if self.relative_labels:
             return str(x)
-        return str(int(np.round(180*x/self.cyclic_range)))
+        return str(int(np.round(180*x/self.cyclic_range[1])))
 
 
     def _rotate(self, seq, n=1):
@@ -36,7 +36,7 @@ class ChartPlot(ElementPlot):
     def _cyclic_reduce_ticks(self, x_values):
         values = []
         labels = []
-        step = self.cyclic_range / (self.xticks - 1)
+        step = self.cyclic_range[1] / (self.xticks - 1)
         if self.relative_labels:
             labels.append(-90)
             label_step = 180 / (self.xticks - 1)
@@ -64,11 +64,11 @@ class ChartPlot(ElementPlot):
             ticks = list(x_values)
 
         ticks.append(ticks[0])
-        x_values.append(x_values[0]+self.cyclic_range)
+        x_values.append(x_values[0]+self.cyclic_range[1])
         y_values.append(y_values[0])
 
-        curveview.data = np.vstack([x_values, y_values]).T
         self.xvalues = x_values
+        return np.vstack([x_values, y_values]).T
 
 
     def get_extents(self, element, ranges):
@@ -137,12 +137,12 @@ class CurvePlot(ChartPlot):
         if self.cyclic_range is not None:
             if self.center_cyclic:
                 self.peak_argmax = np.argmax(curveview.data[:, 1])
-            self._cyclic_curves(curveview)
+            data = self._cyclic_curves(curveview)
             xticks = self._cyclic_reduce_ticks(self.xvalues)
 
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
-        line_segment = axis.plot(curveview.data[:, 0], curveview.data[:, 1],
+        line_segment = axis.plot(data[:, 0], data[:, 1],
                                  zorder=self.zorder, **style)[0]
 
         self.handles['line_segment'] = line_segment
@@ -151,10 +151,11 @@ class CurvePlot(ChartPlot):
 
 
     def update_handles(self, axis, view, key, ranges=None):
+        data = view.data
         if self.cyclic_range is not None:
-            self._cyclic_curves(view)
-        self.handles['line_segment'].set_xdata(view.data[:, 0])
-        self.handles['line_segment'].set_ydata(view.data[:, 1])
+            data = self._cyclic_curves(view)
+        self.handles['line_segment'].set_xdata(data[:, 0])
+        self.handles['line_segment'].set_ydata(data[:, 1])
 
 
 
