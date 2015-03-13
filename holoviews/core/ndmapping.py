@@ -550,6 +550,8 @@ class NdMapping(MultiDimensionalMapping):
             elif isinstance(dim_slice, (list, tuple)):
                 raise ValueError("Keys may only be selected with sets, not lists or tuples.")
             else:
+                if dim.values:
+                    dim_slice = dim.values.index(dim_slice)
                 conditions.append(self._value_condition(dim_slice))
         return conditions
 
