@@ -122,22 +122,24 @@ class CurvePlot(ChartPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['alpha', 'color', 'visible', 'linewidth']
+    style_opts = ['alpha', 'color', 'visible', 'linewidth',
+                  'lw', 'ls', 'linestyle', 'marker']
 
     def __call__(self, ranges=None):
-        curveview = self.map.last
+        element = self.map.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, key, ranges)
-        ranges = match_spec(curveview, ranges)
+        ranges = match_spec(element, ranges)
 
         # Create xticks and reorder data if cyclic
         xticks = None
+        data = element.data
         if self.cyclic_range is not None:
             if self.center_cyclic:
-                self.peak_argmax = np.argmax(curveview.data[:, 1])
-            data = self._cyclic_curves(curveview)
+                self.peak_argmax = np.argmax(element.data[:, 1])
+            data = self._cyclic_curves(element)
             xticks = self._cyclic_reduce_ticks(self.xvalues)
 
         # Create line segments and apply style
