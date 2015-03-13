@@ -142,7 +142,7 @@ class RasterPlugin(MplD3Plugin):
         ax = plot.handles['axis']
         valid_opts = ['cmap']
 
-        opts = {k:v for k,v, in Store.lookup_options(view, 'style').options.items()
+        opts = {k:v for k,v, in plot.style.options.items()
                 if k in valid_opts}
 
         data = view.data
@@ -151,8 +151,6 @@ class RasterPlugin(MplD3Plugin):
             data = np.ma.array(data, mask=np.isnan(data))
             cmap = copy.copy(plt.cm.get_cmap(opts.get('cmap', 'gray')))
             cmap.set_bad('w', 1.)
-            for ann in plot.handles['annotations'].values():
-                ann.set_visible(False)
             opts['cmap'] = cmap
             df = view.dframe(True).fillna(0)
             df = df.sort([d.name for d in view.dimensions()[1:2]])[::-1]
@@ -161,6 +159,9 @@ class RasterPlugin(MplD3Plugin):
         else:
             df = view.dframe().sort(['y','x'], ascending=(1,1))[::-1]
             l, b, r, t = (0, 0, cols, rows)
+
+        for ann in plot.handles.get('annotations', {}).values():
+            ann.remove()
 
         # Generate color mesh to label each point
         cols+=1; rows+=1
@@ -173,7 +174,7 @@ class RasterPlugin(MplD3Plugin):
         labels = []
         for i in range(len(df)):
             label = df.ix[[i], :].T
-            label.columns = [view.label]
+            label.columns = [' '.join([view.label, view.group])]
             labels.append(str(label.to_html(header=len(view.label)>0)))
 
         tooltip = plugins.PointHTMLTooltip(mesh, labels[::-1], hoffset=self.hoffset,
