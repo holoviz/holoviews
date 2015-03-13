@@ -1,7 +1,6 @@
 from ..core.operation import ElementOperation, MapOperation, TreeOperation
 from ..core.options import Compositor
 
-from .rgb import *          # pyflakes:ignore (API import)
 from .element import *      # pyflakes:ignore (API import)
 from ..core import Overlay  # pyflakes:ignore (API import)
 
