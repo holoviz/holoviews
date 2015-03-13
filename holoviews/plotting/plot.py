@@ -11,7 +11,7 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
     GridSpace, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
-from ..core.util import find_minmax, sanitize_identifier
+from ..core.util import find_minmax, sanitize_identifier, int_to_roman
 from ..element import Raster, Table
 
 
@@ -248,6 +248,28 @@ class Plot(param.Parameterized):
                 axis.set_aspect('auto')
 
         return axis
+
+
+    def _subplot_label(self, axis):
+        if self.labels and not self.adjoined and self.layout_num > 0:
+            from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
+            labels = {}
+            if '{Alpha}' in self.labels:
+                labels['Alpha'] = str(chr(self.layout_num+64))
+            elif '{alpha}' in self.labels:
+                labels['alpha'] = str(chr(self.layout_num+96))
+            elif '{numeric}' in self.labels:
+                labels['numeric'] = self.layout_num
+            elif '{Roman}' in self.labels:
+                labels['Roman'] = int_to_roman(self.layout_num)
+            elif '{roman}' in self.labels:
+                labels['roman'] = int_to_roman(self.layout_num).lower()
+            at = AnchoredText(self.labels.format(**labels), loc=3,
+                              bbox_to_anchor=self.label_position, frameon=False,
+                              prop=dict(size=self.label_size, weight='bold'),
+                              bbox_transform=axis.transAxes)
+            at.patch.set_visible(False)
+            axis.add_artist(at)
 
 
     def _finalize_axis(self, key):
@@ -487,6 +509,7 @@ class GridPlot(CompositePlot):
         if self.show_title:
             self.handles['title'] = axis.set_title(self._format_title(key))
 
+        self._subplot_label(axis)
         self._readjust_axes(axis)
         self.drawn = True
         if self.subplot: return self.handles['axis']

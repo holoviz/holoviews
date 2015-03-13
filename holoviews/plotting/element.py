@@ -10,7 +10,7 @@ import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import find_minmax, int_to_roman, match_spec
+from ..core.util import find_minmax, match_spec
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -245,26 +245,6 @@ class ElementPlot(Plot):
                 if yformat:
                     axis.yaxis.set_major_formatter(yformat)
 
-            if self.labels and not self.adjoined and self.layout_num > 0:
-                from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
-                labels = {}
-                if '{Alpha}' in self.labels:
-                    labels['Alpha'] = str(chr(self.layout_num+64))
-                elif '{alpha}' in self.labels:
-                    labels['alpha'] = str(chr(self.layout_num+96))
-                elif '{numeric}' in self.labels:
-                    labels['numeric'] = self.layout_num
-                elif '{Roman}' in self.labels:
-                    labels['Roman'] = int_to_roman(self.layout_num)
-                elif '{roman}' in self.labels:
-                    labels['roman'] = int_to_roman(self.layout_num).lower()
-                at = AnchoredText(self.labels.format(**labels), loc=3,
-                                  bbox_to_anchor=self.label_position, frameon=False,
-                                  prop=dict(size=self.label_size, weight='bold'),
-                                  bbox_transform=axis.transAxes)
-                at.patch.set_visible(False)
-                axis.add_artist(at)
-
             if not self.show_legend:
                 legend = axis.get_legend()
                 if legend: legend.set_visible(False)
@@ -272,6 +252,8 @@ class ElementPlot(Plot):
             if self.show_grid:
                 axis.get_xaxis().grid(True)
                 axis.get_yaxis().grid(True)
+
+            self._subplot_label(axis)
 
             if xlabel: axis.set_xlabel(xlabel)
             if ylabel: axis.set_ylabel(ylabel)
