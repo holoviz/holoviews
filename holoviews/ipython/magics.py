@@ -430,8 +430,10 @@ class OptsMagic(Magics):
         if cls.error_message:
             return cls.error_message
         if cls.opts_spec is not None:
-            next_id = StoreOptions.add_custom_options(cls.opts_spec)
-            StoreOptions.propagate_ids(obj, next_id, cls.applied_keys)
+            custom_trees = StoreOptions.create_custom_trees(obj, cls.opts_spec)
+            Store.custom_options.update(custom_trees)
+            for tree_id in custom_trees.keys():
+                StoreOptions.propagate_ids(obj, tree_id, cls.applied_keys)
             cls.opts_spec = None
             cls.applied_keys = []
         return None
@@ -446,7 +448,7 @@ class OptsMagic(Magics):
     def register_custom_spec(cls, spec, cellmagic):
         spec, applied_keys = StoreOptions.expand_compositor_keys(spec)
         try:
-            StoreOptions.get_custom_tree(spec)
+            StoreOptions.validate_spec(spec)
         except OptionError as e:
             cls.error_message = cls._format_options_error(e)
             return None

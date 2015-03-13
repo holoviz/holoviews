@@ -1,3 +1,4 @@
+from holoviews import Store
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -173,6 +174,7 @@ class TestOptionTreeFind(ComparisonTestCase):
         options.XType.Bar = self.opts6
 
         self.options = options
+        Store.options = OptionTree(groups={'group':  Options()})
 
 
     def test_optiontree_find1(self):

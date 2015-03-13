@@ -424,16 +424,28 @@ class OptionTree(AttrTree):
         return self.find(components).options(group)
 
 
-    def options(self, group):
+
+    def options(self, group, target=None):
         """
         Using inheritance up to the root, get the complete Options
         object for the given node and the specified group.
         """
+        if target is None:
+            target = self.path
         if self.groups.get(group, None) is None:
             return None
-        if self.parent is None:
+        if self.parent is None and target and (self is not Store.options):
+            root_name = self.__class__.__name__
+            replacement = root_name + ('' if len(target) == len(root_name) else '.')
+            option_key = target.replace(replacement,'')
+            if option_key in Store.options:
+                return Store.options[option_key].options(group)
+            else:
+                return Options()
+        elif self.parent is None:
             return self.groups[group]
-        return Options(**dict(self.parent.options(group).kwargs,
+
+        return Options(**dict(self.parent.options(group,target=target).kwargs,
                               **self.groups[group].kwargs))
 
 
@@ -799,63 +811,16 @@ class StoreOptions(object):
     this machinery.
     """
 
-    @classmethod
-    def apply_customizations(cls, spec, options):
-        """
-        Apply the given option specs to the supplied options tree.
-        """
-        for key in sorted(spec.keys()):
-            if isinstance(spec[key], (list, tuple)):
-                customization = {v.key:v for v in spec[key]}
-            else:
-                customization = {k:(Options(**v) if isinstance(v, dict) else v)
-                                 for k,v in spec[key].items()}
-            options[str(key)] = customization
-        return options
+    #===============#
+    # ID management #
+    #===============#
 
     @classmethod
-    def expand_compositor_keys(cls, spec):
-        """
-        Expands compositor definition keys into {type}.{group}
-        keys. For instance a compositor operation returning a group
-        string 'Image' of element type RGB expands to 'RGB.Image'.
-        """
-        expanded_spec={}
-        applied_keys = []
-        compositor_defs = {el.group:el.output_type.__name__
-                           for el in Compositor.definitions}
-        for key, val in spec.items():
-            if key not in compositor_defs:
-                expanded_spec[key] = val
-            else:
-                # Send id to Overlays
-                applied_keys = ['Overlay']
-                type_name = compositor_defs[key]
-                expanded_spec[str(type_name+'.'+key)] = val
-        return expanded_spec, applied_keys
+    def get_object_ids(cls, obj):
+        return set(el for el
+                   in obj.traverse(lambda x: getattr(x, 'id', None))
+                   if el is not None)
 
-
-    @classmethod
-    def get_custom_tree(cls, spec):
-        """
-        Get a tree that is based on the default Store.options tree but
-        has been customized by the specified specs.
-        """
-        options = OptionTree(items=Store.options.data.items(),
-                             groups=Store.options.groups)
-        return cls.apply_customizations(spec, options)
-
-    @classmethod
-    def add_custom_options(cls, spec):
-        """
-        Sets a new tree in Store.custom_options based on the supplied
-        customization specification. Returns the id of the new tree.
-        """
-        ids = Store.custom_options.keys()
-        max_id = max(ids) if len(ids)>0 else -1
-        custom_tree = cls.get_custom_tree(spec)
-        Store.custom_options[max_id+1] = custom_tree
-        return max_id+1
 
     @classmethod
     def propagate_ids(cls, obj, new_id, applied_keys):
@@ -887,6 +852,82 @@ class StoreOptions(object):
         """
         ids = iter(ids)
         obj.traverse(lambda o: setattr(o, 'id', ids.next()))
+
+
+    @classmethod
+    def apply_customizations(cls, spec, options):
+        """
+        Apply the given option specs to the supplied options tree.
+        """
+        for key in sorted(spec.keys()):
+            if isinstance(spec[key], (list, tuple)):
+                customization = {v.key:v for v in spec[key]}
+            else:
+                customization = {k:(Options(**v) if isinstance(v, dict) else v)
+                                 for k,v in spec[key].items()}
+            options[str(key)] = customization
+        return options
+
+
+    @classmethod
+    def validate_spec(cls, spec):
+        """
+        Given a specification, validated it against the default
+        options tree (Store.options)
+        """
+        options = OptionTree(items=Store.options.data.items(),
+                             groups=Store.options.groups)
+        return cls.apply_customizations(spec, options)
+
+
+    @classmethod
+    def expand_compositor_keys(cls, spec):
+        """
+        Expands compositor definition keys into {type}.{group}
+        keys. For instance a compositor operation returning a group
+        string 'Image' of element type RGB expands to 'RGB.Image'.
+        """
+        expanded_spec={}
+        applied_keys = []
+        compositor_defs = {el.group:el.output_type.__name__
+                           for el in Compositor.definitions}
+        for key, val in spec.items():
+            if key not in compositor_defs:
+                expanded_spec[key] = val
+            else:
+                # Send id to Overlays
+                applied_keys = ['Overlay']
+                type_name = compositor_defs[key]
+                expanded_spec[str(type_name+'.'+key)] = val
+        return expanded_spec, applied_keys
+
+
+    @classmethod
+    def create_custom_trees(cls, obj, options=None):
+        """
+        Returns the appropriate set of customized subtree clones for
+        an object, suitable for merging with Store.custom_options (i.e
+        with the ids appropriately offset). Note if an object has no
+        integer ids a new OptionTree is built.
+        """
+        clones = {}
+        obj_ids = cls.get_object_ids(obj)
+        store_ids = Store.custom_options.keys()
+        offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
+        for tree_id in obj_ids:
+            original = Store.custom_options[tree_id]
+            clone = OptionTree(items=  original.items(),
+                               groups= original.groups)
+            clones[tree_id + offset + 1] = clone
+
+        if len(clones) == 0:
+            new_tree = OptionTree(groups={'norm': Options(),
+                                          'plot': Options(),
+                                          'style': Options()})
+            clones[offset] = new_tree
+
+        return {k:cls.apply_customizations(options, t) if options else t
+                for k,t in clones.items()}
 
 
     @classmethod
@@ -992,6 +1033,9 @@ class StoreOptions(object):
         #                  'style': Options('style', cmap='Blues')]}
         options = cls.merge_options(options, **kwargs)
         spec, compositor_applied = StoreOptions.expand_compositor_keys(options)
-        new_id = StoreOptions.add_custom_options(spec)
-        StoreOptions.propagate_ids(obj, new_id, compositor_applied+list(spec.keys()))
+
+        custom_trees = StoreOptions.create_custom_trees(obj, spec)
+        cls.custom_options.update(custom_trees)
+        for tree_id in custom_trees.keys():
+            cls.propagate_ids(obj, tree_id, compositor_applied+list(spec.keys()))
         return obj
