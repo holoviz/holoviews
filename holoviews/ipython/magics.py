@@ -415,7 +415,7 @@ class OptsMagic(Magics):
     Consult %%opts? for more information.
     """
     error_message = None # If not None, the error message that will be displayed
-    next_id = None       # Next id to propagate, binding displayed object together.
+    opts_spec = None       # Next id to propagate, binding displayed object together.
     applied_keys = []    # Path specs selecting the objects to be given a new id
 
     @classmethod
@@ -429,9 +429,10 @@ class OptsMagic(Magics):
         """
         if cls.error_message:
             return cls.error_message
-        if cls.next_id is not None:
-            StoreOptions.propagate_ids(obj, cls.next_id, cls.applied_keys)
-            cls.next_id = None
+        if cls.opts_spec is not None:
+            next_id = StoreOptions.add_custom_options(cls.opts_spec)
+            StoreOptions.propagate_ids(obj, next_id, cls.applied_keys)
+            cls.opts_spec = None
             cls.applied_keys = []
         return None
 
@@ -445,16 +446,16 @@ class OptsMagic(Magics):
     def register_custom_spec(cls, spec, cellmagic):
         spec, applied_keys = StoreOptions.expand_compositor_keys(spec)
         try:
-            new_id = StoreOptions.add_custom_options(spec)
+            StoreOptions.get_custom_tree(spec)
         except OptionError as e:
             cls.error_message = cls._format_options_error(e)
             return None
 
         if cellmagic:
-            cls.next_id = new_id
+            cls.opts_spec = spec
             cls.applied_keys = applied_keys + list(spec.keys())
         else:
-            cls.next_id = None
+            cls.opts_spec = spec
             cls.applied_keys = []
 
 
