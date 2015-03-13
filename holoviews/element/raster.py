@@ -260,7 +260,8 @@ class HeatMap(Raster):
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
         elif dim in self._cached_value_names:
-            return [v if isinstance(v, tuple) else v
+            idx = self._cached_value_names.index(dim)
+            return [v[idx] if isinstance(v, tuple) else v
                     for v in self._data.values()]
         else:
             return super(HeatMap, self).dimension_values(dim)
@@ -269,7 +270,7 @@ class HeatMap(Raster):
     def dframe(self, dense=False):
         if dense:
             keys1, keys2 = self.dense_keys()
-            dense_map = HeatMap({(k1, k2): self._data.get((k1, k2), np.NaN)
+            dense_map = self.clone({(k1, k2): self._data.get((k1, k2), np.NaN)
                                  for k1, k2 in product(keys1, keys2)})
             return dense_map.dframe()
         return super(HeatMap, self).dframe()
