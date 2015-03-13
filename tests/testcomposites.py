@@ -105,6 +105,18 @@ class LayoutTestCase(ElementTestCase):
         t2 = t1.regroup('NewValue')
         self.assertEqual(t2.keys(), [('NewValue', 'I'), ('NewValue', 'II')])
 
+    def test_layouttree_quadruple_1(self):
+        t = self.el1 + self.el1 + self.el1 + self.el1
+        self.assertEqual(t.keys(), [('Element', 'I'), ('Element', 'II'),
+                                    ('Element', 'III'), ('Element', 'IV')])
+
+    def test_layouttree_quadruple_2(self):
+        t = self.el6 + self.el6 + self.el6 + self.el6
+        self.assertEqual(t.keys(), [('Element', 'LabelA', 'I'),
+                                    ('Element', 'LabelA', 'II'),
+                                    ('Element', 'LabelA', 'III'),
+                                    ('Element', 'LabelA', 'IV')])
+
 
 
 class OverlayTestCase(ElementTestCase):
@@ -210,6 +222,19 @@ class OverlayTestCase(ElementTestCase):
         t1 = (self.el1 * self.el2)
         t2 = t1.regroup('NewValue')
         self.assertEqual(t2.keys(), [('NewValue', 'I'), ('NewValue', 'II')])
+
+    def test_overlay_quadruple_1(self):
+        t = self.el1 * self.el1 * self.el1 * self.el1
+        self.assertEqual(t.keys(), [('Element', 'I'), ('Element', 'II'),
+                                    ('Element', 'III'), ('Element', 'IV')])
+
+    def test_overlay_quadruple_2(self):
+        t = self.el6 * self.el6 * self.el6 * self.el6
+        self.assertEqual(t.keys(), [('Element', 'LabelA', 'I'),
+                                    ('Element', 'LabelA', 'II'),
+                                    ('Element', 'LabelA', 'III'),
+                                    ('Element', 'LabelA', 'IV')])
+
 
 
 
