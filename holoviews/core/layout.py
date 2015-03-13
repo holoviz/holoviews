@@ -269,18 +269,19 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def new_path(cls, path, item, paths):
-        count = 2
-        while path in paths:
+    def new_path(cls, path, item, paths, count):
+        while any(path in [p[:i] for p in paths] for i in range(1,len(path)+1)):
             pl = len(path)
-            if pl == 1 and not item.label or pl == 2 and item.label :
-                paths[paths.index(path)] = path + ('I',)
-                paths.append(path + ('II',))
+            if (pl == 1 and not item.label) or (pl == 2 and item.label):
+                new_path = path + (int_to_roman(count-1),)
+                if new_path not in paths:
+                    paths[paths.index(path)] = new_path
+                path = path + (int_to_roman(count),)
             else:
                 path = path[:-1] + (int_to_roman(count),)
             count += 1
         path = tuple(sanitize_identifier(p) for p in path)
-        return path
+        return path, count
 
 
     @classmethod
@@ -293,8 +294,9 @@ class Layout(AttrTree, Dimensioned):
         identifiers if necessary.
         """
         paths, path_items = [], []
+        count = 2
         for path, item in items:
-            new_path = cls.new_path(path, item, paths)
+            new_path, count = cls.new_path(path, item, paths, count)
             path_items.append(item)
             paths.append(new_path)
         return zip(paths, path_items)
