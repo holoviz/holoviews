@@ -131,15 +131,18 @@ class Comparison(ComparisonInterface):
 
         # Rasters
         cls.equality_type_funcs[Image] =       cls.compare_image
-        cls.equality_type_funcs[RGB] =         cls.compare_image
-        cls.equality_type_funcs[HSV] =         cls.compare_image
+        cls.equality_type_funcs[RGB] =         cls.compare_rgb
+        cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
         cls.equality_type_funcs[HeatMap] =     cls.compare_heatmap
 
 
         # Charts
         cls.equality_type_funcs[Curve] =        cls.compare_curve
+        cls.equality_type_funcs[Scatter] =      cls.compare_scatter
+        cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
+        cls.equality_type_funcs[Bars] =         cls.compare_bars
 
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
@@ -393,24 +396,21 @@ class Comparison(ComparisonInterface):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, 'Curve data')
 
+    @classmethod
+    def compare_scatter(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, 'Scatter data')
+
+    @classmethod
+    def compare_scatter3d(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, 'Scatter3D data')
 
     @classmethod
     def compare_histogram(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.edges, el2.edges, "Histogram edges")
         cls.compare_arrays(el1.values, el2.values, "Histogram values")
-
-
-    @classmethod
-    def compare_raster(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Raster data')
-
-
-    @classmethod
-    def compare_heatmap(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'HeatMap data')
 
 
     @classmethod
@@ -429,13 +429,45 @@ class Comparison(ComparisonInterface):
 
         cls.compare_arrays(el1.data, el2.data, 'VectorField data')
 
+    @classmethod
+    def compare_bars(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_ndmappings(el1, el2, msg)
 
     #=========#
     # Rasters #
     #=========#
 
     @classmethod
+    def compare_raster(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, 'Raster data')
+
+    @classmethod
+    def compare_heatmap(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, 'HeatMap data')
+
+    @classmethod
     def compare_image(cls, el1, el2, msg='Image data'):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, msg=msg)
+        cls.bounds_check(el1,el2)
+
+    @classmethod
+    def compare_rgb(cls, el1, el2, msg='RGB data'):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, msg=msg)
+        cls.bounds_check(el1,el2)
+
+    @classmethod
+    def compare_hsv(cls, el1, el2, msg='HSV data'):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, msg=msg)
+        cls.bounds_check(el1,el2)
+
+    @classmethod
+    def compare_surface(cls, el1, el2, msg='Surface data'):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, msg=msg)
         cls.bounds_check(el1,el2)
