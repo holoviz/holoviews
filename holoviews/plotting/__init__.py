@@ -138,7 +138,7 @@ class MPLPlotRenderer(Exporter):
 
         element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
         try:
-            plotclass = Store.defaults[element_type]
+            plotclass = Store.registry[element_type]
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
 
