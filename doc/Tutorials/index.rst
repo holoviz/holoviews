@@ -61,7 +61,13 @@ There are also more detailed tutorials with reference material:
 For more detailed (but less readable!) information on any component described in the
 tutorials, please refer to the `Reference Manual
 <../Reference_Manual>`_.  There is also online help for every object
-and optin in the IPython Notebook; e.g. type ``Image?`` in any cell.
+and option in the IPython Notebook; e.g. type ``Image?`` in any cell.
+
+Finally, here are some examples of HoloViews being used:
+
+* `Interactive plots with mpld3: <http://philippjfr.com/blog/interactive-plots-with-holoviews-and-mpld3/>`_
+  Examples usages of the mpld3 rendering backend allowing you to
+  generate d3.js based plots with interactive widgets.
 
 .. toctree::
    :maxdepth: 2
