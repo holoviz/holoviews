@@ -62,12 +62,15 @@ class DataFrameView(Element):
 
     value_dimensions = param.List(doc="DataFrameView has no value dimension.")
 
-    def __init__(self, data, dimensions={}, key_dimensions=None, **params):
+    def __init__(self, data, dimensions={}, key_dimensions=None, clone_override=False, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
             raise Exception('DataFrame ViewableElement type requires Pandas dataframe as data.')
-        if key_dimensions:
+        if clone_override:
+            dim_dict = {d.name: d for d in key_dimensions}
+            dims = [dim_dict.get(k, k) for k in data.columns]
+        elif key_dimensions:
             if len(key_dimensions) != len(data.columns):
                 raise ValueError("Supplied key dimensions do not match data columns")
             dims = key_dimensions
@@ -124,7 +127,8 @@ class DataFrameView(Element):
         Applies the Pandas dframe method corresponding to the supplied
         name with the supplied args and kwargs.
         """
-        return self.clone(getattr(self.data, name)(*args, **kwargs))
+        return self.clone(getattr(self.data, name)(*args, **kwargs),
+                          clone_override=True)
 
 
     def dframe(self):
@@ -151,7 +155,7 @@ class DataFrameView(Element):
             if not function:
                 raise Exception("Supply a function to reduce the Dimensions with")
             reduced = reduced.groupby(dimensions+unreducable, as_index=True).aggregate(function)
-            reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
+            reduced_indexes = [reduced.index.names.index(d) for d in unreducable if d not in dimensions]
             reduced = reduced.reset_index(level=reduced_indexes)
         if reductions:
             for dim, fn in reductions.items():
@@ -247,15 +251,15 @@ class DFrame(DataFrameView):
       * Optional map_dims (list of strings).
     """
 
-    def _convert(self, kdims=[], vdims=[], mdims=[], reduce_fn=None, view_type=None,
-                 dropna=False, **kwargs):
+    def _convert(self, kdims=[], vdims=[], mdims=[], reduce_fn=None,
+                 view_type=None, dropna=False, **kwargs):
         """
         Conversion method to generate HoloViews objects from a
         DFrame. Accepts key, value and HoloMap dimensions.
         If no HoloMap dimensions are supplied then non-numeric
         dimensions are used. If a reduce_fn such as np.mean is
-        supplied any leftover numeric dimensions are reduced.
-        Also supports a dropna option.
+        supplied the data is aggregated for each group along the
+        key_dimensions. Also supports a dropna option.
         """
         if not isinstance(kdims, list): kdims = [kdims]
         if not isinstance(vdims, list): vdims = [vdims]
@@ -287,6 +291,9 @@ class DFrame(DataFrameView):
         for k, v in groups.items():
             if reduce_dims:
                 v = v.aggregate(reduce_dims, function=reduce_fn)
+                v_indexes = [v.data.index.names.index(d) for d in kdims]
+                v = v.apply('reset_index', level=v_indexes)
+
             vdata = v.data.filter(el_dims)
             vdata = vdata.dropna() if dropna else vdata
             if issubclass(view_type, Chart):
@@ -348,10 +355,15 @@ class DFrame(DataFrameView):
     
     def heatmap(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
         tables = self.table(kdims, vdims, mdims, reduce_fn, **kwargs)
+
         if isinstance(tables, HoloMap):
-            return tables.map(lambda x: HeatMap(x), ['Table'])
+            kwargs = dict(tables.last.get_param_values(onlychanged=True),
+                          **kwargs)
+            return tables.map(lambda x: HeatMap(x, **kwargs), ['Table'])
         else:
-            return HeatMap(tables)
+            kwargs = dict(tables.get_param_values(onlychanged=True),
+                          **kwargs)
+            return HeatMap(tables, **kwargs)
     
     def surface(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
         if not isinstance(kdims, list): kdims = [kdims]
