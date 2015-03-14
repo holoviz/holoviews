@@ -114,8 +114,8 @@ class Chart(Element2D):
     def collapse_data(cls, data, function, **kwargs):
         if not function:
             raise Exception("Must provide function to collapse %s data." % cls.__name__)
-        data = [arr[:, 1:] for arr in data]
-        collapsed = function(np.dstack(data), axis=-1, **kwargs)
+        new_data = [arr[:, 1:] for arr in data]
+        collapsed = function(np.dstack(new_data), axis=-1, **kwargs)
         return np.hstack([data[0][:, 0, np.newaxis], collapsed])
 
 
