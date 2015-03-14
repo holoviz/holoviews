@@ -40,9 +40,13 @@ class Chart(Element2D):
 
         settings.update(params)
         super(Chart, self).__init__(data, **settings)
+        self.data = self._validate_data(data)
+
+
+    def _validate_data(self, data):
         if data.ndim > 1 and not data.shape[1] == len(self.dimensions()):
             raise ValueError("Data has to match number of key and value dimensions")
-
+        return data
 
     def _process_map(self, ndmap):
         """

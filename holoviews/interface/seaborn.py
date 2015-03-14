@@ -103,6 +103,12 @@ class Distribution(Chart):
 
     value_dimensions = param.List(default=[Dimension('Frequency')])
 
+    def _validate_data(self, data):
+        data = np.expand_dims(data, 1) if data.ndim == 1 else data
+        if not data.shape[1] == 1:
+            raise ValueError("Distribution only support single dimensional arrays.")
+        return data
+
     @property
     def xlim(self):
         return self.range(0)
