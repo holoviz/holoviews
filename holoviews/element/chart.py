@@ -290,6 +290,10 @@ class Histogram(Element2D):
             edges = np.concatenate([edges, [edges[-1]+width]])
         return values, edges, settings
 
+    @property
+    def xlim(self):
+        return np.min(self.edges), np.max(self.edges)
+
 
     def dimension_values(self, dim):
         if isinstance(dim, int):
@@ -297,7 +301,8 @@ class Histogram(Element2D):
         if dim in self._cached_value_names:
             return self.values
         elif dim in self._cached_index_names:
-            return self.edges
+            nedges = len(self.edges)
+            return np.convolve(self.edges, np.ones((2,))/2, mode='valid')
         else:
             return super(Histogram, self).dimension_values(dim)
 
