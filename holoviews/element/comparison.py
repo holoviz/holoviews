@@ -134,8 +134,8 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[RGB] =         cls.compare_rgb
         cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
+        cls.equality_type_funcs[Surface] =     cls.compare_surface
         cls.equality_type_funcs[HeatMap] =     cls.compare_heatmap
-
 
         # Charts
         cls.equality_type_funcs[Curve] =        cls.compare_curve
