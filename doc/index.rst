@@ -111,6 +111,7 @@ showing how to fix the bug or implement the feature!
    :maxdepth: 2
 
    Home <self>
+   Features <features>
    Tutorials <Tutorials/index>
    Reference Manual <Reference_Manual/index>
    Github source <http://github.com/ioam/holoviews>
