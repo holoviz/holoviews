@@ -765,6 +765,15 @@ class Store(object):
 
     @classmethod
     def add_style_opts(cls, component, new_options):
+        """
+        Given a component such as an Element (e.g. Image, Curve) or a
+        container (e.g Layout) specify new style options to be
+        accepted by the corresponding plotting class.
+
+        Note: This is supplied for advanced users who know which
+        additional style keywords are appropriate for the
+        corresponding plotting class.
+        """
         if component not in cls.registry:
             raise ValueError("Component %r not registered to a plotting class" % component)
 
