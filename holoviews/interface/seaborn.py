@@ -160,32 +160,39 @@ class DFrame(PandasDFrame):
                                      doc="""Selects which Pandas or Seaborn plot
                                             type to use, when visualizing the plot.""")
 
-    def bivariate(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims **dict(view_type=Bivariate, **kwargs))
 
-    def distribution(self, value_dim):
-        selected_dims = [value_dim]
-        map_dims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
-        if map_dims:
-            map_groups = self.data.groupby(map_dims)
-            vm_dims = map_dims
-        else:
-            map_groups = [(0, self.data)]
-            vm_dims = ['None']
+    def bivariate(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn, view_type=Bivariate, **kwargs)
 
-        vmap = HoloMap(key_dimensions=vm_dims)
-        for map_key, group in map_groups:
-            vmap[map_key] = Distribution(np.array(group[value_dim]),
-                                         key_dimensions=[self.get_dimension(value_dim)])
-        return vmap if map_dims else vmap.last
 
-    def regression(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims, **dict(view_type=Regression, **kwargs))
+    def distribution(self, dim, mdims=[], **kwargs):
+        grouped = self.groupby(mdims, HoloMap) if mdims else HoloMap({0: self})
+        inherited = dict(key_dimensions=[self.get_dimension(dim)],
+                         label=self.label)
+        kwargs = dict(inherited, **kwargs)
+        conversion_fn = lambda x: Distribution(x.data.sort()[dim].dropna(), **kwargs)
+        distributions = grouped.map(conversion_fn, [DFrame])
+        return distributions if mdims else distributions.last
 
-    def timeseries(self, kdims, vdims, **kwargs):
+
+    def regression(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn, view_type=Regression, **kwargs)
+
+
+    def timeseries(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
         if not isinstance(kdims, list) or not len(kdims) ==2:
             raise Exception('TimeSeries requires two key_dimensions.')
-        curve_map = self.table(kdims[0], vdims, **dict(view_type=Curve, **kwargs))
+        if not isinstance(kdims, list): kdims = [kdims]
+        if not isinstance(vdims, list): vdims = [vdims]
+
+        sel_dims = kdims + vdims
+        if mdims:
+            mdims = mdims + [kdims[1]]
+        else:
+            mdims = [kdims[1]]
+            if not reduce_fn:
+                mdims += [dim for dim in self.dimensions(label=True) if dim not in sel_dims]
+        curve_map = self._convert(kdims[0], vdims, mdims, reduce_fn, view_type=Curve, **kwargs)
         return TimeSeries(curve_map.overlay(kdims[1]),
                           key_dimensions=[self.get_dimension(dim) for dim in kdims],
                           **kwargs)

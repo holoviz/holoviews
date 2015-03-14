@@ -19,8 +19,8 @@ except:
 import param
 
 from ..core import OrderedDict, Dimension, ViewableElement, NdMapping, NdOverlay,\
- NdLayout, GridSpace, Element, HoloMap
-from ..element import Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
+    NdLayout, GridSpace, Element, HoloMap
+from ..element import Chart, Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 
 
 class DataFrameView(Element):
@@ -134,9 +134,9 @@ class DataFrameView(Element):
         return self.data.copy()
 
 
-    def reduce(self, dimensions=[], function=None, **reductions):
+    def aggregate(self, dimensions=[], function=None, **reductions):
         """
-        The reduce function accepts either a list of Dimensions
+        The aggregate function accepts either a list of Dimensions
         and a function to apply to find the aggregate across
         those Dimensions or a list of dimension/function pairs
         to apply one by one.
@@ -145,14 +145,20 @@ class DataFrameView(Element):
             raise Exception("Supply either a list of Dimensions or"
                             "reductions as keyword arguments")
         reduced = self.data
+        dfnumeric = reduced.applymap(np.isreal).all(axis=0)
+        unreducable = list(dfnumeric[dfnumeric == False].index)
         if dimensions:
             if not function:
                 raise Exception("Supply a function to reduce the Dimensions with")
-            reduced = reduced.groupby(dimensions, as_index=True).aggregate(function)
+            reduced = reduced.groupby(dimensions+unreducable, as_index=True).aggregate(function)
+            reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
+            reduced = reduced.reset_index(level=reduced_indexes)
         if reductions:
             for dim, fn in reductions.items():
                 reduced = reduced.groupby(dim, as_index=True).aggregate(fn)
-        key_dimensions = [d for d in self.dimensions('key') if d.name in reduced.columns]
+                reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
+                reduced = reduced.reset_index(level=reduced_indexes)
+        key_dimensions = [self.get_dimension(d) for d in reduced.columns]
         return self.clone(reduced, key_dimensions=key_dimensions)
 
 
@@ -167,8 +173,10 @@ class DataFrameView(Element):
         view_dims = set(self._cached_index_names) - set(dimensions)
         view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
-            mapping[k] = self.clone(v.drop(dimensions, axis=1),
-                                    key_dimensions=view_dims)
+            data = v.drop(dimensions, axis=1)
+            mapping[k] = self.clone(data,
+                                    key_dimensions=[self.get_dimension(d)
+                                                    for d in data.columns])
         return mapping
 
 
@@ -239,59 +247,121 @@ class DFrame(DataFrameView):
       * Optional map_dims (list of strings).
     """
 
-    def bars(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims,  **dict(view_type=Bars, **kwargs))
-
-    def curve(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims, **dict(view_type=Curve, **kwargs))
-
-    def heatmap(self, kdims, vdims, **kwargs):
-        return self.table( kdims, vdims, **dict(view_type=HeatMap, **kwargs))
-
-    def points(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims, **dict(view_type=Points, **kwargs))
-
-    def scatter3d(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims, **dict(view_type=Scatter3D, **kwargs))
-
-    def scatter(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims, **dict(view_type=Scatter, **kwargs))
-
-    def surface(self, kdims, vdims, **kwargs):
-        heatmap = self.table(kdims, vdims, **dict(view_type=HeatMap, **kwargs))
-        kwargs.pop('reduce_fn')
-        return Surface(heatmap.data, **kwargs)
-
-    def vectorfield(self, kdims, vdims, **kwargs):
-        return self.table(kdims, vdims, **dict(view_type=VectorField, **kwargs))
-
-    def table(self, kdims, vdims, mdims=None, reduce_fn=None, view_type=None, **kwargs):
+    def _convert(self, kdims=[], vdims=[], mdims=[], reduce_fn=None, view_type=None,
+                 dropna=False, **kwargs):
+        """
+        Conversion method to generate HoloViews objects from a
+        DFrame. Accepts key, value and HoloMap dimensions.
+        If no HoloMap dimensions are supplied then non-numeric
+        dimensions are used. If a reduce_fn such as np.mean is
+        supplied any leftover numeric dimensions are reduced.
+        Also supports a dropna option.
+        """
         if not isinstance(kdims, list): kdims = [kdims]
         if not isinstance(vdims, list): vdims = [vdims]
-        if not isinstance(mdims, list) and not mdims is None: mdims = [mdims]
+
+        # Process dimensions
+        all_dims = self.dimensions(label=True)
+        sel_dims = kdims + vdims + mdims
+        el_dims = kdims + vdims
         if not mdims and not reduce_fn:
-            selected_dims = vdims+kdims
-            mdims = [dim for dim in self.dimensions(label=True) if dim not in selected_dims]
-
-        if mdims:
-            map_groups = self.data.groupby(mdims)
-            vm_dims = [self.get_dimension(d) for d in mdims]
+            mdims = [dim for dim in self.dimensions(label=True)
+                     if dim not in sel_dims]
+        # Find leftover dimensions to reduce
+        if reduce_fn:
+            reduce_dims = kdims
         else:
-            map_groups = [(0, self.data)]
-            vm_dims = [Dimension('None')]
+            reduce_dims = []
 
-        vmap = HoloMap(key_dimensions=vm_dims)
-        group_label = self.group if self.group != type(self).__name__ else 'Table'
-        keydims = [self.get_dimension(d) for d in kdims]
-        valdims = [self.get_dimension(d) for d in vdims]
-        for map_key, group in map_groups:
-            table_data = OrderedDict()
-            for k, v in group.groupby(kdims):
-                data = np.vstack(reduce_fn(np.array(v[d])) if reduce_fn else np.array(v[d])
-                                 for d in vdims)
-                table_data[k] = tuple(data) if len(valdims) > 1 else data[0]
-            view = Table(table_data, key_dimensions=keydims,
-                         value_dimensions=valdims, label=self.label,
-                         group=group_label)
-            vmap[map_key] = view_type(view, **kwargs) if view_type else view
-        return vmap if mdims else vmap.last
+        key_dims = [self.get_dimension(d) for d in kdims]
+        val_dims = [self.get_dimension(d) for d in vdims]
+        if mdims:
+            groups = self.groupby(mdims, HoloMap)
+            mdims = [self.get_dimension(d) for d in mdims]
+        else:
+            groups = NdMapping({0: self})
+            mdims = ['Default']
+
+        # Convert each element in the HoloMap
+        hmap = HoloMap(key_dimensions=mdims)
+        for k, v in groups.items():
+            if reduce_dims:
+                v = v.aggregate(reduce_dims, function=reduce_fn)
+            vdata = v.data.filter(el_dims)
+            vdata = vdata.dropna() if dropna else vdata
+            if issubclass(view_type, Chart):
+                data = [np.array(vdata[d]) for d in el_dims]
+                hmap[k] = self._create_chart(data, key_dims, val_dims,
+                                             view_type, **kwargs)
+            else:
+                data = [np.array(vdata[d]) for d in el_dims]
+                hmap[k] = self._create_table(data, key_dims, val_dims,
+                                             view_type, **kwargs)
+        return hmap if mdims != ['Default'] else hmap.last
+
+
+    def _create_chart(self, data, key_dimensions, value_dimensions, view_type, **kwargs):
+        inherited = dict(key_dimensions=key_dimensions,
+                         value_dimensions=value_dimensions, label=self.label)
+        return view_type(np.vstack(data).T, **dict(inherited, **kwargs))
+
+
+    def _create_table(self, data, key_dimensions, value_dimensions, view_type, **kwargs):
+        ndims = len(key_dimensions)
+        key_data, value_data = data[:ndims], data[ndims:]
+        keys = zip(*key_data)
+        if ndims == 1:
+            keys = [(k,) for k in keys]
+        values = zip(*value_data)
+        inherited = dict(key_dimensions=key_dimensions,
+                         value_dimensions=value_dimensions, label=self.label)
+        return view_type(zip(keys, values), **dict(inherited, **kwargs))
+
+
+    def curve(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=Curve, **kwargs)
+
+    def points(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=Points, **kwargs)
+
+    def scatter3d(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=Scatter3D, **kwargs)
+
+    def scatter(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=Scatter, **kwargs)
+
+    def vectorfield(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=VectorField, **kwargs)
+
+    def bars(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=Bars, **kwargs)
+
+    def table(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, reduce_fn,
+                             view_type=Table, **kwargs)
+    
+    def heatmap(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        tables = self.table(kdims, vdims, mdims, reduce_fn, **kwargs)
+        if isinstance(tables, HoloMap):
+            return tables.map(lambda x: HeatMap(x), ['Table'])
+        else:
+            return HeatMap(tables)
+    
+    def surface(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
+        if not isinstance(kdims, list): kdims = [kdims]
+        if not isinstance(vdims, list): vdims = [vdims]
+        heatmap = self.heatmap(kdims, vdims, mdims, reduce_fn, **kwargs)
+        key_dims = [self.get_dimension(d) for d in kdims]
+        val_dims = [self.get_dimension(d) for d in vdims]
+        kwargs = dict(kwargs, key_dimensions=key_dims, value_dimensions=val_dims,
+                      label=self.label)
+        if isinstance(heatmap, HoloMap):
+            return heatmap.map(lambda x: Surface(x.data, **kwargs), ['HeatMap'])
+        else:
+            return Surface(heatmap.data, **kwargs)
