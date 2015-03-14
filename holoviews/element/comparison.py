@@ -121,6 +121,14 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Arrow] =       cls.compare_arrow
         cls.equality_type_funcs[Text] =        cls.compare_text
 
+
+        # Path comparisons
+        cls.equality_type_funcs[Path] =        cls.compare_paths
+        cls.equality_type_funcs[Contours] =    cls.compare_contours
+        cls.equality_type_funcs[Box] =         cls.compare_box
+        cls.equality_type_funcs[Ellipse] =     cls.compare_ellipse
+        cls.equality_type_funcs[Bounds] =      cls.compare_bounds
+
         # Rasters
         cls.equality_type_funcs[Image] =       cls.compare_image
         cls.equality_type_funcs[RGB] =         cls.compare_image
@@ -136,8 +144,6 @@ class Comparison(ComparisonInterface):
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
         cls.equality_type_funcs[Table] =        cls.compare_tables
-
-        cls.equality_type_funcs[Contours] =     cls.compare_contours
         cls.equality_type_funcs[Points] =       cls.compare_points
         cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
@@ -346,6 +352,38 @@ class Comparison(ComparisonInterface):
         cls.compare_annotation(el1, el2, msg=msg)
 
 
+    #=======#
+    # Paths #
+    #=======#
+
+    @classmethod
+    def compare_paths(cls, el1, el2, msg='Path'):
+        cls.compare_dimensioned(el1, el2)
+
+        if len(el1.data) != len(el2.data):
+            raise cls.failureException("%s objects do not have a matching number of paths." % msg)
+        for arr1, arr2 in zip(el1.data, el2.data):
+            cls.compare_arrays(arr1, arr2, '%s data' % msg)
+
+    @classmethod
+    def compare_contours(cls, el1, el2, msg='Contours'):
+        if el1.level != el2.level:
+            raise cls.failureException("Contour levels are mismatched")
+        cls.compare_paths(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_box(cls, el1, el2, msg='Box'):
+        cls.compare_paths(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_ellipse(cls, el1, el2, msg='Ellipse'):
+        cls.compare_paths(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_bounds(cls, el1, el2, msg='Bounds'):
+        cls.compare_paths(el1, el2, msg=msg)
+
+
     #========#
     # Charts #
     #========#
@@ -374,14 +412,6 @@ class Comparison(ComparisonInterface):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, 'HeatMap data')
 
-    @classmethod
-    def compare_contours(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        if len(el1) != len(el2):
-            raise cls.failureException("Contours do not have a matching number of contours.")
-
-        for c1, c2 in zip(el1.data, el2.data):
-            cls.compare_arrays(c1, c2, 'Contour data')
 
     @classmethod
     def compare_points(cls, el1, el2, msg=None):
