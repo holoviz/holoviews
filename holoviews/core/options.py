@@ -764,6 +764,19 @@ class Store(object):
 
 
     @classmethod
+    def add_style_opts(cls, component, new_options):
+        if component not in cls.defaults:
+            raise ValueError("Component %r noit registered to a plotting class" % component)
+
+        if not isinstance(new_options, list) or not all(isinstance(el, str) for el in new_options):
+            raise ValueError("Please supply a list of style option keyword strings")
+
+        with param.logging_level('CRITICAL'):
+            cls.defaults[component].style_opts += new_options
+        cls.register_plots()
+
+
+    @classmethod
     def register_plots(cls):
         """
         Given that the Store.defaults dictionary has been populate
