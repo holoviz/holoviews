@@ -58,10 +58,10 @@ There are also more detailed tutorials with reference material:
   Complete example of the full range of hierarchical, multidimensional
   discrete and continuous data structures provided by HoloViews.
 
-For more detailed information on any component described in the
-tutorials, please refer to the `Reference Manual:
-<../Reference_Manual>`_ or the online help (e.g. type ``Image?`` in an
-IPython Notebook cell).
+For more detailed (but less readable!) information on any component described in the
+tutorials, please refer to the `Reference Manual
+<../Reference_Manual>`_.  There is also online help for every object
+and optin in the IPython Notebook; e.g. type ``Image?`` in any cell.
 
 .. toctree::
    :maxdepth: 2
