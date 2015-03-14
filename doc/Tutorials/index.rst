@@ -22,6 +22,10 @@ this order:
   ready for selecting, sampling, slicing, viewing, combining, and
   animating.
 
+* `Options: <Options>`_
+  How to control the output from HoloViews, from either pure Python
+  or in IPython notebooks.
+
 * `Transforming Data: <Transforming_Data>`_
   How to transform data within HoloViews containers, e.g. by
   collapsing across dimensions. (Coming soon!)
@@ -66,6 +70,7 @@ IPython Notebook cell).
    Showcase
    Introduction
    Exploring Data <Exploring_Data>
+   Options <Options>
    Transforming Data <Transforming_Data>
    Exporting
    Elements
