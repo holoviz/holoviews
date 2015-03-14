@@ -482,7 +482,8 @@ class NdMapping(MultiDimensionalMapping):
             items = self.data.items()
             for cidx, (condition, dim) in enumerate(zip(conditions, self.key_dimensions)):
                 values = self._cached_index_values.get(dim.name, None)
-                items = [(k, v) for k, v in items if condition(values.index(k[cidx]) if values else k[cidx])]
+                items = [(k, v) for k, v in items
+                         if condition(values.index(k[cidx]) if values else k[cidx])]
             items = [(k, self._dataslice(v, data_slice)) for k, v in items]
             if self.ndims == 1:
                 items = [(k[0], v) for (k, v) in items]
@@ -544,6 +545,9 @@ class NdMapping(MultiDimensionalMapping):
                 else:
                     conditions.append(self._range_condition(dim_slice))
             elif isinstance(dim_slice, set):
+                if dim.values:
+                    dim_slice = [self._cached_index_values[dim.name].index(dim_val)
+                                 for dim_val in dim_slice]
                 conditions.append(self._values_condition(dim_slice))
             elif dim_slice is Ellipsis:
                 conditions.append(self._all_condition())
@@ -551,7 +555,7 @@ class NdMapping(MultiDimensionalMapping):
                 raise ValueError("Keys may only be selected with sets, not lists or tuples.")
             else:
                 if dim.values:
-                    dim_slice = dim.values.index(dim_slice)
+                    dim_slice = self._cached_index_values[dim.name].index(dim_slice)
                 conditions.append(self._value_condition(dim_slice))
         return conditions
 
