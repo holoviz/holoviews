@@ -55,7 +55,7 @@ class OptionsMagic(Magics):
 
 
     @classmethod
-    def get_options(cls, line, options, fallback={}):
+    def get_options(cls, line, options):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
         for keyword in cls.defaults:
@@ -71,10 +71,6 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-            elif keyword in fallback:
-                options[keyword] = fallback[keyword]
-            else:
-                options[keyword] = cls.defaults[keyword]
         return cls._validate(options)
 
     @classmethod
@@ -259,7 +255,7 @@ class OutputMagic(OptionsMagic):
 
         restore_copy = OrderedDict(OutputMagic.options.items())
         try:
-            options = self.get_options(line, OrderedDict(), OutputMagic.options)
+            options = self.get_options(line, OrderedDict(OutputMagic.options.items()))
             OutputMagic.options = options
             # Inform writer of chosen fps
             if options['holomap'] in ['gif', 'scrubber']:
