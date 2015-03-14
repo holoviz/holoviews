@@ -718,7 +718,7 @@ class BarPlot(ElementPlot):
 
     def __init__(self, element, **params):
         super(BarPlot, self).__init__(element, **params)
-        self.values = self._get_values()
+        self.values, self.bar_dimensions = self._get_values()
 
 
     def _get_values(self):
@@ -728,18 +728,21 @@ class BarPlot(ElementPlot):
         gi, ci, si =self.group_index, self.category_index, self.stack_index
         ndims = self.map.last.ndims
         dims = self.map.last.key_dimensions
+        dimensions = []
         values = {}
         for vidx, vtype in zip([gi, ci, si], self._dimensions):
             if vidx < ndims:
                 dim = dims[vidx]
+                dimensions.append(dim)
                 vals = self.map.dimension_values(dim.name)
                 params = dict(key_dimensions=[dim])
             else:
+                dimensions.append(None)
                 vals = [None]
                 params = {}
             values[vtype] = NdMapping([(v, None) for v in vals],
                                       **params).keys()
-        return values
+        return values, dimensions
 
 
     def _compute_styles(self, element, style_groups):
@@ -765,9 +768,7 @@ class BarPlot(ElementPlot):
 
 
     def get_extents(self, element, ranges):
-        vdim = element.dimensions('value', label=True)[0]
-        l, r, b, t = 0, len(self.values['group']), 0, ranges.get(vdim, (np.NaN, np.NaN))[1]
-        return l, b, r, t
+        return 0, len(self.values['group']), np.NaN, np.NaN
 
 
     def __call__(self, ranges=None):
