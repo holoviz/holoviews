@@ -34,7 +34,7 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         from ..operation import histogram
         return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
-                         individually=individually, **kwargs)
+                         individually=individually, dimension=dimension, **kwargs)
 
 
     #======================#
