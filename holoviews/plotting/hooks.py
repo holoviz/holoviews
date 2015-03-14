@@ -181,8 +181,9 @@ class RasterPlugin(MplD3Plugin):
             df = view.dframe().sort(['y','x'], ascending=(1,1))[::-1]
             l, b, r, t = (0, 0, cols, rows)
 
-        for ann in plot.handles.get('annotations', {}).values():
+        for k, ann in plot.handles.get('annotations', {}).items():
             ann.remove()
+            plot.handles['annotations'].pop(k)
 
         # Generate color mesh to label each point
         cols+=1; rows+=1
