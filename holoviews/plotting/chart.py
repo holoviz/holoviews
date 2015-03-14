@@ -209,7 +209,7 @@ class HistogramPlot(ChartPlot):
             self.plotfn = self.handles['axis'].bar
 
         # Plot bars and make any adjustments
-        style = Store.lookup_options(hist, 'style')[self.cyclic_index]
+        style = self.style[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
         self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims) # Indexing top
         self.handles['legend_handle'] = bars
