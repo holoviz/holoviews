@@ -873,7 +873,7 @@ class StoreOptions(object):
         the calls to capture_ids and restore_ids.
         """
         ids = iter(ids)
-        obj.traverse(lambda o: setattr(o, 'id', ids.next()))
+        obj.traverse(lambda o: setattr(o, 'id', next(ids)))
 
 
     @classmethod
