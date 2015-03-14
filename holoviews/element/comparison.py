@@ -122,13 +122,16 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Text] =        cls.compare_text
 
         # Rasters
-        cls.equality_type_funcs[Image] =       cls.compare_matrix
+        cls.equality_type_funcs[Image] =       cls.compare_image
+        cls.equality_type_funcs[RGB] =         cls.compare_image
+        cls.equality_type_funcs[HSV] =         cls.compare_image
+        cls.equality_type_funcs[Raster] =      cls.compare_raster
+        cls.equality_type_funcs[HeatMap] =     cls.compare_heatmap
+
 
         # Charts
         cls.equality_type_funcs[Curve] =        cls.compare_curve
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
-        cls.equality_type_funcs[Raster] =       cls.compare_raster
-        cls.equality_type_funcs[HeatMap] =      cls.compare_heatmap
 
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
@@ -402,7 +405,7 @@ class Comparison(ComparisonInterface):
     #=========#
 
     @classmethod
-    def compare_matrix(cls, el1, el2, msg='Image data'):
+    def compare_image(cls, el1, el2, msg='Image data'):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, msg=msg)
         cls.bounds_check(el1,el2)
