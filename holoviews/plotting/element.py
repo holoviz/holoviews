@@ -438,7 +438,7 @@ class OverlayPlot(ElementPlot):
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
                             uniform=self.uniform, show_legend=False)
-            plotype = Store.defaults[type(vmap.last)]
+            plotype = Store.registry[type(vmap.last)]
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)
 
@@ -572,5 +572,5 @@ class OverlayPlot(ElementPlot):
         self._finalize_axis(key, ranges=ranges)
 
 
-Store.defaults.update({NdOverlay: OverlayPlot,
+Store.registry.update({NdOverlay: OverlayPlot,
                        Overlay: OverlayPlot})

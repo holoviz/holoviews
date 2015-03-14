@@ -478,7 +478,7 @@ class GridPlot(CompositePlot):
             view = layout.data.get(coord, None)
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                subplot = Store.defaults[vtype](view, figure=self.handles['fig'], axis=subax,
+                subplot = Store.registry[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
                                                 subplot=not create_axes, ranges=frame_ranges,
                                                 uniform=self.uniform, keys=self.keys,
@@ -972,7 +972,7 @@ class LayoutPlot(CompositePlot):
                 plotopts['create_axes'] = ax is not None
             else:
                 if pos == 'main':
-                    plot_type = Store.defaults[vtype]
+                    plot_type = Store.registry[vtype]
                 else:
                     plot_type = Plot.sideplots[vtype]
             num = num if len(self.coords) > 1 else 0
@@ -1009,7 +1009,7 @@ class LayoutPlot(CompositePlot):
         return self._finalize_axis(None)
 
 
-Store.defaults.update({GridSpace: GridPlot,
+Store.registry.update({GridSpace: GridPlot,
                        NdLayout: LayoutPlot,
                        Layout: LayoutPlot,
                        AdjointLayout: AdjointLayoutPlot})

@@ -139,5 +139,5 @@ class TablePlot(ElementPlot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-Store.defaults.update({ItemTable: TablePlot,
+Store.registry.update({ItemTable: TablePlot,
                        Table: TablePlot})

@@ -681,7 +681,7 @@ class Store(object):
 
     # A mapping from ViewableElement types to their corresponding plot
     # types. Set using the register_plots methods.
-    defaults = {}
+    registry = {}
 
     # Once register_plotting_classes is called, this OptionTree is populated
     options = OptionTree(groups={'plot':  Options(),
@@ -765,21 +765,21 @@ class Store(object):
 
     @classmethod
     def add_style_opts(cls, component, new_options):
-        if component not in cls.defaults:
-            raise ValueError("Component %r noit registered to a plotting class" % component)
+        if component not in cls.registry:
+            raise ValueError("Component %r not registered to a plotting class" % component)
 
         if not isinstance(new_options, list) or not all(isinstance(el, str) for el in new_options):
             raise ValueError("Please supply a list of style option keyword strings")
 
         with param.logging_level('CRITICAL'):
-            cls.defaults[component].style_opts += new_options
+            cls.registry[component].style_opts += new_options
         cls.register_plots()
 
 
     @classmethod
     def register_plots(cls):
         """
-        Given that the Store.defaults dictionary has been populate
+        Given that the Store.registry dictionary has been populate
         with {<element>:<plot-class>} items, build an OptionTree for the
         supported plot types, registering allowed plotting and style
         keywords.
@@ -798,7 +798,7 @@ class Store(object):
         """
         from .overlay import CompositeOverlay
         path_items = {}
-        for view_class, plot in cls.defaults.items():
+        for view_class, plot in cls.registry.items():
             name = view_class.__name__
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
             style_opts = plot.style_opts

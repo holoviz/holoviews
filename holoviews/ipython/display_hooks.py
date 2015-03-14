@@ -212,8 +212,8 @@ def element_display(element, size, **kwargs):
     if type(element) == Element:                 return None
     info = process_object(element)
     if info: return info
-    if element.__class__ not in Store.defaults: return None
-    fig = Store.defaults[element.__class__](element,
+    if element.__class__ not in Store.registry: return None
+    fig = Store.registry[element.__class__](element,
                                          **opts(element, get_plot_size(element, size)))()
     return display_figure(fig)
 
@@ -223,8 +223,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if not isinstance(vmap, HoloMap): return None
     info = process_object(vmap)
     if info: return info
-    if vmap.type not in Store.defaults:  return None
-    mapplot = Store.defaults[vmap.type](vmap,
+    if vmap.type not in Store.registry:  return None
+    mapplot = Store.registry[vmap.type](vmap,
                                         **opts(vmap.last, get_plot_size(vmap,size)))
     if len(mapplot) == 0:
         return sanitize_HTML(vmap)

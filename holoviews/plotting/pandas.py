@@ -122,5 +122,5 @@ class DFrameViewPlot(ElementPlot):
         self._update_plot(axis, view)
 
 
-Store.defaults.update({DataFrameView: DFrameViewPlot,
+Store.registry.update({DataFrameView: DFrameViewPlot,
                        DFrame: DFrameViewPlot})

@@ -189,5 +189,5 @@ class SurfacePlot(Plot3D):
         self.handles['legend_handle'] = self.handles['surface']
 
 
-Store.defaults.update({Surface: SurfacePlot,
+Store.registry.update({Surface: SurfacePlot,
                        Scatter3D: Scatter3DPlot})

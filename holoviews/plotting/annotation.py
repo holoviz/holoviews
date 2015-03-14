@@ -140,7 +140,7 @@ class PathPlot(ElementPlot):
 
 
 
-Store.defaults.update({
+Store.registry.update({
     VLine: VLinePlot,
     HLine: HLinePlot,
     Arrow: ArrowPlot,

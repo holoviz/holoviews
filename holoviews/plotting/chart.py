@@ -895,7 +895,7 @@ class BarPlot(ElementPlot):
                         prev += height if np.isfinite(height) else 0
 
 
-Store.defaults.update({Curve: CurvePlot,
+Store.registry.update({Curve: CurvePlot,
                        Scatter: PointPlot,
                        Bars: BarPlot,
                        Histogram: HistogramPlot,

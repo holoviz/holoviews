@@ -328,7 +328,7 @@ class SNSFramePlot(DFrameViewPlot):
             super(SNSFramePlot, self)._update_plot(axis, view)
 
 
-Store.defaults.update({TimeSeries: TimeSeriesPlot,
+Store.registry.update({TimeSeries: TimeSeriesPlot,
                        Bivariate: BivariatePlot,
                        Distribution: DistributionPlot,
                        Regression: RegressionPlot,
