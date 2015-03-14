@@ -13,7 +13,7 @@ from ..core.options import Store
 from ..ipython.magics import OutputMagic
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
-from ..plotting import CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot
+from ..plotting import CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot, BarPlot
 
 
 class PlottingHook(param.ParameterizedFunction):
@@ -105,9 +105,30 @@ class CurvePlugin(MplD3Plugin):
 
 
 class BarPlugin(MplD3Plugin):
+
+    types = param.List([Bars])
+
+    def __call__(self, plot, view):
+        if not self._applies(plot, view): return
+        fig = plot.handles['fig']
+
+        for i, (key, bar) in enumerate(plot.handles['bars'].items()):
+            handle = bar.get_children()[0]
+            selection = [(d.name,{k}) for d, k in zip(plot.bar_dimensions, key)
+                         if d is not None]
+            label_data = view.select(**dict(selection)).dframe().ix[0].to_frame()
+            label = str(label_data.to_html(header=len(view.label)>0))
+            tooltip = plugins.LineHTMLTooltip(handle, label, voffset=self.voffset,
+                                              hoffset=self.hoffset, css=self.css)
+            plugins.connect(fig, tooltip)
+
+    
+
+
+class HistogramPlugin(MplD3Plugin):
     "Labels each bar with a table of its values."
 
-    types = param.List([Bars, Histogram])
+    types = param.List([Histogram])
 
     def __call__(self, plot, view):
         if not self._applies(plot, view): return
@@ -229,4 +250,5 @@ if plugins is not None:
     RasterPlot.finalize_hooks = [RasterPlugin]
     CurvePlot.finalize_hooks = [CurvePlugin]
     PointPlot.finalize_hooks = [PointPlugin]
-    HistogramPlot.finalize_hooks = [BarPlugin]
+    HistogramPlot.finalize_hooks = [HistogramPlugin]
+    BarPlot.finalize_hooks = [BarPlugin]
