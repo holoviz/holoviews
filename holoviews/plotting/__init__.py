@@ -167,7 +167,7 @@ class MPLPlotRenderer(Exporter):
     def save(self_or_cls, obj, basename, fmt=None, options=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
-        supplied format or to the appropriate deafult.
+        supplied format or to the appropriate default.
         """
         with StoreOptions.options(obj, options, **kwargs):
             rendered = self_or_cls(obj, fmt)

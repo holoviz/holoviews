@@ -767,7 +767,7 @@ class Store(object):
     def register_plots(cls):
         """
         Given that the Store.defaults dictionary has been populate
-        with {<element>:<plot-class>} items, build an OptionsTree for the
+        with {<element>:<plot-class>} items, build an OptionTree for the
         supported plot types, registering allowed plotting and style
         keywords.
 
