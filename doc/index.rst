@@ -75,7 +75,7 @@ Alternatively, you may install the development version using pip::
 
   pip install https://github.com/ioam/holoviews/archive/v0.8.2.zip
 
-We plan to have a full PyPI release of HoloViews by 8 March 2015.
+We plan to have a full PyPI release of HoloViews by 16 March 2015.
 
 
 
