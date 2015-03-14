@@ -99,9 +99,10 @@ class BasicRasterComparisonTest(RasterTestCase):
     def test_unequal_arrays(self):
         try:
             self.assertEqual(self.mat1, self.mat2)
-            raise AssertionError("Array mismatch not detected")
+            raise AssertionError("Array mismatch not raised")
         except AssertionError as e:
-            self.assertEqual(str(e)[:42], 'Image data not almost equal to 6 decimals\n')
+            if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
+                raise self.failureException("Image data mismatch error not raised.")
 
     def test_bounds_mismatch(self):
         try:
@@ -123,7 +124,8 @@ class RasterOverlayComparisonTest(RasterOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            self.assertEqual(str(e)[:42], 'Image data not almost equal to 6 decimals\n')
+            if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
+                raise self.failureException("Image data mismatch error not raised.")
 
 
 
@@ -132,14 +134,14 @@ class RasterMapComparisonTest(RasterMapTestCase):
     def test_dimension_mismatch(self):
          try:
              self.assertEqual(self.map1_1D, self.map1_2D)
-             raise AssertionError("Mismatch in dimension number not detected.")
+             raise AssertionError("Mismatch in dimension number not raised.")
          except AssertionError as e:
              self.assertEqual(str(e), 'Key dimension list mismatched')
 
     def test_dimension_label_mismatch(self):
          try:
              self.assertEqual(self.map1_1D, self.map6_1D)
-             raise AssertionError("Mismatch in dimension labels not detected.")
+             raise AssertionError("Mismatch in dimension labels not raised.")
          except AssertionError as e:
              self.assertEqual(str(e), 'Dimension names mismatched: int != int_v2')
 
@@ -147,23 +149,24 @@ class RasterMapComparisonTest(RasterMapTestCase):
     def test_key_len_mismatch(self):
         try:
             self.assertEqual(self.map1_1D, self.map3_1D)
-            raise AssertionError("Mismatch in map key number not detected.")
+            raise AssertionError("Mismatch in map key number not raised.")
         except AssertionError as e:
             self.assertEqual(str(e), 'HoloMaps have different numbers of keys.')
 
     def test_key_mismatch(self):
         try:
             self.assertEqual(self.map1_1D, self.map2_1D)
-            raise AssertionError("Mismatch in map keys not detected.")
+            raise AssertionError("Mismatch in map keys not raised.")
         except AssertionError as e:
             self.assertEqual(str(e), 'HoloMaps have different sets of keys.')
 
     def test_element_mismatch(self):
         try:
             self.assertEqual(self.map1_1D, self.map4_1D)
-            raise AssertionError("Pane mismatch in array data not detected.")
+            raise AssertionError("Pane mismatch in array data not raised.")
         except AssertionError as e:
-            self.assertEqual(str(e)[:42], 'Image data not almost equal to 6 decimals\n')
+            if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
+                raise self.failureException("Image mismatch error not raised.")
 
 
 if __name__ == "__main__":

@@ -27,7 +27,8 @@ class SimpleComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(3.5,4.5)
         except AssertionError as e:
-            self.assertEqual(str(e)[:37], "Floats not almost equal to 6 decimals")
+            if not str(e).startswith("Floats not almost equal to 6 decimals"):
+                raise self.failureException("Float mismatch error not raised.")
 
     def test_numpy_floats_equal(self):
         self.assertEqual(np.float32(3.5), np.float32(3.5))
@@ -36,7 +37,8 @@ class SimpleComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(np.float32(3.5), np.float32(3.51))
         except AssertionError as e:
-            self.assertEqual(str(e)[:37], "Floats not almost equal to 6 decimals")
+            if not str(e).startswith("Floats not almost equal to 6 decimals"):
+                    raise self.failureException("Numpy float mismatch error not raised.")
 
     def test_float_heterogeneous_unequal1(self):
         try:
@@ -65,7 +67,8 @@ class SimpleComparisonTest(ComparisonTestCase):
             self.assertEqual(np.array([[1,2],[3,4]]),
                              np.array([[1,2],[3,5]]))
         except AssertionError as e:
-            self.assertEqual(str(e)[:37], "Arrays not almost equal to 6 decimals")
+            if not str(e).startswith("Arrays not almost equal to 6 decimals"):
+                        raise self.failureException("Integer mismatch error not raised.")
 
     def test_arrays_equal_float(self):
         self.assertEqual(np.array([[1.0,2.5],[3,4]], dtype=np.float32),
@@ -76,7 +79,8 @@ class SimpleComparisonTest(ComparisonTestCase):
             self.assertEqual(np.array([[1,2],[3,4.5]], dtype=np.float32),
                              np.array([[1,2],[3,5]], dtype=np.float32))
         except AssertionError as e:
-            self.assertEqual(str(e)[:37], "Arrays not almost equal to 6 decimals")
+            if not str(e).startswith("Arrays not almost equal to 6 decimals"):
+                            raise self.failureException("Float array mismatch error not raised.")
 
     def test_bounds_equal(self):
         self.assertEqual(BoundingBox(radius=0.5),
