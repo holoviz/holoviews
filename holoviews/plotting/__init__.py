@@ -58,7 +58,7 @@ ANIMATION_OPTS = {
 def opts(el, size):
     "Returns the plot options with supplied size (if not overridden)"
     obj = el.last if isinstance(el, HoloMap) else el
-    return dict(figure_size=size, **Store.lookup_options(obj, 'plot').options)
+    return dict(figure_inches=size, **Store.lookup_options(obj, 'plot').options)
 
 
 def get_plot_size(obj, percent_size):
@@ -76,8 +76,8 @@ def get_plot_size(obj, percent_size):
     """
     def rescale_figure(percent_size):
         factor = percent_size / 100.0
-        return (Plot.figure_size[0] * factor,
-                Plot.figure_size[1] * factor)
+        return (Plot.figure_inches[0] * factor,
+                Plot.figure_inches[1] * factor)
 
     if isinstance(obj, (Layout, NdLayout)):
         return (obj.shape[1]*rescale_figure(percent_size)[1],

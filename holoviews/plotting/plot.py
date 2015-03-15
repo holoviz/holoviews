@@ -25,17 +25,26 @@ class Plot(param.Parameterized):
     animation via the anim() method.
     """
 
-    background_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
-        Alpha of the figure background.""")
+    figure_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
+        Alpha of the overall figure background.""")
 
     figure_bounds = param.NumericTuple(default=(0.15, 0.15, 0.85, 0.85),
                                        doc="""
-        The bounds of the figure as a 4-tuple of the form
+        The bounds of the overall figure as a 4-tuple of the form
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
-    figure_size = param.NumericTuple(default=(4, 4), doc="""
-        The matplotlib figure size in inches.""")
+    figure_inches = param.NumericTuple(default=(4, 4), doc="""
+        The overall matplotlib figure size in inches.""")
+
+    figure_latex = param.Boolean(default=False, doc="""
+        Whether to use LaTeX text in the overall figure.""")
+
+    figure_rcparams = param.Dict(default={}, doc="""
+        matplotlib rc parameters to apply to the overall figure.""")
+
+    figure_size = param.Integer(default=100, bounds=(1, None), doc="""
+        Size relative to the supplied overall figure_inches in percent.""")
 
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
@@ -46,9 +55,6 @@ class Plot(param.Parameterized):
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
 
-    latex = param.Boolean(default=False, doc="""
-        Whether to use LaTeX text.""")
-
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
         of plotting. Allows selecting normalization at different levels
@@ -58,12 +64,6 @@ class Plot(param.Parameterized):
                                       objects=['3d', 'polar', None], doc="""
         The projection of the plot axis, default of None is equivalent to
         2D plot, 3D and polar plots are also supported.""")
-
-    rcparams = param.Dict(default={}, doc="""
-        matplotlib rc parameters to apply to the figure.""")
-
-    size = param.Integer(default=100, bounds=(1, None), doc="""
-        Size relative to the supplied figure size in percent.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
@@ -101,9 +101,9 @@ class Plot(param.Parameterized):
         self.handles = {} if figure is None else {'fig': figure}
 
         super(Plot, self).__init__(**params)
-        size_scale = self.size / 100.
-        self.figure_size = (self.figure_size[0] * size_scale,
-                            self.figure_size[1] * size_scale)
+        size_scale = self.figure_size / 100.
+        self.figure_inches = (self.figure_inches[0] * size_scale,
+                              self.figure_inches[1] * size_scale)
         self.handles['axis'] = self._init_axis(axis)
 
 
@@ -234,16 +234,16 @@ class Plot(param.Parameterized):
         a new figure.
         """
         if not self.subplot and self._create_fig:
-            rc_params = self.rcparams
-            if self.latex:
+            rc_params = self.figure_rcparams
+            if self.figure_latex:
                 rc_params['text.usetex'] = True
             with matplotlib.rc_context(rc=rc_params):
                 fig = plt.figure()
                 self.handles['fig'] = fig
                 l, b, r, t = self.figure_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-                fig.patch.set_alpha(self.background_alpha)
-                fig.set_size_inches(list(self.figure_size))
+                fig.patch.set_alpha(self.figure_alpha)
+                fig.set_size_inches(list(self.figure_inches))
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
 

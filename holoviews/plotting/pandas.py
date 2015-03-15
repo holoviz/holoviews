@@ -84,7 +84,7 @@ class DFrameViewPlot(ElementPlot):
                 self.warning('Plot option %s does not apply to %s plot type.' % (k, self.plot_type))
                 style.pop(k)
         if self.plot_type not in ['autocorrelation_plot']:
-            style['figsize'] = self.size
+            style['figsize'] = self.figure_size
 
         # Legacy fix for Pandas, can be removed for Pandas >0.14
         if self.plot_type == 'boxplot':

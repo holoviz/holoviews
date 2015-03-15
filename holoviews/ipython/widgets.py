@@ -248,8 +248,8 @@ def isnumeric(val):
 
 def get_plot_size():
     factor = OutputMagic.options['size'] / 100.0
-    return (Plot.figure_size[0] * factor,
-            Plot.figure_size[1] * factor)
+    return (Plot.figure_inches[0] * factor,
+            Plot.figure_inches[1] * factor)
 
 
 class NdWidget(param.Parameterized):
