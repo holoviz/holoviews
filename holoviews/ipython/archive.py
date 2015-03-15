@@ -172,7 +172,10 @@ class NotebookArchive(FileArchive):
                 self._replacements[new_last_key] = html
 
 
-    def _generate_html(self, node, substitutions):
+    # The following methods are executed via JavaScript and so fail
+    # to appear in the coverage report even though they are tested.
+
+    def _generate_html(self, node, substitutions):  # pragma: no cover
         exporter = HTMLExporter()
         exporter.register_preprocessor(Substitute(self.nbversion,
                                                   substitutions))
@@ -180,7 +183,7 @@ class NotebookArchive(FileArchive):
         return html
 
 
-    def _clear_notebook(self, node):
+    def _clear_notebook(self, node):                # pragma: no cover
         if NotebookExporter is not None:
             exporter = NotebookExporter()
             exporter.register_preprocessor(ClearOutputPreprocessor(enabled=True))
@@ -191,7 +194,7 @@ class NotebookArchive(FileArchive):
         return cleared
 
 
-    def _export_with_html(self):
+    def _export_with_html(self):                    # pragma: no cover
         "Computes substitions before using nbconvert with preprocessors"
         self.export_success = False
         try:
@@ -238,8 +241,7 @@ class NotebookArchive(FileArchive):
         else:
             self.export_success = True
 
-
-    def _get_notebook_node(self):
+    def _get_notebook_node(self):                   # pragma: no cover
         "Load captured notebook node"
         self._notebook_data.seek(0, os.SEEK_END)
         size = self._notebook_data.tell()
