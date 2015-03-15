@@ -470,7 +470,6 @@ class Comparison(ComparisonInterface):
     def compare_surface(cls, el1, el2, msg='Surface data'):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, msg=msg)
-        cls.bounds_check(el1,el2)
 
 
     #========#
