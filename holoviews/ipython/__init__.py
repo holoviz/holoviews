@@ -36,17 +36,6 @@ def supported_formats(optional_formats):
     return supported
 
 
-def update_matplotlib_rc():
-    """
-    Default changes to the matplotlib rc used by IPython Notebook.
-    """
-    import matplotlib
-    rc= {'figure.figsize': (6.0,4.0),
-         'savefig.dpi': 72,
-         }
-    matplotlib.rcParams.update(rc)
-
-
 
 class IPTestCase(ComparisonTestCase):
     """
@@ -113,8 +102,6 @@ def load_ipython_extension(ip, verbose=True):
         valid_formats = supported_formats(OutputMagic.optional_formats)
         OutputMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
-        update_matplotlib_rc()
-        Plot.background_alpha = 0.0
 
 def unload_ipython_extension(ip):
     global _loaded
