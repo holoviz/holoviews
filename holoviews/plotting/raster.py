@@ -77,8 +77,8 @@ class RasterPlot(ElementPlot):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
             self.handles['annotations'] = {}
 
-        if self.show_values:
-            self._annotate_values(view)
+            if self.show_values:
+                self._annotate_values(view)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges,
                                    xticks=xticks, yticks=yticks)
