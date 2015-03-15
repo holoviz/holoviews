@@ -226,7 +226,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     if info: return info
     if vmap.type not in Store.registry:  return None
     mapplot = Store.registry[vmap.type](vmap,
-                                        **opts(vmap.last, get_plot_size(vmap,size)))
+                                        **opts(vmap, get_plot_size(vmap,size)))
     if len(mapplot) == 0:
         return sanitize_HTML(vmap)
     elif len(mapplot) > max_frames:
