@@ -40,7 +40,7 @@ import numpy as np
 import param
 from .tree import AttrTree
 from .util import sanitize_identifier
-
+from .pprint import InfoPrinter
 
 class OptionError(Exception):
     """
@@ -703,6 +703,16 @@ class Store(object):
         val = pickle.load(filename)
         cls.load_counter_offset = None
         return val
+
+
+    @classmethod
+    def info(cls, obj, ansi=True):
+        """
+        Show information about a particular object including the
+        applicable style and plot options.
+        """
+        print(InfoPrinter.info(obj, ansi=ansi))
+
 
     @classmethod
     def loads(cls, obj, pickle_string, protocol=0):
