@@ -109,9 +109,9 @@ class InfoPrinter(object):
             style_msg = '\t<No style options available>'
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi)
-        return '\n'.join([ '', cls.heading('Display Options', ansi=ansi),
+        return '\n'.join([ cls.heading('Display Options', ansi=ansi), '',
                            cls.heading(style_heading, char=None, level=1, ansi=ansi),
-                           '',  style_msg, '', param_info])
+                           style_msg, '', param_info])
 
 
 class PrettyPrinter(object):
