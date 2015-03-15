@@ -174,7 +174,12 @@ class TestOptionTreeFind(ComparisonTestCase):
         options.XType.Bar = self.opts6
 
         self.options = options
+        self.original_options = Store.options
         Store.options = OptionTree(groups={'group':  Options()})
+
+
+    def tearDown(self):
+        Store.options = self.original_options
 
 
     def test_optiontree_find1(self):
