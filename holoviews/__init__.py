@@ -1,10 +1,12 @@
 from __future__ import print_function, absolute_import
-import os, sys
+import os, sys, pydoc, re
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..', 'param'))
 
 import param
+from param.ipython import ParamPager
+
 __version__ = param.Version(release=(0,8,1), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
@@ -26,3 +28,23 @@ try:
     from .ipython.archive import notebook_archive as archive
 except:
     archive = FileArchive()
+
+
+def help(obj, ansi=True):
+    """
+    Extended version of the built-in help that supports parameterized
+    functions and objects. If ansi is set to False, all ANSI color
+    codes are stripped out.
+    """
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    parameterized_object = isinstance(obj, param.Parameterized)
+    parameterized_class = (isinstance(obj,type)
+                           and  issubclass(obj,param.Parameterized))
+
+    if parameterized_object or parameterized_class:
+        info = ParamPager()(obj)
+        if ansi is False:
+            info = ansi_escape.sub('', info)
+        print(info)
+    else:
+        pydoc.help(obj)
