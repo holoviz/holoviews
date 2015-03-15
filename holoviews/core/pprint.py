@@ -42,10 +42,10 @@ class InfoPrinter(object):
         if not show_values:
             return self.ansi_escape.sub('', param_list) if not ansi else param_list
         else:
-            heading = cls.heading('Plot option values:', char=None, level=1, ansi=ansi)
-            key = 'C/V= Constant/Variable, RO/RW = ReadOnly/ReadWrite, AN=Allow None'
-            info = '%s\n\n%s\n%s\n\n%s' % (param_list, heading, key, value_table)
-            return self.ansi_escape.sub('', info) if not ansi else info
+            info = cls.ppager(obj)
+            if ansi is False:
+                info = ansi_escape.sub('', info)
+            return info
 
     @classmethod
     def heading(cls, heading_text, char='=', level=0, ansi=False):
@@ -109,12 +109,9 @@ class InfoPrinter(object):
             style_msg = '\t<No style options available>'
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi)
-        param_heading = '\nPlot options [%s]:' % plot_class.name
-        return '\n'.join([ '', cls.heading('Display Options', ansi=ansi),  '',
+        return '\n'.join([ '', cls.heading('Display Options', ansi=ansi),
                            cls.heading(style_heading, char=None, level=1, ansi=ansi),
-                           style_msg,
-                           cls.heading(param_heading, char=None, level=1, ansi=ansi),
-                           param_info])
+                           '',  style_msg, '', param_info])
 
 
 class PrettyPrinter(object):
