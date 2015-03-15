@@ -56,7 +56,7 @@ class InfoPrinter(object):
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
         """
-        categories = ['display', 'access', 'all']
+        categories = ['options', 'indexing', 'object', 'all']
 
         if category not in categories:
             raise Exception('Valid information categories: %s' % ', '.join(categories))
@@ -67,18 +67,20 @@ class InfoPrinter(object):
         heading = '%s Information' % obj.__class__.__name__
         heading_ul = '='*len(heading)
         prefix = '%s\n%s\n%s\n\n%s\n\n' % (heading_ul, heading, heading_ul, obj_info)
-        if category == 'display':
-            info = cls.display_info(obj, plot_class, ansi)
-        elif category == 'access':
-            info = cls.access_info(obj, ansi)
+        if category == 'options':
+            info = cls.options_info(obj, plot_class, ansi)
+        elif category == 'indexing':
+            info = cls.indexing_info(obj, ansi)
+        elif category == 'object':
+            info = cls.object_params(obj, ansi)
         elif category == 'all':
-            access_info = cls.access_info(obj, ansi)
-            info = "\n".join([access_info, '', cls.display_info(obj, plot_class, ansi)])
+            info = "\n".join([cls.indexing_info(obj, ansi), '',
+                              cls.options_info(obj, plot_class, ansi)])
         return prefix + info
 
     @classmethod
-    def access_info(cls, obj, ansi=False):
-        return '\n'.join([cls.heading('Access Structure', ansi=ansi), '', repr(obj)])
+    def indexing_info(cls, obj, ansi=False):
+        return '\n'.join([cls.heading('Indexing Structure', ansi=ansi), '', repr(obj)])
 
     @classmethod
     def object_info(cls, obj, ansi=False):
@@ -97,7 +99,7 @@ class InfoPrinter(object):
 
 
     @classmethod
-    def display_info(cls, obj, plot_class, ansi=False):
+    def options_info(cls, obj, plot_class, ansi=False):
         style_heading = 'Style options:'
         if plot_class.style_opts:
             style_info = "\n(Consult matplotlib's documentation for more information.)"
@@ -108,7 +110,7 @@ class InfoPrinter(object):
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi)
         param_heading = '\nPlot options [%s]:' % plot_class.name
-        return '\n'.join([ cls.heading('Display', ansi=ansi),  '',
+        return '\n'.join([ cls.heading('Options', ansi=ansi),  '',
                            cls.heading(style_heading, char=None, level=1, ansi=ansi),
                            style_msg,
                            cls.heading(param_heading, char=None, level=1, ansi=ansi),
@@ -176,7 +178,7 @@ class PrettyPrinter(object):
         else:
             (lvl, lines) = cls.element_info(node, siblings, level, value_dims)
 
-        # The attribute access path acts as a prefix (if applicable)
+        # The attribute indexing path acts as a prefix (if applicable)
         if attrpath is not None:
             padding = cls.padding(attrpaths)
             (fst_lvl, fst_line) = lines[0]

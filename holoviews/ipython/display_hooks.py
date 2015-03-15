@@ -98,7 +98,7 @@ def process_object(obj):
     "Hook to process the object currently being displayed."
     invalid_options = OptsMagic.process_element(obj)
     if invalid_options: return invalid_options
-    OutputMagic.page(obj)
+    OutputMagic.info(obj)
 
 
 def render(plot):

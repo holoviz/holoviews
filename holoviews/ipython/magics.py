@@ -161,7 +161,7 @@ class OutputMagic(OptionsMagic):
                'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf')),
                'filename'    : {None},
-               'page'   : ['disabled', 'display', 'access', 'all']}
+               'info'   : ['none', 'object', 'indexing', 'options', 'all']}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
                             ('fig'         , 'png'),
@@ -174,7 +174,7 @@ class OutputMagic(OptionsMagic):
                             ('dpi'         , 72),
                             ('charwidth'   , 80),
                             ('filename'    , None),
-                            ('page'   , 'disabled')])
+                            ('info'   , 'disabled')])
 
     options = OrderedDict(defaults.items())
 
@@ -192,9 +192,9 @@ class OutputMagic(OptionsMagic):
         cls.allowed['holomap'] = cls.inbuilt_formats + supported_formats
 
     @classmethod
-    def page(cls, obj):
-        if cls.options['page'] != 'disabled':
-            page.page(InfoPrinter.info(obj, cls.options['page'], ansi=True))
+    def info(cls, obj):
+        if cls.options['info'] != 'none':
+            page.page(InfoPrinter.info(obj, cls.options['info'], ansi=True))
 
 
     @classmethod
@@ -219,8 +219,8 @@ class OutputMagic(OptionsMagic):
                   % cls.defaults['charwidth'])
         fname =  ("filename    : The filename of the saved output, if any (default %r)"
                   % cls.defaults['filename'])
-        page =  ("page    : The information to page about the displayed objects (default %r)"
-                  % cls.defaults['page'])
+        page =  ("info    : The information to page about the displayed objects (default %r)"
+                  % cls.defaults['info'])
 
         descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname, page]
         return '\n'.join(intro + descriptions)
