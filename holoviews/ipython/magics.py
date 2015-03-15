@@ -8,9 +8,9 @@ except:
 
 from ..core import OrderedDict
 from ..core.options import Options, OptionError, Store, StoreOptions
+from ..core.pprint import InfoPrinter
 
 from IPython.display import display, HTML
-
 from ..operation import Compositor
 
 #========#
@@ -30,8 +30,8 @@ else:
 # Set to True to automatically run notebooks.
 STORE_HISTORY = False
 
-
-
+from IPython.core import page
+InfoPrinter.store = Store
 
 class OptionsMagic(Magics):
     """
@@ -160,7 +160,8 @@ class OutputMagic(OptionsMagic):
                'size'        : (0, float('inf')),
                'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf')),
-               'filename'   : {None}}
+               'filename'    : {None},
+               'page'   : ['disabled', 'display', 'access', 'all']}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
                             ('fig'         , 'png'),
@@ -172,7 +173,8 @@ class OutputMagic(OptionsMagic):
                             ('size'        , 100),
                             ('dpi'         , 72),
                             ('charwidth'   , 80),
-                            ('filename'    , None)])
+                            ('filename'    , None),
+                            ('page'   , 'disabled')])
 
     options = OrderedDict(defaults.items())
 
@@ -188,6 +190,11 @@ class OutputMagic(OptionsMagic):
             raise AssertionError("Registering format in list %s not in known formats %s"
                                  % (supported_formats, cls.optional_formats))
         cls.allowed['holomap'] = cls.inbuilt_formats + supported_formats
+
+    @classmethod
+    def page(cls, obj):
+        if cls.options['page'] != 'disabled':
+            page.page(InfoPrinter.info(obj, cls.options['page'], ansi=True))
 
 
     @classmethod
@@ -212,7 +219,10 @@ class OutputMagic(OptionsMagic):
                   % cls.defaults['charwidth'])
         fname =  ("filename    : The filename of the saved output, if any (default %r)"
                   % cls.defaults['filename'])
-        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname]
+        page =  ("page    : The information to page about the displayed objects (default %r)"
+                  % cls.defaults['page'])
+
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname, page]
         return '\n'.join(intro + descriptions)
 
 

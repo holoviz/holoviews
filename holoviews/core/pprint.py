@@ -7,9 +7,112 @@ concise.
 As a result, HoloViews does not attempt to build representations that
 can be evaluated with eval; such representations would typically be
 far too large to be practical. Instead, all HoloViews objects can be
-represented as tree structures, showing the types, values and labels
-where possible.
+represented as tree structures, showing how to access and index into
+your data.
+
+In addition, there are several different ways of
 """
+
+import re
+# IPython not required to import ParamPager
+from param.ipython import ParamPager
+
+
+class InfoPrinter(object):
+    """
+    Class for printing other information related to an object that is
+    of use to the user.
+    """
+    headings = ['\x1b[1;35m%s\x1b[0m', '\x1b[1;32m%s\x1b[0m']
+    ansi_escape = re.compile(r'\x1b[^m]*m')
+    ppager = ParamPager()
+    store = None
+
+    @classmethod
+    def get_parameter_info(cls, obj, ansi=False):
+        """
+        Get parameter information from the supplied class or object.
+        """
+        info = cls.ppager._param_docstrings(cls.ppager._get_param_info(obj))
+        return self.ansi_escape.sub('', info) if not ansi else info
+
+    @classmethod
+    def heading(cls, heading_text, char='=', level=0, ansi=False):
+        """
+        Turn the supplied heading text into a suitable heading with
+        optional underline and color.
+        """
+        heading_color = cls.headings[level] if ansi else '%s'
+        if char is None:
+            return heading_color % '%s\n' % heading_text
+        else:
+            heading_ul = char*len(heading_text)
+            return heading_color % '%s\n%s' % (heading_text, heading_ul)
+
+
+    @classmethod
+    def info(cls, obj, category, ansi=False):
+        """
+        Show information about an object in the given category. ANSI
+        color codes may be enabled or disabled.
+        """
+        categories = ['display', 'access', 'all']
+
+        if category not in categories:
+            raise Exception('Valid information categories: %s' % ', '.join(categories))
+
+        plot_class = cls.store.registry[type(obj)]
+
+        obj_info = cls.object_info(obj, ansi=ansi)
+        heading = '%s Information' % obj.__class__.__name__
+        heading_ul = '='*len(heading)
+        prefix = '%s\n%s\n%s\n\n%s\n\n' % (heading_ul, heading, heading_ul, obj_info)
+        if category == 'display':
+            info = cls.display_info(obj, plot_class, ansi)
+        elif category == 'access':
+            info = cls.access_info(obj, ansi)
+        elif category == 'all':
+            access_info = cls.access_info(obj, ansi)
+            info = "\n".join([access_info, '', cls.display_info(obj, plot_class, ansi)])
+        return prefix + info
+
+    @classmethod
+    def access_info(cls, obj, ansi=False):
+        return '\n'.join([cls.heading('Access Structure', ansi=ansi), '', repr(obj)])
+
+    @classmethod
+    def object_info(cls, obj, ansi=False):
+        (count, key_dims, val_dims)  = ('N/A', [], [])
+        if hasattr(obj, 'key_dimensions'):
+            key_dims = [d.name for d in obj.key_dimensions]
+        if hasattr(obj, 'value_dimensions'):
+            val_dims = [d.name for d in obj.value_dimensions]
+        if hasattr(obj, 'values'):
+            count = len(obj.values())
+
+        lines = ['Item count:       %s' % count,
+                 'Key dimensions:   %s' % (', '.join(key_dims) if key_dims else 'N/A'),
+                 'Value dimensions: %s' % (', '.join(val_dims) if val_dims else 'N/A')]
+        return '\n'.join(lines)
+
+
+    @classmethod
+    def display_info(cls, obj, plot_class, ansi=False):
+        style_heading = 'Style options:'
+        if plot_class.style_opts:
+            style_info = "\n(Consult matplotlib's documentation for more information.)"
+            style_keywords = '\t%s' % ', '.join(plot_class.style_opts)
+            style_msg = '%s\n%s' % (style_keywords, style_info)
+        else:
+            style_msg = '\t<No style options available>'
+
+        param_info = cls.get_parameter_info(plot_class, ansi=ansi)
+        param_heading = '\nPlot options [%s]:' % plot_class.name
+        return '\n'.join([ cls.heading('Display', ansi=ansi),  '',
+                           cls.heading(style_heading, char=None, level=1, ansi=ansi),
+                           style_msg,
+                           cls.heading(param_heading, char=None, level=1, ansi=ansi),
+                           param_info])
 
 
 class PrettyPrinter(object):
