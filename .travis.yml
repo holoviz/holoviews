@@ -11,7 +11,7 @@ notifications:
 install:
   - pip install coveralls
   - pip install git+git://github.com/ioam/param.git
-  - pip install jinja2 tornado pyzmq matplotlib==1.4.0
+  - pip install jinja2 tornado pyzmq matplotlib==1.4.3
   - pip install ipython==2
 
 before-script:
