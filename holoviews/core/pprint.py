@@ -29,12 +29,23 @@ class InfoPrinter(object):
     store = None
 
     @classmethod
-    def get_parameter_info(cls, obj, ansi=False):
+    def get_parameter_info(cls, obj, ansi=False,  show_values=True, max_col_len=40):
         """
         Get parameter information from the supplied class or object.
         """
-        info = cls.ppager._param_docstrings(cls.ppager._get_param_info(obj))
-        return self.ansi_escape.sub('', info) if not ansi else info
+        param_info = cls.ppager._get_param_info(obj)
+        value_table = cls.ppager._build_table(param_info,
+                                              cls.ppager.order,
+                                              max_col_len=max_col_len,
+                                              only_changed=False)
+        param_list = cls.ppager._param_docstrings(param_info)
+        if not show_values:
+            return self.ansi_escape.sub('', param_list) if not ansi else param_list
+        else:
+            heading = cls.heading('Plot option values:', char=None, level=1, ansi=ansi)
+            key = 'C/V= Constant/Variable, RO/RW = ReadOnly/ReadWrite, AN=Allow None'
+            info = '%s\n\n%s\n%s\n\n%s' % (param_list, heading, key, value_table)
+            return self.ansi_escape.sub('', info) if not ansi else info
 
     @classmethod
     def heading(cls, heading_text, char='=', level=0, ansi=False):
