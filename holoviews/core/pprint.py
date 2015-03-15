@@ -66,25 +66,45 @@ class InfoPrinter(object):
         obj_info = cls.object_info(obj, ansi=ansi)
         heading = '%s Information' % obj.__class__.__name__
         heading_ul = '='*len(heading)
-        prefix = '%s\n%s\n%s\n\n%s\n\n' % (heading_ul, heading, heading_ul, obj_info)
+        prefix = '%s\n%s\n%s\n\n%s\n' % (heading_ul, heading, heading_ul, obj_info)
         if category == 'options':
             info = cls.options_info(obj, plot_class, ansi)
         elif category == 'indexing':
             info = cls.indexing_info(obj, ansi)
         elif category == 'object':
-            info = cls.object_params(obj, ansi)
+            info = cls.object_params(obj, no_heading=True, ansi=ansi)
         elif category == 'all':
             info = "\n".join([cls.indexing_info(obj, ansi), '',
+                              cls.object_params(obj, no_heading=False, ansi=ansi), '',
                               cls.options_info(obj, plot_class, ansi)])
         return prefix + info
 
     @classmethod
     def indexing_info(cls, obj, ansi=False):
-        return '\n'.join([cls.heading('Indexing Structure', ansi=ansi), '', repr(obj)])
+        return '\n'.join(['', cls.heading('Indexing', ansi=ansi), '', repr(obj)])
+
+    @classmethod
+    def object_params(cls, obj, no_heading=False,  ansi=False):
+        obj_name = obj.__class__.__name__
+        element = not getattr(obj, '_deep_indexable', False)
+        url = ('https://ioam.github.io/holoviews/Tutorials/Elements.html#{obj}'
+               if element else 'https://ioam.github.io/holoviews/Tutorials/Containers.html#{obj}')
+        link = url.format(obj=obj_name)
+
+        msg = ("\nMore extensive reference may be accessed using help({obj})"
+               + " (or {obj}? in IPython)."
+               + '\n\nSee {link} for an example of how to use {obj}.\n')
+
+        param_info = cls.get_parameter_info(obj, ansi=ansi)
+        info = [ msg.format(obj=obj_name, link=link),
+                 cls.heading('%s Parameters' % obj_name,
+                             char='-', level=1, ansi=ansi),
+                 '', param_info]
+        return '\n'.join(([] if no_heading else [cls.heading('%s Object' % obj_name, ansi=ansi)]) + info)
 
     @classmethod
     def object_info(cls, obj, ansi=False):
-        (count, key_dims, val_dims)  = ('N/A', [], [])
+        (count, key_dims, val_dims)  = (1, [], [])
         if hasattr(obj, 'key_dimensions'):
             key_dims = [d.name for d in obj.key_dimensions]
         if hasattr(obj, 'value_dimensions'):
@@ -110,7 +130,7 @@ class InfoPrinter(object):
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi)
         param_heading = '\nPlot options [%s]:' % plot_class.name
-        return '\n'.join([ cls.heading('Options', ansi=ansi),  '',
+        return '\n'.join([ '', cls.heading('Options', ansi=ansi),  '',
                            cls.heading(style_heading, char=None, level=1, ansi=ansi),
                            style_msg,
                            cls.heading(param_heading, char=None, level=1, ansi=ansi),

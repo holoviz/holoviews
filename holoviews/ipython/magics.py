@@ -174,7 +174,7 @@ class OutputMagic(OptionsMagic):
                             ('dpi'         , 72),
                             ('charwidth'   , 80),
                             ('filename'    , None),
-                            ('info'   , 'disabled')])
+                            ('info'   ,    'none')])
 
     options = OrderedDict(defaults.items())
 
