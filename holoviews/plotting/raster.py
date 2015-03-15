@@ -21,8 +21,6 @@ class RasterPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
-    normalize_individually = param.Boolean(default=False)
-
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 

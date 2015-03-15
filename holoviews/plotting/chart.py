@@ -467,10 +467,6 @@ class PointPlot(ChartPlot):
     size_index = param.Integer(default=2, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    normalize_individually = param.Boolean(default=False, doc="""
-      Whether to normalize the colors used to represent magnitude for
-      each frame or across the map (when color is applicable).""")
-
     scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
       If values are supplied the area of the points is computed relative
       to the marker size. It is then multiplied by scaling_factor to the power
@@ -562,10 +558,6 @@ class VectorFieldPlot(ElementPlot):
        Which of the polar vector components is mapped to the color
        dimension (if any)""")
 
-    normalize_individually = param.Boolean(default=False, doc="""
-        Whether to normalize the colors used as an extra dimension
-        per frame or across the map (when color is applicable).""")
-
     arrow_heads = param.Boolean(default=True, doc="""
        Whether or not to draw arrow heads. If arrowheads are enabled,
        they may be customized with the 'headlength' and
@@ -582,32 +574,30 @@ class VectorFieldPlot(ElementPlot):
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
-        self._min_dist, self._max_magnitude = self._get_map_info(self.map)
+        self._min_dist = self._get_map_info(self.map)
 
 
     def _get_map_info(self, vmap):
         """
         Get the minimum sample distance and maximum magnitude
         """
-        if self.normalize_individually:
-            return None, None
-        dists, magnitudes  = [], []
+        dists = []
         for vfield in vmap:
             dists.append(self._get_min_dist(vfield))
-
-            if vfield.data.shape[1]>=4:
-                magnitudes.append(max(vfield.data[:, 3]))
-        return min(dists), max(magnitudes) if magnitudes else None
+        return min(dists)
 
 
-    def _get_info(self, vfield, input_scale):
+    def _get_info(self, vfield, input_scale, ranges):
         xs = vfield.data[:, 0] if len(vfield.data) else []
         ys = vfield.data[:, 1] if len(vfield.data) else []
         radians = vfield.data[:, 2] if len(vfield.data) else []
         magnitudes = vfield.data[:, 3] if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
         colors = magnitudes if self.color_dim == 'magnitude' else radians
 
-        max_magnitude = self._max_magnitude if self._max_magnitude else max(magnitudes)
+        if vfield.data.shape[1] >= 4:
+            magnitude_dim = vfield.get_dimension(3).name
+            _, max_magnitude = ranges[magnitude_dim]
+
         min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
 
         if self.normalize_lengths and max_magnitude != 0:
@@ -634,7 +624,9 @@ class VectorFieldPlot(ElementPlot):
         colorized = self.color_dim is not None
         kwargs = self.style[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
-        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale)
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = match_spec(vfield, ranges)
+        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale, ranges)
 
         args = (xs, ys, lens,  [0.0] * len(vfield.data))
         args = args + (colors,) if colorized else args
@@ -649,13 +641,13 @@ class VectorFieldPlot(ElementPlot):
                               **({k:v for k,v in kwargs.items() if k!='color'}
                                  if colorized else kwargs))
 
+
         if self.color_dim == 'angle':
             clims = vfield.get_dimension(2).range
             quiver.set_clim(clims)
         elif self.color_dim == 'magnitude':
             magnitude_dim = vfield.get_dimension(3).name
-            clims = vfield.range(magnitude_dim) if self.normalize_individually else self.map.range(magnitude_dim)
-            quiver.set_clim(clims)
+            quiver.set_clim(ranges[magnitude_dim])
 
         self.handles['axis'].add_collection(quiver)
         self.handles['quiver'] = quiver
@@ -668,8 +660,10 @@ class VectorFieldPlot(ElementPlot):
     def update_handles(self, axis, view, key, ranges=None):
         self.handles['quiver'].set_offsets(view.data[:,0:2])
         input_scale = self.handles['input_scale']
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = match_spec(view, ranges)
 
-        xs, ys, angles, lens, colors, scale = self._get_info(view, input_scale)
+        xs, ys, angles, lens, colors, scale = self._get_info(view, input_scale, ranges)
 
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['quiver']
@@ -678,8 +672,9 @@ class VectorFieldPlot(ElementPlot):
         if self.color_dim is not None:
             quiver.set_array(colors)
 
-        if self.normalize_individually and self.color_dim == 'magnitude':
-            quiver.set_clim(view.range)
+        if self.color_dim == 'magnitude':
+            magnitude_dim = view.get_dimension(3).name
+            quiver.set_clim(ranges[magnitude_dim])
 
 
 class BarPlot(ElementPlot):
