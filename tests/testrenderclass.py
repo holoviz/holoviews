@@ -7,6 +7,11 @@ from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
 
+# Standardize backend due to random inconsistencies
+from matplotlib import pyplot
+pyplot.switch_backend('agg')
+
+
 def digest_data(data):
     hashfn = sha256()
     hashfn.update(data)
