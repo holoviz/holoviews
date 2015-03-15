@@ -284,7 +284,11 @@ class Comparison(ComparisonInterface):
             raise cls.failureException("%s have different numbers of keys." % msg)
 
         if set(el1.keys()) != set(el2.keys()):
-            raise cls.failureException("%s have different sets of keys." % msg)
+            diff1 = [el for el in el1.keys() if el not in el2.keys()]
+            diff2 = [el for el in el2.keys() if el not in el1.keys()]
+            raise cls.failureException("%s have different sets of keys. " % msg
+                                       + "In first, not second %s. " % diff1
+                                       + "In second, not first: %s." % diff2)
 
         for element1, element2 in zip(el1, el2):
             cls.assertEqual(element1, element2)
