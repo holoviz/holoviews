@@ -14,7 +14,7 @@ axes.linewidth: 1.0
 axes.titlesize: medium
 
 figure.facecolor: ffffff
-figure.figsize: (6.0,4.0)
+figure.figsize: 6.0,4.0
 
 font.size:11
 
