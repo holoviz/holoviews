@@ -28,41 +28,40 @@ class MPLPlotRendererTest(ComparisonTestCase):
 
         self.renderer = Store.renderer.instance()
 
-    def test_simple_export_png1(self):
-        data = self.renderer(self.image1, fmt='png')[0]
-        self.assertEqual(digest_data(data),
-                         '11a5a9ca23200b4cb32914779fc25d701d7c2fe074e729dc05eaad46d160a192')
-
-    def test_simple_export_png2(self):
-        data = self.renderer(self.image2, fmt='png')[0]
-        self.assertEqual(digest_data(data),
-                         '0ea1a4fbc69999363560a0f70a03da22fc7bd8698808714975430c931be61865')
-
     def test_simple_export_gif(self):
         data = self.renderer(self.map1, fmt='gif')[0]
         self.assertEqual(digest_data(data),
-                         '4057abe74cb508f6666da39b0dfd117665270bd85f8fc3257b583e2d00527dc5')
-
-    def test_simple_export_png1_double_size(self):
-        data = self.renderer.instance(size=200)(self.image1, fmt='png')[0]
-        self.assertEqual(digest_data(data),
-                         '7f99e5dd9d1b946b95c85aef1bae62c1b293799fc192391f0e6445a36b2599b3')
+                         '913fdc6158d798a6553f5e63a65b45cc4ddbd55390f4ebb643114197f20e14f2')
 
     def test_simple_export_gif_double_size(self):
         data = self.renderer.instance(size=200)(self.map1, fmt='gif')[0]
         self.assertEqual(digest_data(data),
-                         '40f99783a29c3eeb172c8f035c810f32c7bf294a8cbcf4ea5c665e0640d76119')
+                         'aa8ba7b98fb20791a4564f8760753ebaba52ef2f0c9433fc3a7e4de9d8f51696')
 
     def test_simple_export_gif_half_fps(self):
         data = self.renderer.instance(fps=10)(self.map1, fmt='gif', )[0]
         self.assertEqual(digest_data(data),
-                         '461f94c6c9dc85c8cb594f949a091ead0602710fc1bf224a1bd7f664712bf5b0')
+                         '607fdc655296776af7e1930ae5aab1a875ba38ae20e9c2bc29da587e91fa7d17')
+
+    def test_simple_export_png1(self):
+        data = self.renderer(self.image1, fmt='png')[0]
+        self.assertEqual(digest_data(data),
+                         'bed67977226262bda7e45d6d9a0172fe6a098b3b89909b954942e945a7b4aa8a')
+
+    def test_simple_export_png1_double_size(self):
+        data = self.renderer.instance(size=200)(self.image1, fmt='png')[0]
+        self.assertEqual(digest_data(data),
+                         '1ff3d7dcaf7f59452a00dea0aa194f5c7f08a74a314bd727ad7c38f233ad2b7d')
+
+    def test_simple_export_png2(self):
+        data = self.renderer(self.image2, fmt='png')[0]
+        self.assertEqual(digest_data(data),
+                         '10b4eb2d044e7a4f5da4a66e1ca32f356f20ae15d19d20ec2354359439921ac3')
 
     def test_simple_export_png2_double_size(self):
         data = self.renderer.instance(size=200)(self.image2, fmt='png')[0]
         self.assertEqual(digest_data(data),
-                         'fdfde1c69bd11038529ce18e18862b45818dae742a6165f476ed8a0080adf138')
-
+                         '9a249e03f6da99afc1fee826acc1a96a76448d571bdebaf31a8d3483327bcee9')
 
 
 if __name__ == "__main__":
