@@ -161,7 +161,7 @@ class OutputMagic(OptionsMagic):
                'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf')),
                'filename'    : {None},
-               'info'   : ['none', 'object', 'indexing', 'options', 'all']}
+               'info'        : [True, False]}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
                             ('fig'         , 'png'),
@@ -174,7 +174,7 @@ class OutputMagic(OptionsMagic):
                             ('dpi'         , 72),
                             ('charwidth'   , 80),
                             ('filename'    , None),
-                            ('info'   ,    'none')])
+                            ('info'        , False)])
 
     options = OrderedDict(defaults.items())
 
@@ -193,8 +193,8 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def info(cls, obj):
-        if cls.options['info'] != 'none':
-            page.page(InfoPrinter.info(obj, cls.options['info'], ansi=True))
+        if cls.options['info']:
+            page.page(InfoPrinter.info(obj, ansi=True))
 
 
     @classmethod
