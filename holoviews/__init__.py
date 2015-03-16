@@ -30,6 +30,13 @@ except:
     archive = FileArchive()
 
 
+def info(obj, ansi=True):
+    """
+    Simple alias to Store.info method.
+    """
+    Store.info(obj, ansi=ansi)
+
+
 def help(obj, ansi=True):
     """
     Extended version of the built-in help that supports parameterized
