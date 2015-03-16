@@ -35,7 +35,7 @@ class InfoPrinter(object):
         """
         Get parameter information from the supplied class or object.
         """
-        if self.ppager is None: return ''
+        if cls.ppager is None: return ''
         param_info = cls.ppager._get_param_info(obj)
         value_table = cls.ppager._build_table(param_info,
                                               cls.ppager.order,
