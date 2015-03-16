@@ -42,9 +42,9 @@ def help(obj, visualization=False, ansi=True):
                            and  issubclass(obj,param.Parameterized))
 
     if parameterized_object or parameterized_class:
-        if Store.registry.get(type(obj), False):
+        if Store.registry.get(obj if parameterized_class else type(obj), False):
             if visualization is False:
-                print("\nTo view visualization options applicable to this object, use:\n\n"
+                print("\nTo view the visualization options applicable to this object or class, use:\n\n"
                       "   holoviews.help(obj, visualization=True)\n")
         info = ParamPager()(obj)
         if ansi is False:
