@@ -556,12 +556,12 @@ class SelectionWidget(ScrubberWidget):
 
     def get_key_data(self):
         # Generate key data
-        key_data = {}
+        key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
                    if isnumeric(v) else v for v in k]
             key_data[str(tuple(key))] = i
-        return key_data
+        return json.dumps(key_data)
 
 
     def __call__(self):
@@ -573,7 +573,7 @@ class SelectionWidget(ScrubberWidget):
         data = {'id': id, 'Nframes': len(self.mock_obj),
                 'Nwidget': self.mock_obj.ndims,
                 'frames': frames, 'dimensions': dimensions,
-                'key_data': repr(key_data), 'widgets': widgets,
+                'key_data': key_data, 'widgets': widgets,
                 'init_dim_vals': init_dim_vals,
                 'load_json': str(self.export_json).lower(),
                 'server': self.server_url,
