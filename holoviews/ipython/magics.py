@@ -193,7 +193,7 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def info(cls, obj):
-        if cls.options['info'] and not InfoPrinter._disable_help_output:
+        if cls.options['info'] and not Store._disable_help_output:
 
             page.page(InfoPrinter.info(obj, ansi=True))
 
