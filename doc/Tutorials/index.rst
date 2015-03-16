@@ -6,7 +6,7 @@ The HoloViews tutorials are the best way to learn what HoloViews can
 do and how to use it.  The web site has static copies of each
 tutorial, but it is much more effective to install HoloViews and try
 it out live for yourself, using the notebook files in
-``doc/Tutorials/*.ipynb`` in the HoloViews distribution.
+"doc/Tutorials/*.ipynb" in the HoloViews distribution.
 
 The explanatory tutorials are meant to be viewed and worked through in
 this order:
@@ -23,8 +23,8 @@ this order:
   animating.
 
 * `Options: <Options>`_
-  How to control the output from HoloViews, from either pure Python
-  or in IPython notebooks.
+  Listing and changing the many options that control how HoloViews
+  visualizes your objects, from Python or IPython.
 
 * `Transforming Data: <Transforming_Data>`_
   How to transform data within HoloViews containers, e.g. by
@@ -58,16 +58,18 @@ There are also more detailed tutorials with reference material:
   Complete example of the full range of hierarchical, multidimensional
   discrete and continuous data structures provided by HoloViews.
 
-For more detailed (but less readable!) information on any component described in the
+Help on any HoloViews component is available with
+"holoviews.help(obj)". Detailed plotting options for any component can
+be listed with "holoviews.Store.info(component)".  For more detailed
+(but less readable!) information on any component described in the
 tutorials, please refer to the `Reference Manual
-<../Reference_Manual>`_.  There is also online help for every object
-and option in the IPython Notebook; e.g. type ``Image?`` in any cell.
+<../Reference_Manual>`_.
 
 Finally, here are some examples of HoloViews being used:
 
 * `Interactive plots with mpld3: <http://philippjfr.com/blog/interactive-plots-with-holoviews-and-mpld3/>`_
-  Examples usages of the mpld3 rendering backend allowing you to
-  generate d3.js based plots with interactive widgets.
+  Example usage of the mpld3 rendering backend allowing you to
+  generate D3.js-based plots with interactive widgets.
 
 .. toctree::
    :maxdepth: 2
