@@ -178,6 +178,9 @@ class OutputMagic(OptionsMagic):
 
     options = OrderedDict(defaults.items())
 
+    # Used to disable info output in testing
+    _disable_info_output = False
+
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
@@ -193,8 +196,7 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def info(cls, obj):
-        if cls.options['info'] and not Store._disable_help_output:
-
+        if cls.options['info'] and not cls._disable_info_output:
             page.page(InfoPrinter.info(obj, ansi=True))
 
 
