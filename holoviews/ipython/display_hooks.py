@@ -111,6 +111,8 @@ def render(plot):
 def display_widgets(plot):
     "Display widgets applicable to the specified element"
     if OutputMagic.options['holomap'] == 'text': return None
+    if OutputMagic.options['fig'] == 'text':
+        return  "<center><b>Figure format must not be 'text' when using widgets.</b></center>"
     widget_mode = OutputMagic.options['widgets']
     widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
