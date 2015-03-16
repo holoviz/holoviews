@@ -38,7 +38,7 @@ you but we do recommend using the 'agg' backend:
 **Q: Help! I don't know how to index into my object!**
 
 **A:** If you are in the IPython Notebook you can use the cell magic
-``%%output info=True`` at the top of your code cell.
+``%%output fig='repr' holomap='repr'`` at the top of your code cell.
 
 In a regular Python session, you can look at ``print repr(obj)``. For
 an explanation of how this helps you index your object `see our
