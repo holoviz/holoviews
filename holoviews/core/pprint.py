@@ -60,7 +60,7 @@ class InfoPrinter(object):
             return heading_color % '%s\n' % heading_text
         else:
             heading_ul = char*len(heading_text)
-            return heading_color % '%s\n%s' % (heading_text, heading_ul)
+            return heading_color % '%s\n%s\n%s' % (heading_ul, heading_text, heading_ul)
 
 
     @classmethod
@@ -75,8 +75,7 @@ class InfoPrinter(object):
         heading = name if isclass else '{name}: {group} {label}'.format(name=name,
                                                                         group=obj.group,
                                                                         label=obj.label)
-        heading_ul = '='*len(heading)
-        prefix = '%s\n%s\n%s' % (heading_ul, heading, heading_ul)
+        prefix = heading
 
         lines = [prefix, cls.object_info(obj, name, ansi=ansi)]
 
@@ -118,15 +117,18 @@ class InfoPrinter(object):
             container_info = 'Container: %s'  % list(container_set)[0]
         elif len(container_set) > 1:
             container_info = 'Containers:\n   %s'  % '\n   '.join(sorted(container_set))
-        heading = cls.heading('Targets', ansi=ansi)
+        heading = cls.heading('Target Specifications', ansi=ansi, char="-")
 
-        msg = '\nThe following targets are available for customization:\n'
+        target_header = '\nTargets in this object available for customization:\n'
         if element_info and container_info:
             target_info = '%s\n\n%s' % (element_info, container_info)
         else:
             target_info = element_info if element_info else container_info
 
-        return '\n'.join([heading, msg, target_info])
+        target_footer = ("\nTo see the options info for one of these target specifications,"
+                         "\nwhich are of the form {type}[.{group}[.{label}]], do holoviews.info({type}).")
+
+        return '\n'.join([heading, target_header, target_info, target_footer])
 
 
     @classmethod
@@ -137,7 +139,7 @@ class InfoPrinter(object):
         link = url.format(obj=name)
 
         msg = ("\nOnline example: {link}"
-               + "\n\nAccess component help with holoviews.help({obj})"
+               + "\nHelp for the data object: holoviews.help({obj})"
                + " or holoviews.help(<{lower}_instance>)")
 
         return '\n'.join([msg.format(obj=name,
@@ -147,7 +149,6 @@ class InfoPrinter(object):
 
     @classmethod
     def options_info(cls, plot_class, ansi=False):
-        style_heading = 'Style options:'
         if plot_class.style_opts:
             style_info = "\n(Consult matplotlib's documentation for more information.)"
             style_keywords = '\t%s' % ', '.join(plot_class.style_opts)
@@ -156,9 +157,11 @@ class InfoPrinter(object):
             style_msg = '\t<No style options available>'
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi)
-        return '\n'.join([ cls.heading('Display Options', ansi=ansi), '',
-                           cls.heading(style_heading, char=None, level=1, ansi=ansi),
-                           style_msg, '', param_info])
+        return '\n'.join([ cls.heading('Style Options', ansi=ansi, char="-"), '',
+                           style_msg, '', 
+                           cls.heading('Plot Options', ansi=ansi, char="-"), '',
+                           "The plot options are the parameters of the plotting class:\n",
+                           param_info])
 
 
 class PrettyPrinter(object):
