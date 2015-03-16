@@ -77,10 +77,12 @@ magic, including tab-completion!
 
 **Q: How do I get a legend on my figure?**
 
-**A:** Overlaying is a very general operation designed to work across
-different Element type. In order to get a legend, use an the
-``NdOverlay`` class instead. An example of an ``NdOverlay`` in
-action may be `viewed here <https://ioam.github.io/holoviews/Tutorials/Containers.html#NdOverlay>`_
+**A:** Legends are generated in two different ways depending on the
+Overlay type you are using. When using ``*`` to generate an ``Overlay``
+the legends are generated from the label of the Elements.
+Alternatively you can construct a ``NdOverlay``, where the key_dimensions
+and values will become part of the legend. An example of an ``NdOverlay``
+in action may be `viewed here <https://ioam.github.io/holoviews/Tutorials/Containers.html#NdOverlay>`_.
 
 **Q: I wish to use special characters in my title but then attribute
 access becomes confusing.**
