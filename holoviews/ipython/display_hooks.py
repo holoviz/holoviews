@@ -54,7 +54,7 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
 
 
 def HTML_video(plot):
-    if OutputMagic.options['holomap'] == 'text': return None
+    if OutputMagic.options['holomap'] == 'repr': return None
     dpi = OutputMagic.options['dpi']
     anim = plot.anim(fps=OutputMagic.options['fps'])
     writers = animation.writers.avail
@@ -110,9 +110,9 @@ def render(plot):
 
 def display_widgets(plot):
     "Display widgets applicable to the specified element"
-    if OutputMagic.options['holomap'] == 'text': return None
-    if OutputMagic.options['fig'] == 'text':
-        return  "<center><b>Figure format must not be 'text' when using widgets.</b></center>"
+    if OutputMagic.options['holomap'] == 'repr': return None
+    if OutputMagic.options['fig'] == 'repr':
+        return  "<center><b>Figure format must not be 'repr' when using widgets.</b></center>"
     widget_mode = OutputMagic.options['widgets']
     widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
@@ -140,7 +140,7 @@ def display_widgets(plot):
 
 def display_figure(fig, message=None, max_width='100%'):
     "Display widgets applicable to the specified element"
-    if OutputMagic.options['fig'] == 'text': return None
+    if OutputMagic.options['fig'] == 'repr': return None
 
     figure_format = OutputMagic.options['fig']
     dpi = OutputMagic.options['dpi']
