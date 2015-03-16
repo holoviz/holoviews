@@ -23,6 +23,18 @@ and in this tutorial [LINK]. You may also use the
 ``holoviews.archive`` object directly (although it won't be able to
 automatically capture your data or export notebook snapshots).
 
+**Q: My output looks different from what is shown on the website**
+
+**A:** Matplotlib supports its own backends and they can have 
+inconsistent output. HoloViews will not switch the backend for
+you but we do recommend using the 'agg' backend:
+
+.. code:: python
+
+  from matplotlib import pyplot as plt
+  plt.switch_backend('agg')
+
+
 **Q: Help! I don't know how to index into my object!**
 
 **A:** If you are in the IPython Notebook you can use the cell magic
@@ -33,7 +45,6 @@ an explanation of how this helps you index your object `see our
 tutorial
 <https://ioam.github.io/holoviews/Tutorials/Composing_Data.html>`_.
 
-
 **Q: Help! How do I find out the options for customizing the
 appearance of my object?**
 
@@ -42,8 +53,9 @@ appearance of my object?**
 present the available style and plotting options.
 
 You can also view all this information available using
-``Store.info(obj)``. For more information on customizing the display
-of an object, see our `Options Tutorial [NO LINK]`.
+``holoviews.help(obj, visualization=True)``. For more
+information on customizing the display of an object,
+see our `Options Tutorial <https://ioam.github.io/holoviews/Tutorials/Options>`_.
 
 **Q: Why don't you let me pass** *matplotlib_option* **as a style
 through to matplotlib?**
@@ -73,7 +85,7 @@ action may be `viewed here <https://ioam.github.io/holoviews/Tutorials/Container
 **Q: I wish to use special characters in my title but then attribute
 access becomes confusing.**
 
-**A:** The title default of``"{label} {group}"`` is simply a default
+**A:** The title default of ``"{label} {group}"`` is simply a default
 that you can override. If you want to use a lot of special characters,
 it is recommended that you pick ``group`` and ``label`` strings
 without them and set the title
