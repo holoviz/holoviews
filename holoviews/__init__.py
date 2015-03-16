@@ -1,6 +1,8 @@
 from __future__ import print_function, absolute_import
 import os, sys, re, pydoc
 
+import numpy as np # pyflakes:ignore (API import)
+
 _cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(_cwd, '..', 'param'))
 
