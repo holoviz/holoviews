@@ -16,6 +16,8 @@ In addition, there are several different ways of
 import re
 # IPython not required to import ParamPager
 from param.ipython import ParamPager
+from holoviews.core.util import sanitize_identifier
+
 
 
 class InfoPrinter(object):
@@ -77,9 +79,54 @@ class InfoPrinter(object):
         prefix = '%s\n%s\n%s' % (heading_ul, heading, heading_ul)
 
         lines = [prefix, cls.object_info(obj, name, ansi=ansi)]
+
+        if not isclass:
+            lines += ['', cls.target_info(obj, ansi=ansi)]
         if plot_class is not None:
             lines += ['', cls.options_info(plot_class, ansi)]
         return "\n".join(lines)
+
+
+    @classmethod
+    def get_target(cls, obj):
+        objtype=obj.__class__.__name__
+        group = sanitize_identifier(obj.group)
+        label = ('.'+sanitize_identifier(obj.label) if obj.label else '')
+        target = '{objtype}.{group}{label}'.format(objtype=objtype,
+                                                   group=group,
+                                                   label=label)
+        return (None, target) if hasattr(obj, 'values') else (target, None)
+
+
+    @classmethod
+    def target_info(cls, obj, ansi=False):
+        if isinstance(obj, type): return '' # < TEST
+
+        targets = obj.traverse(cls.get_target)
+        elements, containers = zip(*targets)
+        element_set = set(el for el in elements if el is not None)
+        container_set = set(c for c in containers if c is not None)
+
+        element_info = None
+        if len(element_set) == 1:
+            element_info = 'Element: %s'  % list(element_set)[0]
+        elif len(element_set) > 1:
+            element_info = 'Elements:\n   %s'  % '\n   '.join(sorted(element_set))
+
+        container_info = None
+        if len(container_set) == 1:
+            container_info = 'Container: %s'  % list(container_set)[0]
+        elif len(container_set) > 1:
+            container_info = 'Containers:\n   %s'  % '\n   '.join(sorted(container_set))
+        heading = cls.heading('Targets', ansi=ansi)
+
+        msg = '\nThe following targets are available for customization:\n'
+        if element_info and container_info:
+            target_info = '%s\n\n%s' % (element_info, container_info)
+        else:
+            target_info = element_info if element_info else container_info
+
+        return '\n'.join([heading, msg, target_info])
 
 
     @classmethod
