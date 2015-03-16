@@ -67,32 +67,6 @@ class TestBoundingBox(unittest.TestCase):
         self.assert_(self.region.contains(self.xc, self.top))
 
 
-class TestBoundingEllipse(TestBoundingBox):
-    def setUp(self):
-        TestBoundingBox.setUp(self)
-        self.region = BoundingEllipse(points = ((self.left,self.bottom),(self.right,self.top)))
-    def test_left_top(self):
-        self.failIf( self.region.contains(self.left,self.top) )
-    def test_right_top(self):
-        self.failIf( self.region.contains(self.right,self.top) )
-    def test_left_bottom(self):
-        self.failIf( self.region.contains(self.left,self.bottom) )
-    def test_right_bottom(self):
-        self.failIf( self.region.contains(self.right,self.bottom) )
-
-
-class TestBoundingCircle(TestBoundingEllipse):
-    def setUp(self):
-        self.xcenter,self.ycenter = (0.2,-0.2)
-        self.radius = 0.3
-        self.left   =  self.xcenter - self.radius
-        self.right  =  self.xcenter + self.radius
-        self.bottom =  self.ycenter - self.radius
-        self.top    =  self.ycenter + self.radius
-
-        self.region = BoundingCircle(radius = self.radius, center = (self.xcenter,self.ycenter))
-        self.xc, self.yc = self.region.aarect().centroid()
-
 if __name__ == "__main__":
     import sys
     import nose

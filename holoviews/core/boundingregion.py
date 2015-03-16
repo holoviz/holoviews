@@ -219,20 +219,6 @@ class BoundingBox(BoundingRegion):
 
 
 
-class Cartesian2DPoint(param.Parameter):
-    """
-    Parameter whose value represents a point in a 2D Cartesian plane.
-    """
-    ### JABALERT: Should accept and respect a BoundingBox bounds.
-    def __set__(self, obj, val):
-        try: ## Test that it is a 2-tuple
-            (x, y) = val
-            super(Cartesian2DPoint, self).__set__(obj, val)
-        except:
-            raise ValueError("Parameter must be a 2D point (an x,y tuple).")
-
-
-
 class BoundingEllipse(BoundingBox):
     """
     Similar to BoundingBox, but the region is the ellipse
@@ -252,111 +238,6 @@ class BoundingEllipse(BoundingBox):
         yd = y - yc
 
         return (xd ** 2 / xr ** 2 + yd ** 2 / yr ** 2) <= 1
-
-
-
-# CEBALERT: various subclasses of BoundingRegion, such as
-# BoundingCircle, do not set _aarect during __init__. Should
-# BoundingRegion have an __init__ that includes setting _aarect?
-# Currently, BoundingRegion only sets _aarect when certain methods are
-# called, such as translate(). Other subclasses (such as BoundingBox)
-# set _aarect during __init__. I'm a bit confused about the point.
-# Anyway, the situation as it is now means BoundingCircle and other
-# such classes can't be pickled.
-
-class BoundingCircle(BoundingRegion):
-    """
-    A circular BoundingRegion.
-
-    Takes parameters center (a single 2D point (x,y)) and radius (a
-    scalar radius).
-    """
-
-    __slots__ = ['radius', 'center']
-
-    #radius = param.Number(0.5,bounds=(0.0,None))
-    #center = Cartesian2DPoint((0.0,0.0))
-
-    def __init__(self, center=(0.0, 0.0), radius=0.5, **args):
-        self.center = center
-        self.radius = radius
-        super(BoundingCircle, self).__init__(**args)
-
-
-    def contains(self, x, y):
-        xc, yc = self.center
-        xd = x - xc
-        yd = y - yc
-        return xd * xd + yd * yd <= self.radius * self.radius
-
-
-    def aarect(self):
-        xc, yc = self.center
-        r = self.radius
-        return AARectangle((xc - r, yc - r), (xc + r, yc + r))
-
-
-class Unbounded(BoundingRegion):
-    def contains(self, x, y):
-        return True
-
-
-    def scale(self, xs, ys):
-        pass
-
-
-    def translate(self, xoff, yoff):
-        pass
-
-
-    def rotate(self, theta):
-        pass
-
-
-    def aarect(self):
-        return AARectangle((-inf, -inf), (inf, inf))
-
-
-    def centroid(self):
-        return 0.0, 0.0
-
-
-
-### This class is valid only for BoundingBoxes, because it
-### only deals with the aarect(), ignoring arbitrarily shaped
-### BoundingRegions.  To be a real Intersection(BoundingRegion) class,
-### it would need to have a contains() function that computes a
-### logical AND of the contains() for each of the regions supplied.
-### Scale, rotate, and translate would also need to be applied to the
-### individual regions each time.
-### Could be simpler to write this as a function, because it just
-### ends up with a simple BoundingBox after construction.
-class BoundingBoxIntersection(BoundingBox):
-    """A BoundingBox initialized as the intersection of the supplied list of BoundingBoxes."""
-
-
-    def __init__(self, *boxes, **params):
-        """
-        Given a list of BoundingBoxes, computes a new BoundingBox that is
-        the intersection of all of the supplied boxes.
-        """
-        super(BoundingBoxIntersection, self).__init__(**params)
-
-        bounds = [r.aarect().lbrt() for r in boxes]
-        left = max([l for (l, b, r, t) in bounds])
-        bottom = max([b for (l, b, r, t) in bounds])
-        right = min([r for (l, b, r, t) in bounds])
-        top = min([t for (l, b, r, t) in bounds])
-
-        # JABALERT: Why is this one __aarect, and BoundingBox
-        # _aarect?  Probably should change this one to _aarect and
-        # eliminate aarect(self).
-        self.__aarect = AARectangle((left, bottom), (right, top))
-
-
-    def aarect(self):
-        return self.__aarect
-
 
 
 # JABALERT: Should probably remove top, bottom, etc. accessor functions,
