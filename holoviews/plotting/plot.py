@@ -712,8 +712,9 @@ class AdjointLayoutPlot(CompositePlot):
             return
         plt.draw()
         main_ax = self.subplots['main'].handles['axis']
+        checks = [self.view_positions, self.subaxes, self.subplots]
         bbox = main_ax.get_position()
-        if 'right' in self.view_positions:
+        if all('right' in check for check in checks):
             ax = self.subaxes['right']
             subplot = self.subplots['right']
             ax.set_position([bbox.x1 + bbox.width * self.border_size,
@@ -721,7 +722,7 @@ class AdjointLayoutPlot(CompositePlot):
                              bbox.width * self.subplot_size, bbox.height])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
-        if 'top' in self.view_positions:
+        if all('top' in check for check in checks):
             ax = self.subaxes['top']
             subplot = self.subplots['top']
             ax.set_position([bbox.x0,
@@ -1015,7 +1016,7 @@ class LayoutPlot(CompositePlot):
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         for subplot in self.subplots.values():
-                subplot(ranges=ranges)
+            subplot(ranges=ranges)
 
         return self._finalize_axis(None)
 
