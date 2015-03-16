@@ -77,13 +77,7 @@ class InfoPrinter(object):
         prefix = '%s\n%s\n%s' % (heading_ul, heading, heading_ul)
 
         lines = [prefix, cls.object_info(obj, name, ansi=ansi)]
-        lines += [] if isclass else [cls.indexing_info(obj, ansi)]
         return "\n".join(lines + ['', cls.options_info(plot_class, ansi)])
-
-
-    @classmethod
-    def indexing_info(cls, obj, ansi=False):
-        return '\n'.join(['', cls.heading('Indexing', ansi=ansi), '', repr(obj)])
 
 
     @classmethod
