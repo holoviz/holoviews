@@ -46,6 +46,9 @@ def help(obj, visualization=False, ansi=True):
             if visualization is False:
                 print("\nTo view the visualization options applicable to this object or class, use:\n\n"
                       "   holoviews.help(obj, visualization=True)\n")
+            else:
+                Store.info(obj, ansi=ansi)
+                return
         info = param.ipython.ParamPager()(obj)
         if ansi is False:
             info = ansi_escape.sub('', info)
