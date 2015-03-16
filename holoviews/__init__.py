@@ -1,11 +1,10 @@
 from __future__ import print_function, absolute_import
-import os, sys, pydoc, re
+import os, sys, re, pydoc
 
-cwd = os.path.abspath(os.path.split(__file__)[0])
-sys.path.insert(0, os.path.join(cwd, '..', 'param'))
+_cwd = os.path.abspath(os.path.split(__file__)[0])
+sys.path.insert(0, os.path.join(_cwd, '..', 'param'))
 
 import param
-from param.ipython import ParamPager
 
 __version__ = param.Version(release=(0,8,1), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
@@ -16,7 +15,6 @@ from .core.options import Options, Store, StoreOptions  # pyflakes:ignore (API i
 from .core.layout import *                              # pyflakes:ignore (API import)
 from .core.element import *                             # pyflakes:ignore (API import)
 from .core.overlay import *                             # pyflakes:ignore (API import)
-from .core.sheetcoords import *                         # pyflakes:ignore (API import)
 from .core.tree import *                                # pyflakes:ignore (API import)
 from .core.io import FileArchive
 
@@ -46,7 +44,7 @@ def help(obj, visualization=False, ansi=True):
             if visualization is False:
                 print("\nTo view the visualization options applicable to this object or class, use:\n\n"
                       "   holoviews.help(obj, visualization=True)\n")
-        info = ParamPager()(obj)
+        info = param.ipython.ParamPager()(obj)
         if ansi is False:
             info = ansi_escape.sub('', info)
         print(info)

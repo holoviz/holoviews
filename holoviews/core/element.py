@@ -4,7 +4,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement
 from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping, NdMapping
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
@@ -1061,3 +1061,6 @@ class GridSpace(UniformNdMapping):
                 map_frame.insert(0, dim.replace(' ','_'), coord)
             dframes.append(map_frame)
         return pandas.concat(dframes)
+
+__all__ = list(set([_k for _k, _v in locals().items()
+                    if isinstance(_v, type) and issubclass(_v, Dimensioned)]))

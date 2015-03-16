@@ -257,3 +257,6 @@ class AttrTree(object):
 
     def __repr__(self):
         return PrettyPrinter.pprint(self)
+
+
+__all__ = ['AttrTree']

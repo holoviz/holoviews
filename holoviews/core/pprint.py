@@ -272,3 +272,6 @@ class PrettyPrinter(object):
             _, additional_lines = cls.element_info(last, siblings, level, value_dims)
         lines += cls.shift(additional_lines, 1)
         return level, lines
+
+
+__all__ = ['PrettyPrinter', 'InfoPrinter']

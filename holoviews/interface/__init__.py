@@ -2,7 +2,7 @@ from ..core import Dimensioned, AttrTree
 
 try:
     import pandas
-    from .pandas import *      # pyflakes:ignore (API import)
+    from .pandas import DFrame # pyflakes:ignore (API import)
 except:
     pandas = None
 
