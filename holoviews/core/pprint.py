@@ -70,7 +70,9 @@ class InfoPrinter(object):
         isclass = isinstance(obj, type)
         name = obj.__name__ if isclass  else obj.__class__.__name__
         plot_class = cls.store.registry[obj if isclass else type(obj)]
-        heading = 'Information'
+        heading = name if isclass else '{name}: {group} {label}'.format(name=name,
+                                                                        group=obj.group,
+                                                                        label=obj.label)
         heading_ul = '='*len(heading)
         prefix = '%s\n%s\n%s' % (heading_ul, heading, heading_ul)
 
