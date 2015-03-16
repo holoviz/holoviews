@@ -4,9 +4,6 @@ python:
   - "3.3"
   - "3.4"
 
-env:
-  - PAGER="cat > /dev/null"
-
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
