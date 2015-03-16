@@ -165,7 +165,7 @@ class LabelledData(param.Parameterized):
     containing data. This class assumes that the core data contents
     will be held in the attribute called 'data'.
 
-    Used together, group and label is designed to allow a simple and
+    Used together, group and label are designed to allow a simple and
     flexible means of addressing data. For instance, if you are
     collecting the heights of people in different demographics, you
     could specify the values of your objects as 'Height' and then use
@@ -180,19 +180,24 @@ class LabelledData(param.Parameterized):
     LabelledData object is therefore given by the tuple
     (<type>, <group>, label>). This additional level of specification is
     used in the traverse method.
+
+    Any strings can be used for the group and label, but it can be
+    convenient to use a capitalized string of alphanumeric characters,
+    in which case the keys used for matching in the matches and
+    traverse method will correspond exactly to {type}.{group}.{label}.
+    Otherwise the strings provided will be sanitized to be valid
+    capitalized Python identifiers, which works fine but can sometimes
+    be confusing.
     """
 
     group = param.String(default='LabelledData', constant=True, doc="""
        A string describing the type of data contained by the object.
-       By default this should mirror the class name. The first letter
-       of a group name should always be capitalized.""")
+       By default this will typically mirror the class name.""")
 
     label = param.String(default='', constant=True, doc="""
        Optional label describing the data, typically reflecting where
-       or how it was measured. Together with the group parameter,
-       label should allow a specific measurement or dataset to be
-       referenced given the class type. Note that the first letter of
-       a label should always be capitalized.""")
+       or how it was measured. The label should allow a specific
+       measurement or dataset to be referenced for a given group..""")
 
     _deep_indexable = False
 
@@ -242,9 +247,12 @@ class LabelledData(param.Parameterized):
         A specification may be a class, a tuple or a string.
         Equivalent to isinstance if a class is supplied, otherwise
         matching occurs on type, group and label. These may be supplied
-        as a tuple of strings or as a single string of form
-        {type}.{group}.{label}. Matching may be done on type alone,
-        type and group or type, group, and label.
+        as a tuple of strings or as a single string of the
+        form "{type}.{group}.{label}". Matching may be done on {type}
+        alone, {type}.{group}, or {type}.{group}.{label}.  The strings
+        for the type, group, and label will each be sanitized before
+        the match, and so the sanitized versions of those values will
+        need to be provided if the match is to succeed.
         """
         if isinstance(spec, type): return isinstance(self, spec)
         specification = (self.__class__.__name__, self.group, self.label)
@@ -390,7 +398,7 @@ class Dimensioned(LabelledData):
     """
 
     constant_dimensions = param.Dict(default=OrderedDict(), doc="""
-       A dictionary of Dimension : value providing additional
+       A dictionary of Dimension:value pairs providing additional
        dimension information about the object.""")
 
     key_dimensions = param.List(bounds=(0, None), constant=True, doc="""
