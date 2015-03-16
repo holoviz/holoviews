@@ -16,13 +16,6 @@ except: animation = None
 
 Collector.interval_hook = RunProgress
 
-all_line_magics = sorted(['%params', '%opts', '%output', '%compositor'])
-all_cell_magics = sorted(['%%output', '%%opts', '%%labels'])
-message = """Welcome to the HoloViews IPython extension! (http://ioam.github.io/holoviews/)"""
-message += '\nAvailable magics: %s' % ', '.join(sorted(all_line_magics)
-                                                + sorted(all_cell_magics))
-
-
 def supported_formats(optional_formats):
     "Optional formats that are actually supported"
     supported = []
@@ -88,9 +81,7 @@ import numpy as np                        # pyflakes:ignore (namespace import)
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
 _loaded = False
-def load_ipython_extension(ip, verbose=True):
-
-    if verbose: print(message)
+def load_ipython_extension(ip):
 
     global _loaded
     if not _loaded:
