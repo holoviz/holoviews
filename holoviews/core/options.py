@@ -791,7 +791,9 @@ class Store(object):
             raise ValueError("Please supply a list of style option keyword strings")
 
         with param.logging_level('CRITICAL'):
-            cls.registry[component].style_opts += new_options
+            for option in new_options:
+                if option not in cls.registry[component].style_opts:
+                    cls.registry[component].style_opts.append(option)
         cls.register_plots()
 
 
