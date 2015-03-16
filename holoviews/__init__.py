@@ -30,14 +30,7 @@ except:
     archive = FileArchive()
 
 
-def info(obj, ansi=True):
-    """
-    Simple alias to Store.info method.
-    """
-    Store.info(obj, ansi=ansi)
-
-
-def help(obj, ansi=True):
+def help(obj, visualization=False, ansi=True):
     """
     Extended version of the built-in help that supports parameterized
     functions and objects. If ansi is set to False, all ANSI color
@@ -49,6 +42,10 @@ def help(obj, ansi=True):
                            and  issubclass(obj,param.Parameterized))
 
     if parameterized_object or parameterized_class:
+        if Store.registry.get(type(obj), False):
+            if visualization is False:
+                print("\nTo view visualization options applicable to this object, use:\n\n"
+                      "   holoviews.help(obj, visualization=True)\n")
         info = ParamPager()(obj)
         if ansi is False:
             info = ansi_escape.sub('', info)
