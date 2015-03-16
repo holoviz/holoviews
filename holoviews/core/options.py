@@ -693,6 +693,9 @@ class Store(object):
     load_counter_offset = None
     save_option_state = False
 
+    # Used to disable help output in testing
+    _disable_help_output = False
+
     @classmethod
     def load(cls, filename):
         """
@@ -711,8 +714,8 @@ class Store(object):
         Show information about a particular object or component class
         including the applicable style and plot options.
         """
-        print(InfoPrinter.info(obj, ansi=ansi))
-
+        if not cls._disable_help_output:
+            print(InfoPrinter.info(obj, ansi=ansi))
 
     @classmethod
     def loads(cls, obj, pickle_string, protocol=0):
