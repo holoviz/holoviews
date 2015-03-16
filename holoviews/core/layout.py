@@ -99,12 +99,26 @@ class AdjointLayout(Dimensioned):
     def __getitem__(self, key):
         if key is ():
             return self
+
+        data_slice = None
+        if isinstance(key, tuple):
+            data_slice = key[1:]
+            key = key[0]
+
         if isinstance(key, int) and key <= len(self):
-            if key == 0:  return self.main
-            if key == 1:  return self.right
-            if key == 2:  return self.top
+            if key == 0:  data = self.main
+            if key == 1:  data = self.right
+            if key == 2:  data = self.top
+            if data_slice: data = data[data_slice]
+            return data
         elif isinstance(key, str) and key in self.data:
-            return self.data[key]
+            if data_slice is None:
+                return self.data[key]
+            else:
+                self.data[key][data_slice]
+        elif isinstance(key, slice) and key.start is None and key.stop is None:
+            return self if data_slice is None else self.clone([el[data_slice]
+                                                               for el in self])
         else:
             raise KeyError("Key {0} not found in AdjointLayout.".format(key))
 
