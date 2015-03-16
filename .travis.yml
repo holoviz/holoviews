@@ -5,7 +5,7 @@ python:
   - "3.4"
 
 env:
-  - PAGER=echo > /dev/null
+  - PAGER="cat > /dev/null"
 
 notifications:
   email:
