@@ -271,7 +271,7 @@ Store.options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 Store.options.RGBA = Options('style', interpolation='nearest')
 Store.options.RGB = Options('style', interpolation='nearest')
 # Composites
-Store.options.Layout = Options('plot', labels='{Alpha}')
+Store.options.Layout = Options('plot', sublabel_format='{Alpha}')
 Store.options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
                                               'axes.titlesize': 'small'})
 # Annotations

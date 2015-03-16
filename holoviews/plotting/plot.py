@@ -51,9 +51,15 @@ class Plot(param.Parameterized):
         The hook is passed the full set of plot handles and the
         displayed object.""")
 
-    labels = param.String(default=None, allow_None=True, doc="""
+    sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
         including {Alpha}, {alpha}, {numeric} and {roman}.""")
+
+    sublabel_position = param.NumericTuple(default=(-0.35, 0.85), doc="""
+         Position relative to the plot for placing the optional subfigure label.""")
+
+    sublabel_size = param.Number(default=18, doc="""
+         Size of optional subfigure label.""")
 
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
@@ -251,22 +257,23 @@ class Plot(param.Parameterized):
 
 
     def _subplot_label(self, axis):
-        if self.labels and not self.adjoined and self.layout_num > 0:
+        layout_num = self.layout_num if self.subplot else 1
+        if self.sublabel_format and not self.adjoined and layout_num > 0:
             from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
             labels = {}
-            if '{Alpha}' in self.labels:
-                labels['Alpha'] = str(chr(self.layout_num+64))
-            elif '{alpha}' in self.labels:
-                labels['alpha'] = str(chr(self.layout_num+96))
-            elif '{numeric}' in self.labels:
+            if '{Alpha}' in self.sublabel_format:
+                labels['Alpha'] = str(chr(layout_num+64))
+            elif '{alpha}' in self.sublabel_format:
+                labels['alpha'] = str(chr(layout_num+96))
+            elif '{numeric}' in self.sublabel_format:
                 labels['numeric'] = self.layout_num
-            elif '{Roman}' in self.labels:
-                labels['Roman'] = int_to_roman(self.layout_num)
-            elif '{roman}' in self.labels:
-                labels['roman'] = int_to_roman(self.layout_num).lower()
-            at = AnchoredText(self.labels.format(**labels), loc=3,
-                              bbox_to_anchor=self.label_position, frameon=False,
-                              prop=dict(size=self.label_size, weight='bold'),
+            elif '{Roman}' in self.sublabel_format:
+                labels['Roman'] = int_to_roman(layout_num)
+            elif '{roman}' in self.sublabel_format:
+                labels['roman'] = int_to_roman(layout_num).lower()
+            at = AnchoredText(self.sublabel_format.format(**labels), loc=3,
+                              bbox_to_anchor=self.sublabel_position, frameon=False,
+                              prop=dict(size=self.sublabel_size, weight='bold'),
                               bbox_transform=axis.transAxes)
             at.patch.set_visible(False)
             axis.add_artist(at)
@@ -981,7 +988,10 @@ class LayoutPlot(CompositePlot):
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, layout_num=num,
-                                      labels=self.labels, **plotopts)
+                                      sublabel_format=self.sublabel_format,
+                                      sublabel_size=self.sublabel_size,
+                                      sublabel_position=self.sublabel_position,
+                                      **plotopts)
             if issubclass(plot_type, CompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
             else:
