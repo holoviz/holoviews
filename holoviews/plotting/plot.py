@@ -516,7 +516,6 @@ class GridPlot(CompositePlot):
         if self.show_title:
             self.handles['title'] = axis.set_title(self._format_title(key))
 
-        self._subplot_label(axis)
         self._readjust_axes(axis)
         self.drawn = True
         if self.subplot: return self.handles['axis']
@@ -956,15 +955,20 @@ class LayoutPlot(CompositePlot):
 
             override_opts = {}
             if pos == 'main':
-                override_opts['aspect'] = 'square'
+                own_params = self.get_param_values(onlychanged=True)
+                sublabel_opts = {k: v for k, v in own_params
+                                 if 'sublabel_' in k}
+                override_opts = dict(aspect='square')
             elif pos == 'right':
-                right_opts = dict(orientation='vertical', show_xaxis=None, show_yaxis='left')
+                right_opts = dict(orientation='vertical',
+                                  show_xaxis=None, show_yaxis='left')
                 override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
                 top_opts = dict(show_xaxis='bottom', show_yaxis=None)
                 override_opts = dict(subplot_opts, **top_opts)
 
             # Override the plotopts as required
+            plotopts = dict(sublabel_opts, **plotopts)
             plotopts.update(override_opts, figure=self.handles['fig'])
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             if isinstance(view, GridSpace):
@@ -988,9 +992,6 @@ class LayoutPlot(CompositePlot):
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, layout_num=num,
-                                      sublabel_format=self.sublabel_format,
-                                      sublabel_size=self.sublabel_size,
-                                      sublabel_position=self.sublabel_position,
                                       **plotopts)
             if issubclass(plot_type, CompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
