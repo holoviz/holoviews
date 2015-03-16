@@ -67,39 +67,41 @@ class InfoPrinter(object):
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
         """
-        plot_class = cls.store.registry[type(obj)]
+        isclass = isinstance(obj, type)
+        name = obj.__name__ if isclass  else obj.__class__.__name__
+        plot_class = cls.store.registry[obj if isclass else type(obj)]
         heading = 'Information'
         heading_ul = '='*len(heading)
         prefix = '%s\n%s\n%s' % (heading_ul, heading, heading_ul)
-        return "\n".join([prefix,
-                          cls.object_info(obj, ansi=ansi),
-                          cls.indexing_info(obj, ansi), '',
-                          cls.options_info(obj, plot_class, ansi)])
+
+        lines = [prefix, cls.object_info(obj, name, ansi=ansi)]
+        lines += [] if isclass else [cls.indexing_info(obj, ansi)]
+        return "\n".join(lines + ['', cls.options_info(plot_class, ansi)])
 
 
     @classmethod
     def indexing_info(cls, obj, ansi=False):
         return '\n'.join(['', cls.heading('Indexing', ansi=ansi), '', repr(obj)])
 
+
     @classmethod
-    def object_info(cls, obj, ansi=False):
-        obj_name = obj.__class__.__name__
+    def object_info(cls, obj, name, ansi=False):
         element = not getattr(obj, '_deep_indexable', False)
         url = ('https://ioam.github.io/holoviews/Tutorials/Elements.html#{obj}'
                if element else 'https://ioam.github.io/holoviews/Tutorials/Containers.html#{obj}')
-        link = url.format(obj=obj_name)
+        link = url.format(obj=name)
 
         msg = ("\nOnline example: {link}"
                + "\n\nAccess component help with holoviews.help({obj})"
                + " or holoviews.help(<{lower}_instance>)")
 
-        return '\n'.join([msg.format(obj=obj_name,
-                                     lower=obj_name.lower(),
+        return '\n'.join([msg.format(obj=name,
+                                     lower=name.lower(),
                                      link=link)])
 
 
     @classmethod
-    def options_info(cls, obj, plot_class, ansi=False):
+    def options_info(cls, plot_class, ansi=False):
         style_heading = 'Style options:'
         if plot_class.style_opts:
             style_info = "\n(Consult matplotlib's documentation for more information.)"

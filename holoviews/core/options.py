@@ -708,8 +708,8 @@ class Store(object):
     @classmethod
     def info(cls, obj, ansi=True):
         """
-        Show information about a particular object including the
-        applicable style and plot options.
+        Show information about a particular object or component class
+        including the applicable style and plot options.
         """
         print(InfoPrinter.info(obj, ansi=ansi))
 
