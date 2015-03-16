@@ -763,7 +763,7 @@ class BarPlot(ElementPlot):
 
 
     def get_extents(self, element, ranges):
-        return 0, len(self.values['group']), np.NaN, np.NaN
+        return 0, 0, len(self.values['group']), np.NaN
 
 
     def __call__(self, ranges=None):
