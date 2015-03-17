@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import sys, os
 from distutils.core import setup
 
 setup_args = {}
@@ -30,9 +30,9 @@ for package_list in packages_to_state:
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.0",
+    version="1.0.0",
     description='Composable, declarative data structures for building complex visualizations easily.',
-    long_description=open('README.rst').read(),
+    long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
     author= "Jean-Luc Stevens and Philipp Rudiger",
     author_email= "developers@topographica.org",
     maintainer= "IOAM",
@@ -64,9 +64,31 @@ setup_args.update(dict(
 ))
 
 
+def check_pseudo_package(path):
+    """
+    Verifies that a fake subpackage path for assets (notebooks, svgs,
+    pngs etc) both exists and is populated with files.
+    """
+    if not os.path.isdir(path):
+        raise Exception("Please make sure pseudo-package %s exists." % path)
+    else:
+        assets = os.listdir(path)
+        if len(assets) == 0:
+            raise Exception("Please make sure pseudo-package %s is populated." % path)
+
+
 if __name__=="__main__":
 
-    if 'upload' in sys.argv:
+    if ('upload' in sys.argv) or ('sdist' in sys.argv):
+        # Make sure to create these directories and populate them before upload
+        setup_args['packages'] += ["holoviews.assets", 'holoviews.notebooks']
+
+        setup_args['package_data']['holoviews.assets'] = ['*.png', '*.rst']
+        setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
+
+        check_pseudo_package(os.path.join('.', 'holoviews', 'assets'))
+        check_pseudo_package(os.path.join('.', 'holoviews', 'notebooks'))
+
         import holoviews
         holoviews.__version__.verify(setup_args['version'])
 
