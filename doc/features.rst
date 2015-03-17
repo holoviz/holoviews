@@ -18,8 +18,7 @@ ________
 * Supports a truly reproducible workflow by minimizing the code needed for analysis and visualization.
 * Already used in a variety of research projects, from conception to final publication.
 * All HoloViews objects can be pickled and unpickled.
-* Provides 
-`comparison utilities <https://ioam.github.io/holoviews/Reference_Manual/holoviews.element.html#holoviews.element.comparison.Comparison>`_ for testing, so you know when your results have changed and why.
+* Provides `comparison utilities <https://ioam.github.io/holoviews/Reference_Manual/holoviews.element.html#holoviews.element.comparison.Comparison>`_ for testing, so you know when your results have changed and why.
 * Core data structures only depend on the numpy and param libraries.
 * Provides `export and archival facilities <Tutorials/Exporting>`_ for keeping track of your work throughout the lifetime of a project.
 
