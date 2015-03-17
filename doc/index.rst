@@ -61,19 +61,32 @@ installed.  HoloViews is designed to work well with `IPython Notebook
 <http://ipython.org/notebook/>`_ 2 and 3, although it can also be used
 separately. 
 
-Param, Matplotlib, and IPython Notebook can be installed using your
-operating system's package manager, or by using pip::
+Matplotlib and IPython Notebook can be installed using your operating
+system's package manager, using a scientific Python distribution like
+`Anaconda <http:>`_ (particularly useful on Windows), or by using pip::
 
-  pip install matplotlib 'ipython[notebook]' param
+  pip install matplotlib 'ipython[notebook]'
 
-You can also obtain the latest release version of HoloViews using pip::
+You can obtain the latest public release of HoloViews using pip::
 
   pip install holoviews
 
-To obtain the latest development version, you can clone it from our
-git repository::
+Or you can get the latest development version by cloning our git
+repository::
 
+  git clone git://github.com/ioam/param.git
   git clone git://github.com/ioam/holoviews.git
+
+Then launch IPython Notebook::
+
+  ipython notebook
+
+Now you can download the
+`tutorial notebooks <Tutorials/notebook-1.0.0.zip>`_ ,
+unzip them somewhere IPython Notebook can find them, and then open the
+Homepage.ipynb tutorial or any of the others.  Enjoy exploring your
+data!
+
 
 
 |BuildStatus|_
