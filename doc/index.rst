@@ -63,7 +63,8 @@ separately.
 
 Matplotlib and IPython Notebook can be installed using your operating
 system's package manager, using a scientific Python distribution like
-`Anaconda <http:>`_ (particularly useful on Windows), or by using pip::
+`Anaconda <http://continuum.io/downloads>`_ (particularly useful on
+systems without pip, such as Windows or Mac), or by using pip::
 
   pip install matplotlib 'ipython[notebook]'
 
@@ -84,8 +85,8 @@ Then launch IPython Notebook::
 Now you can download the
 `tutorial notebooks <Tutorials/notebook-1.0.0.zip>`_ ,
 unzip them somewhere IPython Notebook can find them, and then open the
-Homepage.ipynb tutorial or any of the others.  Enjoy exploring your
-data!
+Homepage.ipynb tutorial or any of the others in the Notebook.  Enjoy
+exploring your data!
 
 
 
