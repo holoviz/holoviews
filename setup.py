@@ -30,7 +30,7 @@ for package_list in packages_to_state:
 
 setup_args.update(dict(
     name='holoviews',
-    version="0.7",
+    version="1.0",
     description='Composable, declarative data structures for building complex visualizations in Python.',
     long_description=open('README.rst').read(),
     author= "Jean-Luc Stevens and Philipp Rudiger",
