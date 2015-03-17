@@ -5,9 +5,9 @@ from distutils.core import setup
 
 setup_args = {}
 
-required = {'param':">=0.0.1",
+required = {'param':">=1.3.1",
             'numpy':">=1.0",
-            'matplotlib':">=1.1"}
+            'matplotlib':">=1.3"}
 
 packages_to_install = [required]
 packages_to_state = [required]
@@ -31,7 +31,7 @@ for package_list in packages_to_state:
 setup_args.update(dict(
     name='holoviews',
     version="1.0",
-    description='Composable, declarative data structures for building complex visualizations in Python.',
+    description='Composable, declarative data structures for building complex visualizations easily.',
     long_description=open('README.rst').read(),
     author= "Jean-Luc Stevens and Philipp Rudiger",
     author_email= "developers@topographica.org",
@@ -51,7 +51,7 @@ setup_args.update(dict(
                   'holoviews.ipython': ['*.jinja']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
-        "Development Status :: 4 - Beta",
+        "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.3",
         "Programming Language :: Python :: 3.4",
