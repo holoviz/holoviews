@@ -285,35 +285,40 @@ class DFrame(DataFrameView):
         else:
             groups = NdMapping({0: self})
             mdims = ['Default']
+        create_kwargs = dict(key_dimensions=key_dims,
+                             value_dimensions=val_dims,
+                             view_type=view_type)
+        create_kwargs.update(kwargs)
 
         # Convert each element in the HoloMap
         hmap = HoloMap(key_dimensions=mdims)
         for k, v in groups.items():
             if reduce_dims:
                 v = v.aggregate(reduce_dims, function=reduce_fn)
-                v_indexes = [v.data.index.names.index(d) for d in kdims]
+                v_indexes = [v.data.index.names.index(d) for d in kdims
+                             if d in v.data.index.names]
                 v = v.apply('reset_index', level=v_indexes)
 
             vdata = v.data.filter(el_dims)
             vdata = vdata.dropna() if dropna else vdata
             if issubclass(view_type, Chart):
                 data = [np.array(vdata[d]) for d in el_dims]
-                hmap[k] = self._create_chart(data, key_dims, val_dims,
-                                             view_type, **kwargs)
+                hmap[k] = self._create_chart(data, **create_kwargs)
             else:
                 data = [np.array(vdata[d]) for d in el_dims]
-                hmap[k] = self._create_table(data, key_dims, val_dims,
-                                             view_type, **kwargs)
+                hmap[k] = self._create_table(data, **create_kwargs)
         return hmap if mdims != ['Default'] else hmap.last
 
 
-    def _create_chart(self, data, key_dimensions, value_dimensions, view_type, **kwargs):
+    def _create_chart(self, data, key_dimensions=None, value_dimensions=None,
+                      view_type=None, **kwargs):
         inherited = dict(key_dimensions=key_dimensions,
                          value_dimensions=value_dimensions, label=self.label)
         return view_type(np.vstack(data).T, **dict(inherited, **kwargs))
 
 
-    def _create_table(self, data, key_dimensions, value_dimensions, view_type, **kwargs):
+    def _create_table(self, data, key_dimensions=None, value_dimensions=None,
+                      view_type=None, **kwargs):
         ndims = len(key_dimensions)
         key_data, value_data = data[:ndims], data[ndims:]
         keys = zip(*key_data)
