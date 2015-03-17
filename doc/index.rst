@@ -41,7 +41,7 @@ ____________
   import numpy as np
 
 
-.. notebook:: holoviews index.ipynb
+.. notebook:: holoviews Homepage.ipynb
 
 ------------
 
