@@ -83,8 +83,8 @@ Finally, here are some real-world examples of HoloViews being used:
   Example usage of the mpld3 rendering backend allowing you to
   generate D3.js-based plots with interactive widgets.
 
-* HoloViews for machine learning: Kaggle competition for EEG
-  classification
+* `HoloViews for machine learning: Kaggle competition for EEG
+  classification <http://philippjfr.com/blog/kaggle-bci-challenge-visualizing-eeg-data-in-holoviews/>`_
 
 * `ImaGen library <http:https://github.com/ioam/imagen>`_:  Generates
   HoloViews Image and RGB patterns from mathematical functions.
