@@ -86,7 +86,7 @@ Finally, here are some real-world examples of HoloViews being used:
 * `HoloViews for machine learning: Kaggle competition for EEG
   classification <http://philippjfr.com/blog/kaggle-bci-challenge-visualizing-eeg-data-in-holoviews/>`_
 
-* `ImaGen library <http:https://github.com/ioam/imagen>`_:  Generates
+* `ImaGen library <https://github.com/ioam/imagen>`_:  Generates
   HoloViews Image and RGB patterns from mathematical functions.
 
 * Neural simulator tutorials using HoloViews: `Topographica <http://topographica.org/Tutorials/>`_.
