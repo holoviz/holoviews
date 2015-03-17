@@ -66,17 +66,14 @@ operating system's package manager, or by using pip::
 
   pip install matplotlib 'ipython[notebook]' param
 
-You can then obtain the latest version of HoloViews by cloning the git
-repository::
+You can also obtain the latest release version of HoloViews using pip::
+
+  pip install holoviews
+
+To obtain the latest development version, you can clone it from our
+git repository::
 
   git clone git://github.com/ioam/holoviews.git
-
-Alternatively, you may install the development version using pip::
-
-  pip install https://github.com/ioam/holoviews/archive/v0.8.2.zip
-
-We plan to have a full PyPI release of HoloViews by 16 March 2015.
-
 
 
 |BuildStatus|_
