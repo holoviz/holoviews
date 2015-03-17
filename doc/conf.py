@@ -32,6 +32,7 @@ html_theme = "sphinx_rtd_theme"
 
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
+html_logo = '_static/holoviews_logo.png'
 
 # -------------------------------------------------------------------------
 # -- The remaining items are less likely to need changing for a new project

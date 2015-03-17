@@ -93,6 +93,11 @@
     {# SIDE NAV, TOGGLES ON MOBILE #}
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-nav-search">
+
+        {% if logo %}
+          <img src="{{ pathto('_static/' + logo, 1) }}" class="logo" />
+        {% endif %}
+
         <a href="{{ pathto(master_doc) }}" class="fa"> {{ project }}</a>
         {% include "searchbox.html" %}
       </div>
