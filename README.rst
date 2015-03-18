@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_
+|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_ |PyVersions|_ 
 
 holoviews
 =========
@@ -72,6 +72,15 @@ Features
 * Immediately visualize pandas data as any HoloViews object.
 * Seamlessly combine and animate your Seaborn plots in HoloViews rich, compositional data-structures.
    
+
+.. |PyPI| image:: https://pypip.in/version/holoviews/badge.svg?style=flat
+.. _PyPI: https://pypi.python.org/pypi/holoviews/1.0.0
+
+.. |PyVersions| image:: https://pypip.in/py_versions/holoviews/badge.svg?style=flat
+.. _PyVersions: https://pypi.python.org/pypi/holoviews/1.0.0
+
+.. |License| image:: https://pypip.in/license/holoviews/badge.svg?style=flat
+.. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
 
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
