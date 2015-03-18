@@ -81,6 +81,12 @@ element:
 Now you can freely use ``'filternorm'`` in the ``%opts`` line/cell
 magic, including tab-completion!
 
+**Q: I still can't tweak my figure in exactly the way I want. What can I do?**
+
+HoloViews is designed to be as flexible as possible and should always
+support all the common visualization options. We intend to add a new 
+tutorial soon to explain how you can continue to 
+`tweak and extend HoloViews <https://github.com/ioam/holoviews/issues/19>`_.
 
 **Q: How do I get a legend on my figure?**
 
@@ -100,7 +106,7 @@ that you can override. If you want to use a lot of special characters
 in your titles, you can pick simple ``group`` and ``label`` strings
 that let you refer to the object easily in the code, and then you can
 set the title directly, using the plot option
-``title_format=""``.
+``title_format="my new title"``.
 
 
 **Q: Where have my custom styles gone after unpickling my object?**
