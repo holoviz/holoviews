@@ -7,8 +7,9 @@ holoviews
 visualizations easily.**
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
-`Matplotlib <http://matplotlib.org/>`_, and is designed to work
-with `IPython Notebook <http://ipython.org/notebook/>`_.  
+`Numpy <http://www.numpy.org/>`_ and is designed to work 
+together with `Matplotlib <http://matplotlib.org/>`_ and 
+`IPython Notebook <http://ipython.org/notebook/>`_.  
 
 Clone holoviews directly from GitHub with::
 
