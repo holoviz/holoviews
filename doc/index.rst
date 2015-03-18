@@ -1,4 +1,4 @@
-.. holoviews documentation master file
+.. HoloViews documentation master file
 
 .. raw:: html
   :file: latest_news.html
@@ -26,20 +26,11 @@ ____________
                    divtime[div_now] = i
                    z[diverge] = 2
            return divtime
-   # Wait a long while..then normalize
+   # Wait a long time..., then normalize
    arr = mandelbrot(4000,4000, maxit=2000)[400:800, 2500:2900]
 
 
 ..
-  # Code needed to run the index.ipynb tutorial (add as two new cells at the top)
-  
-  cd ..
-
-  import holoviews
-  %load_ext holoviews.ipython
-  %output holomap='widgets'
-  import numpy as np
-
 
 .. notebook:: holoviews Homepage.ipynb
 
@@ -57,18 +48,19 @@ workflow or as part of another project.
 
 For plotting, HoloViews uses `Matplotlib <http://http://matplotlib.org/>`_,
 which most scientists and engineers using Python will already have
-installed.  HoloViews is designed to work well with `IPython Notebook
-<http://ipython.org/notebook/>`_ 2 and 3, although it can also be used
-separately. 
+installed.  HoloViews is pure Python, but it also provides optional
+extensions enabled with ``%load_ext`` above that make it integrate
+well with `IPython Notebook <http://ipython.org/notebook/>`_ 2 and 3.
 
 Matplotlib and IPython Notebook can be installed using your operating
 system's package manager, using a scientific Python distribution like
 `Anaconda <http://continuum.io/downloads>`_ (particularly useful on
-systems without pip, such as Windows or Mac), or by using pip::
+systems shipped without pip, such as Windows or Mac), or by using pip::
 
   pip install matplotlib 'ipython[notebook]'
 
-You can obtain the latest public release of HoloViews using pip::
+You can then obtain the latest
+public release of HoloViews using pip::
 
   pip install holoviews
 
@@ -83,7 +75,7 @@ Then launch IPython Notebook::
   ipython notebook
 
 Now you can download the
-`tutorial notebooks <Tutorials/notebook-1.0.0.zip>`_ ,
+`tutorial notebooks <Tutorials/notebook-1.0.0.zip>`_,
 unzip them somewhere IPython Notebook can find them, and then open the
 Homepage.ipynb tutorial or any of the others in the Notebook.  Enjoy
 exploring your data!
@@ -106,8 +98,9 @@ HoloViews is completely `open source
 freely for both commercial and non-commercial use.  HoloViews is 
 designed to be easily extensible, and contributions from
 users are welcome and encouraged.  In particular, HoloViews components
-can be combined in an infinite number of ways, and so it is impossible
-for us to test all conceivable combinations.  Thus we welcome `bug
+can be combined in an infinite number of ways, and although the
+tutorials are tested continuously, it is impossible
+for us to test all other conceivable combinations.  Thus we welcome `bug
 reports and feature requests <https://github.com/ioam/holoviews/issues>`_, 
 particularly if they come with test cases showing how to reproduce the bugs and 
 `pull requests <http://yangsu.github.io/pull-request-tutorial/>`_
