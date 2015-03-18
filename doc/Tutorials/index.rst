@@ -6,7 +6,7 @@ The HoloViews tutorials are the best way to learn what HoloViews can
 do and how to use it.  The web site has static copies of each
 tutorial, but it is much more effective to install HoloViews and try
 it out live for yourself, using the notebook files in this
-`zip archive <notebook-1.0.0.zip>`_ .
+`zip archive <notebook-1.0.0.zip>`_.
 
 Introductory Tutorials
 ----------------------
@@ -44,12 +44,12 @@ There are additional tutorials detailing other features of HoloViews:
   as part of a reproducible yet interactive scientific workflow.
 
 * `Continuous Coordinates: <Continuous_Coordinates>`_
-  Support for continuous coordinates offered by HoloViews, for use
-  with real-world data.
+  How to use continuous coordinates to work with real-world data or
+  smooth functions.
 
 * `Composing Data: <Composing_Data>`_
   Complete example of the full range of hierarchical, multidimensional
-  discrete and continuous data structures provided by HoloViews.
+  discrete and continuous data structures supported by HoloViews.
 
 * `Pandas and Seaborn: <Pandas_Seaborn>`_
   Using HoloViews with the external Pandas and Seaborn libraries.
@@ -59,8 +59,10 @@ Reference Notebooks
 -------------------
 
 At any point, you can look through these comprehensive but less
-explanatory overview tutorials that simply list each of the objects
-available and show examples:
+explanatory overview tutorials.  For each of the HoloViews components
+available, these tutorials show how to create it, how the objects are
+plotted by default, and show how to list and change all of the
+visualization options for that object type:
 
 * `Elements: <Elements>`_
   Overview and examples of all HoloViews element types, the atomic items
@@ -79,20 +81,22 @@ External Examples
 
 Finally, here are some real-world examples of HoloViews being used:
 
-* `Interactive plots with mpld3: <http://philippjfr.com/blog/interactive-plots-with-holoviews-and-mpld3/>`_
+* `Interactive plots with mpld3 <http://philippjfr.com/blog/interactive-plots-with-holoviews-and-mpld3/>`_:
   Example usage of the mpld3 rendering backend allowing you to
   generate D3.js-based plots with interactive widgets.
 
-* `HoloViews for machine learning: Kaggle competition for EEG
-  classification <http://philippjfr.com/blog/kaggle-bci-challenge-visualizing-eeg-data-in-holoviews/>`_
+* `HoloViews for machine learning <http://philippjfr.com/blog/kaggle-bci-challenge-visualizing-eeg-data-in-holoviews/>`_: 
+  Kaggle competition for EEG classification 
 
-* `ImaGen library <https://github.com/ioam/imagen>`_:  Generates
-  HoloViews Image and RGB patterns from mathematical functions.
+* `ImaGen library <https://github.com/ioam/imagen>`_:  
+  Generates HoloViews Image and RGB patterns from mathematical functions.
 
-* Neural simulator tutorials using HoloViews: `Topographica <http://topographica.org/Tutorials/>`_.
-  (also see publications list, e.g. 
-  `Gee (2014) <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_)
-
+* `Topographica tutorials <http://topographica.org/Tutorials/>`_:
+  Neural simulator using HoloViews (plus publications 
+  `Stevens et al. (2013) <http://homepages.inf.ed.ac.uk/jbednar/papers/stevens.jn13.pdf>`_,
+  `Gee (2014) <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_, and
+  `Fischer (2014) <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_ with
+  associated `notebook <http://ioam.github.io/media/topo/gcal_all.html>`_)
 
 .. toctree::
    :maxdepth: 2
@@ -101,11 +105,11 @@ Finally, here are some real-world examples of HoloViews being used:
    Showcase
    Introduction
    Exploring Data <Exploring_Data>
-   Options <Options>
    Transforming Data <Transforming_Data>
+   Options
    Exporting
-   Elements
-   Containers
-   Pandas and Seaborn <Pandas_Seaborn>
    Continuous Coordinates <Continuous_Coordinates>
    Composing Data <Composing_Data>
+   Pandas and Seaborn <Pandas_Seaborn>
+   Elements
+   Containers
