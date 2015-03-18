@@ -98,6 +98,12 @@ Finally, here are some real-world examples of HoloViews being used:
   `Fischer (2014) <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_ with
   associated `notebook <http://ioam.github.io/media/topo/gcal_all.html>`_)
 
+* `Interfacing HoloViews with Julia <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_:
+  A basic interface to the Julia programming language.
+
+* `Marking summary statistics <http://www.inf.ed.ac.uk/teaching/courses/inf1-cg/assignments/Inf1-CG_Assignment1_Scores.html>`_:
+  Visualizing the marking results of an undergraduate assignment with HoloViews.
+
 .. toctree::
    :maxdepth: 2
    :hidden:
