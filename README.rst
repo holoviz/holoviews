@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_ |PyVersions|_ 
+|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_ |PyVersions|_ |Coveralls|_ 
 
 holoviews
 =========
@@ -82,6 +82,9 @@ Features
 
 .. |License| image:: https://pypip.in/license/holoviews/badge.svg?style=flat
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
+
+.. |Coveralls| image:: https://img.shields.io/coveralls/ioam/holoviews.svg
+.. _Coveralls: https://coveralls.io/r/ioam/holoviews
 
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
