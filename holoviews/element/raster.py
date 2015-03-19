@@ -520,7 +520,7 @@ class RGB(Image):
         """
         Slice the underlying numpy array in sheet coordinates.
         """
-        if len(coords) > self.ndims:
+        if not isinstance(coords, slice) and len(coords) > self.ndims:
             value = coords[self.ndims:]
             if len(value) > 1:
                 raise KeyError("Only one value dimension may be indexed at a time")
