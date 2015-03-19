@@ -2,6 +2,7 @@
 Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
+from functools import reduce
 import param
 
 from .dimension import ViewableElement
