@@ -10,7 +10,7 @@ ________
 * You can create complex animated or interactive visualizations with minimal code.
 * Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <Tutorials/Transforming_Data>`_.
 * Every parameter of every object includes easy-to-access documentation.
-* All features `available in vanilla Python 2 or 3 <Tutorials(Options)>`_, with minimal dependencies.
+* All features `available in vanilla Python 2 or 3 <Tutorials/Options>`_, with minimal dependencies.
 * All examples on the website are tested automatically each night, using the latest version of the code.
 
 **Support for maintainable, reproducible research**
