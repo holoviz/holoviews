@@ -43,7 +43,7 @@ class InfoPrinter(object):
                                               only_changed=False)
         param_list = cls.ppager._param_docstrings(param_info)
         if not show_values:
-            return self.ansi_escape.sub('', param_list) if not ansi else param_list
+            return cls.ansi_escape.sub('', param_list) if not ansi else param_list
         else:
             info = cls.ppager(obj)
             if ansi is False:
