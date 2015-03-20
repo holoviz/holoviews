@@ -147,10 +147,10 @@ class OutputMagic(OptionsMagic):
     # Formats that are always available
     inbuilt_formats= ['auto', 'widgets', 'scrubber', 'repr']
     # Codec or system-dependent format options
-    optional_formats = ['webm','mp4', 'gif']
+    optional_formats = ['webm','mp4', 'gif', 'nbagg']
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
-    allowed = {'backend'     : ['mpl','d3'],
+    allowed = {'backend'     : ['mpl','d3', 'nbagg'],
                'fig'         : ['svg', 'png', 'repr'],
                'holomap'     : inbuilt_formats,
                'widgets'     : ['embed', 'live', 'cached'],

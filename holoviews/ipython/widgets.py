@@ -2,6 +2,10 @@ import os, sys, math, time, uuid, json, warnings
 from unittest import SkipTest
 
 import numpy as np
+from matplotlib.backends.backend_nbagg import FigureManagerNbAgg, new_figure_manager_given_figure
+from matplotlib import pyplot as plt
+
+import numpy as np
 
 try:
     import IPython
@@ -306,10 +310,13 @@ class IPySelectionWidget(NdWidget):
         if widgets is None:
             raise ImportError('ViewSelector requires IPython >= 2.0.')
 
+        self.nbagg = OutputMagic.options['backend'] == 'nbagg'
         self._initialize_widgets()
         self.refresh = True
 
-        if self.cached:
+        if self.nbagg:
+            self.figure = self.plot()
+        elif self.cached:
             self.frames = OrderedDict((k, self._plot_figure(idx))
                                       for idx, k in enumerate(self.keys))
 
@@ -339,26 +346,30 @@ class IPySelectionWidget(NdWidget):
 
     def __call__(self):
         # Initalize image widget
-        if (OutputMagic.options['backend'] == 'mpld3'
+        if self.nbagg:
+            fig = self.plot[0]
+            self.manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
+        elif (OutputMagic.options['backend'] == 'mpld3'
             or OutputMagic.options['fig'] =='svg'):
             self.image_widget = widgets.HTMLWidget()
         else:
             self.image_widget = widgets.ImageWidget()
-
-        if self.cached:
-            self.image_widget.value = list(self.frames.values())[0]
-        else:
-            self.image_widget.value = self._plot_figure(0)
-        self.image_widget.set_css(self.css)
+        if False:
+            if self.cached:
+                self.image_widget.value = list(self.frames.values())[0]
+            else:
+                self.image_widget.value = self._plot_figure(0)
+            self.image_widget.set_css(self.css)
+            display(self.image_widget)
 
         # Initialize interactive widgets
         interactive_widget = widgets.interactive(self.update_widgets,
-                                                 **self.pwidgets)
+                                                     **self.pwidgets)
         interactive_widget.set_css(self.css)
 
         # Display widgets
         display(interactive_widget)
-        display(self.image_widget)
+        self.manager.show()
         return '' # Suppresses outputting ViewableElement repr when called through hook
 
 
@@ -406,7 +417,12 @@ class IPySelectionWidget(NdWidget):
 
         # Update frame
         checked = tuple(checked)
-        if self.cached:
+        if OutputMagic.options['backend'] == 'nbagg':
+            self.manager.destroy()
+            fig = self.plot[self.keys.index(checked)]
+            self.manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
+            self.manager.show()
+        elif self.cached:
             self.image_widget.value = self.frames[checked]
         else:
             self.image_widget.value = self._plot_figure(self.keys.index(checked))

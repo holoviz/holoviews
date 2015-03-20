@@ -42,6 +42,10 @@ ENABLE_TRACEBACKS=True
 
 
 def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
+    if OutputMagic.options['holomap'] == "nbagg":
+        plt.show()
+        return ''
+
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
@@ -60,7 +64,7 @@ def HTML_video(plot):
     writers = animation.writers.avail
     current_format = OutputMagic.options['holomap']
     for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
-        if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
+        if fmt == 'nbagg' or OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
                 return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
             except: pass
@@ -146,7 +150,13 @@ def display_figure(fig, message=None, max_width='100%'):
     dpi = OutputMagic.options['dpi']
     backend = OutputMagic.options['backend']
 
-    if backend == 'd3' and mpld3:
+    if backend == 'nbagg':
+        import numpy as np
+        from matplotlib.backends.backend_nbagg import FigureManagerNbAgg, new_figure_manager_given_figure
+        manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
+        manager.show()
+        return ''
+    elif backend == 'd3' and mpld3:
         fig.dpi = dpi
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
