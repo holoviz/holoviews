@@ -33,7 +33,7 @@ Funding
 
 This work was supported in part by Grants EP/F500385/1 and BB/F529254/1 
 to the `University of Edinburgh 
-Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <www.anc.ed.ac.uk/dtc>`_ 
+Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <http://www.anc.ed.ac.uk/dtc>`_ 
 from the UK Engineering and Physical Sciences Research Council, 
 Biotechnology and Biological Sciences Research Council, and
 Medical Research Council.
