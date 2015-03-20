@@ -120,3 +120,4 @@ showing how to fix the bug or implement the feature!
    Reference Manual <Reference_Manual/index>
    FAQ
    Github source <http://github.com/ioam/holoviews>
+   About <about>
