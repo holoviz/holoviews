@@ -19,7 +19,8 @@ Please visit `our website <http://ioam.github.com/holoviews/>`_ for
 official releases, installation instructions, documentation, and examples.
 
 We also have a `wiki page <https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
-describing current work-in-progress and experimental features.
+describing current work-in-progress and experimental features. If you find any bugs or 
+have any feature suggestions please file a GitHub Issue or submit a pull request.
 
 Features
 --------
