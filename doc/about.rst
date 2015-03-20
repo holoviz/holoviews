@@ -1,6 +1,5 @@
-
-IOAM
-====
+About Us
+========
 
 HoloViews is part of the `IOAM <https://github.com/ioam>`_, 
 the Github organization for the Computational Systems 
@@ -8,9 +7,6 @@ Neuroscience Group at the University of Edinburgh. We are
 member of the Edinburgh `Doctoral Training Center 
 <http://www.anc.ed.ac.uk/dtc/>`_ which is part of the 
 `Institute for Adaptive and Neural Computation <http://www.anc.ed.ac.uk/>`_.
-
-About Us
---------
 
 When we are not working on HoloViews, we are computation neuroscientists
 working on large-scale models of the mammalian visual system. We are also
@@ -36,19 +32,6 @@ from the UK Engineering and Physical Sciences Research Council,
 Biotechnology and Biological Sciences Research Council, and
 Medical Research Council.
 
-
-
-.. image:: https://upload.wikimedia.org/wikipedia/en/thumb/0/0f/University_of_Edinburgh_logo.svg/200px-University_of_Edinburgh_logo.svg.png
-   :height: 100px
-   :align: center
-   :alt: Edinburgh University website
-   :target: http://www.ed.ac.uk
-
-.. image:: https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/7_Local_Superclusters_%28blank_2%29.png/240px-7_Local_Superclusters_%28blank_2%29.png
-   :height: 80px
-   :align: center
-   :alt: Edinburgh University website
-   :target: http://www.ed.ac.uk
 
 .. image:: http://www.anc.ed.ac.uk/anc.png
    :height: 60px
