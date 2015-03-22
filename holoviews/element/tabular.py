@@ -106,8 +106,9 @@ class ItemTable(Element):
         elif col == 0:
             return str(self.dimensions('value')[row])
         else:
+            dim = self.get_dimension(row)
             heading = self._cached_value_names[row]
-            return self.data.get(heading, np.NaN)
+            return dim.pprint_value(self.data.get(heading, np.NaN))
 
 
     def hist(self, *args, **kwargs):
@@ -188,11 +189,14 @@ class Table(NdElement):
                 return str(self.value_dimensions[col - ndims])
             return str(self.key_dimensions[col])
         else:
+            dim = self.get_dimension(col)
             if col >= ndims:
                 row_values = self.values()[row-1]
-                return row_values[col - ndims]
-            row_data = list(self.data.keys())[row-1]
-            return row_data[col]
+                val = row_values[col - ndims]
+            else:
+                row_data = list(self.data.keys())[row-1]
+                val = row_data[col]
+            return dim.pprint_value(val)
 
 
     def cell_type(self, row, col):
