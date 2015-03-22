@@ -70,7 +70,7 @@ class TablePlot(ElementPlot):
                     else:
                         if summarize and row > half_rows:
                             adjusted_row = (frame.rows - self.max_rows + row)
-                        value = frame.cell_value(adjusted_row, col)
+                        value = frame.pprint_cell(adjusted_row, col)
                         cell_text = self.pprint_value(value)
                     cell_values[key][(row, col)] = cell_text
         return cell_values

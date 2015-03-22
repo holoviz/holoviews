@@ -95,9 +95,9 @@ class ItemTable(Element):
                                   'cannot be reduced.')
 
 
-    def cell_value(self, row, col):
+    def pprint_cell(self, row, col):
         """
-        Get the stored value for a given row and column indices.
+        Get the formatted cell value for the given row and column indices.
         """
         if col > 2:
             raise Exception("Only two columns available in a ItemTable.")
@@ -175,9 +175,9 @@ class Table(NdElement):
         return self.ndims + len(self.value_dimensions)
 
 
-    def cell_value(self, row, col):
+    def pprint_cell(self, row, col):
         """
-        Get the stored value for a given row and column indices.
+        Get the formatted cell value for the given row and column indices.
         """
         ndims = self.ndims
         if col >= self.cols:
