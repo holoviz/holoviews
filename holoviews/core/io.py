@@ -26,6 +26,41 @@ from .util import unique_iterator
 from .ndmapping import OrderedDict, UniformNdMapping
 from .dimension import LabelledData
 
+
+class Reference(param.Parameterized):
+    """
+    A Reference allows access to an object to be deferred until it is
+    needed in the appropriate context. References are used by
+    Collector to capture the state of an object at collection time.
+
+    One particularly important property of references is that they
+    should be pickleable. This means that you can pickle Collectors so
+    that you can unpickle them in different environments and still
+    collect from the required object.
+
+    A Reference only needs to have a resolved_type property and a
+    resolve method. The constructor will take some specification of
+    where to find the target object (may be the object itself).
+    """
+
+    @property
+    def resolved_type(self):
+        """
+        Returns the type of the object resolved by this references. If
+        multiple types are possible, the return is a tuple of types.
+        """
+        raise NotImplementedError
+
+
+    def resolve(self, container=None):
+        """
+        Return the referenced object. Optionally, a container may be
+        passed in from which the object is to be resolved.
+        """
+        raise NotImplementedError
+
+
+
 class Exporter(param.ParameterizedFunction):
     """
     An Exporter is a parameterized function that accepts a HoloViews
