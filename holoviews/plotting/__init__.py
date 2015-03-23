@@ -169,7 +169,7 @@ class MPLPlotRenderer(Exporter):
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
-        if 'metadata' in kwargs or self.metadata_fn:
+        if 'metadata' in kwargs or self_or_cls.metadata_fn:
             raise Exception('MPLPlotRenderer does not support saving metadata to file.')
 
         with StoreOptions.options(obj, options, **kwargs):
