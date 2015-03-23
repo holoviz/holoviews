@@ -714,7 +714,7 @@ class Store(object):
         print(InfoPrinter.info(obj, ansi=ansi))
 
     @classmethod
-    def loads(cls, obj, pickle_string, protocol=0):
+    def loads(cls, pickle_string):
         """
         Equivalent to pickle.loads except that the HoloViews trees is
         restored appropriately.
