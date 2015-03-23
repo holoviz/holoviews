@@ -18,7 +18,7 @@ except:
 
 import param
 
-from ..core import OrderedDict, Dimension, ViewableElement, NdMapping, NdOverlay,\
+from ..core import ViewableElement, NdMapping, NdOverlay,\
     NdLayout, GridSpace, Element, HoloMap
 from ..element import Chart, Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 
@@ -62,11 +62,14 @@ class DataFrameView(Element):
 
     value_dimensions = param.List(doc="DataFrameView has no value dimension.")
 
-    def __init__(self, data, dimensions={}, key_dimensions=None, clone_override=False, **params):
+    def __init__(self, data, dimensions={}, key_dimensions=None, clone_override=False,
+                 index=None, columns=None, dtype=None, copy=True, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
         if not isinstance(data, pd.DataFrame):
-            raise Exception('DataFrame ViewableElement type requires Pandas dataframe as data.')
+            data = pd.DataFrame(data, index=index, columns=columns, dtype=dtype)
+        elif copy:
+            data = pd.DataFrame(data, clone=True)
         if clone_override:
             dim_dict = {d.name: d for d in key_dimensions}
             dims = [dim_dict.get(k, k) for k in data.columns]
