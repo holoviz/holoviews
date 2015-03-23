@@ -75,6 +75,15 @@ class Exporter(param.ParameterizedFunction):
     # Mime-types that need encoding as utf-8 upon export
     utf8_mime_types = ['image/svg+xml', 'text/html']
 
+    metadata_fn = param.Callable(doc="""
+      Function that generates additional metadata information from the
+      HoloViews object being saved.
+
+      Must return a dictionary containing string keys and simple
+      literal values such ints, floats, short strings and booleans. By
+      default the metadata is an empty dictionary.""")
+
+
     @classmethod
     def encode(cls, entry):
         """
@@ -104,12 +113,15 @@ class Exporter(param.ParameterizedFunction):
         """
         raise NotImplementedError("Exporter not implemented.")
 
-    def save(self, obj, basename, fmt=None):
+    def save(self, obj, basename, fmt=None, metadata={}, **kwargs):
         """
         Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
         support multiple formats, the fmt argument may also be
         supplied (which typically corresponds to the file-extension).
+
+        The supplied metadata dictionary updates the output of the
+        metadata_fn (if any) which is then saved if supported.
         """
         raise NotImplementedError("Exporter save method not implemented.")
 
