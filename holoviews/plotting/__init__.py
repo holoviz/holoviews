@@ -160,7 +160,6 @@ class MPLPlotRenderer(Exporter):
             data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
         return data, {'file-ext':fmt,
-                      'size':len(data),
                       'mime_type':HTML_TAGS[fmt][0]}
 
 

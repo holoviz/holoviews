@@ -62,7 +62,6 @@ class Exporter(param.ParameterizedFunction):
 
         'file-ext' : The file extension if applicable (else empty string)
         'mime_type': The mime-type of the data.
-        'size'     : Size in bytes of the returned data.
 
         The fmt argument may be used with exporters that support multiple
         output formats. If not supplied, the exporter is to pick an
@@ -92,7 +91,6 @@ class Pickler(Exporter):
     def __call__(self, obj):
         data = Store.dumps(obj, protocol=self.protocol)
         return data, {'file-ext':'pkl',
-                      'size':len(data),
                       'mime_type':'application/python-pickle'}
 
     def save(self, obj, basename):
