@@ -108,7 +108,7 @@ class ElementPlot(Plot):
             dimensions = [d.name for d in self.dimensions]
             key_dimensions = [d.name for d in self.map.key_dimensions]
             if key_dimensions == ['Frame'] and key_dimensions != dimensions:
-                select = dict(Frame=key)
+                select = dict(Frame=0)
             else:
                 select = {d.name: key[self.dimensions.index(d)]
                           for d in self.map.key_dimensions}
