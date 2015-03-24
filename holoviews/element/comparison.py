@@ -26,8 +26,9 @@ from . import *    # pyflakes:ignore (All Elements need to support comparison)
 from ..core import Element, AdjointLayout, Overlay, Dimension, HoloMap, \
                    Dimensioned, Layout, NdLayout, NdOverlay, GridSpace
 from ..core.options import Options
-from ..interface.pandas import DFrame, DataFrameView
-from ..interface.seaborn import PandasDFrame, Bivariate, Distribution, \
+from ..interface.pandas import DFrame as PandasDFrame
+from ..interface.pandas import DataFrameView
+from ..interface.seaborn import DFrame, Bivariate, Distribution, \
                                 Regression, TimeSeries
 
 
