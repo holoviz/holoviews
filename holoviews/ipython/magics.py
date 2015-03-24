@@ -379,16 +379,14 @@ class OptsCompleter(object):
         "Tab completion hook for the %%opts cell magic."
         line = v.text_until_cursor
         completions = cls.setup_completer()
-        return cls.line_completer(line, completions)
-
-    @classmethod
-    def line_completer(cls, line, completions):
-        sorted_keys = sorted(completions.keys())
-        type_keys = [key for key in sorted_keys if ('.' not in key)]
-
         compositor_defs = {el.group:el.output_type.__name__
                            for el in Compositor.definitions}
+        return cls.line_completer(line, completions, compositor_defs)
 
+    @classmethod
+    def line_completer(cls, line, completions, compositor_defs):
+        sorted_keys = sorted(completions.keys())
+        type_keys = [key for key in sorted_keys if ('.' not in key)]
         completion_key, suggestions = cls.dotted_completion(line, sorted_keys, compositor_defs)
 
         verbose_openers = ['style(', 'plot[', 'norm{']
