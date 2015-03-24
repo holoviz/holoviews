@@ -379,8 +379,11 @@ class OptsCompleter(object):
     def option_completer(cls, k,v):
         "Tab completion hook for the %%opts cell magic."
         line = v.text_until_cursor
-
         completions = cls.setup_completer()
+        return cls.line_completer(line, completions)
+
+    @classmethod
+    def line_completer(cls, line, completions):
         sorted_keys = sorted(completions.keys())
         type_keys = [key for key in sorted_keys if ('.' not in key)]
 
