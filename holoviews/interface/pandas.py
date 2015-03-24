@@ -69,7 +69,7 @@ class DataFrameView(Element):
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data, index=index, columns=columns, dtype=dtype)
         elif copy:
-            data = pd.DataFrame(data, clone=True)
+            data = pd.DataFrame(data, copy=True)
         if clone_override:
             dim_dict = {d.name: d for d in key_dimensions}
             dims = [dim_dict.get(k, k) for k in data.columns]
