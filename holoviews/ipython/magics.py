@@ -372,8 +372,7 @@ class OptsCompleter(object):
 
     @classmethod
     def _inside_delims(cls, line, opener, closer):
-        return (line.endswith(closer)
-                or (line.count(opener) - line.count(closer)) % 2)
+        return (line.count(opener) - line.count(closer)) % 2
 
     @classmethod
     def option_completer(cls, k,v):
@@ -408,7 +407,7 @@ class OptsCompleter(object):
         if cls._inside_delims(line, '(', ')'):
             return style_completions
 
-        return style_completions + type_keys + compositor_defs.keys() + verbose_openers
+        return type_keys + compositor_defs.keys() + verbose_openers
 
 
 
