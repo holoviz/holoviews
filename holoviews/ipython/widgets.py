@@ -1,4 +1,4 @@
-import os, sys, math, time, uuid, json
+import os, sys, math, time, uuid, json, warnings
 from unittest import SkipTest
 
 import numpy as np
@@ -11,8 +11,11 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.12")
 from IPython.display import display
 try:
-    from IPython.html import widgets
-    from IPython.html.widgets import FloatSliderWidget
+    # Silence the annoying FutureWarning in IPython 3.0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from IPython.html import widgets
+        from IPython.html.widgets import FloatSliderWidget
 except:
     widgets = None
     FloatSliderWidget = object
