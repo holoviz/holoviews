@@ -4,33 +4,20 @@ import sys, os
 from distutils.core import setup
 
 setup_args = {}
+extras_require = {}
 
-required = {'param':">=1.3.1",
-            'numpy':">=1.0",
-            'matplotlib':">=1.3"}
+install_requires = ['param>=1.3.1', 'numpy>=1.0']
 
-packages_to_install = [required]
-packages_to_state = [required]
-
-
-if 'setuptools' in sys.modules:
-    # support easy_install without depending on setuptools
-    install_requires = []
-    for package_list in packages_to_install:
-        install_requires+=["%s%s"%(package,version) for package,version in package_list.items()]
-    setup_args['install_requires']=install_requires
-    setup_args['dependency_links']=["http://pypi.python.org/simple/"]
-    setup_args['zip_safe'] = False
-
-for package_list in packages_to_state:
-    requires = []
-    requires+=["%s (%s)"%(package,version) for package,version in package_list.items()]
-    setup_args['requires']=requires
+extras_require['mpl']     =  ['matplotlib>=1.4']
+extras_require['notebook'] = extras_require['mpl'] + ['ipython[notebook]']
+extras_require['all'] =      extras_require['mpl'] + ['mpld3', 'ipython[all,nbconvert]']
 
 
 setup_args.update(dict(
     name='holoviews',
     version="1.0.0",
+    install_requires = install_requires,
+    extras_require = extras_require,
     description='Composable, declarative data structures for building complex visualizations easily.',
     long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
     author= "Jean-Luc Stevens and Philipp Rudiger",
@@ -62,7 +49,6 @@ setup_args.update(dict(
         "Topic :: Scientific/Engineering",
         "Topic :: Software Development :: Libraries"]
 ))
-
 
 def check_pseudo_package(path):
     """
