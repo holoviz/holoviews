@@ -862,7 +862,7 @@ class BarPlot(ElementPlot):
                     bars[tuple(val_key)] = bar
                     prev += val[0] if np.isfinite(val[0]) else 0
                     labels.append(label)
-        title = [str(element.key_dimensions[self._dimensions[cg]])
+        title = [str(element.key_dimensions[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
         if any(len(l) for l in labels):
             axis.legend(title=', '.join(title))
