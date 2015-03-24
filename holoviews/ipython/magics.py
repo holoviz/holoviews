@@ -395,14 +395,14 @@ class OptsCompleter(object):
         elif not completion_key:
             return type_keys + compositor_defs.keys() + verbose_openers
 
-        if cls._inside_delims(line, '[', ']') or cls._inside_delims(line, 'plot[', ']'):
+        if cls._inside_delims(line,'[', ']'):
             return [kw+'=' for kw in completions[completion_key][0]]
 
-        if cls._inside_delims(line, '{', '}') or cls._inside_delims(line, 'norm{', '}'):
+        if cls._inside_delims(line, '{', '}'):
             return ['+axiswise', '+framewise']
 
         style_completions = [kw+'=' for kw in completions[completion_key][1]]
-        if cls._inside_delims(line, '(', ')') or cls._inside_delims(line, 'style(', ')'):
+        if cls._inside_delims(line, '(', ')'):
             return style_completions
 
         return style_completions + type_keys + compositor_defs.keys() + verbose_openers
