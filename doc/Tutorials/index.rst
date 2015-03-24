@@ -120,6 +120,7 @@ Finally, here are some real-world examples of HoloViews being used:
    Exporting
    Continuous Coordinates <Continuous_Coordinates>
    Composing Data <Composing_Data>
+   Pandas Conversion <Pandas_Conversion>
    Pandas and Seaborn <Pandas_Seaborn>
    Elements
    Containers
