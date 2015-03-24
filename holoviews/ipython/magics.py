@@ -393,7 +393,7 @@ class OptsCompleter(object):
         if suggestions and line.endswith('.'):
             return ['.'.join([completion_key, el]) for el in suggestions]
         elif not completion_key:
-            return type_keys + compositor_defs.keys() + verbose_openers
+            return type_keys + list(compositor_defs.keys()) + verbose_openers
 
         if cls._inside_delims(line,'[', ']'):
             return [kw+'=' for kw in completions[completion_key][0]]
@@ -405,7 +405,7 @@ class OptsCompleter(object):
         if cls._inside_delims(line, '(', ')'):
             return style_completions
 
-        return type_keys + compositor_defs.keys() + verbose_openers
+        return type_keys + list(compositor_defs.keys()) + verbose_openers
 
 
 
