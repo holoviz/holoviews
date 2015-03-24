@@ -11,6 +11,7 @@ import param
 __version__ = param.Version(release=(1,0,0), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
+from .core import archive
 from .core.dimension import OrderedDict, Dimension      # pyflakes:ignore (API import)
 from .core.boundingregion import BoundingBox            # pyflakes:ignore (API import)
 from .core.options import Options, Store, StoreOptions  # pyflakes:ignore (API import)
@@ -18,16 +19,11 @@ from .core.layout import *                              # pyflakes:ignore (API i
 from .core.element import *                             # pyflakes:ignore (API import)
 from .core.overlay import *                             # pyflakes:ignore (API import)
 from .core.tree import *                                # pyflakes:ignore (API import)
-from .core.io import FileArchive
 
 from .interface import *                                             # pyflakes:ignore (API import)
 from .operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
 from .element import *                                               # pyflakes:ignore (API import)
 
-try:
-    from .ipython.archive import notebook_archive as archive
-except:
-    archive = FileArchive()
 
 
 def help(obj, visualization=False, ansi=True):

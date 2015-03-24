@@ -1,9 +1,10 @@
 from unittest import SkipTest
 import matplotlib.pyplot as plt
 
+import holoviews
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
-from ..plotting import Plot
+from .archive import notebook_archive
 from .magics import load_magics
 from .display_hooks import animate, set_display_hooks, OutputMagic
 from .parser import Parser
@@ -15,6 +16,7 @@ try:    from matplotlib import animation
 except: animation = None
 
 Collector.interval_hook = RunProgress
+holoviews.archive = notebook_archive
 
 def supported_formats(optional_formats):
     "Optional formats that are actually supported"

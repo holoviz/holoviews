@@ -6,7 +6,9 @@ from .operation import *       # pyflakes:ignore (API import)
 from .overlay import *         # pyflakes:ignore (API import)
 from .sheetcoords import *     # pyflakes:ignore (API import)
 from .tree import *            # pyflakes:ignore (API import)
+from .io import FileArchive
 
+archive = FileArchive()
 
 def public(obj):
     if not isinstance(obj, type): return False
