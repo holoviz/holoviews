@@ -363,7 +363,7 @@ class OptsCompleter(object):
                     depth = completion_key.count('.')
                     suggestions = [k.split('.')[depth+1] for k in sorted_keys
                                    if k.startswith(completion_key+'.')]
-                    break
+                    return completion_key, suggestions
             # Attempting to match compositor definitions
             if token in compositor_defs:
                 completion_key = compositor_defs[token]
