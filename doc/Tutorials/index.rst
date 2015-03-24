@@ -51,8 +51,12 @@ There are additional tutorials detailing other features of HoloViews:
   Complete example of the full range of hierarchical, multidimensional
   discrete and continuous data structures supported by HoloViews.
 
+* `Pandas Conversion: <Pandas_Conversion>`_
+  Using HoloViews the DFrame conversion wrapper to convert pandas
+  dataframes into HoloViews components.
+
 * `Pandas and Seaborn: <Pandas_Seaborn>`_
-  Using HoloViews with the external Pandas and Seaborn libraries.
+  Specialized visualizations provided by pandas and seaborn.
 
 
 Reference Notebooks
