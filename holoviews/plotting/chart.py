@@ -495,10 +495,13 @@ class PointPlot(ChartPlot):
         style = self.style[self.cyclic_index]
         if sz is not None and self.scaling_factor > 1:
             style['s'] = self._compute_size(sz, style)
+        color = style.pop('color', None)
         if cs is not None:
             style['c'] = cs
-            style.pop('color', None)
-        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, **style)
+        else:
+            style['c'] = color
+        edgecolor = style.pop('edgecolors', 'none')
+        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, edgecolors=edgecolor, **style)
         self.handles['paths'] = scatterplot
         self.handles['legend_handle'] = scatterplot
 
