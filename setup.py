@@ -10,7 +10,7 @@ install_requires = ['param>=1.3.1', 'numpy>=1.0']
 
 extras_require['mpl']     =  ['matplotlib>=1.4']
 extras_require['notebook'] = extras_require['mpl'] + ['ipython[notebook]']
-extras_require['all'] =      extras_require['mpl'] + ['mpld3', 'ipython[all,nbconvert]']
+extras_require['all'] =      extras_require['notebook'] + ['mpld3', 'pandas', 'seaborn']
 
 
 setup_args.update(dict(
