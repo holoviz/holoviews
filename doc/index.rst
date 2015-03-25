@@ -53,8 +53,8 @@ extensions enabled with ``%load_ext`` above that make it integrate
 well with `IPython Notebook <http://ipython.org/notebook/>`_ 2 and 3.
 
 Matplotlib and IPython Notebook can be installed using your operating
-system's package manager, using a scientific Python distribution like
-`Anaconda <http://continuum.io/downloads>`_ (particularly useful on
+system's package manager, as part of a scientific Python distribution like
+`Anaconda <http://continuum.io/downloads>`_ (particularly convenient on
 systems shipped without pip, such as Windows or Mac), or by using pip::
 
   pip install matplotlib 'ipython[notebook]'
