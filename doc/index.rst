@@ -52,20 +52,27 @@ installed.  HoloViews is pure Python, but it also provides optional
 extensions enabled with ``%load_ext`` above that make it integrate
 well with `IPython Notebook <http://ipython.org/notebook/>`_ 2 and 3.
 
-Matplotlib and IPython Notebook can be installed using your operating
-system's package manager, using a scientific Python distribution like
-`Anaconda <http://continuum.io/downloads>`_ (particularly useful on
-systems shipped without pip, such as Windows or Mac), or by using pip::
+You can then obtain the latest public release of HoloViews including
+matplotlib and IPython notebook using pip::
 
-  pip install matplotlib 'ipython[notebook]'
+  pip install 'holoviews[notebook]'
+  
+Using ``pip install holoviews`` will make sure that only the core
+dependencies are satisfied (`Param <http://ioam.github.com/param/>`_ and
+`Numpy <http://numpy.org>`_). We also support the following install
+options:
 
-You can then obtain the latest
-public release of HoloViews using pip::
+* ``pip install 'holoviews[mpl]'``: Satisfies core dependencies and matplotlib
+* ``pip install 'holoviews[all]'``: In addition to the ``[notebook]`` dependencies,
+  installs `mpld3 <http://mpld3.github.io/>`_, `pandas <http://pandas.pydata.org/>`_
+  and `seaborn <http://stanford.edu/~mwaskom/software/seaborn/index.html>`_.
+  
+If you encounter any issues installing any of these dependencies you
+can try using your operating system's package manager or using a
+scientific Python distribution like `Anaconda <http://continuum.io/downloads>`_
+(particularly useful on systems shipped without pip, such as Windows or Mac).
 
-  pip install holoviews
-
-Or you can get the latest development version by cloning our git
-repository::
+To get the latest development version you can clone our git repository::
 
   git clone git://github.com/ioam/param.git
   git clone git://github.com/ioam/holoviews.git
@@ -75,7 +82,7 @@ Then launch IPython Notebook::
   ipython notebook
 
 Now you can download the
-`tutorial notebooks <Tutorials/notebook-1.0.0.zip>`_,
+`tutorial notebooks <Tutorials/notebook-1.0.1.zip>`_,
 unzip them somewhere IPython Notebook can find them, and then open the
 Homepage.ipynb tutorial or any of the others in the Notebook.  Enjoy
 exploring your data!
