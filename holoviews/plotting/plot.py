@@ -769,7 +769,6 @@ class LayoutPlot(CompositePlot):
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
 
-        self.layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),

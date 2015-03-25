@@ -129,7 +129,7 @@ class ElementPlot(Plot):
         an HoloMap object.
         """
         # Apply data collapse
-        holomap = self.map.map(Compositor.collapse_element, [CompositeOverlay])
+        holomap = Compositor.collapse(self.map, None, mode='data')
 
         # Compute framewise normalization
         mapwise_ranges = self.compute_ranges(holomap, None, None)
