@@ -22,6 +22,25 @@ def find_minmax(lims, olims):
         limits = (np.NaN, np.NaN)
     return limits
 
+def int_to_alpha(n, upper=True):
+    "Generates alphanumeric labels of form A-Z, AA-ZZ etc."
+    casenum = 65 if upper else 97
+    label = ''
+    count= 0
+    if n == 0: return str(chr(n + casenum))
+    while n >= 0:
+        mod, div = n % 26, n
+        for i in range(count):
+            div //= 26
+        div %= 26
+        if count == 0:
+            val = mod
+        else:
+            val = div
+        label += str(chr(val + casenum))
+        count += 1
+        n -= 26**count
+    return label[::-1]
 
 def int_to_roman(input):
    if type(input) != type(1):

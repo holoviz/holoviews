@@ -11,7 +11,8 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
     GridSpace, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
-from ..core.util import find_minmax, sanitize_identifier, int_to_roman
+from ..core.util import find_minmax, sanitize_identifier, int_to_roman,\
+    int_to_alpha
 from ..element import Raster, Table
 
 
@@ -262,9 +263,9 @@ class Plot(param.Parameterized):
             from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
             labels = {}
             if '{Alpha}' in self.sublabel_format:
-                labels['Alpha'] = str(chr(layout_num+64))
+                labels['Alpha'] = int_to_alpha(layout_num-1)
             elif '{alpha}' in self.sublabel_format:
-                labels['alpha'] = str(chr(layout_num+96))
+                labels['alpha'] = int_to_alpha(layout_num-1, upper=False)
             elif '{numeric}' in self.sublabel_format:
                 labels['numeric'] = self.layout_num
             elif '{Roman}' in self.sublabel_format:
