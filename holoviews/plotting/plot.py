@@ -769,6 +769,7 @@ class LayoutPlot(CompositePlot):
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
 
+        self.layout = layout
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
