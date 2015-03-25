@@ -7,7 +7,7 @@ First public release available on GitHub and PyPI.
 Version 1.0.1
 -------------
 
-Minor release address bugs and issues discovered shortly after 1.0.0. 
+Minor release address bugs and issues discovered shortly after 1.0.0.
 
 Highlights:
 
@@ -17,4 +17,5 @@ Highlights:
 * Improvements and bug-fixes the the ``%%opts`` magic tab-completion. (e0ad7108)
 * ``DFrame`` now supports standard constructor for pandas dataframes. (983825c5)
 * ``Tables`` are now correctly formatted using the appropriate ``Dimension`` formatter. (588bc2a3)
+* Support for unlimited alphabetical subfigure labelling. (e039d00b)
 * Miscellaneous bug fixes, including Python 3 compatibility improvements.
