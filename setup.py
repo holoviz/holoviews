@@ -60,16 +60,16 @@ def check_pseudo_package(path):
 
 if __name__=="__main__":
 
+    # Make sure to create these directories and populate them before upload
+    setup_args['packages'] += ["holoviews.assets", 'holoviews.notebooks']
+
+    # Add unit tests
+    setup_args['packages'].append('holoviews.tests')
+
+    setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
+    setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
+
     if ('upload' in sys.argv) or ('sdist' in sys.argv):
-        # Make sure to create these directories and populate them before upload
-        setup_args['packages'] += ["holoviews.assets", 'holoviews.notebooks']
-
-        # Add unit tests
-        setup_args['packages'].append('holoviews.tests')
-
-        setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
-        setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
-
         check_pseudo_package(os.path.join('.', 'holoviews', 'tests'))
         check_pseudo_package(os.path.join('.', 'holoviews', 'assets'))
         check_pseudo_package(os.path.join('.', 'holoviews', 'notebooks'))
