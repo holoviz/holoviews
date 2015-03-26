@@ -3,14 +3,17 @@ Test cases for the HTML/JavaScript scrubber and widgets.
 """
 import re
 from hashlib import sha256
+from unittest import SkipTest
 import numpy as np
 
-from holoviews.ipython import IPTestCase
-from holoviews.ipython.widgets import ScrubberWidget, SelectionWidget
-
-# Standardize backend due to random inconsistencies
-from matplotlib import pyplot
-pyplot.switch_backend('agg')
+try:
+    from holoviews.ipython import IPTestCase
+    from holoviews.ipython.widgets import ScrubberWidget, SelectionWidget
+    # Standardize backend due to random inconsistencies
+    from matplotlib import pyplot
+    pyplot.switch_backend('agg')
+except:
+    raise SkipTest("Matplotlib required to test widgets")
 
 from holoviews import Image, HoloMap
 from holoviews.plotting import RasterPlot

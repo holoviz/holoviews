@@ -1,7 +1,11 @@
-from holoviews.core.options import Store
+from unittest import SkipTest
 
-from holoviews import ipython
-from holoviews.ipython import IPTestCase
+from holoviews.core.options import Store
+try:
+    from holoviews import ipython
+    from holoviews.ipython import IPTestCase
+except ImportError:
+    raise SkipTest("Required dependencies not satisfied for testing magics")
 
 from holoviews.operation import Compositor
 

@@ -1,4 +1,5 @@
 from hashlib import sha256
+from unittest import SkipTest
 import numpy as np
 
 from holoviews import HoloMap, Store
@@ -7,10 +8,12 @@ from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
 
-# Standardize backend due to random inconsistencies
-from matplotlib import pyplot
-pyplot.switch_backend('agg')
-
+try:
+    # Standardize backend due to random inconsistencies
+    from matplotlib import pyplot
+    pyplot.switch_backend('agg')
+except:
+    pyplot = None
 
 def digest_data(data):
     hashfn = sha256()
@@ -26,6 +29,9 @@ class MPLPlotRendererTest(ComparisonTestCase):
     """
 
     def setUp(self):
+        if pyplot is None:
+            raise SkipTest("Matplotlib required to test widgets")
+
         self.basename = 'no-file'
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
