@@ -4,14 +4,9 @@ import sys, os
 from distutils.core import setup
 
 setup_args = {}
-extras_require = {}
 
 install_requires = ['param>=1.3.1', 'numpy>=1.0']
-
-extras_require['mpl']     =  ['matplotlib>=1.4']
-extras_require['notebook'] = extras_require['mpl'] + ['ipython[notebook]']
-extras_require['all'] =      extras_require['notebook'] + ['mpld3', 'pandas', 'seaborn']
-
+extras_require = {'extras': ['mpld3', 'pandas', 'seaborn', 'nose']}
 
 setup_args.update(dict(
     name='holoviews',
@@ -72,7 +67,7 @@ if __name__=="__main__":
         # Add unit tests
         setup_args['packages'].append('holoviews.tests')
 
-        setup_args['package_data']['holoviews.assets'] = ['*.png', '*.rst']
+        setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
         setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
 
         check_pseudo_package(os.path.join('.', 'holoviews', 'tests'))
