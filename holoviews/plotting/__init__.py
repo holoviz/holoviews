@@ -9,7 +9,6 @@ except: basestring = str
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import rc_params_from_file
-from matplotlib.ticker import FormatStrFormatter
 
 import param
 from param.parameterized import bothmethod
@@ -220,12 +219,6 @@ class MPLPlotRenderer(Exporter):
 
 
 Store.renderer = MPLPlotRenderer
-
-# Define default type formatters
-Dimension.type_formatters[int] = FormatStrFormatter("%d")
-Dimension.type_formatters[float] = FormatStrFormatter("%.3g")
-Dimension.type_formatters[np.float32] = FormatStrFormatter("%.3g")
-Dimension.type_formatters[np.float64] = FormatStrFormatter("%.3g")
 
 def set_style(key):
     """

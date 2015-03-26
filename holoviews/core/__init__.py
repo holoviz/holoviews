@@ -10,6 +10,18 @@ from .io import FileArchive
 
 archive = FileArchive()
 
+
+def formatter(fmt):
+    def inner(x): return (fmt % x)
+    return inner
+
+# Define default type formatters
+Dimension.type_formatters[int] = formatter("%d")
+Dimension.type_formatters[float] = formatter("%.3g")
+Dimension.type_formatters[np.float32] = formatter("%.3g")
+Dimension.type_formatters[np.float64] = formatter("%.3g")
+
+
 def public(obj):
     if not isinstance(obj, type): return False
     baseclasses = [Dimension, Dimensioned, ElementOperation, BoundingBox,
