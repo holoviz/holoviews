@@ -86,7 +86,7 @@ IPython Notebook::
   ipython notebook
 
 Now you can download the
-`tutorial notebooks <Tutorials/notebook-1.0.1.zip>`_,
+`tutorial notebooks <Tutorials/notebook-1.0.0.zip>`_,
 unzip them somewhere IPython Notebook can find them, and then open the
 Homepage.ipynb tutorial or any of the others in the Notebook.  Enjoy
 exploring your data!
