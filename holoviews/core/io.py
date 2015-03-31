@@ -20,6 +20,7 @@ from io import BytesIO
 from hashlib import sha256
 
 import param
+from param.parameterized import bothmethod
 
 from .options import Store
 from .util import unique_iterator
@@ -136,6 +137,51 @@ class Exporter(param.ParameterizedFunction):
         """
         raise NotImplementedError("Exporter save method not implemented.")
 
+
+
+class Importer(param.ParameterizedFunction):
+    """
+    An Importer is a parameterized function that accepts some data in
+    some format and returns a HoloViews object. This mechanism is
+    designed to be very general so here are a few examples:
+
+    Unpickling: Native Python, supported by HoloViews.
+    Servers:    Loading data over a network connection.
+    Storage:    Loading from a database (e.g SQL), HDF5 etc.
+    """
+
+    def __call__(self, data):
+        """
+        Given raw data in the appropriate format return the
+        corresponding HoloViews object. Acts as the inverse of
+        Exporter when supplied the data portion of an Exporter's
+        output.
+        """
+        raise NotImplementedError("Importer not implemented.")
+
+
+    @bothmethod
+    def load(self_or_cls, src, entry=None):
+        """
+        Given some source (e.g. a filename, a network connection etc),
+        return the loaded HoloViews object.
+        """
+        raise NotImplementedError("Importer load method not implemented.")
+
+
+    @bothmethod
+    def info(self_or_cls, src):
+        """
+        Returns the 'info' portion of the metadata (if available).
+        """
+        raise NotImplementedError("Importer info method not implemented.")
+
+    @bothmethod
+    def key(self_or_cls, src):
+        """
+        Returns the metadata key (if available).
+        """
+        raise NotImplementedError("Importer keys method not implemented.")
 
 class Pickler(Exporter):
     """
