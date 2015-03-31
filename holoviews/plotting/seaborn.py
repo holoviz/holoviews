@@ -218,7 +218,7 @@ class SNSFramePlot(DFrameViewPlot):
                                             'sharex', 'sharey', 'hue', 'estimator'],
                              'boxplot':   [],
                              'violinplot':['groupby', 'positions',
-                                           'inner', 'bw', 'cut'],
+                                           'inner', 'join_rm', 'bw', 'cut'],
                              'lmplot':    ['hue', 'col', 'row', 'palette',
                                            'sharex', 'dropna', 'legend'],
                              'corrplot':  ['annot', 'sig_stars', 'sig_tail',
@@ -300,8 +300,11 @@ class SNSFramePlot(DFrameViewPlot):
             sns.boxplot(view.data[view.y], view.data[view.x], ax=axis,
                         **style)
         elif self.plot_type == 'violinplot':
-            sns.violinplot(view.data[view.y], view.data[view.x], ax=axis,
-                           **style)
+            if view.x:
+                sns.violinplot(view.data[view.y], view.data[view.x], ax=axis,
+                               **style)
+            else:
+                sns.violinplot(view.data, ax=axis, **style)
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
                              data=view.data, ax=axis, **style)
