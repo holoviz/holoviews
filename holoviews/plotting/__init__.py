@@ -6,16 +6,13 @@ from tempfile import NamedTemporaryFile
 try: basestring = basestring
 except: basestring = str
 
-import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
-import param
 from param.parameterized import bothmethod
 
 from ..core.options import Cycle, Palette, Options, Store, StoreOptions
-from ..core import Dimension, Layout, NdLayout, GridSpace, HoloMap
+from ..core import Dimension
 from ..core.io import Exporter
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
