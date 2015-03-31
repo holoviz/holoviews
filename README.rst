@@ -18,7 +18,9 @@ Clone holoviews directly from GitHub with::
 Please visit `our website <http://ioam.github.com/holoviews/>`_ for
 official releases, installation instructions, documentation, and examples.
 
-We also have a `wiki page <https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
+For general discussion, we have a mailing list on 
+`Google Groups <https://groups.google.com/forum/#!forum/holoviews>`_. In addition
+we have a `wiki page <https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
 describing current work-in-progress and experimental features. If you find any bugs or 
 have any feature suggestions please file a GitHub Issue or submit a pull request.
 
