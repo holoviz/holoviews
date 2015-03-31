@@ -337,11 +337,13 @@ class Layout(AttrTree, Dimensioned):
                             sanitize_identifier(val.label if val.label else 'I')), val)])
 
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_display'] = 'auto'
         self.__dict__['_max_cols'] = 4
+        if items and all(isinstance(item, Dimensioned) for item in items):
+            items = self.from_values(items).data
         params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
-        AttrTree.__init__(self, *args, **kwargs)
+        AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
 
 
