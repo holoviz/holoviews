@@ -85,7 +85,7 @@ class Exporter(param.ParameterizedFunction):
       literals that may be conviently used for dictionary-style
       indexing. Returns an empty dictionary by default.""")
 
-    info_fn = param.Callable(lambda x: repr(x), doc="""
+    info_fn = param.Callable(lambda x: {'repr':repr(x)}, doc="""
       Function that generates additional metadata information from the
       HoloViews object being saved.
 
