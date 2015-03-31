@@ -12,7 +12,7 @@ archive = FileArchive()
 
 
 def formatter(fmt):
-    def inner(x): return (fmt % x)
+    def inner(x, pos=None): return (fmt % x)
     return inner
 
 # Define default type formatters
