@@ -69,19 +69,29 @@ class Exporter(param.ParameterizedFunction):
 
     Pickling:   Native Python, supported by HoloViews.
     Rendering:  Currently using matplotlib but could use any plotting backend.
-    Storage:    Databases (e.g SQL), HDF5 etc.
+    Storage:    Saving to a database (e.g SQL), HDF5 etc.
     """
 
     # Mime-types that need encoding as utf-8 upon export
     utf8_mime_types = ['image/svg+xml', 'text/html']
 
-    metadata_fn = param.Callable(doc="""
+    key_fn = param.Callable(doc="""
+      Function that generates the metadata key from the HoloViews
+      object being saved. The metadata key is a single
+      high-dimensional key of values associated with dimension labels.
+
+      The returned dictionary must have string keys and simple
+      literals that may be conviently used for dictionary-style
+      indexing. Returns an empty dictionary by default.""")
+
+    info_fn = param.Callable(lambda x: repr(x), doc="""
       Function that generates additional metadata information from the
       HoloViews object being saved.
 
-      Must return a dictionary containing string keys and simple
-      literal values such ints, floats, short strings and booleans. By
-      default the metadata is an empty dictionary.""")
+      Unlike metadata keys, the information returned may be unsuitable
+      for use as a key index and may include entries such as the
+      object's repr. Regardless, the info metadata should still only
+      contain items that will be quick to load and inspect. """)
 
 
     @classmethod
@@ -120,8 +130,9 @@ class Exporter(param.ParameterizedFunction):
         support multiple formats, the fmt argument may also be
         supplied (which typically corresponds to the file-extension).
 
-        The supplied metadata dictionary updates the output of the
-        metadata_fn (if any) which is then saved if supported.
+        The supplied metadata key and info dictionaries will be used
+        to update the output of the relevant key and info functions
+        which is then saved (if supported).
         """
         raise NotImplementedError("Exporter save method not implemented.")
 
