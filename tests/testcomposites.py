@@ -34,7 +34,16 @@ class LayoutTestCase(ElementTestCase):
                          [('Element', 'I'), ('Element', 'II')])
 
     def test_layouttree_keys_2(self):
+        t = Layout([self.el1, self.el2])
+        self.assertEqual(t.keys(),
+                         [('Element', 'I'), ('Element', 'II')])
+
+    def test_layouttree_values_1(self):
         t = self.el1 + self.el2
+        self.assertEqual(t.values(), [self.el1, self.el2])
+
+    def test_layouttree_values_2(self):
+        t = Layout([self.el1, self.el2])
         self.assertEqual(t.values(), [self.el1, self.el2])
 
     def test_triple_layouttree_keys(self):
@@ -133,8 +142,17 @@ class OverlayTestCase(ElementTestCase):
         t = self.el1 * self.el2
         self.assertEqual(t.keys(), [('Element', 'I'), ('Element', 'II')])
 
+    def test_overlay_keys_2(self):
+        t = Overlay([self.el1, self.el2])
+        self.assertEqual(t.keys(),
+                         [('Element', 'I'), ('Element', 'II')])
+
     def test_overlay_values(self):
         t = self.el1 * self.el2
+        self.assertEqual(t.values(), [self.el1, self.el2])
+
+    def test_overlay_values_2(self):
+        t = Overlay([self.el1, self.el2])
         self.assertEqual(t.values(), [self.el1, self.el2])
 
     def test_triple_overlay_keys(self):
