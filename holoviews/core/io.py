@@ -124,7 +124,9 @@ class Exporter(param.ParameterizedFunction):
         """
         raise NotImplementedError("Exporter not implemented.")
 
-    def save(self, obj, basename, fmt=None, metadata={}, **kwargs):
+
+    @bothmethod
+    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, **kwargs):
         """
         Similar to the call method except saves exporter data to disk
         into a file with specified basename. For exporters that
