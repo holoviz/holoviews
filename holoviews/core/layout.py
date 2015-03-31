@@ -313,7 +313,7 @@ class Layout(AttrTree, Dimensioned):
             new_path, count = cls.new_path(path, item, paths, count)
             path_items.append(item)
             paths.append(new_path)
-        return zip(paths, path_items)
+        return list(zip(paths, path_items))
 
 
     @classmethod
