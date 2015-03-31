@@ -26,6 +26,9 @@ on `this wiki page
 Of course, notebook-specific functionality like capturing the data in
 notebook cells or saving cleared notebooks is only for IPython.
 
+**Q: How should I use HoloViews as a short qualified  import?**
+
+For a qualified import, we recommend importing HoloViews using ``import holoviews as hv``.
 
 **Q: My output looks different from what is shown on the website**
 
@@ -136,3 +139,10 @@ web. Useful tricks to reduce file size include:
   ``webm``, ``mp4`` or animated ``gif``, while being aware that those
   formats may introduce visible artifacts.
 
+**Q: How do I create a Layout or Overlay object from an arbitary list?**
+
+Unfortunately the Python inbuilt ``sum`` doesn't behave appropriately and the 
+``np.sum`` and ``np.prod`` functions aren't suitable either. The recommended
+approach is to import the ``Overlay`` or ``Layout`` as appropriate 
+and use the ``from_values`` classmethod. In the next release, you will also
+be able to pass a list directly to the constructor of ``Overlay`` or ``Layout``.
