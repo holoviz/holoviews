@@ -193,6 +193,82 @@ class Importer(param.ParameterizedFunction):
         """
         raise NotImplementedError("Importer keys method not implemented.")
 
+
+class Serializer(Exporter):
+    "A generic exporter that supports any arbitrary serializer"
+
+    serializer=param.Callable(Store.dumps, doc="""
+       The serializer function, set to Store.dumps by default. The
+       serializer should take an object and output a serialization as
+       a string or byte stream.
+
+       Any suitable serializer may be used. For instance, pickle.dumps
+       may be used although this will not save customized options.""")
+
+    mime_type=param.String('application/python-pickle', allow_None=True, doc="""
+       The mime-type associated with the serializer (if applicable).""")
+
+    file_ext = param.String('pkl', doc="""
+       The file extension associated with the corresponding file
+       format (if applicable).""")
+
+
+    def __call__(self, obj, **kwargs):
+        data = self.serializer(obj)
+        return data, {'file-ext': self.file_ext, 'mime_type':self.mime_type}
+
+    @bothmethod
+    def save(self_or_cls, obj, basename, info={}, key={}, **kwargs):
+        data, base_info = self_or_cls(obj, **kwargs)
+        key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, base_info, key)
+        info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info)
+        metadata, _ = self_or_cls({'info':info, 'key':key}, **kwargs)
+        with open('%s.%s' % (basename, self_or_cls.file_ext), 'a') as f:
+            f.write(metadata)
+            f.write(data)
+
+
+
+class Deserializer(Importer):
+    "A generic importer that supports any arbitrary de-serializer."
+
+    deserializer=param.Callable(Store.load, doc="""
+       The deserializer function, set to Store.load by default. The
+       deserializer should take a file-like object that can be read
+       from until the first object has been deserialized. If the file
+       has not been exhausted, the deserializer should be able to
+       continue parsing and loading objects.
+
+       Any suitable deserializer may be used. For instance,
+       pickle.load may be used although this will not load customized
+       options.""")
+
+    def __call__(self, data):
+        return self.deserializer(BytesIO(data))
+
+    @bothmethod
+    def load(self_or_cls, filename):
+        with open(filename, 'r') as f:
+            data = self_or_cls.deserializer(f)
+            try:
+                data = self_or_cls.deserializer(f)
+            except: pass
+        return data
+
+    @bothmethod
+    def key(self_or_cls, filename):
+        with open(filename, "r") as f:
+            metadata = self_or_cls.deserializer(f)
+        metadata = metadata if isinstance(metadata, dict) else {}
+        return metadata.get('key', {})
+
+    @bothmethod
+    def info(self_or_cls, filename):
+        with open(filename, "r") as f:
+            metadata = self_or_cls.deserializer(f)
+        metadata = metadata if isinstance(metadata, dict) else {}
+        return metadata.get('info', {})
+
 class Pickler(Exporter):
     """
     Simple example of an archiver that simply returns the pickled data.
