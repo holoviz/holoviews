@@ -108,6 +108,14 @@ class Exporter(param.ParameterizedFunction):
         else:
             return data
 
+    @bothmethod
+    def _merge_metadata(self_or_cls, obj, fn, *dicts):
+        """
+        Returns a merged metadata info dictionary from the supplied
+        function and additional dictionaries
+        """
+        merged = dict([(k,v) for d in dicts for (k,v) in d.items()])
+        return dict(merged, **fn(obj)) if fn else merged
 
     def __call__(self, obj, fmt=None):
         """
