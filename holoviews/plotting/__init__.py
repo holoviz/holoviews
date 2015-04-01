@@ -126,6 +126,12 @@ class MPLPlotRenderer(Exporter):
     dpi=param.Integer(None, allow_None=True, doc="""
         The render resolution in dpi (dots per inch)""")
 
+    info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+        MPLPlotRenderer does not support the saving of object info metadata""")
+
+    key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
+        MPLPlotRenderer does not support the saving of object key metadata""")
+
 
     def __call__(self, obj, fmt=None):
         """
@@ -166,7 +172,7 @@ class MPLPlotRenderer(Exporter):
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
-        if (info or key) or (self_or_cls.key_fn or self_or_cls.info_fn):
+        if info or key:
             raise Exception('MPLPlotRenderer does not support saving metadata to file.')
 
         with StoreOptions.options(obj, options, **kwargs):
