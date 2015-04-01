@@ -243,8 +243,9 @@ styles = {'default': './default.mplstyle'}
 set_style('default')
 
 # Upgrade Dimension formatters to matplotlib
-Dimension.type_formatters = {k: fn if isinstance(fn, ticker.Formatter) else ticker.FuncFormatter(fn)
-                             for k, fn in Dimension.type_formatters.items()}
+wrapped_formatters = {k: fn if isinstance(fn, ticker.Formatter) else ticker.FuncFormatter(fn)
+                      for k, fn in Dimension.type_formatters.items()}
+Dimension.type_formatters.update(wrapped_formatters)
 
 # Define matplotlib based style cycles and Palettes
 Cycle.default_cycles.update({'default_colors': plt.rcParams['axes.color_cycle']})
