@@ -113,7 +113,7 @@ class MPLPlotRenderer(Exporter):
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='gif',
-                                   objects=['webm','h264', 'gif', None], doc="""
+                                   objects=['webm','mp4', 'gif', None], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
