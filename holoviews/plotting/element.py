@@ -41,6 +41,9 @@ class ElementPlot(Plot):
     logy  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the y-axis of the Chart.""")
 
+    logz  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
+
     orientation = param.ObjectSelector(default='horizontal',
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
@@ -75,6 +78,9 @@ class ElementPlot(Plot):
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
+
+    zticks = param.Integer(default=5, doc="""
+        Number of ticks along the z-axis.""")
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
@@ -184,7 +190,7 @@ class ElementPlot(Plot):
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
-                       xlabel=None, ylabel=None, zlabel=None):
+                       zticks=None, xlabel=None, ylabel=None, zlabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
         Only plots with zorder 0 get to apply their settings.
@@ -207,7 +213,7 @@ class ElementPlot(Plot):
                 if hasattr(view, 'ylabel') and ylabel is None:
                     ylabel = view.ylabel
                 if hasattr(view, 'zlabel') and zlabel is None:
-                    ylabel = view.zlabel
+                    zlabel = view.zlabel
 
                 # Extents
                 if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
@@ -251,6 +257,7 @@ class ElementPlot(Plot):
 
             if xlabel: axis.set_xlabel(xlabel)
             if ylabel: axis.set_ylabel(ylabel)
+            if zlabel: axis.set_zlabel(zlabel)
 
             if not self.projection == '3d':
                 disabled_spines = []
@@ -296,7 +303,6 @@ class ElementPlot(Plot):
             elif self.logy:
                 axis.set_yscale('log')
 
-
             if xticks:
                 axis.set_xticks(xticks[0])
                 axis.set_xticklabels(xticks[1])
@@ -319,6 +325,18 @@ class ElementPlot(Plot):
                 axis.yaxis.set_major_locator(log_locator)
             elif self.yticks:
                 axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
+
+            if not self.projection == '3d':
+                pass
+            elif zticks:
+                axis.set_zticks(zticks[0])
+                axis.set_zticklabels(zticks[1])
+            elif self.logz:
+                log_locator = ticker.LogLocator(numticks=self.zticks,
+                                                subs=range(1,10))
+                axis.zaxis.set_major_locator(log_locator)
+            else:
+                axis.zaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
 
             for tick in axis.get_yticklabels():
                 tick.set_rotation(self.yrotation)

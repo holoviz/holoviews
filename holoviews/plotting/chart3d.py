@@ -48,19 +48,6 @@ class Plot3D(ElementPlot):
         labels, and axes options for 3D Plots.
         """
         axis = self.handles['axis']
-
-        if self.zorder == 0 and axis is not None and key is not None:
-            view = self.map.get(key, None) if hasattr(self, 'map') else None
-            if view is not None:
-                if hasattr(view, 'zlabel') and zlabel is None:
-                    zlabel = view.zlabel
-                axis.set_zlabel(zlabel)
-
-            if zticks:
-                axis.set_yticks(zticks[0])
-                axis.set_yticklabels(zticks[1])
-            else:
-                axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
         self.handles['fig'].set_frameon(False)
         axis.grid(True)
         axis.view_init(elev=self.elevation, azim=self.azimuth)
