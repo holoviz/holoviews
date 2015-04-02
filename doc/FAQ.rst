@@ -146,3 +146,23 @@ Unfortunately the Python inbuilt ``sum`` doesn't behave appropriately and the
 approach is to import the ``Overlay`` or ``Layout`` as appropriate 
 and use the ``from_values`` classmethod. In the next release, you will also
 be able to pass a list directly to the constructor of ``Overlay`` or ``Layout``.
+
+**Q: How do I include special characters (e.g. accents) in the title?**
+
+At this time, Python 2 users may need to switch the default encoding 
+of string to UTF-8. This may be done in a live Python of IPython
+session as follows:
+
+.. code:: python
+
+  import sys; reload(sys)
+  sys.setdefaultencoding("utf-8")
+
+Alternatively you may set your
+`PYTHONIOENCODING <https://docs.python.org/2/using/cmdline.html#envvar-PYTHONIOENCODING>`_
+environment variable. That said, we hope to support unicode literals
+in the next release making these changes unnecessary.
+
+
+
+
