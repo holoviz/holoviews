@@ -146,14 +146,12 @@ web. Useful tricks to reduce file size include:
 
 **Q: How do I create a Layout or Overlay object from an arbitary list?**
 
-The Python inbuilt ``sum`` function does not normally work well with
-non-numeric types, because it assumes that they can be added to 0,
-which is not true of HoloViews objects.  For lists of similar types of
-data, the Numpy ``np.sum`` and ``np.prod`` functions do work well.
-However, these functions are not suitable for arbitrary lists of
-different object types, for which the currently recommended
-approach is to import the ``Overlay`` or ``Layout`` as appropriate 
-and use the ``from_values`` classmethod. In the next release, you will also
+For lists of non-iterable elements (e.g. a collection of ``Image``
+elements), the Numpy ``np.sum`` and ``np.prod`` functions work well.
+However, these functions don't work for iterable elements such as 
+``Curve``, for which the currently recommended approach is to
+import the ``Overlay`` or ``Layout`` as appropriate and use 
+the ``from_values`` classmethod. In the next release, you will also
 be able to pass such a list directly to the constructor of ``Overlay``
 or ``Layout``. 
 
