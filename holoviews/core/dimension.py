@@ -583,6 +583,8 @@ class Dimensioned(LabelledData):
         indicate that no range is defined.
         """
         dimension = self.get_dimension(dim)
+        if dimension is None:
+            return (None, None)
         if dimension.range != (None, None):
             return dimension.range
         elif not data_range:
