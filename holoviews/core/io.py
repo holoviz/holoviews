@@ -495,6 +495,9 @@ class FileArchive(Archive):
         elif [obj, data] == [None, None]:
             raise Exception("Either an object or explicit data must be "
                             "supplied to create an entry in the archive.")
+        elif data and 'mime_type' not in info:
+            raise Exception("The mime-type must be supplied in the info dictionary "
+                            "when supplying data directly")
 
         self._validate_formatters()
 
@@ -542,8 +545,6 @@ class FileArchive(Archive):
         (unique_key, ext) = self._unique_name(filename, ext,
                                               self._files.keys(), force=True)
         return (unique_key, ext)
-
-
 
     def _zip_archive(self, export_name, files, root):
         archname = '.'.join(self._unique_name(export_name, 'zip', root))
