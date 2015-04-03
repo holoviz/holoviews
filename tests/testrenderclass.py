@@ -1,3 +1,6 @@
+"""
+Test cases for rendering exporters
+"""
 from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
