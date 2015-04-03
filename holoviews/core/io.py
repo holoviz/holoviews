@@ -564,9 +564,10 @@ class FileArchive(Archive):
                 tarf.addfile(tarinfo, BytesIO(filedata))
 
     def _single_file_archive(self, export_name, files, root):
-        ((_, ext), entry) = files[0]
+        ((basename, ext), entry) = files[0]
         (data, info) = entry
-        (unique_name, ext) = self._unique_name(export_name, ext, root)
+        full_fname = '%s_%s' % (export_name, basename)
+        (unique_name, ext) = self._unique_name(full_fname, ext, root)
         filename = self._truncate_name(self._normalize_name(unique_name), ext=ext)
         fpath = os.path.join(root, filename)
         with open(fpath, 'w') as f:
