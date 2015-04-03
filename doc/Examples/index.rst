@@ -60,7 +60,10 @@ Third party libraries, simulators and toolkits that make use of
 HoloViews for easier visualization and analysis:
 
 * `ImaGen library <http://ioam.github.io/imagen>`_: Generate
-  HoloViews Image and RGB patterns from mathematical functions.
+  HoloViews `Image <https://ioam.github.io/holoviews/Tutorials/Elements.html#Image>`_
+  and 
+  `RGB <https://ioam.github.io/holoviews/Tutorials/Elements.html#RGB>`_ 
+  patterns from mathematical functions.
 
 * `Topographica tutorials <http://topographica.org/Tutorials/>`_:
   Neural simulator using HoloViews (plus publications `Stevens et
