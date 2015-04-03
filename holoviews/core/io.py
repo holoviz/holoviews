@@ -14,7 +14,7 @@ Archives: A collection of HoloViews objects that are first collected
 """
 from __future__ import absolute_import
 
-import re, os, time, string, zipfile, tarfile, shutil, itertools
+import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
 
 from io import BytesIO
 from hashlib import sha256
@@ -23,8 +23,9 @@ import param
 from param.parameterized import bothmethod
 
 from .options import Store
-from .util import unique_iterator
+from .util import unique_iterator, sanitize_identifier
 from .ndmapping import OrderedDict, UniformNdMapping
+from .layout import Layout
 from .dimension import LabelledData
 
 
@@ -279,23 +280,122 @@ class Deserializer(Importer):
         metadata = metadata if isinstance(metadata, dict) else {}
         return metadata.get('info', {})
 
+
+
 class Pickler(Exporter):
     """
-    Simple example of an archiver that simply returns the pickled data.
+    The recommended pickler for serializing HoloViews object to a .hvz
+    file (a simple zip archive of pickle files). In addition to the
+    functionality offered by Store.dump and Store.load, this file
+    format offers three additional features:
+
+    1. Optional (zip) compression.
+    2. Ability to save and load components of a Layout independently.
+    3. Support for metadata per saved component.
+
+    The output file with the .hvz file extension is simply a zip
+    archive containing pickled HoloViews objects.
     """
 
     protocol = param.Integer(default=2, doc="""
         The pickling protocol where 0 is ASCII, 1 supports old Python
         versions and 2 is efficient for new style classes.""")
 
-    def __call__(self, obj):
-        data = Store.dumps(obj, protocol=self.protocol)
-        return data, {'file-ext':'pkl',
-                      'mime_type':'application/python-pickle'}
+    compress = param.Boolean(default=True, doc="""
+        Whether compression is enabled or not""")
 
-    def save(self, obj, basename):
-        with open(basename+'.pkl', 'w') as f:
-            Store.dump(obj, f, protocol=self.protocol)
+    mime_type = 'application/zip'
+    file_ext = 'hvz'
+
+
+    def __call__(self, obj, key={}, info={}, **kwargs):
+        buff = BytesIO()
+        self.save(obj, buff, key=key, info=info, **kwargs)
+        buff.seek(0)
+        return buff.read(), {'file-ext': 'hvz', 'mime_type':self.mime_type}
+
+    @bothmethod
+    def save(self_or_cls, obj, filename, key={}, info={}, **kwargs):
+        base_info = {'file-ext': 'hvz', 'mime_type':self_or_cls.mime_type}
+        key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
+        info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
+        compression = zipfile.ZIP_STORED if self_or_cls.compress else zipfile.ZIP_DEFLATED
+
+        filename = self_or_cls._filename(filename) if isinstance(filename, str) else filename
+        with zipfile.ZipFile(filename, 'w', compression=compression) as f:
+
+            if isinstance(obj, Layout):
+                entries = ['.'.join(k) for k in obj.data.keys()]
+                components = list(obj.data.values())
+                entries = entries if len(entries) > 1 else [entries[0]+'(L)']
+            else:
+                entries = ['%s.%s' % (sanitize_identifier(obj.group, False),
+                                      sanitize_identifier(obj.label, False))]
+                components = [obj]
+
+            for component, entry in zip(components, entries):
+                f.writestr(entry,
+                           Store.dumps(component, protocol=self_or_cls.protocol))
+            f.writestr('metadata',
+                       pickle.dumps({'info':info, 'key':key}))
+
+
+
+class Unpickler(Importer):
+    """
+    The inverse of Pickler used to load the .hvz file format which is
+    simply a zip archive of pickle objects.
+
+    Unlike a regular pickle file, info and key metadata as well as
+    individual components of a Layout may be loaded without needing to
+    load the entire file into memory.
+
+    The components that may be individually loaded may be found using
+    the entries method.
+    """
+
+    def __call__(self, data, entries=None):
+        buff = BytesIO(data)
+        return self.load(buff, entries=entries)
+
+    @bothmethod
+    def load(self_or_cls, filename, entries=None):
+        components, single_layout = [], False
+        entries = entries if entries else self_or_cls.entries(filename)
+        with zipfile.ZipFile(filename, 'r') as f:
+            for entry in entries:
+                if entry not in f.namelist():
+                    raise Exception("Entry %s not available" % entry)
+                components.append(Store.loads(f.read(entry)))
+                single_layout = entry.endswith('(L)')
+
+        if len(components) == 1 and not single_layout:
+            return components[0]
+        else:
+            return Layout.from_values(components)
+
+    @bothmethod
+    def _load_metadata(self_or_cls, filename, name):
+        with zipfile.ZipFile(filename, 'r') as f:
+            if 'metadata' not in f.namelist():
+                raise Exception("No metadata available")
+            metadata = pickle.loads(f.read('metadata'))
+            if name not in metadata:
+                raise KeyError("Entry %s is missing from the metadata" % name)
+            return metadata[name]
+
+    @bothmethod
+    def key(self_or_cls, filename):
+        return self_or_cls._load_metadata(filename, 'key')
+
+    @bothmethod
+    def info(self_or_cls, filename):
+        return self_or_cls._load_metadata(filename, 'info')
+
+    @bothmethod
+    def entries(self_or_cls, filename):
+        with zipfile.ZipFile(filename, 'r') as f:
+            return [el for el in f.namelist() if el != 'metadata']
 
 
 
