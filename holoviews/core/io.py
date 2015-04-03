@@ -109,6 +109,12 @@ class Exporter(param.ParameterizedFunction):
             return data
 
     @bothmethod
+    def _filename(self_or_cls, filename):
+        "Add the file extension if not already present"
+        if not filename.endswith(self_or_cls.file_ext):
+            return '%s.%s' % (filename, self_or_cls.file_ext)
+        else:
+            return filename
     def _merge_metadata(self_or_cls, obj, fn, *dicts):
         """
         Returns a merged metadata info dictionary from the supplied
@@ -218,12 +224,13 @@ class Serializer(Exporter):
         return data, {'file-ext': self.file_ext, 'mime_type':self.mime_type}
 
     @bothmethod
-    def save(self_or_cls, obj, basename, info={}, key={}, **kwargs):
+    def save(self_or_cls, obj, filename, info={}, key={}, **kwargs):
         data, base_info = self_or_cls(obj, **kwargs)
         key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, base_info, key)
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info)
         metadata, _ = self_or_cls({'info':info, 'key':key}, **kwargs)
-        with open('%s.%s' % (basename, self_or_cls.file_ext), 'a') as f:
+        filename = self_or_cls._filename(filename)
+        with open(filename, 'a') as f:
             f.write(metadata)
             f.write(data)
 
