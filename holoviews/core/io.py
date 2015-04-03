@@ -565,8 +565,8 @@ class FileArchive(Archive):
     def _single_file_archive(self, export_name, files, root):
         ((_, ext), entry) = files[0]
         (data, info) = entry
-        unique_name = self._unique_name(export_name, ext, root)
-        filename = self._truncate_name(self._normalize_name(*unique_name))
+        (unique_name, ext) = self._unique_name(export_name, ext, root)
+        filename = self._truncate_name(self._normalize_name(unique_name), ext=ext)
         fpath = os.path.join(root, filename)
         with open(fpath, 'w') as f:
             f.write(Exporter.encode(entry))
@@ -597,8 +597,6 @@ class FileArchive(Archive):
         """
         skip = False if force else (not self.unique_name)
         if skip: return (basename, ext)
-        ext = '' if ext is None else ext
-
         ext = '' if ext is None else ext
         if isinstance(existing, str):
             split = [os.path.splitext(el)
