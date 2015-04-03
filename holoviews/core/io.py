@@ -75,7 +75,7 @@ class Exporter(param.ParameterizedFunction):
     """
 
     # Mime-types that need encoding as utf-8 upon export
-    utf8_mime_types = ['image/svg+xml', 'text/html']
+    utf8_mime_types = ['image/svg+xml', 'text/html', 'text/json']
 
     key_fn = param.Callable(doc="""
       Function that generates the metadata key from the HoloViews
@@ -234,7 +234,7 @@ class Serializer(Exporter):
         info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         metadata, _ = self_or_cls({'info':info, 'key':key}, **kwargs)
         filename = self_or_cls._filename(filename)
-        with open(filename, 'a') as f:
+        with open(filename, 'ab') as f:
             f.write(metadata)
             f.write(data)
 
@@ -259,7 +259,7 @@ class Deserializer(Importer):
 
     @bothmethod
     def load(self_or_cls, filename):
-        with open(filename, 'r') as f:
+        with open(filename, 'rb') as f:
             data = self_or_cls.deserializer(f)
             try:
                 data = self_or_cls.deserializer(f)
@@ -268,14 +268,14 @@ class Deserializer(Importer):
 
     @bothmethod
     def key(self_or_cls, filename):
-        with open(filename, "r") as f:
+        with open(filename, "rb") as f:
             metadata = self_or_cls.deserializer(f)
         metadata = metadata if isinstance(metadata, dict) else {}
         return metadata.get('key', {})
 
     @bothmethod
     def info(self_or_cls, filename):
-        with open(filename, "r") as f:
+        with open(filename, "rb") as f:
             metadata = self_or_cls.deserializer(f)
         metadata = metadata if isinstance(metadata, dict) else {}
         return metadata.get('info', {})
@@ -670,7 +670,7 @@ class FileArchive(Archive):
         (unique_name, ext) = self._unique_name(full_fname, ext, root)
         filename = self._truncate_name(self._normalize_name(unique_name), ext=ext)
         fpath = os.path.join(root, filename)
-        with open(fpath, 'w') as f:
+        with open(fpath, 'wb') as f:
             f.write(Exporter.encode(entry))
 
     def _directory_archive(self, export_name, files, root):
@@ -683,7 +683,7 @@ class FileArchive(Archive):
             (data, info) = entry
             filename = self._truncate_name(basename, ext)
             fpath = os.path.join(output_dir, filename)
-            with open(fpath, 'w') as f:
+            with open(fpath, 'wb') as f:
                 f.write(Exporter.encode(entry))
 
 
