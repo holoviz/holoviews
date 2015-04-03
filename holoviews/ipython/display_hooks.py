@@ -26,7 +26,7 @@ from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, RasterGridPlot
 from ..plotting import ANIMATION_OPTS, HTML_TAGS, opts, get_plot_size
 from .magics import OutputMagic, OptsMagic
-from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
+from .widgets import SelectionWidget, ScrubberWidget
 
 from .archive import notebook_archive
 
@@ -121,7 +121,6 @@ def display_widgets(plot):
     widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
-
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
     if not isuniform and widget_format == 'widgets':
@@ -136,10 +135,6 @@ def display_widgets(plot):
         return ScrubberWidget(plot)()
     if widget_mode == 'embed':
         return SelectionWidget(plot)()
-    elif widget_mode == 'cached':
-        return IPySelectionWidget(plot, cached=True)()
-    else:
-        return IPySelectionWidget(plot, cached=False)()
 
 
 def display_figure(fig, message=None, max_width='100%'):

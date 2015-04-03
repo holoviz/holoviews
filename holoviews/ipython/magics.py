@@ -153,7 +153,7 @@ class OutputMagic(OptionsMagic):
     allowed = {'backend'     : ['mpl','d3', 'nbagg'],
                'fig'         : ['svg', 'png', 'repr'],
                'holomap'     : inbuilt_formats,
-               'widgets'     : ['embed', 'live', 'cached'],
+               'widgets'     : ['embed', 'live'],
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
                'max_branches': (0, float('inf')),

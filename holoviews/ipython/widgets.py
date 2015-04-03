@@ -13,16 +13,6 @@ try:
 except:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
-from IPython.display import display
-try:
-    # Silence the annoying FutureWarning in IPython 3.0
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from IPython.html import widgets
-        from IPython.html.widgets import FloatSliderWidget
-except:
-    widgets = None
-    FloatSliderWidget = object
 
 # IPython 0.13 does not have version_info
 ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
@@ -212,39 +202,6 @@ class RunProgress(ProgressBar):
             super(RunProgress, self).__call__(100)
 
 
-
-class FixedValueSliderWidget(FloatSliderWidget):
-    """
-    Subclass of FloatSliderWidget that jumps discretely
-    between a set of supplied values.
-    """
-
-    def __init__(self, values=[], *args, **kwargs):
-        value = round(values[0], 5)
-        vmin = min(values)
-        vmax = max(values)
-        step = min(abs(np.diff(values))) if len(values) > 1 else 0
-        self.values = np.array(values)
-        widgets.DOMWidget.__init__(self, step=step, min=vmin, max=vmax,
-                                   value=value, *args, **kwargs)
-        self.on_trait_change(self._snap_value, ['value'])
-        self.time = time.time()
-
-
-    def _snap_value(self, name, old_val, new_val):
-        """
-        Snap value to the closest specified value.
-        """
-        if self.time+0.05 > time.time():
-            return
-        diffs = np.abs(self.values - new_val)
-        idx = np.argmin(diffs)
-        val = self.values[idx]
-        if val != self.value:
-            self.value = round(val, 5)
-            self.time = time.time()
-
-
 def isnumeric(val):
     try:
         float(val)
@@ -285,147 +242,6 @@ class NdWidget(param.Parameterized):
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
         return display_figure(fig)
-
-
-
-class IPySelectionWidget(NdWidget):
-    """
-    Interactive widget to select and view ViewableElement objects contained
-    in an NdMapping. ViewSelector creates Slider and Dropdown widgets
-    for each dimension contained within the supplied object and
-    an image widget for the plotted ViewableElement. All widgets are dynamically
-    updated to match the current selection.
-    """
-
-    cached = param.Boolean(default=True, doc="""
-        Whether to cache the ViewableElement plots when initializing the object.""")
-
-    css = param.Dict(default={'margin-left': 'auto',
-                              'margin-right': 'auto'}, doc="""
-                              CSS to apply to the widgets.""")
-
-    def __init__(self, plot, **params):
-        super(IPySelectionWidget, self).__init__(plot, **params)
-
-        if widgets is None:
-            raise ImportError('ViewSelector requires IPython >= 2.0.')
-
-        self.nbagg = OutputMagic.options['backend'] == 'nbagg'
-        self._initialize_widgets()
-        self.refresh = True
-
-        if self.nbagg:
-            self.figure = self.plot()
-        elif self.cached:
-            self.frames = OrderedDict((k, self._plot_figure(idx))
-                                      for idx, k in enumerate(self.keys))
-
-
-    def _initialize_widgets(self):
-        """
-        Initialize widgets and dimension values.
-        """
-
-        self.pwidgets = {}
-        self.dim_val = {}
-        for didx, dim in enumerate(self.mock_obj.key_dimensions):
-            all_vals = [k[didx] for k in self.keys]
-
-            # Initialize dimension value
-            vals = self._get_dim_vals(list(self.keys[0]), didx)
-            self.dim_val[dim.name] = vals[0]
-
-            # Initialize widget
-            if isnumeric(vals[0]):
-                widget_type = FixedValueSliderWidget
-            else:
-                widget_type = widgets.DropdownWidget
-                all_vals = dict((str(v), v) for v in all_vals)
-            self.pwidgets[dim.name] = widget_type(values=sorted(set(all_vals)))
-
-
-    def __call__(self):
-        # Initalize image widget
-        if self.nbagg:
-            fig = self.plot[0]
-            self.manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
-        elif (OutputMagic.options['backend'] == 'mpld3'
-            or OutputMagic.options['fig'] =='svg'):
-            self.image_widget = widgets.HTMLWidget()
-        else:
-            self.image_widget = widgets.ImageWidget()
-        if False:
-            if self.cached:
-                self.image_widget.value = list(self.frames.values())[0]
-            else:
-                self.image_widget.value = self._plot_figure(0)
-            self.image_widget.set_css(self.css)
-            display(self.image_widget)
-
-        # Initialize interactive widgets
-        interactive_widget = widgets.interactive(self.update_widgets,
-                                                     **self.pwidgets)
-        interactive_widget.set_css(self.css)
-
-        # Display widgets
-        display(interactive_widget)
-        self.manager.show()
-        return '' # Suppresses outputting ViewableElement repr when called through hook
-
-
-    def _get_dim_vals(self, indices, idx):
-        """
-        Get the dimension values along the supplied dimension,
-        computed from the supplied indices into the mock_obj.
-        """
-        indices[idx] = slice(None)
-        vals = [k[idx] if isinstance(k, tuple) else k
-                for k in self.mock_obj[tuple(indices)].keys()]
-        return vals
-
-
-    def update_widgets(self, **kwargs):
-        """
-        Callback method to process the new keys, find the closest matching
-        ViewableElement and update all the widgets.
-        """
-
-        # Do nothing if dimension values are unchanged
-        if all(v == self.dim_val[k] for k, v in kwargs.items()):
-            return
-
-        # Place changed dimensions first
-        changed_fn = lambda x: x[1] == self.dim_val[x[0]]
-        dimvals = sorted(kwargs.items(), key=changed_fn)
-
-        # Find the closest matching key along each dimension and update
-        # the matching widget accordingly.
-        checked = [slice(None) for i in range(self.mock_obj.ndims)]
-        for dim, val in dimvals:
-            if not isnumeric(val): val = str(val)
-            dim_idx = self.mock_obj.get_dimension_index(dim)
-            widget = self.pwidgets[dim]
-            vals = self._get_dim_vals(checked, dim_idx)
-            if val not in vals:
-                if isnumeric(val):
-                    val = vals[np.argmin(np.abs(np.array(vals) - val))]
-                else:
-                    val = str(vals[0])
-            checked[dim_idx] = val
-            self.dim_val[dim] = val
-            widget.value = round(val, 5) if isnumeric(val) else val
-
-        # Update frame
-        checked = tuple(checked)
-        if OutputMagic.options['backend'] == 'nbagg':
-            self.manager.destroy()
-            fig = self.plot[self.keys.index(checked)]
-            self.manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
-            self.manager.show()
-        elif self.cached:
-            self.image_widget.value = self.frames[checked]
-        else:
-            self.image_widget.value = self._plot_figure(self.keys.index(checked))
 
 
 
