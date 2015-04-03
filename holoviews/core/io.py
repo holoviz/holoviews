@@ -115,6 +115,8 @@ class Exporter(param.ParameterizedFunction):
             return '%s.%s' % (filename, self_or_cls.file_ext)
         else:
             return filename
+
+    @bothmethod
     def _merge_metadata(self_or_cls, obj, fn, *dicts):
         """
         Returns a merged metadata info dictionary from the supplied
@@ -200,6 +202,7 @@ class Importer(param.ParameterizedFunction):
         raise NotImplementedError("Importer keys method not implemented.")
 
 
+
 class Serializer(Exporter):
     "A generic exporter that supports any arbitrary serializer"
 
@@ -226,8 +229,8 @@ class Serializer(Exporter):
     @bothmethod
     def save(self_or_cls, obj, filename, info={}, key={}, **kwargs):
         data, base_info = self_or_cls(obj, **kwargs)
-        key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, base_info, key)
-        info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info)
+        key = self_or_cls._merge_metadata(obj, self_or_cls.key_fn, key)
+        info = self_or_cls._merge_metadata(obj, self_or_cls.info_fn, info, base_info)
         metadata, _ = self_or_cls({'info':info, 'key':key}, **kwargs)
         filename = self_or_cls._filename(filename)
         with open(filename, 'a') as f:
