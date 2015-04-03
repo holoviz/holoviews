@@ -677,3 +677,7 @@ class FileArchive(Archive):
             mime_type = v[1].get('mime_type', 'no mime type')
             lines.append('%s : %s' % (name.ljust(max_len), mime_type))
         print('\n'.join(lines))
+
+    def listing(self):
+        "Return a list of filename entries currently in the archive"
+        return ['.'.join([f,ext]) if ext else f for (f,ext) in self._files.keys()]
