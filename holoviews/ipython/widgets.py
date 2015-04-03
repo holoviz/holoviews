@@ -2,14 +2,14 @@ import os, sys, math, time, uuid, json, warnings
 from unittest import SkipTest
 
 import numpy as np
-from matplotlib.backends.backend_nbagg import FigureManagerNbAgg, new_figure_manager_given_figure
-from matplotlib import pyplot as plt
 
-import numpy as np
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_nbagg import CommSocket, new_figure_manager_given_figure
 
 try:
     import IPython
     from IPython.core.display import clear_output
+    from IPython.kernel.comm import Comm
 except:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
@@ -218,20 +218,75 @@ def get_plot_size():
 
 class NdWidget(param.Parameterized):
     """
-    NdWidget is an abstract base class implementing a method to
-    find the dimensions and keys of any ViewableElement, GridSpace or UniformNdMapping type.
-    In the process it creates a mock_obj to hold the dimensions
-    and keys.
+    NdWidget is an abstract base class implementing a method to find
+    the dimensions and keys of any ViewableElement, GridSpace or
+    UniformNdMapping type.  In the process it creates a mock_obj to
+    hold the dimensions and keys.
     """
+
+    #######################
+    # JSON export options #
+    #######################
+
+    export_json = param.Boolean(default=False, doc="""Whether to export
+         plots as json files, which can be dynamically loaded through
+         a callback from the slider.""")
+
+    json_path = param.String(default='./json_figures', doc="""
+         If export_json is True the json files will be written to this
+         directory.""")
+
+    server_url = param.String(default='', doc="""If export_json is
+         True the slider widget will expect to be served the plot data
+         from this URL. Data should be served from:
+         server_url/fig_{id}/{frame}.""")
+
+    ##############################
+    # Javascript include options #
+    ##############################
+
+    mpld3_url = 'https://mpld3.github.io/js/mpld3.v0.3git.js'
+    d3_url = 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
     def __init__(self, plot, **params):
         super(NdWidget, self).__init__(**params)
         self.plot = plot
         self.dimensions = plot.dimensions
         self.keys = plot.keys
+        self.mpld3 = OutputMagic.options['backend'] == 'd3'
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
                                   key_dimensions=self.dimensions)
+
+
+    def render_html(self, data):
+        # Set up jinja2 templating
+        import jinja2
+        path, _ = os.path.split(os.path.abspath(__file__))
+        templateLoader = jinja2.FileSystemLoader(searchpath=path)
+        templateEnv = jinja2.Environment(loader=templateLoader)
+        template = templateEnv.get_template(self.template)
+
+        return template.render(**data)
+
+
+    def encode_frames(self, frames):
+        frames = {idx: frame if self.mpld3 or self.export_json else
+                  str(frame) for idx, frame in frames.items()}
+        encoder = {}
+        if self.mpld3:
+            import mpld3
+            encoder = dict(cls=mpld3._display.NumpyEncoder)
+
+        if self.export_json:
+            if not os.path.isdir(self.json_path):
+                os.mkdir(self.json_path)
+            with open(self.json_path+'/fig_%s.json' % self.id, 'wb') as f:
+                json.dump(frames, f, **encoder)
+            frames = {}
+        elif self.mpld3:
+            frames = json.dumps(frames, **encoder)
+        return frames
 
 
     def _plot_figure(self, idx):
@@ -260,72 +315,18 @@ class ScrubberWidget(NdWidget):
     template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
-    #######################
-    # JSON export options #
-    #######################
-
-    export_json = param.Boolean(default=False, doc="""Whether to export
-         plots as json files, which can be dynamically loaded through
-         a callback from the slider.""")
-
-    json_path = param.String(default='./json_figures', doc="""
-         If export_json is True the json files will be written to this
-         directory.""")
-
-    server_url = param.String(default='', doc="""If export_json is
-         True the slider widget will expect to be served the plot data
-         from this URL. Data should be served from:
-         server_url/fig_{id}/{frame}.""")
-
-    ##############################
-    # Javascript include options #
-    ##############################
-
-    mpld3_url = 'https://mpld3.github.io/js/mpld3.v0.3git.js'
-    d3_url = 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
-
     def __init__(self, plot, **params):
         super(ScrubberWidget, self).__init__(plot, **params)
         self.frames = OrderedDict((idx, self._plot_figure(idx))
                                   for idx in range(len(self.plot)))
 
 
-    def get_frames(self, id):
-        use_mpld3 = OutputMagic.options['backend'] == 'd3'
-        frames = {idx: frame if use_mpld3 or self.export_json else
-                  str(frame) for idx, frame in enumerate(self.frames.values())}
-        encoder = {}
-        if use_mpld3:
-            import mpld3
-            encoder = dict(cls=mpld3._display.NumpyEncoder)
-
-        if self.export_json:
-            if not os.path.isdir(self.json_path):
-                os.mkdir(self.json_path)
-            with open(self.json_path+'/fig_%s.json' % id, 'wb') as f:
-                json.dump(frames, f, **encoder)
-            frames = {}
-        elif use_mpld3:
-            frames = json.dumps(frames, **encoder)
-        return frames
-
-
-    def render_html(self, data):
-        # Set up jinja2 templating
-        import jinja2
-        path, _ = os.path.split(os.path.abspath(__file__))
-        templateLoader = jinja2.FileSystemLoader(searchpath=path)
-        templateEnv = jinja2.Environment(loader=templateLoader)
-        template = templateEnv.get_template(self.template)
-
-        return template.render(**data)
-
-
     def __call__(self):
-        id = uuid.uuid4().hex
-        frames = self.get_frames(id)
+        frames = {idx: frame if self.mpld3 or self.export_json else
+                  str(frame) for idx, frame in enumerate(self.frames.values())}
+        frames = self.encode_frames(frames)
 
-        data = {'id': id, 'Nframes': len(self.plot),
+        data = {'id': self.id, 'Nframes': len(self.plot),
                 'interval': int(1000. / OutputMagic.options['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
@@ -338,19 +339,55 @@ class ScrubberWidget(NdWidget):
 
 
 
-class SelectionWidget(ScrubberWidget):
+class CustomCommSocket(CommSocket):
     """
-    Javascript based widget to select and view ViewableElement objects contained
-    in an NdMapping. For each dimension in the NdMapping a slider or
-    dropdown selection widget is created and can be used to select the
-    html output associated with the selected ViewableElement type. Supports
-    selection of any HoloViews static output type including png, svg
-    and mpld3 output. Unlike the IPSelectionWidget, this widget type
-    is exportable to a static html.
+    A CustomCommSocket is required to suspend displaying the nbagg
+    output until the HTML has been rendered by the widget.
+    """
+
+    def __init__(self, manager):
+        self.supports_binary = None
+        self.manager = manager
+        self.uuid = str(uuid.uuid4())
+        self.html = "<div id=%r></div>" % self.uuid
+
+    def start(self):
+        try:
+            self.comm = Comm('matplotlib', data={'id': self.uuid})
+        except AttributeError:
+            raise RuntimeError('Unable to create an IPython notebook Comm '
+                               'instance. Are you in the IPython notebook?')
+        self.comm.on_msg(self.on_message)
+
+        manager = self.manager
+        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
+
+
+
+class SelectionWidget(NdWidget):
+    """
+    Javascript based widget to select and view ViewableElement objects
+    contained in an NdMapping. For each dimension in the NdMapping a
+    slider or dropdown selection widget is created and can be used to
+    select the html output associated with the selected
+    ViewableElement type. The widget maybe set to embed all frames in
+    the supplied object into the rendered html or to dynamically
+    update the widget with a live IPython kernel.
+
+    The widget supports all current HoloViews figure backends
+    including png, svg, mpld3 and nbagg output. To select nbagg
+    output, the SelectionWidget must not be set to embed.
 
     Just like the ScrubberWidget the data can be optionally saved
     to json and dynamically loaded from a server.
     """
+
+    embed = param.Boolean(default=True, doc="""
+        Whether to embed all plots in the Javascript, generating
+        a static widget not dependent on the IPython server.""")
+
+    cache_size = param.Integer(default=100, doc="""
+        Size of dynamic cache if frames are not embedded.""")
 
     template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
@@ -360,11 +397,23 @@ class SelectionWidget(ScrubberWidget):
     ##############################
 
     jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
+    widgets = {}
 
     def __init__(self, plot, **params):
         NdWidget.__init__(self, plot, **params)
-        self.frames = OrderedDict((k, self._plot_figure(idx))
-                                  for idx, k in enumerate(self.keys))
+        self.id = uuid.uuid4().hex
+        self.nbagg = OutputMagic.options['backend'] == 'nbagg'
+        self.frames = {}
+        if self.embed:
+            frames = {idx: self._plot_figure(idx)
+                      for idx in range(len(self.keys))}
+            self.frames = self.encode_frames(frames)
+        elif self.nbagg:
+            fig = self.plot[0]
+            self.manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
+            self.comm = CustomCommSocket(self.manager)
+
+        SelectionWidget.widgets[self.id] = self
 
 
     def get_widgets(self):
@@ -400,18 +449,30 @@ class SelectionWidget(ScrubberWidget):
 
 
     def __call__(self):
-        id = uuid.uuid4().hex
         widgets, dimensions, init_dim_vals = self.get_widgets()
         key_data = self.get_key_data()
-        frames = self.get_frames(id)
+        if self.embed:
+            frames = self.frames
+        elif self.nbagg:
+            self.manager.display_js()
+            frames = {0: self.comm.html}
+        else:
+            frames = {0: self._plot_figure(0)}
+            if self.mpld3:
+                frames = self.encode_frames(frames)
+                self.frames[0] = frames
+            else:
+                self.frames.update(frames)
 
-        data = {'id': id, 'Nframes': len(self.mock_obj),
+        data = {'id': self.id, 'Nframes': len(self.mock_obj),
                 'Nwidget': self.mock_obj.ndims,
                 'frames': frames, 'dimensions': dimensions,
                 'key_data': key_data, 'widgets': widgets,
                 'init_dim_vals': init_dim_vals,
                 'load_json': str(self.export_json).lower(),
+                'nbagg': str(self.nbagg).lower(),
                 'server': self.server_url,
+                'cached': str(self.embed).lower(),
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
@@ -420,6 +481,25 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
+
+
+    def update(self, n):
+        if self.nbagg:
+            if not self.manager._shown:
+                self.comm.start()
+                self.manager.add_web_socket(self.comm)
+                self.manager._shown = True
+            fig = self.plot[n]
+            fig.canvas.draw_idle()
+            return
+        if n not in self.frames:
+            if len(self.frames) >= self.cache_size:
+                self.frames.popitem(last=False)
+            frame = self._plot_figure(n)
+            if self.mpld3: frame = self.encode_frames({0: frame})
+            SelectionWidget.updates[n] = frame
+            self.frames[n] = frame
+        return self.frames[n]
 
 
 

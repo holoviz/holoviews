@@ -135,6 +135,8 @@ def display_widgets(plot):
         return ScrubberWidget(plot)()
     if widget_mode == 'embed':
         return SelectionWidget(plot)()
+    elif widget_mode == 'live':
+        return SelectionWidget(plot, embed=False)()
 
 
 def display_figure(fig, message=None, max_width='100%'):
