@@ -77,36 +77,9 @@ visualization options for that object type:
 
 For more detailed (but less readable!) information on any component
 described in these tutorials, please refer to the `Reference Manual
-<../Reference_Manual>`_.
-
-
-External Examples
------------------
-
-Finally, here are some real-world examples of HoloViews being used:
-
-* `Interactive plots with mpld3 <http://philippjfr.com/blog/interactive-plots-with-holoviews-and-mpld3/>`_:
-  Example usage of the mpld3 rendering backend allowing you to
-  generate D3.js-based plots with interactive widgets.
-
-* `HoloViews for machine learning <http://philippjfr.com/blog/kaggle-bci-challenge-visualizing-eeg-data-in-holoviews/>`_: 
-  Kaggle competition for EEG classification 
-
-* `ImaGen library <http://ioam.github.io/imagen>`_:  
-  Generates HoloViews Image and RGB patterns from mathematical functions.
-
-* `Topographica tutorials <http://topographica.org/Tutorials/>`_:
-  Neural simulator using HoloViews (plus publications 
-  `Stevens et al. (2013) <http://homepages.inf.ed.ac.uk/jbednar/papers/stevens.jn13.pdf>`_,
-  `Gee (2014) <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_, and
-  `Fischer (2014) <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_ with
-  associated `notebook <http://ioam.github.io/media/topo/gcal_all.html>`_)
-
-* `Interfacing HoloViews with Julia <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_:
-  A basic interface to the Julia programming language.
-
-* `Marking summary statistics <http://www.inf.ed.ac.uk/teaching/courses/inf1-cg/assignments/Inf1-CG_Assignment1_Scores.html>`_:
-  Visualizing the marking results of an undergraduate assignment with HoloViews.
+<../Reference_Manual>`_. For further notebooks demonstrating how to
+extend HoloViews and apply it to real world data see the `Examples
+<../Examples>`_ page.
 
 .. toctree::
    :maxdepth: 2
