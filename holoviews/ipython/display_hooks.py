@@ -42,10 +42,6 @@ ENABLE_TRACEBACKS=True
 
 
 def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
-    if OutputMagic.options['holomap'] == "nbagg":
-        plt.show()
-        return ''
-
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
@@ -64,7 +60,7 @@ def HTML_video(plot):
     writers = animation.writers.avail
     current_format = OutputMagic.options['holomap']
     for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
-        if fmt == 'nbagg' or OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
+        if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
             try:
                 return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
             except: pass

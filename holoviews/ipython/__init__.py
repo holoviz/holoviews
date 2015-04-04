@@ -20,7 +20,7 @@ holoviews.archive = notebook_archive
 
 def supported_formats(optional_formats):
     "Optional formats that are actually supported"
-    supported = ['nbagg']
+    supported = []
     for fmt in optional_formats:
         try:
             anim = animation.FuncAnimation(plt.figure(),
