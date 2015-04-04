@@ -181,6 +181,9 @@ class OutputMagic(OptionsMagic):
     # Used to disable info output in testing
     _disable_info_output = False
 
+    # Counter for nbagg figures
+    nbagg_counter = 0
+
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()

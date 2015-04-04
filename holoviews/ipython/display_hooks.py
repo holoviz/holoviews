@@ -148,8 +148,9 @@ def display_figure(fig, message=None, max_width='100%'):
     dpi = OutputMagic.options['dpi']
     backend = OutputMagic.options['backend']
 
-        manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
     if backend == 'nbagg' and new_figure_manager_given_figure is not None:
+        manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+        OutputMagic.nbagg_counter += 1
         manager.show()
         return ''
     elif backend == 'd3' and mpld3:

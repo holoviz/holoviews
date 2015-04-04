@@ -412,7 +412,8 @@ class SelectionWidget(NdWidget):
             self.frames = self.encode_frames(frames)
         elif self.nbagg:
             fig = self.plot[0]
-            self.manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
+            self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+            OutputMagic.nbagg_counter += 1
             self.comm = CustomCommSocket(self.manager)
 
         SelectionWidget.widgets[self.id] = self
