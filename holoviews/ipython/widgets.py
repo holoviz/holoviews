@@ -1,10 +1,10 @@
-import os, sys, math, time, uuid, json, warnings
+import os, sys, math, time, uuid, json
 from unittest import SkipTest
 
-import numpy as np
-
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_nbagg import CommSocket, new_figure_manager_given_figure
+try:
+    from matplotlib.backends.backend_nbagg import CommSocket, new_figure_manager_given_figure
+except:
+    CommSocket = object
 
 try:
     import IPython
@@ -342,8 +342,11 @@ class ScrubberWidget(NdWidget):
 
 class CustomCommSocket(CommSocket):
     """
-    A CustomCommSocket is required to suspend displaying the nbagg
-    output until the HTML has been rendered by the widget.
+    CustomCommSocket provides communication between the IPython
+    kernel and a matplotlib canvas element in the notebook.
+    A CustomCommSocket is required to delay communication
+    between the kernel and the canvas element until the widget
+    has been rendered in the notebook.
     """
 
     def __init__(self, manager):
@@ -359,8 +362,6 @@ class CustomCommSocket(CommSocket):
             raise RuntimeError('Unable to create an IPython notebook Comm '
                                'instance. Are you in the IPython notebook?')
         self.comm.on_msg(self.on_message)
-
-        manager = self.manager
         self.comm.on_close(lambda close_message: self.manager.clearup_closed())
 
 
@@ -402,7 +403,8 @@ class SelectionWidget(NdWidget):
 
     def __init__(self, plot, **params):
         NdWidget.__init__(self, plot, **params)
-        self.nbagg = OutputMagic.options['backend'] == 'nbagg'
+        nbagg = CommSocket is not object
+        self.nbagg = OutputMagic.options['backend'] == 'nbagg' and nbagg
         self.frames = {}
         if self.embed:
             frames = {idx: self._plot_figure(idx)

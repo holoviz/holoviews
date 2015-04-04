@@ -16,6 +16,11 @@ try:
 except:
     mpld3 = None
 
+try:
+    from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
+except:
+    new_figure_manager_given_figure = None
+
 import param
 
 from ..core.options import Store
@@ -143,10 +148,8 @@ def display_figure(fig, message=None, max_width='100%'):
     dpi = OutputMagic.options['dpi']
     backend = OutputMagic.options['backend']
 
-    if backend == 'nbagg':
-        import numpy as np
-        from matplotlib.backends.backend_nbagg import FigureManagerNbAgg, new_figure_manager_given_figure
         manager = new_figure_manager_given_figure(np.random.randint(10**8), fig)
+    if backend == 'nbagg' and new_figure_manager_given_figure is not None:
         manager.show()
         return ''
     elif backend == 'd3' and mpld3:
