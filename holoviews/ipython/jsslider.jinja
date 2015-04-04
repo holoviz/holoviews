@@ -4,6 +4,7 @@
         this.frames = frames;
         this.fig_id = "fig_" + id;
         this.img_id = "_anim_img" + id;
+        this.id = id;
         this.slider_ids = slider_ids;
         this.keyMap = keyMap
         this.current_frame = 0;
@@ -81,7 +82,7 @@
 		}
 	    }
 	    callbacks = {iopub: {output: $.proxy(callback, this)}};
-	    var cmd = "holoviews.ipython.widgets.SelectionWidget.widgets['{{ id }}'].update(" + this.keyMap[key] + ")";
+	    var cmd = "holoviews.ipython.widgets.SelectionWidget.widgets['" + this.id + "'].update(" + this.keyMap[key] + ")";
             kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	}
     }
