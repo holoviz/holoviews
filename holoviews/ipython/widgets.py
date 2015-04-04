@@ -500,7 +500,6 @@ class SelectionWidget(NdWidget):
                 self.frames.popitem(last=False)
             frame = self._plot_figure(n)
             if self.mpld3: frame = self.encode_frames({0: frame})
-            SelectionWidget.updates[n] = frame
             self.frames[n] = frame
         return self.frames[n]
 

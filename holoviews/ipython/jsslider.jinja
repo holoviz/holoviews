@@ -71,6 +71,8 @@
 		function callback(msg) { }
 	    } else {
 		function callback(msg){
+		    /* This callback receives data from Python as a string
+		       in order to parse it correctly quotes are sliced off*/
 		    var data = msg.content.data['text/plain'].slice(1, -1);
 		    if(this.mpld3){
 			data = JSON.parse(data);
@@ -83,7 +85,7 @@
 	    }
 	    callbacks = {iopub: {output: $.proxy(callback, this)}};
 	    var cmd = "holoviews.ipython.widgets.SelectionWidget.widgets['" + this.id + "'].update(" + this.keyMap[key] + ")";
-            kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+	    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	}
     }
 </script>
