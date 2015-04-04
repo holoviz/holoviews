@@ -250,6 +250,7 @@ class NdWidget(param.Parameterized):
 
     def __init__(self, plot, **params):
         super(NdWidget, self).__init__(**params)
+        self.id = uuid.uuid4().hex
         self.plot = plot
         self.dimensions = plot.dimensions
         self.keys = plot.keys
@@ -401,7 +402,6 @@ class SelectionWidget(NdWidget):
 
     def __init__(self, plot, **params):
         NdWidget.__init__(self, plot, **params)
-        self.id = uuid.uuid4().hex
         self.nbagg = OutputMagic.options['backend'] == 'nbagg'
         self.frames = {}
         if self.embed:
