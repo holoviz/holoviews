@@ -1,24 +1,18 @@
-import os, sys, math, time, uuid, json, warnings
+import os, sys, math, time, uuid, json
 from unittest import SkipTest
 
-import numpy as np
+try:
+    from matplotlib.backends.backend_nbagg import CommSocket, new_figure_manager_given_figure
+except:
+    CommSocket = object
 
 try:
     import IPython
     from IPython.core.display import clear_output
+    from IPython.kernel.comm import Comm
 except:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
-from IPython.display import display
-try:
-    # Silence the annoying FutureWarning in IPython 3.0
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from IPython.html import widgets
-        from IPython.html.widgets import FloatSliderWidget
-except:
-    widgets = None
-    FloatSliderWidget = object
 
 # IPython 0.13 does not have version_info
 ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
@@ -208,39 +202,6 @@ class RunProgress(ProgressBar):
             super(RunProgress, self).__call__(100)
 
 
-
-class FixedValueSliderWidget(FloatSliderWidget):
-    """
-    Subclass of FloatSliderWidget that jumps discretely
-    between a set of supplied values.
-    """
-
-    def __init__(self, values=[], *args, **kwargs):
-        value = round(values[0], 5)
-        vmin = min(values)
-        vmax = max(values)
-        step = min(abs(np.diff(values))) if len(values) > 1 else 0
-        self.values = np.array(values)
-        widgets.DOMWidget.__init__(self, step=step, min=vmin, max=vmax,
-                                   value=value, *args, **kwargs)
-        self.on_trait_change(self._snap_value, ['value'])
-        self.time = time.time()
-
-
-    def _snap_value(self, name, old_val, new_val):
-        """
-        Snap value to the closest specified value.
-        """
-        if self.time+0.05 > time.time():
-            return
-        diffs = np.abs(self.values - new_val)
-        idx = np.argmin(diffs)
-        val = self.values[idx]
-        if val != self.value:
-            self.value = round(val, 5)
-            self.time = time.time()
-
-
 def isnumeric(val):
     try:
         float(val)
@@ -257,176 +218,11 @@ def get_plot_size():
 
 class NdWidget(param.Parameterized):
     """
-    NdWidget is an abstract base class implementing a method to
-    find the dimensions and keys of any ViewableElement, GridSpace or UniformNdMapping type.
-    In the process it creates a mock_obj to hold the dimensions
-    and keys.
+    NdWidget is an abstract base class implementing a method to find
+    the dimensions and keys of any ViewableElement, GridSpace or
+    UniformNdMapping type.  In the process it creates a mock_obj to
+    hold the dimensions and keys.
     """
-
-    def __init__(self, plot, **params):
-        super(NdWidget, self).__init__(**params)
-        self.plot = plot
-        self.dimensions = plot.dimensions
-        self.keys = plot.keys
-        # Create mock NdMapping to hold the common dimensions and keys
-        self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  key_dimensions=self.dimensions)
-
-
-    def _plot_figure(self, idx):
-        from .display_hooks import display_figure
-        fig = self.plot[idx]
-        if OutputMagic.options['backend'] == 'd3':
-            import mpld3
-            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            return mpld3.fig_to_dict(fig)
-        return display_figure(fig)
-
-
-
-class IPySelectionWidget(NdWidget):
-    """
-    Interactive widget to select and view ViewableElement objects contained
-    in an NdMapping. ViewSelector creates Slider and Dropdown widgets
-    for each dimension contained within the supplied object and
-    an image widget for the plotted ViewableElement. All widgets are dynamically
-    updated to match the current selection.
-    """
-
-    cached = param.Boolean(default=True, doc="""
-        Whether to cache the ViewableElement plots when initializing the object.""")
-
-    css = param.Dict(default={'margin-left': 'auto',
-                              'margin-right': 'auto'}, doc="""
-                              CSS to apply to the widgets.""")
-
-    def __init__(self, plot, **params):
-        super(IPySelectionWidget, self).__init__(plot, **params)
-
-        if widgets is None:
-            raise ImportError('ViewSelector requires IPython >= 2.0.')
-
-        self._initialize_widgets()
-        self.refresh = True
-
-        if self.cached:
-            self.frames = OrderedDict((k, self._plot_figure(idx))
-                                      for idx, k in enumerate(self.keys))
-
-
-    def _initialize_widgets(self):
-        """
-        Initialize widgets and dimension values.
-        """
-
-        self.pwidgets = {}
-        self.dim_val = {}
-        for didx, dim in enumerate(self.mock_obj.key_dimensions):
-            all_vals = [k[didx] for k in self.keys]
-
-            # Initialize dimension value
-            vals = self._get_dim_vals(list(self.keys[0]), didx)
-            self.dim_val[dim.name] = vals[0]
-
-            # Initialize widget
-            if isnumeric(vals[0]):
-                widget_type = FixedValueSliderWidget
-            else:
-                widget_type = widgets.DropdownWidget
-                all_vals = dict((str(v), v) for v in all_vals)
-            self.pwidgets[dim.name] = widget_type(values=sorted(set(all_vals)))
-
-
-    def __call__(self):
-        # Initalize image widget
-        if (OutputMagic.options['backend'] == 'mpld3'
-            or OutputMagic.options['fig'] =='svg'):
-            self.image_widget = widgets.HTMLWidget()
-        else:
-            self.image_widget = widgets.ImageWidget()
-
-        if self.cached:
-            self.image_widget.value = list(self.frames.values())[0]
-        else:
-            self.image_widget.value = self._plot_figure(0)
-        self.image_widget.set_css(self.css)
-
-        # Initialize interactive widgets
-        interactive_widget = widgets.interactive(self.update_widgets,
-                                                 **self.pwidgets)
-        interactive_widget.set_css(self.css)
-
-        # Display widgets
-        display(interactive_widget)
-        display(self.image_widget)
-        return '' # Suppresses outputting ViewableElement repr when called through hook
-
-
-    def _get_dim_vals(self, indices, idx):
-        """
-        Get the dimension values along the supplied dimension,
-        computed from the supplied indices into the mock_obj.
-        """
-        indices[idx] = slice(None)
-        vals = [k[idx] if isinstance(k, tuple) else k
-                for k in self.mock_obj[tuple(indices)].keys()]
-        return vals
-
-
-    def update_widgets(self, **kwargs):
-        """
-        Callback method to process the new keys, find the closest matching
-        ViewableElement and update all the widgets.
-        """
-
-        # Do nothing if dimension values are unchanged
-        if all(v == self.dim_val[k] for k, v in kwargs.items()):
-            return
-
-        # Place changed dimensions first
-        changed_fn = lambda x: x[1] == self.dim_val[x[0]]
-        dimvals = sorted(kwargs.items(), key=changed_fn)
-
-        # Find the closest matching key along each dimension and update
-        # the matching widget accordingly.
-        checked = [slice(None) for i in range(self.mock_obj.ndims)]
-        for dim, val in dimvals:
-            if not isnumeric(val): val = str(val)
-            dim_idx = self.mock_obj.get_dimension_index(dim)
-            widget = self.pwidgets[dim]
-            vals = self._get_dim_vals(checked, dim_idx)
-            if val not in vals:
-                if isnumeric(val):
-                    val = vals[np.argmin(np.abs(np.array(vals) - val))]
-                else:
-                    val = str(vals[0])
-            checked[dim_idx] = val
-            self.dim_val[dim] = val
-            widget.value = round(val, 5) if isnumeric(val) else val
-
-        # Update frame
-        checked = tuple(checked)
-        if self.cached:
-            self.image_widget.value = self.frames[checked]
-        else:
-            self.image_widget.value = self._plot_figure(self.keys.index(checked))
-
-
-
-class ScrubberWidget(NdWidget):
-    """
-    ScrubberWidget generates a basic animation widget with a slider
-    and various play/rewind/stepping options. It has been adapted
-    from Jake Vanderplas' JSAnimation library, which was released
-    under BSD license.
-
-    Optionally the individual plots can be exported to json, which can
-    be dynamically loaded by serving the data the data for each frame
-    on a simple server.
-    """
-
-    template = param.String('jsscrubber.jinja', doc="""
-        The jinja2 template used to generate the html output.""")
 
     #######################
     # JSON export options #
@@ -453,29 +249,15 @@ class ScrubberWidget(NdWidget):
     d3_url = 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
 
     def __init__(self, plot, **params):
-        super(ScrubberWidget, self).__init__(plot, **params)
-        self.frames = OrderedDict((idx, self._plot_figure(idx))
-                                  for idx in range(len(self.plot)))
-
-
-    def get_frames(self, id):
-        use_mpld3 = OutputMagic.options['backend'] == 'd3'
-        frames = {idx: frame if use_mpld3 or self.export_json else
-                  str(frame) for idx, frame in enumerate(self.frames.values())}
-        encoder = {}
-        if use_mpld3:
-            import mpld3
-            encoder = dict(cls=mpld3._display.NumpyEncoder)
-
-        if self.export_json:
-            if not os.path.isdir(self.json_path):
-                os.mkdir(self.json_path)
-            with open(self.json_path+'/fig_%s.json' % id, 'wb') as f:
-                json.dump(frames, f, **encoder)
-            frames = {}
-        elif use_mpld3:
-            frames = json.dumps(frames, **encoder)
-        return frames
+        super(NdWidget, self).__init__(**params)
+        self.id = uuid.uuid4().hex
+        self.plot = plot
+        self.dimensions = plot.dimensions
+        self.keys = plot.keys
+        self.mpld3 = OutputMagic.options['backend'] == 'd3'
+        # Create mock NdMapping to hold the common dimensions and keys
+        self.mock_obj = NdMapping([(k, None) for k in self.keys],
+                                  key_dimensions=self.dimensions)
 
 
     def render_html(self, data):
@@ -489,11 +271,63 @@ class ScrubberWidget(NdWidget):
         return template.render(**data)
 
 
-    def __call__(self):
-        id = uuid.uuid4().hex
-        frames = self.get_frames(id)
+    def encode_frames(self, frames):
+        frames = {idx: frame if self.mpld3 or self.export_json else
+                  str(frame) for idx, frame in frames.items()}
+        encoder = {}
+        if self.mpld3:
+            import mpld3
+            encoder = dict(cls=mpld3._display.NumpyEncoder)
 
-        data = {'id': id, 'Nframes': len(self.plot),
+        if self.export_json:
+            if not os.path.isdir(self.json_path):
+                os.mkdir(self.json_path)
+            with open(self.json_path+'/fig_%s.json' % self.id, 'wb') as f:
+                json.dump(frames, f, **encoder)
+            frames = {}
+        elif self.mpld3:
+            frames = json.dumps(frames, **encoder)
+        return frames
+
+
+    def _plot_figure(self, idx):
+        from .display_hooks import display_figure
+        fig = self.plot[idx]
+        if OutputMagic.options['backend'] == 'd3':
+            import mpld3
+            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
+            return mpld3.fig_to_dict(fig)
+        return display_figure(fig)
+
+
+
+class ScrubberWidget(NdWidget):
+    """
+    ScrubberWidget generates a basic animation widget with a slider
+    and various play/rewind/stepping options. It has been adapted
+    from Jake Vanderplas' JSAnimation library, which was released
+    under BSD license.
+
+    Optionally the individual plots can be exported to json, which can
+    be dynamically loaded by serving the data the data for each frame
+    on a simple server.
+    """
+
+    template = param.String('jsscrubber.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
+
+    def __init__(self, plot, **params):
+        super(ScrubberWidget, self).__init__(plot, **params)
+        self.frames = OrderedDict((idx, self._plot_figure(idx))
+                                  for idx in range(len(self.plot)))
+
+
+    def __call__(self):
+        frames = {idx: frame if self.mpld3 or self.export_json else
+                  str(frame) for idx, frame in enumerate(self.frames.values())}
+        frames = self.encode_frames(frames)
+
+        data = {'id': self.id, 'Nframes': len(self.plot),
                 'interval': int(1000. / OutputMagic.options['fps']),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
@@ -506,19 +340,56 @@ class ScrubberWidget(NdWidget):
 
 
 
-class SelectionWidget(ScrubberWidget):
+class CustomCommSocket(CommSocket):
     """
-    Javascript based widget to select and view ViewableElement objects contained
-    in an NdMapping. For each dimension in the NdMapping a slider or
-    dropdown selection widget is created and can be used to select the
-    html output associated with the selected ViewableElement type. Supports
-    selection of any HoloViews static output type including png, svg
-    and mpld3 output. Unlike the IPSelectionWidget, this widget type
-    is exportable to a static html.
+    CustomCommSocket provides communication between the IPython
+    kernel and a matplotlib canvas element in the notebook.
+    A CustomCommSocket is required to delay communication
+    between the kernel and the canvas element until the widget
+    has been rendered in the notebook.
+    """
+
+    def __init__(self, manager):
+        self.supports_binary = None
+        self.manager = manager
+        self.uuid = str(uuid.uuid4())
+        self.html = "<div id=%r></div>" % self.uuid
+
+    def start(self):
+        try:
+            self.comm = Comm('matplotlib', data={'id': self.uuid})
+        except AttributeError:
+            raise RuntimeError('Unable to create an IPython notebook Comm '
+                               'instance. Are you in the IPython notebook?')
+        self.comm.on_msg(self.on_message)
+        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
+
+
+
+class SelectionWidget(NdWidget):
+    """
+    Javascript based widget to select and view ViewableElement objects
+    contained in an NdMapping. For each dimension in the NdMapping a
+    slider or dropdown selection widget is created and can be used to
+    select the html output associated with the selected
+    ViewableElement type. The widget maybe set to embed all frames in
+    the supplied object into the rendered html or to dynamically
+    update the widget with a live IPython kernel.
+
+    The widget supports all current HoloViews figure backends
+    including png, svg, mpld3 and nbagg output. To select nbagg
+    output, the SelectionWidget must not be set to embed.
 
     Just like the ScrubberWidget the data can be optionally saved
     to json and dynamically loaded from a server.
     """
+
+    embed = param.Boolean(default=True, doc="""
+        Whether to embed all plots in the Javascript, generating
+        a static widget not dependent on the IPython server.""")
+
+    cache_size = param.Integer(default=100, doc="""
+        Size of dynamic cache if frames are not embedded.""")
 
     template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
@@ -528,11 +399,24 @@ class SelectionWidget(ScrubberWidget):
     ##############################
 
     jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
+    widgets = {}
 
     def __init__(self, plot, **params):
         NdWidget.__init__(self, plot, **params)
-        self.frames = OrderedDict((k, self._plot_figure(idx))
-                                  for idx, k in enumerate(self.keys))
+        nbagg = CommSocket is not object
+        self.nbagg = OutputMagic.options['backend'] == 'nbagg' and nbagg
+        self.frames = {}
+        if self.embed:
+            frames = {idx: self._plot_figure(idx)
+                      for idx in range(len(self.keys))}
+            self.frames = self.encode_frames(frames)
+        elif self.nbagg:
+            fig = self.plot[0]
+            self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+            OutputMagic.nbagg_counter += 1
+            self.comm = CustomCommSocket(self.manager)
+
+        SelectionWidget.widgets[self.id] = self
 
 
     def get_widgets(self):
@@ -568,18 +452,30 @@ class SelectionWidget(ScrubberWidget):
 
 
     def __call__(self):
-        id = uuid.uuid4().hex
         widgets, dimensions, init_dim_vals = self.get_widgets()
         key_data = self.get_key_data()
-        frames = self.get_frames(id)
+        if self.embed:
+            frames = self.frames
+        elif self.nbagg:
+            self.manager.display_js()
+            frames = {0: self.comm.html}
+        else:
+            frames = {0: self._plot_figure(0)}
+            if self.mpld3:
+                frames = self.encode_frames(frames)
+                self.frames[0] = frames
+            else:
+                self.frames.update(frames)
 
-        data = {'id': id, 'Nframes': len(self.mock_obj),
+        data = {'id': self.id, 'Nframes': len(self.mock_obj),
                 'Nwidget': self.mock_obj.ndims,
                 'frames': frames, 'dimensions': dimensions,
                 'key_data': key_data, 'widgets': widgets,
                 'init_dim_vals': init_dim_vals,
                 'load_json': str(self.export_json).lower(),
+                'nbagg': str(self.nbagg).lower(),
                 'server': self.server_url,
+                'cached': str(self.embed).lower(),
                 'mpld3_url': self.mpld3_url,
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
@@ -588,6 +484,24 @@ class SelectionWidget(ScrubberWidget):
                 'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
+
+
+    def update(self, n):
+        if self.nbagg:
+            if not self.manager._shown:
+                self.comm.start()
+                self.manager.add_web_socket(self.comm)
+                self.manager._shown = True
+            fig = self.plot[n]
+            fig.canvas.draw_idle()
+            return
+        if n not in self.frames:
+            if len(self.frames) >= self.cache_size:
+                self.frames.popitem(last=False)
+            frame = self._plot_figure(n)
+            if self.mpld3: frame = self.encode_frames({0: frame})
+            self.frames[n] = frame
+        return self.frames[n]
 
 
 

@@ -150,10 +150,10 @@ class OutputMagic(OptionsMagic):
     optional_formats = ['webm','mp4', 'gif']
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
-    allowed = {'backend'     : ['mpl','d3'],
+    allowed = {'backend'     : ['mpl','d3', 'nbagg'],
                'fig'         : ['svg', 'png', 'repr'],
                'holomap'     : inbuilt_formats,
-               'widgets'     : ['embed', 'live', 'cached'],
+               'widgets'     : ['embed', 'live'],
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
                'max_branches': (0, float('inf')),
@@ -180,6 +180,9 @@ class OutputMagic(OptionsMagic):
 
     # Used to disable info output in testing
     _disable_info_output = False
+
+    # Counter for nbagg figures
+    nbagg_counter = 0
 
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)

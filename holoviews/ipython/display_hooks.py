@@ -16,6 +16,11 @@ try:
 except:
     mpld3 = None
 
+try:
+    from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
+except:
+    new_figure_manager_given_figure = None
+
 import param
 
 from ..core.options import Store
@@ -26,7 +31,7 @@ from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, RasterGridPlot
 from ..plotting import ANIMATION_OPTS, HTML_TAGS, opts, get_plot_size
 from .magics import OutputMagic, OptsMagic
-from .widgets import IPySelectionWidget, SelectionWidget, ScrubberWidget
+from .widgets import SelectionWidget, ScrubberWidget
 
 from .archive import notebook_archive
 
@@ -117,7 +122,6 @@ def display_widgets(plot):
     widget_format = OutputMagic.options['holomap']
     assert widget_mode is not None, "Mistaken call to display_widgets method"
 
-
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
     if not isuniform and widget_format == 'widgets':
@@ -132,10 +136,8 @@ def display_widgets(plot):
         return ScrubberWidget(plot)()
     if widget_mode == 'embed':
         return SelectionWidget(plot)()
-    elif widget_mode == 'cached':
-        return IPySelectionWidget(plot, cached=True)()
-    else:
-        return IPySelectionWidget(plot, cached=False)()
+    elif widget_mode == 'live':
+        return SelectionWidget(plot, embed=False)()
 
 
 def display_figure(fig, message=None, max_width='100%'):
@@ -146,7 +148,12 @@ def display_figure(fig, message=None, max_width='100%'):
     dpi = OutputMagic.options['dpi']
     backend = OutputMagic.options['backend']
 
-    if backend == 'd3' and mpld3:
+    if backend == 'nbagg' and new_figure_manager_given_figure is not None:
+        manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+        OutputMagic.nbagg_counter += 1
+        manager.show()
+        return ''
+    elif backend == 'd3' and mpld3:
         fig.dpi = dpi
         mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
