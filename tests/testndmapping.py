@@ -108,9 +108,3 @@ class NdIndexableMappingTest(ComparisonTestCase):
         ndmap = MultiDimensionalMapping(data, key_dimensions=[self.dim1])
 
         self.assertEqual(list(ndmap.keys()), [0, 1])
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

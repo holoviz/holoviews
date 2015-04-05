@@ -112,10 +112,3 @@ class TestOptsCompleter(IPTestCase):
         suggestions = OptsCompleter.line_completer('%%opts AnElement [test=1] BarElement style(',
                                                    self.completions, self.compositor_defs)
         self.assertEqual(suggestions,  ['styleoptC1=', 'styleoptC2='])
-
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

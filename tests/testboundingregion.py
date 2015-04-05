@@ -66,8 +66,3 @@ class TestBoundingBox(unittest.TestCase):
     def test_top_boundary(self):
         self.assert_(self.region.contains(self.xc, self.top))
 
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

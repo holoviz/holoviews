@@ -185,9 +185,3 @@ class TestPicklerAdvanced(ComparisonTestCase):
                                 entries=['Image.I(L)'])
         self.assertEqual(single_layout, loaded)
 
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

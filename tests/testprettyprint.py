@@ -23,11 +23,3 @@ class PrettyPrintTest(ComparisonTestCase):
         o = self.element1 * self.element2
         r = PrettyPrinter.pprint(o)
         self.assertEqual(r, expected)
-
-
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

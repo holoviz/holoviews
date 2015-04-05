@@ -169,9 +169,3 @@ class RasterMapComparisonTest(RasterMapTestCase):
         except AssertionError as e:
             if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
                 raise self.failureException("Image mismatch error not raised.")
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

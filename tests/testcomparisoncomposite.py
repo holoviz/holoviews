@@ -140,9 +140,3 @@ class CompositeComparisonTestCase(ComparisonTestCase):
             self.assertEqual(t1, t2)
         except AssertionError as e:
             self.assertEqual(str(e), 'Layouts have mismatched path counts.')
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

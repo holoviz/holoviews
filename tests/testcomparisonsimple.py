@@ -105,10 +105,3 @@ class SimpleComparisonTest(ComparisonTestCase):
         except AssertionError as e:
             msg = 'BoundingBox(points=((-1,-1),(3,4.5))) != BoundingBox(points=((-1,-1),(3,5.0)))'
             self.assertEqual(str(e), msg)
-
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "CRITICAL"])

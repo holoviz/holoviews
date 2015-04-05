@@ -91,9 +91,3 @@ class PathComparisonTest(ComparisonTestCase):
         except AssertionError as e:
             if not str(e).startswith("Ellipse data not almost equal to 6 decimals"):
                 raise cls.failureException("Ellipse mismatch error not raised.")
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

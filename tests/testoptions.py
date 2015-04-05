@@ -219,10 +219,3 @@ class TestOptionTreeFind(ComparisonTestCase):
 
     def test_optiontree_find_mismatch4(self):
         self.assertEqual(self.options.find('Baz.Baz').options('group').options, dict())
-
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

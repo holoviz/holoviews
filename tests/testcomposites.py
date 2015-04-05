@@ -342,9 +342,3 @@ class CompositeTestCase(ElementTestCase):
             (self.el1 + self.el2) * (self.el1 + self.el2)
         except TypeError as e:
             self.assertEqual(str(e), "unsupported operand type(s) for *: 'Layout' and 'Layout'")
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

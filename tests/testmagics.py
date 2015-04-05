@@ -140,8 +140,3 @@ class TestCompositorMagic(ExtensionTestCase):
         self.assertEqual(Compositor.definitions[0].group, 'HCSTEST')
         self.assertEqual(Compositor.definitions[0].mode, 'data')
 
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

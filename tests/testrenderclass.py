@@ -76,9 +76,3 @@ class MPLPlotRendererTest(ComparisonTestCase):
         data = self.renderer.instance(size=200)(self.image2, fmt='png')[0]
         self.assertEqual(digest_data(data),
                          '1fa233a601bc7942031e434c20253a8551639bd8cf574440ea9b4485a185c2a1')
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

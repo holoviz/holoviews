@@ -124,8 +124,3 @@ class TestFileArchive(ComparisonTestCase):
             raise AssertionError("No file %r created on export." % fname)
         self.assertEqual(json.load(open(fname, 'r')), data)
         self.assertEqual(archive.listing(), [])
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])

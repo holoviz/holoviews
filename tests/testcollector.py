@@ -136,14 +136,3 @@ class ViewRefTest(ComparisonTestCase):
         self.assertEqual(ref.specification, [('Example', 'Path1'), ('Example', 'Path2')])
         self.assertEqual(ref.specification, ref2.specification)
 
-
-
-
-if __name__ == "__main__":
-    import sys
-    import nose
-    nose.runmodule(argv=[sys.argv[0], "--logging-level", "ERROR"])
-
-
-
-
