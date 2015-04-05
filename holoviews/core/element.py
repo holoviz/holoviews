@@ -303,15 +303,15 @@ class NdElement(Element, NdMapping):
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
         if len(self.value_dimensions) > 1 and not isinstance(subtable, NdElement):
-            # If a value tuple, turn into an ItemTable
             subtable = self.__class__([((), subtable)], label=self.label,
                                       key_dimensions=[],
                                       value_dimensions=self.value_dimensions)
 
+        # If subtable is not a slice return as reduced type
         if not isinstance(args, tuple): args = (args,)
         shallow = len(args) <= self.ndims
         slcs = any(isinstance(a, (slice, set)) for a in args[:self.ndims])
-        if len(subtable) == 1 and shallow and not slcs:
+        if shallow and not (slcs or len(args) == 0):
             args = list(args) + [self.dimensions('value', True)]
         elif shallow:
             return subtable
