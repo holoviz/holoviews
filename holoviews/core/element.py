@@ -269,12 +269,29 @@ class NdElement(Element, NdMapping):
 
 
     def _filter_data(self, subtable, value_dimensions):
+        """
+        Filters value_dimensions in the supplied NdElement data.
+        """
+        if isinstance(subtable, tuple): subtable = {(): subtable}
         col_names = self.dimensions('value', label=True)
         cols = self._filter_columns(value_dimensions, col_names)
         indices = [col_names.index(col) for col in cols]
         value_dimensions = [self.value_dimensions[i] for i in indices]
-        items = [(k, tuple(v[i] for i in indices)) for (k,v) in subtable.items()]
-        return subtable.clone(items, value_dimensions=value_dimensions)
+        items = [(k, tuple(v[i] for i in indices))
+                 for (k,v) in subtable.items()]
+        if len(items) == 1:
+            data = items[0][1]
+            if len(value_dimensions) == 1:
+                return data[0]
+            else:
+                from ..element.tabular import ItemTable
+                kwargs = {'label': self.label
+                          for k, v in self.get_param_values(onlychanged=True)
+                          if k in ['group', 'label']}
+                data = list(zip(value_dimensions, data))
+                return ItemTable(data, **kwargs)
+        else:
+            return subtable.clone(items, value_dimensions=value_dimensions)
 
 
     def __getitem__(self, args):
@@ -291,7 +308,12 @@ class NdElement(Element, NdMapping):
                                       key_dimensions=[],
                                       value_dimensions=self.value_dimensions)
 
-        if not isinstance(args, tuple) or len(args) <= self.ndims:
+        if not isinstance(args, tuple): args = (args,)
+        shallow = len(args) <= self.ndims
+        slcs = any(isinstance(a, (slice, set)) for a in args[:self.ndims])
+        if len(subtable) == 1 and shallow and not slcs:
+            args = list(args) + [self.dimensions('value', True)]
+        elif shallow:
             return subtable
 
         return self._filter_data(subtable, args[-1])
