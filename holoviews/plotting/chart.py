@@ -863,7 +863,7 @@ class BarPlot(ElementPlot):
 
                     # Update variables
                     bars[tuple(val_key)] = bar
-                    prev += val[0] if np.isfinite(val[0]) else 0
+                    prev += val if np.isfinite(val) else 0
                     labels.append(label)
         title = [str(element.key_dimensions[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
