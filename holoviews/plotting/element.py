@@ -529,12 +529,13 @@ class OverlayPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         axis = self.handles['axis']
+        key = self.keys[-1]
 
+        ranges = self.compute_ranges(self.map, key, ranges)
         for plot in self.subplots.values():
             plot(ranges=ranges)
         self._adjust_legend(axis)
 
-        key = self.keys[-1]
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
