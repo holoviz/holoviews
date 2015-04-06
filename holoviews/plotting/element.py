@@ -114,13 +114,16 @@ class ElementPlot(Plot):
     def _get_frame(self, key):
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)
-            dimensions = [d.name for d in self.dimensions]
             key_dimensions = [d.name for d in self.map.key_dimensions]
+            if self.dimensions is None:
+                dimensions = key_dimensions
+            else:
+                dimensions = [d.name for d in self.dimensions]
             if key_dimensions == ['Frame'] and key_dimensions != dimensions:
                 select = dict(Frame=0)
             else:
-                select = {d.name: key[self.dimensions.index(d)]
-                          for d in self.map.key_dimensions}
+                select = {d: key[dimensions.index(d)]
+                          for d in key_dimensions}
         elif isinstance(key, int):
             return self.map.values()[min([key, len(self.map)-1])]
         else:
