@@ -1,5 +1,8 @@
 from itertools import groupby
 from matplotlib import ticker
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
+
 import numpy as np
 
 # Python3 compatibility
@@ -190,6 +193,14 @@ class ElementPlot(Plot):
             return title
         else:
             return '\n'.join([title, dim_title])
+
+
+    def _draw_colorbar(self, artist):
+        if 'cax' not in self.handles:
+            axis = self.handles['axis']
+            divider = make_axes_locatable(axis)
+            self.handles['cax'] = divider.append_axes('right', size="5%", pad=0.05)
+        plt.colorbar(artist, cax=self.handles['cax'])
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,

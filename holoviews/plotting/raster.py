@@ -69,9 +69,7 @@ class RasterPlot(ElementPlot):
         im.set_clim(clims)
         self.handles['im'] = im
         if self.colorbar:
-            divider = make_axes_locatable(axis)
-            self.handles['cax'] = divider.append_axes('right', size="5%", pad=0.05)
-            plt.colorbar(im, cax=self.handles['cax'])
+            self._draw_colorbar(im)
 
         if isinstance(view, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
@@ -147,6 +145,8 @@ class RasterPlot(ElementPlot):
 
         if isinstance(view, HeatMap) and self.show_values:
            self._annotate_values(view)
+        if self.colorbar:
+            self._draw_colorbar(im)
 
         val_dim = [d.name for d in view.value_dimensions][0]
         im.set_clim(ranges.get(val_dim))
