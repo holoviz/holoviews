@@ -8,7 +8,7 @@ except:
     plugins = None
 
 import param
-from ..ipython.magics import OutputMagic
+
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
 from ..plotting import CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot, BarPlot
@@ -56,6 +56,7 @@ class MplD3Plugin(PlottingHook):
     __abstract = True
 
     def _applies(self, plot, view):
+        from ..ipython.magics import OutputMagic
         types_match = super(MplD3Plugin, self)._applies(plot, view)
         axes3d = plot.projection == '3d'
         mpld3_backend = OutputMagic.options['backend'] == 'd3'
