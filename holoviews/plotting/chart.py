@@ -450,6 +450,9 @@ class PointPlot(ChartPlot):
     how point magnitudes are rendered to different colors.
     """
 
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a colorbar to the plot.""")
+
     color_index = param.Integer(default=3, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -498,6 +501,8 @@ class PointPlot(ChartPlot):
             val_dim = points.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
+        if self.colorbar:
+            self._draw_colorbar(paths)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -525,6 +530,9 @@ class PointPlot(ChartPlot):
                 ranges = match_spec(element, ranges)
                 paths.set_clim(ranges[val_dim])
                 paths.set_array(cs)
+        if self.colorbar:
+            self._draw_colorbar(paths)
+
 
 
 
