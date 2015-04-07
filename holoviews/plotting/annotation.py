@@ -3,6 +3,7 @@ from matplotlib import patches as patches
 from matplotlib.collections import LineCollection
 
 from ..core.options import Store
+from ..core.util import match_spec
 from ..element import VLine, HLine, Arrow, Spline, Text
 from .element import ElementPlot
 
@@ -19,11 +20,14 @@ class AnnotationPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         annotation = self.map.last
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = match_spec(annotation, ranges)
         axis = self.handles['axis']
         opts = self.style[self.cyclic_index]
         handles = self.draw_annotation(axis, annotation, annotation.data, opts)
         self.handles['annotations'] = handles
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
+        return self._finalize_axis(key, ranges=ranges)
 
 
     def update_handles(self, axis, annotation, key, ranges=None):

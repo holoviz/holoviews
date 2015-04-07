@@ -64,7 +64,7 @@ class Plot3D(ElementPlot):
         zdim = element.get_dimension(2).name
         if ranges is not None:
             zrange = ranges.get(zdim)
-            if not xrange is None:
+            if zrange is not None:
                 zmin, zmax = (np.min([zrange[0], zmin]) if zmin else zrange[0],
                               np.max([zrange[1], zmax]) if zmax else zrange[1])
         return l, b, zmin, r, t, zmax
