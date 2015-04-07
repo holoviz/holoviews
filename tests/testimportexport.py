@@ -162,6 +162,7 @@ class TestPicklerAdvanced(ComparisonTestCase):
         Pickler.save(self.image1+self.image2, 'test_pickler_save_load_layout_entry1',
                         info={'info':'example'}, key={1:2})
         entries = Unpickler.entries('test_pickler_save_load_layout_entry1.hvz')
+        assert ('Image.I' in entries), "Entry 'Image.I' missing"
         loaded = Unpickler.load('test_pickler_save_load_layout_entry1.hvz',
                                 entries=['Image.I'])
         self.assertEqual(loaded, self.image1)
@@ -170,6 +171,7 @@ class TestPicklerAdvanced(ComparisonTestCase):
         Pickler.save(self.image1+self.image2, 'test_pickler_save_load_layout_entry2',
                         info={'info':'example'}, key={1:2})
         entries = Unpickler.entries('test_pickler_save_load_layout_entry2.hvz')
+        assert ('Image.II' in entries), "Entry 'Image.II' missing"
         loaded = Unpickler.load('test_pickler_save_load_layout_entry2.hvz',
                                 entries=['Image.II'])
         self.assertEqual(loaded, self.image2)

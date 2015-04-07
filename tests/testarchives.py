@@ -9,7 +9,7 @@ import zipfile
 import tarfile
 import numpy as np
 from holoviews import Image
-from holoviews.core.io import Serializer, Pickler, Unpickler, Deserializer, FileArchive
+from holoviews.core.io import Serializer, FileArchive
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -27,7 +27,7 @@ class TestFileArchive(ComparisonTestCase):
                 shutil.rmtree(f)
 
     def test_filearchive_init(self):
-        archive = FileArchive()
+        FileArchive()
 
     def test_filearchive_image_pickle(self):
         export_name = 'archive_image'

@@ -2,10 +2,8 @@ import sys
 import numbers
 import itertools
 import string
-from collections import OrderedDict
 
 import numpy as np
-
 import param
 
 def find_minmax(lims, olims):
@@ -144,7 +142,6 @@ def dimension_sort(odict, dimensions, categorical, cached_values):
     or sorts in categorical order for any categorical Dimensions.
     """
     sortkws = {}
-    dim_names = [d.name for d in dimensions]
     if categorical:
         sortkws['key'] = lambda x: tuple(cached_values[d.name].index(x[0][i])
                                          if d.values else x[0][i]

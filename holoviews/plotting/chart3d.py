@@ -1,6 +1,4 @@
 import numpy as np
-from matplotlib import ticker
-
 import param
 
 from ..core.options import Store

@@ -3,9 +3,6 @@ Bounding regions and bounding boxes.
 
 File originally part of the Topographica project.
 """
-
-from numpy import inf
-
 ### JABALERT: The aarect information should probably be rewritten in
 ### matrix notation, not list notation, so that it can be scaled,
 ### translated, etc. easily.

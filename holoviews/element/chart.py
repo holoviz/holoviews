@@ -301,7 +301,6 @@ class Histogram(Element2D):
         if dim in self._cached_value_names:
             return self.values
         elif dim in self._cached_index_names:
-            nedges = len(self.edges)
             return np.convolve(self.edges, np.ones((2,))/2, mode='valid')
         else:
             return super(Histogram, self).dimension_values(dim)

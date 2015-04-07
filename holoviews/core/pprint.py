@@ -37,17 +37,13 @@ class InfoPrinter(object):
         """
         if cls.ppager is None: return ''
         param_info = cls.ppager._get_param_info(obj)
-        value_table = cls.ppager._build_table(param_info,
-                                              cls.ppager.order,
-                                              max_col_len=max_col_len,
-                                              only_changed=False)
         param_list = cls.ppager._param_docstrings(param_info)
         if not show_values:
             return cls.ansi_escape.sub('', param_list) if not ansi else param_list
         else:
             info = cls.ppager(obj)
             if ansi is False:
-                info = ansi_escape.sub('', info)
+                info = cls.ansi_escape.sub('', info)
             return info
 
     @classmethod

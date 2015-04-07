@@ -268,7 +268,6 @@ class DFrame(DataFrameView):
         if not isinstance(vdims, list): vdims = [vdims]
 
         # Process dimensions
-        all_dims = self.dimensions(label=True)
         sel_dims = kdims + vdims + mdims
         el_dims = kdims + vdims
         if not mdims and not reduce_fn:

@@ -8,8 +8,6 @@ except:
     plugins = None
 
 import param
-
-from ..core.options import Store
 from ..ipython.magics import OutputMagic
 from ..core import NdOverlay, Overlay
 from ..element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
