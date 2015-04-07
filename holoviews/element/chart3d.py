@@ -2,10 +2,10 @@ import param
 
 from ..core import Dimension, Element3D
 from .chart import Chart
-from .raster import Raster
+from .raster import Raster, Image
 
 
-class Surface(Element3D, Raster):
+class Surface(Element3D, Image):
     """
     Surface Element represents a 3D surface in space.
     The data should be supplied as a dense NxM matrix.
@@ -22,9 +22,6 @@ class Surface(Element3D, Raster):
         The Surface height dimension.""")
 
     group = param.String(default='Surface')
-
-    def __init__(self, data, extents=(0, 0, 0, 1, 1, None), **params):
-        super(Surface, self).__init__(data, extents=extents, **params)
 
 
 
