@@ -82,6 +82,14 @@ class RasterPlot(ElementPlot):
                                    xticks=xticks, yticks=yticks)
 
 
+    def get_extents(self, view, ranges):
+        """
+        Gets the extents for the axes from the current Element. The globally
+        computed ranges can optionally override the extents.
+        """
+        return view.extents if self.rescale_individually else self.map.extents
+
+
     def _compute_ticks(self, view):
         if isinstance(view, HeatMap):
             xdim, ydim = view.key_dimensions

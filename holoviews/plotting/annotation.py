@@ -23,7 +23,7 @@ class AnnotationPlot(ElementPlot):
         opts = self.style[self.cyclic_index]
         handles = self.draw_annotation(axis, annotation, annotation.data, opts)
         self.handles['annotations'] = handles
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
     def update_handles(self, axis, annotation, key, ranges=None):

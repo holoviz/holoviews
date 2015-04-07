@@ -97,11 +97,12 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def __call__(self, ranges=None):
         axis = self.handles['axis']
         points = self.map.last
-
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = match_spec(points, ranges)
         key = self.keys[-1]
-        self.update_handles(axis, points, key)
+        self.update_handles(axis, points, key, ranges)
 
-        return self._finalize_axis(key)
+        return self._finalize_axis(key, ranges=ranges)
 
     def update_handles(self, axis, points, key, ranges=None):
         ndims = points.data.shape[1]
@@ -153,7 +154,12 @@ class SurfacePlot(Plot3D):
         key = self.keys[-1]
         self.update_handles(self.handles['axis'], view, key)
 
-        return self._finalize_axis(key)
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = match_spec(view, ranges)
+
+        self.update_handles(self.handles['axis'], view, key, ranges)
+
+        return self._finalize_axis(key, ranges=ranges)
 
 
     def update_handles(self, axis, element, key, ranges=None):

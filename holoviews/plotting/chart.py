@@ -71,22 +71,6 @@ class ChartPlot(ElementPlot):
         return np.vstack([x_values, y_values]).T
 
 
-    def get_extents(self, element, ranges):
-        l, r = self.xlim if self.rescale_individually else self.map.xlim
-        b, t = self.ylim if self.rescale_individually else self.map.ylim
-        dimensions = element.dimensions(label=True)
-        xdim, ydim = dimensions[0], dimensions[1]
-        if ranges is not None:
-            xrange, yrange = ranges.get(xdim), ranges.get(ydim)
-            if not xrange is None:
-                l, r = (np.min([xrange[0], l]) if l else xrange[0],
-                        np.max([xrange[1], r]) if r else xrange[1])
-            if not yrange is None:
-                b, t = (np.min([yrange[0], b]) if b else yrange[0],
-                        np.max([yrange[1], t]) if t else yrange[1])
-        return l, b, r, t
-
-
 class CurvePlot(ChartPlot):
     """
     CurvePlot can plot Curve and ViewMaps of Curve, which can be
@@ -197,6 +181,11 @@ class HistogramPlot(ChartPlot):
 
     def __call__(self, ranges=None):
         hist = self.map.last
+        key = self.keys[-1]
+        axis = self.handles['axis']
+
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = match_spec(hist, ranges)
 
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
@@ -217,7 +206,7 @@ class HistogramPlot(ChartPlot):
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
 
-        return self._finalize_axis(self.keys[-1], **ax_settings)
+        return self._finalize_axis(self.keys[-1], ranges=ranges, **ax_settings)
 
 
     def _process_hist(self, hist):
@@ -657,7 +646,7 @@ class VectorFieldPlot(ElementPlot):
         self.handles['legend_handle'] = quiver
         self.handles['input_scale'] = input_scale
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
     def update_handles(self, axis, view, key, ranges=None):

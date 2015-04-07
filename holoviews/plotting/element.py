@@ -175,7 +175,16 @@ class ElementPlot(Plot):
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
         """
-        return view.extents if self.rescale_individually else self.map.extents
+        xdim, ydim = view.get_dimension(0), view.get_dimension(1)
+        if ranges:
+            x0, x1 = ranges[xdim.name]
+            y0, y1 = ranges[ydim.name]
+        else:
+            return view.extents
+        if self.projection == '3d':
+                z0, z1 = ranges[view.get_dimension(2).name]
+                return x0, y0, z0, x1, y1, z1
+        return x0, y0, x1, y1
 
 
     def _format_title(self, key):
@@ -596,6 +605,7 @@ class OverlayPlot(ElementPlot):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
+        ranges = self.compute_ranges(self.map, key, ranges)
         for plot in self.subplots.values():
             plot.update_frame(key, ranges)
 
