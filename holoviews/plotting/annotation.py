@@ -3,7 +3,7 @@ from matplotlib import patches as patches
 from matplotlib.collections import LineCollection
 
 from ..core.options import Store
-from ..element import Contours, VLine, HLine, Arrow, Spline, Text, Path, Box, Bounds, Ellipse
+from ..element import VLine, HLine, Arrow, Spline, Text
 from .element import ElementPlot
 
 
@@ -114,41 +114,9 @@ class TextPlot(AnnotationPlot):
 
 
 
-class PathPlot(ElementPlot):
-
-    style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
-
-    def __init__(self, *args, **params):
-        self.aspect = 'equal'
-        super(PathPlot, self).__init__(*args, **params)
-
-
-    def __call__(self, ranges=None):
-        lines = self.map.last
-
-        style = self.style[self.cyclic_index]
-        line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
-        self.handles['line_segments'] = line_segments
-        self.handles['axis'].add_collection(line_segments)
-
-        return self._finalize_axis(self.keys[-1])
-
-
-    def update_handles(self, axis, view, key, ranges=None):
-        self.handles['line_segments'].set_paths(view.data)
-
-
-
-
 Store.registry.update({
     VLine: VLinePlot,
     HLine: HLinePlot,
     Arrow: ArrowPlot,
     Spline: SplinePlot,
-    Text: TextPlot,
-
-    Contours: PathPlot,
-    Path:     PathPlot,
-    Box:      PathPlot,
-    Bounds:  PathPlot,
-    Ellipse:  PathPlot})
+    Text: TextPlot})

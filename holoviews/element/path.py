@@ -82,7 +82,7 @@ class Contours(Path):
     (the contour level).
     """
 
-    level = param.Number(default=0.5, doc="""
+    level = param.Number(default=np.NaN, doc="""
         Optional level associated with the set of Contours.""")
 
     value_dimension = param.List(default=[Dimension('Level')], doc="""
@@ -95,6 +95,11 @@ class Contours(Path):
         data = [] if data is None else data
         super(Contours, self).__init__(data, **params)
 
+    def dimension_values(self, dim):
+        dimension = self.get_dimension(dim)
+        if dimension in self.value_dimensions:
+            return [self.level]
+        return super(Contours, self).dimension_values(dim)
 
 
 class Box(Path):
@@ -154,3 +159,16 @@ class Bounds(Path):
         (l,b,r,t) = data
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         super(Bounds, self).__init__([box], **params)
+
+
+class Polygons(Contours):
+    """
+    Polygons is a Path Element type that may contain any number of
+    closed paths with an associated value.
+    """
+
+    group = param.String(default="Polygons")
+
+    value_dimensions = param.List(default=[Dimension('Value')], doc="""
+        Polygons optionally accept a value dimension, corresponding
+        to the supplied value.""", bounds=(1,1))
