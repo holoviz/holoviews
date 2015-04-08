@@ -29,7 +29,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, RasterGridPlot
-from ..plotting import ANIMATION_OPTS, HTML_TAGS, opts, get_plot_size
+from ..plotting import ANIMATION_OPTS, HTML_TAGS, MIME_TYPES,  opts, get_plot_size
 from .magics import OutputMagic, OptsMagic
 from .widgets import SelectionWidget, ScrubberWidget
 
@@ -53,7 +53,7 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     renderer = Store.renderer.instance(dpi=dpi)
     data = renderer.anim_data(anim, fmt, writer, **anim_kwargs)
     b64data = base64.b64encode(data).decode("utf-8")
-    (mime_type, tag) = HTML_TAGS[fmt]
+    (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
     src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)
     return  tag.format(src=src, mime_type=mime_type)
 
@@ -163,7 +163,7 @@ def display_figure(fig, message=None, max_width='100%'):
         if figure_format=='svg':
             figdata = figdata.encode("utf-8")
         b64 = base64.b64encode(figdata).decode("utf-8")
-        (mime_type, tag) = HTML_TAGS[figure_format]
+        (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         html = tag.format(src=src)
     plt.close(fig)

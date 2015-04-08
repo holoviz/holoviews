@@ -32,13 +32,22 @@ VIDEO_TAG = """
 Your browser does not support the video tag.
 </video><center/>"""
 
+
 HTML_TAGS = {
     'base64': 'data:{mime_type};base64,{b64}', # Use to embed data
-    'svg':  ('image/svg+xml', IMAGE_TAG),
-    'png':  ('image/png',     IMAGE_TAG),
-    'gif':  ('image/gif',     IMAGE_TAG),
-    'webm': ('video/webm',   VIDEO_TAG),
-    'mp4':  ('video/mp4',    VIDEO_TAG)
+    'svg':  IMAGE_TAG,
+    'png':  IMAGE_TAG,
+    'gif':  IMAGE_TAG,
+    'webm': VIDEO_TAG,
+    'mp4':  VIDEO_TAG
+}
+
+MIME_TYPES = {
+    'svg':  'image/svg+xml',
+    'png':  'image/png',
+    'gif':  'image/gif',
+    'webm': 'video/webm',
+    'mp4':  'video/mp4'
 }
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
@@ -163,7 +172,7 @@ class MPLPlotRenderer(Exporter):
             data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
         return data, {'file-ext':fmt,
-                      'mime_type':HTML_TAGS[fmt][0]}
+                      'mime_type':MIME_TYPES[fmt]}
 
 
     @bothmethod
