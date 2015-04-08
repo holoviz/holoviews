@@ -82,7 +82,7 @@ class Contours(Path):
     (the contour level).
     """
 
-    level = param.Number(default=np.NaN, doc="""
+    level = param.Number(default=None, doc="""
         Optional level associated with the set of Contours.""")
 
     value_dimension = param.List(default=[Dimension('Level')], doc="""

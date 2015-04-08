@@ -79,7 +79,7 @@ class PolygonPlot(ElementPlot):
             polys.append(Polygon(segments))
         collection = PatchCollection(polys, clim=ranges[vdim.name],
                                      zorder=self.zorder, **style)
-        if np.isfinite(value):
+        if value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(polys)))
         return collection, polys
         
@@ -99,7 +99,7 @@ class PolygonPlot(ElementPlot):
             self.handles['polys'] = polys
             self.handles['polygons'] = collection
             axis.add_collection(collection)
-        elif np.isfinite(value):
+        elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim(ranges[vdim.name])
         if self.colorbar:
