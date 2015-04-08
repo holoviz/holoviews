@@ -126,6 +126,7 @@ class Comparison(ComparisonInterface):
         # Path comparisons
         cls.equality_type_funcs[Path] =        cls.compare_paths
         cls.equality_type_funcs[Contours] =    cls.compare_contours
+        cls.equality_type_funcs[Polygons] =    cls.compare_polygons
         cls.equality_type_funcs[Box] =         cls.compare_box
         cls.equality_type_funcs[Ellipse] =     cls.compare_ellipse
         cls.equality_type_funcs[Bounds] =      cls.compare_bounds
@@ -377,6 +378,12 @@ class Comparison(ComparisonInterface):
     def compare_contours(cls, el1, el2, msg='Contours'):
         if el1.level != el2.level:
             raise cls.failureException("Contour levels are mismatched")
+        cls.compare_paths(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_polygons(cls, el1, el2, msg='Polygons'):
+        if el1.level != el2.level:
+            raise cls.failureException("Polygon levels are mismatched")
         cls.compare_paths(el1, el2, msg=msg)
 
     @classmethod
