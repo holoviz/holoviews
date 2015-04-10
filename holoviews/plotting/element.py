@@ -24,6 +24,9 @@ class ElementPlot(Plot):
     apply_databounds = param.Boolean(default=True, doc="""
         Whether to compute the plot bounds from the data itself.""")
 
+    apply_ticks = param.Boolean(default=True, doc="""
+        Whether to compute the plot bounds from the data itself.""")
+
     aspect = param.Parameter(default='square', doc="""
         The aspect ratio mode of the plot. By default, a plot may
         select its own appropriate aspect ratio but sometimes it may
@@ -87,6 +90,8 @@ class ElementPlot(Plot):
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
+
+    _suppressed = ['Table', 'ItemTable']
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=0,
                  cyclic_index=0, style=None, zorder=0, adjoined=None, uniform=True, **params):
@@ -228,10 +233,11 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         view = self._get_frame(key)
-        subplots = self.subplots.values() if self.subplots else {}
+        subplots = self.subplots.values() if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            if view is not None and not type(view) in [Table, ItemTable]:
+            suppress = any(sp in self._suppressed for sp in [self] + subplots)
+            if view is not None and not suppress:
 
                 # Axis labels
                 if hasattr(view, 'xlabel') and xlabel is None:
@@ -241,18 +247,8 @@ class ElementPlot(Plot):
                 if hasattr(view, 'zlabel') and zlabel is None:
                     zlabel = view.zlabel
 
-                # Extents
                 if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
-                    extents = self.get_extents(view, ranges)
-                    if extents and not self.overlaid:
-                        coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                        if isinstance(view, Element3D):
-                            l, b, zmin, r, t, zmax = coords
-                            if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
-                        else:
-                            l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
-                        if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
-                        if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
+                    self._finalize_limits(axis, view, subplots, ranges)
 
                 # Tick formatting
                 xdim, ydim = view.get_dimension(0), view.get_dimension(1)
@@ -261,15 +257,15 @@ class ElementPlot(Plot):
                     xformat = xdim.formatter
                 elif xdim.type_formatters.get(xdim.type):
                     xformat = xdim.type_formatters[xdim.type]
-                if xformat:
-                    axis.xaxis.set_major_formatter(xformat)
+                    if xformat:
+                        axis.xaxis.set_major_formatter(xformat)
 
                 if ydim.formatter:
                     yformat = ydim.formatter
                 elif ydim.type_formatters.get(ydim.type):
                     yformat = ydim.type_formatters[ydim.type]
-                if yformat:
-                    axis.yaxis.set_major_formatter(yformat)
+                    if yformat:
+                        axis.yaxis.set_major_formatter(yformat)
 
             if not self.show_legend:
                 legend = axis.get_legend()
@@ -279,98 +275,15 @@ class ElementPlot(Plot):
                 axis.get_xaxis().grid(True)
                 axis.get_yaxis().grid(True)
 
-            self._subplot_label(axis)
-
             if xlabel: axis.set_xlabel(xlabel)
             if ylabel: axis.set_ylabel(ylabel)
             if zlabel: axis.set_zlabel(zlabel)
 
-            if not self.projection == '3d':
-                disabled_spines = []
-                if self.show_xaxis is not None:
-                    if self.show_xaxis == 'top':
-                        axis.xaxis.set_ticks_position("top")
-                        axis.xaxis.set_label_position("top")
-                    elif self.show_xaxis == 'bottom':
-                        axis.xaxis.set_ticks_position("bottom")
-                else:
-                    axis.xaxis.set_visible(False)
-                    disabled_spines.extend(['top', 'bottom'])
-
-                if self.show_yaxis is not None:
-                    if self.show_yaxis == 'left':
-                        axis.yaxis.set_ticks_position("left")
-                    elif self.show_yaxis == 'right':
-                        axis.yaxis.set_ticks_position("right")
-                        axis.yaxis.set_label_position("right")
-                else:
-                    axis.yaxis.set_visible(False)
-                    disabled_spines.extend(['left', 'right'])
-
-                for pos in disabled_spines:
-                    axis.spines[pos].set_visible(False)
-
-            if not self.show_frame:
-                axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
-                axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
-
-            if self.logx or self.logy:
-                pass
-            elif self.aspect == 'square':
-                axis.set_aspect((1./axis.get_data_ratio()))
-            elif self.aspect not in [None, 'square']:
-                if isinstance(self.aspect, basestring):
-                    axis.set_aspect(self.aspect)
-                else:
-                    axis.set_aspect(((1./axis.get_data_ratio()))/self.aspect)
-
-            if self.logx:
-                axis.set_xscale('log')
-            elif self.logy:
-                axis.set_yscale('log')
-
-            if xticks:
-                axis.set_xticks(xticks[0])
-                axis.set_xticklabels(xticks[1])
-            elif self.logx:
-                log_locator = ticker.LogLocator(numticks=self.xticks,
-                                                subs=range(1,10))
-                axis.xaxis.set_major_locator(log_locator)
-            elif self.xticks:
-                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
-
-            for tick in axis.get_xticklabels():
-                tick.set_rotation(self.xrotation)
-
-            if yticks:
-                axis.set_yticks(yticks[0])
-                axis.set_yticklabels(yticks[1])
-            elif self.logy:
-                log_locator = ticker.LogLocator(numticks=self.yticks,
-                                                subs=range(1,10))
-                axis.yaxis.set_major_locator(log_locator)
-            elif self.yticks:
-                axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
-
-            if not self.projection == '3d':
-                pass
-            elif zticks:
-                axis.set_zticks(zticks[0])
-                axis.set_zticklabels(zticks[1])
-            elif self.logz:
-                log_locator = ticker.LogLocator(numticks=self.zticks,
-                                                subs=range(1,10))
-                axis.zaxis.set_major_locator(log_locator)
-            else:
-                axis.zaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
-
-            for tick in axis.get_yticklabels():
-                tick.set_rotation(self.yrotation)
-
-            if self.invert_xaxis:
-                axis.invert_xaxis()
-            if self.invert_yaxis:
-                axis.invert_yaxis()
+            self._apply_aspect(axis)
+            self._subplot_label(axis)
+            self._finalize_axes()
+            if self.apply_ticks:
+                self._finalize_ticks(axis, xticks, yticks, zticks)
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title)
@@ -382,6 +295,114 @@ class ElementPlot(Plot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
         return super(ElementPlot, self)._finalize_axis(key)
+
+
+    def _apply_aspect(self, axis):
+        if self.logx or self.logy:
+            pass
+        elif self.aspect == 'square':
+            axis.set_aspect((1./axis.get_data_ratio()))
+        elif self.aspect not in [None, 'square']:
+            if isinstance(self.aspect, basestring):
+                axis.set_aspect(self.aspect)
+            else:
+                axis.set_aspect(((1./axis.get_data_ratio()))/self.aspect)
+
+
+    def _finalize_limits(self, axis, view, subplots, ranges):
+        # Extents
+        extents = self.get_extents(view, ranges)
+        if extents and not self.overlaid:
+            coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            if isinstance(view, Element3D):
+                l, b, zmin, r, t, zmax = coords
+                if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
+            else:
+                l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+                if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
+                if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
+
+
+    def _finalize_axes(self):
+        if self.logx:
+            axis.set_xscale('log')
+        elif self.logy:
+            axis.set_yscale('log')
+
+        if self.invert_xaxis:
+            axis.invert_xaxis()
+        if self.invert_yaxis:
+            axis.invert_yaxis()
+
+
+    def _finalize_ticks(self, axis, xticks, yticks, zticks):
+        if not self.projection == '3d':
+            disabled_spines = []
+            if self.show_xaxis is not None:
+                if self.show_xaxis == 'top':
+                    axis.xaxis.set_ticks_position("top")
+                    axis.xaxis.set_label_position("top")
+                elif self.show_xaxis == 'bottom':
+                    axis.xaxis.set_ticks_position("bottom")
+            else:
+                axis.xaxis.set_visible(False)
+                disabled_spines.extend(['top', 'bottom'])
+
+            if self.show_yaxis is not None:
+                if self.show_yaxis == 'left':
+                    axis.yaxis.set_ticks_position("left")
+                elif self.show_yaxis == 'right':
+                    axis.yaxis.set_ticks_position("right")
+                    axis.yaxis.set_label_position("right")
+            else:
+                axis.yaxis.set_visible(False)
+                disabled_spines.extend(['left', 'right'])
+
+            for pos in disabled_spines:
+                axis.spines[pos].set_visible(False)
+
+        if not self.show_frame:
+            axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
+            axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
+
+        if xticks:
+            axis.set_xticks(xticks[0])
+            axis.set_xticklabels(xticks[1])
+        elif self.logx:
+            log_locator = ticker.LogLocator(numticks=self.xticks,
+                                            subs=range(1,10))
+            axis.xaxis.set_major_locator(log_locator)
+        elif self.xticks:
+            axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
+
+        for tick in axis.get_xticklabels():
+            tick.set_rotation(self.xrotation)
+
+        if yticks:
+            axis.set_yticks(yticks[0])
+            axis.set_yticklabels(yticks[1])
+        elif self.logy:
+            log_locator = ticker.LogLocator(numticks=self.yticks,
+                                            subs=range(1,10))
+            axis.yaxis.set_major_locator(log_locator)
+        elif self.yticks:
+            axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
+
+        if not self.projection == '3d':
+            pass
+        elif zticks:
+            axis.set_zticks(zticks[0])
+            axis.set_zticklabels(zticks[1])
+        elif self.logz:
+            log_locator = ticker.LogLocator(numticks=self.zticks,
+                                            subs=range(1,10))
+            axis.zaxis.set_major_locator(log_locator)
+        else:
+            axis.zaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
+
+        if self.projection == '3d':
+            for tick in axis.get_zticklabels():
+                tick.set_rotation(self.zrotation)
 
 
     def update_frame(self, key, ranges=None):
