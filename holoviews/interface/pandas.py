@@ -324,8 +324,6 @@ class DFrame(DataFrameView):
         ndims = len(key_dimensions)
         key_data, value_data = data[:ndims], data[ndims:]
         keys = zip(*key_data)
-        if ndims == 1:
-            keys = [(k,) for k in keys]
         values = zip(*value_data)
         inherited = dict(key_dimensions=key_dimensions,
                          value_dimensions=value_dimensions, label=self.label)
