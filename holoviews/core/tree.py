@@ -3,7 +3,7 @@ try:
 except:
     from collections import OrderedDict
 
-import util
+from . import util
 from .pprint import PrettyPrinter
 
 
