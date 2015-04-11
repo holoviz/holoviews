@@ -68,8 +68,10 @@ def sanitize_identifier(name, escape=True):
     chars = []
     if name and name[0].islower():
         name = string.upper(name[0])+name[1:]
-    for c in name:
-        if c not in valid_chars:
+    for i, c in enumerate(name):
+        if i==0 and c in string.digits:
+            chars.append('_%s' % c)
+        elif c not in valid_chars:
             chars.append('_%s_' % hex(ord(c)))
         else:
             chars.append(c)
