@@ -3,8 +3,8 @@ try:
 except:
     from collections import OrderedDict
 
+import util
 from .pprint import PrettyPrinter
-from .util import sanitize_identifier, unescape_identifier
 
 
 class AttrTree(object):
@@ -41,7 +41,7 @@ class AttrTree(object):
         require an identifier.
         """
         self.__dict__['parent'] = parent
-        self.__dict__['identifier'] = sanitize_identifier(identifier, escape=False)
+        self.__dict__['identifier'] = util.sanitize_identifier(identifier, escape=False)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
 
@@ -184,7 +184,7 @@ class AttrTree(object):
         super(AttrTree, self).__setattr__(identifier, val)
 
         if identifier[0].isupper():
-            identifier = unescape_identifier(identifier)
+            identifier = util.unescape_identifier(identifier)
             if not identifier in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
@@ -202,9 +202,9 @@ class AttrTree(object):
         if identifier.startswith('__'):
             raise AttributeError('Attribute %s not found.' % identifier)
         elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
-        identifier = sanitize_identifier(identifier, escape=False)
+        identifier = util.sanitize_identifier(identifier, escape=False)
 
-        unescaped_identifier = unescape_identifier(identifier)
+        unescaped_identifier = util.unescape_identifier(identifier)
         if unescaped_identifier in self.children:
             return self.__dict__[unescaped_identifier]
 
