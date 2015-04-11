@@ -594,7 +594,7 @@ class Dimensioned(LabelledData):
         dim_vals = self.dimension_values(dimension.name)
         try:
             dim_vals = np.concatenate([dim_vals, soft_range])
-            return np.min(dim_vals), np.max(dim_vals)
+            return np.nanmin(dim_vals), np.nanmax(dim_vals)
         except:
             try:
                 if dim in self.dimensions() and len(dim_vals):

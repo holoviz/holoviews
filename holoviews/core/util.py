@@ -9,12 +9,12 @@ import param
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns
-    (np.min(a1, b1), np.max(a2, b2)). Used to calculate
+    (np.nanmin(a1, b1), np.nanmax(a2, b2)). Used to calculate
     min and max values of a number of items.
     """
 
     try:
-        limzip = zip(list(lims), list(olims), [np.min, np.max])
+        limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except:
         limits = (np.NaN, np.NaN)
