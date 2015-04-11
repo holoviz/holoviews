@@ -98,9 +98,10 @@ class AttrTree(object):
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
 
-        if not all(p[0].isupper() for p in path):
-            raise Exception("All paths elements must be capitalized.")
-
+        disallowed = [p for p in path if not util.allowable(p)]
+        if any(disallowed):
+            raise Exception("Attribute strings in path elements cannot be "
+                            "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))
         if len(path) > 1:
             attrtree = self.__getattr__(path[0])
             attrtree.set_path(path[1:], val)
@@ -208,14 +209,11 @@ class AttrTree(object):
         if unescaped_identifier in self.children:
             return self.__dict__[unescaped_identifier]
 
-        if identifier[0].isupper():
-            identifier = unescaped_identifier
-            self.children.append(identifier)
-            child_tree = self.__class__(identifier=identifier, parent=self)
-            self.__dict__[identifier] = child_tree
-            return child_tree
-        else:
-            raise AttributeError("%s: Custom paths elements must be capitalized." % identifier)
+        identifier = unescaped_identifier
+        self.children.append(identifier)
+        child_tree = self.__class__(identifier=identifier, parent=self)
+        self.__dict__[identifier] = child_tree
+        return child_tree
 
 
     def __iter__(self):
