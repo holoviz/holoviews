@@ -219,7 +219,7 @@ class MPLPlotRenderer(Exporter):
             format=fmt,
             facecolor=fig.get_facecolor(),
             edgecolor=fig.get_edgecolor(),
-            dpi=rcParams['savefig.dpi'],
+            dpi=self.dpi,
             bbox_inches=bbox_inches,
         )
         kw.update(kwargs)
