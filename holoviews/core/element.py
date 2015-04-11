@@ -9,7 +9,7 @@ from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping, NdMapping
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
-from .util import find_minmax
+from .util import find_minmax, sanitize_identifier
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -129,8 +129,8 @@ class Element(ViewableElement, Composable, Overlayable):
         match key at the level of an individual Element (there is only
         one possible match).
         """
-        identifier = '%s.%s' % (self.__class__.__name__, self.group)
-        identifier += ('.%s' % self.label) if self.label else ''
+        identifier = '%s.%s' % (self.__class__.__name__, sanitize_identifier(self.group))
+        identifier += ('.%s' % sanitize_identifier(self.label)) if self.label else ''
         options = {identifier:{}}
         for k,d in kwargs.items():
             options[identifier][k] = d
