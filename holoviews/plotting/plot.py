@@ -956,6 +956,7 @@ class LayoutPlot(CompositePlot):
             # Options common for any subplot
 
             override_opts = {}
+            sublabel_opts = {}
             if pos == 'main':
                 own_params = self.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
