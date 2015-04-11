@@ -21,13 +21,15 @@ class PathPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         lines = self.map.last
-
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = match_spec(lines, ranges)
         style = self.style[self.cyclic_index]
         line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
         self.handles['axis'].add_collection(line_segments)
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
+        return self._finalize_axis(key, ranges=ranges)
 
 
     def update_handles(self, axis, view, key, ranges=None):
