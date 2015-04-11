@@ -85,6 +85,9 @@ class ElementPlot(Plot):
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
+    zrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
     zticks = param.Integer(default=5, doc="""
         Number of ticks along the z-axis.""")
 
@@ -233,7 +236,7 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         view = self._get_frame(key)
-        subplots = self.subplots.values() if self.subplots else []
+        subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
             suppress = any(sp in self._suppressed for sp in [self] + subplots)
@@ -281,7 +284,7 @@ class ElementPlot(Plot):
 
             self._apply_aspect(axis)
             self._subplot_label(axis)
-            self._finalize_axes()
+            self._finalize_axes(axis)
             if self.apply_ticks:
                 self._finalize_ticks(axis, xticks, yticks, zticks)
 
@@ -323,7 +326,7 @@ class ElementPlot(Plot):
             if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
 
 
-    def _finalize_axes(self):
+    def _finalize_axes(self, axis):
         if self.logx:
             axis.set_xscale('log')
         elif self.logy:
