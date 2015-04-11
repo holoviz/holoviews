@@ -84,6 +84,14 @@ class Spline(Annotation):
         super(Spline, self).__init__(spline_points, **params)
 
 
+    def dimension_values(self, dimension):
+        index = self.get_dimension_index(dimension)
+        if index in [0, 1]:
+            return [point[index] for point in self.data[0]]
+        else:
+            return super(Spline, self).dimension_values(dimension)
+
+
 
 class Arrow(Annotation):
     """
