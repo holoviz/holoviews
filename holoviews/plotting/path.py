@@ -78,7 +78,8 @@ class PolygonPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         polys = []
         for segments in element.data:
-            polys.append(Polygon(segments))
+            if segments.shape[0]:
+                polys.append(Polygon(segments))
         collection = PatchCollection(polys, clim=ranges[vdim.name],
                                      zorder=self.zorder, **style)
         if value is not None and np.isfinite(value):
