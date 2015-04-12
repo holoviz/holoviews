@@ -85,10 +85,7 @@ def unescape_identifier(identifier):
 
 
 def allowable(name):
-    valid_second_chars= string.ascii_letters+string.digits
-    if len(name) >= 2 and name.startswith('_') and (name[1] not in valid_second_chars):
-        return False
-    return True
+    return not name.startswith('_')
 
 
 def unique_iterator(seq):

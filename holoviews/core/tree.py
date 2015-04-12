@@ -209,11 +209,14 @@ class AttrTree(object):
         if unescaped_identifier in self.children:
             return self.__dict__[unescaped_identifier]
 
-        identifier = unescaped_identifier
-        self.children.append(identifier)
-        child_tree = self.__class__(identifier=identifier, parent=self)
-        self.__dict__[identifier] = child_tree
-        return child_tree
+        if not identifier.startswith('_'):
+            identifier = unescaped_identifier
+            self.children.append(identifier)
+            child_tree = self.__class__(identifier=identifier, parent=self)
+            self.__dict__[identifier] = child_tree
+            return child_tree
+        else:
+            raise AttributeError
 
 
     def __iter__(self):
