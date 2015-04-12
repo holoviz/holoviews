@@ -2,9 +2,111 @@ import sys
 import numbers
 import itertools
 import string
+import unicodedata
 
 import numpy as np
 import param
+
+
+class sanitize_identifier(param.ParameterizedFunction):
+    """
+    Sanitizes group/label values for use in AttrTree attribute
+    access. Depending on the version parameter, either sanitization
+    appropriate for Python 2 (no unicode gn identifiers allowed) or
+    Python 3 (some unicode allowed) is used.
+
+    Note that if you are using Python 3, you can switch to version 2
+    for compatibility but you cannot enable relaxed sanitization if
+    you are using Python 2.
+    """
+
+    version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
+        The sanitization version. If set to 2, more aggresive
+        sanitization appropriate for Python 2 is applied. Otherwise,
+        if set to 3, more relaxed, Python 3 sanitization is used.""")
+
+    capitalize = param.Boolean(default=True, doc="""
+       Whether the first letter should be converted to
+       uppercase. Note, this will only be applied to ASCII characters
+       in order to make sure paths aren't confused with method
+       names.""")
+
+    UNDERSCORE_TOKEN = 'UNDERSCORE'
+
+    def __call__(self, name, escape=True, version=None):
+        if name in [None, '']: return name
+        version = self.version if version is None else version
+        if self.capitalize and name and name[0] in string.ascii_lowercase:
+            name = name[0].upper()+name[1:]
+        chars = (self.sanitize_py2(name, escape)
+                 if version==2 else self.sanitize_py3(name, escape))
+        if len(chars[0]) >= 2 and chars[0].startswith('_0x'):
+            chars = [chars[0][2:]] + chars[1:]
+        if escape and len(chars) and chars[0][0] == '_':
+            chars[0] = self.UNDERSCORE_TOKEN + chars[0][1:]
+        return ''.join(chars)
+
+
+    def sanitize_py2(self, name, escape=True):
+        if name is None: return ''
+        valid_chars = string.ascii_letters+string.digits+'_'
+        name = name.replace(' ', '_')
+        chars = []
+        for i, c in enumerate(name):
+            if i==0 and c in string.digits:
+                chars.append('_%s' % c)
+            elif c not in valid_chars:
+                chars.append('_%s_' % hex(ord(c)))
+            else:
+                chars.append(c)
+        return chars
+
+    def sanitize_py3(self, name, escape=True):
+        chars = []
+        valid_non_starting = ['Mn', 'Mc', 'Nd', 'Pc']
+        if not name.isidentifier():
+            for i, c in enumerate(name):
+                category = unicodedata.category(c)
+                non_starting = category in valid_non_starting
+                if i==0 and not c.isidentifier() and non_starting:
+                    chars.append('_%s' % c)
+                elif not ('_'+c).isidentifier():
+                    chars.append('_%s_' % hex(ord(c)))
+                else:
+                    chars.append(c)
+            return chars
+        else:
+            return list(name)
+
+
+class allowable(param.ParameterizedFunction):
+    """
+    Predicate function that returns a boolean that indicates whether a
+    string is an allowable identifier or not.
+    """
+
+    version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
+       The sanitization version. If set to 2, fewer strings are
+       allowable as more aggresive sanitization is needed for Python
+       2. If set to 3, more strings will be allowable due to better
+       unicode support in Python 3.""")
+
+    def __call__(self, name, version=None):
+        if name is None: return name
+        if name.startswith('_'): return False
+        version = self.version if version is None else version
+        if len(name) >= 2 and version==2:
+            valid_second_chars= string.ascii_letters+string.digits
+            return not(name.startswith('_') and (name[1] not in valid_second_chars))
+        elif len(name) >= 2 and version==3:
+            return not(name.startswith('_') and not name[:2].isidentifier())
+        else:
+            return True
+
+
+def unescape_identifier(identifier):
+    return identifier.replace(sanitize_identifier.UNDERSCORE_TOKEN, '_')
+
 
 def find_minmax(lims, olims):
     """
@@ -53,39 +155,6 @@ def int_to_roman(input):
       result += nums[i] * count
       input -= ints[i] * count
    return result
-
-
-UNDERSCORE_TOKEN = 'UNDERSCORE'
-
-def sanitize_identifier(name, escape=True):
-    """
-    Sanitizes group/label values for use in AttrTree
-    attribute access
-    """
-    if name is None: return ''
-    valid_chars = string.ascii_letters+string.digits+'_'
-    name = name.replace(' ', '_')
-    chars = []
-    if name and name[0].islower():
-        name = string.upper(name[0])+name[1:]
-    for i, c in enumerate(name):
-        if i==0 and c in string.digits:
-            chars.append('_%s' % c)
-        elif c not in valid_chars:
-            chars.append('_%s_' % hex(ord(c)))
-        else:
-            chars.append(c)
-    if escape and len(chars) and chars[0][0] == '_':
-        chars[0] = UNDERSCORE_TOKEN + chars[0][1:]
-    return ''.join(chars)
-
-
-def unescape_identifier(identifier):
-    return identifier.replace(UNDERSCORE_TOKEN, '_')
-
-
-def allowable(name):
-    return not name.startswith('_')
 
 
 def unique_iterator(seq):
