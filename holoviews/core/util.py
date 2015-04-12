@@ -36,8 +36,14 @@ class sanitize_identifier(param.ParameterizedFunction):
     def __call__(self, name, escape=True, version=None):
         if name in [None, '']: return name
         version = self.version if version is None else version
+        if not allowable(name, version):
+            raise Exception('String %r cannot be sanitized into a suitable attribute name\n'
+                            '(Must not start with an underscore or character in a digit class)')
+
+        name = name.replace(' ', '_')
         if self.capitalize and name and name[0] in string.ascii_lowercase:
             name = name[0].upper()+name[1:]
+
         chars = (self.sanitize_py2(name, escape)
                  if version==2 else self.sanitize_py3(name, escape))
         if len(chars[0]) >= 2 and chars[0].startswith('_0x'):
@@ -50,12 +56,9 @@ class sanitize_identifier(param.ParameterizedFunction):
     def sanitize_py2(self, name, escape=True):
         if name is None: return ''
         valid_chars = string.ascii_letters+string.digits+'_'
-        name = name.replace(' ', '_')
         chars = []
         for i, c in enumerate(name):
-            if i==0 and c in string.digits:
-                chars.append('_%s' % c)
-            elif c not in valid_chars:
+            if c not in valid_chars:
                 chars.append('_%s_' % hex(ord(c)))
             else:
                 chars.append(c)
@@ -63,14 +66,9 @@ class sanitize_identifier(param.ParameterizedFunction):
 
     def sanitize_py3(self, name, escape=True):
         chars = []
-        valid_non_starting = ['Mn', 'Mc', 'Nd', 'Pc']
         if not name.isidentifier():
             for i, c in enumerate(name):
-                category = unicodedata.category(c)
-                non_starting = category in valid_non_starting
-                if i==0 and not c.isidentifier() and non_starting:
-                    chars.append('_%s' % c)
-                elif not ('_'+c).isidentifier():
+                if not ('_'+c).isidentifier():
                     chars.append('_%s_' % hex(ord(c)))
                 else:
                     chars.append(c)
@@ -84,7 +82,6 @@ class allowable(param.ParameterizedFunction):
     Predicate function that returns a boolean that indicates whether a
     string is an allowable identifier or not.
     """
-
     version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
        The sanitization version. If set to 2, fewer strings are
        allowable as more aggresive sanitization is needed for Python
@@ -94,11 +91,15 @@ class allowable(param.ParameterizedFunction):
     def __call__(self, name, version=None):
         if name is None: return name
         if name.startswith('_'): return False
+
+        invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
         version = self.version if version is None else version
         if len(name) >= 2 and version==2:
+            if name[0] in string.digits: return False
             valid_second_chars= string.ascii_letters+string.digits
             return not(name.startswith('_') and (name[1] not in valid_second_chars))
         elif len(name) >= 2 and version==3:
+            if unicodedata.category(name[0]) in invalid_starting: return False
             return not(name.startswith('_') and not name[:2].isidentifier())
         else:
             return True
