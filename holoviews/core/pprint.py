@@ -36,8 +36,8 @@ class InfoPrinter(object):
         Get parameter information from the supplied class or object.
         """
         if cls.ppager is None: return ''
-        param_info = cls.ppager._get_param_info(obj)
-        param_list = cls.ppager._param_docstrings(param_info)
+        param_info = cls.ppager.get_param_info(obj)
+        param_list = cls.ppager.param_docstrings(param_info)
         if not show_values:
             return cls.ansi_escape.sub('', param_list) if not ansi else param_list
         else:
