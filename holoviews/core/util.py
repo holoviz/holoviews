@@ -88,9 +88,18 @@ class allowable(param.ParameterizedFunction):
        2. If set to 3, more strings will be allowable due to better
        unicode support in Python 3.""")
 
+    disallowed = param.List(default=['Trait_names'], doc="""
+       An explicit list of identifiers that should not be treated as
+       attribute names for use on Tree objects.
+
+       By default, prevents IPython from creating an entry called
+       Trait_names due to an inconvenient getattr check during
+       tab-completion.""")
+
     def __call__(self, name, version=None):
         if name is None: return name
         if name.startswith('_'): return False
+        if name in self.disallowed: return False
 
         invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
         version = self.version if version is None else version
