@@ -114,13 +114,13 @@ def find_minmax(lims, olims):
     (np.nanmin(a1, b1), np.nanmax(a2, b2)). Used to calculate
     min and max values of a number of items.
     """
-
     try:
         limzip = zip(list(lims), list(olims), [np.nanmin, np.nanmax])
         limits = tuple([float(fn([l, ol])) for l, ol, fn in limzip])
     except:
         limits = (np.NaN, np.NaN)
     return limits
+
 
 def int_to_alpha(n, upper=True):
     "Generates alphanumeric labels of form A-Z, AA-ZZ etc."
@@ -141,6 +141,7 @@ def int_to_alpha(n, upper=True):
         count += 1
         n -= 26**count
     return label[::-1]
+
 
 def int_to_roman(input):
    if type(input) != type(1):
