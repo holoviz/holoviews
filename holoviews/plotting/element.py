@@ -90,7 +90,7 @@ class ElementPlot(Plot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    _suppressed = ['Table', 'ItemTable']
+    _suppressed = [Table, ItemTable]
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=0,
                  cyclic_index=0, style=None, zorder=0, adjoined=None, uniform=True, **params):
@@ -236,7 +236,7 @@ class ElementPlot(Plot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            suppress = any(sp in self._suppressed for sp in [self] + subplots)
+            suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots)
             if view is not None and not suppress:
 
                 # Axis labels
