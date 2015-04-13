@@ -236,7 +236,8 @@ class ElementPlot(Plot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots)
+            suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots
+                           if isinstance(sp.map, HoloMap))
             if view is not None and not suppress:
 
                 # Axis labels
