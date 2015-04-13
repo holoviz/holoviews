@@ -161,8 +161,6 @@ class AttrTree(object):
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
         """
-        identifier = str(identifier)
-        keyerror_msg = ''
         split_label = (tuple(identifier.split('.'))
                        if isinstance(identifier, str) else tuple(identifier))
         if len(split_label) == 1:
@@ -170,7 +168,7 @@ class AttrTree(object):
             if identifier in self.children:
                 return self.__dict__[identifier]
             else:
-                raise KeyError(identifier + ((' : %s' % keyerror_msg) if keyerror_msg else ''))
+                raise KeyError(identifier)
         path_item = self
         for identifier in split_label:
             path_item = path_item[identifier]
