@@ -334,7 +334,7 @@ class OptsCompleter(object):
         "Get the dictionary of valid completions"
         for element in Store.options.keys():
             try:
-                options = Store.options[element]
+                options = Store.options['.'.join(element)]
                 plotkws = options['plot'].allowed_keywords
                 stylekws = options['style'].allowed_keywords
                 dotted = '.'.join(element)
