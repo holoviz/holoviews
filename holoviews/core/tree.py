@@ -161,6 +161,7 @@ class AttrTree(object):
         If the node is a root node, you may also access elements using
         either tuple format or the 'A.B.C' string format.
         """
+        identifier = str(identifier)
         keyerror_msg = ''
         split_label = (tuple(identifier.split('.'))
                        if isinstance(identifier, str) else tuple(identifier))
@@ -185,7 +186,6 @@ class AttrTree(object):
         super(AttrTree, self).__setattr__(identifier, val)
 
         if identifier[0].isupper():
-            identifier = util.unescape_identifier(identifier)
             if not identifier in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
@@ -205,12 +205,10 @@ class AttrTree(object):
         elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
         identifier = util.sanitize_identifier(identifier, escape=False)
 
-        unescaped_identifier = util.unescape_identifier(identifier)
-        if unescaped_identifier in self.children:
-            return self.__dict__[unescaped_identifier]
+        if identifier in self.children:
+            return self.__dict__[identifier]
 
         if not identifier.startswith('_'):
-            identifier = unescaped_identifier
             self.children.append(identifier)
             child_tree = self.__class__(identifier=identifier, parent=self)
             self.__dict__[identifier] = child_tree

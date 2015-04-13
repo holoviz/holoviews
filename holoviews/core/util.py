@@ -16,6 +16,20 @@ def safe_unicode(value):
    else: return unicode(value.decode('utf-8'))
 
 
+
+def capitalize_unicode_name(s):
+    """
+    Turns a string such as 'capital delta' into the shortened,
+    capitalized version, in this case simply 'Delta'. Used as a
+    transform in sanitize_identifier.
+    """
+    index = s.find('capital')
+    if index == -1: return s
+    tail = s[index:].replace('capital', '').strip()
+    tail = tail[0].upper() + tail[1:]
+    return s[:index] + tail
+
+
 class sanitize_identifier(param.ParameterizedFunction):
     """
     Sanitizes group/label values for use in AttrTree attribute
@@ -26,6 +40,16 @@ class sanitize_identifier(param.ParameterizedFunction):
     Note that if you are using Python 3, you can switch to version 2
     for compatibility but you cannot enable relaxed sanitization if
     you are using Python 2.
+
+    Special characters are sanitized using their (lowercase) unicode
+    name using the unicodedata module. For instance:
+
+    >>> unicodedata.name('$').lower()
+    'dollar sign'
+
+    As these names are often very long, this parameterized function
+    allows filtered, substitions and transforms to help shorten these
+    names appropriately.
     """
 
     version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
@@ -39,59 +63,115 @@ class sanitize_identifier(param.ParameterizedFunction):
        in order to make sure paths aren't confused with method
        names.""")
 
-    UNDERSCORE_TOKEN = 'UNDERSCORE'
+    eliminations = param.List(['extended', 'accent', 'small', 'letter', 'sign', 'digit',
+                               'latin', 'greek', 'arabic-indic', 'with'], doc="""
+       Lowercase strings to be eliminated from the unicode names in
+       order to shorten the sanitized name ( lowercase). Redundant
+       strings should be removed but too much elimination could cause
+       two unique strings to map to the same sanitized output.""")
+
+    substitutions = param.Dict(default={'circumflex':'power',
+                                        'asterisk':'times',
+                                        'solidus':'over'}, doc="""
+       Lowercase substitutions of substrings in unicode names. For
+       instance the ^ character has the name 'circumflex accent' even
+       though it is more typically used for exponentiation. Note that
+       substitutions occur after filtering and that there should be no
+       ordering dependence between substitutions.""")
+
+    transforms = param.List(default=[capitalize_unicode_name], doc="""
+       List of string transformation functions to apply after
+       filtering and substitution in order to further compress the
+       unicode name. For instance, the defaultcapitalize_unicode_name
+       function will turn the string "capital delta" into "Delta".""")
+
 
     def __call__(self, name, escape=True, version=None):
         if name in [None, '']: return name
+        name = safe_unicode(name)
         version = self.version if version is None else version
         if not allowable(name, version):
-            raise Exception('String %r cannot be sanitized into a suitable attribute name\n'
-                            '(Must not start with a space, underscore or character in a digit class)')
+            raise SyntaxError(('String %r cannot be sanitized into a suitable attribute name\n' % name)
+                              + '(Must not start with a space, underscore or character in a digit class)')
 
-        name = name.replace(' ', '_')
         if self.capitalize and name and name[0] in string.ascii_lowercase:
             name = name[0].upper()+name[1:]
 
-        chars = (self.sanitize_py2(name, escape)
-                 if version==2 else self.sanitize_py3(name, escape))
-        if len(chars[0]) >= 2 and chars[0].startswith('_0x'):
-            chars = [chars[0][2:]] + chars[1:]
-        if escape and len(chars) and chars[0][0] == '_':
-            chars[0] = self.UNDERSCORE_TOKEN + chars[0][1:]
-        return ''.join(chars)
+        return (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
 
 
-    def _accumulate_bytes(self, name, invalid_fn):
+    @param.parameterized.bothmethod
+    def shortened_character_name(self_or_cls, c, eliminations=[], substitutions={}, transforms=[]):
+        """
+        Given a unicode character c, return the shortened unicode name
+        (as a list of tokens) by applying the eliminations,
+        substitutions and transforms.
+        """
+        name = unicodedata.name(c).lower()
+        # Filtering
+        for elim in eliminations:
+            name = name.replace(elim, '')
+        # Substitition
+        for i,o in substitutions.items():
+            name = name.replace(i, o)
+        for transform in transforms:
+            name = transform(name)
+        return ' '.join(name.strip().split()).replace(' ','_')
+
+
+    def _process_underscores(self, tokens):
+        "Strip underscores to make sure the number is correct after join"
+        groups = [[str(''.join(el))] if b else list(el)
+                  for (b,el) in itertools.groupby(tokens, lambda k: k=='_')]
+        flattened = [el for group in groups for el in group]
+        processed = []
+        for token in flattened:
+            if token == '_':  continue
+            if token.startswith('_'):
+                token = str(token[1:])
+            if token.endswith('_'):
+                token = str(token[:-1])
+            processed.append(token)
+        return processed
+
+
+    def sanitize(self, name, valid_fn):
         "Accumulate blocks of hex and separate blocks by underscores"
-        chars, accumulator = [], []
-        for i, c in enumerate(name):
-            if invalid_fn(c):
-                accumulator.append('%s' % hex(ord(c)))
-                continue
-            elif accumulator:
-                chars.append('_%s_' % ''.join(accumulator))
-                accumulator = []
-            chars.append(c)
-        endblock = '_%s' % ''.join(accumulator)
-        return chars + ([endblock] if accumulator else [])
+        sanitized, chars = [], ''
+        for split in name.split():
+            for c in split:
+                if valid_fn(c): chars += str(c) if c=='_' else c
+                else:
+                    short = self.shortened_character_name(c, self.eliminations,
+                                                         self.substitutions,
+                                                         self.transforms)
+                    if chars: print(chars)
+                    sanitized.extend([chars] if chars else [])
+                    sanitized.append(short)
+                    chars = ''
+            if chars:
+                sanitized.extend([chars])
+                chars=''
+        return self._process_underscores(sanitized + ([chars] if chars else []))
 
 
-    def sanitize_py2(self, name, escape=True):
+    def sanitize_py2(self, name):
         if name is None: return ''
         valid_chars = string.ascii_letters+string.digits+'_'
-        return self._accumulate_bytes(name, lambda c: c not in valid_chars)
+        return str('_'.join(self.sanitize(name, lambda c: c in valid_chars)))
 
-    def sanitize_py3(self, name, escape=True):
+
+    def sanitize_py3(self, name):
         if not name.isidentifier():
-            return self._accumulate_bytes(name, lambda c: not ('_'+c).isidentifier())
+            return '_'.join(self.sanitize(name, lambda c: ('_'+c).isidentifier()))
         else:
-            return list(name)
+            return name
 
 
 class allowable(param.ParameterizedFunction):
     """
     Predicate function that returns a boolean that indicates whether a
-    string is an allowable identifier or not.
+    string is an allowable identifier or not (after sanitization).
     """
     version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
        The sanitization version. If set to 2, fewer strings are
@@ -108,25 +188,14 @@ class allowable(param.ParameterizedFunction):
        tab-completion.""")
 
     def __call__(self, name, version=None):
-        if name is None: return name
+        if name == '': return True
         if name.startswith('_') or name.startswith(' '): return False
         if name in self.disallowed: return False
 
         invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
         version = self.version if version is None else version
-        if len(name) >= 2 and version==2:
-            if name[0] in string.digits: return False
-            valid_second_chars= string.ascii_letters+string.digits
-            return not(name.startswith('_') and (name[1] not in valid_second_chars))
-        elif len(name) >= 2 and version==3:
-            if unicodedata.category(name[0]) in invalid_starting: return False
-            return not(name.startswith('_') and not name[:2].isidentifier())
-        else:
-            return True
-
-
-def unescape_identifier(identifier):
-    return identifier.replace(sanitize_identifier.UNDERSCORE_TOKEN, '_')
+        if version==2: return (not name[0] in string.digits)
+        elif version==3: return not (unicodedata.category(name[0]) in invalid_starting)
 
 
 def find_minmax(lims, olims):
