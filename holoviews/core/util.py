@@ -53,26 +53,29 @@ class sanitize_identifier(param.ParameterizedFunction):
         return ''.join(chars)
 
 
+    def _accumulate_bytes(self, name, invalid_fn):
+        "Accumulate blocks of hex and separate blocks by underscores"
+        chars, accumulator = [], []
+        for i, c in enumerate(name):
+            if invalid_fn(c):
+                accumulator.append('%s' % hex(ord(c)))
+                continue
+            elif accumulator:
+                chars.append('_%s_' % ''.join(accumulator))
+                accumulator = []
+            chars.append(c)
+        endblock = '_%s' % ''.join(accumulator)
+        return chars + ([endblock] if accumulator else [])
+
+
     def sanitize_py2(self, name, escape=True):
         if name is None: return ''
         valid_chars = string.ascii_letters+string.digits+'_'
-        chars = []
-        for i, c in enumerate(name):
-            if c not in valid_chars:
-                chars.append('_%s_' % hex(ord(c)))
-            else:
-                chars.append(c)
-        return chars
+        return self._accumulate_bytes(name, lambda c: c not in valid_chars)
 
     def sanitize_py3(self, name, escape=True):
-        chars = []
         if not name.isidentifier():
-            for i, c in enumerate(name):
-                if not ('_'+c).isidentifier():
-                    chars.append('_%s_' % hex(ord(c)))
-                else:
-                    chars.append(c)
-            return chars
+            return self._accumulate_bytes(name, lambda c: not ('_'+c).isidentifier())
         else:
             return list(name)
 
