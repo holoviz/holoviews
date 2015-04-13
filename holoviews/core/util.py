@@ -44,7 +44,7 @@ class sanitize_identifier(param.ParameterizedFunction):
     Special characters are sanitized using their (lowercase) unicode
     name using the unicodedata module. For instance:
 
-    >>> unicodedata.name('$').lower()
+    >>> unicodedata.name(u'$').lower()
     'dollar sign'
 
     As these names are often very long, this parameterized function
