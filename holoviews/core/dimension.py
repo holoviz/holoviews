@@ -212,10 +212,10 @@ class LabelledData(param.Parameterized):
         self.id = id
         super(LabelledData, self).__init__(**params)
         if not allowable(self.group):
-            raise ValueError("Supplied group %s contains invalid characters." %
+            raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
         elif not allowable(self.label):
-            raise ValueError("Supplied label %s contains invalid characters." %
+            raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
 
 
