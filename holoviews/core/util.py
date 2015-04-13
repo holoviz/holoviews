@@ -38,7 +38,7 @@ class sanitize_identifier(param.ParameterizedFunction):
         version = self.version if version is None else version
         if not allowable(name, version):
             raise Exception('String %r cannot be sanitized into a suitable attribute name\n'
-                            '(Must not start with an underscore or character in a digit class)')
+                            '(Must not start with a space, underscore or character in a digit class)')
 
         name = name.replace(' ', '_')
         if self.capitalize and name and name[0] in string.ascii_lowercase:
@@ -101,7 +101,7 @@ class allowable(param.ParameterizedFunction):
 
     def __call__(self, name, version=None):
         if name is None: return name
-        if name.startswith('_'): return False
+        if name.startswith('_') or name.startswith(' '): return False
         if name in self.disallowed: return False
 
         invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
