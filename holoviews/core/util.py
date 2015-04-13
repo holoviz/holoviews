@@ -94,10 +94,28 @@ class sanitize_identifier(param.ParameterizedFunction):
             raise SyntaxError(('String %r cannot be sanitized into a suitable attribute name\n' % name)
                               + '(Must not start with a space, underscore or character in a digit class)')
 
+        if version == 2:
+            name = self.remove_diacritics(name)
         if self.capitalize and name and name[0] in string.ascii_lowercase:
             name = name[0].upper()+name[1:]
 
         return (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
+
+
+    @param.parameterized.bothmethod
+    def remove_diacritics(self_or_cls, name):
+        """
+        Remove diacritics and accents from the input leaving other
+        unicode characters alone."""
+        chars = ''
+        for c in name:
+            replacement = unicodedata.normalize('NFKD', c).encode('ASCII', 'ignore')
+            replacement = replacement.decode('unicode_escape')
+            if replacement != '':
+                chars += safe_unicode(replacement)
+            else:
+                chars += c
+        return chars
 
 
     @param.parameterized.bothmethod

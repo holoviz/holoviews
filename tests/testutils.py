@@ -111,11 +111,11 @@ class TestSanitizationPy2(ComparisonTestCase):
 
     def test_umlaut_sanitized_py2(self):
         sanitized = sanitize_identifier('Festkörperphysik', version=2)
-        self.assertEqual(sanitized, 'Festk_o_diaeresis_rperphysik')
+        self.assertEqual(sanitized, 'Festkorperphysik')
 
     def test_power_umlaut_sanitized_py2(self):
         sanitized = sanitize_identifier('^Festkörperphysik', version=2)
-        self.assertEqual(sanitized, 'power_Festk_o_diaeresis_rperphysik')
+        self.assertEqual(sanitized, 'power_Festkorperphysik')
 
 
 
