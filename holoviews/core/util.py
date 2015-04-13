@@ -16,6 +16,11 @@ else:
     basestring = basestring
 
 
+def encodestr(value):
+   if sys.version_info.major == 3 or not isinstance(value, str): return value
+   else: return unicode(value.decode('utf-8'))
+
+
 class sanitize_identifier(param.ParameterizedFunction):
     """
     Sanitizes group/label values for use in AttrTree attribute
