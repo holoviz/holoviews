@@ -16,7 +16,7 @@ else:
     basestring = basestring
 
 
-def encodestr(value):
+def safe_unicode(value):
    if sys.version_info.major == 3 or not isinstance(value, str): return value
    else: return unicode(value.decode('utf-8'))
 

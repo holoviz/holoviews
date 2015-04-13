@@ -9,7 +9,7 @@ import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import find_minmax, match_spec, basestring, encodestr
+from ..core.util import find_minmax, match_spec, basestring, safe_unicode
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -200,9 +200,10 @@ class ElementPlot(Plot):
         if self.layout_dimensions:
             title = ''
         else:
-            title = encodestr(self.title_format).format(label=encodestr(label),
-                                                        group=encodestr(group),
-                                                        type=type_name)
+            title_format = safe_unicode(self.title_format)
+            title = title_format.format(label=safe_unicode(label),
+                                        group=safe_unicode(group),
+                                        type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
             return dim_title
@@ -611,9 +612,10 @@ class OverlayPlot(ElementPlot):
         if self.layout_dimensions:
             title = ''
         else:
-            title = encodestr(self.title_format).format(label=encodestr(label),
-                                                        group=encodestr(group),
-                                                        type=type_name)
+            title_format = safe_unicode(self.title_format)
+            title = title_format.format(label=safe_unicode(label),
+                                        group=safe_unicode(group),
+                                        type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
             return dim_title

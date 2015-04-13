@@ -12,7 +12,7 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, sanitize_identifier, int_to_roman,\
-    int_to_alpha, encodestr
+    int_to_alpha, safe_unicode
 from ..element import Raster, Table
 
 
@@ -396,9 +396,9 @@ class CompositePlot(Plot):
         type_name = type(self.layout).__name__
         group = layout.group if layout.group != type_name else ''
         label = layout.label
-        title = encodestr(self.title_format).format(label=encodestr(label),
-                                                    group=encodestr(group),
-                                                    type=type_name)
+        title = safe_unicode(self.title_format).format(label=safe_unicode(label),
+                                                       group=safe_unicode(group),
+                                                       type=type_name)
         title = '' if title.isspace() else title
         return '\n'.join([title, dim_title]) if title else dim_title
 

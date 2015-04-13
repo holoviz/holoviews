@@ -7,7 +7,7 @@ import param
 from ..element import ItemTable, Table
 from .element import ElementPlot
 from ..core.options import Store
-from ..core.util import encodestr
+from ..core.util import safe_unicode
 
 
 class TablePlot(ElementPlot):
@@ -86,9 +86,9 @@ class TablePlot(ElementPlot):
             formatter = '{:.%df}' % self.float_precision
             formatted = formatter.format(value)
         elif isinstance(value, str):
-            formatted = encodestr(value)
+            formatted = safe_unicode(value)
         else:
-            formatted = encodestr(value)
+            formatted = str(value)
 
         if len(formatted) > self.max_value_len:
             return formatted[:(self.max_value_len-3)]+'...'
