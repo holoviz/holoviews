@@ -42,8 +42,9 @@ class Raster(Element2D):
 
 
     def __getitem__(self, slices):
+        if not isinstance(slices, tuple): slices = (slices, slice(None))
         slc_types = [isinstance(sl, slice) for sl in slices]
-        data = self.data.__getitem__(slices)
+        data = self.data.__getitem__(slices[::-1])
         if all(slc_types):
             return self.clone(data)
         elif not any(slc_types):
