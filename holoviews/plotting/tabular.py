@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
@@ -7,6 +8,7 @@ import param
 from ..element import ItemTable, Table
 from .element import ElementPlot
 from ..core.options import Store
+from ..core.util import unicode
 
 
 class TablePlot(ElementPlot):
@@ -85,7 +87,9 @@ class TablePlot(ElementPlot):
             formatter = '{:.%df}' % self.float_precision
             formatted = formatter.format(value)
         else:
-            formatted = str(value)
+            if sys.version_info.major == 2 and isinstance(value, str):
+                value = value.decode('utf-8')
+            formatted = unicode(value)
 
         if len(formatted) > self.max_value_len:
             return formatted[:(self.max_value_len-3)]+'...'

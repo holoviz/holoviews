@@ -1,3 +1,4 @@
+import sys
 from itertools import product, groupby
 
 import numpy as np
@@ -12,7 +13,7 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, sanitize_identifier, int_to_roman,\
-    int_to_alpha
+    int_to_alpha, unicode
 from ..element import Raster, Table
 
 
@@ -395,9 +396,13 @@ class CompositePlot(Plot):
         layout = self.layout
         type_name = type(self.layout).__name__
         group = layout.group if layout.group != type_name else ''
-        title = self.title_format.format(label=layout.label,
-                                         group=group,
-                                         type=type_name)
+        label = layout.label
+        if sys.version_info.major == 2:
+            group = unicode(group.decode('utf-8'))
+            label = unicode(label.decode('utf-8'))
+        title = unicode(self.title_format).format(label=label,
+                                                  group=group,
+                                                  type=type_name)
         title = '' if title.isspace() else title
         return '\n'.join([title, dim_title]) if title else dim_title
 

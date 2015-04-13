@@ -825,7 +825,7 @@ class BarPlot(ElementPlot):
             if grp_name is not None:
                 if 'group' in style_groups:
                     idx = style_groups.index('group')
-                    label_key[idx] = str(gdim.pprint_value(grp_name))
+                    label_key[idx] = gdim.pprint_value(grp_name)
                     style_key[idx] = grp_name
                 val_key[gi] = grp_name
                 if ci < ndims:
@@ -839,7 +839,7 @@ class BarPlot(ElementPlot):
                 if cat_name is not None:
                     if 'category' in style_groups:
                         idx = style_groups.index('category')
-                        label_key[idx] = str(gdim.pprint_value(cat_name))
+                        label_key[idx] = gdim.pprint_value(cat_name)
                         style_key[idx] = cat_name
                     val_key[ci] = cat_name
                     xticks.append((xpos+width/2., cat_name, 0))
@@ -848,7 +848,7 @@ class BarPlot(ElementPlot):
                     if stk_name is not None:
                         if 'stack' in style_groups:
                             idx = style_groups.index('stack')
-                            label_key[idx] = str(gdim.pprint_value(stk_name))
+                            label_key[idx] = gdim.pprint_value(stk_name)
                             style_key[idx] = stk_name
                         val_key[si] = stk_name
                     val = element.get(tuple(val_key), (np.NaN,))

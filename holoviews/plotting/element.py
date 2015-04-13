@@ -1,3 +1,4 @@
+import sys
 from itertools import groupby
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -5,15 +6,11 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-# Python3 compatibility
-try: basestring = basestring
-except: basestring = str
-
 import param
 
 from ..core.options import Store
 from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import find_minmax, match_spec
+from ..core.util import find_minmax, match_spec, unicode, basestring
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -200,12 +197,16 @@ class ElementPlot(Plot):
         if frame is None: return None
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
+        label = frame.label
         if self.layout_dimensions:
             title = ''
         else:
-            title = self.title_format.format(label=frame.label,
-                                             group=group,
-                                             type=type_name)
+            if sys.version_info.major == 2:
+                group = unicode(group.decode('utf-8'))
+                label = unicode(label.decode('utf-8'))
+            title = unicode(self.title_format).format(label=label,
+                                                      group=group,
+                                                      type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
             return dim_title
@@ -613,9 +614,12 @@ class OverlayPlot(ElementPlot):
         if self.layout_dimensions:
             title = ''
         else:
-            title = self.title_format.format(label=label,
-                                             group=group,
-                                             type=type_name)
+            if sys.version_info.major == 2:
+                group = unicode(group.decode('utf-8'))
+                label = unicode(label.decode('utf-8'))
+            title = unicode(self.title_format).format(label=label,
+                                                      group=group,
+                                                      type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
             return dim_title

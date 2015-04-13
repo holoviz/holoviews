@@ -7,6 +7,14 @@ import unicodedata
 import numpy as np
 import param
 
+# Python3 compatibility
+if sys.version_info.major == 3:
+    unicode = str
+    basestring = str
+else:
+    unicode = unicode
+    basestring = basestring
+
 
 class sanitize_identifier(param.ParameterizedFunction):
     """
