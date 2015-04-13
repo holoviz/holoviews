@@ -85,6 +85,8 @@ class TablePlot(ElementPlot):
         if isinstance(value, float):
             formatter = '{:.%df}' % self.float_precision
             formatted = formatter.format(value)
+        elif isinstance(value, str):
+            formatted = encodestr(value)
         else:
             formatted = encodestr(value)
 
