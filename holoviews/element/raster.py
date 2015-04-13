@@ -51,14 +51,9 @@ class Raster(Element2D):
         else:
             return self.clone(np.expand_dims(data, axis=slc_types.index(True)))
 
+
     def _coord2matrix(self, coord):
-        xd, yd = self.data.shape
-        l, b, r, t = self.extents
-        xvals = np.linspace(l, r, xd)
-        yvals = np.linspace(b, t, yd)
-        xidx = np.argmin(np.abs(xvals-coord[0]))
-        yidx = np.argmin(np.abs(yvals-coord[1]))
-        return (xidx, yidx)
+        return int(round(coord[1])), int(round(coord[0]))
 
 
     @classmethod
@@ -101,16 +96,16 @@ class Raster(Element2D):
             other_dimension = [d for d in self.key_dimensions if
                                d.name != dimension]
             # Indices inverted for indexing
-            sample_ind = self.get_dimension_index(other_dimension[0].name)
+            sample_ind = self.get_dimension_index(dimension)
 
             # Generate sample slice
             sample = [slice(None) for i in range(self.ndims)]
-            coord_fn = (lambda v: (v, 0)) if sample_ind else (lambda v: (0, v))
-            sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[sample_ind]
+            coord_fn = (lambda v: (v, 0)) if not sample_ind else (lambda v: (0, v))
+            sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[abs(sample_ind-1)]
 
             # Sample data
-            x_vals = sorted(set(self.dimension_values(dimension)))
-            data = list(zip(x_vals, self.data[sample]))
+            x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
+            data = list(zip(x_vals, self.data[sample[::-1]]))
             params['key_dimensions'] = other_dimension
             return Curve(data, **params)
 
@@ -319,7 +314,7 @@ class Image(SheetCoordinateSystem, Raster):
             bounds = BoundingBox(radius=bounds)
         data = np.array([[0]]) if data is None else data
         l, b, r, t = bounds.lbrt()
-        (dim1, dim2) = data.shape[0], data.shape[1]
+        (dim1, dim2) = data.shape[1], data.shape[0]
         xdensity = xdensity if xdensity else dim1/float(r-l)
         ydensity = ydensity if ydensity else dim2/float(t-b)
 
@@ -401,9 +396,9 @@ class Image(SheetCoordinateSystem, Raster):
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             (l, r), (b, t) = self.xlim, self.ylim
-            shape = self.data.shape[abs(dim_idx-1)]
+            shape = self.data.shape[dim_idx]
             dim_min, dim_max = [(l, r), (b, t)][dim_idx]
-            dim_len = self.data.shape[dim_idx]
+            dim_len = self.data.shape[abs(dim_idx-1)]
             half_unit = (dim_max - dim_min)/dim_len/2.
             coord_fn = (lambda v: (0, v)) if dim_idx else (lambda v: (v, 0))
             linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
