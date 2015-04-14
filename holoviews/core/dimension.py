@@ -13,7 +13,7 @@ except:
 
 import param
 
-from ..core.util import allowable, sanitize_identifier
+from ..core.util import sanitize_identifier
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -211,10 +211,10 @@ class LabelledData(param.Parameterized):
         self.data = data
         self.id = id
         super(LabelledData, self).__init__(**params)
-        if not allowable(self.group):
+        if not sanitize_identifier.allowable(self.group):
             raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
-        elif not allowable(self.label):
+        elif not sanitize_identifier.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
 

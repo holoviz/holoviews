@@ -98,7 +98,7 @@ class AttrTree(object):
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
 
-        disallowed = [p for p in path if not util.allowable(p)]
+        disallowed = [p for p in path if not util.sanitize_identifier.allowable(p)]
         if any(disallowed):
             raise Exception("Attribute strings in path elements cannot be "
                             "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))

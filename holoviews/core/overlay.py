@@ -14,7 +14,6 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout
-from .util import allowable
 
 
 class Overlayable(object):
@@ -179,7 +178,7 @@ class Overlay(Layout, CompositeOverlay):
 
     @group.setter
     def group(self, group):
-        if not allowable(group):
+        if not sanitize_identifier.allowable(group):
             raise ValueError("Supplied group %s contains invalid characters." %
                              group)
         else:
@@ -197,7 +196,7 @@ class Overlay(Layout, CompositeOverlay):
 
     @label.setter
     def label(self, label):
-        if not allowable(label):
+        if not sanitize_identifier.allowable(label):
             raise ValueError("Supplied group %s contains invalid characters." %
                              label)
         self._label = label
