@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Test cases for rendering exporters
 """
@@ -5,8 +6,8 @@ from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
-from holoviews import HoloMap, Store
-from holoviews.element import Image
+from holoviews import plotting
+from holoviews import HoloMap, Store, Image, ItemTable
 from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
@@ -39,6 +40,9 @@ class MPLPlotRendererTest(ComparisonTestCase):
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
+
+        self.unicode_table = ItemTable([('β','Δ1'), ('°C', '3×4')],
+                                       label='Poincaré', group='α Festkörperphysik')
 
         self.renderer = Store.renderer.instance()
 
@@ -76,3 +80,9 @@ class MPLPlotRendererTest(ComparisonTestCase):
         data = self.renderer.instance(size=200)(self.image2, fmt='png')[0]
         self.assertEqual(digest_data(data),
                          '1fa233a601bc7942031e434c20253a8551639bd8cf574440ea9b4485a185c2a1')
+
+    def test_simple_export_unicode_table_png(self):
+        "Test that unicode support and rendering is working"
+        data = self.renderer.instance(size=200)(self.unicode_table, fmt='png')[0]
+        self.assertEqual(digest_data(data),
+                         'f1b0a7d76e0ebf5253ed51ee430d8c15c26bd285db88dc9249d5a4ae2ea4fb79')

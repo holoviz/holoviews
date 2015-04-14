@@ -18,3 +18,6 @@
 !/doc/Reference_Manual/index.rst
 .ipynb_checkpoints
 .coverage
+
+/release
+/doc/Tutorials-WIP/*.ipynb
