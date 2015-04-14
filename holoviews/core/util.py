@@ -85,30 +85,38 @@ class sanitize_identifier(param.ParameterizedFunction):
        unicode name. For instance, the defaultcapitalize_unicode_name
        function will turn the string "capital delta" into "Delta".""")
 
+    disallowed = param.List(default=['Trait_names'], doc="""
+       An explicit list of name that should not be allowed as
+       attribute names on Tree objects.
 
-    def __call__(self, name, escape=True, version=None):
-        if name in [None, '']: return name
-        name = safe_unicode(name)
-        version = self.version if version is None else version
-        if not allowable(name, version):
-            raise SyntaxError(('String %r cannot be sanitized into a suitable attribute name\n' % name)
-                              + '(Must not start with a space, underscore or character in a digit class)')
+       By default, prevents IPython from creating an entry called
+       Trait_names due to an inconvenient getattr check (during
+       tab-completion).""")
 
-        if version == 2:
-            name = self.remove_diacritics(name)
-        if self.capitalize and name and name[0] in string.ascii_lowercase:
-            name = name[0].upper()+name[1:]
-
-        return (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
-
+    prefix = 'A'
 
     @param.parameterized.bothmethod
-    def remove_diacritics(self_or_cls, name):
+    def allowable(self_or_cls, name):
+       return name not in self_or_cls.disallowed
+
+    @param.parameterized.bothmethod
+    def prefixed(self, identifier, version):
+        """
+        Whether or not the identifier will be prefixed.
+        Strings that require the prefix are generally not recommended.
+        """
+        invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
+        if identifier.startswith('_'):  return True
+        return((identifier[0] in string.digits) if version==2
+               else (unicodedata.category(identifier[0]) in invalid_starting))
+
+    @param.parameterized.bothmethod
+    def remove_diacritics(self_or_cls, identifier):
         """
         Remove diacritics and accents from the input leaving other
         unicode characters alone."""
         chars = ''
-        for c in name:
+        for c in identifier:
             replacement = unicodedata.normalize('NFKD', c).encode('ASCII', 'ignore')
             replacement = replacement.decode('unicode_escape')
             if replacement != '':
@@ -116,7 +124,6 @@ class sanitize_identifier(param.ParameterizedFunction):
             else:
                 chars += c
         return chars
-
 
     @param.parameterized.bothmethod
     def shortened_character_name(self_or_cls, c, eliminations=[], substitutions={}, transforms=[]):
@@ -137,6 +144,24 @@ class sanitize_identifier(param.ParameterizedFunction):
         return ' '.join(name.strip().split()).replace(' ','_').replace('-','_')
 
 
+    def __call__(self, name, escape=True, version=None):
+        if name in [None, '']: return name
+        name = safe_unicode(name)
+        version = self.version if version is None else version
+        if not self.allowable(name):
+            raise SyntaxError("String %r is in the disallowed list of attribute names: %r" % self.disallowed)
+
+        if version == 2:
+            name = self.remove_diacritics(name)
+        if self.capitalize and name and name[0] in string.ascii_lowercase:
+            name = name[0].upper()+name[1:]
+
+        sanitized = (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
+        if not self.prefixed(name, version): return sanitized
+        elif name.startswith('_'):           return self.prefix + sanitized
+        else:                                return self.prefix + '_' + sanitized
+
+
     def _process_underscores(self, tokens):
         "Strip underscores to make sure the number is correct after join"
         groups = [[str(''.join(el))] if b else list(el)
@@ -152,6 +177,18 @@ class sanitize_identifier(param.ParameterizedFunction):
             processed.append(token)
         return processed
 
+    def sanitize_py2(self, name):
+        # This fix works but masks an issue in self.sanitize (py2)
+        prefix = '_' if name.startswith('_') else ''
+        valid_chars = string.ascii_letters+string.digits+'_'
+        return prefix + str('_'.join(self.sanitize(name, lambda c: c in valid_chars)))
+
+
+    def sanitize_py3(self, name):
+        if not name.isidentifier():
+            return '_'.join(self.sanitize(name, lambda c: ('_'+c).isidentifier()))
+        else:
+            return name
 
     def sanitize(self, name, valid_fn):
         "Accumulate blocks of hex and separate blocks by underscores"
@@ -163,7 +200,6 @@ class sanitize_identifier(param.ParameterizedFunction):
                     short = self.shortened_character_name(c, self.eliminations,
                                                          self.substitutions,
                                                          self.transforms)
-                    if chars: print(chars)
                     sanitized.extend([chars] if chars else [])
                     sanitized.append(short)
                     chars = ''
@@ -171,49 +207,6 @@ class sanitize_identifier(param.ParameterizedFunction):
                 sanitized.extend([chars])
                 chars=''
         return self._process_underscores(sanitized + ([chars] if chars else []))
-
-
-    def sanitize_py2(self, name):
-        if name is None: return ''
-        valid_chars = string.ascii_letters+string.digits+'_'
-        return str('_'.join(self.sanitize(name, lambda c: c in valid_chars)))
-
-
-    def sanitize_py3(self, name):
-        if not name.isidentifier():
-            return '_'.join(self.sanitize(name, lambda c: ('_'+c).isidentifier()))
-        else:
-            return name
-
-
-class allowable(param.ParameterizedFunction):
-    """
-    Predicate function that returns a boolean that indicates whether a
-    string is an allowable identifier or not (after sanitization).
-    """
-    version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
-       The sanitization version. If set to 2, fewer strings are
-       allowable as more aggresive sanitization is needed for Python
-       2. If set to 3, more strings will be allowable due to better
-       unicode support in Python 3.""")
-
-    disallowed = param.List(default=['Trait_names'], doc="""
-       An explicit list of identifiers that should not be treated as
-       attribute names for use on Tree objects.
-
-       By default, prevents IPython from creating an entry called
-       Trait_names due to an inconvenient getattr check during
-       tab-completion.""")
-
-    def __call__(self, name, version=None):
-        if name == '': return True
-        if name.startswith('_') or name.startswith(' '): return False
-        if name in self.disallowed: return False
-
-        invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
-        version = self.version if version is None else version
-        if version==2: return (not name[0] in string.digits)
-        elif version==3: return not (unicodedata.category(name[0]) in invalid_starting)
 
 
 def find_minmax(lims, olims):
