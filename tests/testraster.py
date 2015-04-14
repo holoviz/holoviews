@@ -12,7 +12,7 @@ class TestRaster(ComparisonTestCase):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_raster_init(self):
-        raster = Raster(self.array1)
+        Raster(self.array1)
 
     def test_image_init(self):
         image = Image(self.array1)
@@ -32,7 +32,7 @@ class TestRaster(ComparisonTestCase):
         self.assertEqual(raster.sample(y=0).data,
                          np.array([(0, 0), (1, 1), (2, 2)]))
 
-    def test_image_index(self):
+    def test_image_sample(self):
         image = Image(self.array1)
         self.assertEqual(image.sample(y=0.25).data,
                          np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]))

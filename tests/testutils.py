@@ -199,13 +199,13 @@ class TestSanitizationPy3(ComparisonTestCase):
         your digits! E.g arabic ٥ five and urdu ۵ five
         """
         try:
-            sanitized = sanitize_identifier('٥', version=3)
+            sanitize_identifier('٥', version=3)
         except SyntaxError as e:
             assert str(e).startswith("String '٥' cannot be sanitized")
 
     def test_urdu_five_sanitized_py3(self):
         try:
-            sanitized = sanitize_identifier('۵', version=3)
+            sanitize_identifier('۵', version=3)
         except SyntaxError as e:
             assert str(e).startswith("String '۵' cannot be sanitized")
 

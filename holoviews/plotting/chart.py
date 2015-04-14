@@ -182,7 +182,6 @@ class HistogramPlot(ChartPlot):
     def __call__(self, ranges=None):
         hist = self.map.last
         key = self.keys[-1]
-        axis = self.handles['axis']
 
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(hist, ranges)
@@ -502,7 +501,7 @@ class PointPlot(ChartPlot):
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
         if self.colorbar:
-            self._draw_colorbar(paths)
+            self._draw_colorbar(scatterplot)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 

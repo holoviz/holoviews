@@ -1,8 +1,8 @@
 import param
 
-from ..core import Dimension, Element3D, BoundingBox
+from ..core import Dimension, Element3D
 from .chart import Chart
-from .raster import Raster, Image
+from .raster import Image
 
 
 class Surface(Image, Element3D):

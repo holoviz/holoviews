@@ -214,7 +214,6 @@ class MPLPlotRenderer(Exporter):
         Similar to IPython.core.pylabtools.print_figure but without
         any IPython dependency.
         """
-        from matplotlib import rcParams
         kw = dict(
             format=fmt,
             facecolor=fig.get_facecolor(),

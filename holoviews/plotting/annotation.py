@@ -1,6 +1,5 @@
 import matplotlib
 from matplotlib import patches as patches
-from matplotlib.collections import LineCollection
 
 from ..core.options import Store
 from ..core.util import match_spec

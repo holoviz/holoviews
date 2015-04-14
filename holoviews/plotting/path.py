@@ -1,5 +1,3 @@
-import math
-
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection, LineCollection
 import numpy as np
@@ -89,11 +87,8 @@ class PolygonPlot(ElementPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         vdim = element.value_dimensions[0]
-        vrange = ranges.get(vdim.name, (0, 0))
         collection = self.handles['polygons']
         value = element.level
-
-        style = self.style[self.cyclic_index]
 
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
                zip(element.data, self.handles['polys'])):

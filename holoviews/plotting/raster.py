@@ -3,7 +3,6 @@ from itertools import product
 
 import numpy as np
 from matplotlib import pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import param
 
