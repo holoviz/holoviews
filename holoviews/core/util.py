@@ -158,7 +158,6 @@ class sanitize_identifier(param.ParameterizedFunction):
 
         sanitized = (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
         if not self.prefixed(name, version): return sanitized
-        elif name.startswith('_'):           return self.prefix + sanitized
         else:                                return self.prefix + '_' + sanitized
 
 

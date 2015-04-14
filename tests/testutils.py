@@ -70,7 +70,7 @@ class TestSanitizationPy2(ComparisonTestCase):
 
     def test_simple_underscore_sanitized_py2(self):
         sanitized = sanitize_identifier('_test', version=2)
-        self.assertEqual(sanitized, 'A_test')
+        self.assertEqual(sanitized, 'A__test')
 
     def test_simple_alpha_sanitized_py2(self):
         sanitized = sanitize_identifier('α', version=2)
@@ -158,7 +158,7 @@ class TestSanitizationPy3(ComparisonTestCase):
 
     def test_simple_underscore_sanitized_py3(self):
         sanitized = sanitize_identifier('_test', version=3)
-        self.assertEqual(sanitized, 'A_test')
+        self.assertEqual(sanitized, 'A__test')
 
     def test_simple_alpha_sanitized_py3(self):
         sanitized = sanitize_identifier('α', version=3)
