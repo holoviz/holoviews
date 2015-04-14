@@ -134,7 +134,7 @@ class sanitize_identifier(param.ParameterizedFunction):
             name = name.replace(i, o)
         for transform in transforms:
             name = transform(name)
-        return ' '.join(name.strip().split()).replace(' ','_')
+        return ' '.join(name.strip().split()).replace(' ','_').replace('-','_')
 
 
     def _process_underscores(self, tokens):
