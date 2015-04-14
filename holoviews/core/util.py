@@ -85,7 +85,7 @@ class sanitize_identifier(param.ParameterizedFunction):
        unicode name. For instance, the defaultcapitalize_unicode_name
        function will turn the string "capital delta" into "Delta".""")
 
-    disallowed = param.List(default=['Trait_names'], doc="""
+    disallowed = param.List(default=['Trait_names', '_ipython_display_'], doc="""
        An explicit list of name that should not be allowed as
        attribute names on Tree objects.
 
@@ -149,7 +149,7 @@ class sanitize_identifier(param.ParameterizedFunction):
         name = safe_unicode(name)
         version = self.version if version is None else version
         if not self.allowable(name):
-            raise SyntaxError("String %r is in the disallowed list of attribute names: %r" % self.disallowed)
+            raise AttributeError("String %r is in the disallowed list of attribute names: %r" % self.disallowed)
 
         if version == 2:
             name = self.remove_diacritics(name)
