@@ -39,7 +39,7 @@ class TablePlot(ElementPlot):
         summarized.""")
 
     font_types = param.Dict(default={'heading': FontProperties(weight='bold',
-                                                               family='monospace')},
+                                                               family='DejaVu Sans')},
        doc="""The font style used for heading labels used for emphasis.""")
 
     style_opts = ['alpha', 'sketch_params']
