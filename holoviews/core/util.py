@@ -93,7 +93,7 @@ class sanitize_identifier(param.ParameterizedFunction):
        Trait_names due to an inconvenient getattr check (during
        tab-completion).""")
 
-    prefix = 'A'
+    prefix = 'A_'
 
     @param.parameterized.bothmethod
     def allowable(self_or_cls, name):
@@ -158,7 +158,7 @@ class sanitize_identifier(param.ParameterizedFunction):
 
         sanitized = (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
         if not self.prefixed(name, version): return sanitized
-        else:                                return self.prefix + '_' + sanitized
+        else:                                return self.prefix + sanitized
 
 
     def _process_underscores(self, tokens):
