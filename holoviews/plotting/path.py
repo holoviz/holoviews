@@ -65,16 +65,16 @@ class PolygonPlot(ElementPlot):
 
         if self.colorbar:
             self._draw_colorbar(collection)
-        
+
         self.handles['polygons'] = collection
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
-    
-    
+
+
     def _create_polygons(self, element, ranges):
         value = element.level
         vdim = element.value_dimensions[0]
-        
+
         style = self.style[self.cyclic_index]
         polys = []
         for segments in element.data:
@@ -85,14 +85,14 @@ class PolygonPlot(ElementPlot):
         if value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(polys)))
         return collection, polys
-        
+
 
     def update_handles(self, axis, element, key, ranges=None):
         vdim = element.value_dimensions[0]
         vrange = ranges.get(vdim.name, (0, 0))
         collection = self.handles['polygons']
         value = element.level
-        
+
         style = self.style[self.cyclic_index]
 
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
