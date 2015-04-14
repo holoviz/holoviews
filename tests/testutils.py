@@ -5,49 +5,72 @@ Unit tests of the helper functions in core.utils
 import sys
 from unittest import SkipTest
 
-from holoviews.core.util import sanitize_identifier, allowable
+from holoviews.core.util import sanitize_identifier
 from holoviews.element.comparison import ComparisonTestCase
 
 py_version = sys.version_info.major
 
 
-class TestAllowablePy2(ComparisonTestCase):
+class TestAllowablePrefix(ComparisonTestCase):
     """
-    Tests of allowable (Python 2)
+    Tests of allowable and hasprefix method.
     """
-    def setUp(self):
+
+    def test_allowable_false(self):
+        self.assertEqual(sanitize_identifier.allowable('Trait_names'), False)
+
+    def test_allowable_true(self):
+        self.assertEqual(sanitize_identifier.allowable('some_string'), True)
+
+    def test_prefix_test1_py2(self):
         if py_version != 2: raise SkipTest
+        prefixed = sanitize_identifier.prefixed('_some_string', version=2)
+        self.assertEqual(prefixed, True)
 
-    def test_simple_ascii_allowable_py2(self):
-        self.assertEqual(allowable('a', version=2), True)
+    def test_prefix_test2_py2(self):
+        if py_version != 2: raise SkipTest
+        prefixed = sanitize_identifier.prefixed('some_string', version=2)
+        self.assertEqual(prefixed, False)
 
-    def test_simple_alpha_allowable_py2(self):
-        self.assertEqual(allowable('α', version=2), True)
+    def test_prefix_test3_py2(self):
+        if py_version != 2: raise SkipTest
+        prefixed = sanitize_identifier.prefixed('0some_string', version=2)
+        self.assertEqual(prefixed, True)
 
-    def test_simple_number_allowable_py2(self):
-        self.assertEqual(allowable('8', version=2), False)
+    def test_prefix_test1_py3(self):
+        if py_version != 3: raise SkipTest
+        prefixed = sanitize_identifier.prefixed('_some_string', version=3)
+        self.assertEqual(prefixed, True)
 
-    def test_simple_underscore_allowable_py2(self):
-        self.assertEqual(allowable('_', version=2), False)
+    def test_prefix_test2_py3(self):
+        if py_version != 3: raise SkipTest
+        prefixed = sanitize_identifier.prefixed('some_string', version=3)
+        self.assertEqual(prefixed, False)
 
-    def test_simple_space_allowable_py2(self):
-        self.assertEqual(allowable(' ', version=2), False)
+    def test_prefix_test3_py3(self):
+        if py_version != 3: raise SkipTest
+        prefixed = sanitize_identifier.prefixed('۵some_string', version=3)
+        self.assertEqual(prefixed, True)
 
-    def test_arabic_five_allowable_py2(self):
-        "Testing arabic five allowed as it will be sanitized"
-        self.assertEqual(allowable('٥', version=2), True)
 
 class TestSanitizationPy2(ComparisonTestCase):
     """
     Tests of sanitize_identifier (Python 2)
     """
-
     def setUp(self):
         if py_version != 2: raise SkipTest
 
     def test_simple_dollar_sanitized_py2(self):
         sanitized = sanitize_identifier('$', version=2)
         self.assertEqual(sanitized, 'dollar')
+
+    def test_simple_digit_sanitized_py2(self):
+        sanitized = sanitize_identifier('0', version=2)
+        self.assertEqual(sanitized, 'A_0')
+
+    def test_simple_underscore_sanitized_py2(self):
+        sanitized = sanitize_identifier('_test', version=2)
+        self.assertEqual(sanitized, 'A_test')
 
     def test_simple_alpha_sanitized_py2(self):
         sanitized = sanitize_identifier('α', version=2)
@@ -118,34 +141,6 @@ class TestSanitizationPy2(ComparisonTestCase):
         self.assertEqual(sanitized, 'power_Festkorperphysik')
 
 
-
-class TestAllowablePy3(ComparisonTestCase):
-    """
-    Tests of allowable (Python 3)
-    """
-    def setUp(self):
-        if py_version != 3: raise SkipTest
-
-    def test_simple_ascii_allowable_py3(self):
-        self.assertEqual(allowable('a', version=3), True)
-
-    def test_simple_alpha_allowable_py3(self):
-        self.assertEqual(allowable('α', version=3), True)
-
-    def test_simple_number_allowable_py3(self):
-        self.assertEqual(allowable('8', version=3), False)
-
-    def test_simple_underscore_allowable_py3(self):
-        self.assertEqual(allowable('_', version=3), False)
-
-    def test_simple_space_allowable_py3(self):
-        self.assertEqual(allowable(' ', version=3), False)
-
-    def test_arabic_five_allowable_py3(self):
-        "Testing arabic five (digit category, cannot start identifier"
-        self.assertEqual(allowable('٥', version=3), False)
-
-
 class TestSanitizationPy3(ComparisonTestCase):
     """
     Tests of sanitize_identifier (Python 3)
@@ -156,6 +151,14 @@ class TestSanitizationPy3(ComparisonTestCase):
     def test_simple_dollar_sanitized_py3(self):
         sanitized = sanitize_identifier('$', version=3)
         self.assertEqual(sanitized, 'dollar')
+
+    def test_simple_digit_sanitized_py3(self):
+        sanitized = sanitize_identifier('0', version=3)
+        self.assertEqual(sanitized, 'A_0')
+
+    def test_simple_underscore_sanitized_py3(self):
+        sanitized = sanitize_identifier('_test', version=3)
+        self.assertEqual(sanitized, 'A_test')
 
     def test_simple_alpha_sanitized_py3(self):
         sanitized = sanitize_identifier('α', version=3)
