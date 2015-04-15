@@ -61,11 +61,11 @@ class ElementPlot(Plot):
     show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
-    show_xaxis = param.ObjectSelector(default='bottom',
+    xaxis = param.ObjectSelector(default='bottom',
                                       objects=['top', 'bottom', None], doc="""
         Whether and where to display the xaxis.""")
 
-    show_yaxis = param.ObjectSelector(default='left',
+    yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
 
@@ -367,20 +367,20 @@ class ElementPlot(Plot):
     def _finalize_ticks(self, axis, xticks, yticks, zticks):
         if not self.projection == '3d':
             disabled_spines = []
-            if self.show_xaxis is not None:
-                if self.show_xaxis == 'top':
+            if self.xaxis is not None:
+                if self.xaxis == 'top':
                     axis.xaxis.set_ticks_position("top")
                     axis.xaxis.set_label_position("top")
-                elif self.show_xaxis == 'bottom':
+                elif self.xaxis == 'bottom':
                     axis.xaxis.set_ticks_position("bottom")
             else:
                 axis.xaxis.set_visible(False)
                 disabled_spines.extend(['top', 'bottom'])
 
-            if self.show_yaxis is not None:
-                if self.show_yaxis == 'left':
+            if self.yaxis is not None:
+                if self.yaxis == 'left':
                     axis.yaxis.set_ticks_position("left")
-                elif self.show_yaxis == 'right':
+                elif self.yaxis == 'right':
                     axis.yaxis.set_ticks_position("right")
                     axis.yaxis.set_label_position("right")
             else:
@@ -391,8 +391,8 @@ class ElementPlot(Plot):
                 axis.spines[pos].set_visible(False)
 
         if not self.show_frame:
-            axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
-            axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
+            axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
+            axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
 
         if self.xticker:
             axis.xaxis.set_major_locator(self.xticker)
@@ -453,8 +453,8 @@ class ElementPlot(Plot):
         axis = self.handles['axis']
 
         axes_visible = view is not None or self.overlaid
-        axis.xaxis.set_visible(axes_visible and self.show_xaxis)
-        axis.yaxis.set_visible(axes_visible and self.show_yaxis)
+        axis.xaxis.set_visible(axes_visible and self.xaxis)
+        axis.yaxis.set_visible(axes_visible and self.yaxis)
         axis.patch.set_alpha(np.min([int(axes_visible), 1]))
 
         for hname, handle in self.handles.items():

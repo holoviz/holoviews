@@ -32,12 +32,12 @@ class Plot3D(ElementPlot):
     show_grid = param.Boolean(default=False, doc="""
         Whether to draw a grid in the figure.""")
 
-    show_xaxis = param.ObjectSelector(default='fixed',
-                                      objects=['fixed'], doc="""
+    xaxis = param.ObjectSelector(default='fixed',
+                                 objects=['fixed'], doc="""
         Whether and where to display the xaxis.""")
 
-    show_yaxis = param.ObjectSelector(default='fixed',
-                                      objects=['fixed'], doc="""
+    yaxis = param.ObjectSelector(default='fixed',
+                                 objects=['fixed'], doc="""
         Whether and where to display the yaxis.""")
 
     def _finalize_axis(self, key, zlabel=None, zticks=None, **kwargs):

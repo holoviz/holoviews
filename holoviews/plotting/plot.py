@@ -419,12 +419,12 @@ class GridPlot(CompositePlot):
 
     show_title = param.Boolean(default=False)
 
-    show_xaxis = param.ObjectSelector(default='bottom',
-                                      objects=['top', 'bottom', None], doc="""
+    xaxis = param.ObjectSelector(default='bottom',
+                                 objects=['top', 'bottom', None], doc="""
         Whether and where to display the xaxis.""")
 
-    show_yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', None], doc="""
+    yaxis = param.ObjectSelector(default='left',
+                                 objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
 
     tick_format = param.String(default="%.2f", doc="""
@@ -580,8 +580,8 @@ class GridPlot(CompositePlot):
         ydim = dims[1] if layout.ndims > 1 else None
         layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
         if not self.show_frame:
-            layout_axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
-            layout_axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
+            layout_axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
+            layout_axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
 
@@ -964,10 +964,10 @@ class LayoutPlot(CompositePlot):
                 override_opts = dict(aspect='square')
             elif pos == 'right':
                 right_opts = dict(orientation='vertical',
-                                  show_xaxis=None, show_yaxis='left')
+                                  xaxis=None, yaxis='left')
                 override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
-                top_opts = dict(show_xaxis='bottom', show_yaxis=None)
+                top_opts = dict(xaxis='bottom', yaxis=None)
                 override_opts = dict(subplot_opts, **top_opts)
 
             # Override the plotopts as required
