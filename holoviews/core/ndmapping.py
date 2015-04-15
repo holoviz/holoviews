@@ -613,6 +613,7 @@ class UniformNdMapping(NdMapping):
 
     _abstract = True
     _deep_indexable = True
+    _auxiliary_component = False
 
     def __init__(self, initial_items=None, group=None, label=None, **params):
         self._type = None
@@ -680,9 +681,9 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
-        if self._group is None:
+        if self._group is None and not data._auxiliary_component:
             self._group_check = data.group
-        if self._label is None:
+        if self._label is None and not data._auxiliary_component:
             self._label_check = data.label
         elif self._group_check and data.group != self._group_check:
             raise ValueError("Elements in %s need to have uniform values.")

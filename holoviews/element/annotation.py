@@ -25,6 +25,8 @@ class Annotation(Element2D):
 
     group = param.String(default='Annotation')
 
+    _auxiliary_component = True
+
     def __init__(self, data, **params):
         super(Annotation, self).__init__(data, **params)
 

@@ -135,7 +135,8 @@ class Overlay(Layout, CompositeOverlay):
     def group(self):
         if self._group:
             return self._group
-        values = {el.group for el in self}
+        values = {el.group for el in self
+                  if not el._auxiliary_component}
         types = {type(el) for el in self}
         if values:
             group = list(values)[0]
@@ -159,7 +160,8 @@ class Overlay(Layout, CompositeOverlay):
     def label(self):
         if self._label:
             return self._label
-        labels = {el.label for el in self}
+        labels = {el.label for el in self
+                  if not el._auxiliary_component}
         if len(labels) == 1:
             return list(labels)[0]
         else:
