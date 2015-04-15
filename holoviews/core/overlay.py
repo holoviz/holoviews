@@ -135,9 +135,9 @@ class Overlay(Layout, CompositeOverlay):
     def group(self):
         if self._group:
             return self._group
-        values = {el.group for el in self
-                  if not el._auxiliary_component}
-        types = {type(el) for el in self}
+        elements = [el for el in self if not el._auxiliary_component]
+        values = {el.group for el in elements}
+        types = {type(el) for el in elements}
         if values:
             group = list(values)[0]
             vtype = list(types)[0].__name__
