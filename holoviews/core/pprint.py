@@ -123,7 +123,7 @@ class InfoPrinter(object):
             target_info = element_info if element_info else container_info
 
         target_footer = ("\nTo see the options info for one of these target specifications,"
-                         "\nwhich are of the form {type}[.{group}[.{label}]], do holoviews.info({type}).")
+                         "\nwhich are of the form {type}[.{group}[.{label}]], do holoviews.help({type}).")
 
         return '\n'.join([heading, target_header, target_info, target_footer])
 
