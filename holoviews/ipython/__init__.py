@@ -1,4 +1,3 @@
-import warnings
 from unittest import SkipTest
 import matplotlib.pyplot as plt
 
@@ -13,25 +12,8 @@ from .widgets import RunProgress
 
 from param import ipython as param_ext
 
-try:    from matplotlib import animation
-except: animation = None
-
 Collector.interval_hook = RunProgress
 holoviews.archive = notebook_archive
-
-def supported_formats(optional_formats):
-    "Optional formats that are actually supported"
-    supported = []
-    for fmt in optional_formats:
-        try:
-            fig = plt.figure()
-            anim = animation.FuncAnimation(fig, lambda x: x, frames=[0,1])
-            animate(anim, 72, *OutputMagic.ANIMATION_OPTS[fmt])
-            plt.close(fig)
-            supported.append(fmt)
-        except: pass
-    return supported
-
 
 
 class IPTestCase(ComparisonTestCase):
@@ -79,8 +61,8 @@ class IPTestCase(ComparisonTestCase):
 
 
 # Populating the namespace for keyword evaluation
-from ..core.options import Cycle, Palette # pyflakes:ignore (namespace import)
-import numpy as np                        # pyflakes:ignore (namespace import)
+from ..core.options import Cycle, Palette, Store # pyflakes:ignore (namespace import)
+import numpy as np                               # pyflakes:ignore (namespace import)
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
@@ -90,13 +72,9 @@ def load_ipython_extension(ip):
     global _loaded
     if not _loaded:
         _loaded = True
-
         param_ext.load_ipython_extension(ip, verbose=False)
         load_magics(ip)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            valid_formats = supported_formats(OutputMagic.optional_formats)
-        valid_formats = supported_formats(OutputMagic.optional_formats)
+        valid_formats = Store.renderer.supported_holomap_formats(OutputMagic.optional_formats)
         OutputMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
 

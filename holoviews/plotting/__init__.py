@@ -1,4 +1,5 @@
 import os
+import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 
@@ -6,6 +7,7 @@ from tempfile import NamedTemporaryFile
 try: basestring = basestring
 except: basestring = str
 
+from matplotlib import animation
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
@@ -142,6 +144,8 @@ class MPLPlotRenderer(Exporter):
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         MPLPlotRenderer does not support the saving of object key metadata""")
 
+    # Error messages generated when testing potentially supported formats
+    HOLOMAP_FORMAT_ERROR_MESSAGES = {}
 
     def __call__(self, obj, fmt=None):
         """
@@ -174,6 +178,29 @@ class MPLPlotRenderer(Exporter):
 
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
+
+    @bothmethod
+    def supported_holomap_formats(self_or_cls, optional_formats):
+        "Optional formats that are actually supported by this renderer"
+        supported = []
+        with param.logging_level('CRITICAL'):
+            self_or_cls.HOLOMAP_FORMAT_ERROR_MESSAGES = {}
+        for fmt in optional_formats:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    fig = plt.figure()
+                    anim = animation.FuncAnimation(fig, lambda x: x, frames=[0,1])
+                    (writer, fmt, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
+                    if extra_args != []:
+                        anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+                        renderer = self_or_cls.instance(dpi=72)
+                        renderer.anim_data(anim, fmt, writer, **anim_kwargs)
+                    plt.close(fig)
+                    supported.append(fmt)
+                except Exception as e:
+                    self_or_cls.HOLOMAP_FORMAT_ERROR_MESSAGES[fmt] = str(e)
+        return supported
 
 
     @bothmethod
