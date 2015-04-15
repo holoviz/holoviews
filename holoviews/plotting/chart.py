@@ -671,15 +671,15 @@ class VectorFieldPlot(ElementPlot):
 class BarPlot(ElementPlot):
 
     group_index = param.Integer(default=0, doc="""
-       Index of the dimension in the supplied MultiBars
+       Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
 
     category_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied MultiBars
+       Index of the dimension in the supplied Bars
        Element, which will be laid out into categories.""")
 
     stack_index = param.Integer(default=2, doc="""
-       Index of the dimension in the supplied MultiBars
+       Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
     padding = param.Number(default=0.2, doc="""
