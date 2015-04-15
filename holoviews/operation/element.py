@@ -462,8 +462,8 @@ class contours(ElementOperation):
         from matplotlib import pyplot as plt
 
         figure_handle = plt.figure()
-        (l, b, r, t) = matrix.extents
-        contour_set = plt.contour(matrix.data, extent=(l, r, t, b),
+        extent = matrix.range(0) + matrix.range(1)
+        contour_set = plt.contour(matrix.data, extent=extent,
                                   levels=self.p.levels)
 
         contours = NdOverlay(None, key_dimensions=['Levels'])
