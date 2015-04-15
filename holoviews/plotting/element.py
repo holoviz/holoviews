@@ -72,11 +72,17 @@ class ElementPlot(Plot):
     xticks = param.Integer(default=5, doc="""
         Number of ticks along the x-axis.""")
 
+    xticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
+        Allows supplying a matplotlib x-tick locator.""")
+
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
     yticks = param.Integer(default=5, doc="""
         Number of ticks along the y-axis.""")
+
+    yticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
+        Allows supplying a matplotlib y-tick locator.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -86,6 +92,9 @@ class ElementPlot(Plot):
 
     zticks = param.Integer(default=5, doc="""
         Number of ticks along the z-axis.""")
+
+    zticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
+        Allows supplying a matplotlib z-tick locator.""")
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
@@ -263,15 +272,15 @@ class ElementPlot(Plot):
                     xformat = xdim.formatter
                 elif xdim.type_formatters.get(xdim.type):
                     xformat = xdim.type_formatters[xdim.type]
-                    if xformat:
-                        axis.xaxis.set_major_formatter(xformat)
+                if xformat:
+                    axis.xaxis.set_major_formatter(xformat)
 
                 if ydim.formatter:
                     yformat = ydim.formatter
                 elif ydim.type_formatters.get(ydim.type):
                     yformat = ydim.type_formatters[ydim.type]
-                    if yformat:
-                        axis.yaxis.set_major_formatter(yformat)
+                if yformat:
+                    axis.yaxis.set_major_formatter(yformat)
 
             if not self.show_legend:
                 legend = axis.get_legend()
@@ -385,7 +394,9 @@ class ElementPlot(Plot):
             axis.spines['right' if self.show_yaxis == 'left' else 'left'].set_visible(False)
             axis.spines['bottom' if self.show_xaxis == 'top' else 'top'].set_visible(False)
 
-        if xticks:
+        if self.xticker:
+            axis.xaxis.set_major_locator(self.xticker)
+        elif xticks:
             axis.set_xticks(xticks[0])
             axis.set_xticklabels(xticks[1])
         elif self.logx:
@@ -398,7 +409,9 @@ class ElementPlot(Plot):
         for tick in axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
 
-        if yticks:
+        if self.yticker:
+            axis.yaxis.set_major_locator(self.yticker)
+        elif yticks:
             axis.set_yticks(yticks[0])
             axis.set_yticklabels(yticks[1])
         elif self.logy:
@@ -410,6 +423,8 @@ class ElementPlot(Plot):
 
         if not self.projection == '3d':
             pass
+        elif self.zticker:
+            axis.zaxis.set_major_locator(self.zticker)
         elif zticks:
             axis.set_zticks(zticks[0])
             axis.set_zticklabels(zticks[1])
