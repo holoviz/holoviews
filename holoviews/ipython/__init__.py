@@ -23,9 +23,10 @@ def supported_formats(optional_formats):
     supported = []
     for fmt in optional_formats:
         try:
-            anim = animation.FuncAnimation(plt.figure(),
-                                           lambda x: x, frames=[0,1])
+            fig = plt.figure()
+            anim = animation.FuncAnimation(fig, lambda x: x, frames=[0,1])
             animate(anim, 72, *OutputMagic.ANIMATION_OPTS[fmt])
+            plt.close(fig)
             supported.append(fmt)
         except: pass
     return supported
