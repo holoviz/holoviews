@@ -11,7 +11,7 @@ from matplotlib import rc_params_from_file
 
 from param.parameterized import bothmethod
 
-from ..core.options import Cycle, Palette, Options, Store, StoreOptions
+from ..core.options import Cycle, Palette, Options, StoreOptions
 from ..core import Dimension
 from ..core.io import Exporter
 from .annotation import * # pyflakes:ignore (API import)
@@ -292,9 +292,9 @@ Store.options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize':
 # Annotations
 Store.options.VLine = Options('style', color=Cycle(key='default_colors'))
 Store.options.HLine = Options('style', color=Cycle(key='default_colors'))
-Store.options.Spline = Options('style', lw=2)
+Store.options.Spline = Options('style', linewidth=2)
 Store.options.Text = Options('style', fontsize=13)
-Store.options.Arrow = Options('style', color='k', lw=2, fontsize=13)
+Store.options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 Store.options.Contours = Options('style', color=Cycle(key='default_colors'))
 Store.options.Path = Options('style', color=Cycle(key='default_colors'))

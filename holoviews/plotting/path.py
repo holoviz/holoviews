@@ -47,9 +47,8 @@ class PolygonPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
-    style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor',
-                  'linewidth', 'hatch', 'linestyle',
-                  'joinstyle', 'fill', 'capstyle']
+    style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor', 'linewidth',
+                  'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
     def __call__(self, ranges=None):
         element = self.map.last

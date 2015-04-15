@@ -163,9 +163,8 @@ class DistributionPlot(FullRedrawPlot):
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")
 
-    style_opts = ['bins', 'hist', 'kde', 'rug', 'fit',
-                  'hist_kws', 'kde_kws', 'rug_kws',
-                  'fit_kws', 'color']
+    style_opts = ['bins', 'hist', 'kde', 'rug', 'fit', 'hist_kws',
+                  'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
     def __call__(self, ranges=None):
         distview = self.map.last

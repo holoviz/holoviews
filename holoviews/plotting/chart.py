@@ -106,8 +106,7 @@ class CurvePlot(ChartPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['alpha', 'color', 'visible', 'linewidth',
-                  'lw', 'ls', 'linestyle', 'marker']
+    style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
     def __call__(self, ranges=None):
         element = self.map.last
@@ -161,9 +160,8 @@ class HistogramPlot(ChartPlot):
     show_grid = param.Boolean(default=False, doc="""
         Whether to overlay a grid on the axis.""")
 
-    style_opts = ['alpha', 'color', 'align', 'visible',
-                  'edgecolor', 'log', 'ecolor', 'capsize',
-                  'error_kw', 'hatch', 'fc', 'ec']
+    style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
+                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch']
 
     def __init__(self, histograms, **params):
         self.center = False
@@ -459,7 +457,7 @@ class PointPlot(ChartPlot):
       scaling of the point width.""")
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
-                  'linewidth', 'marker', 's', 'visible',
+                  'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
 
     def __call__(self, ranges=None):
@@ -560,7 +558,7 @@ class VectorFieldPlot(ElementPlot):
        normalized.""")
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
-                  'linewidth', 'marker', 's', 'visible', 'cmap',
+                  'linewidth', 'marker', 'size', 'visible', 'cmap',
                   'scale', 'headlength', 'headaxislength', 'pivot']
 
     def __init__(self, *args, **params):
@@ -694,9 +692,8 @@ class BarPlot(ElementPlot):
 
     xticks = param.Integer(0, precedence=-1)
 
-    style_opts = ['alpha', 'color', 'align', 'visible',
-                  'edgecolor', 'log', 'ecolor', 'capsize',
-                  'error_kw', 'hatch', 'fc', 'ec']
+    style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
+                  'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
 
     _dimensions = OrderedDict([('group', 0),
                                ('category',1),
