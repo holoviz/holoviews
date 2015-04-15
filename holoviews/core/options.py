@@ -797,7 +797,7 @@ class Store(object):
 
 
     @classmethod
-    def register_plots(cls):
+    def register_plots(cls, style_aliases={}):
         """
         Given that the Store.registry dictionary has been populate
         with {<element>:<plot-class>} items, build an OptionTree for the
@@ -821,7 +821,11 @@ class Store(object):
         for view_class, plot in cls.registry.items():
             name = view_class.__name__
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
-            style_opts = plot.style_opts
+            expanded_opts = [opt for key in plot.style_opts
+                             for opt in style_aliases.get(key, [])]
+            style_opts = sorted(set(expanded_opts + plot.style_opts))
+            with param.logging_level('CRITICAL'):
+                plot.style_opts = style_opts
             opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
 
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
