@@ -254,6 +254,8 @@ def max_extents(extents, zrange=False):
       inds = [(0, 2), (1, 3)]
    arr = np.array(extents, dtype=np.float, ndmin=2)
    extents = [np.NaN] * num
+   if 0 in arr.shape:
+      return extents
    with warnings.catch_warnings():
       warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
       for lower, upper in inds:
