@@ -116,10 +116,10 @@ particularly if they come with test cases showing how to reproduce the bugs and
 showing how to fix the bug or implement the feature!
 
 .. |PyPI| image:: https://pypip.in/version/holoviews/badge.svg?style=flat
-.. _PyPI: https://pypi.python.org/pypi/holoviews/1.0.1
+.. _PyPI: https://pypi.python.org/pypi/holoviews
 
 .. |PyVersions| image:: https://pypip.in/py_versions/holoviews/badge.svg?style=flat
-.. _PyVersions: https://pypi.python.org/pypi/holoviews/1.0.1
+.. _PyVersions: https://pypi.python.org/pypi/holoviews
 
 .. |License| image:: https://pypip.in/license/holoviews/badge.svg?style=flat
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
