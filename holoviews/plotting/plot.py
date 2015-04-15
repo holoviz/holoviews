@@ -11,7 +11,7 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
     GridSpace, Layout, Element, CompositeOverlay
 from ..core.options import Store, Compositor
 from ..core import traversal
-from ..core.util import find_minmax, sanitize_identifier, int_to_roman,\
+from ..core.util import sanitize_identifier, int_to_roman,\
     int_to_alpha, safe_unicode, max_range
 from ..element import Raster, Table
 

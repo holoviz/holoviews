@@ -8,8 +8,8 @@ import numpy as np
 import param
 
 from ..core.options import Store
-from ..core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D, GridSpace
-from ..core.util import find_minmax, match_spec, basestring, safe_unicode, max_extents
+from ..core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
+from ..core.util import match_spec, basestring, safe_unicode, max_extents
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot

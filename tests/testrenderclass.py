@@ -6,7 +6,7 @@ from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
-from holoviews import plotting
+from holoviews import plotting  # pyflakes:ignore (Sets Store.renderer)
 from holoviews import HoloMap, Store, Image, ItemTable
 from holoviews.element.comparison import ComparisonTestCase
 
