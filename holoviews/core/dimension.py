@@ -593,6 +593,8 @@ class Dimensioned(LabelledData):
                       if r is not None]
         dim_vals = self.dimension_values(dimension.name)
         try:
+            dim_vals = np.array(dim_vals)
+            dim_vals = np.squeeze(dim_vals) if len(dim_vals.shape) > 1 else dim_vals
             dim_vals = np.concatenate([dim_vals, soft_range])
             return np.nanmin(dim_vals), np.nanmax(dim_vals)
         except:
