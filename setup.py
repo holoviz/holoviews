@@ -6,7 +6,7 @@ from distutils.core import setup
 setup_args = {}
 
 install_requires = ['param>=1.3.2', 'numpy>=1.0']
-extras_require = {'extras': ['mpld3', 'pandas', 'seaborn', 'nose', 'cyordereddict']}
+extras_require = {'extras': ['jinja2', 'mpld3', 'pandas', 'seaborn', 'nose', 'cyordereddict']}
 
 setup_args.update(dict(
     name='holoviews',
