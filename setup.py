@@ -10,7 +10,7 @@ extras_require = {'extras': ['mpld3', 'pandas', 'seaborn', 'nose', 'cyordereddic
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.0.1",
+    version="1.1.0",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Composable, declarative data structures for building complex visualizations easily.',
