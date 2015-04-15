@@ -1,3 +1,4 @@
+import warnings
 from unittest import SkipTest
 import matplotlib.pyplot as plt
 
@@ -91,8 +92,10 @@ def load_ipython_extension(ip):
         _loaded = True
 
         param_ext.load_ipython_extension(ip, verbose=False)
-
         load_magics(ip)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            valid_formats = supported_formats(OutputMagic.optional_formats)
         valid_formats = supported_formats(OutputMagic.optional_formats)
         OutputMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
