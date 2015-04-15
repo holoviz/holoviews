@@ -8,8 +8,8 @@ import numpy as np
 import param
 
 from ..core.options import Store
-from ..core import OrderedDict, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import find_minmax, match_spec, basestring, safe_unicode
+from ..core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D, GridSpace
+from ..core.util import find_minmax, match_spec, basestring, safe_unicode, max_extents
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -17,11 +17,14 @@ from .plot import Plot
 
 class ElementPlot(Plot):
 
-    apply_databounds = param.Boolean(default=True, doc="""
+    apply_ranges = param.Boolean(default=True, doc="""
         Whether to compute the plot bounds from the data itself.""")
 
+    apply_extents = param.Boolean(default=True, doc="""
+        Whether to apply extent overrides on the Elements""")
+
     apply_ticks = param.Boolean(default=True, doc="""
-        Whether to compute the plot bounds from the data itself.""")
+        Whether to apply custom ticks.""")
 
     aspect = param.Parameter(default='square', doc="""
         The aspect ratio mode of the plot. By default, a plot may
@@ -51,9 +54,6 @@ class ElementPlot(Plot):
         The orientation of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
         adjoined plots when appropriate.""")
-
-    rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per element.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -179,16 +179,29 @@ class ElementPlot(Plot):
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
         """
-        xdim, ydim = view.get_dimension(0), view.get_dimension(1)
-        if ranges:
-            x0, x1 = ranges[xdim.name]
-            y0, y1 = ranges[ydim.name]
+        num = 6 if self.projection == '3d' else 4
+        if self.apply_ranges and ranges:
+            dims = view.dimensions()
+            x0, x1 = ranges[dims[0].name]
+            y0, y1 = ranges[dims[1].name]
+            if self.projection == '3d':
+                z0, z1 = ranges[dims[2].name]
+                range_extents = (x0, y0, z0, x1, y1, z1)
+            else:
+                range_extents = (x0, y0, x1, y1)
         else:
-            return view.extents
-        if self.projection == '3d':
-                z0, z1 = ranges[view.get_dimension(2).name]
-                return x0, y0, z0, x1, y1, z1
-        return x0, y0, x1, y1
+            range_extents = (np.NaN,) * num
+
+        if self.apply_extents:
+            norm_opts = Store.lookup_options(view, 'norm').options
+            if norm_opts.get('framewise', False):
+                extents = view.extents
+            else:
+                extent_list = self.map.traverse(lambda x: x.extents, [Element])
+                extents = max_extents(extent_list, self.projection == '3d')
+        else:
+            extents = (np.NaN,) * num
+        return tuple(l2 if l2 is None or np.isfinite(l2) else l1 for l1, l2 in zip(range_extents, extents))
 
 
     def _format_title(self, key):
@@ -240,17 +253,8 @@ class ElementPlot(Plot):
             suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots
                            if isinstance(sp.map, HoloMap))
             if view is not None and not suppress:
-
-                # Axis labels
-                if hasattr(view, 'xlabel') and xlabel is None:
-                    xlabel = view.xlabel
-                if hasattr(view, 'ylabel') and ylabel is None:
-                    ylabel = view.ylabel
-                if hasattr(view, 'zlabel') and zlabel is None:
-                    zlabel = view.zlabel
-
-                if self.apply_databounds and all(sp.apply_databounds for sp in subplots):
-                    self._finalize_limits(axis, view, subplots, ranges)
+                xlabel, ylabel, zlabel = self._axis_labels(view, subplots, xlabel, ylabel, zlabel)
+                self._finalize_limits(axis, view, subplots, ranges)
 
                 # Tick formatting
                 xdim, ydim = view.get_dimension(0), view.get_dimension(1)
@@ -297,6 +301,20 @@ class ElementPlot(Plot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
         return super(ElementPlot, self)._finalize_axis(key)
+
+
+    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+        # Axis labels
+        dims = view.dimensions()
+        if isinstance(view, CompositeOverlay):
+            dims = dims[view.ndims:]
+        if dims and xlabel is None:
+            xlabel = str(dims[0])
+        if len(dims) >= 2 and ylabel is None:
+            ylabel = str(dims[1])
+        if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
+            zlabel = str(dims[2])
+        return xlabel, ylabel, zlabel
 
 
     def _apply_aspect(self, axis):
@@ -571,35 +589,21 @@ class OverlayPlot(ElementPlot):
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
+    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+        return xlabel, ylabel, zlabel
+
+
     def get_extents(self, overlay, ranges):
-        extents = None
+        extents = []
         for key, subplot in self.subplots.items():
-            if subplot.projection == '3d':
-                indexes = ((0, 3), (1, 4), (2, 5))
-            else:
-                indexes = ((0, 2), (1, 3))
             layer = overlay.data.get(key, False)
-            if layer and not isinstance(layer, Annotation):
+            if layer and subplot.apply_ranges and not isinstance(layer, Annotation):
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
                 else:
                     sp_ranges = match_spec(layer, ranges) if ranges else {}
-                lextnt = subplot.get_extents(layer, sp_ranges)
-                if not extents and lextnt:
-                    extents = lextnt
-                    continue
-                elif not lextnt:
-                    continue
-                bounds = [find_minmax((extents[low], extents[high]),
-                                      (lextnt[low], lextnt[high]))
-                                          for low, high in indexes]
-                if subplot.projection == '3d':
-                    extents = (bounds[0][0], bounds[1][0], bounds[2][0],
-                               bounds[0][1], bounds[1][1], bounds[2][1])
-                else:
-                    extents = (bounds[0][0], bounds[1][0],
-                               bounds[0][1], bounds[1][1])
-        return extents
+                extents.append(subplot.get_extents(layer, sp_ranges))
+        return max_extents(extents, self.projection == '3d')
 
 
     def _format_title(self, key):

@@ -12,7 +12,7 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import find_minmax, sanitize_identifier, int_to_roman,\
-    int_to_alpha, safe_unicode
+    int_to_alpha, safe_unicode, max_range
 from ..element import Raster, Table
 
 
@@ -198,15 +198,14 @@ class Plot(param.Parameterized):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+        group_ranges = OrderedDict()
         for el in elements:
             for dim in el.dimensions(label=True):
                 dim_range = el.range(dim)
-                if group not in ranges: ranges[group] = OrderedDict()
-                if dim in ranges[group]:
-                    ranges[group][dim] = find_minmax(ranges[group][dim], dim_range)
-                else:
-                    ranges[group][dim] = dim_range
-
+                if dim not in group_ranges:
+                    group_ranges[dim] = []
+                group_ranges[dim].append(dim_range)
+        ranges[group] = OrderedDict((k, max_range(v)) for k, v in group_ranges.items())
 
     def _get_frame(self, key):
         """

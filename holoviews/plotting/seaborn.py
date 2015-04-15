@@ -33,9 +33,6 @@ class FullRedrawPlot(ElementPlot):
         Aspect ratio defaults to square, 'equal' or numeric values
         are also supported.""")
 
-    rescale_individually = param.Boolean(default=False, doc="""
-        Whether to use redraw the axes per map or per element.""")
-
     show_grid = param.Boolean(default=True, doc="""
         Enables the axis grid.""")
 
@@ -84,8 +81,6 @@ class BivariatePlot(FullRedrawPlot):
     compose).
     """
 
-    rescale_individually = param.Boolean(default=True)
-
     joint = param.Boolean(default=False, doc="""
         Whether to visualize the kernel density estimate with marginal
         distributions along each axis. Does not animate or compose
@@ -127,8 +122,6 @@ class TimeSeriesPlot(FullRedrawPlot):
     curve.
     """
 
-    rescale_individually = param.Boolean(default=False)
-
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")
 
@@ -140,18 +133,21 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'estimator', 'kwargs']
 
     def __call__(self, ranges=None):
-        curveview = self.map.last
+        element = self.map.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
-        self._update_plot(axis, curveview)
+        self._update_plot(axis, element)
 
         return self._finalize_axis(self.keys[-1])
-
 
     def _update_plot(self, axis, view):
         sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
                    zorder=self.zorder, **self.style)
 
+    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+        xlabel = xlabel if xlabel else str(view.key_dimensions[0])
+        ylabel = ylabel if ylabel else str(view.value_dimensions[0])
+        return xlabel, ylabel, zlabel
 
 
 class DistributionPlot(FullRedrawPlot):
@@ -161,7 +157,8 @@ class DistributionPlot(FullRedrawPlot):
     array as a histogram, kernel density estimate, or rugplot.
     """
 
-    rescale_individually = param.Boolean(default=False)
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to compute the plot bounds from the data itself.""")
 
     show_frame = param.Boolean(default=False, doc="""
        Disabled by default for clarity.""")

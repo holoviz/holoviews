@@ -216,15 +216,7 @@ class HistogramPlot(ChartPlot):
         edges = hist.edges[:-1]
         hist_vals = np.array(hist.values)
         widths = [hist._width] * len(hist) if getattr(hist, '_width', None) else np.diff(hist.edges)
-        extents = None
-        if extents is None:
-            xlims = hist.xlim if self.rescale_individually else self.map.xlim
-            ylims = hist.ylim
-        else:
-            l, b, r, t = extents
-            xlims = (l, r)
-            ylims = (b, t)
-        lims = xlims + ylims
+        lims = hist.range(0) + hist.range(1)
         return edges, hist_vals, widths, lims
 
 
@@ -261,7 +253,7 @@ class HistogramPlot(ChartPlot):
         Get axis settings options including ticks, x- and y-labels
         and limits.
         """
-        axis_settings = dict(zip(self.axis_settings, [hist.xlabel, hist.ylabel, ticks]))
+        axis_settings = dict(zip(self.axis_settings, [None, None, ticks]))
         return axis_settings
 
 
@@ -357,7 +349,7 @@ class SideHistogramPlot(HistogramPlot):
         """
         hist = view
         main = self.adjoined.main
-        y0, y1 = hist.ylim
+        y0, y1 = hist.range(1)
         offset = self.offset * y1
         plot_options = Store.lookup_options(main, 'plot').options
         individually = plot_options.get('normalize_individually', False)
@@ -404,7 +396,7 @@ class SideHistogramPlot(HistogramPlot):
 
 
     def get_extents(self, element, ranges):
-        (x0, x1), y1 = element.xlim, element.ylim[1]
+        x0, y0, x1, y1 = element.extents
         return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
 

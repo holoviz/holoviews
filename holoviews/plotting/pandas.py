@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import numpy as np
 from matplotlib import pyplot as plt
 
 import param
@@ -90,6 +91,28 @@ class DFrameViewPlot(ElementPlot):
         if self.plot_type == 'boxplot':
             style['return_type'] = 'axes'
         return style
+
+
+    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+        if view.x and not xlabel:
+            xlabel = str(view.get_dimension(view.x))
+        if view.x2 and not ylabel:
+            ylabel = str(view.get_dimension(view.x2))
+        elif view.y and not ylabel:
+            ylabel = str(view.get_dimension(view.y))
+        return xlabel, ylabel, zlabel
+
+
+    def get_extents(self, view, ranges):
+        x0, y0, x1, y1 = (np.NaN,) * 4
+        if ranges:
+            if view.x:
+                x0, x1 = ranges[view.x]
+            if view.x2:
+                y0, y1 = ranges[view.x2]
+            elif view.y:
+                y0, y1 = ranges[view.y]
+        return (x0, y0, x1, y1)
 
 
     def _validate(self, dfview):

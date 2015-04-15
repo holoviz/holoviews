@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 import param
 
 from ..core.options import Store
-from ..core import CompositeOverlay
+from ..core import CompositeOverlay, Element
 from ..core import traversal
-from ..core.util import match_spec
+from ..core.util import match_spec, max_range
 from ..element.raster import HeatMap, Image, Raster, RGB, HSV
 from .element import ElementPlot, OverlayPlot
 from .plot import Plot, GridPlot
@@ -38,10 +38,9 @@ class RasterPlot(ElementPlot):
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = match_spec(view, ranges)
-
-        (l, b, r, t) = (0, 0, 1, 1) if isinstance(view, HeatMap)\
-            else self.map.last.extents
-        xticks, yticks = self._compute_ticks(view)
+        xdim, ydim = view.key_dimensions
+        (l, r), (b, t) = ranges[xdim.name], ranges[ydim.name]
+        xticks, yticks = self._compute_ticks(view, ranges)
 
         opts = self.style[self.cyclic_index]
         data = view.data
@@ -57,6 +56,7 @@ class RasterPlot(ElementPlot):
             cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
             cmap.set_bad('w', 1.)
             opts['cmap'] = cmap
+            l, b, r, t = view.extents
         elif type(view) == Raster:
             b, t = t, b
             r+=1; b+=1
@@ -81,30 +81,15 @@ class RasterPlot(ElementPlot):
                                    xticks=xticks, yticks=yticks)
 
 
-    def get_extents(self, view, ranges):
-        """
-        Gets the extents for the axes from the current Element. The globally
-        computed ranges can optionally override the extents.
-        """
-        return view.extents if self.rescale_individually else self.map.extents
-
-
-    def _compute_ticks(self, view):
+    def _compute_ticks(self, view, ranges):
         if isinstance(view, HeatMap):
             xdim, ydim = view.key_dimensions
             dim1_keys, dim2_keys = view.dense_keys()
             num_x, num_y = len(dim1_keys), len(dim2_keys)
-            xstep, ystep = 1.0/num_x, 1.0/num_y
-            xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
-            ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
-            if len(xpos) > self.xticks:
-                xsamples = np.linspace(0, len(xpos)-1, self.xticks, dtype=int)
-                xpos = xpos[xsamples]
-                dim1_keys = [dim1_keys[i] for i in xsamples]
-            if len(ypos) > self.yticks:
-                ysamples = np.linspace(0, len(ypos)-1, self.yticks, dtype=int)
-                ypos = ypos[ysamples]
-                dim2_keys = [dim2_keys[i] for i in ysamples]
+            x0, y0, x1, y1 = view.extents
+            xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
+            xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
+            ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
             xlabels = [xdim.pprint_value(k) for k in dim1_keys] if xdim.formatter else dim1_keys
             ylabels = [ydim.pprint_value(k) for k in dim2_keys] if ydim.formatter else dim2_keys
             return (xpos, xlabels), (ypos, ylabels)
@@ -157,7 +142,7 @@ class RasterPlot(ElementPlot):
 
         val_dim = [d.name for d in view.value_dimensions][0]
         im.set_clim(ranges.get(val_dim))
-        xticks, yticks = self._compute_ticks(view)
+        xticks, yticks = self._compute_ticks(view, ranges)
         return {'xticks': xticks, 'yticks': yticks}
 
 
@@ -205,7 +190,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def get_extents(self, view, ranges):
-        width, height, _, _, _, _ = self._compute_borders()
+        width, height, _, _, _, _ = self._compute_borders(ranges)
         return (0, 0, width, height)
 
 
@@ -214,7 +199,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def __call__(self, ranges=None):
-        width, height, b_w, b_h, widths, heights = self._compute_borders()
+        width, height, b_w, b_h, widths, heights = self._compute_borders(ranges)
 
         key = self.keys[-1]
         ranges = self.compute_ranges(self.layout, key, ranges)
@@ -284,16 +269,26 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                             yticks=(self._yticks, self._process_ticklabels(self._ykeys, ydim)))
 
 
-    def _compute_borders(self):
+    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+        xdim = self.layout.key_dimensions[0]
+        ydim = self.layout.key_dimensions[1] if self.layout.ndims > 1 else None
+        return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel
+
+
+    def _compute_borders(self, ranges):
         ndims = self.layout.ndims
-        width_extents = [self.layout[(xkey, slice(None)) if ndims > 1 else xkey].extents
-                         for xkey in self._xkeys]
+        xkey, ykey = self._xkeys[0], self._ykeys[0]
+        width_fn = lambda x: x.range(0)
+        height_fn = lambda x: x.range(1)
         if ndims > 1:
-            height_extents = [self.layout[:, ykey].extents for ykey in self._ykeys]
+            vert_section = self.layout[xkey, slice(None)]
         else:
-            height_extents = [self.layout[self._xkeys[0]].extents]
-        widths = [extent[2]-extent[0] for extent in width_extents]
-        heights = [extent[3]-extent[1] for extent in height_extents]
+            vert_section = [self.layout[xkey]]
+        horz_section = self.layout[(slice(None), ykey) if ndims > 1 else slice(None)]
+        height_extents = [max_range(hm.traverse(height_fn, [Element])) for hm in vert_section]
+        width_extents = [max_range(hm.traverse(width_fn, [Element])) for hm in horz_section]
+        widths = [extent[0]-extent[1] for extent in width_extents]
+        heights = [extent[0]-extent[1] for extent in height_extents]
         width, height = np.sum(widths), np.sum(heights)
         border_width = (width/10.)/(len(widths)+1)
         border_height = (height/10.)/(len(heights)+1)

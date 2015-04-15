@@ -54,22 +54,6 @@ class Plot3D(ElementPlot):
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 
-    def get_extents(self, element, ranges):
-        extents = super(Plot3D, self).get_extents(element, ranges)
-        if len(extents) == 4:
-            l, b, r, t = extents
-            zmin, zmax = self.zlim if self.rescale_individually else self.map.zlim
-        else:
-            l, b, zmin, r, t, zmax = extents
-        zdim = element.get_dimension(2).name
-        if ranges is not None:
-            zrange = ranges.get(zdim)
-            if zrange is not None:
-                zmin, zmax = (np.min([zrange[0], zmin]) if zmin else zrange[0],
-                              np.max([zrange[1], zmax]) if zmax else zrange[1])
-        return l, b, zmin, r, t, zmax
-
-
     def update_frame(self, *args, **kwargs):
         """
         If on the bottom Layer, clear plot before drawing each frame.
