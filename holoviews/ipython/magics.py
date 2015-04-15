@@ -188,13 +188,10 @@ class OutputMagic(OptionsMagic):
 
 
     def missing_dependency_exception(value, keyword, allowed):
-        if value in ['mp4', 'webm']:
-            raise Exception("Format %r does not appear to be supported.\n"
-                             "Please ensure that FFMPEG/AVCONV is installed." % value)
-        elif value == 'gif':
-            raise Exception("Format %r does not appear to be supported.\n"
-                             "Please ensure that ImageMagick is installed." % value)
-        raise Exception('%s %s %s' % (value, keyword, allowed))
+        errors = getattr(Store.renderer, 'HOLOMAP_FORMAT_ERROR_MESSAGES', {})
+        msg = ("Format %r does not appear to be supported." % value)
+        error_msg = ('\nMessage: %s' % errors[value]) if value in errors else ''
+        raise Exception(msg+error_msg)
 
     custom_exceptions = {'holomap':missing_dependency_exception}
 
