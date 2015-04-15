@@ -43,6 +43,8 @@ class OptionsMagic(Magics):
     defaults = OrderedDict([('charwidth'   , 80)])  # Default keyword values.
     options =  OrderedDict(defaults.items()) # Current options
 
+    # Callables accepting (value, keyword, allowed) for custom exceptions
+    custom_exceptions = {}
 
     @classmethod
     def get_options(cls, line, options):
@@ -54,8 +56,11 @@ class OptionsMagic(Magics):
                 allowed = cls.allowed[keyword]
                 if isinstance(allowed, set):  pass
                 elif isinstance(allowed, list) and value not in allowed:
-                    raise ValueError("Value %r for key %r not one of %s"
-                                     % (value, keyword, allowed))
+                    if keyword in cls.custom_exceptions:
+                        cls.custom_exceptions[keyword](value, keyword, allowed)
+                    else:
+                        raise ValueError("Value %r for key %r not one of %s"
+                                         % (value, keyword, allowed))
                 elif isinstance(allowed, tuple):
                     if not (allowed[0] <= value <= allowed[1]):
                         info = (keyword,value)+allowed
@@ -180,6 +185,18 @@ class OutputMagic(OptionsMagic):
 
     # Used to disable info output in testing
     _disable_info_output = False
+
+
+    def missing_dependency_exception(value, keyword, allowed):
+        if value in ['mp4', 'webm']:
+            raise Exception("Format %r does not appear to be supported.\n"
+                             "Please ensure that FFMPEG/AVCONV is installed." % value)
+        elif value == 'gif':
+            raise Exception("Format %r does not appear to be supported.\n"
+                             "Please ensure that ImageMagick is installed." % value)
+        raise Exception('%s %s %s' % (value, keyword, allowed))
+
+    custom_exceptions = {'holomap':missing_dependency_exception}
 
     # Counter for nbagg figures
     nbagg_counter = 0
