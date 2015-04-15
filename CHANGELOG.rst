@@ -19,3 +19,28 @@ Highlights:
 * ``Tables`` are now correctly formatted using the appropriate ``Dimension`` formatter. (588bc2a3)
 * Support for unlimited alphabetical subfigure labelling. (e039d00b)
 * Miscellaneous bug fixes, including Python 3 compatibility improvements.
+
+
+Version 1.1.0
+-------------
+
+Highlights
+
+* Support for nbagg as a backend (09eab4f1)
+* New .hvz file format for saving HoloViews objects (bfd5f7af)
+* New ``Polygon`` element type (d1ec8ec8)
+* Greatly improved Unicode support throughout including support for
+  unicode characters in Python 3 attribute names (609a8454)
+* Regular SelectionWidget now supports live rendering (eb5bf8b6).
+* Support list of objects in Layout and Overlay constructor (5ba1866e)
+
+Backward incompatible changes:
+
+* ``xlim``, ``ylim``, ``zlim``, ``xlabel``, ``ylabel`` and ``zlabel``
+  have been deprecated (081d4123)
+* Plotting options ``show_xaxis`` and ``show_yaxis`` renamed to
+  ``xaxis`` and ``yaxis`` respectively (13393f2a).
+* Deprecated IPySelectionWidget (f59c34c0)
+
+In addition to the above improvements, many miscellaneous bug fixes
+were made.
