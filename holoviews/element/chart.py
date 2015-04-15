@@ -236,9 +236,6 @@ class Bars(NdElement):
 
     value_dimensions = param.List(default=[Dimension('y')], bounds=(1,1))
 
-    xlim = (np.NaN, np.NaN)
-    ylim = (np.NaN, np.NaN)
-
 
 
 class Histogram(Element2D):
@@ -255,11 +252,12 @@ class Histogram(Element2D):
 
     value_dimensions = param.List(default=[Dimension('Frequency')])
 
-    def __init__(self, values, edges=None, **params):
+    def __init__(self, values, edges=None, extents=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)
         settings.update(params)
         super(Histogram, self).__init__((self.values, self.edges), **settings)
         self._width = None
+        self._extents = (None, None, None, None) if extents is None else extents
 
 
     def _process_data(self, values, edges):
@@ -290,9 +288,18 @@ class Histogram(Element2D):
             edges = np.concatenate([edges, [edges[-1]+width]])
         return values, edges, settings
 
+
     @property
-    def xlim(self):
-        return np.min(self.edges), np.max(self.edges)
+    def extents(self):
+        if any(lim is not None for lim in self._extents):
+            return self._extents
+        else:
+            return (np.min(self.edges), None, np.max(self.edges), None)
+
+
+    @extents.setter
+    def extents(self, extents):
+        return (np.min(self.edges), None, np.max(self.edges), None)
 
 
     def dimension_values(self, dim):

@@ -45,25 +45,6 @@ class Path(Element2D):
     def __len__(self):
         return len(self.data)
 
-    @property
-    def xlim(self):
-        if self._xlim: return self._xlim
-        elif len(self):
-            xmin = min(min(c[:, 0]) for c in self.data)
-            xmax = max(max(c[:, 0]) for c in self.data)
-            return xmin, xmax
-        else:
-            return None
-
-    @property
-    def ylim(self):
-        if self._ylim: return self._ylim
-        elif len(self):
-            ymin = min(min(c[:, 0]) for c in self.data)
-            ymax = max(max(c[:, 0]) for c in self.data)
-            return ymin, ymax
-        else:
-            return None
 
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)

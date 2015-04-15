@@ -37,7 +37,7 @@ class Raster(Element2D):
     def __init__(self, data, extents=None, **params):
         if extents is None:
             (d1, d2) = data.shape[:2]
-            extents = (0,0, d2, d1)
+            extents = (0, 0, d2, d1)
         super(Raster, self).__init__(data, extents=extents, **params)
 
 
@@ -46,11 +46,12 @@ class Raster(Element2D):
         slc_types = [isinstance(sl, slice) for sl in slices]
         data = self.data.__getitem__(slices[::-1])
         if all(slc_types):
-            return self.clone(data)
+            return self.clone(data, extents=None)
         elif not any(slc_types):
             return data
         else:
-            return self.clone(np.expand_dims(data, axis=slc_types.index(True)))
+            return self.clone(np.expand_dims(data, axis=slc_types.index(True)),
+                              extents=None)
 
 
     def _coord2matrix(self, coord):
@@ -193,14 +194,9 @@ class HeatMap(Raster):
 
     group = param.String(default='HeatMap')
 
-    def __init__(self, data, **params):
-        if 'extents' in params:
-            raise KeyError("HeatMap only supports fixed extents of unit size.")
-
+    def __init__(self, data, extents=None, **params):
         self._data, array, dimensions = self._process_data(data, params)
-        super(HeatMap, self).__init__(array,
-                                      extents=(0,0,1,1),
-                                      **dict(params, **dimensions))
+        super(HeatMap, self).__init__(array, **dict(params, **dimensions))
 
 
     def _process_data(self, data, params):
@@ -272,19 +268,6 @@ class HeatMap(Raster):
         return super(HeatMap, self).dframe()
 
 
-    @property
-    def xlim(self):
-        if self._xlim: return self._xlim
-        dim1_keys, _ = self.dense_keys()
-        return min(dim1_keys), max(dim1_keys)
-
-
-    @property
-    def ylim(self):
-        if self._ylim: return self._ylim
-        _, dim2_keys = self.dense_keys()
-        return min(dim2_keys), max(dim2_keys)
-
 
 class Image(SheetCoordinateSystem, Raster):
     """
@@ -306,21 +289,22 @@ class Image(SheetCoordinateSystem, Raster):
         The dimension description of the data held in the matrix.""")
 
 
-    def __init__(self, data, bounds=None, xdensity=None, ydensity=None, **params):
+    def __init__(self, data, bounds=None, extents=None, xdensity=None, ydensity=None, **params):
         bounds = bounds if bounds is not None else BoundingBox()
-        if isinstance(bounds, (tuple, list, np.ndarray)):
+        if np.isscalar(bounds):
+            bounds = BoundingBox(radius=bounds)
+        elif isinstance(bounds, (tuple, list, np.ndarray)):
             l, b, r, t = bounds
             bounds = BoundingBox(points=((l, b), (r, t)))
-        elif np.isscalar(bounds):
-            bounds = BoundingBox(radius=bounds)
         data = np.array([[0]]) if data is None else data
         l, b, r, t = bounds.lbrt()
         (dim1, dim2) = data.shape[1], data.shape[0]
         xdensity = xdensity if xdensity else dim1/float(r-l)
         ydensity = ydensity if ydensity else dim2/float(t-b)
-
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
-        Element2D.__init__(self, data, extents=self.lbrt, bounds=bounds, **params)
+        extents = extents if extents else (None, None, None, None)
+        Element2D.__init__(self, data, extents=extents, bounds=bounds,
+                           **params)
 
         if len(self.data.shape) == 3:
             if self.data.shape[2] != len(self.value_dimensions):
@@ -365,24 +349,13 @@ class Image(SheetCoordinateSystem, Raster):
                           bounds=bounds)
 
 
-    @property
-    def xlim(self):
-        l, _, r, _ = self.bounds.lbrt()
-        return (l, r)
-
-
-    @property
-    def ylim(self):
-        _, b, _, t = self.bounds.lbrt()
-        return (b, t)
-
-
     def range(self, dim, data_range=True):
         dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
+            l, b, r, t = self.bounds.lbrt()
             if dim_idx:
-                return self.ylim
-            return self.xlim
+                return (b, t)
+            return (l, r)
         return super(Image, self).range(dim, data_range=data_range)
 
 
@@ -396,7 +369,7 @@ class Image(SheetCoordinateSystem, Raster):
         """
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
-            (l, r), (b, t) = self.xlim, self.ylim
+            (l, r), (b, t) = self.range(0), self.range(1)
             shape = self.data.shape[dim_idx]
             dim_min, dim_max = [(l, r), (b, t)][dim_idx]
             dim_len = self.data.shape[abs(dim_idx-1)]

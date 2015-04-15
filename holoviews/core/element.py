@@ -9,7 +9,7 @@ from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping, NdMapping
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
-from .util import find_minmax, sanitize_identifier
+from .util import sanitize_identifier
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -140,67 +140,10 @@ class Element(ViewableElement, Composable, Overlayable):
 
 class Element2D(Element):
 
-    def __init__(self, data, extents=None, **params):
-        self._xlim = None if extents is None else (extents[0], extents[2])
-        self._ylim = None if extents is None else (extents[1], extents[3])
-        super(Element2D, self).__init__(data, **params)
-
-    @property
-    def xlabel(self):
-        return self.get_dimension(0).pprint_label
-
-    @property
-    def ylabel(self):
-        return self.get_dimension(1).pprint_label
-
-    @property
-    def xlim(self):
-        if self._xlim and None not in self._xlim:
-            return self._xlim
-        else:
-            return self.range(0)
-
-    @xlim.setter
-    def xlim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._xlim = limits
-        else:
-            raise ValueError('xlim needs to be a length two tuple or None.')
-
-    @property
-    def ylim(self):
-        if self._ylim and None not in self._ylim:
-            return self._ylim
-        else:
-            return self.range(1)
-
-    @ylim.setter
-    def ylim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._ylim = limits
-        else:
-            raise ValueError('xlim needs to be a length two tuple or None.')
-
-    @property
-    def extents(self):
-        """"
-        The extent on Element2D types and its subclasses are a tuple
-        of all the dimension lower bounds followed by the upper bounds.
-        In case of a simple Element2D this takes the form (l, b, r, t).
-        """
-        lbound, ubound = [], []
-        for kd in self._cached_index_names:
-            drange = self.range(kd)
-            lower, upper = drange if drange else (np.NaN, np.NaN)
-            lbound.append(lower)
-            ubound.append(upper)
-        return tuple(lbound+ubound)
-
-
-    @extents.setter
-    def extents(self, extents):
-        l, b, r, t = extents
-        self.xlim, self.ylim = (l, r), (b, t)
+    extents = param.Tuple(default=(None, None, None, None),
+                          doc="""Allows overriding the extents
+              of the Element in 2D space defined as four-tuple
+              defining the (left, bottom, right and top) edges.""")
 
 
 class NdElement(Element, NdMapping):
@@ -416,49 +359,11 @@ class NdElement(Element, NdMapping):
 
 class Element3D(Element2D):
 
-
-    def __init__(self, data, extents=None, **params):
-        if extents is not None:
-            self._zlim = (extents[2], extents[5])
-            extents = (extents[0], extents[1], extents[3], extents[4])
-        else:
-            self._zlim = None
-        super(Element3D, self).__init__(data, extents=extents, **params)
-
-    @property
-    def extents(self):
-        """"
-        For Element3D the extents is the 6-tuple (left, bottom, -z, right, top, +z) using
-        a right-handed Cartesian coordinate-system.
-        """
-        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
-        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
-        zminus, zplus = self.zlim if self.zlim else (np.NaN, np.NaN)
-        return l, b, zminus, r, t, zplus
-
-    @extents.setter
-    def extents(self, extents):
-        l, b, zminus, r, t, zplus = extents
-        self.xlim, self.ylim, self.zlim = (l, r), (b, t), (zminus, zplus)
-
-
-    @property
-    def zlim(self):
-        if self._zlim and None not in self._zlim:
-            return self._zlim
-        else:
-            return self.range(2)
-
-    @zlim.setter
-    def zlim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._zlim = limits
-        else:
-            raise ValueError('zlim needs to be a length two tuple or None.')
-
-    @property
-    def zlabel(self):
-        return self.get_dimension(2).pprint_label
+    extents = param.Tuple(default=(None, None, None,
+                                   None, None, None),
+        doc="""Allows overriding the extents of the Element
+               in 3D space defined as (xmin, ymin, zmin,
+               xmax, ymax, zmax).""")
 
 
 
@@ -470,52 +375,6 @@ class HoloMap(UniformNdMapping):
     """
 
     data_type = (ViewableElement, UniformNdMapping)
-
-    @property
-    def xlabel(self):
-        return self.last.xlabel
-
-
-    @property
-    def ylabel(self):
-        return self.last.ylabel
-
-
-    @property
-    def xlim(self):
-        xlim = self.last.xlim
-        for data in self.values():
-            xlim = find_minmax(xlim, data.xlim) if data.xlim and xlim else xlim
-        return xlim
-
-
-    @property
-    def ylim(self):
-        ylim = self.last.ylim
-        for data in self.values():
-            ylim = find_minmax(ylim, data.ylim) if data.ylim and ylim else ylim
-        return ylim
-
-    @property
-    def zlim(self):
-        if not isinstance(self.last, Element3D):
-            return (None, None)
-        zlim = self.last.zlim
-        for data in self.values():
-            zlim = find_minmax(zlim, data.zlim) if data.zlim and zlim else zlim
-        return zlim
-
-    @property
-    def extents(self):
-        if self.xlim is None: return np.NaN, np.NaN, np.NaN, np.NaN
-        l, r = self.xlim
-        b, t = self.ylim
-        if isinstance(self.last, Element3D):
-            zmin, zmax = self.zlim
-            return float(l), float(b), float(zmin), float(r), float(t), float(zmax)
-        else:
-            return float(l), float(b), float(r), float(t)
-
 
     def overlay(self, dimensions, **kwargs):
         """
@@ -720,12 +579,15 @@ class HoloMap(UniformNdMapping):
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
-                lower, upper = (self.xlims[0],self.xlims[1]) if bounds is None else bounds
+                xlim = self.last.range(0)
+                lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
                 edges = np.linspace(lower, upper, samples+1)
                 linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
             elif dims == 2:
                 (rows, cols) = samples
-                (l,b,r,t) = self.last.extents if bounds is None else bounds
+                x0, x1 = self.last.range(0)
+                y0, y1 = self.last.range(1)
+                (l,b,r,t) = (x0, y0, x1, y0) if bounds is None else bounds
 
                 xedges = np.linspace(l, r, cols+1)
                 yedges = np.linspace(b, t, rows+1)
@@ -1034,40 +896,6 @@ class GridSpace(UniformNdMapping):
         if self.ndims == 1:
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
-
-
-    @property
-    def xlim(self):
-        xlim = list(self.values())[-1].xlim
-        for data in self.values():
-            xlim = find_minmax(xlim, data.xlim)
-        return xlim
-
-
-    @property
-    def ylim(self):
-        ylim = list(self.values())[-1].ylim
-        for data in self.values():
-            ylim = find_minmax(ylim, data.ylim)
-        if ylim[0] == ylim[1]: ylim = (ylim[0], ylim[0]+1.)
-        return ylim
-
-    @property
-    def extents(self):
-        if self.xlim is None: return np.NaN, np.NaN, np.NaN, np.NaN
-        l, r = self.xlim
-        b, t = self.ylim
-        return float(l), float(b), float(r), float(t)
-
-    @property
-    def grid_lbrt(self):
-        grid_dimensions = []
-        for dim in self._cached_index_names:
-            grid_dimensions.append(self.range(dim))
-        if self.ndims == 1:
-            grid_dimensions.append((0, 1))
-        xdim, ydim = grid_dimensions
-        return (xdim[0], ydim[0], xdim[1], ydim[1])
 
 
     def dframe(self):

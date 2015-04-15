@@ -11,6 +11,12 @@ class Surface(Image, Element3D):
     The data should be supplied as a dense NxM matrix.
     """
 
+    extents = param.Tuple(default=(None, None, None,
+                                   None, None, None),
+        doc="""Allows overriding the extents of the Element
+               in 3D space defined as (xmin, ymin, zmin,
+               xmax, ymax, zmax).""")
+
     key_dimensions = param.List(default=[Dimension('x'),
                                          Dimension('y')],
                                 bounds=(2,2), doc="""
@@ -23,9 +29,20 @@ class Surface(Image, Element3D):
 
     group = param.String(default='Surface')
 
-    def __init__(self, data, **params):
-        self._zlim = None
-        Image.__init__(self, data, **params)
+    def __init__(self, data, extents=None, **params):
+        extents = extents if extents else (None, None, None, None, None, None)
+        Image.__init__(self, data, extents=extents, **params)
+
+
+    def range(self, dim, data_range=True):
+        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
+        if dim_idx in [0, 1]:
+            l, b, r, t = self.bounds.lbrt()
+            if dim_idx == 0:
+                return (l, r)
+            elif dim_idx == 1:
+                return (b, t)
+        return super(Image, self).range(dim, data_range=data_range)
 
 
 

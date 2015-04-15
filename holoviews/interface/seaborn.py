@@ -109,14 +109,6 @@ class Distribution(Chart):
             raise ValueError("Distribution only support single dimensional arrays.")
         return data
 
-    @property
-    def xlim(self):
-        return self.range(0)
-
-    @property
-    def ylim(self):
-        return (None, None)
-
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 0:

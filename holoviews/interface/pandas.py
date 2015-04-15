@@ -83,8 +83,6 @@ class DataFrameView(Element):
             if name in data.columns:
                 dims[list(data.columns).index(name)] = dim
 
-        self._xlim = None
-        self._ylim = None
         ViewableElement.__init__(self, data, key_dimensions=dims, **params)
         self.data.columns = self._cached_index_names
 
@@ -209,34 +207,6 @@ class DataFrameView(Element):
         Splits the supplied dimensions out into a HoloMap.
         """
         return self.groupby(key_dimensions, HoloMap)
-
-    @property
-    def xlabel(self):
-        return self.x
-
-    @property
-    def ylabel(self):
-        return self.y
-
-    @property
-    def xlim(self):
-        if self._xlim:
-            return self._xlim
-        if self.x:
-            xdata = self.data[self.x]
-            return min(xdata), max(xdata)
-        else:
-            return None
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        elif self.y:
-            ydata = self.data[self.y]
-            return min(ydata), max(ydata)
-        else:
-            return None
 
 
 

@@ -41,34 +41,6 @@ class CompositeOverlay(ViewableElement, Composable):
 
     _deep_indexable = True
 
-    @property
-    def xlim(self):
-        return self.range([d.name for d in self.deep_dimensions][0])
-
-    @xlim.setter
-    def xlim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._xlim = limits
-        else:
-            raise ValueError('xlim needs to be a length two tuple or None.')
-
-    @property
-    def ylim(self):
-        return self.range([d.name for d in self.deep_dimensions][1])
-
-    @ylim.setter
-    def ylim(self, limits):
-        if limits is None or (isinstance(limits, tuple) and len(limits) == 2):
-            self._ylim = limits
-        else:
-            raise ValueError('ylim needs to be a length two tuple or None.')
-
-    @property
-    def extents(self):
-        l, r = self.xlim if self.xlim else (np.NaN, np.NaN)
-        b, t = self.ylim if self.ylim else (np.NaN, np.NaN)
-        return l, b, r, t
-
 
     def hist(self, index=0, adjoin=True, **kwargs):
         valid_ind = isinstance(index, int) and (0 <= index < len(self))
@@ -83,7 +55,6 @@ class CompositeOverlay(ViewableElement, Composable):
             return layout
         else:
             return hist
-
 
 
     def dimension_values(self, dimension):
@@ -227,8 +198,6 @@ class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
     _deep_indexable = True
 
     def __init__(self, overlays=None, **params):
-        self._xlim = None
-        self._ylim = None
         super(NdOverlay, self).__init__(overlays, **params)
 
 

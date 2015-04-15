@@ -25,12 +25,9 @@ class Annotation(Element2D):
 
     group = param.String(default='Annotation')
 
-    xlabel, ylabel = "", ""
-
     def __init__(self, data, **params):
         super(Annotation, self).__init__(data, **params)
-        self._xlim = (0, 1) if self._xlim is None else self._xlim
-        self._ylim = (0, 1) if self._ylim is None else self._ylim
+
 
     def dimension_values(self, dimension):
         index = self.get_dimension_index(dimension)
