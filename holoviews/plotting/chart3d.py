@@ -136,13 +136,11 @@ class SurfacePlot(Plot3D):
     def __call__(self, ranges=None):
         view = self.map.last
         key = self.keys[-1]
-        self.update_handles(self.handles['axis'], view, key)
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = match_spec(view, ranges)
 
         self.update_handles(self.handles['axis'], view, key, ranges)
-
         return self._finalize_axis(key, ranges=ranges)
 
 
