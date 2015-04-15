@@ -1,4 +1,4 @@
-import sys
+import sys, warnings
 import numbers
 import itertools
 import string
@@ -220,6 +220,46 @@ def find_minmax(lims, olims):
     except:
         limits = (np.NaN, np.NaN)
     return limits
+
+
+def max_range(ranges):
+   """
+   Computes the maximal lower and upper bounds from a list bounds.
+   """
+   try:
+      with warnings.catch_warnings():
+         warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+         arr = np.array(ranges, dtype=np.float)
+         return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
+   except:
+      return (np.NaN, np.NaN)
+
+
+def max_extents(extents, zrange=False):
+   """
+   Computes the maximal extent in 2D and 3D space from
+   list of 4-tuples or 6-tuples. If zrange is enabled
+   all extents are converted to 6-tuples to comput
+   x-, y- and z-limits.
+   """
+
+   if zrange:
+      num = 6
+      inds = [(0, 2), (1, 3)]
+      extents = [e if len(e) == 6 else (e[0], e[1], None,
+                                        e[2], e[3], None)
+                 for e in extents]
+   else:
+      num = 4
+      inds = [(0, 2), (1, 3)]
+   arr = np.array(extents, dtype=np.float, ndmin=2)
+   extents = [np.NaN] * num
+   with warnings.catch_warnings():
+      warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+      for lower, upper in inds:
+         extents[lower] = np.nanmin(arr[:, lower])
+         extents[upper] = np.nanmax(arr[:, upper])
+   return tuple(extents)
 
 
 def int_to_alpha(n, upper=True):
