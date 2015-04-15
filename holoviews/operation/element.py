@@ -462,7 +462,7 @@ class contours(ElementOperation):
         from matplotlib import pyplot as plt
 
         figure_handle = plt.figure()
-        extent = matrix.range(0) + matrix.range(1)
+        extent = matrix.range(0) + matrix.range(1)[::-1]
         contour_set = plt.contour(matrix.data, extent=extent,
                                   levels=self.p.levels)
 
