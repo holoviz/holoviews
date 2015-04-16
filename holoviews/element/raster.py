@@ -79,6 +79,8 @@ class Raster(Element2D):
             samples = zip(X, Y)
         params = dict(self.get_param_values(onlychanged=True),
                       value_dimensions=self.value_dimensions)
+        params.pop('extents', None)
+        params.pop('bounds', None)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
@@ -140,6 +142,8 @@ class Raster(Element2D):
             data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           key_dimensions=other_dimension)
+            params.pop('bounds', None)
+            params.pop('extents', None)
             return Table(data, **params)
 
 
