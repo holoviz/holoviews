@@ -16,8 +16,18 @@ class TestAllowablePrefix(ComparisonTestCase):
     Tests of allowable and hasprefix method.
     """
 
-    def test_allowable_false(self):
-        self.assertEqual(sanitize_identifier.allowable('Trait_names'), False)
+    def test_allowable_false_1(self):
+        self.assertEqual(sanitize_identifier.allowable('trait_names'), False)
+
+    def test_allowable_false_2(self):
+        self.assertEqual(sanitize_identifier.allowable('_repr_png_'), False)
+
+    def test_allowable_false_3(self):
+        self.assertEqual(sanitize_identifier.allowable('_ipython_display_'),
+                         False)
+
+    def test_allowable_false_underscore(self):
+        self.assertEqual(sanitize_identifier.allowable('_foo', True), False)
 
     def test_allowable_true(self):
         self.assertEqual(sanitize_identifier.allowable('some_string'), True)

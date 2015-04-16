@@ -85,7 +85,8 @@ class sanitize_identifier(param.ParameterizedFunction):
        unicode name. For instance, the defaultcapitalize_unicode_name
        function will turn the string "capital delta" into "Delta".""")
 
-    disallowed = param.List(default=['Trait_names', '_ipython_display_'], doc="""
+    disallowed = param.List(default=['trait_names', '_ipython_display_',
+                                     '_getAttributeNames'], doc="""
        An explicit list of name that should not be allowed as
        attribute names on Tree objects.
 
@@ -93,11 +94,23 @@ class sanitize_identifier(param.ParameterizedFunction):
        Trait_names due to an inconvenient getattr check (during
        tab-completion).""")
 
+    disable_leading_underscore = param.Boolean(default=False, doc="""
+       Whether leading underscores should be allowed to be sanitized
+       with the leading prefix.""")
+
     prefix = 'A_'
 
     @param.parameterized.bothmethod
-    def allowable(self_or_cls, name):
-       return name not in self_or_cls.disallowed
+    def allowable(self_or_cls, name, disable_leading_underscore=None):
+       disabled_reprs = ['javascript', 'jpeg', 'json', 'latex',
+                         'latex', 'pdf', 'png', 'svg']
+       disabled_ = (self_or_cls.disable_leading_underscore
+                    if disable_leading_underscore is None
+                    else disable_leading_underscore)
+       if disabled_ and name.startswith('_'):
+          return False
+       isrepr = any(('_repr_%s_' % el) == name for el in disabled_reprs)
+       return (name not in self_or_cls.disallowed) and not isrepr
 
     @param.parameterized.bothmethod
     def prefixed(self, identifier, version):
