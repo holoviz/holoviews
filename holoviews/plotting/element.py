@@ -390,7 +390,7 @@ class ElementPlot(Plot):
             for pos in disabled_spines:
                 axis.spines[pos].set_visible(False)
 
-        if not self.show_frame:
+        if not self.show_frame and self.projection != 'polar':
             axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
             axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
 
