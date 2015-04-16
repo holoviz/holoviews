@@ -33,6 +33,7 @@ Highlights
   unicode characters in Python 3 attribute names (609a8454)
 * Regular SelectionWidget now supports live rendering (eb5bf8b6).
 * Support list of objects in Layout and Overlay constructor (5ba1866e)
+* Polar projections now supported (3801b76e)
 
 Backward incompatible changes:
 
