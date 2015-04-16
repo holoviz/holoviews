@@ -138,10 +138,10 @@ class Raster(Element2D):
         else:
             dimension, reduce_fn = reduce_map.items()[0]
             other_dimension = [d for d in self.key_dimensions if d.name != dimension]
-            x_vals = sorted(set(self.dimension_values(dimension)))
-            data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(dimension)))
+            x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
+            data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(other_dimension[0])))
             params = dict(dict(self.get_param_values(onlychanged=True)),
-                          key_dimensions=other_dimension)
+                          key_dimensions=other_dimension, value_dimensions=self.value_dimensions)
             params.pop('bounds', None)
             params.pop('extents', None)
             return Table(data, **params)
