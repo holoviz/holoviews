@@ -20,6 +20,9 @@ class RasterPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
+    situate_axes = param.Boolean(default=False, doc="""
+        Whether to situate the image relative to other plots. """)
+
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 
@@ -31,6 +34,18 @@ class RasterPlot(ElementPlot):
         super(RasterPlot, self).__init__(*args, **kwargs)
         if self.map.type == Raster:
             self.invert_yaxis = True
+
+
+    def get_extents(self, view, ranges):
+        extents = super(RasterPlot, self).get_extents(view, ranges)
+        if self.situate_axes:
+            return extents
+        else:
+            if isinstance(view, Image):
+                return view.bounds.lbrt()
+            else:
+                return view.extents
+
 
     def __call__(self, ranges=None):
         view = self.map.last
