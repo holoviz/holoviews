@@ -39,7 +39,11 @@ class RasterPlot(ElementPlot):
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = match_spec(view, ranges)
         xdim, ydim = view.key_dimensions
-        (l, r), (b, t) = ranges[xdim.name], ranges[ydim.name]
+        if isinstance(view, Image):
+            l, b, r, t = view.bounds.lbrt()
+        else:
+            (l, r), (b, t) = ranges[xdim.name], ranges[ydim.name]
+
         xticks, yticks = self._compute_ticks(view, ranges)
 
         opts = self.style[self.cyclic_index]
@@ -47,6 +51,7 @@ class RasterPlot(ElementPlot):
         clims = opts.pop('clims', None)
         if view.depth != 1:
             opts.pop('cmap', None)
+
         if isinstance(view, RGB):
             data = view.rgb.data
         elif isinstance(view, HeatMap):
@@ -140,8 +145,17 @@ class RasterPlot(ElementPlot):
         if self.colorbar:
             self._draw_colorbar(im)
 
+        if isinstance(view, Image):
+            l, b, r, t = view.bounds.lbrt()
+        else:
+            (l, r), (b, t) = ranges[xdim.name], ranges[ydim.name]
+        if type(view) == Raster:
+            b, t = t, b
+            r+=1; b+=1
         val_dim = [d.name for d in view.value_dimensions][0]
+        xdim, ydim = view.key_dimensions
         im.set_clim(ranges.get(val_dim))
+        im.set_extent((l, r, b, t))
         xticks, yticks = self._compute_ticks(view, ranges)
         return {'xticks': xticks, 'yticks': yticks}
 
