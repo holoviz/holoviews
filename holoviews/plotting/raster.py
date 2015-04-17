@@ -160,6 +160,7 @@ class RasterPlot(ElementPlot):
         if self.colorbar:
             self._draw_colorbar(im)
 
+        xdim, ydim = view.key_dimensions
         if isinstance(view, Image):
             l, b, r, t = view.bounds.lbrt()
         else:
@@ -168,7 +169,6 @@ class RasterPlot(ElementPlot):
             b, t = t, b
             r+=1; b+=1
         val_dim = [d.name for d in view.value_dimensions][0]
-        xdim, ydim = view.key_dimensions
         im.set_clim(ranges.get(val_dim))
         im.set_extent((l, r, b, t))
         xticks, yticks = self._compute_ticks(view, ranges)
