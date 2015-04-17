@@ -1,12 +1,11 @@
 from unittest import SkipTest
-import matplotlib.pyplot as plt
 
 import holoviews
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from .archive import notebook_archive
 from .magics import load_magics
-from .display_hooks import animate, set_display_hooks, OutputMagic
+from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
 
