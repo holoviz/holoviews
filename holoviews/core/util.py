@@ -103,7 +103,7 @@ class sanitize_identifier(param.ParameterizedFunction):
     @param.parameterized.bothmethod
     def allowable(self_or_cls, name, disable_leading_underscore=None):
        disabled_reprs = ['javascript', 'jpeg', 'json', 'latex',
-                         'latex', 'pdf', 'png', 'svg']
+                         'latex', 'pdf', 'png', 'svg', 'markdown']
        disabled_ = (self_or_cls.disable_leading_underscore
                     if disable_leading_underscore is None
                     else disable_leading_underscore)
