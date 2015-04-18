@@ -54,10 +54,6 @@ class RasterPlot(ElementPlot):
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = match_spec(view, ranges)
         xdim, ydim = view.key_dimensions
-        if isinstance(view, Image):
-            l, b, r, t = view.bounds.lbrt()
-        else:
-            (l, r), (b, t) = ranges[xdim.name], ranges[ydim.name]
 
         xticks, yticks = self._compute_ticks(view, ranges)
 
@@ -66,6 +62,13 @@ class RasterPlot(ElementPlot):
         clims = opts.pop('clims', None)
         if view.depth != 1:
             opts.pop('cmap', None)
+
+        if isinstance(view, Image):
+            l, b, r, t = view.bounds.lbrt()
+        else:
+            l, b, r, t = view.extents
+            if type(view) == Raster:
+                b, t = t, b
 
         if isinstance(view, RGB):
             data = view.rgb.data
@@ -76,10 +79,6 @@ class RasterPlot(ElementPlot):
             cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
             cmap.set_bad('w', 1.)
             opts['cmap'] = cmap
-            l, b, r, t = view.extents
-        elif type(view) == Raster:
-            b, t = t, b
-            r+=1; b+=1
 
         im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
@@ -164,10 +163,10 @@ class RasterPlot(ElementPlot):
         if isinstance(view, Image):
             l, b, r, t = view.bounds.lbrt()
         else:
-            (l, r), (b, t) = ranges[xdim.name], ranges[ydim.name]
-        if type(view) == Raster:
-            b, t = t, b
-            r+=1; b+=1
+            l, b, r, t = view.extents
+            if type(view) == Raster:
+                b, t = t, b
+
         val_dim = [d.name for d in view.value_dimensions][0]
         im.set_clim(ranges.get(val_dim))
         im.set_extent((l, r, b, t))
