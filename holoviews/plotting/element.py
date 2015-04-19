@@ -657,5 +657,39 @@ class OverlayPlot(ElementPlot):
         self._finalize_axis(key, ranges=ranges)
 
 
+
+class DrawPlot(ElementPlot):
+    """
+    A DrawPlot is an ElementPlot that uses a draw method for
+    rendering. The draw method is also called per update such that a
+    full redraw is triggered per frame.
+
+    Although not optimized for HoloMaps (due to the full redraw),
+    DrawPlot is very easy to subclass to interface HoloViews with any
+    third-party libraries offering matplotlib plotting functionality.
+    """
+
+    _abstract = True
+
+    def draw(self, axis, element):
+        """
+        The only method that needs to be overridden in subclasses.
+
+        The current axis and element are supplied as arguments. The
+        job of this function is to apply the appropriate matplotlib
+        commands to render the element to the supplied axis.
+        """
+        raise NotImplementedError
+
+    def __call__(self, ranges=None):
+        self.draw(self.handles['axis'], self.map.last)
+        return self._finalize_axis(self.keys[-1])
+
+    def update_handles(self, axis, element, key, ranges=None):
+        if self.zorder == 0 and axis: axis.cla()
+        self.draw(axis, element)
+
+
+
 Store.registry.update({NdOverlay: OverlayPlot,
                        Overlay: OverlayPlot})
