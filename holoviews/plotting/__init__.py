@@ -319,7 +319,7 @@ Store.options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize':
 # Annotations
 Store.options.VLine = Options('style', color=Cycle(key='default_colors'))
 Store.options.HLine = Options('style', color=Cycle(key='default_colors'))
-Store.options.Spline = Options('style', linewidth=2)
+Store.options.Spline = Options('style', linewidth=2, ec='r')
 Store.options.Text = Options('style', fontsize=13)
 Store.options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
