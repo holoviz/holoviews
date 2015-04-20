@@ -459,11 +459,12 @@ class contours(ElementOperation):
 
 class histogram(ElementOperation):
     """
-    Returns a Histogram of the Raster data, binned into
-    num_bins over the bin_range (if specified).
+    Returns a Histogram of the input element data, binned into
+    num_bins over the bin_range (if specified) along the specified
+    dimension.
 
-    If adjoin is True, the histogram will be returned adjoined to
-    the Raster as a side-plot.
+    If adjoin is True, the histogram will be returned adjoined to the
+    Element as a side-plot.
     """
 
     adjoin = param.Boolean(default=True, doc="""
