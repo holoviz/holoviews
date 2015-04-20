@@ -1,3 +1,8 @@
+"""
+Collection of either extremely generic or simple ElementOperation
+examples.
+"""
+
 import numpy as np
 
 import param
@@ -10,6 +15,50 @@ from ..element.raster import Image, RGB
 from ..element.tabular import ItemTable
 from ..element.path import Contours
 from .normalization import raster_normalization
+
+
+class operation(ElementOperation):
+    """
+    The most generic operation that wraps any callable into an
+    ElementOperation. The callable needs to accept an HoloViews
+    component and a key (that may be ignored) and must return a new
+    HoloViews component.
+
+    This class may be useful for turning a HoloViews method into an
+    operation to define as compositor operation. For instance, the
+    following definition:
+
+    operation.instance(op=lambda x, k: x.collapse(np.subtract))
+
+    Could be used to implement a collapse operation to subtracts the
+    data between Rasters in an Overlay.
+    """
+
+    def identity(x,k): return x
+
+    output_type = param.Parameter(None, doc="""
+       The output element type which may be None to disable type
+       checking.
+
+       May be used to declare useful information to other code in
+       HoloViews e.g required for tab-completion support of operations
+       registered with compositors.""")
+
+    group = param.String(default='Operation', doc="""
+        The group assigned to the result after having applied the
+        operator.""")
+
+    op = param.Callable(default=identity, doc="""
+        The operation used to generate a new HoloViews object returned
+        by the operation. By default, the identity operation is
+        applied.""")
+
+    def _process(self, view, key=None):
+        retval = self.p.op(view, key)
+        if (self.p.output_type is not None):
+            assert isinstance(retval, self.p.output_type, \
+                              "Return value does not match the declared output type ")
+        return retval.relabel(group=self.p.group)
 
 
 class factory(ElementOperation):
@@ -207,58 +256,6 @@ class image_overlay(ElementOperation):
                 el.value_dimensions[0].range = self.p.default_range
             completed.append(el)
         return np.prod(completed)
-
-
-class collapse(ElementOperation):
-    """
-    Applies any arbitrary collapsing operator across the data elements
-    of the input overlay and returns the result.
-
-    As applying collapse operations on arbitrary data works very
-    naturally using arrays, the result is a Image containing the
-    computed result data.
-    """
-
-    output_type = Image
-
-    operator = param.Callable(np.add, doc="""
-        The collapsing operator to apply between the data attributes
-        of the supplied Views used to collapse the data.
-
-        By default applies elementwise addition across the input
-        data. In unpack is set to True, needs to be used with
-        operators than can take an arbitrary number of inputs.
-
-       Simple example operators include:
-          np.add, np.subtract, np.multiply np.divide
-
-       For more complex example see the documentation for unpack.""")
-
-    unpack = param.Boolean(default=True, doc="""
-       Whether the operator is supplied the .data attributes as an
-       unpack collection of arguments or as a list.
-
-       Using unpack=False, more complex operators may be used such as:
-
-        lambda x: np.mean(x, axis=0)
-        lambda x: np.std(x, axis=0)
-        lambda x: np.var(x, axis=0)
-        """)
-
-    group = param.String(default='Operation', doc="""
-        The group assigned to the result after having applied the operator.""")
-
-    def _process(self, overlay, key=None):
-        if not isinstance(overlay, CompositeOverlay):
-            raise Exception("Operation requires an Overlay type as input")
-
-        if self.p.unpack:
-            new_data = self.p.operator(*[el.data for el in overlay])
-        else:
-            new_data = self.p.operator([el.data for el in overlay])
-
-        return Image(new_data, bounds=overlay[0].bounds,
-                      label=self.get_overlay_label(overlay))
 
 
 
