@@ -61,7 +61,7 @@ class Raster(Element2D):
     @classmethod
     def collapse_data(cls, data_list, function, **kwargs):
         if isinstance(function, np.ufunc):
-            return function(*data_list)
+            return function.reduce(data_list)
         else:
             return function(np.dstack(data_list), axis=-1, **kwargs)
 

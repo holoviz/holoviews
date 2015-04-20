@@ -118,7 +118,7 @@ class Chart(Element2D):
     def collapse_data(cls, data, function, **kwargs):
         new_data = [arr[:, 1:] for arr in data]
         if isinstance(function, np.ufunc):
-            collapsed = function(*new_data)
+            collapsed = function.reduce(new_data)
         else:
             collapsed = function(np.dstack(new_data), axis=-1, **kwargs)
         return np.hstack([data[0][:, 0, np.newaxis], collapsed])
