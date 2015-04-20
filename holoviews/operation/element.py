@@ -83,17 +83,17 @@ class chain(ElementOperation):
     Defining an ElementOperation chain is an easy way to define a new
     ElementOperation from a series of existing ones. The argument is a
     list of ElementOperation (or ElementOperation instances) that are
-    called in turn until the final, transformed element is returned.
+    called in sequence to generate the returned element.
 
-    chain(operations=[collapse.instance(operator=np.add), colormap])
+    chain(operations=[gradient, threshold.instance(level=2)])
 
-    This first sums the data in the input with collapse (using np.add)
-    and then returns an RGB Image applying the default colormap of
-    the colormap operator.
+    This operation can accept an Image instance and would first
+    compute the gradient before thresholding the result at a level of
+    2.0.
 
     Instances are only required when arguments need to be passed to
-    individual operators so that the result is a function over one
-    argument.
+    individual operations so the resulting object is a function over a
+    single argument.
     """
 
     output_type = param.Parameter(Image, doc="""
@@ -111,7 +111,8 @@ class chain(ElementOperation):
     def _process(self, view, key=None):
         processed = view
         for operation in self.p.operations:
-            processed = operation.process_element(processed, key, input_ranges=self.p.input_ranges)
+            processed = operation.process_element(processed, key,
+                                                  input_ranges=self.p.input_ranges)
 
         return processed.clone(group=self.p.group)
 
@@ -151,10 +152,6 @@ class transform(ElementOperation):
                      else self.p.operator(matrix.data))
         return Image(processed, matrix.bounds, group=self.p.group)
 
-
-#==============================#
-# Raster processing operations #
-#==============================#
 
 
 class image_overlay(ElementOperation):
@@ -514,7 +511,3 @@ class collapse_curve(ElementOperation):
 
         return Curve(np.array(data), group=self.p.group,
                      label=self.get_overlay_label(overlay))
-
-
-
-
