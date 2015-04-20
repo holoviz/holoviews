@@ -419,27 +419,6 @@ class convolve(ElementOperation):
 
 
 
-class split_raster(ElementOperation):
-    """
-    Given a Raster element, return the individual value dimensions as
-    an overlay of Image elements.
-    """
-
-    group = param.String(default='', doc="""
-       Optional suffix appended to the group dimensions in the
-       components of the output overlay. Default keeps the group
-       strings identical to those in the input raster.""")
-
-    def _process(self, raster, key=None):
-        matrices = []
-        for i, dim in enumerate(raster.value_dimensions):
-            matrix = Image(raster.data[:, :, i],
-                            value_dimensions = [dim(name=dim.name+self.p.group)])
-            matrices.append(matrix)
-        return np.product(matrices)
-
-
-
 class contours(ElementOperation):
     """
     Given a Image with a single channel, annotate it with contour
