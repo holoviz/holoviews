@@ -14,6 +14,27 @@ from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import unique_iterator, sanitize_identifier, dimension_sort
 
 
+class item_check(object):
+    """
+    Context manager to allow creating NdMapping types without
+    performing the usual item_checks, providing significant
+    speedups when there are a lot of items. Should only be
+    used when both keys and values are guaranteed to be the
+    right type, as is the case for many internal operations.
+    """
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    def __enter__(self):
+        self._enabled = MultiDimensionalMapping._check_items
+        MultiDimensionalMapping._check_items = self.enabled
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        MultiDimensionalMapping._check_items = self._enabled
+
+
+
 class MultiDimensionalMapping(Dimensioned):
     """
     An MultiDimensionalMapping is a Dimensioned mapping (like a
@@ -47,6 +68,7 @@ class MultiDimensionalMapping(Dimensioned):
     data_type = None          # Optional type checking of elements
     _deep_indexable = False
     _sorted = True
+    _check_items = True
 
     def __init__(self, initial_items=None, **params):
         if isinstance(initial_items, NdMapping):
@@ -65,9 +87,15 @@ class MultiDimensionalMapping(Dimensioned):
         self._cached_index_values = {d.name:d.values for d in self.key_dimensions}
         self._cached_categorical = any(d.values for d in self.key_dimensions)
 
-        self._instantiated = False
+        self._instantiated = not any(v == 'initial' for v in self._cached_index_values.values())
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
+        elif not self._check_items and self._instantiated:
+            if isinstance(initial_items, (dict, MultiDimensionalMapping)):
+                initial_items = initial_items.items()
+            self.data = OrderedDict((k if isinstance(k, tuple) else (k,), v)
+                                    for k, v in initial_items)
+            self._resort()
         elif initial_items is not None:
             self.update(OrderedDict(initial_items))
         self._instantiated = True
@@ -193,6 +221,16 @@ class MultiDimensionalMapping(Dimensioned):
         self.data = OrderedDict(resorted)
 
 
+    def clone(self, data=None, shared_data=True, *args, **overrides):
+        """
+        Overrides Dimensioned clone to avoid checking items if data
+        is unchanged.
+        """
+        with item_check(not shared_data and self._check_items):
+            return super(MultiDimensionalMapping, self).clone(data, shared_data,
+                                                              *args, **overrides)
+
+
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
         """
         Splits the mapping into groups by key dimension which are then
@@ -211,9 +249,10 @@ class MultiDimensionalMapping(Dimensioned):
                               if not dim.name in dimensions))
         selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
                                   for key in self.data.keys())
-        groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel))).reindex(inames), **kwargs))
-                  for sel in selects]
-        return container_type(groups, key_dimensions=dims)
+        with item_check(False):
+            groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel))).reindex(inames), **kwargs))
+                      for sel in selects]
+            return container_type(groups, key_dimensions=dims)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
@@ -288,17 +327,20 @@ class MultiDimensionalMapping(Dimensioned):
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
         reduced_dims = set(self._cached_index_names).difference(dimension_labels)
-        dimensions = [self.get_dimension(d) for d in dimension_labels if d not in reduced_dims]
+        dimensions = [self.get_dimension(d) for d in dimension_labels
+                      if d not in reduced_dims]
 
         if len(set(keys)) != len(keys) and not force:
-            raise Exception("Given dimension labels not sufficient to address all values uniquely")
+            raise Exception("Given dimension labels not sufficient"
+                            "to address all values uniquely")
 
         if len(keys):
             constant_dimensions = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
         else:
             constant_dimensions = {}
-        return self.clone(reindexed_items, key_dimensions=dimensions,
-                          constant_dimensions=constant_dimensions)
+        with item_check(indices == sorted(indices)):
+            return self.clone(reindexed_items, key_dimensions=dimensions,
+                              constant_dimensions=constant_dimensions)
 
 
     @property
@@ -373,6 +415,7 @@ class MultiDimensionalMapping(Dimensioned):
             if self.key_dimensions != other.key_dimensions:
                 raise KeyError("Cannot update with NdMapping that has"
                                " a different set of key dimensions.")
+            other = other.data
         for key, data in other.items():
             self._add_item(key, data, sort=False)
         self._resort()
@@ -485,11 +528,10 @@ class NdMapping(MultiDimensionalMapping):
                 items = [(k, v) for k, v in items
                          if condition(values.index(k[cidx]) if values else k[cidx])]
             items = [(k, self._dataslice(v, data_slice)) for k, v in items]
-            if self.ndims == 1:
-                items = [(k[0], v) for (k, v) in items]
             if len(items) == 0:
                 raise KeyError('No items within specified slice.')
-            return self.clone(items)
+            with item_check(False):
+                return self.clone(items)
 
 
     def _expand_slice(self, indices):
@@ -627,7 +669,7 @@ class UniformNdMapping(NdMapping):
         Relabels the UniformNdMapping and all it's Elements
         with the supplied group and label.
         """
-        return self.clone([(k, v.relabel(label, group)) for k, v in self.items()],
+        return self.clone([(k, v.relabel(label, group)) for k, v in self.data.items()],
                           group=group if group else self.group,
                           label=self.label if label is None else label)
 

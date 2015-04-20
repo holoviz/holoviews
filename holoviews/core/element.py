@@ -418,10 +418,10 @@ class HoloMap(UniformNdMapping):
         N separate Maps.
         """
         if not issubclass(self.type, CompositeOverlay):
-            return None, self.clone(self.items())
+            return None, self.clone()
 
         item_maps = OrderedDict()
-        for k, overlay in self.items():
+        for k, overlay in self.data.items():
             for key, el in overlay.items():
                 if key not in item_maps:
                     item_maps[key] = [(k, el)]
@@ -493,7 +493,7 @@ class HoloMap(UniformNdMapping):
                     items.append((new_key, self.empty_element * other[other_key]))
             return self.clone(items, key_dimensions=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
-            items = [(k, v * other) for (k, v) in self.items()]
+            items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
             raise Exception("Can only overlay with {data} or {vmap}.".format(
@@ -603,7 +603,7 @@ class HoloMap(UniformNdMapping):
             samples = set(self.last.closest(linsamples))
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
-                              for k, view in self.items()])
+                              for k, view in self.data.items()])
         return sampled.table().reindex() if sampled.type in [ItemTable, Table] else sampled.table()
 
 
@@ -629,7 +629,7 @@ class HoloMap(UniformNdMapping):
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
         style_prefix = 'Custom[<' + self.name + '>]_'
-        for k, v in self.items():
+        for k, v in self.data.items():
             histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
                                 individually=individually, num_bins=num_bins,
                                 style_prefix=style_prefix, **kwargs)
@@ -871,7 +871,7 @@ class GridSpace(UniformNdMapping):
         """
         if self.type == HoloMap:
             last_items = [(k, v.last if isinstance(v, HoloMap) else v)
-                          for (k, v) in self.items()]
+                          for (k, v) in self.data.items()]
         else:
             last_items = self.data
         return self.clone(last_items)
