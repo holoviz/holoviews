@@ -586,6 +586,8 @@ class VectorFieldPlot(ElementPlot):
         if vfield.data.shape[1] >= 4:
             magnitude_dim = vfield.get_dimension(3).name
             _, max_magnitude = ranges[magnitude_dim]
+        else:
+            max_magnitude = 1.0
 
         min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
 
