@@ -222,7 +222,8 @@ class Plot(param.Parameterized):
         """
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or self.layout_num:
+        elif not self.uniform or len(self) == 1 or self.layout_num\
+          and not isinstance(self, GridPlot):
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
