@@ -60,9 +60,10 @@ class Raster(Element2D):
 
     @classmethod
     def collapse_data(cls, data_list, function, **kwargs):
-        if not function:
-            raise Exception("Must provide function to collapse %s data." % cls.__name__)
-        return function(np.dstack(data_list), axis=-1, **kwargs)
+        if isinstance(function, np.ufunc):
+            return function(*data_list)
+        else:
+            return function(np.dstack(data_list), axis=-1, **kwargs)
 
 
     def sample(self, samples=[], **sample_values):

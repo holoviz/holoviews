@@ -66,8 +66,6 @@ class ItemTable(Element):
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
-        if not function:
-            raise Exception("Must provide function to collapse %s data." % cls.__name__)
         groups = np.vstack([np.array(odict.values()) for odict in data]).T
         return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
 
