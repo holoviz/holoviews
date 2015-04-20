@@ -7,14 +7,11 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, ElementOperation, CompositeOverlay, \
-                   NdOverlay, Overlay, BoundingBox
+from ..core import ElementOperation, NdOverlay, Overlay
 from ..core.util import find_minmax
-from ..element.chart import Histogram, VectorField, Curve
+from ..element.chart import Histogram, Curve
 from ..element.raster import Image, RGB
-from ..element.tabular import ItemTable
 from ..element.path import Contours
-from .normalization import raster_normalization
 
 
 class operation(ElementOperation):
