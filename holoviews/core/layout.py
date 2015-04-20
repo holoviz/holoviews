@@ -57,11 +57,10 @@ class AdjointLayout(Dimensioned):
 
     key_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
 
-    group = param.String(default='AdjointLayout')
-
     layout_order = ['main', 'right', 'top']
 
     _deep_indexable = True
+    _auxiliary_component = False
 
     def __init__(self, data, **params):
 
@@ -81,6 +80,42 @@ class AdjointLayout(Dimensioned):
             data = OrderedDict()
 
         super(AdjointLayout, self).__init__(data, **params)
+
+
+    @property
+    def group(self):
+        if self.main and self.main.group != type(self.main).__name__:
+            return self.main.group
+        else:
+            return 'AdjointLayout'
+
+
+    @group.setter
+    def group(self, group):
+        """
+        AdjointLayout always inherits the group from its main
+        Element, however due to param inheritance a setter is
+        needed.
+        """
+        pass
+
+
+    @property
+    def label(self):
+        if self.main:
+            return self.main.label
+        else:
+            return ''
+
+
+    @label.setter
+    def label(self, label):
+        """
+        AdjointLayout always inherits the label from its main
+        Element, however due to param inheritance a setter is
+        needed.
+        """
+        pass
 
 
     def get(self, key, default=None):

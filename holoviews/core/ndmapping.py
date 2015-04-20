@@ -673,14 +673,42 @@ class UniformNdMapping(NdMapping):
                           group=group if group else self.group,
                           label=self.label if label is None else label)
 
+
+    def clone(self, data=None, shared_data=True, *args, **overrides):
+        """
+        Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs.
+
+        If shared_data is set to True and no data explicitly supplied,
+        the clone will share data with the original.
+        """
+        settings = dict(self.get_param_values())
+        if settings.get('group', None) != self._group:
+            settings.pop('group')
+        if settings.get('label', None) != self._label:
+            settings.pop('label')
+        settings.update(overrides)
+        if data is None and shared_data:
+            data = self.data
+        with item_check(not shared_data and self._check_items):
+            return self.__class__(data, *args, **settings)
+
+
     @property
     def group(self):
         if self._group:
             return self._group
-        elif self._group_check and self._group_check != self.type.__name__:
-            return self._group_check
         else:
+            vals = self.values()
+            groups = {v.group for v in vals
+                      if not v._auxiliary_component}
+            if len(groups) == 1:
+                tp = type(vals[0]).__name__
+                group = list(groups)[0]
+                if tp != group:
+                    return group
             return type(self).__name__
+
 
     @group.setter
     def group(self, group):
@@ -689,14 +717,18 @@ class UniformNdMapping(NdMapping):
                              "characters." % self.group)
         self._group = group
 
+
     @property
     def label(self):
         if self._label:
             return self._label
-        elif self._label_check:
-            return self._label_check
         else:
-            return ''
+            labels = {v.label for v in self.values()
+                      if not v._auxiliary_component}
+            if len(labels) == 1:
+                return list(labels)[0]
+            else:
+                return ''
 
     @label.setter
     def label(self, label):
@@ -723,14 +755,6 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of ViewableElement." %
                                  self.__class__.__name__)
-        if self._group is None and not data._auxiliary_component:
-            self._group_check = data.group
-        if self._label is None and not data._auxiliary_component:
-            self._label_check = data.label
-        elif self._group_check and data.group != self._group_check:
-            raise ValueError("Elements in %s need to have uniform values.")
-        elif self._label_check and data.label != self._label_check:
-            raise ValueError("Elements in %s need to have uniform labels.")
 
         if not traversal.uniform(NdMapping([(0, self), (1, data)])):
             raise ValueError("HoloMaps dimensions must be consistent in %s." %
