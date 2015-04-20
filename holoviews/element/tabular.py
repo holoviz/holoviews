@@ -73,7 +73,7 @@ class ItemTable(Element):
     def dimension_values(self, dimension):
         if isinstance(dimension, int):
             dimension = self._cached_index_names[dimension]
-        elif dimension in self.dimensions('value', label=True):
+        if dimension in self.dimensions('value', label=True):
             return [self.data.get(dimension, np.NaN)]
         else:
             return super(ItemTable, self).dimension_values(dimension)
