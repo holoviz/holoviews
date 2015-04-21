@@ -483,6 +483,9 @@ class Dimensioned(LabelledData):
         if selection == 'all':
             dims = [dim for group in self._dim_groups
                     for dim in getattr(self, group)]
+        elif isinstance(selection, list):
+            dims =  [dim for group in selection
+                     for dim in getattr(self, '%s_dimensions' % group)]
         elif selection in ['key', 'value', 'constant']:
             lmbd, kwargs = lambdas[selection]
             key_traversal = self.traverse(lmbd, **kwargs)
