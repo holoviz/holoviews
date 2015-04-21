@@ -185,6 +185,10 @@ class Overlay(Layout, CompositeOverlay):
                     dimension_names.append(dim.name)
         return dimensions
 
+    @property
+    def shape(self):
+        raise NotImplementedError
+
 
 
 class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
