@@ -53,8 +53,8 @@ class operation(ElementOperation):
     def _process(self, view, key=None):
         retval = self.p.op(view, key)
         if (self.p.output_type is not None):
-            assert isinstance(retval, self.p.output_type, \
-                              "Return value does not match the declared output type ")
+            assert isinstance(retval, self.p.output_type), \
+                              "Return value does not match the declared output type."
         return retval.relabel(group=self.p.group)
 
 
