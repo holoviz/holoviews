@@ -235,6 +235,25 @@ def find_minmax(lims, olims):
     return limits
 
 
+def find_range(values, soft_range=[]):
+   """
+   Safely finds either the numerical min and max of
+   a set of values, falling back to the first and
+   the last value in the sorted list of values.
+   """
+   try:
+      values = np.array(values)
+      values = np.squeeze(values) if len(values.shape) > 1 else values
+      values = np.concatenate([values, soft_range])
+      return np.nanmin(values), np.nanmax(values)
+   except:
+      try:
+         values = sorted(values)
+         return (values[0], values[-1])
+      except:
+         return (None, None)
+
+
 def max_range(ranges):
    """
    Computes the maximal lower and upper bounds from a list bounds.
