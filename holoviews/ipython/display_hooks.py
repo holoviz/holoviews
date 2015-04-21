@@ -18,8 +18,10 @@ except:
 
 try:
     from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
+    from mpl_toolkits.mplot3d import Axes3D
 except:
     new_figure_manager_given_figure = None
+    Axes3D = None
 
 import param
 
@@ -150,6 +152,10 @@ def display_figure(fig, message=None, max_width='100%'):
 
     if backend == 'nbagg' and new_figure_manager_given_figure is not None:
         manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+        # Need to call mouse_init on each 3D axis to enable rotation support
+        for ax in fig.get_axes():
+            if isinstance(ax, Axes3D):
+                ax.mouse_init()
         OutputMagic.nbagg_counter += 1
         manager.show()
         return ''

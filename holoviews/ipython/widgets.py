@@ -3,8 +3,10 @@ from unittest import SkipTest
 
 try:
     from matplotlib.backends.backend_nbagg import CommSocket, new_figure_manager_given_figure
+    from mpl_toolkits.mplot3d import Axes3D
 except:
     CommSocket = object
+    Axes3D = None
 
 try:
     import IPython
@@ -413,6 +415,10 @@ class SelectionWidget(NdWidget):
         elif self.nbagg:
             fig = self.plot[0]
             self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+            # Need to call mouse_init on each 3D axis to enable rotation support
+            for ax in fig.get_axes():
+                if isinstance(ax, Axes3D):
+                    ax.mouse_init()
             OutputMagic.nbagg_counter += 1
             self.comm = CustomCommSocket(self.manager)
 
