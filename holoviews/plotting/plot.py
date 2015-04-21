@@ -185,11 +185,11 @@ class Plot(param.Parameterized):
                 if applies and 'norm' in opts.groups:
                     nopts = opts['norm'].options
                     if 'axiswise' in nopts or 'framewise' in nopts:
-                        norm_opts.update({path: (opts['norm'].options.get('axiswise', False),
-                                                 opts['norm'].options.get('framewise', False))})
+                        norm_opts.update({path: (nopts.get('axiswise', False),
+                                                 nopts.get('framewise', False))})
         element_specs = [spec for eid, spec in element_specs]
         norm_opts.update({spec: (False, False) for spec in element_specs
-                          if not any(spec[1:i] in norm_opts.keys() for i in range(1, 3))})
+                          if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
 
 
