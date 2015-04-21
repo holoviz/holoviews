@@ -23,8 +23,9 @@ def uniform(obj):
     dim_groups = obj.traverse(lambda x: tuple(x.key_dimensions),
                               ('HoloMap',))
     if dim_groups:
+        dgroups = [[d.name for d in dg] for dg in dim_groups]
         return all(set(g1) <= set(g2) or set(g1) >= set(g2)
-                   for g1 in dim_groups for g2 in dim_groups)
+                   for g1 in dgroups for g2 in dgroups)
     return True
 
 
@@ -43,8 +44,9 @@ def unique_dimkeys(obj, default_dim='Frame'):
     if not key_dims:
         return [Dimension(default_dim)], [(0,)]
     dim_groups, keys = zip(*sorted(key_dims, key=lambda x: -len(x[0])))
+    dgroups = [[d.name for d in dg] for dg in dim_groups]
     subset = all(set(g1) <= set(g2) or set(g1) >= set(g2)
-                 for g1 in dim_groups for g2 in dim_groups)
+                 for g1 in dgroups for g2 in dgroups)
     # Find unique keys
     if subset:
         all_dims = sorted({dim for dim_group in dim_groups
