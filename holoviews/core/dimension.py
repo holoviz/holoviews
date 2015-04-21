@@ -274,16 +274,23 @@ class LabelledData(param.Parameterized):
         Traverses any nested LabelledData object (i.e LabelledData
         objects containing LabelledData objects), applying the
         supplied function to each constituent element if the supplied
-        specification strings apply. The output of these function
-        calls are collected and returned in the accumulator list.
+        specifications. The output of these function calls are
+        collected and returned in the accumulator list.
 
         If specs is None, all constituent elements are
-        processed. Otherwise, specs is a list such that an elements is
-        processed if any of the contained string specification
-        matches.
+        processed. Otherwise, specs must be a list of
+        type.group.label specs, types, and functions.
         """
         accumulator = []
-        if specs is None or any(self.matches(spec) for spec in specs):
+        matches = specs is None
+        if not matches:
+            for spec in specs:
+                if callable(spec) and not isinstance(spec, type):
+                    matches = spec(self)
+                else:
+                    matches = self.matches(spec)
+                if matches: break
+        if matches:
             accumulator.append(fn(self))
 
         # Assumes composite objects are iterables
