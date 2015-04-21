@@ -176,6 +176,15 @@ class Chart(Element2D):
             return super(Chart, self).dimension_values(dim)
 
 
+    def range(self, dim):
+        index = self.get_dimension_index(dim)
+        if index < len(self.dimensions()):
+            data = self.data[:, index]
+            return np.nanmin(data), np.nanmax(data)
+        else:
+            return super(Chart, self).dimension_values(dim)
+
+
     def dframe(self):
         import pandas as pd
         columns = [d.name for d in self.dimensions()]

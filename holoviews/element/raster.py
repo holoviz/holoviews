@@ -361,7 +361,12 @@ class Image(SheetCoordinateSystem, Raster):
             if dim_idx:
                 return (b, t)
             return (l, r)
-        return super(Image, self).range(dim, data_range=data_range)
+        elif dim_idx < len(self.value_dimensions) + 2:
+            dim_idx -= 2
+            data = np.atleast_3d(self.data)[:, :, dim_idx]
+            return (data.min(), data.max())
+        else:
+            return super(Image, self).range(dim)
 
 
     def _coord2matrix(self, coord):
