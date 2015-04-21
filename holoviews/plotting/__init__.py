@@ -14,7 +14,7 @@ from matplotlib import rc_params_from_file
 from param.parameterized import bothmethod
 
 from ..core.options import Cycle, Palette, Options, StoreOptions
-from ..core import Dimension
+from ..core import Dimension, Layout, NdLayout, Overlay
 from ..core.io import Exporter
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
@@ -25,7 +25,6 @@ from .raster import * # pyflakes:ignore (API import)
 from .tabular import * # pyflakes:ignore (API import)
 from . import pandas # pyflakes:ignore (API import)
 from . import seaborn # pyflakes:ignore (API import)
-
 
 # Tags used when matplotlib output is to be embedded in HTML
 IMAGE_TAG = "<center><img src='{src}' style='max-width:100%'/><center/>"
