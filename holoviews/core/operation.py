@@ -53,13 +53,13 @@ class Operation(param.ParameterizedFunction):
 
 
     @classmethod
-    def get_overlay_extents(cls, overlay):
+    def get_overlay_bounds(cls, overlay):
         """
         Returns the extents if all the elements of an overlay agree on
         a consistent extents, otherwise raises an exception.
         """
-        if all(el.extents==overlay[0].extents for el in overlay):
-            return overlay[0].extents
+        if all(el.bounds==overlay[0].bounds for el in overlay):
+            return overlay[0].bounds
         else:
             raise ValueError("Extents across the overlay are inconsistent")
 
