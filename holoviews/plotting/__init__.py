@@ -87,8 +87,7 @@ def get_plot_size(obj, percent_size):
         factor = percent_size / 100.0
         return (Plot.figure_inches[0] * factor,
                 Plot.figure_inches[1] * factor)
-
-    if isinstance(obj, (Layout, NdLayout)):
+    if isinstance(obj, (Layout, NdLayout)) and not isinstance(obj, Overlay):
         return (obj.shape[1]*rescale_figure(percent_size)[1],
                 obj.shape[0]*rescale_figure(percent_size)[0])
     elif isinstance(obj, GridSpace):
