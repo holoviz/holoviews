@@ -8,7 +8,7 @@ from matplotlib import gridspec, animation
 
 import param
 from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, Element, CompositeOverlay
+    GridSpace, Layout, Element, CompositeOverlay, Element3D
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import sanitize_identifier, int_to_roman,\
@@ -863,9 +863,9 @@ class LayoutPlot(CompositePlot):
 
             # Create temporary subplots to get projections types
             # to create the correct subaxes for all plots in the layout
-            temp_subplots, new_layout = self._create_subplots(layouts[(r, c)], positions,
-                                                              None, frame_ranges)
-            gidx, gsinds, projs = self.grid_situate(temp_subplots, gidx, layout_type, cols)
+            _, _, projs = self._create_subplots(layouts[(r, c)], positions,
+                                                None, frame_ranges, create=False)
+            gidx, gsinds = self.grid_situate(gidx, layout_type, cols)
 
             layout_key, _ = layout_items.get((r, c), (None, None))
             if isinstance(layout, NdLayout) and layout_key:
@@ -875,10 +875,10 @@ class LayoutPlot(CompositePlot):
             # axis objects
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
                        for ind, proj in zip(gsinds, projs)]
-            subplots, adjoint_layout = self._create_subplots(layouts[(r, c)], positions,
-                                                             layout_dimensions, frame_ranges,
-                                                             dict(zip(positions, subaxes)),
-                                                             num=num+1)
+            subplots, adjoint_layout, _ = self._create_subplots(layouts[(r, c)], positions,
+                                                                layout_dimensions, frame_ranges,
+                                                                dict(zip(positions, subaxes)),
+                                                                num=num+1)
             layout_axes[(r, c)] = subaxes
 
             # Generate the AdjointLayoutsPlot which will coordinate
@@ -896,7 +896,7 @@ class LayoutPlot(CompositePlot):
         return layout_subplots, layout_axes, collapsed_layout
 
 
-    def grid_situate(self, subplots, current_idx, layout_type, subgrid_width):
+    def grid_situate(self, current_idx, layout_type, subgrid_width):
         """
         Situate the current AdjointLayoutPlot in a LayoutPlot. The
         LayoutPlot specifies a layout_type into which the AdjointLayoutPlot
@@ -930,12 +930,11 @@ class LayoutPlot(CompositePlot):
             grid_idx = (bottom_idx if bottom else current_idx) + 2
             start, inds = grid_idx, [current_idx, current_idx+1,
                               bottom_idx, bottom_idx+1]
-        projs = [subplots.get(pos, Plot).projection for pos in positions]
 
-        return start, inds, projs
+        return start, inds
 
 
-    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}, num=1):
+    def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}, num=1, create=True):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -944,6 +943,7 @@ class LayoutPlot(CompositePlot):
         empty axes as necessary.
         """
         subplots = {}
+        projections = []
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(show_title=False, adjoined=layout)
         for pos in positions:
@@ -951,11 +951,29 @@ class LayoutPlot(CompositePlot):
             view = layout.get(pos, None)
             ax = axes.get(pos, None)
             if view is None:
+                projections.append(None)
                 continue
+
+            # Determine projection type for plot
+            components = view.traverse(lambda x: x)
+            projs = ['3d' if isinstance(c, Element3D) else
+                     Store.lookup_options(c, 'plot').options.get('projection', None)
+                     for c in components]
+            projs = [p for p in projs if p is not None]
+            if len(set(projs)) > 1:
+                raise Exception("A single axis may only be assigned one projection type")
+            elif projs:
+                projections.append(projs[0])
+            else:
+                projections.append(None)
+
+            if not create:
+                continue
+
             # Customize plotopts depending on position.
             plotopts = Store.lookup_options(view, 'plot').options
-            # Options common for any subplot
 
+            # Options common for any subplot
             override_opts = {}
             sublabel_opts = {}
             if pos == 'main':
@@ -1001,7 +1019,7 @@ class LayoutPlot(CompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
             else:
                 adjoint_clone[pos] = subplots[pos].map
-        return subplots, adjoint_clone
+        return subplots, adjoint_clone, projections
 
 
     def update_handles(self, axis, view, key, ranges=None):
