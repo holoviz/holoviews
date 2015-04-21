@@ -13,7 +13,7 @@ except:
 
 import param
 
-from ..core.util import sanitize_identifier
+from ..core.util import sanitize_identifier, max_range, find_range
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -581,7 +581,7 @@ class Dimensioned(LabelledData):
                             (dimension, self.__class__.__name__))
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dimension, data_range=True):
         """
         Returns the range of values along the specified dimension.
 
@@ -589,7 +589,7 @@ class Dimensioned(LabelledData):
         the appropriate range. Otherwise, (None,None) is returned to
         indicate that no range is defined.
         """
-        dimension = self.get_dimension(dim)
+        dimension = self.get_dimension(dimension)
         if dimension is None:
             return (None, None)
         if dimension.range != (None, None):
@@ -598,21 +598,14 @@ class Dimensioned(LabelledData):
             return (None, None)
         soft_range = [r for r in dimension.soft_range
                       if r is not None]
-        dim_vals = self.dimension_values(dimension.name)
-        try:
-            dim_vals = np.array(dim_vals)
-            dim_vals = np.squeeze(dim_vals) if len(dim_vals.shape) > 1 else dim_vals
-            dim_vals = np.concatenate([dim_vals, soft_range])
-            return np.nanmin(dim_vals), np.nanmax(dim_vals)
-        except:
-            try:
-                if dim in self.dimensions() and len(dim_vals):
-                    if not self._sorted:
-                        dim_vals = sorted(dim_vals)
-                    return (dim_vals[0], dim_vals[-1])
-            except:
-                pass
-            return (None, None)
+        if dimension in self.key_dimensions or dimension in self.value_dimensions:
+            dim_vals = self.dimension_values(dimension.name)
+            return find_range(dim_vals, soft_range)
+        match_fn = lambda x: (dimension in x.key_dimensions) or (dimension in x.value_dimensions)
+        range_fn = lambda x: x.range(dimension.name)
+        ranges = self.traverse(range_fn, [match_fn])
+        drange = max_range(ranges)
+        return drange
 
 
     def __repr__(self):
