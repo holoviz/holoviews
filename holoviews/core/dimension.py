@@ -604,8 +604,9 @@ class Dimensioned(LabelledData):
         if dimension in self.key_dimensions or dimension in self.value_dimensions:
             dim_vals = self.dimension_values(dimension.name)
             return find_range(dim_vals, soft_range)
-        match_fn = lambda x: (dimension in x.key_dimensions) or (dimension in x.value_dimensions)
-        range_fn = lambda x: x.range(dimension.name)
+        dname = dimension.name
+        match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
+        range_fn = lambda x: x.range(dname)
         ranges = self.traverse(range_fn, [match_fn])
         drange = max_range(ranges)
         return drange
