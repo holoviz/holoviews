@@ -1,4 +1,4 @@
-from itertools import groupby
+from collections import Counter
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
@@ -485,9 +485,12 @@ class OverlayPlot(ElementPlot):
     OverlayPlot supports compositors processing of Overlays across maps.
     """
 
-    style_group = param.List(['group'], bounds=(1, 2), doc="""Which Element parts of the
-        Element specification the Elements will be grouped by for styling.
-        Accepts any combination of label and group.""")
+    style_grouping = param.Integer(default=2,
+                                   doc="""The length of the type.group.label
+        spec that will be used to group Elements into style groups, i.e.
+        a style_grouping value of 1 will group just by type, a value of 2
+        will group by type and group and a value of 3 will group by the
+        full specification.""")
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
@@ -517,17 +520,29 @@ class OverlayPlot(ElementPlot):
     def _create_subplots(self, ranges):
         subplots = OrderedDict()
 
+        length = self.style_grouping
+        ordering = util.layer_sort(self.map)
         keys, vmaps = self.map.split_overlays()
-        group_fn = lambda s: tuple(getattr(s.last, sg) for sg in self.style_group)
-        style_groups = {k: list(v) for k,v in groupby(vmaps, group_fn)}
-        style_lengths = {k: len(v) for k, v, in style_groups.items()}
-        style_iter = {k: enumerate(v) for k, v, in style_groups.items()}
+        group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
+        map_lengths = Counter()
+        for m in vmaps:
+            map_lengths[group_fn(m)[:length]] += len(m)
+
+        zoffset = 0
         overlay_type = 1 if self.map.type == Overlay else 2
-        for zorder, (key, vmap) in enumerate(zip(keys, vmaps)):
-            style_key = group_fn(vmap)
-            cyclic_index,  _ = next(style_iter[style_key])
-            length = style_lengths[style_key]
-            style = Store.lookup_options(vmap.last, 'style').max_cycles(length)
+        group_counter = Counter()
+        for (key, vmap) in zip(keys, vmaps):
+            if self.map.type == Overlay:
+                style_key = (vmap.type.__name__,) + key
+            else:
+                if not isinstance(key, tuple): key = (key,)
+                style_key = group_fn(vmap) + key
+            group_key = style_key[:length]
+            zorder = ordering.index(style_key) + zoffset
+            cyclic_index = group_counter[group_key]
+            group_counter[group_key] += 1
+            group_length = map_lengths[group_key]
+            style = Store.lookup_options(vmap.last, 'style').max_cycles(group_length)
             plotopts = dict(keys=self.keys, axis=self.handles['axis'], style=style,
                             cyclic_index=cyclic_index, figure=self.handles['fig'],
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
