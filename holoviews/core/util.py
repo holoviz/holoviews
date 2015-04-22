@@ -3,6 +3,8 @@ import numbers
 import itertools
 import string
 import unicodedata
+from collections import defaultdict
+from itertools import takewhile, count
 
 import numpy as np
 import param
@@ -423,3 +425,82 @@ class ProgressIndicator(param.Parameterized):
 
     def __call__(self, completion):
         raise NotImplementedError
+
+
+def sort_topologically(graph):
+    """
+    Stackless topological sorting.
+
+    graph = {
+        3: [1],
+        5: [3],
+        4: [2],
+        6: [4],
+    }
+
+    sort_topologically(graph)
+    [set([1, 2]), set([3, 4]), set([5, 6])]
+    """
+    levels_by_name = {}
+    names_by_level = defaultdict(set)
+
+    def add_level_to_name(name, level):
+        levels_by_name[name] = level
+        names_by_level[level].add(name)
+
+
+    def walk_depth_first(name):
+        stack = [name]
+        while(stack):
+            name = stack.pop()
+            if name in levels_by_name:
+                continue
+
+            if name not in graph or not graph[name]:
+                level = 0
+                add_level_to_name(name, level)
+                continue
+
+            children = graph[name]
+
+            children_not_calculated = [child for child in children if child not in levels_by_name]
+            if children_not_calculated:
+                stack.append(name)
+                stack.extend(children_not_calculated)
+                continue
+
+            level = 1 + max(levels_by_name[lname] for lname in children)
+            add_level_to_name(name, level)
+
+    for name in graph:
+        walk_depth_first(name)
+
+    return list(takewhile(lambda x: x is not None, (names_by_level.get(i, None) for i in count())))
+
+
+def layer_sort(hmap):
+   """
+   Find a global ordering for layers in a HoloMap of CompositeOverlay
+   types.
+   """
+   orderings = {}
+   for o in hmap:
+      okeys = [(type(v).__name__, v.group, v.label) + k if len(o.key_dimensions) else
+               (type(v).__name__,) + k for k, v in o.data.items()]
+      if len(okeys) == 1 and not okeys[0] in orderings:
+         orderings[okeys[0]] = []
+      else:
+         orderings.update({k: [] if k == v else [v] for k, v in zip(okeys[1:], okeys)})
+   return [i for g in sort_topologically(orderings) for i in sorted(g)]
+
+
+def layer_groups(ordering, length=2):
+   """
+   Splits a global ordering of Layers into groups based on a slice of
+   the spec.  The grouping behavior can be modified by changing the
+   length of spec the entries are grouped by.
+   """
+   group_orderings = defaultdict(list)
+   for el in ordering:
+      group_orderings[el[:length]].append(el)
+   return group_orderings
