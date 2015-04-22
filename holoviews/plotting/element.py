@@ -7,9 +7,9 @@ import numpy as np
 
 import param
 
+from ..core import util
 from ..core.options import Store
 from ..core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..core.util import match_spec, basestring, safe_unicode, max_extents
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
 from .plot import Plot
@@ -207,7 +207,7 @@ class ElementPlot(Plot):
                 extents = view.extents
             else:
                 extent_list = self.map.traverse(lambda x: x.extents, [Element])
-                extents = max_extents(extent_list, self.projection == '3d')
+                extents = util.max_extents(extent_list, self.projection == '3d')
         else:
             extents = (np.NaN,) * num
         return tuple(l2 if l2 is None or np.isfinite(l2) else l1 for l1, l2 in zip(range_extents, extents))
@@ -222,9 +222,9 @@ class ElementPlot(Plot):
         if self.layout_dimensions:
             title = ''
         else:
-            title_format = safe_unicode(self.title_format)
-            title = title_format.format(label=safe_unicode(label),
-                                        group=safe_unicode(group),
+            title_format = util.safe_unicode(self.title_format)
+            title = title_format.format(label=util.safe_unicode(label),
+                                        group=util.safe_unicode(group),
                                         type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
@@ -332,7 +332,7 @@ class ElementPlot(Plot):
         elif self.aspect == 'square':
             axis.set_aspect((1./axis.get_data_ratio()))
         elif self.aspect not in [None, 'square']:
-            if isinstance(self.aspect, basestring):
+            if isinstance(self.aspect, util.basestring):
                 axis.set_aspect(self.aspect)
             else:
                 axis.set_aspect(((1./axis.get_data_ratio()))/self.aspect)
@@ -467,7 +467,7 @@ class ElementPlot(Plot):
             return
         if self.normalize:
             ranges = self.compute_ranges(self.map, key, ranges)
-            ranges = match_spec(view, ranges)
+            ranges = util.match_spec(view, ranges)
         axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
@@ -537,6 +537,8 @@ class OverlayPlot(ElementPlot):
             plotype = Store.registry[type(vmap.last)]
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)
+            if issubclass(plotype, OverlayPlot):
+                zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
 
         return subplots
 
@@ -618,9 +620,9 @@ class OverlayPlot(ElementPlot):
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
                 else:
-                    sp_ranges = match_spec(layer, ranges) if ranges else {}
+                    sp_ranges = util.match_spec(layer, ranges) if ranges else {}
                 extents.append(subplot.get_extents(layer, sp_ranges))
-        return max_extents(extents, self.projection == '3d')
+        return util.max_extents(extents, self.projection == '3d')
 
 
     def _format_title(self, key):
@@ -633,9 +635,9 @@ class OverlayPlot(ElementPlot):
         if self.layout_dimensions:
             title = ''
         else:
-            title_format = safe_unicode(self.title_format)
-            title = title_format.format(label=safe_unicode(label),
-                                        group=safe_unicode(group),
+            title_format = util.safe_unicode(self.title_format)
+            title = title_format.format(label=util.safe_unicode(label),
+                                        group=util.safe_unicode(group),
                                         type=type_name)
         dim_title = self._frame_title(key, 2)
         if not title or title.isspace():
