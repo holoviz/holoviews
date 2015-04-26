@@ -2,6 +2,7 @@ import numpy as np
 
 import param
 
+from ..core import util
 from ..core import OrderedDict, Dimension, NdMapping, Element2D, NdElement, HoloMap
 from .tabular import ItemTable, Table
 
@@ -176,13 +177,18 @@ class Chart(Element2D):
             return super(Chart, self).dimension_values(dim)
 
 
-    def range(self, dim):
+    def range(self, dim, data_range=True):
         index = self.get_dimension_index(dim)
-        if index < len(self.dimensions()):
+        dim = self.get_dimension(dim_idx)
+        if dim.range != (None, None):
+            return dim.range
+        elif index < len(self.dimensions()):
             data = self.data[:, index]
-            return np.nanmin(data), np.nanmax(data)
+            data_range = np.nanmin(data), np.nanmax(data)
+        if data_range:
+            return util.max_range([data_range, dim.soft_range])
         else:
-            return super(Chart, self).dimension_values(dim)
+            return dim.soft_range
 
 
     def dframe(self):

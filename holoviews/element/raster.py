@@ -3,6 +3,7 @@ import numpy as np
 import colorsys
 import param
 
+from ..core import util
 from ..core import OrderedDict, Dimension, NdMapping, Element2D, Overlay
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
@@ -356,17 +357,23 @@ class Image(SheetCoordinateSystem, Raster):
 
     def range(self, dim, data_range=True):
         dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
-        if dim_idx in [0, 1]:
+        dim = self.get_dimension(dim_idx)
+        if dim.range != (None, None):
+            return dim.range
+        elif dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
             if dim_idx:
-                return (b, t)
-            return (l, r)
+                data_range = (b, t)
+            else:
+                data_range = (l, r)
         elif dim_idx < len(self.value_dimensions) + 2:
             dim_idx -= 2
             data = np.atleast_3d(self.data)[:, :, dim_idx]
-            return (data.min(), data.max())
+            data_range = (data.min(), data.max())
+        if data_range:
+            return util.max_range([data_range, dim.soft_range])
         else:
-            return super(Image, self).range(dim)
+            return dim.soft_range
 
 
     def _coord2matrix(self, coord):
