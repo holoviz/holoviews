@@ -4,7 +4,6 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 from operator import itemgetter
-import numpy as np
 
 try:
     from cyordereddict import OrderedDict
