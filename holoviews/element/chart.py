@@ -178,12 +178,12 @@ class Chart(Element2D):
 
 
     def range(self, dim, data_range=True):
-        index = self.get_dimension_index(dim)
+        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
         dim = self.get_dimension(dim_idx)
         if dim.range != (None, None):
             return dim.range
-        elif index < len(self.dimensions()):
-            data = self.data[:, index]
+        elif dim_idx < len(self.dimensions()):
+            data = self.data[:, dim_idx]
             data_range = np.nanmin(data), np.nanmax(data)
         if data_range:
             return util.max_range([data_range, dim.soft_range])
