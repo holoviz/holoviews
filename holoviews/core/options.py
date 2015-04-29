@@ -78,13 +78,14 @@ class Cycle(param.Parameterized):
     attribute.
     """
 
-    key = param.String(default='grayscale', doc="""
-       Palettes look up the Palette values based on some key.""")
+    key = param.String(default='default_colors', doc="""
+       The key in the default_cycles dictionary used to specify the
+       color cycle if values is not supplied. """)
 
     values = param.List(default=[], doc="""
        The values the cycle will iterate over.""")
 
-    default_cycles = {}
+    default_cycles = {'default_colors': []}
 
     def __init__(self, **params):
         super(Cycle, self).__init__(**params)
@@ -134,6 +135,9 @@ class Palette(Cycle):
     The range and samples may conveniently be overridden
     with the __getitem__ method.
     """
+
+    key = param.String(default='grayscale', doc="""
+       Palettes look up the Palette values based on some key.""")
 
     range = param.NumericTuple(default=(0, 1), doc="""
         The range from which the Palette values are sampled.""")
