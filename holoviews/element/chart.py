@@ -99,8 +99,8 @@ class Chart(Element2D):
                 data = data[np.logical_and(clip_start, clip_stop), :]
                 lbound = self.extents[idx]
                 ubound = self.extents[self.ndims:][idx]
-                lower_bounds.append(start if slc.start else lbound)
-                upper_bounds.append(stop if slc.stop else ubound)
+                lower_bounds.append(lbound if slc.start is None else slc.start)
+                upper_bounds.append(ubound if slc.stop is None else slc.stop)
             else:
                 data_index = data[:, idx] == slc
                 if not any(data_index):
