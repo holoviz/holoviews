@@ -83,64 +83,6 @@ class Contours(Path):
         return super(Contours, self).dimension_values(dim)
 
 
-class Box(Path):
-    """
-    Draw a centered box of a given width at the given position with
-    the specified aspect ratio (if any).
-    """
-
-    group = param.String(default='Box')
-
-    def __init__(self, x, y, height, aspect=1.0, **params):
-        width = height * aspect
-        (l,b,r,t) = (x-width/2.0, y-height/2, x+width/2.0, y+height/2)
-        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
-        super(Box, self).__init__([box], **params)
-
-
-class Ellipse(Path):
-    """
-    Draw an axis-aligned ellipse at the specified x,y position with
-    the given width and aspect ratio. By default draws a circle
-    (aspect=1).
-
-    Note that as a subclass of Path, internally an Ellipse is a
-    sequency of (x,y) sample positions. Ellipse could also be
-    implemented as an annotation that uses a more appropriate
-    matplotlib artist.
-    """
-
-    group = param.String(default='Ellipse')
-
-    def __init__(self, x, y, height, aspect=1, samples=100, **params):
-
-        angles = np.linspace(0, 2*np.pi, samples)
-        radius = height / 2.0
-        ellipse = np.array(
-            list(zip(radius*aspect*np.sin(angles)+x,
-                     radius*np.cos(angles)+y)))
-        super(Ellipse, self).__init__([ellipse], **params)
-
-
-class Bounds(Path):
-    """
-    Draw a centered square bounds of a given radius or an arbitrary
-    rectangle with the specified (left, bottom, right, top)
-    coordinates.
-    """
-
-    group = param.String(default='Bounds')
-
-    def __init__(self, data, **params):
-        if not isinstance(data, (tuple, float)):
-            raise ValueError("Input to Box must be either a tuple of format (l,b,r,t) or a radius")
-        elif isinstance(data, float):
-            data = (-data, -data, data, data)
-
-        (l,b,r,t) = data
-        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
-        super(Bounds, self).__init__([box], **params)
-
 
 class Polygons(Contours):
     """
@@ -153,3 +95,105 @@ class Polygons(Contours):
     value_dimensions = param.List(default=[Dimension('Value')], doc="""
         Polygons optionally accept a value dimension, corresponding
         to the supplied value.""", bounds=(1,1))
+
+
+
+class BaseShape(Path):
+    """
+    A BaseShape is a Path that can be succinctly expressed by a small
+    number of parameters instead of a full path specification. For
+    instance, a circle may be expressed by the center position and
+    radius instead of an explicit list of path coordinates.
+    """
+
+    __abstract = True
+
+    def clone(self, *args, **overrides):
+        """
+        Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs.
+        """
+        settings = dict(self.get_param_values(), **overrides)
+        return self.__class__(*args, **settings)
+
+
+
+class Box(BaseShape):
+    """
+    Draw a centered box of a given width at the given position with
+    the specified aspect ratio (if any).
+    """
+
+    x = param.Number(default=0, doc="The x-position of the box center.")
+
+    y = param.Number(default=0, doc="The y-position of the box center.")
+
+    height = param.Number(default=1, doc="The height of the box.")
+
+    aspect= param.Number(default=1, doc=""""
+        The aspect ratio of the box if supplied, otherwise an aspect
+        of 1.0 is used.""")
+
+    group = param.String(default='Box', doc="The assigned group name.")
+
+    def __init__(self, x, y, height, **params):
+        super(Box, self).__init__([], x=x,y =y, height=height, **params)
+        width = height * self.aspect
+        (l,b,r,t) = (x-width/2.0, y-height/2, x+width/2.0, y+height/2)
+        self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]
+
+
+class Ellipse(BaseShape):
+    """
+    Draw an axis-aligned ellipse at the specified x,y position with
+    the given width and aspect ratio. By default draws a circle
+    (aspect=1).
+
+    Note that as a subclass of Path, internally an Ellipse is a
+    sequency of (x,y) sample positions. Ellipse could also be
+    implemented as an annotation that uses a more appropriate
+    matplotlib artist.
+    """
+    x = param.Number(default=0, doc="The x-position of the ellipse center.")
+
+    y = param.Number(default=0, doc="The y-position of the ellipse center.")
+
+    height = param.Number(default=1, doc="The height of the ellipse.")
+
+    aspect= param.Number(default=1.0, doc="The aspect ratio of the ellipse.")
+
+    samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
+
+    group = param.String(default='Ellipse', doc="The assigned group name.")
+
+    def __init__(self, x, y, height, **params):
+        super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
+        angles = np.linspace(0, 2*np.pi, self.samples)
+        radius = height / 2.0
+        self.data = [np.array(
+            list(zip(radius*self.aspect*np.sin(angles)+x,
+                     radius*np.cos(angles)+y)))]
+
+
+class Bounds(BaseShape):
+    """
+    An arbitrary axis-aligned bounding rectangle defined by the (left,
+    bottom, right, top) coordinate positions.
+
+    If supplied a single real number as input, this value will be
+    treated as the radius of a square, zero-center box which will be
+    used to compute the corresponding lbrt tuple.
+    """
+
+    lbrt = param.NumericTuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
+          The (left, bottom, right, top) coordinates of the bounding box.""")
+
+    group = param.String(default='Bounds', doc="The assigned group name.")
+
+    def __init__(self, lbrt, **params):
+        if not isinstance(lbrt, tuple):
+            lbrt = (-lbrt, -lbrt, lbrt, lbrt)
+
+        super(Bounds, self).__init__([], lbrt=lbrt, **params)
+        (l,b,r,t) = self.lbrt
+        self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]
