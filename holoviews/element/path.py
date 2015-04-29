@@ -42,6 +42,19 @@ class Path(Element2D):
         super(Path, self).__init__(data, **params)
 
 
+    def __getitem__(self, key):
+        if not isinstance(key, tuple) or len(key) == 1:
+            key = (key, slice(None))
+        elif len(key) == 0: return self.clone()
+        if not all(isinstance(k, slice) for k in key):
+            raise IndexError("%s only support slice indexing" %
+                             self.__class__.__name__)
+        xkey, ykey = key
+        xstart, xstop = xkey.start, xkey.stop
+        ystart, ystop = ykey.start, ykey.stop
+        return self.clone(extents=(xstart, ystart, xstop, ystop))
+
+
     def __len__(self):
         return len(self.data)
 
