@@ -86,7 +86,7 @@ class Overlay(Layout, CompositeOverlay):
 
     @classmethod
     def _from_values(cls, val):
-        return reduce(lambda x,y: x*y, val).display('auto')
+        return reduce(lambda x,y: x*y, val).map(lambda x: x.display('auto'), [Overlay])
 
 
     def __init__(self, items=None, group=None, label=None, **params):
