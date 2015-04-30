@@ -319,6 +319,39 @@ class Histogram(Element2D):
         self._extents = (None, None, None, None) if extents is None else extents
 
 
+    def __getitem__(self, key):
+        """
+        Implements slicing or indexing of the Histogram
+        """
+        if key is (): return self # May no longer be necessary
+        if isinstance(key, tuple) and len(key) > self.ndims:
+            raise Exception("Slice must match number of key_dimensions.")
+
+        centers = [(float(l)+r)/2 for (l,r) in zip(self.edges, self.edges[1:])]
+        if isinstance(key, slice):
+            start, stop = key.start, key.stop
+            if [start, stop] == [None,None]: return self
+            start_idx, stop_idx = None,None
+            if start is not None:
+                start_idx = np.digitize([start], centers, right=True)[0]
+            if stop is not None:
+                stop_idx = np.digitize([stop], centers, right=True)[0]
+
+            slice_end = stop_idx+1 if stop_idx is not None else None
+            slice_values = self.values[start_idx:stop_idx]
+            slice_edges =  self.edges[start_idx: slice_end]
+
+            extents = (min(slice_edges), self.extents[1],
+                       max(slice_edges), self.extents[3])
+            return self.clone((slice_values, slice_edges), extents=extents)
+        else:
+            if not (self.edges.min() <= key < self.edges.max()):
+                raise Exception("Key value %s is out of the histogram bounds" % key)
+            idx = np.digitize([key], self.edges)[0]
+            return self.values[idx-1 if idx>0 else idx]
+
+
+
     def _process_data(self, values, edges):
         """
         Ensure that edges are specified as left and right edges of the
@@ -358,7 +391,7 @@ class Histogram(Element2D):
 
     @extents.setter
     def extents(self, extents):
-        return (np.min(self.edges), None, np.max(self.edges), None)
+        self._extents = extents
 
 
     def dimension_values(self, dim):
