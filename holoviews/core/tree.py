@@ -228,8 +228,17 @@ class AttrTree(object):
 
 
     def get(self, identifier, default=None):
-        return self.__dict__.get(identifier, default)
-
+        split_label = (tuple(identifier.split('.'))
+                       if isinstance(identifier, str) else tuple(identifier))
+        if len(split_label) == 1:
+            identifier = split_label[0]
+            return self.__dict__.get(identifier, default)
+        path_item = self
+        for identifier in split_label:
+            if path_item == default or path_item is None:
+                return default
+            path_item = path_item.get(identifier, default)
+        return path_item
 
     def keys(self):
         return list(self.data.keys())
