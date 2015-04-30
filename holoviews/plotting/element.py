@@ -688,7 +688,7 @@ class DrawPlot(ElementPlot):
 
     _abstract = True
 
-    def draw(self, axis, element):
+    def draw(self, axis, element, ranges=None):
         """
         The only method that needs to be overridden in subclasses.
 
@@ -699,12 +699,16 @@ class DrawPlot(ElementPlot):
         raise NotImplementedError
 
     def __call__(self, ranges=None):
-        self.draw(self.handles['axis'], self.map.last)
-        return self._finalize_axis(self.keys[-1])
+        element = self.map.last
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = util.match_spec(element, ranges)
+        self.draw(self.handles['axis'], self.map.last, ranges)
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
 
     def update_handles(self, axis, element, key, ranges=None):
         if self.zorder == 0 and axis: axis.cla()
-        self.draw(axis, element)
+        self.draw(axis, element, ranges)
 
 
 
