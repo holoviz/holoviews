@@ -141,6 +141,7 @@ class Comparison(ComparisonInterface):
 
         # Charts
         cls.equality_type_funcs[Curve] =        cls.compare_curve
+        cls.equality_type_funcs[ErrorBars] =    cls.compare_errorbars
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
@@ -407,6 +408,11 @@ class Comparison(ComparisonInterface):
     def compare_curve(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, 'Curve data')
+
+    @classmethod
+    def compare_errorbars(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, 'ErrorBars data')
 
     @classmethod
     def compare_scatter(cls, el1, el2, msg=None):
