@@ -108,6 +108,16 @@ class Overlay(Layout, CompositeOverlay):
         return Overlay([(k, v[key]) for k, v in self.items()])
 
 
+    def get(self, identifier, default=None):
+        if isinstance(identifier, int):
+            values = self.data.values()
+            if 0 <= identifier < len(values):
+                return self.data.values()[identifier]
+            else:
+                return default
+        return super(Overlay, self).get(identifier, default)
+
+
     def __add__(self, other):
         return Layout.from_values(self) + Layout.from_values(other)
 
