@@ -14,6 +14,8 @@ from ..element.raster import Image, RGB
 from ..element.path import Contours
 
 
+def identity(x,k): return x
+
 class operation(ElementOperation):
     """
     The most generic operation that wraps any callable into an
@@ -30,8 +32,6 @@ class operation(ElementOperation):
     Could be used to implement a collapse operation to subtracts the
     data between Rasters in an Overlay.
     """
-
-    def identity(x,k): return x
 
     output_type = param.Parameter(None, doc="""
        The output element type which may be None to disable type
