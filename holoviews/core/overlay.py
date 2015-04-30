@@ -100,6 +100,14 @@ class Overlay(Layout, CompositeOverlay):
                                  **{k:v for k,v in params.items() if k in view_params})
 
 
+    def __getitem__(self, key):
+        """
+        Allows transparently slicing the Elements in the Overlay
+        to select specific layers in an Overlay use the .get method.
+        """
+        return Overlay([(k, v[key]) for k, v in self.items()])
+
+
     def __add__(self, other):
         return Layout.from_values(self) + Layout.from_values(other)
 
