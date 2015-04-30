@@ -32,7 +32,7 @@ def capitalize_unicode_name(s):
     return s[:index] + tail
 
 
-class sanitize_identifier(param.ParameterizedFunction):
+class sanitize_identifier_fn(param.ParameterizedFunction):
     """
     Sanitizes group/label values for use in AttrTree attribute
     access. Depending on the version parameter, either sanitization
@@ -221,6 +221,8 @@ class sanitize_identifier(param.ParameterizedFunction):
                 sanitized.extend([chars])
                 chars=''
         return self._process_underscores(sanitized + ([chars] if chars else []))
+
+sanitize_identifier = sanitize_identifier_fn.instance()
 
 
 def find_minmax(lims, olims):
