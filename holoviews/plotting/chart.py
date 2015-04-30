@@ -460,7 +460,8 @@ class SideHistogramPlot(HistogramPlot):
 
 
     def get_extents(self, element, ranges):
-        x0, y0, x1, y1 = element.extents
+        x0, _, x1, _ = element.extents
+        _, y1 = element.range(1)
         return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
 
