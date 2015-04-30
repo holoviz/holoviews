@@ -183,8 +183,15 @@ class Chart(Element2D):
         if dim.range != (None, None):
             return dim.range
         elif dim_idx < len(self.dimensions()):
-            data = np.atleast_2d(self.data)[:, dim_idx]
-            data_range = np.nanmin(data), np.nanmax(data)
+            if self.data.ndim == 1:
+                data = np.atleast_2d(self.data).T
+            else:
+                data = self.data
+            if len(data):
+                data = data[:, dim_idx]
+                data_range = np.nanmin(data), np.nanmax(data)
+            else:
+                data_range = (np.NaN, np.NaN)
         if data_range:
             return util.max_range([data_range, dim.soft_range])
         else:
