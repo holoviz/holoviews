@@ -294,7 +294,9 @@ Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad})
 # Register default Element options
 Store.register_plots(style_aliases={'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                                     'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
-                                    'linestyle': ['ls'], 'size': ['s'], 'color': ['c']})
+                                    'linestyle': ['ls'], 'size': ['s'], 'color': ['c'],
+                                    'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
+                                    'markerfacecolor': ['mfc'], 'markersize': ['ms']})
 
 # Charts
 Store.options.Curve = Options('style', color=Cycle(), linewidth=2)
