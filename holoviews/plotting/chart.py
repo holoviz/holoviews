@@ -148,11 +148,11 @@ class CurvePlot(ChartPlot):
 class ErrorPlot(ChartPlot):
     """
     ErrorPlot plots the ErrorBar Element type and supporting
-    both horizontal and vertical error bars via the vertical
+    both horizontal and vertical error bars via the 'horizontal'
     plot option.
     """
 
-    vertical = param.Boolean(default=False, doc="""
+    horizontal = param.Boolean(default=False, doc="""
        Whether to draw horizontal or vertical error bars.""")
 
     style_opts = ['ecolor', 'elinewidth', 'capsize', 'capthick',
@@ -173,7 +173,7 @@ class ErrorPlot(ChartPlot):
 
         error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
                             zorder=self.zorder)
-        kwarg = 'xerr' if self.vertical else 'yerr'
+        kwarg = 'xerr' if self.horizontal else 'yerr'
         error_kwargs[kwarg] = element.data[:, 2:4].T
         _, (bottoms, tops), verts = axis.errorbar(element.data[:, 0],
                                                   element.data[:, 1],
@@ -191,7 +191,7 @@ class ErrorPlot(ChartPlot):
         tops = self.handles['tops']
         verts = self.handles['verts']
         paths = verts.get_paths()
-        if self.vertical:
+        if not self.horizontal:
             bdata = data[:, 0] - data[:, 2]
             tdata = data[:, 0] + data[:, 3]
             tops.set_xdata(bdata)
