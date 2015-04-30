@@ -48,7 +48,7 @@ class CompositeOverlay(ViewableElement, Composable):
         if not any([valid_ind, valid_label]):
             raise TypeError("Please supply a suitable index or label for the histogram data")
 
-        hist = self[index].hist(adjoin=False, **kwargs)
+        hist = self.get(index).hist(adjoin=False, **kwargs)
         if adjoin:
             layout = self << hist
             layout.main_layer = index
