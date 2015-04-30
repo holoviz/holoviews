@@ -10,7 +10,7 @@ import param
 from ..core.options import Store
 from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
 from ..core.util import match_spec
-from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField
+from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars
 from .element import ElementPlot
 from .plot import Plot
 
@@ -141,6 +141,72 @@ class CurvePlot(ChartPlot):
             data = self._cyclic_curves(view)
         self.handles['line_segment'].set_xdata(data[:, 0])
         self.handles['line_segment'].set_ydata(data[:, 1])
+
+
+
+
+class ErrorPlot(ChartPlot):
+    """
+    ErrorPlot plots the ErrorBar Element type and supporting
+    both horizontal and vertical error bars via the vertical
+    plot option.
+    """
+
+    vertical = param.Boolean(default=False, doc="""
+       Whether to draw horizontal or vertical error bars.""")
+
+    style_opts = ['ecolor', 'elinewidth', 'capsize', 'capthick',
+                  'barsabove', 'lolims', 'uplims', 'xlolims',
+                  'errorevery', 'xuplims', 'alpha', 'linestyle',
+                  'linewidth', 'markeredgecolor', 'markeredgewidth',
+                  'markerfacecolor', 'markersize', 'solid_capstyle',
+                  'solid_joinstyle', 'dashes', 'color']
+
+
+    def __call__(self, ranges=None):
+        element = self.map.last
+        axis = self.handles['axis']
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
+                            zorder=self.zorder)
+        kwarg = 'xerr' if self.vertical else 'yerr'
+        error_kwargs[kwarg] = element.data[:, 2:4].T
+        _, (bottoms, tops), verts = axis.errorbar(element.data[:, 0],
+                                                  element.data[:, 1],
+                                                  **error_kwargs)
+        self.handles['bottoms'] = bottoms
+        self.handles['tops'] = tops
+        self.handles['verts'] = verts[0]
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
+
+
+    def update_handles(self, axis, view, key, ranges=None):
+        data = view.data
+        bottoms = self.handles['bottoms']
+        tops = self.handles['tops']
+        verts = self.handles['verts']
+        paths = verts.get_paths()
+        if self.vertical:
+            bdata = data[:, 0] - data[:, 2]
+            tdata = data[:, 0] + data[:, 3]
+            tops.set_xdata(bdata)
+            bottoms.set_xdata(tdata)
+            for i, path in enumerate(paths):
+                path.vertices = np.array([[bdata[i], data[i, 1]],
+                                          [tdata[i], data[i, 1]]])
+        else:
+            bdata = data[:, 1] - data[:, 2]
+            tdata = data[:, 1] + data[:, 3]
+            bottoms.set_ydata(bdata)
+            tops.set_ydata(tdata)
+            for i, path in enumerate(paths):
+                path.vertices = np.array([[data[i, 0], bdata[i]],
+                                          [data[i, 0], tdata[i]]])
 
 
 
@@ -885,6 +951,7 @@ Store.registry.update({Curve: CurvePlot,
                        Bars: BarPlot,
                        Histogram: HistogramPlot,
                        Points: PointPlot,
-                       VectorField: VectorFieldPlot})
+                       VectorField: VectorFieldPlot,
+                       ErrorBars: ErrorPlot})
 
 Plot.sideplots.update({Histogram: SideHistogramPlot})

@@ -239,6 +239,39 @@ class Curve(Chart):
 
 
 
+class ErrorBars(Chart):
+    """
+    ErrorBars is a Chart Element type representing any number of
+    errorbars situated in a 2D space. The errors must be supplied
+    as an Nx3 or Nx4 array representing the x/y-positions and
+    either the symmetric error or assymetric errors respectively.
+    Internally the data is always held as an Nx4 array with the
+    lower and upper bounds.
+    """
+
+    group = param.String(default='ErrorBars', doc="""
+        A string describing the quantitity measured by the ErrorBars
+        object.""")
+
+    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
+                                bounds=(2, 2), constant=True, doc="""
+        The Dimensions corresponding to the x- and y-positions of
+        the error bars.""")
+
+    value_dimensions = param.List(default=[Dimension('lerror'), Dimension('uerror')],
+                                  bounds=(2,2), constant=True)
+
+    def __init__(self, data, **params):
+        data = list(data)
+        data = self._null_value if (data is None) or (len(data) == 0) else data
+        if len(data) and not isinstance(data, np.ndarray):
+            data = np.array(data)
+        if data.shape[1] == 3:
+            data = np.hstack([data, np.atleast_2d(data[:, 2]).T])
+        super(ErrorBars, self).__init__(data, **params)
+
+
+
 class Bars(NdElement):
     """
     Bars is an Element type, representing a number of stacked and

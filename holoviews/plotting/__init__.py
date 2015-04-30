@@ -299,6 +299,7 @@ Store.register_plots(style_aliases={'edgecolor': ['ec', 'ecolor'], 'facecolor': 
 # Charts
 Store.options.Curve = Options('style', color=Cycle(), linewidth=2)
 Store.options.Scatter = Options('style', color=Cycle(), marker='o')
+Store.options.ErrorBars = Options('style', ecolor='k')
 Store.options.Bars = Options('style', ec='k', color=Cycle())
 Store.options.Histogram = Options('style', ec='k', fc=Cycle())
 Store.options.Points = Options('style', color=Cycle(), marker='o')
