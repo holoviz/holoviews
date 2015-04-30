@@ -46,8 +46,8 @@ class Operation(param.ParameterizedFunction):
         Returns a label if all the elements of an overlay agree on a
         consistent label, otherwise returns the default label.
         """
-        if all(el.label==overlay[0].label for el in overlay):
-            return overlay[0].label
+        if all(el.label==overlay.get(0).label for el in overlay):
+            return overlay.get(0).label
         else:
             return default_label
 
@@ -58,8 +58,8 @@ class Operation(param.ParameterizedFunction):
         Returns the extents if all the elements of an overlay agree on
         a consistent extents, otherwise raises an exception.
         """
-        if all(el.bounds==overlay[0].bounds for el in overlay):
-            return overlay[0].bounds
+        if all(el.bounds==overlay.get(0).bounds for el in overlay):
+            return overlay.get(0).bounds
         else:
             raise ValueError("Extents across the overlay are inconsistent")
 

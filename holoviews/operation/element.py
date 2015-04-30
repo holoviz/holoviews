@@ -352,7 +352,7 @@ class convolve(ElementOperation):
         if len(overlay) != 2:
             raise Exception("Overlay must contain at least to items.")
 
-        [target, kernel] = overlay[0], overlay[1]
+        [target, kernel] = overlay.get(0), overlay.get(1)
 
         if len(target.value_dimensions) != 1:
             raise Exception("Convolution requires inputs with single value dimensions.")
@@ -498,11 +498,11 @@ class collapse_curve(ElementOperation):
         for curve in overlay:
             if not isinstance(curve, Curve):
                 raise ValueError("The collapse_curve operation requires Curves as input.")
-            if not all(curve.data[:,0] == overlay[0].data[:,0]):
+            if not all(curve.data[:,0] == overlay.get(0).data[:,0]):
                 raise ValueError("All input curves must have same x-axis values.")
 
         data = []
-        for i, xval in enumerate(overlay[0].data[:,0]):
+        for i, xval in enumerate(overlay.get(0).data[:,0]):
             yval = self.p.fn([c.data[i,1]  for c in overlay])
             data.append((xval, yval))
 
