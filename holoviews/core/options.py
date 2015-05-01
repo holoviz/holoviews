@@ -692,6 +692,9 @@ class Store(object):
                                  'style': Options(),
                                  'norm':  Options()})
 
+    # A list of hooks to call after registering the plot and style options
+    option_setters = []
+
     # A dictionary of custom OptionTree by custom object id
     custom_options = {}
     load_counter_offset = None
@@ -843,6 +846,10 @@ class Store(object):
                                   groups={'style': Options(),
                                           'plot': Options(),
                                           'norm': Options()})
+
+        for fn in cls.option_setters:
+            fn(cls.options)
+
 
 class StoreOptions(object):
     """
