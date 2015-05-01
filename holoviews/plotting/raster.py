@@ -215,10 +215,10 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
         _, _, self.layout = self._create_subplots(layout, None, ranges, create_axes=False)
-
+        self.border_extents = self._compute_borders()
 
     def get_extents(self, view, ranges):
-        width, height, _, _, _, _ = self._compute_borders(ranges)
+        width, height, _, _, _, _ = self.border_extents
         return (0, 0, width, height)
 
 
@@ -227,7 +227,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def __call__(self, ranges=None):
-        width, height, b_w, b_h, widths, heights = self._compute_borders(ranges)
+        width, height, b_w, b_h, widths, heights = self.border_extents
 
         key = self.keys[-1]
         ranges = self.compute_ranges(self.layout, key, ranges)
@@ -303,7 +303,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel
 
 
-    def _compute_borders(self, ranges):
+    def _compute_borders(self):
         ndims = self.layout.ndims
         xkey, ykey = self._xkeys[0], self._ykeys[0]
         width_fn = lambda x: x.range(0)
