@@ -278,10 +278,10 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def update_frame(self, key, ranges=None):
-        grid_values = self.layout.values()
+        grid_values = self._get_frame(key).values()
         ranges = self.compute_ranges(self.layout, key, ranges)
         for i, plot in enumerate(self.handles['projs']):
-            view = grid_values[i].get(key, None)
+            view = grid_values[i]
             if view:
                 plot.set_visible(True)
                 data = view.values()[0].data if isinstance(view, CompositeOverlay) else view.data
