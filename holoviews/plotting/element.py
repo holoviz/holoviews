@@ -175,8 +175,9 @@ class ElementPlot(Plot):
         check = holomap.last
         if issubclass(holomap.type, CompositeOverlay):
             check = holomap.last.values()[0]
-            dim_inds = [self.dimensions.index(d) for d in holomap.key_dimensions]
-            keys = [tuple(k[i] for i in dim_inds) for k in keys]
+            if self.dimensions:
+                dim_inds = [self.dimensions.index(d) for d in holomap.key_dimensions]
+                keys = [tuple(k[i] for i in dim_inds) for k in keys]
             holomap = Compositor.collapse(holomap, (ranges, keys if keys else None),
                                           mode='display')
 
