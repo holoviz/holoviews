@@ -291,12 +291,14 @@ Dimension.type_formatters.update(wrapped_formatters)
 Cycle.default_cycles.update({'default_colors': plt.rcParams['axes.color_cycle']})
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad})
 
+style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
+                 'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
+                 'linestyle': ['ls'], 'size': ['s'], 'color': ['c'],
+                 'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
+                 'markerfacecolor': ['mfc'], 'markersize': ['ms']}
+
 # Register default Element options
-Store.register_plots(style_aliases={'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
-                                    'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
-                                    'linestyle': ['ls'], 'size': ['s'], 'color': ['c'],
-                                    'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
-                                    'markerfacecolor': ['mfc'], 'markersize': ['ms']})
+Store.register_plots(style_aliases=style_aliases)
 
 # Charts
 Store.options.Curve = Options('style', color=Cycle(), linewidth=2)
