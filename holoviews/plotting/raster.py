@@ -183,7 +183,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     equivalent using subplots.
     """
 
-    aspect = param.Parameter(default='auto', doc="""
+    aspect = param.Parameter(default='equal', doc="""
         Aspect ratios on RasterGridPlot should be automatically determined.""")
 
     border = param.Number(default=10, doc="""
@@ -216,6 +216,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.rows, self.cols = layout.shape
         _, _, self.layout = self._create_subplots(layout, None, ranges, create_axes=False)
         self.border_extents = self._compute_borders()
+        width, height, _, _, _, _ = self.border_extents
+        if self.aspect == 'equal':
+            self.aspect = float(width/height)
 
     def get_extents(self, view, ranges):
         width, height, _, _, _, _ = self.border_extents

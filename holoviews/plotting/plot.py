@@ -976,7 +976,8 @@ class LayoutPlot(CompositePlot):
                 own_params = self.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
-                override_opts = dict(aspect='square')
+                if not isinstance(view, GridSpace):
+                    override_opts = dict(aspect='square')
             elif pos == 'right':
                 right_opts = dict(orientation='vertical',
                                   xaxis=None, yaxis='left')
