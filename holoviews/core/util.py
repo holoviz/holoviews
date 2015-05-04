@@ -4,7 +4,6 @@ import itertools
 import string
 import unicodedata
 from collections import defaultdict
-from itertools import takewhile, count
 
 import numpy as np
 import param
@@ -477,7 +476,9 @@ def sort_topologically(graph):
     for name in graph:
         walk_depth_first(name)
 
-    return list(takewhile(lambda x: x is not None, (names_by_level.get(i, None) for i in count())))
+    return list(itertools.takewhile(lambda x: x is not None,
+                                    (names_by_level.get(i, None)
+                                     for i in itertools.count())))
 
 
 def layer_sort(hmap):
