@@ -159,12 +159,19 @@ class ElementPlot(Plot):
         computed ranges can optionally override the extents.
         """
         num = 6 if self.projection == '3d' else 4
-        if self.apply_ranges and ranges:
-            dims = view.dimensions()
-            x0, x1 = ranges[dims[0].name]
-            y0, y1 = ranges[dims[1].name]
+        if self.apply_ranges:
+            if ranges:
+                dims = view.dimensions()
+                x0, x1 = ranges[dims[0].name]
+                y0, y1 = ranges[dims[1].name]
+                if self.projection == '3d':
+                    z0, z1 = ranges[dims[2].name]
+            else:
+                x0, x1 = view.range(0)
+                y0, y1 = view.range(1)
+                if self.projection == '3d':
+                    z0, z1 = view.range(2)
             if self.projection == '3d':
-                z0, z1 = ranges[dims[2].name]
                 range_extents = (x0, y0, z0, x1, y1, z1)
             else:
                 range_extents = (x0, y0, x1, y1)
