@@ -223,7 +223,7 @@ class MPLPlotRenderer(Exporter):
         Render a matplotlib animation object and return the corresponding data.
         """
         anim_kwargs = dict(anim_kwargs, **({'dpi':self.dpi} if self.dpi is not None else {}))
-        anim_kwargs = dict(anim_kwargs, **({'fps':self.fps} if fmt =='gif' else {}))
+        anim_kwargs = dict({'fps':self.fps} if fmt =='gif' else {}, **anim_kwargs)
         if not hasattr(anim, '_encoded_video'):
             with NamedTemporaryFile(suffix='.%s' % fmt) as f:
                 anim.save(f.name, writer=writer,
