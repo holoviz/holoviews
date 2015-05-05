@@ -112,11 +112,16 @@ class ElementPlot(Plot):
             self.map = element
         self.uniform = uniform
         self.adjoined = adjoined
-        self.map = self._check_map(ranges, keys)
         self.overlaid = overlaid
         self.cyclic_index = cyclic_index
         self.style = Store.lookup_options(self.map.last, 'style') if style is None else style
         self.zorder = zorder
+        check = self.map.last
+        if isinstance(check, CompositeOverlay):
+            check = check.values()[0] # Should check if any are 3D plots
+        if isinstance(check, Element3D):
+            self.projection = '3d'
+
         dimensions = self.map.key_dimensions if dimensions is None else dimensions
         keys = keys if keys else list(self.map.data.keys())
         plot_opts = Store.lookup_options(self.map.last, 'plot').options
@@ -146,45 +151,6 @@ class ElementPlot(Plot):
         except KeyError:
             selection = None
         return selection.last if isinstance(selection, HoloMap) else selection
-
-
-    def _check_map(self, ranges=None, keys=None):
-        """
-        Helper method that ensures a given element is always returned as
-        an HoloMap object.
-        """
-        # Apply data collapse
-        if issubclass(self.map.type, CompositeOverlay):
-            holomap = Compositor.collapse(self.map, None, mode='data')
-        else:
-            holomap = self.map
-
-        # Compute framewise normalization
-        mapwise_ranges = self.compute_ranges(holomap, None, None)
-        if keys and isinstance(holomap, HoloMap) and ranges:
-            frame_ranges = OrderedDict([(tuple(key),
-                                         self.compute_ranges(holomap, key, ranges[key]))
-                                        for key in keys])
-            ranges = frame_ranges.values()
-        elif isinstance(holomap, HoloMap):
-            frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
-                                        for key in (keys if keys else holomap.keys())])
-            ranges = frame_ranges.values()
-            keys = holomap.data.keys()
-
-        check = holomap.last
-        if issubclass(holomap.type, CompositeOverlay):
-            check = holomap.last.values()[0]
-            if self.dimensions and holomap.key_dimensions[0].name != 'Frame':
-                dim_inds = [self.dimensions.index(d) for d in holomap.key_dimensions]
-                keys = [tuple(k[i] for i in dim_inds) for k in keys]
-            holomap = Compositor.collapse(holomap, (ranges, keys if keys else None),
-                                          mode='display')
-
-        if isinstance(check, Element3D):
-            self.projection = '3d'
-
-        return holomap
 
 
     def get_extents(self, view, ranges):
@@ -518,7 +484,33 @@ class OverlayPlot(ElementPlot):
 
     def __init__(self, overlay, ranges=None, **params):
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+
+        # Apply data collapse
+        self.map = Compositor.collapse(self.map, None, mode='data')
+        self.map = self._apply_compositor(self.map, ranges, self.keys)
         self.subplots = self._create_subplots(ranges)
+
+
+    def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
+        """
+        Given a HoloMap compute the appropriate ranges in order to apply
+        the Compositor collapse operations in display mode (data collapse
+        should already have happened).
+        """
+        # Compute framewise normalization
+        defaultdim = holomap.ndims == 1 and holomap.key_dimensions[0].name != 'Frame'
+
+        if keys and ranges and dimensions and not defaultdim:
+            dim_inds = [dimensions.index(d) for d in holomap.key_dimensions]
+            sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
+            frame_ranges = OrderedDict([(slckey, self.compute_ranges(holomap, key, ranges[key]))
+                                        for key, slckey in zip(keys, sliced_keys) if slckey in holomap.data.keys()])
+        else:
+            mapwise_ranges = self.compute_ranges(holomap, None, None)
+            frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
+                                        for key in holomap.keys()])
+
+        return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
 
 
     def _create_subplots(self, ranges):
