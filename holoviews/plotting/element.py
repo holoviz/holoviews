@@ -500,9 +500,9 @@ class OverlayPlot(ElementPlot):
 
     def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
         """
-        Given a HoloMap compute the appropriate ranges in order to apply
-        the Compositor collapse operations in display mode (data collapse
-        should already have happened).
+        Given a HoloMap compute the appropriate (mapwise or framewise)
+        ranges in order to apply the Compositor collapse operations in
+        display mode (data collapse should already have happened).
         """
         # Compute framewise normalization
         defaultdim = holomap.ndims == 1 and holomap.key_dimensions[0].name != 'Frame'
@@ -516,6 +516,7 @@ class OverlayPlot(ElementPlot):
             mapwise_ranges = self.compute_ranges(holomap, None, None)
             frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
                                         for key in holomap.keys()])
+        ranges = frame_ranges.values()
 
         return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
 
