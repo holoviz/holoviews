@@ -376,7 +376,7 @@ class CompositePlot(Plot):
         for path, item in self.layout.items():
             if self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
-                                if d in item.key_dimensions], key)
+                                if d in item.dimensions('key')], key)
             else:
                 dim_keys = item.traverse(nthkey_fn, ('HoloMap',))[0]
             if dim_keys:
