@@ -180,7 +180,7 @@ class ElementPlot(Plot):
                 extents = util.max_extents(extent_list, self.projection == '3d')
         else:
             extents = (np.NaN,) * num
-        return tuple(l2 if l2 is None or np.isfinite(l2) else l1 for l1, l2 in zip(range_extents, extents))
+        return tuple(l1 if l2 is None or not np.isfinite(l2) else l2 for l1, l2 in zip(range_extents, extents))
 
 
     def _format_title(self, key):
