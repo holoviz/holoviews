@@ -873,9 +873,10 @@ class LayoutPlot(CompositePlot):
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects
-            subaxes = [plt.subplot(self.gs[ind], projection=proj)
-                       for ind, proj in zip(gsinds, projs)]
-            subplots, adjoint_layout, _ = self._create_subplots(layouts[(r, c)], positions,
+            with matplotlib.rc_context(rc=self.figure_rcparams):
+                subaxes = [plt.subplot(self.gs[ind], projection=proj)
+                           for ind, proj in zip(gsinds, projs)]
+                subplots, adjoint_layout, _ = self._create_subplots(layouts[(r, c)], positions,
                                                                 layout_dimensions, frame_ranges,
                                                                 dict(zip(positions, subaxes)),
                                                                 num=num+1)
@@ -1033,8 +1034,9 @@ class LayoutPlot(CompositePlot):
         self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        for subplot in self.subplots.values():
-            subplot(ranges=ranges)
+        with matplotlib.rc_context(rc=self.figure_rcparams):
+            for subplot in self.subplots.values():
+                subplot(ranges=ranges)
 
         return self._finalize_axis(None)
 
