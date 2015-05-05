@@ -53,7 +53,6 @@ class RasterPlot(ElementPlot):
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
         ranges = match_spec(view, ranges)
-        xdim, ydim = view.key_dimensions
 
         xticks, yticks = self._compute_ticks(view, ranges)
 
