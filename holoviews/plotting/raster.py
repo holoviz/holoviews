@@ -27,7 +27,7 @@ class RasterPlot(ElementPlot):
         Whether to annotate each pixel with its value.""")
 
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
-                  'filterrad', 'origin', 'clims']
+                  'filterrad', 'origin', 'clims', 'norm']
 
 
     def __init__(self, *args, **kwargs):
@@ -84,7 +84,8 @@ class RasterPlot(ElementPlot):
         if clims is None:
             val_dim = [d.name for d in view.value_dimensions][0]
             clims = ranges.get(val_dim)
-        im.set_clim(clims)
+        if 'norm' not in opts:
+            im.set_clim(clims)
         self.handles['im'] = im
         if self.colorbar:
             self._draw_colorbar(im)
