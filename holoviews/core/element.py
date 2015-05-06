@@ -604,7 +604,7 @@ class HoloMap(UniformNdMapping):
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
                               for k, view in self.data.items()])
-        return sampled.table().reindex() if sampled.type in [ItemTable, Table] else sampled.table()
+        return sampled.table()
 
 
     def reduce(self, dimensions=None, function=None, **reduce_map):
