@@ -20,8 +20,9 @@ def uniform(obj):
     dimensions. If there are is no common subset of dimensions, None
     is returned.
     """
+    from .element import HoloMap
     dim_groups = obj.traverse(lambda x: tuple(x.key_dimensions),
-                              ('HoloMap',))
+                              (HoloMap,))
     if dim_groups:
         dgroups = [[d.name for d in dg] for dg in dim_groups]
         return all(set(g1) <= set(g2) or set(g1) >= set(g2)

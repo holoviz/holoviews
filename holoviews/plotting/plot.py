@@ -378,7 +378,7 @@ class CompositePlot(Plot):
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
             else:
-                dim_keys = item.traverse(nthkey_fn, ('HoloMap',))[0]
+                dim_keys = item.traverse(nthkey_fn, (HoloMap,))[0]
             if dim_keys:
                 layout_frame[path] = item.select(**dict(dim_keys))
             else:
