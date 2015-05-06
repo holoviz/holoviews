@@ -49,12 +49,12 @@ class MPLPlotRendererTest(ComparisonTestCase):
     def test_simple_export_gif(self):
         data = self.renderer(self.map1, fmt='gif')[0]
         self.assertEqual(digest_data(data),
-                         'dd61926210f18b527cfa0ee29d47179f24e06325c1f9abde52b84a58217a9844')
+                         'f71b5aa9e001e22d502e6c4ad0e9fc4aea5c04cb2d1a68f2f8a4296e563107e1')
 
     def test_simple_export_gif_double_size(self):
         data = self.renderer.instance(size=200)(self.map1, fmt='gif')[0]
         self.assertEqual(digest_data(data),
-                         '3d5921cebd6601e524fbd620ce7d6f607ec74415cc8af08b1b82b3fa10a5f874')
+                         '11baa26abaf19572dc1a44e80e0a11c81db716124ad99ea84a272d44ca99526d')
 
     def test_simple_export_gif_half_fps(self):
         data = self.renderer.instance(fps=10)(self.map1, fmt='gif', )[0]
