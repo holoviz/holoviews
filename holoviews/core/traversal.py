@@ -40,8 +40,9 @@ def unique_dimkeys(obj, default_dim='Frame'):
     keys.
     """
     from .ndmapping import NdMapping
+    from .element import HoloMap
     key_dims = obj.traverse(lambda x: (tuple(x.key_dimensions),
-                                       list(x.data.keys())), ('HoloMap',))
+                                       list(x.data.keys())), (HoloMap,))
     if not key_dims:
         return [Dimension(default_dim)], [(0,)]
     dim_groups, keys = zip(*sorted(key_dims, key=lambda x: -len(x[0])))
