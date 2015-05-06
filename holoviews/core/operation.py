@@ -111,7 +111,8 @@ class ElementOperation(Operation):
             processed = self._process(element)
         elif isinstance(element, GridSpace):
             # Initialize an empty axis layout
-            processed = GridSpace(None, label=element.label)
+            processed = GridSpace(None, label=element.label,
+                                  key_dimensions=element.key_dimensions)
             # Populate the axis layout
             for pos, cell in element.items():
                 processed[pos] = self(cell, **params)
