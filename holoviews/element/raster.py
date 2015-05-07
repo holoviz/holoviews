@@ -369,7 +369,7 @@ class Image(SheetCoordinateSystem, Raster):
         elif dim_idx < len(self.value_dimensions) + 2:
             dim_idx -= 2
             data = np.atleast_3d(self.data)[:, :, dim_idx]
-            data_range = (data.min(), data.max())
+            data_range = (np.nanmin(data), np.nanmax(data))
         if data_range:
             return util.max_range([data_range, dim.soft_range])
         else:
