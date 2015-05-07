@@ -320,7 +320,7 @@ class ElementPlot(Plot):
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
-            if isinstance(view, Element3D):
+            if isinstance(view, Element3D) or self.projection == '3d':
                 l, b, zmin, r, t, zmax = coords
                 if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
             else:
