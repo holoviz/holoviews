@@ -144,7 +144,7 @@ web. Useful tricks to reduce file size include:
   ``webm``, ``mp4`` or animated ``gif``, while being aware that those
   formats may introduce visible artifacts.
 
-**Q: How do I create a Layout or Overlay object from an arbitary list?**
+**Q: How do I create a Layout or Overlay object from an arbitrary list?**
 
 For lists of non-iterable elements (e.g. a collection of ``Image``
 elements), the Numpy ``np.sum`` and ``np.prod`` functions work well.
