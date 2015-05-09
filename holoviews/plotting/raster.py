@@ -33,7 +33,7 @@ class RasterPlot(ElementPlot):
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
         if self.map.type == Raster:
-            self.invert_yaxis = True
+            self.invert_yaxis = not self.invert_yaxis
 
 
     def get_extents(self, view, ranges):
