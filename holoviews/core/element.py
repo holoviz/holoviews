@@ -535,6 +535,21 @@ class HoloMap(UniformNdMapping):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
+    def collate(self, merge_type=None):
+        """
+        Collation allows collapsing nested HoloMaps by merging
+        their dimensions. In the simple case a HoloMap containing
+        other HoloMaps can easily be joined in this way. However
+        collation is particularly useful when the objects being
+        joined are deeply nested, e.g. you want to join multiple
+        Layouts recorded at different times, collation will return
+        one Layout containing HoloMaps indexed by Time. Changing
+        the merge_type will allow merging the outer Dimension
+        into any other UniformNdMapping type.
+        """
+        return Collator(self, merge_type=merge_type if merge_type else self.__class__)()
+
+
     def collapse(self, dimensions=None, function=None, **kwargs):
         """
         Allows collapsing one of any number of key dimensions
@@ -640,126 +655,6 @@ class HoloMap(UniformNdMapping):
             return layout
 
         return (self << histmap) if adjoin else histmap
-
-
-
-class Collator(NdMapping):
-    """
-    Collator is an NdMapping type which can merge any number
-    of HoloViews components with whatever level of nesting
-    by inserting the Collators key_dimensions on the HoloMaps.
-    If the items in the Collator do not contain HoloMaps
-    they will be created. Collator also supports filtering
-    of Tree structures and dropping of constant_dimensions.
-
-    Collator can also be subclassed to dynamically load data
-    from different locations. This only requires subclassing
-    the _process_data method, which should return the data
-    to be merged, e.g. the Collator may contain a number of
-    filenames as values, which the _process_data can
-    dynamically load (and then merge) during the call.
-    """
-
-    drop = param.List(default=[], doc="""
-        List of dimensions to drop when collating data, specified
-        as strings.""")
-
-    progress_bar = param.Parameter(default=None, doc="""
-         The progress bar instance used to report progress. Set to
-         None to disable progress bars.""")
-
-    _deep_indexable = False
-
-    def __call__(self, path_filters=[], merge=True):
-        """
-        Filter each Layout in the Collator with the supplied
-        path_filters. If merge is set to True all Layouts are
-        merged, otherwise an NdMapping containing all the
-        Layouts is returned. Optionally a list of dimensions
-        to be ignored can be supplied.
-        """
-        constant_dims = self.static_dimensions
-        ndmapping = NdMapping(key_dimensions=self.key_dimensions)
-
-        num_elements = len(self)
-        for idx, (key, data) in enumerate(self.data.items()):
-            if isinstance(data, AttrTree):
-                data = data.filter(path_filters)
-            data = self._process_data(data)
-
-            if merge:
-                dim_keys = zip(self._cached_index_names, key)
-                varying_keys = [(d, k) for d, k in dim_keys
-                                if d not in constant_dims]
-                constant_keys = [(d, k) for d, k in dim_keys
-                                 if d in constant_dims]
-                data = self._add_dimensions(data, varying_keys,
-                                            dict(constant_keys))
-            ndmapping[key] = data
-            if self.progress_bar is not None:
-                self.progress_bar(float(idx+1)/num_elements*100)
-
-        if merge:
-            components = ndmapping.values()
-            accumulator = ndmapping.last.clone(components[0].data)
-            for component in components:
-                accumulator.update(component)
-            return accumulator
-        return ndmapping
-
-
-    @property
-    def static_dimensions(self):
-        """
-        Return all constant dimensions.
-        """
-        dimensions = []
-        for dim in self.key_dimensions:
-            if len(set(self.dimension_values(dim.name))) == 1:
-                dimensions.append(dim)
-        return dimensions
-
-
-    def _add_dimensions(self, item, dims, constant_keys):
-        """
-        Recursively descend through an Layout and NdMapping objects
-        in order to add the supplied dimension values to all contained
-        HoloMaps.
-        """
-        if isinstance(item, Layout):
-            item.fixed = False
-
-        dim_vals = [(dim, val) for dim, val in dims[::-1]
-                    if dim not in self.drop]
-        dimensions, key = zip(*dim_vals)
-        if isinstance(item, HoloMap):
-            new_item = item.clone(constant_dimensions=constant_keys)
-            for dim, val in dim_vals:
-                if dim not in [d.name for d in new_item.key_dimensions]:
-                    new_item = new_item.add_dimension(dim, 0, val)
-                else:
-                    raise ValueError("Items already contain dimensions %s "
-                                     "and cannot be collated.")
-        elif isinstance(item, ViewableElement):
-            new_item = HoloMap({key: item}, key_dimensions=dimensions,
-                               constant_dimensions=constant_keys)
-        else:
-            new_item = item.clone(shared_data=False, constant_dimensions=constant_keys)
-            for k, v in item.items():
-                new_item[k] = self._add_dimensions(v, dims, constant_keys)
-        if isinstance(new_item, Layout):
-            new_item.fixed = True
-
-        return new_item
-
-
-    def _process_data(self, data):
-        """"
-        Subclassable to apply some processing to the data elements
-        before filtering and merging them.
-        """
-        return data
-
 
 
 class GridSpace(UniformNdMapping):
@@ -912,5 +807,130 @@ class GridSpace(UniformNdMapping):
             dframes.append(map_frame)
         return pandas.concat(dframes)
 
+
+class Collator(NdMapping):
+    """
+    Collator is an NdMapping type which can merge any number
+    of HoloViews components with whatever level of nesting
+    by inserting the Collators key_dimensions on the HoloMaps.
+    If the items in the Collator do not contain HoloMaps
+    they will be created. Collator also supports filtering
+    of Tree structures and dropping of constant_dimensions.
+
+    Collator can also be subclassed to dynamically load data
+    from different locations. This only requires subclassing
+    the _process_data method, which should return the data
+    to be merged, e.g. the Collator may contain a number of
+    filenames as values, which the _process_data can
+    dynamically load (and then merge) during the call.
+    """
+
+    drop = param.List(default=[], doc="""
+        List of dimensions to drop when collating data, specified
+        as strings.""")
+
+    progress_bar = param.Parameter(default=None, doc="""
+         The progress bar instance used to report progress. Set to
+         None to disable progress bars.""")
+
+    merge_type = param.ClassSelector(class_=NdMapping, default=HoloMap,
+                                     is_instance=False,instantiate=False)
+
+    _deep_indexable = False
+
+    _nest_order = {HoloMap: ViewableElement,
+                   GridSpace: (HoloMap, ViewableElement),
+                   NdLayout: (GridSpace, HoloMap, ViewableElement),
+                   NdOverlay: Element}
+
+    def __call__(self, path_filters=[], merge=True):
+        """
+        Filter each Layout in the Collator with the supplied
+        path_filters. If merge is set to True all Layouts are
+        merged, otherwise an NdMapping containing all the
+        Layouts is returned. Optionally a list of dimensions
+        to be ignored can be supplied.
+        """
+        constant_dims = self.static_dimensions
+        ndmapping = NdMapping(key_dimensions=self.key_dimensions)
+
+        num_elements = len(self)
+        for idx, (key, data) in enumerate(self.data.items()):
+            if isinstance(data, AttrTree):
+                data = data.filter(path_filters)
+            data = self._process_data(data)
+
+            if merge:
+                dim_keys = zip(self._cached_index_names, key)
+                varying_keys = [(d, k) for d, k in dim_keys
+                                if d not in constant_dims]
+                constant_keys = [(d, k) for d, k in dim_keys
+                                 if d in constant_dims]
+                data = self._add_dimensions(data, varying_keys,
+                                            dict(constant_keys))
+            ndmapping[key] = data
+            if self.progress_bar is not None:
+                self.progress_bar(float(idx+1)/num_elements*100)
+
+        if merge:
+            components = ndmapping.values()
+            accumulator = ndmapping.last.clone(components[0].data)
+            for component in components:
+                accumulator.update(component)
+            return accumulator
+        return ndmapping
+
+
+    @property
+    def static_dimensions(self):
+        """
+        Return all constant dimensions.
+        """
+        dimensions = []
+        for dim in self.key_dimensions:
+            if len(set(self.dimension_values(dim.name))) == 1:
+                dimensions.append(dim)
+        return dimensions
+
+
+    def _add_dimensions(self, item, dims, constant_keys):
+        """
+        Recursively descend through an Layout and NdMapping objects
+        in order to add the supplied dimension values to all contained
+        HoloMaps.
+        """
+        if isinstance(item, Layout):
+            item.fixed = False
+
+        dim_vals = [(dim, val) for dim, val in dims[::-1]
+                    if dim not in self.drop]
+        dimensions, key = zip(*dim_vals)
+        if isinstance(item, self.merge_type):
+            new_item = item.clone(constant_dimensions=constant_keys)
+            for dim, val in dim_vals:
+                if dim not in [d.name for d in new_item.key_dimensions]:
+                    new_item = new_item.add_dimension(dim, 0, val)
+                else:
+                    raise ValueError("Items already contain dimensions %s "
+                                     "and cannot be collated.")
+        elif isinstance(item, self._nest_order[self.merge_type]):
+            new_item = self.merge_type({key: item}, key_dimensions=dimensions,
+                                       constant_dimensions=constant_keys)
+        else:
+            new_item = item.clone(shared_data=False, constant_dimensions=constant_keys)
+            for k, v in item.items():
+                new_item[k] = self._add_dimensions(v, dims[::-1], constant_keys)
+        if isinstance(new_item, Layout):
+            new_item.fixed = True
+
+        return new_item
+
+
+    def _process_data(self, data):
+        """"
+        Subclassable to apply some processing to the data elements
+        before filtering and merging them.
+        """
+        return data
 __all__ = list(set([_k for _k, _v in locals().items()
                     if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
