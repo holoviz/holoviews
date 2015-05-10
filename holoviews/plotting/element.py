@@ -34,6 +34,9 @@ class ElementPlot(Plot):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
+    bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
+        If set bgcolor overrides the background color of the axis.""")
+
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -231,6 +234,8 @@ class ElementPlot(Plot):
         """
 
         axis = self.handles['axis']
+        if self.bgcolor:
+            axis.set_axis_bgcolor(self.bgcolor)
 
         view = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
