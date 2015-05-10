@@ -222,8 +222,10 @@ class AdjointLayout(Dimensioned):
 
 class NdLayout(UniformNdMapping):
     """
-    A NdLayout is an NdMapping, which unlike a HoloMap lays
-    the individual elements out in a GridSpace.
+    NdLayout is a UniformNdMapping providing an n-dimensional
+    data structure to display the contained Elements and containers
+    in a layout. Using the cols method the NdLayout can be rearranged
+    with the desired number of columns.
     """
 
     data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
