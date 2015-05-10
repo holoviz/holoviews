@@ -535,7 +535,7 @@ class OverlayPlot(ElementPlot):
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         map_lengths = Counter()
         for m in vmaps:
-            map_lengths[group_fn(m)[:length]] += len(m)
+            map_lengths[group_fn(m)[:length]] += 1
 
         zoffset = 0
         overlay_type = 1 if self.map.type == Overlay else 2
