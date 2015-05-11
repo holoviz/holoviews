@@ -593,7 +593,6 @@ class HoloMap(UniformNdMapping):
         is the tuple (lower, upper) and the tuple (left, bottom,
         right, top) for 2D sampling.
         """
-        from ..element import Table, ItemTable
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
