@@ -6,7 +6,7 @@ import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .layout import Composable, Layout, AdjointLayout, NdLayout
-from .ndmapping import OrderedDict, UniformNdMapping, NdMapping
+from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
 from .util import sanitize_identifier
@@ -383,7 +383,8 @@ class HoloMap(UniformNdMapping):
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
-            return NdOverlay(self, **kwargs)
+            with item_check(False):
+                return NdOverlay(self, **kwargs)
         else:
             dims = [d for d in self._cached_index_names
                     if d not in dimensions]
@@ -397,7 +398,8 @@ class HoloMap(UniformNdMapping):
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
-            return GridSpace(self, **kwargs)
+            with item_check(False):
+                return GridSpace(self, **kwargs)
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
@@ -408,7 +410,8 @@ class HoloMap(UniformNdMapping):
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
-            return NdLayout(self, **kwargs)
+            with item_check(False):
+                return NdLayout(self, **kwargs)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
