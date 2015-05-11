@@ -157,7 +157,8 @@ class OptsSpec(Parser):
     opts_spec = pp.OneOrMore(spec_group)
 
     # Aliases that map to the current option name for backward compatibility
-    aliases = {}
+    aliases = {'horizontal_spacing':'hspace',
+               'vertical_spacing':  'vspace'}
 
     @classmethod
     def process_normalization(cls, parse_group):

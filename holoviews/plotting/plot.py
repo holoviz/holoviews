@@ -757,11 +757,11 @@ class LayoutPlot(CompositePlot):
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
-    horizontal_spacing = param.Number(default=0.5, doc="""
+    hspace = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vertical_spacing = param.Number(default=0.2, doc="""
+    vspace = param.Number(default=0.2, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
@@ -833,8 +833,8 @@ class LayoutPlot(CompositePlot):
         self.gs = gridspec.GridSpec(rows, cols,
                                     width_ratios=wr_list,
                                     height_ratios=hr_list,
-                                    wspace=self.horizontal_spacing,
-                                    hspace=self.vertical_spacing)
+                                    wspace=self.hspace,
+                                    hspace=self.vspace)
 
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
