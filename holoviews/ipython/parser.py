@@ -164,7 +164,9 @@ class OptsSpec(Parser):
                'figure_inches':   'fig_inches',
                'figure_latex':    'fig_latex',
                'figure_rcparams': 'fig_rcparams',
-               'figure_size':     'fig_size'}
+               'figure_size':     'fig_size',
+               'show_xaxis':      'xaxis',
+               'show_yaxis':      'yaxis'}
 
     @classmethod
     def process_normalization(cls, parse_group):
