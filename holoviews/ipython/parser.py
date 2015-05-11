@@ -156,6 +156,8 @@ class OptsSpec(Parser):
 
     opts_spec = pp.OneOrMore(spec_group)
 
+    # Aliases that map to the current option name for backward compatibility
+    aliases = {}
 
     @classmethod
     def process_normalization(cls, parse_group):
@@ -225,11 +227,13 @@ class OptsSpec(Parser):
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
-                options['plot'] = Options(**cls.todict(plotopts, 'brackets', ns=ns))
+                opts = cls.todict(plotopts, 'brackets', ns=ns)
+                options['plot'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
 
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
-                options['style'] = Options(**cls.todict(styleopts, 'parens', ns=ns))
+                opts = cls.todict(styleopts, 'parens', ns=ns)
+                options['style'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
             parse[group['pathspec']] = options
         return parse
 
