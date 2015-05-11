@@ -11,7 +11,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort
+from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select
 
 
 class item_check(object):
@@ -271,8 +271,9 @@ class MultiDimensionalMapping(Dimensioned):
         selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
                                   for key in self.data.keys())
         with item_check(False):
-            groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel))).reindex(inames), **kwargs))
-                      for sel in selects]
+            selects = group_select(list(selects))
+            groups = [(k, group_type(v.reindex(inames), **kwargs))
+                      for k, v in iterative_select(self, dimensions, selects)]
             return container_type(groups, key_dimensions=dims)
 
 
