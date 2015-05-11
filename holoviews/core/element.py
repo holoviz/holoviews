@@ -829,6 +829,12 @@ class Collator(NdMapping):
         List of dimensions to drop when collating data, specified
         as strings.""")
 
+    transform_fn = param.Callable(default=None, doc="""
+        If supplied the transform_fn is passed the data to be collated
+        as input and can apply some transformation for it. For example
+        it can load references from disk before they are collated into
+        a displayable HoloViews object.""")
+
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
          None to disable progress bars.""")
@@ -858,7 +864,8 @@ class Collator(NdMapping):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(path_filters)
-            data = self._process_data(data)
+            if self.transform_fn:
+                data = self.transform_fn(data)
 
             if merge:
                 dim_keys = zip(self._cached_index_names, key)
@@ -926,11 +933,5 @@ class Collator(NdMapping):
         return new_item
 
 
-    def _process_data(self, data):
-        """"
-        Subclassable to apply some processing to the data elements
-        before filtering and merging them.
-        """
-        return data
 __all__ = list(set([_k for _k, _v in locals().items()
                     if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
