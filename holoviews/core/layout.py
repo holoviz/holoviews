@@ -321,6 +321,7 @@ class Layout(AttrTree, Dimensioned):
 
     @classmethod
     def new_path(cls, path, item, paths, count):
+        path = tuple(sanitize_identifier(p) for p in path)
         while any(path in [p[:i] for p in paths] for i in range(1,len(path)+1)):
             pl = len(path)
             if (pl == 1 and not item.label) or (pl == 2 and item.label):
@@ -331,7 +332,6 @@ class Layout(AttrTree, Dimensioned):
             else:
                 path = path[:-1] + (int_to_roman(count),)
             count += 1
-        path = tuple(sanitize_identifier(p) for p in path)
         return path, count
 
 
