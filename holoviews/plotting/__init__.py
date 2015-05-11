@@ -66,7 +66,7 @@ ANIMATION_OPTS = {
 def opts(el, size):
     "Returns the plot options with supplied size (if not overridden)"
     obj = el.last if isinstance(el, HoloMap) else el
-    return dict(figure_inches=size, **Store.lookup_options(obj, 'plot').options)
+    return dict(fig_inches=size, **Store.lookup_options(obj, 'plot').options)
 
 
 def get_plot_size(obj, percent_size):
@@ -80,12 +80,12 @@ def get_plot_size(obj, percent_size):
 
     Used by the IPython Notebook display hooks and the save
     utility. Note that this can be overridden explicitly per object
-    using the figure_size and size plot options.
+    using the fig_size and size plot options.
     """
     def rescale_figure(percent_size):
         factor = percent_size / 100.0
-        return (Plot.figure_inches[0] * factor,
-                Plot.figure_inches[1] * factor)
+        return (Plot.fig_inches[0] * factor,
+                Plot.fig_inches[1] * factor)
     if isinstance(obj, (Layout, NdLayout)) and not isinstance(obj, Overlay):
         return (obj.shape[1]*rescale_figure(percent_size)[1],
                 obj.shape[0]*rescale_figure(percent_size)[0])

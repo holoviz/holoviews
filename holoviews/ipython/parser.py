@@ -158,7 +158,13 @@ class OptsSpec(Parser):
 
     # Aliases that map to the current option name for backward compatibility
     aliases = {'horizontal_spacing':'hspace',
-               'vertical_spacing':  'vspace'}
+               'vertical_spacing':  'vspace',
+               'figure_alpha':'    fig_alpha',
+               'figure_bounds':   'fig_bounds',
+               'figure_inches':   'fig_inches',
+               'figure_latex':    'fig_latex',
+               'figure_rcparams': 'fig_rcparams',
+               'figure_size':     'fig_size'}
 
     @classmethod
     def process_normalization(cls, parse_group):
