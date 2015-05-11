@@ -34,6 +34,26 @@ class item_check(object):
         MultiDimensionalMapping._check_items = self._enabled
 
 
+class sorted_context(object):
+    """
+    Context manager to allow creating NdMapping types without
+    performing the usual sorting, providing significant
+    speedups when there are a lot of items. Should only be
+    used if values are guaranteed to be sorted before or after
+    the operation is performed.
+    """
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    def __enter__(self):
+        self._enabled = MultiDimensionalMapping._sorted
+        MultiDimensionalMapping._sorted = self.enabled
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        MultiDimensionalMapping._sorted = self.enabled
+
+
 
 class MultiDimensionalMapping(Dimensioned):
     """
@@ -215,10 +235,11 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        resorted = dimension_sort(self.data, self.key_dimensions,
-                                  self._cached_categorical,
-                                  self._cached_index_values)
-        self.data = OrderedDict(resorted)
+        if self._sorted:
+            resorted = dimension_sort(self.data, self.key_dimensions,
+                                      self._cached_categorical,
+                                      self._cached_index_values)
+            self.data = OrderedDict(resorted)
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
