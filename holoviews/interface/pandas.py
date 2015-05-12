@@ -209,6 +209,14 @@ class DataFrameView(Element):
         return self.groupby(key_dimensions, HoloMap)
 
 
+def is_type(df, baseType):
+    test = [issubclass(np.dtype(d).type, baseType) for d in df.dtypes]
+    return pd.DataFrame(data=test, index=df.columns, columns=["numeric"])
+
+
+def is_number(df):
+    return is_type(df, np.number)
+
 
 class DFrame(DataFrameView):
     """
@@ -241,8 +249,9 @@ class DFrame(DataFrameView):
         sel_dims = kdims + vdims + mdims
         el_dims = kdims + vdims
         if not mdims and not reduce_fn:
+            numeric = is_number(self.data)
             mdims = [dim for dim in self.dimensions(label=True)
-                     if dim not in sel_dims]
+                     if dim not in sel_dims and not numeric.ix[dim][0]]
         # Find leftover dimensions to reduce
         if reduce_fn:
             reduce_dims = kdims
