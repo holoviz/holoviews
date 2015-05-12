@@ -386,7 +386,7 @@ class Image(SheetCoordinateSystem, Raster):
         """
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
-            (l, r), (b, t) = self.range(0), self.range(1)
+            l, b, r, t = self.bounds.lbrt()
             shape = self.data.shape[dim_idx]
             dim_min, dim_max = [(l, r), (b, t)][dim_idx]
             dim_len = self.data.shape[abs(dim_idx-1)]

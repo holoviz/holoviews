@@ -1,4 +1,4 @@
-import sys, warnings
+import sys, warnings, operator
 import numbers
 import itertools
 import string
@@ -507,3 +507,40 @@ def layer_groups(ordering, length=2):
    for el in ordering:
       group_orderings[el[:length]].append(el)
    return group_orderings
+
+
+def group_select(selects, length=None, depth=None):
+    """
+    Given a list of key tuples to select, groups them into sensible
+    chunks to avoid duplicating indexing operations.
+    """
+    if length == None and depth == None:
+        length = depth = len(selects[0])
+    getter = operator.itemgetter(depth-length)
+    if length > 1:
+        selects = sorted(selects, key=getter)
+        grouped_selects = defaultdict(dict)
+        for k, v in itertools.groupby(selects, getter):
+            grouped_selects[k] = group_select(list(v), length-1, depth)
+        return grouped_selects
+    else:
+        return list(selects)
+
+
+def iterative_select(obj, dimensions, selects, depth=None):
+    """
+    Takes the output of group_select selecting subgroups iteratively,
+    avoiding duplicating select operations.
+    """
+    ndims = len(dimensions)
+    depth = depth if depth is not None else ndims
+    items = []
+    if isinstance(selects, dict):
+        for k, v in selects.items():
+            items += iterative_select(obj.select(**{dimensions[ndims-depth]: k}),
+                                      dimensions, v, depth-1)
+    else:
+        for s in selects:
+            items.append((s, obj.select(**{dimensions[-1]: s[-1]})))
+    return items
+

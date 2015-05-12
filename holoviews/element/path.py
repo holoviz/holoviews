@@ -33,6 +33,7 @@ class Path(Element2D):
         The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
+    group = param.String(default="Path")
 
     def __init__(self, data, **params):
         if not isinstance(data, list):

@@ -11,7 +11,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort
+from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select
 
 
 class item_check(object):
@@ -32,6 +32,26 @@ class item_check(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         MultiDimensionalMapping._check_items = self._enabled
+
+
+class sorted_context(object):
+    """
+    Context manager to allow creating NdMapping types without
+    performing the usual sorting, providing significant
+    speedups when there are a lot of items. Should only be
+    used if values are guaranteed to be sorted before or after
+    the operation is performed.
+    """
+
+    def __init__(self, enabled):
+        self.enabled = enabled
+
+    def __enter__(self):
+        self._enabled = MultiDimensionalMapping._sorted
+        MultiDimensionalMapping._sorted = self.enabled
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        MultiDimensionalMapping._sorted = self.enabled
 
 
 
@@ -215,10 +235,11 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        resorted = dimension_sort(self.data, self.key_dimensions,
-                                  self._cached_categorical,
-                                  self._cached_index_values)
-        self.data = OrderedDict(resorted)
+        if self._sorted:
+            resorted = dimension_sort(self.data, self.key_dimensions,
+                                      self._cached_categorical,
+                                      self._cached_index_values)
+            self.data = OrderedDict(resorted)
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
@@ -250,8 +271,9 @@ class MultiDimensionalMapping(Dimensioned):
         selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
                                   for key in self.data.keys())
         with item_check(False):
-            groups = [(sel, group_type(self.select(**dict(zip(dimensions, sel))).reindex(inames), **kwargs))
-                      for sel in selects]
+            selects = group_select(list(selects))
+            groups = [(k, group_type(v.reindex(inames), **kwargs))
+                      for k, v in iterative_select(self, dimensions, selects)]
             return container_type(groups, key_dimensions=dims)
 
 

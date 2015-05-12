@@ -26,26 +26,26 @@ class Plot(param.Parameterized):
     animation via the anim() method.
     """
 
-    figure_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
+    fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
         Alpha of the overall figure background.""")
 
-    figure_bounds = param.NumericTuple(default=(0.15, 0.15, 0.85, 0.85),
+    fig_bounds = param.NumericTuple(default=(0.15, 0.15, 0.85, 0.85),
                                        doc="""
         The bounds of the overall figure as a 4-tuple of the form
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
-    figure_inches = param.NumericTuple(default=(4, 4), doc="""
+    fig_inches = param.NumericTuple(default=(4, 4), doc="""
         The overall matplotlib figure size in inches.""")
 
-    figure_latex = param.Boolean(default=False, doc="""
+    fig_latex = param.Boolean(default=False, doc="""
         Whether to use LaTeX text in the overall figure.""")
 
-    figure_rcparams = param.Dict(default={}, doc="""
+    fig_rcparams = param.Dict(default={}, doc="""
         matplotlib rc parameters to apply to the overall figure.""")
 
-    figure_size = param.Integer(default=100, bounds=(1, None), doc="""
-        Size relative to the supplied overall figure_inches in percent.""")
+    fig_size = param.Integer(default=100, bounds=(1, None), doc="""
+        Size relative to the supplied overall fig_inches in percent.""")
 
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
@@ -108,9 +108,9 @@ class Plot(param.Parameterized):
         self.handles = {} if figure is None else {'fig': figure}
 
         super(Plot, self).__init__(**params)
-        size_scale = self.figure_size / 100.
-        self.figure_inches = (self.figure_inches[0] * size_scale,
-                              self.figure_inches[1] * size_scale)
+        size_scale = self.fig_size / 100.
+        self.fig_inches = (self.fig_inches[0] * size_scale,
+                              self.fig_inches[1] * size_scale)
         self.handles['axis'] = self._init_axis(axis)
 
 
@@ -241,16 +241,16 @@ class Plot(param.Parameterized):
         a new figure.
         """
         if not self.subplot and self._create_fig:
-            rc_params = self.figure_rcparams
-            if self.figure_latex:
+            rc_params = self.fig_rcparams
+            if self.fig_latex:
                 rc_params['text.usetex'] = True
             with matplotlib.rc_context(rc=rc_params):
                 fig = plt.figure()
                 self.handles['fig'] = fig
-                l, b, r, t = self.figure_bounds
+                l, b, r, t = self.fig_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-                fig.patch.set_alpha(self.figure_alpha)
-                fig.set_size_inches(list(self.figure_inches))
+                fig.patch.set_alpha(self.fig_alpha)
+                fig.set_size_inches(list(self.fig_inches))
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
 
@@ -751,17 +751,16 @@ class LayoutPlot(CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
-    figure_bounds = param.NumericTuple(default=(0.05, 0.05, 0.95, 0.95),
-                                       doc="""
+    fig_bounds = param.NumericTuple(default=(0.05, 0.05, 0.95, 0.95), doc="""
         The bounds of the figure as a 4-tuple of the form
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
-    horizontal_spacing = param.Number(default=0.5, doc="""
+    hspace = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vertical_spacing = param.Number(default=0.2, doc="""
+    vspace = param.Number(default=0.2, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
@@ -833,8 +832,8 @@ class LayoutPlot(CompositePlot):
         self.gs = gridspec.GridSpec(rows, cols,
                                     width_ratios=wr_list,
                                     height_ratios=hr_list,
-                                    wspace=self.horizontal_spacing,
-                                    hspace=self.vertical_spacing)
+                                    wspace=self.hspace,
+                                    hspace=self.vspace)
 
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
@@ -873,7 +872,7 @@ class LayoutPlot(CompositePlot):
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects
-            with matplotlib.rc_context(rc=self.figure_rcparams):
+            with matplotlib.rc_context(rc=self.fig_rcparams):
                 subaxes = [plt.subplot(self.gs[ind], projection=proj)
                            for ind, proj in zip(gsinds, projs)]
                 subplots, adjoint_layout, _ = self._create_subplots(layouts[(r, c)], positions,
@@ -1034,7 +1033,7 @@ class LayoutPlot(CompositePlot):
         self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        with matplotlib.rc_context(rc=self.figure_rcparams):
+        with matplotlib.rc_context(rc=self.fig_rcparams):
             for subplot in self.subplots.values():
                 subplot(ranges=ranges)
 

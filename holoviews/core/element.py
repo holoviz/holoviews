@@ -6,7 +6,7 @@ import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .layout import Composable, Layout, AdjointLayout, NdLayout
-from .ndmapping import OrderedDict, UniformNdMapping, NdMapping
+from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
 from .util import sanitize_identifier
@@ -383,7 +383,8 @@ class HoloMap(UniformNdMapping):
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
-            return NdOverlay(self, **kwargs)
+            with item_check(False):
+                return NdOverlay(self, **kwargs)
         else:
             dims = [d for d in self._cached_index_names
                     if d not in dimensions]
@@ -397,7 +398,8 @@ class HoloMap(UniformNdMapping):
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
-            return GridSpace(self, **kwargs)
+            with item_check(False):
+                return GridSpace(self, **kwargs)
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
@@ -408,7 +410,8 @@ class HoloMap(UniformNdMapping):
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
-            return NdLayout(self, **kwargs)
+            with item_check(False):
+                return NdLayout(self, **kwargs)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
@@ -590,7 +593,6 @@ class HoloMap(UniformNdMapping):
         is the tuple (lower, upper) and the tuple (left, bottom,
         right, top) for 2D sampling.
         """
-        from ..element import Table, ItemTable
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
@@ -829,6 +831,12 @@ class Collator(NdMapping):
         List of dimensions to drop when collating data, specified
         as strings.""")
 
+    transform_fn = param.Callable(default=None, doc="""
+        If supplied the transform_fn is passed the data to be collated
+        as input and can apply some transformation for it. For example
+        it can load references from disk before they are collated into
+        a displayable HoloViews object.""")
+
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
          None to disable progress bars.""")
@@ -858,7 +866,8 @@ class Collator(NdMapping):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(path_filters)
-            data = self._process_data(data)
+            if self.transform_fn:
+                data = self.transform_fn(data)
 
             if merge:
                 dim_keys = zip(self._cached_index_names, key)
@@ -926,11 +935,5 @@ class Collator(NdMapping):
         return new_item
 
 
-    def _process_data(self, data):
-        """"
-        Subclassable to apply some processing to the data elements
-        before filtering and merging them.
-        """
-        return data
 __all__ = list(set([_k for _k, _v in locals().items()
                     if isinstance(_v, type) and issubclass(_v, Dimensioned)]))
