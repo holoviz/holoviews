@@ -109,6 +109,19 @@ class Distribution(Chart):
             raise ValueError("Distribution only support single dimensional arrays.")
         return data
 
+
+    def range(self, dimension):
+        dim_idx = self.get_dimension_index(dimension)
+        dim = self.get_dimension(dim_idx)
+        if dim.range != (None, None):
+            return dim.range
+        elif dim_idx == 0:
+            return (np.nanmin(self.data), np.nanmax(self.data))
+        elif dim_idx == 1:
+            return (None, None)
+        else:
+            return super(Distribution, self).dimension_values(dimension)
+
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 0:
