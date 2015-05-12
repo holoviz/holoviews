@@ -449,7 +449,7 @@ class histogram(ElementOperation):
         else:
             selected_dim = [d.name for d in view.value_dimensions + view.key_dimensions][0]
         data = np.array(view.dimension_values(selected_dim))
-        range = find_minmax((np.min(data), np.max(data)), (0, -float('inf')))\
+        range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
 
         # Avoids range issues including zero bin range and empty bins
@@ -457,7 +457,7 @@ class histogram(ElementOperation):
             range = (0.0, 0.1)
         try:
             data = data[np.invert(np.isnan(data))]
-            hist, edges = np.histogram(data, normed=self.p.normed,
+            hist, edges = np.histogram(data[np.isfinite(data)], normed=self.p.normed,
                                        range=range, bins=self.p.num_bins)
         except:
             edges = np.linspace(range[0], range[1], self.p.num_bins + 1)
