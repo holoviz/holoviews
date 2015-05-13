@@ -51,7 +51,7 @@ class sorted_context(object):
         MultiDimensionalMapping._sorted = self.enabled
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping._sorted = self.enabled
+        MultiDimensionalMapping._sorted = self._enabled
 
 
 
