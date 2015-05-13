@@ -264,11 +264,10 @@ class ElementPlot(Plot):
                 if yformat:
                     axis.yaxis.set_major_formatter(yformat)
 
-            if not self.show_legend:
+            if self.zorder == 0 and not subplots:
                 legend = axis.get_legend()
-                if legend: legend.set_visible(False)
+                if legend: legend.set_visible(self.show_legend)
 
-            if not self.overlaid:
                 axis.get_xaxis().grid(self.show_grid)
                 axis.get_yaxis().grid(self.show_grid)
 
@@ -557,7 +556,7 @@ class OverlayPlot(ElementPlot):
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
-                            uniform=self.uniform, show_legend=False)
+                            uniform=self.uniform)
             plotype = Store.registry[type(vmap.last)]
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)
