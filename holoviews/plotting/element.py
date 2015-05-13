@@ -268,9 +268,9 @@ class ElementPlot(Plot):
                 legend = axis.get_legend()
                 if legend: legend.set_visible(False)
 
-            if self.show_grid:
-                axis.get_xaxis().grid(True)
-                axis.get_yaxis().grid(True)
+            if not self.overlaid:
+                axis.get_xaxis().grid(self.show_grid)
+                axis.get_yaxis().grid(self.show_grid)
 
             if xlabel: axis.set_xlabel(xlabel)
             if ylabel: axis.set_ylabel(ylabel)
