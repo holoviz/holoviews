@@ -129,8 +129,7 @@ class Dimension(param.Parameterized):
         """
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
-        return self.format_string.format(name=self.name.capitalize(),
-                                         val=value, unit=unit)
+        return self.format_string.format(name=self.name, val=value, unit=unit)
 
     def __hash__(self):
         """
