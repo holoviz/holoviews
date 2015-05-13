@@ -132,7 +132,6 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         chars = ''
         for c in identifier:
             replacement = unicodedata.normalize('NFKD', c).encode('ASCII', 'ignore')
-            replacement = replacement.decode('unicode_escape')
             if replacement != '':
                 chars += safe_unicode(replacement)
             else:
