@@ -523,6 +523,9 @@ class PointPlot(ChartPlot):
       allows for linear scaling of the area and a factor of 4 linear
       scaling of the point width.""")
 
+    show_grid = param.Boolean(default=True, doc="""
+      Whether to draw grid lines at the tick positions.""")
+
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
