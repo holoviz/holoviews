@@ -1080,9 +1080,8 @@ class StoreOptions(object):
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
         options = cls.merge_options(options, **kwargs)
-        spec, compositor_applied = StoreOptions.expand_compositor_keys(options)
-
-        custom_trees = StoreOptions.create_custom_trees(obj, spec)
+        spec, compositor_applied = cls.expand_compositor_keys(options)
+        custom_trees = cls.create_custom_trees(obj, spec)
         Store.custom_options.update(custom_trees)
         for tree_id in custom_trees.keys():
             cls.propagate_ids(obj, tree_id, compositor_applied+list(spec.keys()))
