@@ -66,7 +66,7 @@ ANIMATION_OPTS = {
 def opts(el, size):
     "Returns the plot options with supplied size (if not overridden)"
     obj = el.last if isinstance(el, HoloMap) else el
-    return dict(fig_inches=size, **Store.lookup_options(obj, 'plot').options)
+    return dict(dict(fig_inches=size), **Store.lookup_options(obj, 'plot').options)
 
 
 def get_plot_size(obj, percent_size):
