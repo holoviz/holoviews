@@ -243,7 +243,12 @@ class OptsSpec(Parser):
                 styleopts = group['style_options'][0]
                 opts = cls.todict(styleopts, 'parens', ns=ns)
                 options['style'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
-            parse[group['pathspec']] = options
+
+            if group['pathspec'] in parse:
+                # Update in case same pathspec accidentally repeated by the user.
+                parse[group['pathspec']].update(options)
+            else:
+                parse[group['pathspec']] = options
         return parse
 
 
