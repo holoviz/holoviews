@@ -1,7 +1,7 @@
-from holoviews import Store
+import numpy as np
+from holoviews import Store, Histogram
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
-
 
 class TestOptions(ComparisonTestCase):
 
@@ -153,6 +153,77 @@ class TestOptionTree(ComparisonTestCase):
 
         self.assertEqual(options.MyType.Child['group2'].options,
                          {'kw2':'value2', 'kw4':'value4'})
+
+
+class TestStoreInheritance(ComparisonTestCase):
+    """
+    Tests to prevent regression after fix in 71c1f3a that resolves
+    issue #43
+    """
+
+    def setUp(self):
+        self.store_copy = OptionTree(sorted(Store.options.items()),
+                                groups={'style': Options(),
+                                        'plot': Options(),
+                                        'norm': Options()})
+
+        Store.options = OptionTree(groups={'plot':  Options(),
+                                           'style': Options()})
+        self.default_plot = dict(plot1='plot1', plot2='plot2')
+        Store.options.Histogram = Options('plot', **self.default_plot)
+
+        self.default_style = dict(style1='style1', style2='style2')
+        Store.options.Histogram = Options('style', **self.default_style)
+
+        data = [np.random.normal() for i in range(10000)]
+        frequencies, edges = np.histogram(data, 20)
+        self.hist = Histogram(frequencies, edges)
+        super(TestStoreInheritance, self).setUp()
+
+
+    def tearDown(self):
+        Store.options = self.store_copy
+        super(TestStoreInheritance, self).tearDown()
+
+    def test_original_style_options(self):
+        self.assertEqual(Store.lookup_options(self.hist, 'style').options,
+                         self.default_style)
+
+    def test_original_plot_options(self):
+        self.assertEqual(Store.lookup_options(self.hist, 'plot').options,
+                         self.default_plot)
+
+    def test_plot_inheritance_addition(self):
+        "Adding an element"
+        hist2 = self.hist(plot={'plot3':'plot3'})
+        self.assertEqual(Store.lookup_options(hist2, 'plot').options,
+                         dict(plot1='plot1', plot2='plot2', plot3='plot3'))
+        # Check style works as expected
+        self.assertEqual(Store.lookup_options(hist2, 'style').options, self.default_style)
+
+    def test_plot_inheritance_override(self):
+        "Overriding an element"
+        hist2 = self.hist(plot={'plot1':'plot_child'})
+        self.assertEqual(Store.lookup_options(hist2, 'plot').options,
+                         dict(plot1='plot_child', plot2='plot2'))
+        # Check style works as expected
+        self.assertEqual(Store.lookup_options(hist2, 'style').options, self.default_style)
+
+    def test_style_inheritance_addition(self):
+        "Adding an element"
+        hist2 = self.hist(style={'style3':'style3'})
+        self.assertEqual(Store.lookup_options(hist2, 'style').options,
+                         dict(style1='style1', style2='style2', style3='style3'))
+        # Check plot options works as expected
+        self.assertEqual(Store.lookup_options(hist2, 'plot').options, self.default_plot)
+
+    def test_style_inheritance_override(self):
+        "Overriding an element"
+        hist2 = self.hist(style={'style1':'style_child'})
+        self.assertEqual(Store.lookup_options(hist2, 'style').options,
+                         dict(style1='style_child', style2='style2'))
+        # Check plot options works as expected
+        self.assertEqual(Store.lookup_options(hist2, 'plot').options, self.default_plot)
 
 
 class TestOptionTreeFind(ComparisonTestCase):
