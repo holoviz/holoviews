@@ -68,12 +68,12 @@ class AdjointLayout(Dimensioned):
         if data and len(data) > 3:
             raise Exception('AdjointLayout accepts no more than three elements.')
 
+        if data is not None and all(isinstance(v, tuple) for v in data):
+            data = dict(data)
         if isinstance(data, dict):
             wrong_pos = [k for k in data if k not in self.layout_order]
             if wrong_pos:
                 raise Exception('Wrong AdjointLayout positions provided.')
-            else:
-                data = data
         elif isinstance(data, list):
             data = dict(zip(self.layout_order, data))
         else:
