@@ -262,15 +262,6 @@ class NdElement(Element, NdMapping):
         return self._filter_data(subtable, args[-1])
 
 
-    def select(self, **selection):
-        val_selection = selection.pop('value', None)
-        selection = NdMapping.select(self, **selection)
-        if val_selection:
-            return self._filter_data(selection, val_selection)
-        else:
-            return selection
-
-
     def sample(self, samples=[]):
         """
         Allows sampling of the Table with a list of samples.

@@ -150,7 +150,7 @@ class ElementPlot(Plot):
         else:
             select = dict(zip(self.map.dimensions('key', label=True), key))
         try:
-            selection = self.map.select(ignore_invalid=True, **select)
+            selection = self.map.select(**select)
         except KeyError:
             selection = None
         return selection.last if isinstance(selection, HoloMap) else selection

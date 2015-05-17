@@ -548,25 +548,51 @@ class Dimensioned(LabelledData):
         return self
 
 
-    def select(self, ignore_invalid=False, **kwargs):
+    def select(self, **kwargs):
         """
         Allows slicing or indexing into the Dimensioned object
         by supplying the dimension and index/slice as key
-        value pairs.
+        value pairs. Select descends recursively through the
+        data structure applying the key dimension selection.
+        The 'value' keyword allows selecting the
+        value_dimensions on objects which have any declared.
         """
-        valid_kwargs = {k: v for k, v in kwargs.items()
-                        if k in self.dimensions(label=True)}
-        if not len(valid_kwargs) == len(kwargs) and not ignore_invalid:
-            raise KeyError("Invalid Dimension supplied.")
-        kwargs = {k: kwargs[k] for k in valid_kwargs.keys()}
-        deep_select = any([kw for kw in kwargs.keys() if (kw in self.deep_dimensions)
-                           and (kw not in self._cached_index_names)])
-        selection_depth = len(self.dimensions('key')) if deep_select else self.ndims
-        selection = [slice(None) for i in range(selection_depth)]
-        for dim, val in kwargs.items():
-            if isinstance(val, tuple): val = slice(*val)
-            selection[self.get_dimension_index(dim)] = val
-        return self.__getitem__(tuple(selection))
+
+        # Apply all indexes applying on this object
+        val_dim = ['value'] if self.value_dimensions else []
+        local_dims = self._cached_index_names + val_dim
+        local_kwargs = {k: v for k, v in kwargs.items()
+                        if k in local_dims}
+        if local_kwargs:
+            select = [slice(None) for i in range(self.ndims)]
+            for dim, val in local_kwargs.items():
+                if dim == 'value':
+                    select += [val]
+                else:
+                    if isinstance(val, tuple): val = slice(*val)
+                    select[self.get_dimension_index(dim)] = val
+            selection = self.__getitem__(tuple(select))
+        else:
+            selection = self
+
+        if type(selection) is not type(self):
+            # Apply the selection on the selected object of a different type
+            val_dim = ['value'] if selection.value_dimensions else []
+            key_dims = selection.dimensions('key', label=True) + val_dim
+            if any(kw in key_dims for kw in kwargs):
+                selection = selection.select(**kwargs)
+        elif selection._deep_indexable:
+            # Apply the deep selection on each item in local selection
+            items = []
+            for k, v in selection.items():
+                val_dim = ['value'] if v.value_dimensions else []
+                key_dims = v.dimensions('key', label=True) + val_dim
+                if any(kw in key_dims for kw in kwargs):
+                    items.append((k, v.select(**kwargs)))
+                else:
+                    items.append((k, v))
+            selection = selection.clone(items)
+        return selection
 
 
     def dimension_values(self, dimension):
