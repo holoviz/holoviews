@@ -72,10 +72,9 @@ class Parser(object):
                 # (e.g tuples with spaces in them)
                 joiner=',' if any(')' in el for el in elements) else ''
                 grouped[-1] += joiner + joiner.join(elements)
-
         for keyword in grouped:
             # Tuple ('a', 3) becomes (,'a',3) and '(,' is never valid
-            kw = keyword.replace('(,', '(')
+            kw = keyword.replace('(,', '(').replace('=,','=')
             try:     kwargs.update(eval('dict(%s)' % kw,
                                         dict(cls.namespace, **ns)))
             except: raise SyntaxError("Could not evaluate keyword: %r" % keyword)
@@ -116,7 +115,7 @@ class OptsSpec(Parser):
 
     plot_options_long = pp.nestedExpr(opener='plot[',
                                       closer=']',
-                                      ignoreExpr=None
+                                      content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
                                   ).setResultsName('plot_options')
 
     plot_options = (plot_options_short | plot_options_long)
