@@ -116,7 +116,7 @@ class OptsSpec(Parser):
 
     plot_options_long = pp.nestedExpr(opener='plot[',
                                       closer=']',
-                                       content=pp.OneOrMore(pp.Word(allowed) ^ pp.quotedString)
+                                      ignoreExpr=None
                                   ).setResultsName('plot_options')
 
     plot_options = (plot_options_short | plot_options_long)
