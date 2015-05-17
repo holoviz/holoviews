@@ -423,7 +423,7 @@ class SideHistogramPlot(HistogramPlot):
         if isinstance(main, HoloMap):
             if issubclass(main.type, CompositeOverlay):
                 range_item = [hm for hm in main.split_overlays()[1]
-                              if hist_dim in hm.dimensions('value', label=True)][0]
+                              if hist_dim in hm.dimensions('all', label=True)][0]
                 if individually:
                     range_item = range_item[key]
             else:
