@@ -244,7 +244,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     vmap = self.layout.get((xkey, ykey), None)
                 else:
                     vmap = self.layout.get(xkey, None)
-                pane = vmap.select({d: val for d, val in zip(self.dimensions, key)
+                pane = vmap.select(**{d: val for d, val in zip(self.dimensions, key)
                                     if d in vmap.key_dimensions}).last
                 if pane:
                     if issubclass(vmap.type, CompositeOverlay): pane = pane.values()[-1]
