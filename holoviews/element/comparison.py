@@ -103,6 +103,9 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
+        #Dictionary comparisons
+        cls.equality_type_funcs[dict] =        cls.compare_dictionaries
+
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray] =   cls.compare_arrays
 
@@ -176,6 +179,20 @@ class Comparison(ComparisonInterface):
 
         return cls.equality_type_funcs
 
+
+    @classmethod
+    def compare_dictionaries(cls, d1, d2, msg='Dictionaries'):
+        keys= set(d1.keys())
+        keys2 = set(d2.keys())
+        symmetric_diff = keys ^ keys2
+        if symmetric_diff:
+            msg = ("Dictionaries have different sets of keys: %r\n\n"
+                   % symmetric_diff)
+            msg += "Dictionary 1: %s\n" % d1
+            msg += "Dictionary 2: %s" % d2
+            raise cls.failureException(msg)
+        for k in keys:
+            cls.assertEqual(d1[k], d2[k])
 
     #=====================#
     # Literal comparisons #
