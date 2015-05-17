@@ -518,10 +518,13 @@ class OptsMagic(Magics):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
             try:
-                retval = StoreOptions.apply_customizations(spec, Store.options)
+                StoreOptions.validate_spec(spec)
             except OptionError as e:
+                OptsMagic.error_message = None
                 display(HTML(self._format_options_error(e)))
                 return
+
+            StoreOptions.apply_customizations(spec, Store.options)
         OptsMagic.error_message = None
 
 
