@@ -65,13 +65,20 @@ class Parser(object):
         for group in groupby(tokens, lambda el: '=' in el):
             (val, items) = group
             if val is True:
-                grouped += [el for el in items]
+                grouped += list(items)
             if val is False:
-                grouped[-1] += ''.join(items)
+                elements =list(items)
+                # Assume anything before ) can be joined with commas
+                # (e.g tuples with spaces in them)
+                joiner=',' if any(')' in el for el in elements) else ''
+                grouped[-1] += joiner + joiner.join(elements)
 
         for keyword in grouped:
-            try:     kwargs.update(eval('dict(%s)' % keyword, dict(cls.namespace, **ns)))
-            except:  raise SyntaxError("Could not evaluate keyword: %r" % keyword)
+            # Tuple ('a', 3) becomes (,'a',3) and '(,' is never valid
+            kw = keyword.replace('(,', '(')
+            try:     kwargs.update(eval('dict(%s)' % kw,
+                                        dict(cls.namespace, **ns)))
+            except: raise SyntaxError("Could not evaluate keyword: %r" % keyword)
         return kwargs
 
 
