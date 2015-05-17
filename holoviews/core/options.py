@@ -1056,8 +1056,8 @@ class StoreOptions(object):
 
         Or setting two types of option at once:
 
-        {'Image.Channel:[Options('plot', size=50),
-                        Options('style', cmap='Blues')]}
+        {'Image.Channel':[Options('plot', size=50),
+                          Options('style', cmap='Blues')]}
 
 
         Relationship to the %%opts magic
