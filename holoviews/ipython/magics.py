@@ -514,11 +514,14 @@ class OptsMagic(Magics):
 
         self.register_custom_spec(spec, cell is not None)
         if cell:
+            # Process_element is invoked when the cell is run.
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            retval = StoreOptions.apply_customizations(spec, Store.options)
-            if retval is None:
-                display(HTML(OptsMagic.error_message))
+            try:
+                retval = StoreOptions.apply_customizations(spec, Store.options)
+            except OptionError as e:
+                display(HTML(self._format_options_error(e)))
+                return
         OptsMagic.error_message = None
 
 
