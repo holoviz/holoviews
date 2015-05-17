@@ -622,6 +622,8 @@ class HoloMap(UniformNdMapping):
         map_range = None if individually else self.range
         bin_range = map_range if bin_range is None else bin_range
         style_prefix = 'Custom[<' + self.name + '>]_'
+        if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
+            kwargs['index'] = 0
         for k, v in self.data.items():
             histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
                                 individually=individually, num_bins=num_bins,
