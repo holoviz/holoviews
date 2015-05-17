@@ -25,7 +25,7 @@ from numpy.testing import assert_array_almost_equal
 from . import *    # pyflakes:ignore (All Elements need to support comparison)
 from ..core import Element, AdjointLayout, Overlay, Dimension, HoloMap, \
                    Dimensioned, Layout, NdLayout, NdOverlay, GridSpace
-from ..core.options import Options
+from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
 from ..interface.seaborn import DFrame, Bivariate, Distribution, \
@@ -176,6 +176,7 @@ class Comparison(ComparisonInterface):
 
         # Option objects
         cls.equality_type_funcs[Options] =     cls.compare_options
+        cls.equality_type_funcs[Cycle] =       cls.compare_cycles
 
         return cls.equality_type_funcs
 
@@ -605,6 +606,9 @@ class Comparison(ComparisonInterface):
     def compare_options(cls, options1, options2, msg=None):
         cls.assertEqual(options1.kwargs, options2.kwargs)
 
+    @classmethod
+    def compare_cycles(cls, cycle1, cycle2, msg=None):
+        cls.assertEqual(cycle1.values, cycle2.values)
 
     @classmethod
     def compare_channelopts(cls, opt1, opt2, msg=None):
