@@ -229,8 +229,7 @@ def element_display(element, size, **kwargs):
     info = process_object(element)
     if info: return info
     if element.__class__ not in Store.registry: return None
-    fig = Store.registry[element.__class__](element,
-                                         **opts(element, get_plot_size(element, size)))()
+    fig = Store.registry[element.__class__](element, **opts(element, size))()
     return display_figure(fig)
 
 
@@ -240,8 +239,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     info = process_object(vmap)
     if info: return info
     if vmap.type not in Store.registry:  return None
-    mapplot = Store.registry[vmap.type](vmap,
-                                        **opts(vmap, get_plot_size(vmap,size)))
+    mapplot = Store.registry[vmap.type](vmap, **opts(vmap, size))
     if len(mapplot) == 0:
         return sanitize_HTML(vmap)
     elif len(mapplot) > max_frames:
@@ -264,7 +262,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 
     info = process_object(layout)
     if info: return info
-    layoutplot = LayoutPlot(layout, **opts(layout, get_plot_size(layout, size)))
+    layoutplot = LayoutPlot(layout, **opts(layout, size))
     if isinstance(layout, Layout):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in list(layout.data.keys())]))
@@ -295,7 +293,7 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
         plot_type = RasterGridPlot
     else:
         plot_type = GridPlot
-    gridplot = plot_type(grid, **opts(grid, get_plot_size(grid, size)))
+    gridplot = plot_type(grid, **opts(grid, size))
 
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)

@@ -63,10 +63,11 @@ ANIMATION_OPTS = {
 }
 
 
-def opts(el, size):
+def opts(el, percent_size):
     "Returns the plot options with supplied size (if not overridden)"
     obj = el.last if isinstance(el, HoloMap) else el
-    return dict(dict(fig_inches=size), **Store.lookup_options(obj, 'plot').options)
+    return dict(dict(fig_inches=get_plot_size(obj, percent_size)),
+                **Store.lookup_options(obj, 'plot').options)
 
 
 def get_plot_size(obj, percent_size):
@@ -82,25 +83,15 @@ def get_plot_size(obj, percent_size):
     utility. Note that this can be overridden explicitly per object
     using the fig_size and size plot options.
     """
-    def rescale_figure(percent_size):
-        factor = percent_size / 100.0
-        return (Plot.fig_inches[0] * factor,
-                Plot.fig_inches[1] * factor)
-    if isinstance(obj, (Layout, NdLayout)) and not isinstance(obj, Overlay):
-        return (obj.shape[1]*rescale_figure(percent_size)[1],
-                obj.shape[0]*rescale_figure(percent_size)[0])
-    elif isinstance(obj, GridSpace):
-        max_dim = max(obj.shape)
-        # Reduce plot size as GridSpace gets larger
-        shape_factor = 1. / max_dim
-        # Expand small grids to a sensible viewing size
-        expand_factor = 1 + (max_dim - 1) * 0.1
-        scale_factor = expand_factor * shape_factor
-        return (scale_factor * obj.shape[0] * rescale_figure(percent_size)[0],
-                scale_factor * obj.shape[1] * rescale_figure(percent_size)[1])
+    factor = percent_size / 100.0
+    plot_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+    options = Store.lookup_options(obj, 'plot').options
+    fig_inches = options.get('fig_inches', Plot.fig_inches)
+    if isinstance(fig_inches, (list, tuple)):
+        return (fig_inches[0] * factor,
+                fig_inches[1] * factor)
     else:
-        return rescale_figure(percent_size)
-
+        return Plot.fig_inches * factor 
 
 
 class MPLPlotRenderer(Exporter):
