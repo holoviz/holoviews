@@ -81,6 +81,17 @@ class Plot(param.Parameterized):
     title_format = param.String(default="{label} {group}", doc="""
         The formatting string for the title of this plot.""")
 
+    fontsizes = param.Parameter(default=None, allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text. By default,
+       the fontsize is determined by matplotlib (via rcparams) but if
+       set to an integer, this is the fontsize of all text except for
+       tick labels (and subfigure labels in Layouts).
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
+
     # A list of matplotlib keyword arguments that may be supplied via a
     # style options object. Each subclass should override this
     # parameter to list every option that works correctly.
@@ -112,6 +123,20 @@ class Plot(param.Parameterized):
         self.fig_inches = (self.fig_inches[0] * size_scale,
                               self.fig_inches[1] * size_scale)
         self.handles['axis'] = self._init_axis(axis)
+
+
+    def _fontsize(self, key, label='fontsize', common=True):
+        """
+        To be used as kwargs e.g: **self._fontsize('title')
+        """
+        if not self.fontsizes:
+            return {}
+        if isinstance(self.fontsizes, dict):
+            if key not in self.fontsizes:
+                return {}
+            else:
+                return {label:self.fontsizes[key]}
+        return {label:self.fontsizes} if common else {}
 
 
     def compute_ranges(self, obj, key, ranges):
