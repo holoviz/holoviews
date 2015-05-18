@@ -991,6 +991,13 @@ class StoreOptions(object):
         >>> sorted(merged['Curve']['style'].items())
         [('color', 'b'), ('linewidth', 10)]
         """
+        groups = set(Store.options.groups.keys())
+        if (options is not None and set(options.keys()) <= groups):
+            kwargs, options = options, None
+        elif (options is not None and any(k in groups for k in options)):
+              raise Exception("All keys must be a subset of %s"
+                              % ', '.join(groups))
+
         options = {} if (options is None) else dict(**options)
         all_keys = set(k for d in kwargs.values() for k in d)
         for spec_key in all_keys:
