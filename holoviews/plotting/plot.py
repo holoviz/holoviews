@@ -81,7 +81,7 @@ class Plot(param.Parameterized):
     title_format = param.String(default="{label} {group}", doc="""
         The formatting string for the title of this plot.""")
 
-    fontsizes = param.Parameter(default=None, allow_None=True,  doc="""
+    fontsize = param.Parameter(default=None, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text. By default,
        the fontsize is determined by matplotlib (via rcparams) but if
        set to an integer, this is the fontsize of all text except for
@@ -129,14 +129,14 @@ class Plot(param.Parameterized):
         """
         To be used as kwargs e.g: **self._fontsize('title')
         """
-        if not self.fontsizes:
+        if not self.fontsize:
             return {}
-        if isinstance(self.fontsizes, dict):
-            if key not in self.fontsizes:
+        if isinstance(self.fontsize, dict):
+            if key not in self.fontsize:
                 return {}
             else:
-                return {label:self.fontsizes[key]}
-        return {label:self.fontsizes} if common else {}
+                return {label:self.fontsize[key]}
+        return {label:self.fontsize} if common else {}
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -797,7 +797,7 @@ class LayoutPlot(CompositePlot):
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    fontsizes = param.Parameter(default={'title':16}, allow_None=True)
+    fontsize = param.Parameter(default={'title':16}, allow_None=True)
 
     def __init__(self, layout, **params):
         if not isinstance(layout, (NdLayout, Layout)):
