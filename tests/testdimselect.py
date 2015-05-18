@@ -21,6 +21,7 @@ class DimensionedSelectionTest(ComparisonTestCase):
         self.ndoverlay_map = self.img_map.overlay('b')
         self.overlay_map = self.img_map * self.contour_map
         self.layout_map = self.ndoverlay_map + self.contour_map
+        self.duplicate_map = self.img_map.clone(key_dimensions=['x', 'y'])
 
 
     def test_simple_holoselect(self):
@@ -55,3 +56,11 @@ class DimensionedSelectionTest(ComparisonTestCase):
         hmap2 = self.layout_map.HoloMap.II[1:3, 1:3, 0:0.5, 0:0.5]
         selection = self.layout_map.select(a=(1,3), b=(1, 3), x=(0, 0.5), y=(0, 0.5))
         self.assertEqual(selection, hmap1 + hmap2)
+
+    def test_spec_duplicate_dim_select(self):
+        selection = self.duplicate_map.select((HoloMap,), x=(0, 1), y=(1, 3))
+        self.assertEqual(selection, self.duplicate_map[0:1, 1:3])
+
+    def test_duplicate_dim_select(self):
+        selection = self.duplicate_map.select(x=(None, 0.5), y=(None, 0.5))
+        self.assertEqual(selection, self.duplicate_map[:.5, :.5, :.5, :.5])
