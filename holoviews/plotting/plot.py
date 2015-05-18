@@ -924,7 +924,8 @@ class LayoutPlot(CompositePlot):
                 collapsed_layout[layout_key] = adjoint_layout
 
         if self.show_title and len(self.coords) > 1:
-            self.handles['title'] = self.handles['fig'].suptitle('', fontsize=16)
+            title = self.handles['fig'].suptitle('', **self._fontsize('title'))
+            self.handles['title'] = title
 
         return layout_subplots, layout_axes, collapsed_layout
 
