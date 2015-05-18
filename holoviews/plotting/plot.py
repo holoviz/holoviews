@@ -814,9 +814,9 @@ class LayoutPlot(CompositePlot):
 
             # For each row and column record the width and height ratios
             # of the LayoutPlot with the most horizontal or vertical splits
-            if layout_shape[0] > row_heightratios.get(r, (0, None))[0]:
+            if layout_shape[1] > row_heightratios.get(r, (0, None))[0]:
                 row_heightratios[r] = (layout_shape[1], height_ratios)
-            if layout_shape[1] > col_widthratios.get(c, (0, None))[0]:
+            if layout_shape[0] > col_widthratios.get(c, (0, None))[0]:
                 col_widthratios[c] = (layout_shape[0], width_ratios)
 
         # In order of row/column collect the largest width and height ratios
