@@ -271,9 +271,9 @@ class ElementPlot(Plot):
                 axis.get_xaxis().grid(self.show_grid)
                 axis.get_yaxis().grid(self.show_grid)
 
-            if xlabel: axis.set_xlabel(xlabel)
-            if ylabel: axis.set_ylabel(ylabel)
-            if zlabel: axis.set_zlabel(zlabel)
+            if xlabel: axis.set_xlabel(xlabel, **self._fontsize('xlabel'))
+            if ylabel: axis.set_ylabel(ylabel, **self._fontsize('ylabel'))
+            if zlabel: axis.set_zlabel(zlabel, **self._fontsize('ylabel'))
 
             self._apply_aspect(axis)
             self._subplot_label(axis)
@@ -282,7 +282,8 @@ class ElementPlot(Plot):
                 self._finalize_ticks(axis, xticks, yticks, zticks)
 
             if self.show_title and title is not None:
-                self.handles['title'] = axis.set_title(title)
+                self.handles['title'] = axis.set_title(title,
+                                                **self._fontsize('title'))
 
         for hook in self.finalize_hooks:
             try:
@@ -420,6 +421,8 @@ class ElementPlot(Plot):
             for tick in axis.get_zticklabels():
                 tick.set_rotation(self.zrotation)
 
+        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
+        if tick_fontsize:  axis.tick_params(**tick_fontsize)
 
     def update_frame(self, key, ranges=None):
         """
