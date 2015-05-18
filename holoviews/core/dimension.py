@@ -645,6 +645,11 @@ class Dimensioned(LabelledData):
         Apply the supplied options to a clone of the object which is
         then returned.
         """
+        groups = set(Store.options.groups.keys())
+        if kwargs and set(kwargs) <= groups:
+            identifier = '%s.%s' % (self.__class__.__name__, sanitize_identifier(self.group))
+            identifier += ('.%s' % sanitize_identifier(self.label)) if self.label else ''
+            kwargs = {k:{identifier:v} for k,v in kwargs.items()}
         deep_clone = self.map(lambda x: x.clone(id=x.id))
         StoreOptions.set_options(deep_clone, options, **kwargs)
         return deep_clone
