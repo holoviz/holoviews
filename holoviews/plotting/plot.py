@@ -541,7 +541,9 @@ class GridPlot(CompositePlot):
             subplot(ranges=ranges, **subplot_kwargs)
 
         if self.show_title:
-            self.handles['title'] = axis.set_title(self._format_title(key))
+            title = axis.set_title(self._format_title(key),
+                                   **self._fontsize('title'))
+            self.handles['title'] = title
 
         self._readjust_axes(axis)
         self.drawn = True
@@ -564,8 +566,9 @@ class GridPlot(CompositePlot):
         any handles on the plot.
         """
         if self.show_title:
-            self.handles['title'] = axis.set_title(self._format_title(key))
-
+            title = axis.set_title(self._format_title(key),
+                                   **self._fontsize('title'))
+            self.handles['title'] = title
 
     def _layout_axis(self, layout, axis):
         fig = self.handles['fig']
@@ -576,10 +579,15 @@ class GridPlot(CompositePlot):
             layout_axis.set_position(self.position)
         layout_axis.patch.set_visible(False)
 
+        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
+        if tick_fontsize: layout_axis.tick_params(**tick_fontsize)
+
         # Set labels
-        layout_axis.set_xlabel(str(layout.key_dimensions[0]))
+        layout_axis.set_xlabel(str(layout.key_dimensions[0]),
+                               **self._fontsize('xlabel'))
         if layout.ndims == 2:
-            layout_axis.set_ylabel(str(layout.key_dimensions[1]))
+            layout_axis.set_ylabel(str(layout.key_dimensions[1]),
+                               **self._fontsize('ylabel'))
 
         # Compute and set x- and y-ticks
         dims = layout.key_dimensions
