@@ -68,14 +68,17 @@ class Parser(object):
                 grouped += list(items)
             if val is False:
                 elements =list(items)
-                # Assume anything before ) can be joined with commas
+                # Assume anything before ) or } can be joined with commas
                 # (e.g tuples with spaces in them)
-                joiner=',' if any(')' in el for el in elements) else ''
+                joiner=',' if any(')' or '}' in el for el in elements) else ''
                 grouped[-1] += joiner + joiner.join(elements)
+
         for keyword in grouped:
             # Tuple ('a', 3) becomes (,'a',3) and '(,' is never valid
-            kw = keyword.replace('(,', '(').replace('=,','=')
-            try:     kwargs.update(eval('dict(%s)' % kw,
+            # Same for some of the other joining errors corrected here
+            for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='), (',:',':')]:
+                keyword = keyword.replace(fst, snd)
+            try:     kwargs.update(eval('dict(%s)' % keyword,
                                         dict(cls.namespace, **ns)))
             except: raise SyntaxError("Could not evaluate keyword: %r" % keyword)
         return kwargs
