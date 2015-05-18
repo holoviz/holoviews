@@ -797,6 +797,8 @@ class LayoutPlot(CompositePlot):
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
+    fontsizes = param.Parameter(default={'title':16}, allow_None=True)
+
     def __init__(self, layout, **params):
         if not isinstance(layout, (NdLayout, Layout)):
             raise ValueError("LayoutPlot only accepts Layout objects.")
