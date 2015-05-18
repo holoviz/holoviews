@@ -546,7 +546,7 @@ class Dimensioned(LabelledData):
         return self
 
 
-    def select(self, **kwargs):
+    def select(self, selection_specs=None, **kwargs):
         """
         Allows slicing or indexing into the Dimensioned object
         by supplying the dimension and index/slice as key
@@ -554,6 +554,11 @@ class Dimensioned(LabelledData):
         data structure applying the key dimension selection.
         The 'value' keyword allows selecting the
         value_dimensions on objects which have any declared.
+
+        The selection may also be selectively applied to
+        specific objects by supplying the selection_specs
+        as an iterable of type.group.label specs, types or
+        functions.
         """
 
         # Apply all indexes applying on this object
@@ -561,7 +566,15 @@ class Dimensioned(LabelledData):
         local_dims = self._cached_index_names + val_dim
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in local_dims}
-        if local_kwargs:
+
+        # Check selection_spec applies
+        if selection_specs is not None:
+            matches = any(self.matches(spec)
+                          for spec in selection_specs)
+        else:
+            matches = True
+
+        if local_kwargs and matches:
             select = [slice(None) for i in range(self.ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':
@@ -578,7 +591,7 @@ class Dimensioned(LabelledData):
             val_dim = ['value'] if selection.value_dimensions else []
             key_dims = selection.dimensions('key', label=True) + val_dim
             if any(kw in key_dims for kw in kwargs):
-                selection = selection.select(**kwargs)
+                selection = selection.select(selection_specs, **kwargs)
         elif selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
@@ -586,7 +599,7 @@ class Dimensioned(LabelledData):
                 val_dim = ['value'] if v.value_dimensions else []
                 key_dims = v.dimensions('key', label=True) + val_dim
                 if any(kw in key_dims for kw in kwargs):
-                    items.append((k, v.select(**kwargs)))
+                    items.append((k, v.select(selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
             selection = selection.clone(items)

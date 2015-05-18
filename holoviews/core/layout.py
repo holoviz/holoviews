@@ -434,8 +434,8 @@ class Layout(AttrTree, Dimensioned):
         return self
 
 
-    def select(self, **selections):
-        return super(Layout, self).select(**selections).display(self._display)
+    def select(self, selection_specs=None, **selections):
+        return super(Layout, self).select(selection_specs, **selections).display(self._display)
 
 
     def grid_items(self):

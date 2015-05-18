@@ -101,7 +101,7 @@ class DataFrameView(Element):
                                 'only has %d index dimensions.' % (self.ndims, len(key)))
 
 
-    def select(self, **select):
+    def select(self, selection_specs=None, **select):
         """
         Allows slice and select individual values along the DataFrameView
         dimensions. Supply the dimensions and values or slices as
