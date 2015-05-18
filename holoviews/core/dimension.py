@@ -252,7 +252,8 @@ class LabelledData(param.Parameterized):
         the match, and so the sanitized versions of those values will
         need to be provided if the match is to succeed.
         """
-        if isinstance(spec, type): return isinstance(self, spec)
+        if callable(spec) and not isinstance(spec, type): return spec(self)
+        elif isinstance(spec, type): return isinstance(self, spec)
         specification = (self.__class__.__name__, self.group, self.label)
         identifier_specification = tuple(sanitize_identifier(ident, escape=False)
                                          for ident in specification)
@@ -283,10 +284,7 @@ class LabelledData(param.Parameterized):
         matches = specs is None
         if not matches:
             for spec in specs:
-                if callable(spec) and not isinstance(spec, type):
-                    matches = spec(self)
-                else:
-                    matches = self.matches(spec)
+                matches = self.matches(spec)
                 if matches: break
         if matches:
             accumulator.append(fn(self))
