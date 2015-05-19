@@ -32,6 +32,8 @@ class PathPlot(ElementPlot):
 
     def update_handles(self, axis, view, key, ranges=None):
         self.handles['line_segments'].set_paths(view.data)
+        visible = self.style[self.cyclic_index].get('visible', True)
+        self.handles['line_segments'].set_visible(visible)
 
 
 
