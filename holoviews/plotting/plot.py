@@ -1,4 +1,5 @@
 from itertools import product, groupby
+from collections import defaultdict
 
 import numpy as np
 import matplotlib
@@ -35,8 +36,12 @@ class Plot(param.Parameterized):
         (left, bottom, right, top), defining the size of the border
         around the subplots.""")
 
-    fig_inches = param.NumericTuple(default=(4, 4), doc="""
-        The overall matplotlib figure size in inches.""")
+    fig_inches = param.Parameter(default=4, doc="""
+        The overall matplotlib figure size in inches.  May be set as
+        an integer in which case it will be used to autocompute a
+        size. Alternatively may be set with an explicit tuple or list,
+        in which case it will be applied directly after being scaled
+        by fig_size.""")
 
     fig_latex = param.Boolean(default=False, doc="""
         Whether to use LaTeX text in the overall figure.""")
@@ -119,9 +124,11 @@ class Plot(param.Parameterized):
         self.handles = {} if figure is None else {'fig': figure}
 
         super(Plot, self).__init__(**params)
-        size_scale = self.fig_size / 100.
-        self.fig_inches = (self.fig_inches[0] * size_scale,
-                              self.fig_inches[1] * size_scale)
+        scale = self.fig_size/100.
+        if isinstance(self.fig_inches, (tuple, list)):
+            self.fig_inches = [i*scale for i in self.fig_inches]
+        else:
+            self.fig_inches *= scale
         self.handles['axis'] = self._init_axis(axis)
 
 
@@ -275,7 +282,10 @@ class Plot(param.Parameterized):
                 l, b, r, t = self.fig_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
                 fig.patch.set_alpha(self.fig_alpha)
-                fig.set_size_inches(list(self.fig_inches))
+                if isinstance(self.fig_inches, (tuple, list)):
+                    fig.set_size_inches(list(self.fig_inches))
+                else:
+                    fig.set_size_inches([self.fig_inches, self.fig_inches])
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
 
@@ -484,12 +494,30 @@ class GridPlot(CompositePlot):
             l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
             grid_kwargs = {'left': l, 'right': l+w, 'bottom': b, 'top': b+h}
             self.position = (l, b, w, h)
+
+        self.fig_inches = self._get_size()
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
         self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)
 
 
+    def _get_size(self):
+        max_dim = max(self.layout.shape)
+        # Reduce plot size as GridSpace gets larger
+        shape_factor = 1. / max_dim
+        # Expand small grids to a sensible viewing size
+        expand_factor = 1 + (max_dim - 1) * 0.1
+        scale_factor = expand_factor * shape_factor
+        if not isinstance(self.fig_inches, (tuple, list)):
+            fig_inches = (self.fig_inches,)*2
+        else: fig_inches = self.fig_inches
+        return (scale_factor * self.layout.shape[0] * fig_inches[0],
+                scale_factor * self.layout.shape[1] * fig_inches[1])
+
+
     def _create_subplots(self, layout, axis, ranges, create_axes):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
+        if not ranges:
+            self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
 
         frame_ranges = self.compute_ranges(layout, None, ranges)
@@ -784,10 +812,15 @@ class LayoutPlot(CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
+    apply_aspects = param.Boolean(default=True, doc="""
+      If applied and any of the Layout elements have explicit
+      aspects set subplot proportions will be computed to
+      respect the aspects.""")
+
     fig_bounds = param.NumericTuple(default=(0.05, 0.05, 0.95, 0.95), doc="""
-        The bounds of the figure as a 4-tuple of the form
-        (left, bottom, right, top), defining the size of the border
-        around the subplots.""")
+      The bounds of the figure as a 4-tuple of the form
+      (left, bottom, right, top), defining the size of the border
+      around the subplots.""")
 
     hspace = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
@@ -833,36 +866,70 @@ class LayoutPlot(CompositePlot):
         layout_dimensions = layout.key_dimensions if isinstance(layout, NdLayout) else None
 
         layouts = {}
-        row_heightratios, col_widthratios = {}, {}
+        row_heightratios, col_widthratios, col_aspects = {}, {}, defaultdict(lambda: [0, 0])
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             _, view = layout_items.get((r, c), (None, None))
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
+            main = layout_view.main
+            main = main.last if isinstance(main, HoloMap) else main
+            if main and self.apply_aspects:
+                main_aspect = Store.lookup_options(main, 'plot').options.get('aspect', 1)
+            else:
+                main_aspect = 1
+
             # Compute shape of AdjointLayout element
             layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
             layout_type = layout_lens[len(layout_view)]
-            width_ratios = AdjointLayoutPlot.layout_dict[layout_type]['width_ratios']
-            height_ratios = AdjointLayoutPlot.layout_dict[layout_type]['height_ratios']
+            if layout_type in ['Dual', 'Triple']:
+                aspect = [main_aspect, 0.25]
+            else:
+                aspect = [main_aspect, 0]
+            width_ratios = AdjointLayoutPlot.layout_dict[layout_type]['width_ratios'][:]
+            height_ratios = AdjointLayoutPlot.layout_dict[layout_type]['height_ratios'][:]
+            if not isinstance(main_aspect, (basestring, type(None))):
+                width_ratios[0] = (width_ratios[0] * main_aspect)
+                height_ratios[0] = (height_ratios[0] * 1./main_aspect)
             layout_shape = (len(width_ratios), len(height_ratios))
 
             # For each row and column record the width and height ratios
             # of the LayoutPlot with the most horizontal or vertical splits
+            # and largest aspect
             if layout_shape[1] > row_heightratios.get(r, (0, None))[0]:
-                row_heightratios[r] = (layout_shape[1], height_ratios)
+                row_heightratios[r] = [layout_shape[1], height_ratios]
+            if layout_type == 'Triple':
+                if height_ratios[1] > row_heightratios[r][1][1]:
+                    row_heightratios[r][1][1] = height_ratios[1]
+            elif height_ratios[0] > row_heightratios[r][1][0]:
+                row_heightratios[r][1][0] = height_ratios[0]
+
             if layout_shape[0] > col_widthratios.get(c, (0, None))[0]:
                 col_widthratios[c] = (layout_shape[0], width_ratios)
+            if width_ratios[0] > col_widthratios[c][1][0]:
+                col_widthratios[c][1][0] = width_ratios[0]
+
+            if aspect[0] > col_aspects.get(c, [0])[0]:
+                col_aspects[c][0] = aspect[0]
+            elif aspect[1] > col_aspects.get(c, [0])[1]:
+                col_aspects[c][1] = aspect[1]
 
         # In order of row/column collect the largest width and height ratios
         height_ratios = [v[1] for k, v in sorted(row_heightratios.items())]
         width_ratios = [v[1] for k, v in sorted(col_widthratios.items())]
+        aspect_ratios = [v for k, v in sorted(col_aspects.items())]
         # Compute the number of rows and cols
         cols = np.sum([len(wr) for wr in width_ratios])
         rows = np.sum([len(hr) for hr in height_ratios])
         # Flatten the width and height ratio lists
         wr_list = [wr for wrs in width_ratios for wr in wrs]
         hr_list = [hr for hrs in height_ratios for hr in hrs]
+        if not isinstance(self.fig_inches, (tuple, list)):
+            aspect_list = [ar for ars in aspect_ratios for ar in ars]
+            xinches = self.fig_inches * sum(aspect_list)
+            yinches = xinches/(sum(aspect_list)/sum([min(hr_list)/float(h) for h in hr_list]))
+            self.handles['fig'].set_size_inches([xinches, yinches])
 
         self.gs = gridspec.GridSpec(rows, cols,
                                     width_ratios=wr_list,

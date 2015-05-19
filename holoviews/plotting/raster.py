@@ -214,6 +214,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self._ykeys = sorted(set(ykeys))
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
+        self.fig_inches = self._get_size()
         _, _, self.layout = self._create_subplots(layout, None, ranges, create_axes=False)
         self.border_extents = self._compute_borders()
         width, height, _, _, _, _ = self.border_extents
