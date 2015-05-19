@@ -13,7 +13,7 @@ from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import sanitize_identifier, int_to_roman,\
-    int_to_alpha, safe_unicode, max_range
+    int_to_alpha, safe_unicode, max_range, basestring
 from ..element import Raster, Table
 
 
