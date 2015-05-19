@@ -826,7 +826,7 @@ class LayoutPlot(CompositePlot):
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vspace = param.Number(default=0.2, doc="""
+    vspace = param.Number(default=0.1, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
