@@ -299,7 +299,7 @@ class NdWidget(param.Parameterized):
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(fig)
-        return display_figure(fig)
+        return display_figure(fig, allow_nbagg=False)
 
 
 

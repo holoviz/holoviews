@@ -150,7 +150,7 @@ def dict_to_css(css_dict):
         raise ValueError("CSS must be supplied as Python dictionary")
 
 
-def display_figure(fig, message=None, max_width='100%'):
+def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
     "Display widgets applicable to the specified element"
     if OutputMagic.options['fig'] == 'repr': return None
 
@@ -159,7 +159,7 @@ def display_figure(fig, message=None, max_width='100%'):
     css = OutputMagic.options['css']
     backend = OutputMagic.options['backend']
 
-    if backend == 'nbagg' and new_figure_manager_given_figure is not None:
+    if allow_nbagg and backend == 'nbagg' and new_figure_manager_given_figure is not None:
         manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
         # Need to call mouse_init on each 3D axis to enable rotation support
         for ax in fig.get_axes():
