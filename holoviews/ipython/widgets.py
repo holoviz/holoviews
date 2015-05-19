@@ -421,8 +421,7 @@ class SelectionWidget(NdWidget):
                     ax.mouse_init()
             OutputMagic.nbagg_counter += 1
             self.comm = CustomCommSocket(self.manager)
-
-        SelectionWidget.widgets[self.id] = self
+            SelectionWidget.widgets[self.id] = self
 
 
     def get_widgets(self):
