@@ -27,7 +27,7 @@ class RasterPlot(ElementPlot):
         Whether to annotate each pixel with its value.""")
 
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
-                  'filterrad', 'origin', 'clims', 'norm']
+                  'filterrad', 'clims', 'norm']
 
 
     def __init__(self, *args, **kwargs):
@@ -192,7 +192,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     show_title = param.Boolean(default=True)
 
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
-                  'filterrad', 'origin']
+                  'filterrad']
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
                  layout_num=1, **params):
