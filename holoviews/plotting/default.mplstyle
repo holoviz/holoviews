@@ -5,6 +5,8 @@
 # https://github.com/CamDavidsonPilon/Probabilistic-Programming-and-Bayesian-Methods-for-Hackers/
 
 
+backend: agg
+
 axes.color_cycle: 30a2da, fc4f30, e5ae38, 6d904f, 8b8b8b
 axes.facecolor: f0f0f0
 axes.labelsize: medium
