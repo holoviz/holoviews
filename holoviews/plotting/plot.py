@@ -822,6 +822,13 @@ class LayoutPlot(CompositePlot):
       (left, bottom, right, top), defining the size of the border
       around the subplots.""")
 
+    tight = param.Boolean(default=False, doc="""
+      Tightly fit the axes in the layout within the fig_bounds
+      and tight_padding.""")
+
+    tight_padding = param.Parameter(default=3, doc="""
+      Integer or tuple specifying the padding in inches in a tight layout.""")
+
     hspace = param.Number(default=0.5, doc="""
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
@@ -866,32 +873,42 @@ class LayoutPlot(CompositePlot):
         layout_dimensions = layout.key_dimensions if isinstance(layout, NdLayout) else None
 
         layouts = {}
-        row_heightratios, col_widthratios, col_aspects = {}, {}, defaultdict(lambda: [0, 0])
+        row_heightratios, col_widthratios = {}, {}
+        col_aspects, row_aspects = defaultdict(lambda: [0, 0]), defaultdict(lambda: [0, 0])
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             _, view = layout_items.get((r, c), (None, None))
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
-            main = layout_view.main
-            main = main.last if isinstance(main, HoloMap) else main
-            if main and self.apply_aspects:
-                main_aspect = Store.lookup_options(main, 'plot').options.get('aspect', 1)
-            else:
-                main_aspect = 1
-
             # Compute shape of AdjointLayout element
             layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
             layout_type = layout_lens[len(layout_view)]
-            if layout_type in ['Dual', 'Triple']:
-                aspect = [main_aspect, 0.25]
+            hidx = 0
+
+            # Get aspects
+            main = layout_view.main
+            main = main.last if isinstance(main, HoloMap) else main
+            main_options = Store.lookup_options(main, 'plot').options if main else {}
+            if main and self.apply_aspects and not isinstance(main_options.get('aspect', 1), basestring):
+                main_aspect = main_options.get('aspect', 1)
             else:
-                aspect = [main_aspect, 0]
+                main_aspect = 1
+            if layout_type == 'Triple':
+                row_aspect = [0.25, 1./main_aspect]
+            else:
+                row_aspect = [1./main_aspect, 0]
+            if layout_type in ['Dual', 'Triple']:
+                col_aspect = [main_aspect, 0.25]
+            else:
+                col_aspect = [main_aspect, 0]
+
+            # Compute width and height ratios
             width_ratios = AdjointLayoutPlot.layout_dict[layout_type]['width_ratios'][:]
             height_ratios = AdjointLayoutPlot.layout_dict[layout_type]['height_ratios'][:]
             if not isinstance(main_aspect, (basestring, type(None))):
                 width_ratios[0] = (width_ratios[0] * main_aspect)
-                height_ratios[0] = (height_ratios[0] * 1./main_aspect)
+                height_ratios[0] = (height_ratios[hidx] * 1./main_aspect)
             layout_shape = (len(width_ratios), len(height_ratios))
 
             # For each row and column record the width and height ratios
@@ -899,36 +916,42 @@ class LayoutPlot(CompositePlot):
             # and largest aspect
             if layout_shape[1] > row_heightratios.get(r, (0, None))[0]:
                 row_heightratios[r] = [layout_shape[1], height_ratios]
-            if layout_type == 'Triple':
-                if height_ratios[1] > row_heightratios[r][1][1]:
-                    row_heightratios[r][1][1] = height_ratios[1]
-            elif height_ratios[0] > row_heightratios[r][1][0]:
-                row_heightratios[r][1][0] = height_ratios[0]
+            if height_ratios[hidx] > row_heightratios[r][1][hidx]:
+                row_heightratios[r][1][hidx] = height_ratios[hidx]
 
             if layout_shape[0] > col_widthratios.get(c, (0, None))[0]:
                 col_widthratios[c] = (layout_shape[0], width_ratios)
             if width_ratios[0] > col_widthratios[c][1][0]:
                 col_widthratios[c][1][0] = width_ratios[0]
 
-            if aspect[0] > col_aspects.get(c, [0])[0]:
-                col_aspects[c][0] = aspect[0]
-            if aspect[1] > col_aspects.get(c, [0, 0])[1]:
-                col_aspects[c][1] = aspect[1]
+            for i in range(2):
+                if col_aspect[i] > col_aspects.get(c, [0,0])[i]:
+                    col_aspects[c][i] = col_aspect[i]
+                if row_aspect[i] > row_aspects.get(r, [0,0])[i]:
+                    row_aspects[r][i] = row_aspect[i]
 
         # In order of row/column collect the largest width and height ratios
         height_ratios = [v[1] for k, v in sorted(row_heightratios.items())]
         width_ratios = [v[1] for k, v in sorted(col_widthratios.items())]
-        aspect_ratios = [v for k, v in sorted(col_aspects.items())]
+        col_aspect_ratios = [v for k, v in sorted(col_aspects.items())]
+        row_aspect_ratios = [v for k, v in sorted(row_aspects.items())]
+
         # Compute the number of rows and cols
         cols = np.sum([len(wr) for wr in width_ratios])
         rows = np.sum([len(hr) for hr in height_ratios])
+
         # Flatten the width and height ratio lists
         wr_list = [wr for wrs in width_ratios for wr in wrs]
         hr_list = [hr for hrs in height_ratios for hr in hrs]
+
+        # Compute and set the plot size if not explicitly supplied
         if not isinstance(self.fig_inches, (tuple, list)):
-            aspect_list = [ar for ars in aspect_ratios for ar in ars]
-            xinches = self.fig_inches * sum(aspect_list)
-            yinches = xinches/(sum(aspect_list)/sum([min(hr_list)/float(h) for h in hr_list]))
+            col_ars = [ar for ars in col_aspect_ratios for ar in ars]
+            row_ars = [ar for ars in row_aspect_ratios for ar in ars]
+            width = len(col_ars[::2]) + sum(col_ars[1::2])
+            xinches = self.fig_inches * width
+            yscale = sum(col_ars)/sum(row_ars)
+            yinches = xinches/yscale
             self.handles['fig'].set_size_inches([xinches, yinches])
 
         self.gs = gridspec.GridSpec(rows, cols,
@@ -940,6 +963,7 @@ class LayoutPlot(CompositePlot):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
         gidx = 0
+        tight = self.tight
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
@@ -977,10 +1001,11 @@ class LayoutPlot(CompositePlot):
             with matplotlib.rc_context(rc=self.fig_rcparams):
                 subaxes = [plt.subplot(self.gs[ind], projection=proj)
                            for ind, proj in zip(gsinds, projs)]
-                subplots, adjoint_layout, _ = self._create_subplots(layouts[(r, c)], positions,
-                                                                layout_dimensions, frame_ranges,
-                                                                dict(zip(positions, subaxes)),
-                                                                num=num+1)
+                subplot_data = self._create_subplots(layouts[(r, c)], positions,
+                                                     layout_dimensions, frame_ranges,
+                                                     dict(zip(positions, subaxes)),
+                                                     num=num+1)
+            subplots, adjoint_layout, _ = subplot_data
             layout_axes[(r, c)] = subaxes
 
             # Generate the AdjointLayoutsPlot which will coordinate
@@ -989,9 +1014,21 @@ class LayoutPlot(CompositePlot):
             layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
                                             figure=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
+            tight = not any(type(p) is GridPlot for p in layout_plot.subplots.values()) and tight
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
 
+        # Apply tight layout if enabled and incompatible
+        # GridPlot isn't present.
+        if tight:
+            if isinstance(self.tight_padding, (tuple, list)):
+                wpad, hpad = self.tight_padding
+                padding = dict(w_pad=wpad, h_pad=hpad)
+            else:
+                padding = dict(w_pad=self.tight_padding, h_pad=self.tight_padding)
+            self.gs.tight_layout(self.handles['fig'], rect=self.fig_bounds, **padding)
+
+        # Create title handle
         if self.show_title and len(self.coords) > 1:
             title = self.handles['fig'].suptitle('', **self._fontsize('title'))
             self.handles['title'] = title
