@@ -912,7 +912,7 @@ class LayoutPlot(CompositePlot):
 
             if aspect[0] > col_aspects.get(c, [0])[0]:
                 col_aspects[c][0] = aspect[0]
-            elif aspect[1] > col_aspects.get(c, [0])[1]:
+            if aspect[1] > col_aspects.get(c, [0, 0])[1]:
                 col_aspects[c][1] = aspect[1]
 
         # In order of row/column collect the largest width and height ratios
