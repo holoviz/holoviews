@@ -8,6 +8,7 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
+import param
 from itertools import groupby
 import pyparsing as pp
 
@@ -18,6 +19,12 @@ ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
 
 
+# To generate warning in the standard param style
+# Parameterize Parser and use warning method once param supports
+# logging at the class level.
+class ParserWarning(param.Parameterized):pass
+parsewarning = ParserWarning(name='Warning')
+
 class Parser(object):
     """
     Base class for magic line parsers, designed for forgiving parsing
@@ -26,6 +33,8 @@ class Parser(object):
 
     # Static namespace set in __init__.py of the extension
     namespace = {}
+    # If True, raise SyntaxError on eval error otherwise warn
+    abort_on_eval_failure = False
 
     @classmethod
     def _strip_commas(cls, kw):
@@ -79,9 +88,16 @@ class Parser(object):
             # Same for some of the other joining errors corrected here
             for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='), (',:',':')]:
                 keyword = keyword.replace(fst, snd)
-            try:     kwargs.update(eval('dict(%s)' % keyword,
-                                        dict(cls.namespace, **ns)))
-            except: raise SyntaxError("Could not evaluate keyword: %r" % keyword)
+            try:
+                kwargs.update(eval('dict(%s)' % keyword,
+                                   dict(cls.namespace, **ns)))
+            except:
+                if cls.abort_on_eval_failure:
+                    raise SyntaxError("Could not evaluate keyword: %r"
+                                      % keyword)
+                msg = "Ignoring keyword pair that fails to evaluate: '%s'"
+                parsewarning.warning(msg % keyword)
+
         return kwargs
 
 
