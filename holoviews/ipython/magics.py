@@ -7,6 +7,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 from ..core import OrderedDict
+from ..core import util
 from ..core.options import Options, OptionError, Store, StoreOptions
 from ..core.pprint import InfoPrinter
 
@@ -55,6 +56,18 @@ class OptionsMagic(Magics):
                 value = items[keyword]
                 allowed = cls.allowed[keyword]
                 if isinstance(allowed, set):  pass
+                elif isinstance(allowed, dict):
+                    if not isinstance(value, dict):
+                        raise ValueError("Value %r for %r not a dict type" % value)
+                    disallowed = set(value.keys()) - set(allowed.keys())
+                    if disallowed:
+                        raise ValueError("Keywords %r for %r option not one of %s"
+                                         % (disallowed, keyword, allowed))
+                    wrong_type = {k: v for k, v in value.items()
+                                  if not isinstance(v, allowed[k])}
+                    if wrong_type:
+                        raise ValueError(("Value %r for %r option's %r attribute not of type %r" %
+                                          (v, keyword, k, allowed[k])))
                 elif isinstance(allowed, list) and value not in allowed:
                     if keyword in cls.custom_exceptions:
                         cls.custom_exceptions[keyword](value, keyword, allowed)
@@ -166,7 +179,11 @@ class OutputMagic(OptionsMagic):
                'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf')),
                'filename'    : {None},
-               'info'        : [True, False]}
+               'info'        : [True, False],
+               'css'         : {k: util.basestring
+                                for k in ['width', 'height', 'padding', 'margin',
+                                          'max-width', 'min-width', 'max-height',
+                                          'min-height', 'outline', 'float']}}
 
     defaults = OrderedDict([('backend'     , 'mpl'),
                             ('fig'         , 'png'),
@@ -179,7 +196,8 @@ class OutputMagic(OptionsMagic):
                             ('dpi'         , 72),
                             ('charwidth'   , 80),
                             ('filename'    , None),
-                            ('info'        , False)])
+                            ('info'        , False),
+                            ('css'         , {})])
 
     options = OrderedDict(defaults.items())
 
@@ -241,8 +259,9 @@ class OutputMagic(OptionsMagic):
                   % cls.defaults['filename'])
         page =  ("info    : The information to page about the displayed objects (default %r)"
                   % cls.defaults['info'])
+        css =   ("css     : Optional css style attributes to apply to the figure image tag")
 
-        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname, page]
+        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname, page, css]
         return '\n'.join(intro + descriptions)
 
 

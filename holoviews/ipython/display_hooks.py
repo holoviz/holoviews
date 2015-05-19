@@ -57,7 +57,7 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     b64data = base64.b64encode(data).decode("utf-8")
     (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
     src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)
-    return  tag.format(src=src, mime_type=mime_type)
+    return tag.format(src=src, mime_type=mime_type, css=dict_to_css(OutputMagic.options['css']))
 
 
 def HTML_video(plot):
@@ -142,12 +142,21 @@ def display_widgets(plot):
         return SelectionWidget(plot, embed=False)()
 
 
+def dict_to_css(css_dict):
+    """Converts a Python dictionary to a valid CSS specification"""
+    if isinstance(css_dict, dict):
+        return '; '.join("%s: %s" % (k, v) for k, v in css_dict.items())
+    else:
+        raise ValueError("CSS must be supplied as Python dictionary")
+
+
 def display_figure(fig, message=None, max_width='100%'):
     "Display widgets applicable to the specified element"
     if OutputMagic.options['fig'] == 'repr': return None
 
     figure_format = OutputMagic.options['fig']
     dpi = OutputMagic.options['dpi']
+    css = OutputMagic.options['css']
     backend = OutputMagic.options['backend']
 
     if backend == 'nbagg' and new_figure_manager_given_figure is not None:
@@ -171,7 +180,7 @@ def display_figure(fig, message=None, max_width='100%'):
         b64 = base64.b64encode(figdata).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-        html = tag.format(src=src)
+        html = tag.format(src=src, css=dict_to_css(css))
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 

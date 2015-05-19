@@ -27,9 +27,9 @@ from . import pandas # pyflakes:ignore (API import)
 from . import seaborn # pyflakes:ignore (API import)
 
 # Tags used when matplotlib output is to be embedded in HTML
-IMAGE_TAG = "<center><img src='{src}' style='max-width:100%'/><center/>"
+IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; {css}'/>"
 VIDEO_TAG = """
-<center><video controls style='max-width:100%'>
+<center><video controls style='max-width:100%; margin: auto; {css}'>
 <source src='{src}' type='{mime_type}'>
 Your browser does not support the video tag.
 </video><center/>"""
