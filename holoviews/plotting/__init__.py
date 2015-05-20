@@ -149,7 +149,7 @@ class MPLPlotRenderer(Exporter):
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
 
-        plot = plotclass(obj, **opts(obj,  get_plot_size(obj, self.size)))
+        plot = plotclass(obj, **opts(obj,  self.size))
 
         if fmt is None:
             fmt = self.holomap if len(plot) > 1 else self.fig
