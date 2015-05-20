@@ -297,7 +297,7 @@ class LabelledData(param.Parameterized):
         return accumulator
 
 
-    def map(self, map_fn, specs=None):
+    def map(self, map_fn, specs=None, clone=True):
         """
         Recursively replaces elements using a map function when the
         specification applies.
@@ -305,9 +305,9 @@ class LabelledData(param.Parameterized):
         applies = specs is None or any(self.matches(spec) for spec in specs)
         mapped = map_fn(self) if applies else self
         if self._deep_indexable:
-            deep_mapped = mapped.clone(shared_data=False)
+            deep_mapped = mapped.clone(shared_data=False) if clone else mapped
             for k, v in mapped.items():
-                deep_mapped[k] = v.map(map_fn, specs)
+                deep_mapped[k] = v.map(map_fn, specs, clone)
             return deep_mapped
         else:
             return mapped
