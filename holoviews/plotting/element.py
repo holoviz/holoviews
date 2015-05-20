@@ -37,6 +37,11 @@ class ElementPlot(Plot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
+    hidden_labels = param.List(default=[], doc="""
+        Accepts a list containing any combination of x, y and z, disabling
+        the axes labels (ticks, ticklabels, axis label) without disabling
+        the axis entirely.""")
+
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -372,7 +377,8 @@ class ElementPlot(Plot):
             for pos in disabled_spines:
                 axis.spines[pos].set_visible(False)
 
-        if not self.show_frame and self.projection != 'polar':
+        if not self.overlaid and not self.show_frame and self.projection != 'polar':
+
             axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
             axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
 
@@ -420,6 +426,19 @@ class ElementPlot(Plot):
         if self.projection == '3d':
             for tick in axis.get_zticklabels():
                 tick.set_rotation(self.zrotation)
+
+        if 'x' in self.hidden_labels:
+            axis.set_xticklabels([])
+            axis.xaxis.set_ticks_position('none')
+            axis.set_xlabel('')
+        if 'y' in self.hidden_labels:
+            axis.set_yticklabels([])
+            axis.yaxis.set_ticks_position('none')
+            axis.set_ylabel('')
+        if 'z' in self.hidden_labels:
+            axis.set_zticklabels([])
+            axis.zaxis.set_ticks_position('none')
+            axis.set_zlabel('')
 
         tick_fontsize = self._fontsize('ticks','labelsize',common=False)
         if tick_fontsize:  axis.tick_params(**tick_fontsize)
