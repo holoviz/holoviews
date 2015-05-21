@@ -36,7 +36,10 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.holoviews.rc",
                "~/.config/holoviews/holoviews.rc"]:
     try:
-        execfile(os.path.expanduser(rcfile))
+        filename = os.path.expanduser(rcfile)
+        with open(filename) as f:
+            code = compile(f.read(), filename, 'exec')
+            exec(code)
         break
     except IOError:
         pass
