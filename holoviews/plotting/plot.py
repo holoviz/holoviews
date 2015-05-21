@@ -700,7 +700,7 @@ class GridPlot(CompositePlot):
         border_width = self.padding / (self.cols-1)
         xticks = [(plot_width/2)+(r*(plot_width+border_width)) for r in range(self.cols)]
         plot_height = (1.0 - self.padding) / self.rows
-        border_height = self.padding / (self.rows-1)
+        border_height = self.padding / (self.rows-1) if layout.ndims > 1 else 0
         yticks = [(plot_height/2)+(r*(plot_height+border_height)) for r in range(self.rows)]
 
         layout_axis.set_xticks(xticks)
