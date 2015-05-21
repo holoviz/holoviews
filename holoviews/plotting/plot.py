@@ -239,6 +239,20 @@ class Plot(param.Parameterized):
                 group_ranges[dim].append(dim_range)
         ranges[group] = OrderedDict((k, max_range(v)) for k, v in group_ranges.items())
 
+
+
+    @classmethod
+    def _deep_options(cls, obj, opt_type, opts, specs=None):
+        """
+        Traverses the supplied object getting all options
+        in opts for the specified opt_type and specs
+        """
+        lookup = lambda x: ((type(x).__name__, x.group, x.label),
+                            {o: Store.lookup_options(x, opt_type).options.get(o, None)
+                             for o in opts})
+        return dict(obj.traverse(lookup, specs))
+
+
     def _get_frame(self, key):
         """
         Required on each Plot type to get the data corresponding
@@ -307,8 +321,13 @@ class Plot(param.Parameterized):
                 labels['Roman'] = int_to_roman(layout_num)
             elif '{roman}' in self.sublabel_format:
                 labels['roman'] = int_to_roman(layout_num).lower()
+            if not isinstance(self.aspect, basestring):
+                position = (self.sublabel_position[0]/self.aspect,
+                            self.sublabel_position[1]*self.aspect)
+            else:
+                position = self.sublabel_position
             at = AnchoredText(self.sublabel_format.format(**labels), loc=3,
-                              bbox_to_anchor=self.sublabel_position, frameon=False,
+                              bbox_to_anchor=position, frameon=False,
                               prop=dict(size=self.sublabel_size, weight='bold'),
                               bbox_transform=axis.transAxes)
             at.patch.set_visible(False)
@@ -448,23 +467,35 @@ class GridPlot(CompositePlot):
     aspect = param.Parameter(default='auto', doc="""
         Aspect ratios on GridPlot should be automatically determined.""")
 
-    show_frame = param.Boolean(default=False)
+    padding = param.Number(default=0.1, doc="""
+        The amount of padding as a fraction of the total Grid size""")
+
+    shared_xaxis = param.Boolean(default=False, doc="""
+        If enabled the x-axes of the GridSpace will be drawn from the
+        objects inside the Grid rather than the GridSpace dimensions.""")
+
+    shared_yaxis = param.Boolean(default=False, doc="""
+        If enabled the x-axes of the GridSpace will be drawn from the
+        objects inside the Grid rather than the GridSpace dimensions.""")
+
+    show_frame = param.Boolean(default=False, doc="""
+        Whether to draw a frame around the Grid.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
     show_title = param.Boolean(default=False)
 
+    tick_format = param.String(default="%.2f", doc="""
+        Formatting string for the GridPlot ticklabels.""")
+
     xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom', None], doc="""
+                                 objects=['bottom', 'top', None], doc="""
         Whether and where to display the xaxis.""")
 
     yaxis = param.ObjectSelector(default='left',
                                  objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
-
-    tick_format = param.String(default="%.2f", doc="""
-        Formatting string for the GridPlot ticklabels.""")
 
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -472,8 +503,8 @@ class GridPlot(CompositePlot):
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
-    def __init__(self, layout, axis=None, create_axes=True, ranges=None, keys=None,
-                 dimensions=None, layout_num=1, **params):
+    def __init__(self, layout, axis=None, create_axes=True, ranges=None,
+                 keys=None, dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
         self.layout = layout
@@ -515,36 +546,65 @@ class GridPlot(CompositePlot):
 
 
     def _create_subplots(self, layout, axis, ranges, create_axes):
-        layout = layout.map(Compositor.collapse_element, [CompositeOverlay])
+        layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
+                            clone=False)
+        norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
+        axiswise = any(v.get('axiswise', False) for v in norm_opts.values())
+        
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
-
         frame_ranges = self.compute_ranges(layout, None, ranges)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
+            if not isinstance(coord, tuple): coord = (coord,)
+            view = layout.data.get(coord, None)
+
             # Create axes
+            kwargs = {}
             if create_axes:
                 subax = plt.subplot(self._layoutspec[r, c])
-                subax.axis('off')
+
+                if not axiswise and self.shared_xaxis and self.xaxis is not None:
+                    self.xaxis = 'top'
+                if not axiswise and self.shared_yaxis and self.yaxis is not None:
+                    self.yaxis = 'right'
+
+                # Disable subplot axes depending on shared axis options
+                # and the position in the grid
+                if (self.shared_xaxis or self.shared_yaxis) and not axiswise:
+                    hidden_labels = []
+                    if c == 0 and r != 0:
+                        subax.xaxis.set_ticks_position('none')
+                        hidden_labels += ['x']
+                    if c != 0 and r == 0:
+                        subax.yaxis.set_ticks_position('none')
+                        hidden_labels += ['y']
+                    if r != 0 and c != 0:
+                        hidden_labels += ['x', 'y']
+                    if not self.shared_xaxis:
+                        hidden_labels += ['x']
+                    if not self.shared_yaxis:
+                        hidden_labels += ['y']
+                    kwargs['hidden_labels'] = list(set(hidden_labels))
+                else:
+                    kwargs['hidden_labels'] = ['x', 'y']
                 subaxes[(r, c)] = subax
-                subax.patch.set_visible(False)
             else:
                 subax = None
 
             # Create subplot
-            if not isinstance(coord, tuple): coord = (coord,)
-            view = layout.data.get(coord, None)
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
+                opts = Store.lookup_options(view, 'plot').options
                 subplot = Store.registry[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
                                                 subplot=not create_axes, ranges=frame_ranges,
                                                 uniform=self.uniform, keys=self.keys,
-                                                show_legend=False)
+                                                show_legend=False, **dict(opts, **kwargs))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
                 subplots[(r, c)] = subplot
             if r != self.rows-1:
@@ -598,10 +658,12 @@ class GridPlot(CompositePlot):
                                    **self._fontsize('title'))
             self.handles['title'] = title
 
+
     def _layout_axis(self, layout, axis):
         fig = self.handles['fig']
         axkwargs = {'gid': str(self.position)} if axis else {}
         layout_axis = fig.add_subplot(1,1,1, **axkwargs)
+
         if axis:
             axis.set_visible(False)
             layout_axis.set_position(self.position)
@@ -630,22 +692,44 @@ class GridPlot(CompositePlot):
             layout_axis.set_aspect(float(self.rows)/self.cols)
 
         # Process ticks
-        plot_width = 1.0 / self.cols
-        xticks = [(plot_width/2)+(r*plot_width) for r in range(self.cols)]
-        plot_height = 1.0 / self.rows
-        yticks = [(plot_height/2)+(r*plot_height) for r in range(self.rows)]
+        plot_width = (1.0 - self.padding) / self.cols
+        border_width = self.padding / (self.cols-1)
+        xticks = [(plot_width/2)+(r*(plot_width+border_width)) for r in range(self.cols)]
+        plot_height = (1.0 - self.padding) / self.rows
+        border_height = self.padding / (self.rows-1)
+        yticks = [(plot_height/2)+(r*(plot_height+border_height)) for r in range(self.rows)]
+
         layout_axis.set_xticks(xticks)
         layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys)), dims[0]))
         for tick in layout_axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
-        layout_axis.set_yticks(yticks)
+
         ydim = dims[1] if layout.ndims > 1 else None
+        layout_axis.set_yticks(yticks)
         layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
+        for tick in layout_axis.get_yticklabels():
+            tick.set_rotation(self.yrotation)
+
         if not self.show_frame:
             layout_axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
             layout_axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
-        for tick in layout_axis.get_yticklabels():
-            tick.set_rotation(self.yrotation)
+
+        axis = layout_axis
+        disabled_spines = []
+        if self.xaxis is not None:
+            axis.xaxis.set_ticks_position(self.xaxis)
+            axis.xaxis.set_label_position(self.xaxis)
+        else:
+            axis.xaxis.set_visible(False)
+
+        if self.yaxis is not None:
+            axis.yaxis.set_ticks_position(self.yaxis)
+            axis.yaxis.set_label_position(self.yaxis)
+        else:
+            axis.yaxis.set_visible(False)
+
+        for pos in ['left', 'right', 'top', 'bottom']:
+            axis.spines[pos].set_visible(False)
 
         return layout_axis
 
@@ -667,17 +751,23 @@ class GridPlot(CompositePlot):
         bbox = axis.get_position()
         l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
 
+        if self.padding:
+            width_padding = w/(1./self.padding)
+            height_padding = h/(1./self.padding)
+        else:
+            width_padding, height_padding = 0, 0
+
         if self.cols == 1:
             b_w = 0
         else:
-            b_w = (w/10.) / (self.cols - 1)
+            b_w = width_padding / (self.cols - 1)
 
         if self.rows == 1:
             b_h = 0
         else:
-            b_h = (h/10.) / (self.rows - 1)
-        ax_w = (w - ((w/10.) if self.cols > 1 else 0)) / self.cols
-        ax_h = (h - ((h/10.) if self.rows > 1 else 0)) / self.rows
+            b_h = height_padding / (self.rows - 1)
+        ax_w = (w - (width_padding if self.cols > 1 else 0)) / self.cols
+        ax_h = (h - (height_padding if self.rows > 1 else 0)) / self.rows
 
         r, c = (0, 0)
         for ax in subaxes.values():
