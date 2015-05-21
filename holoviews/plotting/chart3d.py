@@ -23,6 +23,9 @@ class Plot3D(ElementPlot):
     distance = param.Integer(default=10, bounds=(7, 15), doc="""
         Distance from the plotted object.""")
 
+    disable_axes = param.Boolean(default=False, doc="""
+        Disable all axes.""")
+
     bgcolor = param.String(default='white', doc="""
         Background color of the axis.""")
 
@@ -32,7 +35,7 @@ class Plot3D(ElementPlot):
     show_frame = param.Boolean(default=False, doc="""
         Whether to draw a frame around the figure.""")
 
-    show_grid = param.Boolean(default=False, doc="""
+    show_grid = param.Boolean(default=True, doc="""
         Whether to draw a grid in the figure.""")
 
     xaxis = param.ObjectSelector(default='fixed',
@@ -57,8 +60,6 @@ class Plot3D(ElementPlot):
         axis.grid(self.show_grid)
         axis.view_init(elev=self.elevation, azim=self.azimuth)
         axis.dist = self.distance
-        axis.xaxis.set_visible(False)
-        axis.yaxis.set_visible(False)
 
         if self.xaxis is None:
             axis.w_xaxis.line.set_lw(0.)
@@ -69,9 +70,10 @@ class Plot3D(ElementPlot):
         if self.zaxis is None:
             axis.w_zaxis.line.set_lw(0.)
             axis.w_zaxis.label.set_text('')
+        if self.disable_axes:
+            axis.set_axis_off()
 
         axis.set_axis_bgcolor(self.bgcolor)
-        axis.set_axis_off()
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 
