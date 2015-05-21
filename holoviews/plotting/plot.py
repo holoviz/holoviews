@@ -321,13 +321,8 @@ class Plot(param.Parameterized):
                 labels['Roman'] = int_to_roman(layout_num)
             elif '{roman}' in self.sublabel_format:
                 labels['roman'] = int_to_roman(layout_num).lower()
-            if not isinstance(self.aspect, basestring):
-                position = (self.sublabel_position[0]/self.aspect,
-                            self.sublabel_position[1]*self.aspect)
-            else:
-                position = self.sublabel_position
             at = AnchoredText(self.sublabel_format.format(**labels), loc=3,
-                              bbox_to_anchor=position, frameon=False,
+                              bbox_to_anchor=self.sublabel_position, frameon=False,
                               prop=dict(size=self.sublabel_size, weight='bold'),
                               bbox_transform=axis.transAxes)
             at.patch.set_visible(False)
