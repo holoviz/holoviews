@@ -562,11 +562,17 @@ class GridPlot(CompositePlot):
         for coord in layout.keys(full_grid=True):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
+            # Create subplot
+            if view is not None:
+                vtype = view.type if isinstance(view, HoloMap) else view.__class__
+                opts = Store.lookup_options(view, 'plot').options
 
             # Create axes
             kwargs = {}
             if create_axes:
-                subax = plt.subplot(self._layoutspec[r, c])
+                threed = issubclass(vtype, Element3D)
+                subax = plt.subplot(self._layoutspec[r, c],
+                                    projection='3d' if threed else None)
 
                 if not axiswise and self.shared_xaxis and self.xaxis is not None:
                     self.xaxis = 'top'
@@ -580,7 +586,7 @@ class GridPlot(CompositePlot):
                     if c == 0 and r != 0:
                         subax.xaxis.set_ticks_position('none')
                         hidden_labels += ['x']
-                    if c != 0 and r == 0:
+                    if c != 0 and r == 0 and not layout.ndims == 1:
                         subax.yaxis.set_ticks_position('none')
                         hidden_labels += ['y']
                     if r != 0 and c != 0:
@@ -598,8 +604,6 @@ class GridPlot(CompositePlot):
 
             # Create subplot
             if view is not None:
-                vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = Store.lookup_options(view, 'plot').options
                 subplot = Store.registry[vtype](view, figure=self.handles['fig'], axis=subax,
                                                 dimensions=self.dimensions, show_title=False,
                                                 subplot=not create_axes, ranges=frame_ranges,
