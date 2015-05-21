@@ -24,6 +24,22 @@ from .interface import *                                             # pyflakes:
 from .operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
 from .element import *                                               # pyflakes:ignore (API import)
 
+try:
+    # Switching to 'agg' backend (may be overridden in holoviews.rc)
+    import matplotlib.pyplot as plt
+    plt.switch_backend('agg')
+except:
+    pass
+
+# A single holoviews.rc file may be executed if found.
+for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
+               "~/.holoviews.rc",
+               "~/.config/holoviews/holoviews.rc"]:
+    try:
+        execfile(os.path.expanduser(rcfile))
+        break
+    except IOError:
+        pass
 
 
 def help(obj, visualization=False, ansi=True):
