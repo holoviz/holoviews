@@ -23,6 +23,9 @@ class Plot3D(ElementPlot):
     distance = param.Integer(default=10, bounds=(7, 15), doc="""
         Distance from the plotted object.""")
 
+    bgcolor = param.String(default='white', doc="""
+        Background color of the axis.""")
+
     projection = param.ObjectSelector(default='3d', doc="""
         The projection of the matplotlib axis.""")
 
@@ -33,11 +36,15 @@ class Plot3D(ElementPlot):
         Whether to draw a grid in the figure.""")
 
     xaxis = param.ObjectSelector(default='fixed',
-                                 objects=['fixed'], doc="""
+                                 objects=['fixed', None], doc="""
         Whether and where to display the xaxis.""")
 
     yaxis = param.ObjectSelector(default='fixed',
-                                 objects=['fixed'], doc="""
+                                 objects=['fixed', None], doc="""
+        Whether and where to display the yaxis.""")
+
+    zaxis = param.ObjectSelector(default='fixed',
+                                 objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
     def _finalize_axis(self, key, zlabel=None, zticks=None, **kwargs):
@@ -47,10 +54,24 @@ class Plot3D(ElementPlot):
         """
         axis = self.handles['axis']
         self.handles['fig'].set_frameon(False)
-        axis.grid(True)
+        axis.grid(self.show_grid)
         axis.view_init(elev=self.elevation, azim=self.azimuth)
         axis.dist = self.distance
-        axis.set_axis_bgcolor('white')
+        axis.xaxis.set_visible(False)
+        axis.yaxis.set_visible(False)
+
+        if self.xaxis is None:
+            axis.w_xaxis.line.set_lw(0.)
+            axis.w_xaxis.label.set_text('')
+        if self.yaxis is None:
+            axis.w_yaxis.line.set_lw(0.)
+            axis.w_yaxis.label.set_text('')
+        if self.zaxis is None:
+            axis.w_zaxis.line.set_lw(0.)
+            axis.w_zaxis.label.set_text('')
+
+        axis.set_axis_bgcolor(self.bgcolor)
+        axis.set_axis_off()
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 

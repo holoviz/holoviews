@@ -77,6 +77,9 @@ class ElementPlot(Plot):
                                       objects=['left', 'right', None], doc="""
         Whether and where to display the yaxis.""")
 
+    zaxis = param.Boolean(default=True, doc="""
+        Whether to display the z-axis.""")
+
     xticks = param.Integer(default=5, doc="""
         Number of ticks along the x-axis.""")
 
@@ -276,9 +279,9 @@ class ElementPlot(Plot):
                 axis.get_xaxis().grid(self.show_grid)
                 axis.get_yaxis().grid(self.show_grid)
 
-            if xlabel: axis.set_xlabel(xlabel, **self._fontsize('xlabel'))
-            if ylabel: axis.set_ylabel(ylabel, **self._fontsize('ylabel'))
-            if zlabel: axis.set_zlabel(zlabel, **self._fontsize('ylabel'))
+            if xlabel and self.xaxis: axis.set_xlabel(xlabel, **self._fontsize('xlabel'))
+            if ylabel and self.yaxis: axis.set_ylabel(ylabel, **self._fontsize('ylabel'))
+            if zlabel and self.zaxis: axis.set_zlabel(zlabel, **self._fontsize('ylabel'))
 
             self._apply_aspect(axis)
             self._subplot_label(axis)
