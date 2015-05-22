@@ -901,10 +901,9 @@ class LayoutPlot(CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
-    apply_aspects = param.Boolean(default=True, doc="""
-      If applied and any of the Layout elements have explicit
-      aspects set subplot proportions will be computed to
-      respect the aspects.""")
+    aspect_weight = param.Number(default=1, doc="""
+      Weighting of the individual aspects when computing the Layout
+      grid aspects and overall figure size.""")
 
     fig_bounds = param.NumericTuple(default=(0.05, 0.05, 0.95, 0.95), doc="""
       The bounds of the figure as a 4-tuple of the form
@@ -979,8 +978,9 @@ class LayoutPlot(CompositePlot):
             main = layout_view.main
             main = main.last if isinstance(main, HoloMap) else main
             main_options = Store.lookup_options(main, 'plot').options if main else {}
-            if main and self.apply_aspects and not isinstance(main_options.get('aspect', 1), basestring):
+            if main and not isinstance(main_options.get('aspect', 1), basestring):
                 main_aspect = main_options.get('aspect', 1)
+                main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
             else:
                 main_aspect = 1
             if layout_type == 'Triple':
