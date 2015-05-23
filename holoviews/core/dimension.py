@@ -658,6 +658,9 @@ class Dimensioned(LabelledData):
         """
         groups = set(Store.options.groups.keys())
         if kwargs and set(kwargs) <= groups:
+            if not all(isinstance(v, dict) for v in kwargs.values()):
+                raise Exception("The %s options must be specified using dictionary groups" %
+                                ','.join(repr(k) for k in kwargs.keys()))
             identifier = '%s.%s' % (self.__class__.__name__, sanitize_identifier(self.group))
             identifier += ('.%s' % sanitize_identifier(self.label)) if self.label else ''
             kwargs = {k:{identifier:v} for k,v in kwargs.items()}
