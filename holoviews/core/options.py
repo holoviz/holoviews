@@ -977,9 +977,8 @@ class StoreOptions(object):
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
-                clones[offset] = OptionTree(groups={'norm': Options(),
-                                                    'plot': Options(),
-                                                    'style': Options()})
+                clones[offset] = OptionTree(groups={group: Options()
+                                                    for group in Store.options.groups})
                 id_mapping.append((None, offset))
 
         return {k:cls.apply_customizations(options, t) if options else t
