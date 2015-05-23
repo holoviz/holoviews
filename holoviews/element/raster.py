@@ -442,7 +442,7 @@ class RGB(Image):
 
 
     @classmethod
-    def load_image(cls, filename, height=1, array=False):
+    def load_image(cls, filename, height=1, array=False, bounds=None):
         """
         Returns an raster element or raw numpy array from a PNG image
         file, using matplotlib.
@@ -466,9 +466,11 @@ class RGB(Image):
         if array:  return data
 
         (h, w, channels) = data.shape
-        f = float(height) / h
-        xoffset, yoffset = w*f/2, h*f/2
-        return cls(data, bounds=(-xoffset, -yoffset, xoffset, yoffset))
+        if bounds is None:
+            f = float(height) / h
+            xoffset, yoffset = w*f/2, h*f/2
+            bounds=(-xoffset, -yoffset, xoffset, yoffset)
+        return cls(data, bounds=bounds)
 
 
     def __init__(self, data, **params):
