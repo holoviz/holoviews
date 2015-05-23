@@ -453,7 +453,6 @@ class OptsMagic(Magics):
     """
     error_message = None # If not None, the error message that will be displayed
     opts_spec = None       # Next id to propagate, binding displayed object together.
-    applied_keys = []    # Path specs selecting the objects to be given a new id
 
     @classmethod
     def process_element(cls, obj):
@@ -467,12 +466,8 @@ class OptsMagic(Magics):
         if cls.error_message:
             return cls.error_message
         if cls.opts_spec is not None:
-            custom_trees = StoreOptions.create_custom_trees(obj, cls.opts_spec)
-            Store.custom_options.update(custom_trees)
-            for tree_id in custom_trees.keys():
-                StoreOptions.propagate_ids(obj, tree_id, cls.applied_keys)
+            StoreOptions.set_options(obj, cls.opts_spec)
             cls.opts_spec = None
-            cls.applied_keys = []
         return None
 
 
@@ -483,7 +478,7 @@ class OptsMagic(Magics):
 
     @classmethod
     def register_custom_spec(cls, spec, cellmagic):
-        spec, applied_keys = StoreOptions.expand_compositor_keys(spec)
+        spec, _ = StoreOptions.expand_compositor_keys(spec)
         try:
             StoreOptions.validate_spec(spec)
         except OptionError as e:
@@ -492,10 +487,8 @@ class OptsMagic(Magics):
 
         if cellmagic:
             cls.opts_spec = spec
-            cls.applied_keys = applied_keys + list(spec.keys())
         else:
             cls.opts_spec = spec
-            cls.applied_keys = []
 
 
     @line_cell_magic
