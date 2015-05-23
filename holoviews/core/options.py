@@ -874,7 +874,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def propagate_ids(cls, obj, new_id, applied_keys):
+    def propagate_ids(cls, obj, match_id, new_id, applied_keys):
         """
         Recursively propagate an id through an object for components
         matching the applied_keys. This method can only be called if
@@ -884,7 +884,8 @@ class StoreOptions(object):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
-        obj.traverse(lambda o: setattr(o, 'id', new_id), specs=set(applied_keys))
+        obj.traverse(lambda o: setattr(o, 'id', new_id)
+                     if o.id == match_id else None, specs=set(applied_keys))
 
     @classmethod
     def capture_ids(cls, obj):
@@ -960,8 +961,11 @@ class StoreOptions(object):
         an object, suitable for merging with Store.custom_options (i.e
         with the ids appropriately offset). Note if an object has no
         integer ids a new OptionTree is built.
+
+        The id_mapping return value is a list mapping the ids that
+        need to be matched as set to their new values.
         """
-        clones = {}
+        clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
         store_ids = Store.custom_options.keys()
         offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
@@ -970,15 +974,17 @@ class StoreOptions(object):
             clone = OptionTree(items=  original.items(),
                                groups= original.groups)
             clones[tree_id + offset + 1] = clone
+            id_mapping.append((tree_id, tree_id + offset + 1))
 
         if len(clones) == 0:
             new_tree = OptionTree(groups={'norm': Options(),
                                           'plot': Options(),
                                           'style': Options()})
             clones[offset] = new_tree
+            id_mapping.append((None, offset))
 
         return {k:cls.apply_customizations(options, t) if options else t
-                for k,t in clones.items()}
+                for k,t in clones.items()}, id_mapping
 
 
     @classmethod
@@ -1091,8 +1097,8 @@ class StoreOptions(object):
         #                  'style': Options('style', cmap='Blues')]}
         options = cls.merge_options(options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
-        custom_trees = cls.create_custom_trees(obj, spec)
+        custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         Store.custom_options.update(custom_trees)
-        for tree_id in custom_trees.keys():
-            cls.propagate_ids(obj, tree_id, compositor_applied+list(spec.keys()))
+        for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
+            cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj
