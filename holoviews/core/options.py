@@ -311,10 +311,11 @@ class OptionTree(AttrTree):
         self.__dict__['_instantiated'] = True
 
 
-    def _inherited_options(self, identifier, group_name, options):
+    def _merge_options(self, identifier, group_name, options):
         """
-        Computes the inherited Options object for the given group
-        name from the current node given a new set of options.
+        Computes a merged Options object for the given group
+        name from the existing Options on the node and the
+        new Options which are passed in.
         """
         override_kwargs = dict(options.kwargs)
         if not self._instantiated:
@@ -378,12 +379,13 @@ class OptionTree(AttrTree):
         for group_name in current_node.groups:
             options = group_items.get(group_name, False)
             if options:
-                new_groups[group_name] = self._inherited_options(identifier, group_name, options)
+                new_groups[group_name] = self._merge_options(identifier, group_name, options)
             else:
                 new_groups[group_name] = current_node.groups[group_name]
 
         if new_groups:
-            new_node = OptionTree(None, identifier=identifier, parent=self, groups=new_groups)
+            data = self[identifier].items() if identifier in self.children else None
+            new_node = OptionTree(data, identifier=identifier, parent=self, groups=new_groups)
         else:
             raise ValueError('OptionTree only accepts a dictionary of Options.')
         super(OptionTree, self).__setattr__(identifier, new_node)
