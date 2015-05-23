@@ -302,7 +302,6 @@ def default_options(options):
     options.Raster = Options('style', cmap='hot', interpolation='nearest')
     options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
     options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
-    options.RGBA = Options('style', interpolation='nearest')
     options.RGB = Options('style', interpolation='nearest')
     # Composites
     options.Layout = Options('plot', sublabel_format='{Alpha}')
