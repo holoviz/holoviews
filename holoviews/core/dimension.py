@@ -661,7 +661,12 @@ class Dimensioned(LabelledData):
             if not all(isinstance(v, dict) for v in kwargs.values()):
                 raise Exception("The %s options must be specified using dictionary groups" %
                                 ','.join(repr(k) for k in kwargs.keys()))
-            identifier = '%s.%s' % (self.__class__.__name__, sanitize_identifier(self.group))
+
+            sanitized_group = sanitize_identifier(self.group)
+            if  sanitized_group != self.__class__.__name__:
+                identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
+            else:
+                identifier = self.__class__.__name__
             identifier += ('.%s' % sanitize_identifier(self.label)) if self.label else ''
             kwargs = {k:{identifier:v} for k,v in kwargs.items()}
         deep_clone = self.map(lambda x: x.clone(id=x.id))
