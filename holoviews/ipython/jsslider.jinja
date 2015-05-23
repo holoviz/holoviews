@@ -90,150 +90,167 @@
     }
 </script>
 
-<div class="animation row row-fluid" style="display: table; table-layout: fixed; width: 100%; height:50%;">
-    <div class="span9 col-xs-9" style="display: table-cell; float:None; vertical-align: middle;">
-       	<div style="margin:auto auto; width:80%">
-             <div id="_anim_img{{ id }}"></div>
-	</div>
-    </div>
-    <div class="span4 col-xs-3" style="display: table-cell; float:None; width:25%; vertical-align: middle;">
-        {% for widget_data in widgets %}
-	<div class="control-group" style="{{ widget_data['visibility'] }}">
-        {% if widget_data['type'] == 'slider' %}
-            <div class="row" style="display: table;">
-                <div class="span6 col-xs-6" for="textInput{{ id }}_{{ widget_data['dim'] }}" style="display: table-cell; float:None; vertical-align: middle;">
-                    <strong>{{ widget_data['dim'] }}:</strong>
-                </div>
-                <div class="span6 col-xs-6" style="display: table-cell; float:None; vertical-align: middle;">
-                    <input type="text" class="form-control input-medium" id="textInput{{ id }}_{{ widget_data['dim'] }}" value="" disabled>
-                </div>
-            </div>
-	    <div class="row" style="margin-top:7%">
-	    	 <div class="span8 offset4 col-xs-8 col-xs-offset-4">
-                    <div id="_anim_widget{{ id }}_{{ widget_data['dim'] }}"></div>
-                </div>
-	    </div>
-        </br>
-        <script>
-			/* Load JQuery UI CSS */
-            function loadcssfile(filename){
-              var fileref=document.createElement("link")
-              fileref.setAttribute("rel", "stylesheet")
-              fileref.setAttribute("type", "text/css")
-              fileref.setAttribute("href", filename)
-              document.getElementsByTagName("head")[0].appendChild(fileref)
-            }
-            loadcssfile("https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css");
-			/* Check if jQuery and jQueryUI have been loaded
-               otherwise load with require.js */
-            var jQuery = window.jQuery,
-                // check for old versions of jQuery
-                oldjQuery = jQuery && !!jQuery.fn.jquery.match(/^1\.[0-4](\.|$)/),
-                jquery_path = 'https://code.jquery.com/jquery-1.11.1.min',
-                paths = {},
-                noConflict;
-            var jQueryUI = jQuery.ui;
-            // check for jQuery
-            if (!jQuery || oldjQuery) {
-                // load if it's not available or doesn't meet min standards
-                paths.jQuery = jQuery;
-                noConflict = !!oldjQuery;
-            } else {
-                // register the current jQuery
-                define('jquery', [], function() { return jQuery; });
-            }
-            if (!jQueryUI) {
-                paths.jQueryUI = "{{ jqueryui_url }}"
-            } else {
-                define('jQueryUI', [], function() { return jQuery.ui; });
-            }
-            var jquery_require = {paths: paths,
-                                  shim: {
-                                      "jQueryUI": {
-                                          export:"$" ,
-                                          deps: ['jquery']
-                                      }
-                                  }}
-            require.config(jquery_require);
-            require(["jquery", "jQueryUI"], function(args){
-                if (noConflict) $.noConflict(true);
-                var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
-                $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
-                    animate: "fast",
-                    min: 0,
-                    max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
-                    value: 0,
-                    slide: function(event, ui) {
-                        var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
-                        $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
-                        anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
-                    }
-                });
-                $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').keypress(function(event) {
-                    if (event.which == 80 || event.which == 112) {
-                        var start = $(this).slider("option", "value");
-                        var stop =  $(this).slider("option", "max");
-                        for (var i=start; i<=stop; i++) {
-                            var delay = i*{{ delay }};
-                            $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
-                                var val = {value:i};
-                                $(this).slider('value',i);
-                                $(this).slider("option", "slide")(null, val);
-                            }, $(this)), delay);
-                            }, $(this))(i);
-                        }
-                    }
-                    if (event.which == 82 || event.which == 114) {
-                        var start = $(this).slider("option", "value");
-                        var stop =  $(this).slider("option", "min");
-                        var count = 0;
-                        for (var i=start; i>=stop; i--) {
-                            var delay = count*{{ delay }};
-                            count = count + 1;
-                            $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
-                                var val = {value:i};
-                                $(this).slider('value',i);
-                                $(this).slider("option", "slide")(null, val);
-                            }, $(this)), delay);
-                            }, $(this))(i);
-                        }
-                    }
-                });
-                $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(valMap{{ id }}_{{ widget_data['dim'] }}[0]);
-            });
-        </script>
-        {% elif widget_data['type']=='dropdown' %}
-        <div class="row" style="display: table;">
-            <div class="span6 col-xs-6" style="display: table-cell; float:None; vertical-align: middle;">
-                <strong>{{ widget_data['dim'] }}:</strong>
-            </div>
-            <div class="span6 col-xs-6" style="display: table-cell; float:None; vertical-align: middle;">
-                <select name="select-choice-min" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" >
-                </select>
-            </div>
-        </div>
-        </br>
-        <script>
-            var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
-            var options = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
-            for (var i=0; i<valMap{{ id }}_{{ widget_data['dim'] }}.length; i++)
-            {
-                options.append($("<option>", {
-                    value: i,
-                    text:  valMap{{ id }}_{{ widget_data['dim'] }}[i]
-            }));
-            };
+<style>
+div.hololayout {
+    display: flex;
+    align-items: center;
+}
 
-            $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').on('change', function(event, ui) {
-                var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[this.value];
-                if(anim{{ id }}) {
-                    anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
-            }
-            });
-        </script>
-        {% endif %}
+form.holoform {
+    background-color: #fafafa;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+div.holoslider {
+    min-height: 0 !important;
+    height: 0.8em;
+}
+
+
+.hologroup {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.holoselect {
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+</style>
+
+<div class="hololayout row row-fluid">
+    <div class="holoframe span9 col-xs-9 vcenter">
+      <div id="_anim_img{{ id }}"></div>
+    </div>
+    <div class="span3 col-xs-3 vcenter">
+    <form class="holoform well">
+      {% for widget_data in widgets %}
+      {% if widget_data['type'] == 'slider' %}
+      <div class="form-group control-group">
+	<label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim'] }}:</strong></label>
+	<div class="hololayout">
+	  <div class="col-xs-4 span4 hologroup">
+            <input type="text" class="form-control input-small" style="width: 95%;" id="textInput{{ id }}_{{ widget_data['dim'] }}" value="" disabled>
+	  </div><!--
+          --><div class="holoslider span7 offset1 col-xs-7 col-xs-offset-1" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}"></div>
 	</div>
-        {% endfor %}
+      </div>
+      <script>
+	/* Load JQuery UI CSS */
+        function loadcssfile(filename){
+            var fileref=document.createElement("link")
+            fileref.setAttribute("rel", "stylesheet")
+            fileref.setAttribute("type", "text/css")
+            fileref.setAttribute("href", filename)
+            document.getElementsByTagName("head")[0].appendChild(fileref)
+        }
+        loadcssfile("https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css");
+        /* Check if jQuery and jQueryUI have been loaded
+	   otherwise load with require.js */
+        var jQuery = window.jQuery,
+        // check for old versions of jQuery
+        oldjQuery = jQuery && !!jQuery.fn.jquery.match(/^1\.[0-4](\.|$)/),
+        jquery_path = 'https://code.jquery.com/jquery-1.11.1.min',
+        paths = {},
+        noConflict;
+        var jQueryUI = jQuery.ui;
+        // check for jQuery
+        if (!jQuery || oldjQuery) {
+            // load if it's not available or doesn't meet min standards
+            paths.jQuery = jQuery;
+            noConflict = !!oldjQuery;
+        } else {
+            // register the current jQuery
+            define('jquery', [], function() { return jQuery; });
+        }
+        if (!jQueryUI) {
+            paths.jQueryUI = "{{ jqueryui_url }}"
+        } else {
+            define('jQueryUI', [], function() { return jQuery.ui; });
+        }
+        var jquery_require = {paths: paths,
+                              shim: {
+                                  "jQueryUI": {
+                                      export:"$" ,
+                                      deps: ['jquery']
+                                  }
+                              }}
+        require.config(jquery_require);
+        require(["jquery", "jQueryUI"], function(args){
+            if (noConflict) $.noConflict(true);
+            var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
+            $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
+                animate: "fast",
+                min: 0,
+                max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
+                value: 0,
+                slide: function(event, ui) {
+                    var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
+                    $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
+                    anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
+		    }
+            });
+            $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').keypress(function(event) {
+                if (event.which == 80 || event.which == 112) {
+                    var start = $(this).slider("option", "value");
+                    var stop =  $(this).slider("option", "max");
+                    for (var i=start; i<=stop; i++) {
+                        var delay = i*{{ delay }};
+                        $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
+                            var val = {value:i};
+                            $(this).slider('value',i);
+                            $(this).slider("option", "slide")(null, val);
+                        }, $(this)), delay);
+							 }, $(this))(i);
+                    }
+                }
+                if (event.which == 82 || event.which == 114) {
+                    var start = $(this).slider("option", "value");
+                    var stop =  $(this).slider("option", "min");
+                    var count = 0;
+                    for (var i=start; i>=stop; i--) {
+                        var delay = count*{{ delay }};
+                        count = count + 1;
+                        $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
+                            var val = {value:i};
+                            $(this).slider('value',i);
+                            $(this).slider("option", "slide")(null, val);
+                        }, $(this)), delay);
+							 }, $(this))(i);
+                    }
+                }
+            });
+            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(valMap{{ id }}_{{ widget_data['dim'] }}[0]);
+        });
+      </script>
+      {% elif widget_data['type']=='dropdown' %}
+      <div class="form-group control-group">
+	<label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim'] }}:</strong></label>
+        <select class="holoselect form-control" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" >
+        </select>
+      </div>
+      <script>
+        var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
+        var options = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
+        for (var i=0; i<valMap{{ id }}_{{ widget_data['dim'] }}.length; i++){
+            options.append($("<option>", {
+                value: i,
+                text:  valMap{{ id }}_{{ widget_data['dim'] }}[i]
+            }));
+        };
+        $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').on('change', function(event, ui) {
+            var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[this.value];
+            if(anim{{ id }}) {
+                anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
+            }
+        });
+      </script>
+      {% endif %}
+      {% endfor %}
+    </form>
     </div>
 </div>
 
