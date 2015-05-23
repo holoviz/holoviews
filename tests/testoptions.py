@@ -154,6 +154,27 @@ class TestOptionTree(ComparisonTestCase):
         self.assertEqual(options.MyType.Child['group2'].options,
                          {'kw2':'value2', 'kw4':'value4'})
 
+    def test_optiontree_inheritance_flipped(self):
+        """
+        Tests for ordering problems manifested in issue #93
+        """
+        options = OptionTree(groups={'group1':  Options(),
+                                     'group2': Options()})
+
+        opts3 = Options(kw3='value3')
+        opts4 = Options(kw4='value4')
+        options.MyType.Child = {'group1':opts3, 'group2':opts4}
+
+        opts1 = Options(kw1='value1')
+        opts2 = Options(kw2='value2')
+        options.MyType = {'group1':opts1, 'group2':opts2}
+
+        self.assertEqual(options.MyType.Child['group1'].options,
+                         {'kw1':'value1', 'kw3':'value3'})
+
+        self.assertEqual(options.MyType.Child['group2'].options,
+                         {'kw2':'value2', 'kw4':'value4'})
+
 
 class TestStoreInheritance(ComparisonTestCase):
     """
