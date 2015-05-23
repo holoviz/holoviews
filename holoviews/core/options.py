@@ -869,8 +869,7 @@ class StoreOptions(object):
     @classmethod
     def get_object_ids(cls, obj):
         return set(el for el
-                   in obj.traverse(lambda x: getattr(x, 'id', None))
-                   if el is not None)
+                   in obj.traverse(lambda x: getattr(x, 'id', None)))
 
 
     @classmethod
@@ -969,19 +968,19 @@ class StoreOptions(object):
         obj_ids = cls.get_object_ids(obj)
         store_ids = Store.custom_options.keys()
         offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
+        obj_ids = [None] if len(obj_ids)==0 else obj_ids
         for tree_id in obj_ids:
-            original = Store.custom_options[tree_id]
-            clone = OptionTree(items=  original.items(),
-                               groups= original.groups)
-            clones[tree_id + offset + 1] = clone
-            id_mapping.append((tree_id, tree_id + offset + 1))
-
-        if len(clones) == 0:
-            new_tree = OptionTree(groups={'norm': Options(),
-                                          'plot': Options(),
-                                          'style': Options()})
-            clones[offset] = new_tree
-            id_mapping.append((None, offset))
+            if tree_id is not None:
+                original = Store.custom_options[tree_id]
+                clone = OptionTree(items = original.items(),
+                                   groups = original.groups)
+                clones[tree_id + offset + 1] = clone
+                id_mapping.append((tree_id, tree_id + offset + 1))
+            else:
+                clones[offset] = OptionTree(groups={'norm': Options(),
+                                                    'plot': Options(),
+                                                    'style': Options()})
+                id_mapping.append((None, offset))
 
         return {k:cls.apply_customizations(options, t) if options else t
                 for k,t in clones.items()}, id_mapping
