@@ -619,7 +619,12 @@ class HoloMap(UniformNdMapping):
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         histmap = self.clone(shared_data=False)
 
-        map_range = None if individually else self.range
+        if individually:
+            map_range = None
+        else:
+            if 'dimension' not in kwargs:
+                raise Exception("Please supply the dimension to compute a histogram for.")
+            map_range = self.range(kwargs['dimension'])
         bin_range = map_range if bin_range is None else bin_range
         style_prefix = 'Custom[<' + self.name + '>]_'
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
