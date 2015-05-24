@@ -471,8 +471,8 @@ class ElementPlot(Plot):
                 handle.set_visible(view is not None)
         if view is None:
             return
-        if self.normalize:
-            ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.map, key, ranges)
+        if not self.adjoined:
             ranges = util.match_spec(view, ranges)
         axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))

@@ -159,7 +159,7 @@ class Plot(param.Parameterized):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = {} if ranges is None or self.adjoined else dict(ranges)
+        ranges = {} if ranges is None else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -173,7 +173,7 @@ class Plot(param.Parameterized):
         for group, (axiswise, framewise) in norm_opts.items():
             if group in ranges:
                 continue # Skip if ranges are already computed
-            elif not framewise and not self.adjoined: # Traverse to get all elements
+            elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 elements = self._get_frame(key).traverse(return_fn, [group])

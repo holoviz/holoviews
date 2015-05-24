@@ -252,7 +252,7 @@ class HistogramPlot(ChartPlot):
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, key, ranges)
-        ranges = match_spec(hist, ranges)
+        el_ranges = match_spec(hist, ranges)
 
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
@@ -267,13 +267,13 @@ class HistogramPlot(ChartPlot):
         # Plot bars and make any adjustments
         style = self.style[self.cyclic_index]
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
-        self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims) # Indexing top
+        self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
         self.handles['legend_handle'] = bars
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges, **ax_settings)
+        return self._finalize_axis(self.keys[-1], ranges=el_ranges, **ax_settings)
 
 
     def _process_hist(self, hist):
@@ -325,7 +325,7 @@ class HistogramPlot(ChartPlot):
         return axis_settings
 
 
-    def _update_plot(self, key, hist, bars, lims):
+    def _update_plot(self, key, hist, bars, lims, ranges):
         """
         Process bars can be subclassed to manually adjust bars
         after being plotted.
@@ -333,7 +333,7 @@ class HistogramPlot(ChartPlot):
         return bars
 
 
-    def _update_artists(self, key, hist, edges, hvals, widths, lims):
+    def _update_artists(self, key, hist, edges, hvals, widths, lims, ranges):
         """
         Update all the artists in the histogram. Subclassable to
         allow updating of further artists.
@@ -360,7 +360,7 @@ class HistogramPlot(ChartPlot):
 
         ticks = self._compute_ticks(view, edges, widths, lims)
         ax_settings = self._process_axsettings(view, lims, ticks)
-        self._update_artists(key, view, edges, hvals, widths, lims)
+        self._update_artists(key, view, edges, hvals, widths, lims, ranges)
         return ax_settings
 
 
@@ -403,12 +403,12 @@ class SideHistogramPlot(HistogramPlot):
         return axsettings
 
 
-    def _update_artists(self, n, view, edges, hvals, widths, lims):
-        super(SideHistogramPlot, self)._update_artists(n, view, edges, hvals, widths, lims)
-        self._update_plot(n, view, self.handles['bars'], lims)
+    def _update_artists(self, n, view, edges, hvals, widths, lims, ranges):
+        super(SideHistogramPlot, self)._update_artists(n, view, edges, hvals, widths, lims, ranges)
+        self._update_plot(n, view, self.handles['bars'], lims, ranges)
 
 
-    def _update_plot(self, key, view, bars, lims):
+    def _update_plot(self, key, view, bars, lims, ranges):
         """
         Process the bars and draw the offset line as necessary. If a
         color map is set in the style of the 'main' ViewableElement object, color
@@ -419,8 +419,6 @@ class SideHistogramPlot(HistogramPlot):
         main = self.adjoined.main
         y0, y1 = hist.range(1)
         offset = self.offset * y1
-        plot_options = Store.lookup_options(main, 'plot').options
-        individually = plot_options.get('normalize_individually', False)
 
         hist_dim = hist.get_dimension(0).name
         range_item = main
@@ -428,13 +426,17 @@ class SideHistogramPlot(HistogramPlot):
             if issubclass(main.type, CompositeOverlay):
                 range_item = [hm for hm in main.split_overlays()[1]
                               if hist_dim in hm.dimensions('all', label=True)][0]
-                if individually:
-                    range_item = range_item[key]
+        else:
+            range_item = HoloMap({0: main}, key_dimensions=['Frame'])
+        ranges = match_spec(range_item.last, ranges)
+        if hist_dim in ranges:
+            main_range = ranges[hist_dim]
+        else:
+            framewise = Store.lookup_options(range_item.last, 'norm').options.get('framewise')
+            if framewise and range_item.get(key, False):
+                main_range = range_item.get(key, False).range(hist_dim)
             else:
-                range_item = main[key] if individually else main
-        elif isinstance(main, ViewableElement):
-            range_item = main
-        main_range = range_item.range(hist_dim)
+                main_range = range_item.range(hist_dim)
 
         if offset and ('offset_line' not in self.handles):
             self.handles['offset_line'] = self.offset_linefn(offset,
