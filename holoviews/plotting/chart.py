@@ -191,18 +191,22 @@ class ErrorPlot(ChartPlot):
         tops = self.handles['tops']
         verts = self.handles['verts']
         paths = verts.get_paths()
-        if not self.horizontal:
+        if self.horizontal:
             bdata = data[:, 0] - data[:, 2]
             tdata = data[:, 0] + data[:, 3]
             tops.set_xdata(bdata)
+            tops.set_ydata(data[:, 1])
             bottoms.set_xdata(tdata)
+            bottoms.set_ydata(data[:, 1])
             for i, path in enumerate(paths):
                 path.vertices = np.array([[bdata[i], data[i, 1]],
                                           [tdata[i], data[i, 1]]])
         else:
             bdata = data[:, 1] - data[:, 2]
             tdata = data[:, 1] + data[:, 3]
+            bottoms.set_xdata(data[:, 0])
             bottoms.set_ydata(bdata)
+            tops.set_xdata(data[:, 0])
             tops.set_ydata(tdata)
             for i, path in enumerate(paths):
                 path.vertices = np.array([[data[i, 0], bdata[i]],
