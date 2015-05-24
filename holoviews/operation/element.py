@@ -440,6 +440,9 @@ class histogram(ElementOperation):
     num_bins = param.Integer(default=20, doc="""
       Number of bins in the histogram .""")
 
+    weight_dimension = param.String(default=None, doc="""
+       Name of the dimension the weighting should be drawn from""")
+
     style_prefix = param.String(default=None, allow_None=None, doc="""
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
@@ -449,18 +452,19 @@ class histogram(ElementOperation):
         else:
             selected_dim = [d.name for d in view.value_dimensions + view.key_dimensions][0]
         data = np.array(view.dimension_values(selected_dim))
-        range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
+        weights = np.array(view.dimension_values(self.p.weight_dimension)) if self.p.weight_dimension else None
+        hist_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
 
         # Avoids range issues including zero bin range and empty bins
-        if range == (0, 0):
-            range = (0.0, 0.1)
+        if hist_range == (0, 0):
+            hist_range = (0, 1)
         try:
             data = data[np.invert(np.isnan(data))]
             hist, edges = np.histogram(data[np.isfinite(data)], normed=self.p.normed,
-                                       range=range, bins=self.p.num_bins)
+                                       range=hist_range, weights=weights, bins=self.p.num_bins)
         except:
-            edges = np.linspace(range[0], range[1], self.p.num_bins + 1)
+            edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
 
@@ -468,6 +472,7 @@ class histogram(ElementOperation):
                               label=view.label)
 
         return (view << hist_view) if self.p.adjoin else hist_view
+
 
 
 #==================#
