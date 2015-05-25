@@ -20,7 +20,7 @@ class Element(ViewableElement, Composable, Overlayable):
     the data maps onto the x- and y- and value dimensions.
     """
 
-    group = param.String(default='Element')
+    group = param.String(default='Element', constant=True)
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, individually=True, **kwargs):
@@ -149,7 +149,7 @@ class NdElement(Element, NdMapping):
     slice over the column names (using alphanumeric ordering).
     """
 
-    group = param.String(default='NdElement', doc="""
+    group = param.String(default='NdElement', constant=True, doc="""
          The group is used to describe the NdElement.""")
 
     value_dimensions = param.List(default=[Dimension('Data')], doc="""

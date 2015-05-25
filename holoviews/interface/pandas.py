@@ -58,7 +58,7 @@ class DataFrameView(Element):
 
     y = param.String(doc="""Dimension to visualize along the y-axis.""")
 
-    group = param.String(default='DFrame')
+    group = param.String(default='DFrame', constant=True)
 
     value_dimensions = param.List(doc="DataFrameView has no value dimension.")
 

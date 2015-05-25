@@ -24,7 +24,7 @@ class ItemTable(Element):
     value_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
        ItemTables should have only index Dimensions.""")
 
-    group = param.String(default="ItemTable")
+    group = param.String(default="ItemTable", constant=True)
 
 
     @property
@@ -148,7 +148,7 @@ class Table(NdElement):
     format and is convertible to most other Element types.
     """
 
-    group = param.String(default='Table', doc="""
+    group = param.String(default='Table', constant=True, doc="""
          The group is used to describe the Table.""")
 
     def __setitem__(self, key, value):

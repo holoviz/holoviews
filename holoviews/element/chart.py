@@ -18,7 +18,7 @@ class Chart(Element2D):
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
-    group = param.String(default='Chart')
+    group = param.String(default='Chart', constant=True)
 
     value_dimensions = param.List(default=[Dimension('y')], bounds=(1,3), doc="""
         Dimensions on Element2Ds determine the number of indexable
@@ -211,7 +211,7 @@ class Scatter(Chart):
     disconnected points.
     """
 
-    group = param.String(default='Scatter')
+    group = param.String(default='Scatter', constant=True)
 
     @classmethod
     def collapse_data(cls, data, function=None, **kwargs):
@@ -227,7 +227,7 @@ class Curve(Chart):
     the x-axis.
     """
 
-    group = param.String(default='Curve')
+    group = param.String(default='Curve', constant=True)
 
     def progressive(self):
         """
@@ -256,7 +256,7 @@ class ErrorBars(Chart):
     lower and upper bounds.
     """
 
-    group = param.String(default='ErrorBars', doc="""
+    group = param.String(default='ErrorBars', constant=True, doc="""
         A string describing the quantitity measured by the ErrorBars
         object.""")
 
@@ -289,7 +289,7 @@ class Bars(NdElement):
     dimension.
     """
 
-    group = param.String(default='Bars')
+    group = param.String(default='Bars', constant=True)
 
     key_dimensions = param.List(default=[Dimension('x')], bounds=(1,3))
 
@@ -307,7 +307,7 @@ class Histogram(Element2D):
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
-    group = param.String(default='Histogram')
+    group = param.String(default='Histogram', constant=True)
 
     value_dimensions = param.List(default=[Dimension('Frequency')])
 
@@ -441,7 +441,7 @@ class Points(Chart):
         The label of the x- and y-dimension of the Points in form
         of a string or dimension object.""")
 
-    group = param.String(default='Points')
+    group = param.String(default='Points', constant=True)
 
     value_dimensions = param.List(default=[], bounds=(0, 2))
 
@@ -503,7 +503,7 @@ class VectorField(Points):
     higher.
     """
 
-    group = param.String(default='VectorField')
+    group = param.String(default='VectorField', constant=True)
 
     value_dimensions = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
                                            Dimension('Magnitude')], bounds=(1, 2))

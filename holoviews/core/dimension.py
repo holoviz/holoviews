@@ -693,4 +693,4 @@ class ViewableElement(Dimensioned):
     __abstract = True
     _auxiliary_component = False
 
-    group = param.String(default='ViewableElement')
+    group = param.String(default='ViewableElement', constant=True)

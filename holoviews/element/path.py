@@ -35,7 +35,7 @@ class Path(Element2D):
         The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
-    group = param.String(default="Path")
+    group = param.String(default="Path", constant=True)
 
     def __init__(self, data, **params):
         if isinstance(data, tuple):
@@ -93,7 +93,7 @@ class Contours(Path):
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""", bounds=(1,1))
 
-    group = param.String(default='Contours')
+    group = param.String(default='Contours', constant=True)
 
     def __init__(self, data, **params):
         data = [] if data is None else data
@@ -113,7 +113,7 @@ class Polygons(Contours):
     closed paths with an associated value.
     """
 
-    group = param.String(default="Polygons")
+    group = param.String(default="Polygons", constant=True)
 
     value_dimensions = param.List(default=[Dimension('Value')], doc="""
         Polygons optionally accept a value dimension, corresponding
@@ -157,7 +157,7 @@ class Box(BaseShape):
         The aspect ratio of the box if supplied, otherwise an aspect
         of 1.0 is used.""")
 
-    group = param.String(default='Box', doc="The assigned group name.")
+    group = param.String(default='Box', constant=True, doc="The assigned group name.")
 
     def __init__(self, x, y, height, **params):
         super(Box, self).__init__([], x=x,y =y, height=height, **params)
@@ -187,7 +187,7 @@ class Ellipse(BaseShape):
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
-    group = param.String(default='Ellipse', doc="The assigned group name.")
+    group = param.String(default='Ellipse', constant=True, doc="The assigned group name.")
 
     def __init__(self, x, y, height, **params):
         super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
@@ -211,7 +211,7 @@ class Bounds(BaseShape):
     lbrt = param.NumericTuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
           The (left, bottom, right, top) coordinates of the bounding box.""")
 
-    group = param.String(default='Bounds', doc="The assigned group name.")
+    group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
 
     def __init__(self, lbrt, **params):
         if not isinstance(lbrt, tuple):

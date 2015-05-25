@@ -81,7 +81,7 @@ class MultiDimensionalMapping(Dimensioned):
     storage methods helps make both classes easier to understand.
     """
 
-    group = param.String(default='MultiDimensionalMapping')
+    group = param.String(default='MultiDimensionalMapping', constant=True)
 
     key_dimensions = param.List(default=[Dimension("Default")], constant=True)
 
@@ -524,7 +524,7 @@ class NdMapping(MultiDimensionalMapping):
     keys that are outside the slice range.
     """
 
-    group = param.String(default='NdMapping')
+    group = param.String(default='NdMapping', constant=True)
 
     def __getitem__(self, indexslice):
         """

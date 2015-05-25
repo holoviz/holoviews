@@ -27,7 +27,7 @@ class Surface(Image, Element3D):
                                   bounds=(1,1), doc="""
         The Surface height dimension.""")
 
-    group = param.String(default='Surface')
+    group = param.String(default='Surface', constant=True)
 
     def __init__(self, data, extents=None, **params):
         extents = extents if extents else (None, None, None, None, None, None)
@@ -63,7 +63,7 @@ class Scatter3D(Element3D, Chart):
         Scatter3D can have optional value dimensions,
         which may be mapped onto color and size.""")
 
-    group = param.String(default='Scatter3D')
+    group = param.String(default='Scatter3D', constant=True)
 
     def __getitem__(self, slc):
         return Chart.__getitem__(self, slc)
