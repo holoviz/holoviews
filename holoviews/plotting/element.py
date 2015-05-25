@@ -1,3 +1,4 @@
+import math
 from collections import Counter
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -228,7 +229,9 @@ class ElementPlot(Plot):
             axis = self.handles['axis']
             divider = make_axes_locatable(axis)
             self.handles['cax'] = divider.append_axes('right', size="5%", pad=0.05)
-        plt.colorbar(artist, cax=self.handles['cax'])
+        self.handles['cbar'] = plt.colorbar(artist, cax=self.handles['cax'])
+        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
+            self.handles['cbar'].solids.set_edgecolor("face")
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
