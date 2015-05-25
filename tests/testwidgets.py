@@ -55,7 +55,7 @@ class TestWidgets(IPTestCase):
 
     def test_selection_widget_1(self):
         html = normalize(SelectionWidget(self.plot1)())
-        self.assertEqual(digest_data(html), '291357a9fa2fdbe58c33e60cb5bed1b590631d30c5c35ee8452f0ac03541d02f')
+        self.assertEqual(digest_data(html), '5ce9d99df36fd341d03a01ccc9ebd0aa6456df6be9bf922e928ec9d80159be20')
 
     def test_scrubber_widget_2(self):
         html = normalize(ScrubberWidget(self.plot2)())
@@ -63,4 +63,4 @@ class TestWidgets(IPTestCase):
 
     def test_selection_widget_2(self):
         html = normalize(SelectionWidget(self.plot2)())
-        self.assertEqual(digest_data(html), 'e250a3d430e0126ed10c79cbcff256a1145d8e1ae4d2b3c5b7cb52775c483e09')
+        self.assertEqual(digest_data(html), 'b28da687c51c10c868ee3797147170a6b5fd053667f15341459f8382eeda7689')
