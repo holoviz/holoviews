@@ -366,6 +366,8 @@ class Histogram(Element2D):
         elif isinstance(values, np.ndarray) and len(values.shape) == 2:
             values = values[:, 0]
             edges = values[:, 1]
+        elif all(isinstance(el, tuple) for el in values):
+            edges, values = zip(*values)
         else:
             values = np.array(values)
             edges = np.array(edges, dtype=np.float)
