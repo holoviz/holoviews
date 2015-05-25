@@ -449,7 +449,7 @@ class SideHistogramPlot(HistogramPlot):
         # If .main is an NdOverlay or a HoloMap of Overlays get the correct style
         if isinstance(range_item, HoloMap):
             range_item = range_item.last
-        elif isinstance(range_item, CompositeOverlay):
+        if isinstance(range_item, CompositeOverlay):
             range_item = [ov for ov in range_item
                           if hist_dim in ov.dimensions('value', label=True)][0]
 
