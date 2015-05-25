@@ -231,14 +231,19 @@ class LabelledData(param.Parameterized):
         return self.__class__(data, *args, **settings)
 
 
-    def relabel(self, label=None, group=None):
+    def relabel(self, label=None, group=None, depth=0):
         """
         Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
         """
         keywords = [('label',label), ('group',group)]
-        return self.clone(self.data,
-                          **{k:v for k,v in keywords if v is not None})
+        obj = self.clone(self.data,
+                         **{k:v for k,v in keywords if v is not None})
+        if (depth > 0) and hasattr(obj, '_deep_indexable'):
+            for k, v in obj.items():
+                obj[k] =  v.relabel(group=group, label=label, depth=depth-1)
+        return obj
+
 
     def matches(self, spec):
         """

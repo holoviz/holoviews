@@ -686,16 +686,6 @@ class UniformNdMapping(NdMapping):
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
 
-    def relabel(self, label=None, group=None):
-        """
-        Relabels the UniformNdMapping and all it's Elements
-        with the supplied group and label.
-        """
-        return self.clone([(k, v.relabel(label, group)) for k, v in self.data.items()],
-                          group=group if group else self.group,
-                          label=self.label if label is None else label)
-
-
     def clone(self, data=None, shared_data=True, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
