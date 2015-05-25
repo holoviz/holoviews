@@ -100,6 +100,7 @@ form.holoform {
     background-color: #fafafa;
     border-radius: 5px;
     overflow: hidden;
+    padding: 0.8em;
 }
 
 div.holoslider {
@@ -107,11 +108,18 @@ div.holoslider {
     height: 0.8em;
 }
 
+div.holoformgroup {
+    padding-right: 0.5em;
+    margin-top: 0.5em;
+    padding-top: 0.5em;
+    margin-bottom: 0.5em;
+}
 
 .hologroup {
     padding-left: 0;
-    padding-right: 0;
+    padding-right: 1em;
 }
+
 
 .holoselect {
     width: 100%;
@@ -122,14 +130,14 @@ div.holoslider {
 </style>
 
 <div class="hololayout row row-fluid">
-    <div class="holoframe span9 col-xs-9 vcenter">
+    <div class="holoframe span9 col-xs-9">
       <div id="_anim_img{{ id }}"></div>
     </div>
-    <div class="span3 col-xs-3 vcenter">
+    <div class="span3 col-xs-3">
     <form class="holoform well">
       {% for widget_data in widgets %}
       {% if widget_data['type'] == 'slider' %}
-      <div class="form-group control-group">
+      <div class="form-group control-group holoformgroup">
 	<label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim'] }}:</strong></label>
 	<div class="hololayout">
 	  <div class="col-xs-4 span4 hologroup">
