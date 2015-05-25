@@ -10,7 +10,7 @@ import param
 from ..core.options import Store
 from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
 from ..core.util import match_spec
-from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars
+from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars, Polygons
 from .element import ElementPlot
 from .plot import Plot
 
@@ -453,7 +453,7 @@ class SideHistogramPlot(HistogramPlot):
             range_item = [ov for ov in range_item
                           if hist_dim in ov.dimensions('value', label=True)][0]
 
-        if isinstance(range_item, (Raster, Points)):
+        if isinstance(range_item, (Raster, Points, Polygons)):
             style = Store.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
