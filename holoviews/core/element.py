@@ -556,9 +556,11 @@ class HoloMap(UniformNdMapping):
                 linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
             elif dims == 2:
                 (rows, cols) = samples
-                x0, x1 = self.last.range(0)
-                y0, y1 = self.last.range(1)
-                (l,b,r,t) = (x0, y0, x1, y0) if bounds is None else bounds
+                if bounds:
+                    (l,b,r,t) = bounds
+                else:
+                    l, r = self.last.range(0)
+                    b, t = self.last.range(1)
 
                 xedges = np.linspace(l, r, cols+1)
                 yedges = np.linspace(b, t, rows+1)
