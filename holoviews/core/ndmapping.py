@@ -782,3 +782,25 @@ class UniformNdMapping(NdMapping):
             raise ValueError("HoloMaps dimensions must be consistent in %s." %
                              type(self).__name__)
         super(UniformNdMapping, self)._item_check(dim_vals, data)
+
+
+    def dframe(self):
+        """
+        Gets a dframe for each Element in the HoloMap, appends the
+        dimensions of the HoloMap as series and concatenates the
+        dframes.
+        """
+        import pandas
+        dframes = []
+        for key, view in self.data.items():
+            view_frame = view.dframe()
+            for val, dim in reversed(zip(key, self._cached_index_names)):
+                dim = dim.replace(' ', '_')
+                dimn = 1
+                while dim in view_frame:
+                    dim = dim+'_%d' % dimn
+                    if dim in view_frame:
+                        dimn += 1
+                view_frame.insert(0, dim, val)
+            dframes.append(view_frame)
+        return pandas.concat(dframes)

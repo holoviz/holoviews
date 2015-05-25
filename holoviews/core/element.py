@@ -479,28 +479,6 @@ class HoloMap(UniformNdMapping):
                 data=self.data_type, vmap=self.__class__.__name__))
 
 
-    def dframe(self):
-        """
-        Gets a dframe for each Element in the HoloMap, appends the
-        dimensions of the HoloMap as series and concatenates the
-        dframes.
-        """
-        import pandas
-        dframes = []
-        for key, view in self.data.items():
-            view_frame = view.dframe()
-            for val, dim in reversed(zip(key, self._cached_index_names)):
-                dim = dim.replace(' ', '_')
-                dimn = 1
-                while dim in view_frame:
-                    dim = dim+'_%d' % dimn
-                    if dim in view_frame:
-                        dimn += 1
-                view_frame.insert(0, dim, val)
-            dframes.append(view_frame)
-        return pandas.concat(dframes)
-
-
     def __add__(self, obj):
         return Layout.from_values(self) + Layout.from_values(obj)
 
@@ -776,21 +754,6 @@ class GridSpace(UniformNdMapping):
         if self.ndims == 1:
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
-
-
-    def dframe(self):
-        """
-        Gets a Pandas dframe from each of the items in the GridSpace, appends the
-        GridSpace coordinates and concatenates all the dframes.
-        """
-        import pandas
-        dframes = []
-        for coords, vmap in self.items():
-            map_frame = vmap.dframe()
-            for coord, dim in zip(coords, self._cached_index_names)[::-1]:
-                map_frame.insert(0, dim.replace(' ','_'), coord)
-            dframes.append(map_frame)
-        return pandas.concat(dframes)
 
 
 class Collator(NdMapping):
