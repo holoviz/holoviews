@@ -234,6 +234,12 @@ class HeatMap(Raster):
         return data, array, dimensions
 
 
+    def clone(self, data=None, shared_data=True, *args, **overrides):
+        if not data and shared_data:
+            data = self._data
+        return super(HeatMap, self).clone(data, shared_data)
+
+
     def __getitem__(self, coords):
         """
         Slice the underlying NdMapping.
