@@ -112,25 +112,38 @@ class Arrow(Annotation):
     specified as well as the arrow head style.
     """
 
+    x = param.Number(default=0, doc="The x-position of the arrow.")
+
+    y = param.Number(default=0, doc="The y-position of the arrow.")
+
+    text = param.String(default='', doc="Text associated with the arrow.")
+
+    direction = param.ObjectSelector(default='<',
+                                     objects=['<', '^', '>', 'v'], doc="""
+        The cardinal direction in which the arrow is pointing.""")
+
+    arrowstyle = param.ObjectSelector(default='->',
+                                       objects=['-', '->', '-[', '-|>', '<->', '<|-|>'], doc="""
+       The arrowstyle used to draw the arrow.""")
+
+    points = param.Number(default=40, doc="Font size of arrow text (if any).")
+
     group = param.String(default='Arrow')
 
     def __init__(self, x, y, text='', direction='<',
                  points=40, arrowstyle='->', **params):
 
-        directions = ['<', '^', '>', 'v']
-        arrowstyles = ['-', '->', '-[', '-|>', '<->', '<|-|>']
-
-        if direction.lower() not in directions:
-            raise ValueError("Valid arrow directions are: %s"
-                             % ', '.join(repr(d) for d in directions))
-
-        if arrowstyle not in arrowstyles:
-            raise ValueError("Valid arrow styles are: %s"
-                             % ', '.join(repr(a) for a in arrowstyles))
-
         info = (direction.lower(), text, (x,y), points, arrowstyle)
-        super(Arrow, self).__init__(info, **params)
+        super(Arrow, self).__init__(info, x=x, y=y,
+                                    text=text, direction=direction,
+                                    points=points, arrowstyle=arrowstyle,
+                                    **params)
 
+    # Note: This version of clone is identical in Text and path.BaseShape
+    # Consider implementing a mix-in class if it is needed again.
+    def clone(self, *args, **overrides):
+        settings = dict(self.get_param_values(), **overrides)
+        return self.__class__(*args, **settings)
 
 
 class Text(Annotation):
@@ -139,12 +152,33 @@ class Text(Annotation):
     fontsize, alignment and rotation.
     """
 
+    x = param.Number(default=0, doc="The x-position of the text.")
+
+    y = param.Number(default=0, doc="The y-position of text.")
+
+    text = param.String(default='', doc="The text to be displayed.")
+
+    fontsize = param.Number(default=12, doc="Font size of the text.")
+
+    rotation = param.Number(default=0, doc="Text rotation angle in degrees.")
+
+    halign= param.ObjectSelector(default='center',
+                                 objects= ['left', 'right', 'center'], doc="""
+       The horizontal alignment position of the displayed text.""")
+
+    valign= param.ObjectSelector(default='center',
+                                 objects= ['top', 'bottom', 'center'], doc="""
+       The vertical alignment position of the displayed text.""")
+
     group = param.String(default='Text')
 
     def __init__(self, x,y, text, fontsize=12,
-                 horizontalalignment='center',
-                 verticalalignment='center',
-                 rotation=0, **params):
-        info = (x,y, text, fontsize,
-                horizontalalignment, verticalalignment, rotation)
-        super(Text, self).__init__(info, **params)
+                 halign='center', valign='center', rotation=0, **params):
+        info = (x,y, text, fontsize, halign, valign, rotation)
+        super(Text, self).__init__(info, x=x, y=y, text=text,
+                                   fontsize=fontsize, rotation=rotation,
+                                   halign=halign, valign=valign, **params)
+
+    def clone(self, *args, **overrides):
+        settings = dict(self.get_param_values(), **overrides)
+        return self.__class__(*args, **settings)
