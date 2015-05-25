@@ -107,7 +107,8 @@ class Chart(Element2D):
                     raise IndexError("Value %s not found in data." % slc)
                 data = data[data_index, :]
         if not any(isinstance(slc, slice) for slc in slices):
-            return data
+            data = data[:, self.ndims:]
+            return data[0] if data.shape[1] == 1 else data
         if self.ndims == 1:
             lower_bounds.append(None)
             upper_bounds.append(None)
