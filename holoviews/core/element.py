@@ -107,6 +107,7 @@ class Element(ViewableElement, Composable, Overlayable):
         from ..element import Table
         keys = zip(*[self.dimension_values(dim.name)
                  for dim in self.key_dimensions])
+        if not keys: keys = [()]
         values = zip(*[self.dimension_values(dim.name)
                        for dim in self.value_dimensions])
         params = dict(key_dimensions=self.key_dimensions,
