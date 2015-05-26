@@ -294,8 +294,9 @@ class NdElement(Element, NdMapping):
             else:
                 reduced = tuple(reduce_fn(self.dimension_values(vdim.name))
                                 for vdim in self.value_dimensions)
-                params = dict(group=self.group) if self.value != type(self).__name__ else {}
-                reduced_table = self.__class__([((), reduced)], label=self.label,
+                reduced_dims = [d for d in self.key_dimensions if d.name not in reduce_map]
+                params = dict(group=self.group) if self.group != type(self).__name__ else {}
+                reduced_table = self.__class__([((), reduced)], label=self.label, key_dimensions=reduced_dims,
                                                value_dimensions=self.value_dimensions, **params)
         return reduced_table
 
