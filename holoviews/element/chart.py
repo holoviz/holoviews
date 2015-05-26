@@ -133,10 +133,13 @@ class Chart(Element2D):
         """
         sample_data = OrderedDict()
         for sample in samples:
-            sample_data[sample] = self[sample]
+            data = self[sample]
+            data = data if np.isscalar(data) else tuple(data)
+            sample_data[sample] = data
         params = dict(self.get_param_values(onlychanged=True))
         params.pop('extents', None)
-        return Table(sample_data, **params)
+        return Table(sample_data, **dict(params, key_dimensions=self.key_dimensions,
+                                         value_dimensions=self.value_dimensions))
 
 
     def reduce(self, dimensions=None, function=None, **reduce_map):
