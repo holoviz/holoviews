@@ -9,7 +9,7 @@ from matplotlib import gridspec, animation
 
 import param
 from ..core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, Element, CompositeOverlay, Element3D
+    GridSpace, Layout, Element, CompositeOverlay, Element3D, Empty
 from ..core.options import Store, Compositor
 from ..core import traversal
 from ..core.util import sanitize_identifier, int_to_roman,\
@@ -232,6 +232,7 @@ class Plot(param.Parameterized):
         elements = [el for el in elements if el is not None]
         group_ranges = OrderedDict()
         for el in elements:
+            if isinstance(el, (Empty, Table)): continue
             for dim in el.dimensions(label=True):
                 dim_range = el.range(dim)
                 if dim not in group_ranges:
@@ -1052,13 +1053,14 @@ class LayoutPlot(CompositePlot):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
         gidx = 0
+        layout_count = 0
         tight = self.tight
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
                                     for key in self.keys])
         layout_subplots, layout_axes = {}, {}
-        for num, (r, c) in enumerate(self.coords):
+        for r, c in self.coords:
             # Compute the layout type from shape
             wsplits = len(width_ratios[c])
             hsplits = len(height_ratios[r])
@@ -1086,14 +1088,20 @@ class LayoutPlot(CompositePlot):
                 layout_dimensions = OrderedDict(zip(layout_dimensions, layout_key))
 
             # Generate the axes and create the subplots with the appropriate
-            # axis objects
+            # axis objects, handling any Empty objects.
+            obj = layouts[(r, c)]
+            empty = isinstance(obj.main, Empty)
+            if empty:
+                obj = AdjointLayout([])
+            else:
+                layout_count += 1
             with matplotlib.rc_context(rc=self.fig_rcparams):
                 subaxes = [plt.subplot(self.gs[ind], projection=proj)
                            for ind, proj in zip(gsinds, projs)]
-                subplot_data = self._create_subplots(layouts[(r, c)], positions,
+                subplot_data = self._create_subplots(obj, positions,
                                                      layout_dimensions, frame_ranges,
                                                      dict(zip(positions, subaxes)),
-                                                     num=num+1)
+                                                     num=0 if empty else layout_count)
             subplots, adjoint_layout, _ = subplot_data
             layout_axes[(r, c)] = subaxes
 

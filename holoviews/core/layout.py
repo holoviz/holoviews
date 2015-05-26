@@ -39,6 +39,21 @@ class Composable(object):
 
 
 
+class Empty(Dimensioned, Composable):
+    """
+    Empty may be used to define an empty placeholder in a Layout. It can be
+    placed in a Layout just like any regular Element and container
+    type via the + operator or by passing it to the Layout constructor
+    as a part of a list.
+    """
+
+    group = param.String(default='Empty')
+
+    def __init__(self):
+        super(Empty, self).__init__(None)
+
+
+
 class AdjointLayout(Dimensioned):
     """
     A AdjointLayout provides a convenient container to lay out a primary plot
