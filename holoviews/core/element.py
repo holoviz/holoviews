@@ -110,10 +110,16 @@ class Element(ViewableElement, Composable, Overlayable):
         if not keys: keys = [()]
         values = zip(*[self.dimension_values(dim.name)
                        for dim in self.value_dimensions])
+        kwargs = {'label': self.label
+                  for k, v in self.get_param_values(onlychanged=True)
+                  if k in ['group', 'label']}
+
         params = dict(key_dimensions=self.key_dimensions,
                       value_dimensions=self.value_dimensions,
-                      label=self.label, group=self.group, **kwargs)
-        return Table(zip(keys, values), **params)
+                      label=self.label)
+        if not self.params()['group'].default == self.group:
+            params['group'] = self.group
+        return Table(zip(keys, values), **dict(params, **kwargs))
 
 
     def dframe(self):
