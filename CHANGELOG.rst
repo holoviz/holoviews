@@ -1,4 +1,4 @@
-Version 1.1.5
+Version 1.2.0
 -------------
 
 Since the last release we closed over 20 issues and have made 334
