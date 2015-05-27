@@ -177,7 +177,7 @@ def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
         figdata = renderer.figure_data(fig, figure_format)
         if figure_format=='svg':
             figdata = figdata.encode("utf-8")
-        if figure_format=='pdf':
+        if figure_format == 'pdf' and 'height' not in css:
             w, h = fig.get_size_inches()
             css['height'] = '%dpx' % (h*fig.get_dpi())
         b64 = base64.b64encode(figdata).decode("utf-8")
