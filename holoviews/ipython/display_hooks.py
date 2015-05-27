@@ -179,7 +179,7 @@ def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
             figdata = figdata.encode("utf-8")
         if figure_format == 'pdf' and 'height' not in css:
             w, h = fig.get_size_inches()
-            css['height'] = '%dpx' % (h*fig.get_dpi())
+            css['height'] = '%dpx' % (h*fig.get_dpi()*1.15)
         b64 = base64.b64encode(figdata).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
