@@ -42,7 +42,7 @@ API changes:
   * ``figure_*`` to ``fig_*``
   * ``vertical_spacing`` and ``horizontal_spacing`` to ``vspace`` and ``hspace`` respectively
   * Deprecation of confusing ``origin`` style option on RasterPlot
-  * ``Overlay.__getitem__`` no longer supports integer indexing (use get method instead)
+* ``Overlay.__getitem__`` no longer supports integer indexing (use ``get`` method instead)
 
 Important bug fixes:
 
