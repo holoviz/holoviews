@@ -91,7 +91,7 @@ unzip them somewhere IPython Notebook can find them, and then open the
 Homepage.ipynb tutorial or any of the others in the Notebook.  Enjoy
 exploring your data!
 
-|PyPI|_ |License|_ |PyVersions|_ |Coveralls|_
+|PyPI|_ |License|_  |Coveralls|_
 
 ------------
 
@@ -115,13 +115,10 @@ particularly if they come with test cases showing how to reproduce the bugs and
 `pull requests <http://yangsu.github.io/pull-request-tutorial/>`_
 showing how to fix the bug or implement the feature!
 
-.. |PyPI| image:: https://pypip.in/version/holoviews/badge.svg?style=flat
+.. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
 
-.. |PyVersions| image:: https://pypip.in/py_versions/holoviews/badge.svg?style=flat
-.. _PyVersions: https://pypi.python.org/pypi/holoviews
-
-.. |License| image:: https://pypip.in/license/holoviews/badge.svg?style=flat
+.. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
 
 .. |Coveralls| image:: https://img.shields.io/coveralls/ioam/holoviews.svg
