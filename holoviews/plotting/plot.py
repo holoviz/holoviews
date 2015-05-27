@@ -902,7 +902,7 @@ class LayoutPlot(CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
-    aspect_weight = param.Number(default=1, doc="""
+    aspect_weight = param.Number(default=0, doc="""
       Weighting of the individual aspects when computing the Layout
       grid aspects and overall figure size.""")
 
