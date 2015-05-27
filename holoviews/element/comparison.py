@@ -23,7 +23,7 @@ from unittest import TestCase
 from numpy.testing import assert_array_almost_equal
 
 from . import *    # pyflakes:ignore (All Elements need to support comparison)
-from ..core import Element, AdjointLayout, Overlay, Dimension, HoloMap, \
+from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
                    Dimensioned, Layout, NdLayout, NdOverlay, GridSpace
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
@@ -115,8 +115,9 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Element]     =  cls.compare_elements     # Used in unit tests
 
         # Composition (+ and *)
-        cls.equality_type_funcs[Overlay] =       cls.compare_overlays
-        cls.equality_type_funcs[Layout] =    cls.compare_layouttrees
+        cls.equality_type_funcs[Overlay] =     cls.compare_overlays
+        cls.equality_type_funcs[Layout] =      cls.compare_layouttrees
+        cls.equality_type_funcs[Empty] =       cls.compare_empties
 
         # Annotations
         cls.equality_type_funcs[VLine] =       cls.compare_vline
@@ -287,6 +288,11 @@ class Comparison(ComparisonInterface):
     def compare_layouttrees(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
         cls.compare_trees(el1, el2, msg='Layouts')
+
+    @classmethod
+    def compare_empties(cls, el1, el2, msg=None):
+        if not all(isinstance(el, Empty) for el in [el1, el2]):
+            raise cls.failureException("Compared elements are not both Empty()")
 
     @classmethod
     def compare_overlays(cls, el1, el2, msg=None):
