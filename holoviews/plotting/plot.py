@@ -607,6 +607,8 @@ class GridPlot(CompositePlot):
                                                 show_legend=False, **dict(opts, **kwargs))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
                 subplots[(r, c)] = subplot
+            else:
+                subax.set_visible(False)
             if r != self.rows-1:
                 r += 1
             else:
