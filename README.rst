@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_ |PyVersions|_ |Coveralls|_ |Downloads|_
+|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_
 
 holoviews
 =========
@@ -80,11 +80,8 @@ Features
 * Seamlessly combine and animate your Seaborn plots in HoloViews rich, compositional data-structures.
    
 
-.. |PyPI| image:: https://pypip.in/version/holoviews/badge.svg?style=flat
+.. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
-
-.. |PyVersions| image:: https://pypip.in/py_versions/holoviews/badge.svg?style=flat
-.. _PyVersions: https://pypi.python.org/pypi/holoviews
 
 .. |License| image:: https://pypip.in/license/holoviews/badge.svg?style=flat
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
@@ -101,5 +98,5 @@ Features
 .. |holoviewsDocs| image:: http://doozy.inf.ed.ac.uk:8010/png?builder=holoviews_docs
 .. _holoviewsDocs: http://doozy.inf.ed.ac.uk:8010/waterfall
 
-.. |Downloads| image:: https://pypip.in/download/holoviews/badge.svg?style=flat
+.. |Downloads| image:: https://img.shields.io/pypi/dm/holoviews.svg
 .. _Downloads: https://pypi.python.org/pypi/holoviews
