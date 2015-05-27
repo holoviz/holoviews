@@ -83,7 +83,7 @@ Features
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
 
-.. |License| image:: https://pypip.in/license/holoviews/badge.svg?style=flat
+.. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
 
 .. |Coveralls| image:: https://img.shields.io/coveralls/ioam/holoviews.svg
