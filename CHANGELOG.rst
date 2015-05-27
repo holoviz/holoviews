@@ -32,30 +32,26 @@ Highlights/Features:
   (38e9d44)
 
 API changes:
-* ``Path`` and ``Histogram`` support new constructors (7138ef4,
-  03b5d38)
+
+* ``Path`` and ``Histogram`` support new constructors (7138ef4, 03b5d38)
 * New depth argument on the relabel method (f89b89f)
 * Interface to Pandas improved (1a7cd3d)
 * Removed ``xlim``, ``ylim`` and ``zlim`` to eliminate redundancy.
 * Renaming of various plot and style options including:
+
   * ``figure_*`` to ``fig_*``
-  * ``vertical_spacing`` and ``horizontal_spacing`` to ``vspace`` and
-    ``hspace`` respectively
+  * ``vertical_spacing`` and ``horizontal_spacing`` to ``vspace`` and ``hspace`` respectively
   * Deprecation of confusing ``origin`` style option on RasterPlot
-  * ``Overlay.__getitem__`` no longer supports integer indexing (use
-    get method instead)
+  * ``Overlay.__getitem__`` no longer supports integer indexing (use get method instead)
 
 Important bug fixes:
 
-* Important fixes to inheritance in the options system (d34a931,
-  71c1f3a7)
+* Important fixes to inheritance in the options system (d34a931, 71c1f3a7)
 * Fixes to the select method (df839bea5)
 * Fixes to normalization system (c3ef40b)
-* Fixes to ``Raster`` and ``Image`` extents, ``__getitem__`` and
-  sampling.
+* Fixes to ``Raster`` and ``Image`` extents, ``__getitem__`` and sampling.
 * Fixed bug with disappearing adjoined plots (2360972)
-* Fixed plot ordering of overlaid elements across a ``HoloMap``
-  (c4f1685)
+* Fixed plot ordering of overlaid elements across a ``HoloMap`` (c4f1685)
 
 
 Version 1.1.0
