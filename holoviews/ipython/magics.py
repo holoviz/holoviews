@@ -14,6 +14,8 @@ from ..core.pprint import InfoPrinter
 from IPython.display import display, HTML
 from ..operation import Compositor
 
+import param
+
 #========#
 # Magics #
 #========#
@@ -155,6 +157,10 @@ class OptionsMagic(Magics):
         return items
 
 
+class OutputWarning(param.Parameterized):pass
+outputwarning = OutputWarning(name='Warning')
+
+
 @magics_class
 class OutputMagic(OptionsMagic):
     """
@@ -169,7 +175,7 @@ class OutputMagic(OptionsMagic):
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'     : ['mpl','d3', 'nbagg'],
-               'fig'         : ['svg', 'png', 'repr'],
+               'fig'         : ['svg', 'png', 'repr', 'pdf'],
                'holomap'     : inbuilt_formats,
                'widgets'     : ['embed', 'live'],
                'fps'         : (0, float('inf')),
@@ -277,10 +283,9 @@ class OutputMagic(OptionsMagic):
             if options['holomap'] not in allowed:
                 raise ValueError("The D3 backend only supports holomap options %r" % allowed)
 
-        if (options['holomap']=='widgets'
-            and options['widgets']!='embed'
-            and options['fig']=='svg'):
-            raise ValueError("SVG mode not supported by widgets unless in embed mode")
+        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
+            outputwarning.warning("PDF output is experimental, may not be supported"
+                                  "by your browser and may change in future.")
         return options
 
 

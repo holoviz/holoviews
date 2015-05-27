@@ -29,10 +29,11 @@ from . import seaborn # pyflakes:ignore (API import)
 # Tags used when matplotlib output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
 VIDEO_TAG = """
-<center><video controls style='max-width:100%; margin: auto; display: block; {css}'>
+<video controls style='max-width:100%; margin: auto; display: block; {css}'>
 <source src='{src}' type='{mime_type}'>
 Your browser does not support the video tag.
-</video><center/>"""
+</video>"""
+PDF_TAG = "<iframe src='{src}' style='width:100%; margin: auto; display: block; {css}'></iframe>"
 
 
 HTML_TAGS = {
@@ -41,7 +42,8 @@ HTML_TAGS = {
     'png':  IMAGE_TAG,
     'gif':  IMAGE_TAG,
     'webm': VIDEO_TAG,
-    'mp4':  VIDEO_TAG
+    'mp4':  VIDEO_TAG,
+    'pdf':  PDF_TAG
 }
 
 MIME_TYPES = {
@@ -49,7 +51,8 @@ MIME_TYPES = {
     'png':  'image/png',
     'gif':  'image/gif',
     'webm': 'video/webm',
-    'mp4':  'video/mp4'
+    'mp4':  'video/mp4',
+    'pdf':  'application/pdf'
 }
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
@@ -109,7 +112,7 @@ class MPLPlotRenderer(Exporter):
     """
 
     fig = param.ObjectSelector(default='svg',
-                               objects=['png', 'svg', None], doc="""
+                               objects=['png', 'svg', 'pdf', None], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
