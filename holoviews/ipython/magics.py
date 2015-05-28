@@ -482,7 +482,7 @@ class OptsMagic(Magics):
         return "Keyword <b>%r</b> not one of following %s options:<br><br><b>%s</b>" % info
 
     @classmethod
-    def register_custom_spec(cls, spec, cellmagic):
+    def register_custom_spec(cls, spec):
         spec, _ = StoreOptions.expand_compositor_keys(spec)
         try:
             StoreOptions.validate_spec(spec)
@@ -490,10 +490,7 @@ class OptsMagic(Magics):
             cls.error_message = cls._format_options_error(e)
             return None
 
-        if cellmagic:
-            cls.opts_spec = spec
-        else:
-            cls.opts_spec = spec
+        cls.opts_spec = spec
 
 
     @line_cell_magic
@@ -529,8 +526,8 @@ class OptsMagic(Magics):
             display(HTML("<b>Invalid syntax</b>: Consult <tt>%%opts?</tt> for more information."))
             return
 
-        self.register_custom_spec(spec, cell is not None)
         if cell:
+            self.register_custom_spec(spec)
             # Process_element is invoked when the cell is run.
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
