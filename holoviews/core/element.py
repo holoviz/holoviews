@@ -871,7 +871,6 @@ class Collator(NdMapping):
 
         dim_vals = [(dim, val) for dim, val in dims[::-1]
                     if dim not in self.drop]
-        dimensions, key = zip(*dim_vals) if len(dim_vals) else [], ()
         if isinstance(item, self.merge_type):
             new_item = item.clone(constant_dimensions=constant_keys)
             for dim, val in dim_vals:
@@ -881,8 +880,12 @@ class Collator(NdMapping):
                     raise ValueError("Items already contain dimensions %s "
                                      "and cannot be collated.")
         elif isinstance(item, self._nest_order[self.merge_type]):
-            new_item = self.merge_type({key: item}, key_dimensions=dimensions,
-                                       constant_dimensions=constant_keys)
+            if len(dim_vals):
+                dimensions, key = zip(*dim_vals)
+                new_item = self.merge_type({key: item}, key_dimensions=dimensions,
+                                           constant_dimensions=constant_keys)
+            else:
+                new_item = item
         else:
             new_item = item.clone(shared_data=False, constant_dimensions=constant_keys)
             for k, v in item.items():
