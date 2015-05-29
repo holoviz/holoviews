@@ -598,6 +598,10 @@ class HoloMap(UniformNdMapping):
                          for k, v in self.items()]
         return self.clone(reduced_items).table()
 
+    def relabel(self, label=None, group=None, depth=1):
+        # Identical to standard relabel method except for default depth of 1
+        return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
+
 
     @property
     def empty_element(self):
