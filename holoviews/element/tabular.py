@@ -178,7 +178,7 @@ class Table(NdElement):
 
 
     def __setitem__(self, key, value):
-        if self.indexed and key != len(self.data):
+        if self.indexed and ((key != len(self)) and (key != (len(self),))):
             raise Exception("Supplied key %d does not correspond to the items row number.")
 
         if isinstance(value, (dict, OrderedDict)):
