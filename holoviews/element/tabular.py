@@ -163,14 +163,10 @@ class Table(NdElement):
         self._sorted = False
         super(Table, self).__init__(OrderedDict(), **params)
 
+        data = {} if data is None else data
         if self.indexed:
             if isinstance(data, list):
-                data = OrderedDict(list(enumerate(data))) # CHECK PYTHON 3!
-            elif data is None:
-                data = {}
-            elif isinstance(data, (dict, OrderedDict)):
-                if set(data.keys()) != set(range(len(data))):
-                    raise Exception("Supplied keys must correspond to the zero-indexed row number.")
+                data = OrderedDict(list(enumerate(data)))
         else:
             data = dict(data)
 
