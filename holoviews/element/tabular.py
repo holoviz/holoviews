@@ -148,10 +148,43 @@ class Table(NdElement):
     format and is convertible to most other Element types.
     """
 
+    key_dimensions = param.List(default=[Dimension(name="Index")], doc="""
+         One or more key dimensions. By default, the special 'Index'
+         dimension ensures that the table is always indexed by the row
+         number.
+
+         If no key dimensions are set, only one entry can be stored
+         using the empty key ().""")
+
     group = param.String(default='Table', constant=True, doc="""
          The group is used to describe the Table.""")
 
+    def __init__(self, data=None, **params):
+        self._sorted = False
+        super(Table, self).__init__(OrderedDict(), **params)
+
+        if self.indexed:
+            if isinstance(data, list):
+                data = OrderedDict(list(enumerate(data))) # CHECK PYTHON 3!
+            elif data is None:
+                data = {}
+            elif isinstance(data, (dict, OrderedDict)):
+                if set(data.keys()) != set(range(len(data))):
+                    raise Exception("Supplied keys must correspond to the zero-indexed row number.")
+        else:
+            data = dict(data)
+
+        for k in sorted(data.keys()):
+            self[k] = data[k] # Validates input
+
+        self._sorted = True
+        self._resort()
+
+
     def __setitem__(self, key, value):
+        if self.indexed and key != len(self.data):
+            raise Exception("Supplied key %d does not correspond to the items row number.")
+
         if isinstance(value, (dict, OrderedDict)):
             if all(isinstance(k, str) for k in key):
                 value = ItemTable(value)
@@ -163,6 +196,14 @@ class Table(NdElement):
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             value = value.data.values()
         super(Table, self).__setitem__(key, value)
+
+    @property
+    def indexed(self):
+        """
+        Whether this is an indexed table: a table that has a single
+        key dimension called 'Index' corresponds to the row number.
+        """
+        return self.ndims == 1 and self.key_dimensions[0].name == 'Index'
 
     @property
     def rows(self):
@@ -212,6 +253,13 @@ class Table(NdElement):
         to any type.
         """
         return TableConversion(self)
+
+    def dframe(self, value_label='data'):
+        import pandas
+        dframe = super(Table, self).dframe(value_label=value_label)
+        # Drop 'Index' column as it is redundant with dframe index
+        if self.indexed: del dframe['Index']
+        return dframe
 
 
 
