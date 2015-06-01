@@ -23,6 +23,10 @@ class DimensionedSelectionTest(ComparisonTestCase):
         self.layout_map = self.ndoverlay_map + self.contour_map
         self.duplicate_map = self.img_map.clone(key_dimensions=['x', 'y'])
 
+        self.overlap1 = HoloMap({i: self.img_fn() for i in range(5)})
+        self.overlap2 = HoloMap({i: self.img_fn() for i in range(10)})
+        self.overlap_layout = self.overlap1 + self.overlap2
+
 
     def test_simple_holoselect(self):
         self.assertEqual(self.img_map.select(a=0, b=1),
@@ -64,3 +68,7 @@ class DimensionedSelectionTest(ComparisonTestCase):
     def test_duplicate_dim_select(self):
         selection = self.duplicate_map.select(x=(None, 0.5), y=(None, 0.5))
         self.assertEqual(selection, self.duplicate_map[:.5, :.5, :.5, :.5])
+
+    def test_overlap_select(self):
+        selection = self.overlap_layout.select(Default=(6, None))
+        self.assertEqual(selection, self.overlap1.clone(shared_data=False) + self.overlap2[6:])
