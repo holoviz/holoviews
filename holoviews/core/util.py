@@ -364,6 +364,7 @@ def match_spec(element, specification):
 
 
 def python2sort(x,key=None):
+    if len(x) == 0: return x
     it = iter(x)
     groups = [[next(it)]]
     for item in it:
