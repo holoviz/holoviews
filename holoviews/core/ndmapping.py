@@ -108,6 +108,7 @@ class MultiDimensionalMapping(Dimensioned):
         self._cached_categorical = any(d.values for d in self.key_dimensions)
 
         self._instantiated = not any(v == 'initial' for v in self._cached_index_values.values())
+        if initial_items is None: initial_items = []
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif not self._check_items and self._instantiated:
