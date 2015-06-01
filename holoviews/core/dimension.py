@@ -587,7 +587,11 @@ class Dimensioned(LabelledData):
                 else:
                     if isinstance(val, tuple): val = slice(*val)
                     select[self.get_dimension_index(dim)] = val
-            selection = self.__getitem__(tuple(select))
+            if self._deep_indexable:
+                selection = self.get(tuple(select),
+                                     self.clone(shared_data=False))
+            else:
+                selection = self[tuple(select)]
         else:
             selection = self
 
