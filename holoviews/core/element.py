@@ -170,14 +170,11 @@ class NdElement(Element, NdMapping):
 
     def __init__(self, data=None, **params):
         NdMapping.__init__(self, data, **dict(params, group=params.get('group',self.group)))
-        for k, v in self.data.items():
-            self[k] = v # Validates input
 
 
-    def __setitem__(self, key, value):
+    def _add_item(self, key, value, sort=True):
         value = (value,) if np.isscalar(value) else tuple(value)
-        key = key if isinstance(key, tuple) else (key,)
-        self.data[key] = value
+        super(NdElement, self)._add_item(key, value, sort)
 
 
     def _filter_columns(self, index, col_names):
