@@ -148,8 +148,8 @@ class Table(NdElement):
     format and is convertible to most other Element types.
     """
 
-    key_dimensions = param.List(default=[Dimension(name="Index")], doc="""
-         One or more key dimensions. By default, the special 'Index'
+    key_dimensions = param.List(default=[Dimension(name="Row")], doc="""
+         One or more key dimensions. By default, the special 'Row'
          dimension ensures that the table is always indexed by the row
          number.
 
@@ -178,7 +178,7 @@ class Table(NdElement):
 
     def __setitem__(self, key, value):
         if self.indexed and ((key != len(self)) and (key != (len(self),))):
-            raise Exception("Supplied key %d does not correspond to the items row number.")
+            raise Exception("Supplied key %s does not correspond to the items row number." % key)
 
         if isinstance(value, (dict, OrderedDict)):
             if all(isinstance(k, str) for k in key):
@@ -196,9 +196,9 @@ class Table(NdElement):
     def indexed(self):
         """
         Whether this is an indexed table: a table that has a single
-        key dimension called 'Index' corresponds to the row number.
+        key dimension called 'Row' corresponds to the row number.
         """
-        return self.ndims == 1 and self.key_dimensions[0].name == 'Index'
+        return self.ndims == 1 and self.key_dimensions[0].name == 'Row'
 
     @property
     def rows(self):
@@ -252,8 +252,8 @@ class Table(NdElement):
     def dframe(self, value_label='data'):
         import pandas
         dframe = super(Table, self).dframe(value_label=value_label)
-        # Drop 'Index' column as it is redundant with dframe index
-        if self.indexed: del dframe['Index']
+        # Drop 'Row' column as it is redundant with dframe index
+        if self.indexed: del dframe['Row']
         return dframe
 
 
