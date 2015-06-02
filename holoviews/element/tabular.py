@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Dimension, Element, NdElement, HoloMap
+from ..core import OrderedDict, Dimension, Element, NdElement, HoloMap, NdMapping
 
 
 class ItemTable(Element):
@@ -161,7 +161,10 @@ class Table(NdElement):
 
     def __init__(self, data=None, **params):
         self._sorted = False
-        super(Table, self).__init__(OrderedDict(), **params)
+
+        init_data = data if isinstance(data, NdMapping) else OrderedDict()
+        super(Table, self).__init__(init_data, **params)
+        if isinstance(data, NdMapping): return
 
         data = {} if data is None else data
         if self.indexed:
