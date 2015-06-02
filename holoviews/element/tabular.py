@@ -160,7 +160,6 @@ class Table(NdElement):
          The group is used to describe the Table.""")
 
     def __init__(self, data=None, **params):
-        self._sorted = False
 
         init_data = data if isinstance(data, NdMapping) else OrderedDict()
         super(Table, self).__init__(init_data, **params)
@@ -175,9 +174,6 @@ class Table(NdElement):
 
         for k in sorted(data.keys()):
             self[k] = data[k] # Validates input
-
-        self._sorted = True
-        self._resort()
 
 
     def __setitem__(self, key, value):
