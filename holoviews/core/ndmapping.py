@@ -304,14 +304,17 @@ class MultiDimensionalMapping(Dimensioned):
         return self.clone(items, key_dimensions=dimensions, **kwargs)
 
 
-    def drop_dimension(self, dim):
+    def drop_dimension(self, dimensions):
         """
-        Returns a new mapping with the named dimension
-        removed. Ensures that the dropped dimension is constant (owns
-        only a single key value) before dropping it.
+        Returns a new mapping with the named dimension(s) removed.
         """
-        dim_labels = [d for d in self._cached_index_names if d != dim]
-        return self.reindex(dim_labels)
+        dimensions = [dimensions] if np.isscalar(dimensions) else dimensions
+        dim_labels = [d for d in self._cached_index_names if d not in dimensions]
+        dim_inds = [self.get_dimension_index(d) for d in dim_labels]
+        dims = [self.get_dimension(d) for d in dim_labels]
+        key_getter = itemgetter(*dim_inds)
+        return self.clone([(key_getter(k), v) for k, v in self.data.items()],
+                          key_dimensions=dims)
 
 
     def dimension_values(self, dimension):
