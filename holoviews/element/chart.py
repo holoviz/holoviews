@@ -74,7 +74,7 @@ class Chart(Element2D):
         """
         if not isinstance(coords, list): coords = [coords]
         xs = self.data[:, 0]
-        idxs = [np.argmin(xs-coord) for coord in coords]
+        idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
         return [xs[idx] for idx in idxs]
 
 
