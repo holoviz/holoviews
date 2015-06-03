@@ -438,9 +438,13 @@ class MultiDimensionalMapping(Dimensioned):
         remains unchanged after the update.
         """
         if isinstance(other, NdMapping):
-            if self.key_dimensions != other.key_dimensions:
+            dims = [d for d in other._cached_index_names
+                    if d not in self._cached_index_names]
+            if len(dims) == other.ndims:
                 raise KeyError("Cannot update with NdMapping that has"
                                " a different set of key dimensions.")
+            elif dims:
+                other = other.drop_dimension(dims)
             other = other.data
         for key, data in other.items():
             self._add_item(key, data, sort=False)
