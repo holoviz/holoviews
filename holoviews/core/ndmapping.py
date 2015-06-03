@@ -153,7 +153,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         # Apply dimension types
         dim_types = zip(self._cached_index_types, dim_vals)
-        dim_vals = tuple(v if t is None else t(v) for t, v in dim_types)
+        dim_vals = tuple(v if None in [t, v] else t(v) for t, v in dim_types)
 
         # Check and validate for categorical dimensions
         if self._cached_categorical:
