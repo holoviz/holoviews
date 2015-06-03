@@ -341,8 +341,8 @@ class ElementPlot(Plot):
                 if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
-            if not np.NaN in (l, r) and not l==r: axis.set_xlim((l, r))
-            if not np.NaN in (b, t) and not b==t: axis.set_ylim((b, t))
+            if all(np.isfinite(c) for c in (l, r)) and not l==r: axis.set_xlim((l, r))
+            if all(np.isfinite(c) for c in (l, r)) and not b==t: axis.set_ylim((b, t))
 
 
     def _finalize_axes(self, axis):
