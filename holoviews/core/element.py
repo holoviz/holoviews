@@ -808,7 +808,7 @@ class Collator(NdMapping):
                    NdLayout: (GridSpace, HoloMap, ViewableElement),
                    NdOverlay: Element}
 
-    def __call__(self, path_filters=[], merge=True):
+    def __call__(self, path_filters=[], merge=True, drop_constant=True):
         """
         Filter each Layout in the Collator with the supplied
         path_filters. If merge is set to True all Layouts are
@@ -828,11 +828,11 @@ class Collator(NdMapping):
 
             if merge:
                 dim_keys = zip(self._cached_index_names, key)
-                varying_keys = [(d, k) for d, k in dim_keys
-                                if d not in constant_dims and d not in self.drop]
+                varying_keys = [(d, k) for d, k in dim_keys if not constant or
+                                (d not in constant_dims and d not in self.drop_constant)]
                 constant_keys = [(d if isinstance(d, Dimension) else Dimension(d), k)
                                  for d, k in dim_keys if d in constant_dims
-                                 and d not in self.drop]
+                                 and d not in self.drop and drop_constant]
                 if varying_keys or constant_keys:
                     data = self._add_dimensions(data, varying_keys,
                                                 dict(constant_keys))
