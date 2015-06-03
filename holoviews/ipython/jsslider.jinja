@@ -200,11 +200,11 @@ div.hologroup {
                 min: 0,
                 max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
                 value: 0,
-                slide: function(event, ui) {
+                slide: _.throttle(function(event, ui) {
                     var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
                     $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
-		    }
+		    }, 50)
             });
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').keypress(function(event) {
                 if (event.which == 80 || event.which == 112) {
