@@ -100,3 +100,8 @@ Features
 
 .. |Downloads| image:: https://img.shields.io/pypi/dm/holoviews.svg
 .. _Downloads: https://pypi.python.org/pypi/holoviews
+
+
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/ioam/holoviews
+   :target: https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
