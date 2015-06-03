@@ -6,7 +6,7 @@ from functools import reduce
 import param
 
 from .dimension import ViewableElement
-from .element import Element, HoloMap, GridSpace
+from .element import Element, HoloMap, GridSpace, Collator
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
 from .traversal import unique_dimkeys
@@ -179,33 +179,24 @@ class TreeOperation(Operation):
     def __call__(self, src, **params):
         self.p = param.ParamOverrides(self, params)
         dims, keys = unique_dimkeys(src)
+        if isinstance(src, Layout) and not src.uniform:
+            raise Exception("TreeOperation can only process uniform Layouts")
 
         if not dims:
             return self.process_element(src, None)
-        elif isinstance(src, HoloMap):
-            values = src.values()
-        elif isinstance(src, Layout):
-            if not src.uniform:
-                raise Exception("TreeOperation can only process uniform Layouts")
+        else:
             dim_names = [d.name for d in dims]
-            values = [src.select(**dict(zip(dim_names, key))) for key in keys]
+            values = {}
+            for key in keys:
+                selection = src.select(**dict(zip(dim_names, key)))
+                if not isinstance(selection, Layout):
+                    selection = Layout.from_values([selection])
+                processed = self._process(selection, key)
+                if isinstance(processed, list):
+                    processed = Layout.from_values(processed)
+                values[key] = processed
+        return Collator(values, key_dimensions=dims)(constant=False)
 
-        tree = Layout()
-        for key, el in zip(keys, values):
-            if not isinstance(el, Layout):
-                result = self._process(Layout.from_values(el), key)
-            else:
-                result = self._process(el, key)
-
-            holomaps = [HoloMap([(key,el)], key_dimensions=dims,
-                                group=el.group, label=el.label) for el in result]
-            if len(holomaps) == 1:
-                processed_tree = Layout.from_values(holomaps[0])
-            else:
-                processed_tree = Layout.from_values(holomaps)
-
-            tree.update(processed_tree)
-        return tree
 
 
     def _process(self, tree, key=None):
