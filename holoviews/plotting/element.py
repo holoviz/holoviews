@@ -338,11 +338,17 @@ class ElementPlot(Plot):
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
             if isinstance(view, Element3D) or self.projection == '3d':
                 l, b, zmin, r, t, zmax = coords
-                if not np.NaN in (zmin, zmax) and not zmin==zmax: axis.set_zlim((zmin, zmax))
+                zmin, zmax = (c if np.isfinite(c) else None for c in (zmin, zmax))
+                if not zmin == zmax:
+                    axis.set_zlim((zmin, zmax))
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
-            if all(np.isfinite(c) for c in (l, r)) and not l==r: axis.set_xlim((l, r))
-            if all(np.isfinite(c) for c in (l, r)) and not b==t: axis.set_ylim((b, t))
+            l, r = (c if np.isfinite(c) else None for c in (l, r))
+            if not l == r:
+                axis.set_xlim((l, r))
+            b, t = (c if np.isfinite(c) else None for c in (b, t))
+            if not b == t:
+                axis.set_ylim((b, t))
 
 
     def _finalize_axes(self, axis):
