@@ -46,7 +46,7 @@ class Chart(Element2D):
 
     def _validate_data(self, data):
         if data.ndim == 1:
-            data = np.array(zip(range(len(data)), data))
+            data = np.array(list(zip(range(len(data)), data)))
         if not data.shape[1] == len(self.dimensions()):
             raise ValueError("Data has to match number of key and value dimensions")
         return data
