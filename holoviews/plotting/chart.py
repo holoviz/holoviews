@@ -221,9 +221,6 @@ class HistogramPlot(ChartPlot):
     animation.
     """
 
-    num_ticks = param.Integer(default=5, doc="""
-        If colorbar is enabled the number of labels will be overwritten.""")
-
     show_frame = param.Boolean(default=False, doc="""
         Disabled by default for clarity.""")
 
@@ -295,19 +292,13 @@ class HistogramPlot(ChartPlot):
         """
         if self.cyclic:
             x0, x1, _, _ = lims
-            xvals = np.linspace(x0, x1, self.num_ticks)
+            xvals = np.linspace(x0, x1, self.xticks)
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         else:
-            dim_type = view.get_dimension_type(0)
-            if dim_type in [str, type(None), np.string_]:
-                xvals = [edges[i]+widths[i]/2. for i in range(len(edges))]
-                labels = list(view.data[:, 0])
-            else:
-                edge_inds = list(range(len(edges)))
-                step = len(edges)/float(self.num_ticks-1)
-                inds = [0] + [edge_inds[int(i*step)-1] for i in range(1, self.num_ticks)]
-                xvals = [edges[i]+widths[i]/2. for i in inds]
-                labels = ["%g" % round(x, 2) for x in xvals]
+            dim = view.get_dimension(0)
+            inds = np.linspace(0, len(edges)-1, self.xticks, dtype=np.int)
+            xvals = [edges[i] for i in inds]
+            labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
 
 
