@@ -49,11 +49,12 @@ class TablePlot(ElementPlot):
 
     def __init__(self, table, **params):
         super(TablePlot, self).__init__(table, **params)
-        self.cell_values = self._format_table()
+        self.cell_values, self.cell_widths = self._format_table()
 
 
     def _format_table(self):
         cell_values = defaultdict(dict)
+        cell_widths = defaultdict(int)
         for key in self.keys:
             frame = self._get_frame(key)
             if frame is None:
@@ -74,7 +75,9 @@ class TablePlot(ElementPlot):
                         value = frame.pprint_cell(adjusted_row, col)
                         cell_text = self.pprint_value(value)
                     cell_values[key][(row, col)] = cell_text
-        return cell_values
+                    if len(cell_text) + 2 > cell_widths[col]:
+                        cell_widths[col] = len(cell_text) + 2
+        return cell_values, cell_widths
 
 
     def pprint_value(self, value):
@@ -104,8 +107,7 @@ class TablePlot(ElementPlot):
         size_factor = (1.0 - 2*self.border)
         table = mpl_Table(axis, bbox=[self.border, self.border,
                                       size_factor, size_factor])
-
-        width = size_factor / element.cols
+        total_width = sum(self.cell_widths.values())
         height = size_factor / element.rows
 
         summarize = element.rows > self.max_rows
@@ -118,6 +120,7 @@ class TablePlot(ElementPlot):
                     adjusted_row = (element.rows - self.max_rows + row)
                 cell_value = self.cell_values[self.keys[-1]][(row, col)]
                 cellfont = self.font_types.get(element.cell_type(adjusted_row,col), None)
+                width = self.cell_widths[col] / float(total_width)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
                 table.add_cell(row, col, width, height, text=cell_value,  loc='center',
                                **font_kwargs)
