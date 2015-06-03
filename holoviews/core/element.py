@@ -828,8 +828,8 @@ class Collator(NdMapping):
 
             if merge:
                 dim_keys = zip(self._cached_index_names, key)
-                varying_keys = [(d, k) for d, k in dim_keys if not constant or
-                                (d not in constant_dims and d not in self.drop_constant)]
+                varying_keys = [(d, k) for d, k in dim_keys if not drop_constant or
+                                (d not in constant_dims and d not in self.drop)]
                 constant_keys = [(d if isinstance(d, Dimension) else Dimension(d), k)
                                  for d, k in dim_keys if d in constant_dims
                                  and d not in self.drop and drop_constant]
