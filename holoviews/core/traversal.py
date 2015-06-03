@@ -6,7 +6,7 @@ or mutate the matching elements.
 
 from operator import itemgetter
 
-from .dimension import Dimension
+from .dimension import Dimension, OrderedDict
 
 def create_ndkey(length, indexes, values):
     key = [None] * length
@@ -51,9 +51,9 @@ def unique_dimkeys(obj, default_dim='Frame'):
                  for g1 in dgroups for g2 in dgroups)
     # Find unique keys
     if subset:
-        all_dims = sorted({dim for dim_group in dim_groups
-                           for dim in dim_group},
-                               key=lambda x: dim_groups[0].index(x))
+        dims = OrderedDict([(dim.name, dim) for dim_group in dim_groups
+                            for dim in dim_group]).values()
+        all_dims = sorted(dims, key=lambda x: dim_groups[0].index(x))
     else:
         all_dims = [default_dim]
 
