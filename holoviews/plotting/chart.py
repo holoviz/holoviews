@@ -312,7 +312,7 @@ class HistogramPlot(ChartPlot):
         Get axis settings options including ticks, x- and y-labels
         and limits.
         """
-        axis_settings = dict(zip(self.axis_settings, [None, None, ticks]))
+        axis_settings = dict(zip(self.axis_settings, [None, None, (None if self.overlaid else ticks)]))
         return axis_settings
 
 
