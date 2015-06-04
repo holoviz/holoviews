@@ -237,7 +237,7 @@ div.hologroup {
                     var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
                     $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
-		    }, 100)
+		    }, {{ throttle }})
             });
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').keypress(function(event) {
                 if (event.which == 80 || event.which == 112) {

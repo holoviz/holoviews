@@ -440,6 +440,8 @@ class SelectionWidget(NdWidget):
 
     jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
 
+    throttle = {'embed': 0, 'live': 100}
+
     def get_widgets(self):
         # Generate widget data
         widgets = []
@@ -498,6 +500,7 @@ class SelectionWidget(NdWidget):
                 'server': self.server_url,
                 'cached': str(self.embed).lower(),
                 'mpld3_url': self.mpld3_url,
+                'throttle': self.throttle[OutputMagic.options['widgets']],
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
                 'delay': int(1000./OutputMagic.options['fps']),
