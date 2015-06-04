@@ -390,9 +390,6 @@ class SelectionWidget(NdWidget):
         Whether to embed all plots in the Javascript, generating
         a static widget not dependent on the IPython server.""")
 
-    cache_size = param.Integer(default=100, doc="""
-        Size of dynamic cache if frames are not embedded.""")
-
     template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
@@ -412,7 +409,10 @@ class SelectionWidget(NdWidget):
             frames = {idx: self._plot_figure(idx)
                       for idx in range(len(self.keys))}
             self.frames = self.encode_frames(frames)
-        elif self.nbagg:
+        else:
+            SelectionWidget.widgets[self.id] = self
+
+        if self.nbagg:
             fig = self.plot[0]
             self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
             # Need to call mouse_init on each 3D axis to enable rotation support
@@ -421,7 +421,6 @@ class SelectionWidget(NdWidget):
                     ax.mouse_init()
             OutputMagic.nbagg_counter += 1
             self.comm = CustomCommSocket(self.manager)
-            SelectionWidget.widgets[self.id] = self
 
 
     def get_widgets(self):
@@ -500,13 +499,10 @@ class SelectionWidget(NdWidget):
             fig = self.plot[n]
             fig.canvas.draw_idle()
             return
-        if n not in self.frames:
-            if len(self.frames) >= self.cache_size:
-                self.frames.popitem(last=False)
+        else:
             frame = self._plot_figure(n)
             if self.mpld3: frame = self.encode_frames({0: frame})
-            self.frames[n] = frame
-        return self.frames[n]
+            return frame
 
 
 
