@@ -85,4 +85,4 @@ class MPLPlotRendererTest(ComparisonTestCase):
         "Test that unicode support and rendering is working"
         data = self.renderer.instance(size=200)(self.unicode_table, fmt='png')[0]
         self.assertEqual(digest_data(data),
-                         'f1b0a7d76e0ebf5253ed51ee430d8c15c26bd285db88dc9249d5a4ae2ea4fb79')
+                         'a3dd68a888de14064cb621c14be5b175d96781cdbc932a3f778def34beaee1ff')
