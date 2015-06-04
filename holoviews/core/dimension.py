@@ -672,11 +672,15 @@ class Dimensioned(LabelledData):
                                 ','.join(repr(k) for k in kwargs.keys()))
 
             sanitized_group = sanitize_identifier(self.group)
-            if  sanitized_group != self.__class__.__name__:
+            if self.label:
+                identifier = ('%s.%s.%s' % (self.__class__.__name__,
+                                            sanitized_group,
+                                            sanitize_identifier(self.label)))
+            elif  sanitized_group != self.__class__.__name__:
                 identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
             else:
                 identifier = self.__class__.__name__
-            identifier += ('.%s' % sanitize_identifier(self.label)) if self.label else ''
+
             kwargs = {k:{identifier:v} for k,v in kwargs.items()}
         deep_clone = self.map(lambda x: x.clone(id=x.id))
         StoreOptions.set_options(deep_clone, options, **kwargs)
