@@ -94,7 +94,6 @@
   }
 
   Animation.prototype.dynamic_update = function(prev, current){
-      console.log(current);
       var kernel = IPython.notebook.kernel;
       if(this.nbagg) {
 	  function callback(msg) { }
