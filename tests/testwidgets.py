@@ -51,16 +51,16 @@ class TestWidgets(IPTestCase):
 
     def test_scrubber_widget_1(self):
         html = normalize(ScrubberWidget(self.plot1)())
-        self.assertEqual(digest_data(html), 'b3b5a2c1b797e7382a6d56c507483ecc5415a3268c27d7eae072ac0167acb50f')
+        self.assertEqual(digest_data(html), '7b780efd7898ffd8293598f0d299610b2696b933cdbfc2112dbc778fe921d7ad')
 
     def test_selection_widget_1(self):
         html = normalize(SelectionWidget(self.plot1)())
-        self.assertEqual(digest_data(html), 'bb4fe3165ad845e763542d4cd6deac5f18a663b734bc82ceef77eed46f57e386')
+        self.assertEqual(digest_data(html), '21ed291114f17c126c6de21f1282fe42448b3c1696bd3cd815bc1d426af26d94')
 
     def test_scrubber_widget_2(self):
         html = normalize(ScrubberWidget(self.plot2)())
-        self.assertEqual(digest_data(html), '623d3ab77b1ac49a429f1e8736064ff46219f17245c2caeea8bc3e9acba8efb3')
+        self.assertEqual(digest_data(html), 'd02b3082d0fea63a7a4c233033458097e66db1fe01bfb8941bde4be8854fce68')
 
     def test_selection_widget_2(self):
         html = normalize(SelectionWidget(self.plot2)())
-        self.assertEqual(digest_data(html), '63e0fbb650b6c66ff738c969d0e3fade1fcaf417449feacc7b076d00ddb9e078')
+        self.assertEqual(digest_data(html), '81aa9471231e8c78987fddee9ad14e17562075a2b59a49903ca08c7865277c9b')
