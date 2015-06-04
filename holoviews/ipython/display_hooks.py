@@ -133,13 +133,9 @@ def display_widgets(plot):
 
     if widget_format == 'auto':
         widget_format = 'scrubber' if islinear or not isuniform else 'widgets'
-
-    if widget_format == 'scrubber':
-        return ScrubberWidget(plot)()
-    if widget_mode == 'embed':
-        return SelectionWidget(plot)()
-    elif widget_mode == 'live':
-        return SelectionWidget(plot, embed=False)()
+    embed = widget_mode == 'embed'
+    widget = ScrubberWidget if widget_format == 'scrubber' else SelectionWidget
+    return widget(plot, embed=embed)()
 
 
 def dict_to_css(css_dict):

@@ -8,7 +8,6 @@
         this.slider_ids = slider_ids;
         this.keyMap = keyMap
         this.current_frame = 0;
-	this.previous_frame = 0;
         this.current_vals = dim_vals;
         this.load_json = load_json;
         this.mpld3 = mpld3_enabled;
@@ -79,7 +78,7 @@
 	}
 	if(this.nbagg || !(current in this.cache)) {
 	    callbacks = {iopub: {output: $.proxy(callback, this)}};
-	    var cmd = "holoviews.ipython.widgets.SelectionWidget.widgets['" + this.id + "'].update(" + current + ")";
+	    var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
 	    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	} else {
 	    this.update(prev, current);
@@ -87,12 +86,12 @@
     }
 
     NDSlider.prototype.update = function(prev, current){
-	if(prev in this.cache) {
-	    this.cache[prev].hide();
-	}
-	if(current in this.cache) {
-	    this.cache[current].show();
-	}
+      if(current in this.cache) {
+	  if(prev in this.cache) {
+	      this.cache[prev].hide();
+	  }
+	  this.cache[current].show();
+      }
     }
 
     NDSlider.prototype.set_frame = function(dim_val, dim_idx){
@@ -114,7 +113,6 @@
         key += ")";
 	var prev = this.current_frame;
 	var current = this.keyMap[key];
-	this.previous_frame = prev;
 	this.current_frame = current;
 	if(this.cached) {
 	    this.update(prev, current)

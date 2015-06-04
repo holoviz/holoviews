@@ -218,6 +218,31 @@ def get_plot_size():
             Plot.fig_inches[1] * factor)
 
 
+class CustomCommSocket(CommSocket):
+    """
+    CustomCommSocket provides communication between the IPython
+    kernel and a matplotlib canvas element in the notebook.
+    A CustomCommSocket is required to delay communication
+    between the kernel and the canvas element until the widget
+    has been rendered in the notebook.
+    """
+
+    def __init__(self, manager):
+        self.supports_binary = None
+        self.manager = manager
+        self.uuid = str(uuid.uuid4())
+        self.html = "<div id=%r></div>" % self.uuid
+
+    def start(self):
+        try:
+            self.comm = Comm('matplotlib', data={'id': self.uuid})
+        except AttributeError:
+            raise RuntimeError('Unable to create an IPython notebook Comm '
+                               'instance. Are you in the IPython notebook?')
+        self.comm.on_msg(self.on_message)
+        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
+
+
 class NdWidget(param.Parameterized):
     """
     NdWidget is an abstract base class implementing a method to find
@@ -229,6 +254,10 @@ class NdWidget(param.Parameterized):
     #######################
     # JSON export options #
     #######################
+
+    embed = param.Boolean(default=True, doc="""
+        Whether to embed all plots in the Javascript, generating
+        a static widget not dependent on the IPython server.""")
 
     export_json = param.Boolean(default=False, doc="""Whether to export
          plots as json files, which can be dynamically loaded through
@@ -249,6 +278,7 @@ class NdWidget(param.Parameterized):
 
     mpld3_url = 'https://mpld3.github.io/js/mpld3.v0.3git.js'
     d3_url = 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
+    widgets = {}
 
     def __init__(self, plot, **params):
         super(NdWidget, self).__init__(**params)
@@ -260,6 +290,27 @@ class NdWidget(param.Parameterized):
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
                                   key_dimensions=self.dimensions)
+
+        nbagg = CommSocket is not object
+        self.nbagg = OutputMagic.options['backend'] == 'nbagg' and nbagg
+
+        self.frames = {}
+        if self.embed:
+            frames = OrderedDict([(idx, self._plot_figure(idx))
+                                  for idx in range(len(plot))])
+            self.frames = self.encode_frames(frames)
+        else:
+            NdWidget.widgets[self.id] = self
+
+        if self.nbagg:
+            fig = plot[0]
+            self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
+            # Need to call mouse_init on each 3D axis to enable rotation support
+            for ax in fig.get_axes():
+                if isinstance(ax, Axes3D):
+                    ax.mouse_init()
+            OutputMagic.nbagg_counter += 1
+            self.comm = CustomCommSocket(self.manager)
 
 
     def render_html(self, data):
@@ -302,6 +353,20 @@ class NdWidget(param.Parameterized):
         return display_figure(fig, allow_nbagg=False)
 
 
+    def update(self, n):
+        if self.nbagg:
+            from .display_hooks import display_figure
+            if not self.manager._shown:
+                self.comm.start()
+                self.manager.add_web_socket(self.comm)
+                self.manager._shown = True
+            fig = self.plot[n]
+            fig.canvas.draw_idle()
+        else:
+            frame = self._plot_figure(n)
+            if self.mpld3: frame = self.encode_frames({0: frame})
+            return frame
+
 
 class ScrubberWidget(NdWidget):
     """
@@ -318,16 +383,20 @@ class ScrubberWidget(NdWidget):
     template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
-    def __init__(self, plot, **params):
-        super(ScrubberWidget, self).__init__(plot, **params)
-        self.frames = OrderedDict((idx, self._plot_figure(idx))
-                                  for idx in range(len(self.plot)))
-
-
     def __call__(self):
-        frames = {idx: frame if self.mpld3 or self.export_json else
-                  str(frame) for idx, frame in enumerate(self.frames.values())}
-        frames = self.encode_frames(frames)
+        if self.embed:
+            frames = self.frames
+        elif self.nbagg:
+            self.manager.display_js()
+            frames = {0: self.comm.html}
+        else:
+            frames = {0: self._plot_figure(0)}
+            if self.mpld3:
+                frames = self.encode_frames(frames)
+                self.frames[0] = frames
+            else:
+                self.frames.update(frames)
+
 
         data = {'id': self.id, 'Nframes': len(self.plot),
                 'interval': int(1000. / OutputMagic.options['fps']),
@@ -336,35 +405,11 @@ class ScrubberWidget(NdWidget):
                 'server': self.server_url,
                 'mpld3_url': self.mpld3_url,
                 'd3_url': self.d3_url[:-3],
+                'cached': str(self.embed).lower(),
+                'nbagg': str(self.nbagg).lower(),
                 'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
-
-
-
-class CustomCommSocket(CommSocket):
-    """
-    CustomCommSocket provides communication between the IPython
-    kernel and a matplotlib canvas element in the notebook.
-    A CustomCommSocket is required to delay communication
-    between the kernel and the canvas element until the widget
-    has been rendered in the notebook.
-    """
-
-    def __init__(self, manager):
-        self.supports_binary = None
-        self.manager = manager
-        self.uuid = str(uuid.uuid4())
-        self.html = "<div id=%r></div>" % self.uuid
-
-    def start(self):
-        try:
-            self.comm = Comm('matplotlib', data={'id': self.uuid})
-        except AttributeError:
-            raise RuntimeError('Unable to create an IPython notebook Comm '
-                               'instance. Are you in the IPython notebook?')
-        self.comm.on_msg(self.on_message)
-        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
 
 
 
@@ -386,10 +431,6 @@ class SelectionWidget(NdWidget):
     to json and dynamically loaded from a server.
     """
 
-    embed = param.Boolean(default=True, doc="""
-        Whether to embed all plots in the Javascript, generating
-        a static widget not dependent on the IPython server.""")
-
     template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
@@ -398,30 +439,6 @@ class SelectionWidget(NdWidget):
     ##############################
 
     jqueryui_url = 'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'
-    widgets = {}
-
-    def __init__(self, plot, **params):
-        NdWidget.__init__(self, plot, **params)
-        nbagg = CommSocket is not object
-        self.nbagg = OutputMagic.options['backend'] == 'nbagg' and nbagg
-        self.frames = {}
-        if self.embed:
-            frames = {idx: self._plot_figure(idx)
-                      for idx in range(len(self.keys))}
-            self.frames = self.encode_frames(frames)
-        else:
-            SelectionWidget.widgets[self.id] = self
-
-        if self.nbagg:
-            fig = self.plot[0]
-            self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
-            # Need to call mouse_init on each 3D axis to enable rotation support
-            for ax in fig.get_axes():
-                if isinstance(ax, Axes3D):
-                    ax.mouse_init()
-            OutputMagic.nbagg_counter += 1
-            self.comm = CustomCommSocket(self.manager)
-
 
     def get_widgets(self):
         # Generate widget data
@@ -488,22 +505,6 @@ class SelectionWidget(NdWidget):
                 'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
 
         return self.render_html(data)
-
-
-    def update(self, n):
-        if self.nbagg:
-            if not self.manager._shown:
-                self.comm.start()
-                self.manager.add_web_socket(self.comm)
-                self.manager._shown = True
-            fig = self.plot[n]
-            fig.canvas.draw_idle()
-            return
-        else:
-            frame = self._plot_figure(n)
-            if self.mpld3: frame = self.encode_frames({0: frame})
-            return frame
-
 
 
 def progress(iterator, enum=False, length=None):

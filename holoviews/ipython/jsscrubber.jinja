@@ -1,9 +1,10 @@
 <script language="javascript">
   /* Define the Animation class */
-  function Animation(frames, num_frames, id, interval, load_json, mpld3){
+  function Animation(frames, num_frames, id, interval, load_json, mpld3, nbagg, cached){
       this.img_id = "_anim_img" + id;
       this.slider_id = "_anim_slider" + id;
       this.loop_select_id = "_anim_loop_select" + id;
+      this.id = id;
       this.fig_id = "fig_" + id;
       this.interval = interval;
       this.current_frame = 0;
@@ -11,12 +12,24 @@
       this.timer = null;
       this.load_json = load_json;
       this.mpld3 = mpld3;
+      this.nbagg = nbagg;
+      this.cached = cached;
       this.frames = frames;
+      this.cache = {};
       this.length = num_frames;
-
       document.getElementById(this.slider_id).max = this.length - 1;
-      this.set_frame(this.current_frame);
+      if(this.cached) {
+	  this.update_cache();
+	  this.update(0, 0);
+      } else if(this.nbagg) {
+	  this.update_cache();
+	  this.update(0, 0);
+          this.set_frame(0);
+      } else {
+	  this.dynamic_update(0, 0);
+      }
   }
+
   Animation.prototype.get_loop_state = function(){
       var button_group = document[this.loop_select_id].state;
       for (var i = 0; i < button_group.length; i++) {
@@ -27,33 +40,87 @@
       }
       return undefined;
   }
+
+  Animation.prototype.update_cache = function(){
+      for (var i=0; i<_.size(this.frames); i++) {
+	  i = Object.keys(this.frames)[i];
+	  if(!(i in this.cache)) {
+	      this.cache[i] = $('<div />').appendTo("#" + this.img_id);
+	      if(this.mpld3) {
+		  var cache_id = this.img_id+"_"+i;
+		  this.cache[i].attr("id", cache_id);
+	      }
+	      if(this.load_json) {
+		  var data_url = "{{ server }}/" + this.fig_id + "/" + i;
+		  if(this.mpld3) {
+		      $.getJSON(data_url, (function(cache_id) {
+			  return function(data) {
+			      mpld3.draw_figure(cache_id, data);
+			  };
+		      }(cache_id)));
+		    } else {
+			this.cache[i].load(data_url);
+		    }
+	      } else {
+		  if(this.mpld3) {
+		      mpld3.draw_figure(cache_id, this.frames[i]);
+		  } else {
+		      this.cache[i].html(this.frames[i]);
+		  }
+	      }
+	      this.cache[i].hide();
+	  }
+      }
+    }
+
   Animation.prototype.set_frame = function(frame){
       this.current_frame = frame;
+      prev = document.getElementById(this.slider_id).value;
       document.getElementById(this.slider_id).value = this.current_frame;
-      if(this.load_json) {
-          var data_url = "{{ server }}/" + this.fig_id + "/" + this.current_frame;
-          if(this.mpld3) {
-              d3.select("#"+this.img_id).selectAll("*").remove();
-              $.getJSON(data_url,
-                  (function(img_id) {
-                       return function(data) {
-                           mpld3.draw_figure(img_id, data);
-                       };
-                   }(this.img_id))
-              );
-          } else {
-              $("#" + this.img_id).load("{{ server }}/" + this.fig_id + "/" + this.current_frame);
-          }
-      }else {
-          if(this.mpld3) {
-              d3.select("#"+this.img_id).selectAll("*").remove();
-              mpld3.draw_figure(this.img_id, this.frames[this.current_frame]);
-          }else {
-              $("#" + this.img_id).html(this.frames[this.current_frame]);
-          }
+      if(this.cached) {
+	  this.update(prev, frame)
+      } else {
+          this.dynamic_update(prev, frame)
       }
   }
-  Animation.prototype.next_frame = function()
+
+  Animation.prototype.update = function(prev, current){
+      if(current in this.cache) {
+	  if(prev in this.cache) {
+	      this.cache[prev].hide();
+	  }
+	  this.cache[current].show();
+      }
+  }
+
+  Animation.prototype.dynamic_update = function(prev, current){
+      console.log(current);
+      var kernel = IPython.notebook.kernel;
+      if(this.nbagg) {
+	  function callback(msg) { }
+      } else {
+	  function callback(msg){
+	      /* This callback receives data from Python as a string
+		 in order to parse it correctly quotes are sliced off*/
+	      var data = msg.content.data['text/plain'].slice(1, -1);
+	      if(this.mpld3){
+		  data = JSON.parse(data)[0];
+	      }
+	      this.frames[current] = data;
+	      this.update_cache();
+	      this.update(prev, current);
+	  }
+      }
+      if(this.nbagg || !(current in this.cache)) {
+	  callbacks = {iopub: {output: $.proxy(callback, this)}};
+	  var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+	  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+      } else {
+	  this.update(prev, current);
+      }
+  }
+
+ Animation.prototype.next_frame = function()
   {
       this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
   }
@@ -171,7 +238,7 @@
 
       function create_widget() {
           setTimeout(function() {
-              anim{{ id }} = new Animation(frame_data, {{ Nframes }}, "{{ id }}", {{ interval }}, {{ load_json }}, {{ mpld3 }});
+              anim{{ id }} = new Animation(frame_data, {{ Nframes }}, "{{ id }}", {{ interval }}, {{ load_json }}, {{ mpld3 }}, {{ nbagg }}, {{ cached }});
           }, 0);
       }
 
