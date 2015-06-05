@@ -101,7 +101,7 @@ and more maintainable alternatives once it is ready.
 **A:** Legends are generated in two different ways, depending on the
 ``Overlay`` type you are using. When using ``*`` to generate an ``Overlay``,
 the legends are generated from the labels of the Elements.
-Alternatively, you can construct an ``NdOverlay``, where the key_dimensions
+Alternatively, you can construct an ``NdOverlay``, where the key dimensions
 and values will become part of the legend. An example of an ``NdOverlay``
 in action may be `viewed here <Tutorials/Containers.html#NdOverlay>`_.
 
