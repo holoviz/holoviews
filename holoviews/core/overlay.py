@@ -193,7 +193,7 @@ class Overlay(Layout, CompositeOverlay):
         self._label = label
 
     @property
-    def deep_dimensions(self):
+    def ddims(self):
         dimensions = []
         dimension_names = []
         for el in self:

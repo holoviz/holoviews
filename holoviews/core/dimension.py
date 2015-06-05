@@ -480,7 +480,8 @@ class Dimensioned(LabelledData):
     def deep_dimensions(self): return self.ddims
 
     def __init__(self, data, **params):
-        for group in self._dim_groups[0:2]+list(self._dim_aliases.keys()):
+        for group in self._dim_groups+list(self._dim_aliases.keys()):
+            if group in ['deep_dimensions', 'ddims']: continue
             if group in params:
                 if group in self._dim_aliases:
                     params[self._dim_aliases[group]] = params.pop(group)

@@ -189,7 +189,7 @@ class AdjointLayout(Dimensioned):
 
 
     @property
-    def deep_dimensions(self):
+    def ddims(self):
         return self.main.dimensions()
 
     @property
