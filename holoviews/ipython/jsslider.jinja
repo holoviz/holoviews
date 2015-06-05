@@ -11,87 +11,87 @@
         this.current_vals = dim_vals;
         this.load_json = load_json;
         this.mpld3 = mpld3_enabled;
-	this.nbagg = nbagg;
+		this.nbagg = nbagg;
         this.notFound = notFound;
-	this.cached = cached;
-	this.cache = {};
-	if(this.cached) {
-	    this.update_cache();
-	    this.update(0, 0);
-	} else if(this.nbagg) {
-	    this.update_cache();
-	    this.update(0, 0);
+		this.cached = cached;
+		this.cache = {};
+		if(this.cached) {
+			this.update_cache();
+			this.update(0);
+		} else if(this.nbagg) {
+			this.update_cache();
+			this.update(0);
             this.set_frame(this.current_vals[0], 0);
-	} else {
-	    this.dynamic_update(0, 0);
-	}
+		} else {
+			this.dynamic_update(0);
+		}
     }
 
     NDSlider.prototype.update_cache = function(){
-	if(this.load_json) {
-	    var frame_len = _.size(this.keyMap);
-	} else {
-	    var frame_len = _.size(this.frames);
-	}
-	for (var i=0; i<frame_len; i++) {
-	    if(!this.load_json) {
-		i = Object.keys(this.frames)[i];
-	    }
-	    if(!(i in this.cache)) {
-		this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
-		if(this.mpld3) {
-		    var cache_id = this.img_id+"_"+i;
-		    this.cache[i].attr("id", cache_id);
-		}
 		if(this.load_json) {
-		    var data_url = "{{ server }}/" + this.fig_id + "/" + i;
-		    if(this.mpld3) {
-			$.getJSON(data_url, (function(cache_id) {
-			    return function(data) {
-				mpld3.draw_figure(cache_id, data);
-			    };
-			}(cache_id)));
-		    } else {
-			this.cache[i].load(data_url);
-		    }
+			var frame_len = _.size(this.keyMap);
 		} else {
-		    if(this.mpld3) {
-			mpld3.draw_figure(cache_id, this.frames[i]);
-		    } else {
-			this.cache[i].html(this.frames[i]);
-		    }
+			var frame_len = _.size(this.frames);
 		}
-	    }
-	}
+		for (var i=0; i<frame_len; i++) {
+			if(!this.load_json) {
+				i = Object.keys(this.frames)[i];
+			}
+			if(!(i in this.cache)) {
+				this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
+				if(this.mpld3) {
+					var cache_id = this.img_id+"_"+i;
+					this.cache[i].attr("id", cache_id);
+				}
+				if(this.load_json) {
+					var data_url = "{{ server }}/" + this.fig_id + "/" + i;
+					if(this.mpld3) {
+						$.getJSON(data_url, (function(cache_id) {
+							return function(data) {
+								mpld3.draw_figure(cache_id, data);
+							};
+						}(cache_id)));
+					} else {
+						this.cache[i].load(data_url);
+					}
+				} else {
+					if(this.mpld3) {
+						mpld3.draw_figure(cache_id, this.frames[i]);
+					} else {
+						this.cache[i].html(this.frames[i]);
+					}
+				}
+			}
+		}
     }
 
-    NDSlider.prototype.dynamic_update = function(prev, current){
-	var kernel = IPython.notebook.kernel;
-	if(this.nbagg) {
-	    function callback(msg) { }
-	} else {
-	    function callback(msg){
-		/* This callback receives data from Python as a string
-		   in order to parse it correctly quotes are sliced off*/
-		var data = msg.content.data['text/plain'].slice(1, -1);
-		if(this.mpld3){
-		    data = JSON.parse(data)[0];
+    NDSlider.prototype.dynamic_update = function(current){
+		var kernel = IPython.notebook.kernel;
+		if(this.nbagg) {
+			function callback(msg) { }
+		} else {
+			function callback(msg){
+				/* This callback receives data from Python as a string
+				   in order to parse it correctly quotes are sliced off*/
+				var data = msg.content.data['text/plain'].slice(1, -1);
+				if(this.mpld3){
+					data = JSON.parse(data)[0];
+				}
+				this.frames[current] = data;
+				this.update_cache();
+				this.update(current);
+			}
 		}
-		this.frames[current] = data;
-		this.update_cache();
-		this.update(prev, current);
-	    }
-	}
-	if(this.nbagg || !(current in this.cache)) {
-	    callbacks = {iopub: {output: $.proxy(callback, this)}};
-	    var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-	    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-	} else {
-	    this.update(prev, current);
-	}
+		if(this.nbagg || !(current in this.cache)) {
+			callbacks = {iopub: {output: $.proxy(callback, this)}};
+			var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+			kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+		} else {
+			this.update(current);
+		}
     }
 
-    NDSlider.prototype.update = function(prev, current){
+    NDSlider.prototype.update = function(current){
 		if(current in this.cache) {
 			$.each(this.cache, function(index, value) {
 				value.hide();
@@ -117,14 +117,13 @@
             else if(this.slider_ids.length == 1) { key += ',';}
         }
         key += ")";
-	var prev = this.current_frame;
-	var current = this.keyMap[key];
-	this.current_frame = current;
-	if(this.cached) {
-	    this.update(prev, current)
-	} else {
-            this.dynamic_update(prev, current)
-	}
+		var current = this.keyMap[key];
+		this.current_frame = current;
+		if(this.cached) {
+			this.update(current)
+		} else {
+            this.dynamic_update(current)
+		}
     }
 </script>
 

@@ -20,10 +20,10 @@
       document.getElementById(this.slider_id).max = this.length - 1;
       if(this.cached) {
 		  this.update_cache();
-		  this.update(0, 0);
+		  this.update(0);
       } else if(this.nbagg) {
 		  this.update_cache();
-		  this.update(0, 0);
+		  this.update(0);
 		  this.set_frame(0);
       } else {
 		  this.dynamic_update(0, 0);
@@ -43,54 +43,53 @@
 
   Animation.prototype.update_cache = function(){
       if(this.load_json) {
-	  var frame_len = _.size(this.keyMap);
+		  var frame_len = _.size(this.keyMap);
       } else {
-	  var frame_len = _.size(this.frames);
+		  var frame_len = _.size(this.frames);
       }
       for (var i=0; i<_.size(this.frames); i++) {
-	  if(!this.load_json) {
-	      i = Object.keys(this.frames)[i];
-	  }
-	  if(!(i in this.cache)) {
-	      this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
-	      if(this.mpld3) {
-		  var cache_id = this.img_id+"_"+i;
-		  this.cache[i].attr("id", cache_id);
-	      }
-	      if(this.load_json) {
-		  var data_url = "{{ server }}/" + this.fig_id + "/" + i;
-		  if(this.mpld3) {
-		      $.getJSON(data_url, (function(cache_id) {
-			  return function(data) {
-			      mpld3.draw_figure(cache_id, data);
-			  };
-		      }(cache_id)));
-		    } else {
-			this.cache[i].load(data_url);
-		    }
-	      } else {
-		  if(this.mpld3) {
-		      mpld3.draw_figure(cache_id, this.frames[i]);
-		  } else {
-		      this.cache[i].html(this.frames[i]);
+		  if(!this.load_json) {
+			  i = Object.keys(this.frames)[i];
 		  }
-	      }
-	  }
-      }
-    }
-
-  Animation.prototype.set_frame = function(frame){
-      this.current_frame = frame;
-      prev = document.getElementById(this.slider_id).value;
-      document.getElementById(this.slider_id).value = this.current_frame;
-      if(this.cached) {
-	  this.update(prev, frame)
-      } else {
-          this.dynamic_update(prev, frame)
+		  if(!(i in this.cache)) {
+			  this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
+			  if(this.mpld3) {
+				  var cache_id = this.img_id+"_"+i;
+				  this.cache[i].attr("id", cache_id);
+			  }
+			  if(this.load_json) {
+				  var data_url = "{{ server }}/" + this.fig_id + "/" + i;
+				  if(this.mpld3) {
+					  $.getJSON(data_url, (function(cache_id) {
+						  return function(data) {
+							  mpld3.draw_figure(cache_id, data);
+						  };
+					  }(cache_id)));
+				  } else {
+					  this.cache[i].load(data_url);
+				  }
+			  } else {
+				  if(this.mpld3) {
+					  mpld3.draw_figure(cache_id, this.frames[i]);
+				  } else {
+					  this.cache[i].html(this.frames[i]);
+				  }
+			  }
+		  }
       }
   }
 
-  Animation.prototype.update = function(prev, current){
+  Animation.prototype.set_frame = function(frame){
+      this.current_frame = frame;
+      document.getElementById(this.slider_id).value = this.current_frame;
+      if(this.cached) {
+	  this.update(frame)
+      } else {
+          this.dynamic_update(frame)
+      }
+  }
+
+  Animation.prototype.update = function(current){
       if(current in this.cache) {
 		  $.each(this.cache, function(index, value) {
 			  value.hide();
@@ -100,62 +99,55 @@
   }
 
 
-  Animation.prototype.dynamic_update = function(prev, current){
+  Animation.prototype.dynamic_update = function(current){
       var kernel = IPython.notebook.kernel;
       if(this.nbagg) {
-	  function callback(msg) { }
+		  function callback(msg) { }
       } else {
-	  function callback(msg){
-	      /* This callback receives data from Python as a string
-		 in order to parse it correctly quotes are sliced off*/
-	      var data = msg.content.data['text/plain'].slice(1, -1);
-	      if(this.mpld3){
-		  data = JSON.parse(data)[0];
-	      }
-	      this.frames[current] = data;
-	      this.update_cache();
-	      this.update(prev, current);
-	  }
+		  function callback(msg){
+			  /* This callback receives data from Python as a string
+				 in order to parse it correctly quotes are sliced off*/
+			  var data = msg.content.data['text/plain'].slice(1, -1);
+			  if(this.mpld3){
+				  data = JSON.parse(data)[0];
+			  }
+			  this.frames[current] = data;
+			  this.update_cache();
+			  this.update(current);
+		  }
       }
       if(this.nbagg || !(current in this.cache)) {
-	  callbacks = {iopub: {output: $.proxy(callback, this)}};
-	  var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-	  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+		  callbacks = {iopub: {output: $.proxy(callback, this)}};
+		  var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+		  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
       } else {
-	  this.update(prev, current);
+		  this.update(current);
       }
   }
 
- Animation.prototype.next_frame = function()
-  {
+  Animation.prototype.next_frame = function() {
       this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
   }
-  Animation.prototype.previous_frame = function()
-  {
+  Animation.prototype.previous_frame = function() {
       this.set_frame(Math.max(0, this.current_frame - 1));
   }
-  Animation.prototype.first_frame = function()
-  {
+  Animation.prototype.first_frame = function() {
       this.set_frame(0);
   }
-  Animation.prototype.last_frame = function()
-  {
+  Animation.prototype.last_frame = function() {
       this.set_frame(this.length - 1);
   }
-  Animation.prototype.slower = function()
-  {
+  Animation.prototype.slower = function() {
       this.interval /= 0.7;
       if(this.direction > 0){this.play_animation();}
       else if(this.direction < 0){this.reverse_animation();}
   }
-  Animation.prototype.faster = function()
-  {
+  Animation.prototype.faster = function() {
       this.interval *= 0.7;
       if(this.direction > 0){this.play_animation();}
       else if(this.direction < 0){this.reverse_animation();}
   }
-  Animation.prototype.anim_step_forward = function()
-  {
+  Animation.prototype.anim_step_forward = function() {
       this.current_frame += 1;
       if(this.current_frame < this.length){
           this.set_frame(this.current_frame);
@@ -172,12 +164,11 @@
           }
       }
   }
-  Animation.prototype.anim_step_reverse = function()
-  {
+  Animation.prototype.anim_step_reverse = function() {
       this.current_frame -= 1;
       if(this.current_frame >= 0){
           this.set_frame(this.current_frame);
-      }else{
+      } else {
           var loop_state = this.get_loop_state();
           if(loop_state == "loop"){
               this.last_frame();
@@ -190,23 +181,20 @@
           }
       }
   }
-  Animation.prototype.pause_animation = function()
-  {
+  Animation.prototype.pause_animation = function() {
       this.direction = 0;
       if (this.timer){
           clearInterval(this.timer);
           this.timer = null;
       }
   }
-  Animation.prototype.play_animation = function()
-  {
+  Animation.prototype.play_animation = function() {
       this.pause_animation();
       this.direction = 1;
       var t = this;
       if (!this.timer) this.timer = setInterval(function(){t.anim_step_forward();}, this.interval);
   }
-  Animation.prototype.reverse_animation = function()
-  {
+  Animation.prototype.reverse_animation = function() {
       this.pause_animation();
       this.direction = -1;
       var t = this;
