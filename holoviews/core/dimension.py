@@ -488,7 +488,7 @@ class Dimensioned(LabelledData):
                     group = self._dim_aliases[group]
                 if group == 'cdims':
                     dimensions = {d if isinstance(d, Dimension) else Dimension(d): val
-                                  for d, val in params.pop(group)}
+                                  for d, val in params.pop(group).items()}
                 else:
                     dimensions = [d if isinstance(d, Dimension) else Dimension(d)
                                   for d in params.pop(group)]
