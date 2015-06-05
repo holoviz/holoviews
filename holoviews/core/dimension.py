@@ -441,7 +441,7 @@ class Dimensioned(LabelledData):
     _sorted = False
     _dim_groups = ['kdims', 'vdims', 'cdims', 'ddims']
     _dim_aliases = dict(key_dimensions='kdims', value_dimensions='vdims',
-                        constant_dimensions='cdims')
+                        constant_dimensions='cdims', deep_dimensions='ddims')
 
 
     # Long-name aliases

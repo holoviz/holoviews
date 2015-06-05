@@ -392,9 +392,11 @@ class MultiDimensionalMapping(Dimensioned):
                    " containing %d items of type %s\n" % (len(self.keys()),
                                                           type(self.values()[0]).__name__)
         info_str += ('-' * (len(info_str)-1)) + "\n\n"
+        aliases = {v: k for k, v in self._dim_aliases.items()}
         for group in self._dim_groups:
             dimensions = getattr(self, group)
             if dimensions:
+                group = aliases[group]
                 info_str += '%s Dimensions: \n' % group.capitalize()
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
