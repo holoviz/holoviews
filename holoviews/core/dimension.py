@@ -17,6 +17,26 @@ from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
 
+# Alias parameter support for pickle loading
+
+ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
+           'constant_dimensions': 'cdims'}
+
+def param_aliases(d):
+    """
+    Called from __setstate__ in LabelledData in order to load
+    old pickles with outdated parameter names.
+
+    Warning: We want to keep pickle hacking to a minimum!
+    """
+    for old, new in ALIASES.items():
+        old_param = '_%s_param_value' % old
+        new_param = '_%s_param_value' % new
+        if old_param in d:
+            d[new_param] = d.pop(old_param)
+    return d
+
+
 class Dimension(param.Parameterized):
     """
     Dimension objects are used to specify some important general
@@ -341,6 +361,7 @@ class LabelledData(param.Parameterized):
         When unpickled, restore the saved style and plotting options
         to ViewableElement.options.
         """
+        d = param_aliases(d)
         try:
             load_options = Store.load_counter_offset is not None
             if load_options:
