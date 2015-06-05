@@ -42,8 +42,15 @@
   }
 
   Animation.prototype.update_cache = function(){
+      if(this.load_json) {
+	  var frame_len = _.size(this.keyMap);
+      } else {
+	  var frame_len = _.size(this.frames);
+      }
       for (var i=0; i<_.size(this.frames); i++) {
-	  i = Object.keys(this.frames)[i];
+	  if(!this.load_json) {
+	      i = Object.keys(this.frames)[i];
+	  }
 	  if(!(i in this.cache)) {
 	      this.cache[i] = $('<div />').appendTo("#" + this.img_id);
 	      if(this.mpld3) {
