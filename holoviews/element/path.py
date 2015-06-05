@@ -30,8 +30,8 @@ class Path(Element2D):
     along the specified path.
     """
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                  constant=True, bounds=(2, 2), doc="""
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       constant=True, bounds=(2, 2), doc="""
         The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
@@ -101,7 +101,7 @@ class Contours(Path):
 
     def dimension_values(self, dim):
         dimension = self.get_dimension(dim)
-        if dimension in self.value_dimensions:
+        if dimension in self.vdims:
             return [self.level]
         return super(Contours, self).dimension_values(dim)
 
@@ -115,7 +115,7 @@ class Polygons(Contours):
 
     group = param.String(default="Polygons", constant=True)
 
-    value_dimensions = param.List(default=[Dimension('Value')], doc="""
+    vdims = param.List(default=[Dimension('Value')], doc="""
         Polygons optionally accept a value dimension, corresponding
         to the supplied value.""", bounds=(1,1))
 

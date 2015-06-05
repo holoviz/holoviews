@@ -81,7 +81,7 @@ class RasterPlot(ElementPlot):
 
         im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
-            val_dim = [d.name for d in view.value_dimensions][0]
+            val_dim = [d.name for d in view.vdims][0]
             clims = ranges.get(val_dim)
         if 'norm' not in opts:
             im.set_clim(clims)
@@ -102,7 +102,7 @@ class RasterPlot(ElementPlot):
 
     def _compute_ticks(self, view, ranges):
         if isinstance(view, HeatMap):
-            xdim, ydim = view.key_dimensions
+            xdim, ydim = view.kdims
             dim1_keys, dim2_keys = view.dense_keys()
             num_x, num_y = len(dim1_keys), len(dim2_keys)
             x0, y0, x1, y1 = view.extents
@@ -118,7 +118,7 @@ class RasterPlot(ElementPlot):
 
     def _annotate_values(self, view):
         axis = self.handles['axis']
-        val_dim = view.value_dimensions[0]
+        val_dim = view.vdims[0]
         dim1_keys, dim2_keys = view.dense_keys()
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xstep, ystep = 1.0/num_x, 1.0/num_y
@@ -159,7 +159,7 @@ class RasterPlot(ElementPlot):
         if self.colorbar:
             self._draw_colorbar(im)
 
-        xdim, ydim = view.key_dimensions
+        xdim, ydim = view.kdims
         if isinstance(view, Image):
             l, b, r, t = view.bounds.lbrt()
         else:
@@ -167,7 +167,7 @@ class RasterPlot(ElementPlot):
             if type(view) == Raster:
                 b, t = t, b
 
-        val_dim = [d.name for d in view.value_dimensions][0]
+        val_dim = [d.name for d in view.vdims][0]
         im.set_clim(ranges.get(val_dim))
         im.set_extent((l, r, b, t))
         xticks, yticks = self._compute_ticks(view, ranges)
@@ -246,7 +246,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 else:
                     vmap = self.layout.get(xkey, None)
                 pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key)
-                                    if d in vmap.key_dimensions})
+                                    if d in vmap.kdims})
                 if pane:
                     if issubclass(vmap.type, CompositeOverlay): pane = pane.values()[-1]
                     data = pane.data if pane else None
@@ -256,7 +256,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = Store.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
-                valrange = match_spec(pane, ranges)[pane.value_dimensions[0].name]
+                valrange = match_spec(pane, ranges)[pane.vdims[0].name]
                 plot.set_clim(valrange)
                 if data is None:
                     plot.set_visible(False)
@@ -268,11 +268,11 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             x += w + b_w
             self._xticks.append(x-b_w-w/2.)
 
-        grid_dims = self.layout.key_dimensions
+        grid_dims = self.layout.kdims
         ydim = grid_dims[1] if self.layout.ndims > 1 else None
         xticks = (self._xticks, self._process_ticklabels(self._xkeys, grid_dims[0]))
         yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
-        ylabel = str(self.layout.key_dimensions[1]) if self.layout.ndims > 1 else ''
+        ylabel = str(self.layout.kdims[1]) if self.layout.ndims > 1 else ''
 
         return self._finalize_axis(key, ranges=ranges,
                                    title=self._format_title(key),
@@ -293,8 +293,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             else:
                 plot.set_visible(False)
 
-        xdim = self.layout.key_dimensions[0]
-        ydim = self.layout.key_dimensions[1] if self.layout.ndims > 1 else None
+        xdim = self.layout.kdims[0]
+        ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
 
         self._finalize_axis(key, ranges=ranges, title=self._format_title(key),
                             xticks=(self._xticks, self._process_ticklabels(self._xkeys, xdim)),
@@ -302,8 +302,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
-        xdim = self.layout.key_dimensions[0]
-        ydim = self.layout.key_dimensions[1] if self.layout.ndims > 1 else None
+        xdim = self.layout.kdims[0]
+        ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
         return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel
 
 

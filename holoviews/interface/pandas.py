@@ -60,9 +60,9 @@ class DataFrameView(Element):
 
     group = param.String(default='DFrame', constant=True)
 
-    value_dimensions = param.List(doc="DataFrameView has no value dimension.")
+    vdims = param.List(doc="DataFrameView has no value dimension.")
 
-    def __init__(self, data, dimensions={}, key_dimensions=None, clone_override=False,
+    def __init__(self, data, dimensions={}, kdims=None, clone_override=False,
                  index=None, columns=None, dtype=None, copy=True, **params):
         if pd is None:
             raise Exception("Pandas is required for the Pandas interface.")
@@ -71,19 +71,19 @@ class DataFrameView(Element):
         elif copy:
             data = pd.DataFrame(data, copy=True)
         if clone_override:
-            dim_dict = {d.name: d for d in key_dimensions}
+            dim_dict = {d.name: d for d in kdims}
             dims = [dim_dict.get(k, k) for k in data.columns]
-        elif key_dimensions:
-            if len(key_dimensions) != len(data.columns):
+        elif kdims:
+            if len(kdims) != len(data.columns):
                 raise ValueError("Supplied key dimensions do not match data columns")
-            dims = key_dimensions
+            dims = kdims
         else:
             dims = list(data.columns)
         for name, dim in dimensions.items():
             if name in data.columns:
                 dims[list(data.columns).index(name)] = dim
 
-        ViewableElement.__init__(self, data, key_dimensions=dims, **params)
+        ViewableElement.__init__(self, data, kdims=dims, **params)
         self.data.columns = self._cached_index_names
 
 
@@ -163,8 +163,8 @@ class DataFrameView(Element):
                 reduced = reduced.groupby(dim, as_index=True).aggregate(fn)
                 reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
                 reduced = reduced.reset_index(level=reduced_indexes)
-        key_dimensions = [self.get_dimension(d) for d in reduced.columns]
-        return self.clone(reduced, key_dimensions=key_dimensions)
+        kdims = [self.get_dimension(d) for d in reduced.columns]
+        return self.clone(reduced, kdims=kdims)
 
 
     def groupby(self, dimensions, container_type=NdMapping):
@@ -174,14 +174,14 @@ class DataFrameView(Element):
                             % invalid_dims)
 
         index_dims = [self.get_dimension(d) for d in dimensions]
-        mapping = container_type(None, key_dimensions=index_dims)
+        mapping = container_type(None, kdims=index_dims)
         view_dims = set(self._cached_index_names) - set(dimensions)
         view_dims = [self.get_dimension(d) for d in view_dims]
         for k, v in self.data.groupby(dimensions):
             data = v.drop(dimensions, axis=1)
             mapping[k] = self.clone(data,
-                                    key_dimensions=[self.get_dimension(d)
-                                                    for d in data.columns])
+                                    kdims=[self.get_dimension(d)
+                                           for d in data.columns])
         return mapping
 
 
@@ -202,11 +202,11 @@ class DataFrameView(Element):
         return self.groupby(dimensions, GridSpace)
 
 
-    def holomap(self, key_dimensions=[]):
+    def holomap(self, kdims=[]):
         """
         Splits the supplied dimensions out into a HoloMap.
         """
-        return self.groupby(key_dimensions, HoloMap)
+        return self.groupby(kdims, HoloMap)
 
 
 def is_type(df, baseType):
@@ -266,13 +266,12 @@ class DFrame(DataFrameView):
         else:
             groups = NdMapping({0: self})
             mdims = ['Default']
-        create_kwargs = dict(key_dimensions=key_dims,
-                             value_dimensions=val_dims,
+        create_kwargs = dict(kdims=key_dims, vdims=val_dims,
                              view_type=view_type)
         create_kwargs.update(kwargs)
 
         # Convert each element in the HoloMap
-        hmap = HoloMap(key_dimensions=mdims)
+        hmap = HoloMap(kdims=mdims)
         for k, v in groups.items():
             if reduce_dims:
                 v = v.aggregate(reduce_dims, function=reduce_fn)
@@ -291,21 +290,21 @@ class DFrame(DataFrameView):
         return hmap if mdims != ['Default'] else hmap.last
 
 
-    def _create_chart(self, data, key_dimensions=None, value_dimensions=None,
+    def _create_chart(self, data, kdims=None, vdims=None,
                       view_type=None, **kwargs):
-        inherited = dict(key_dimensions=key_dimensions,
-                         value_dimensions=value_dimensions, label=self.label)
+        inherited = dict(kdims=kdims,
+                         vdims=vdims, label=self.label)
         return view_type(np.vstack(data).T, **dict(inherited, **kwargs))
 
 
-    def _create_table(self, data, key_dimensions=None, value_dimensions=None,
+    def _create_table(self, data, kdims=None, vdims=None,
                       view_type=None, **kwargs):
-        ndims = len(key_dimensions)
+        ndims = len(kdims)
         key_data, value_data = data[:ndims], data[ndims:]
         keys = zip(*key_data)
         values = zip(*value_data)
-        inherited = dict(key_dimensions=key_dimensions,
-                         value_dimensions=value_dimensions, label=self.label)
+        inherited = dict(kdims=kdims,
+                         vdims=vdims, label=self.label)
         return view_type(zip(keys, values), **dict(inherited, **kwargs))
 
 
@@ -355,7 +354,7 @@ class DFrame(DataFrameView):
         heatmap = self.heatmap(kdims, vdims, mdims, reduce_fn, **kwargs)
         key_dims = [self.get_dimension(d) for d in kdims]
         val_dims = [self.get_dimension(d) for d in vdims]
-        kwargs = dict(kwargs, key_dimensions=key_dims, value_dimensions=val_dims,
+        kwargs = dict(kwargs, kdims=key_dims, vdims=val_dims,
                       label=self.label)
         if isinstance(heatmap, HoloMap):
             return heatmap.map(lambda x: Surface(x.data, **kwargs), ['HeatMap'])

@@ -14,13 +14,13 @@ class Chart(Element2D):
     selection of subsets of the data.
     """
 
-    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
+    kdims = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
     group = param.String(default='Chart', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('y')], bounds=(1,3), doc="""
+    vdims = param.List(default=[Dimension('y')], bounds=(1,3), doc="""
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
@@ -88,7 +88,7 @@ class Chart(Element2D):
             return self
         if not isinstance(slices, tuple): slices = (slices,)
         if len(slices) > self.ndims:
-            raise Exception("Slice must match number of key_dimensions.")
+            raise Exception("Slice must match number of key dimensions.")
 
         data = self.data
         lower_bounds, upper_bounds = [], []
@@ -141,8 +141,8 @@ class Chart(Element2D):
             sample_data[sample] = data
         params = dict(self.get_param_values(onlychanged=True))
         params.pop('extents', None)
-        return Table(sample_data, **dict(params, key_dimensions=self.key_dimensions,
-                                         value_dimensions=self.value_dimensions))
+        return Table(sample_data, **dict(params, kdims=self.kdims,
+                                         vdims=self.vdims))
 
 
     def reduce(self, dimensions=[], function=None, **reduce_map):
@@ -163,11 +163,11 @@ class Chart(Element2D):
             raise ValueError("Chart Elements may only be reduced to a point.")
         dim, reduce_fn = list(reduce_map.items())[0]
         if dim in self._cached_index_names:
-            reduced_data = OrderedDict(zip(self.value_dimensions, reduce_fn(self.data[:, self.ndims:], axis=0)))
+            reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.ndims:], axis=0)))
         else:
             raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
-        params = dict(self.get_param_values(onlychanged=True), value_dimensions=self.value_dimensions,
-                      key_dimensions=[])
+        params = dict(self.get_param_values(onlychanged=True), vdims=self.vdims,
+                      kdims=[])
         params.pop('extents', None)
         return ItemTable(reduced_data, **params)
 
@@ -241,7 +241,7 @@ class Curve(Chart):
         Create map indexed by Curve x-axis with progressively expanding number
         of curve samples.
         """
-        vmap = HoloMap(None, key_dimensions=self.key_dimensions,
+        vmap = HoloMap(None, kdims=self.kdims,
                        title=self.title+' {dims}')
         for idx in range(len(self.data)):
             x = self.data[0]
@@ -267,13 +267,13 @@ class ErrorBars(Chart):
         A string describing the quantitity measured by the ErrorBars
         object.""")
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                bounds=(2, 2), constant=True, doc="""
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True, doc="""
         The Dimensions corresponding to the x- and y-positions of
         the error bars.""")
 
-    value_dimensions = param.List(default=[Dimension('lerror'), Dimension('uerror')],
-                                  bounds=(2,2), constant=True)
+    vdims = param.List(default=[Dimension('lerror'), Dimension('uerror')],
+                       bounds=(2,2), constant=True)
 
     def __init__(self, data, **params):
         data = list(data)
@@ -298,9 +298,9 @@ class Bars(NdElement):
 
     group = param.String(default='Bars', constant=True)
 
-    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,3))
+    kdims = param.List(default=[Dimension('x')], bounds=(1,3))
 
-    value_dimensions = param.List(default=[Dimension('y')], bounds=(1,1))
+    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
 
 
@@ -310,13 +310,13 @@ class Histogram(Element2D):
     upper and lower bounds of their edges and the computed bin values.
     """
 
-    key_dimensions = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
+    kdims = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
     group = param.String(default='Histogram', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('Frequency')])
+    vdims = param.List(default=[Dimension('Frequency')])
 
     def __init__(self, values, edges=None, extents=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)
@@ -332,7 +332,7 @@ class Histogram(Element2D):
         """
         if key is (): return self # May no longer be necessary
         if isinstance(key, tuple) and len(key) > self.ndims:
-            raise Exception("Slice must match number of key_dimensions.")
+            raise Exception("Slice must match number of key dimensions.")
 
         centers = [(float(l)+r)/2 for (l,r) in zip(self.edges, self.edges[1:])]
         if isinstance(key, slice):
@@ -445,14 +445,14 @@ class Points(Chart):
     they should lie in the range [0,1].
     """
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                  bounds=(2, 2), constant=True, doc="""
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Points in form
         of a string or dimension object.""")
 
     group = param.String(default='Points', constant=True)
 
-    value_dimensions = param.List(default=[], bounds=(0, 2))
+    vdims = param.List(default=[], bounds=(0, 2))
 
 
     _min_dims = 2                      # Minimum number of columns
@@ -514,8 +514,8 @@ class VectorField(Points):
 
     group = param.String(default='VectorField', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
-                                           Dimension('Magnitude')], bounds=(1, 2))
+    vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
+                                Dimension('Magnitude')], bounds=(1, 2))
 
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns

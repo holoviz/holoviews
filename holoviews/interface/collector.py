@@ -303,7 +303,7 @@ class Collect(object):
 
         if self.path not in attrtree:
             if not isinstance(val, (UniformNdMapping, Layout)):
-                val = HoloMap([((time,), val)], key_dimensions=[Time])
+                val = HoloMap([((time,), val)], kdims=[Time])
         else:
             current_val = attrtree.data[self.path]
             val = self._merge_views(current_val, val, time)
@@ -320,7 +320,7 @@ class Collect(object):
         if isinstance(val, ViewableElement):
             current_val[time] = val
         elif (isinstance(current_val, UniformNdMapping) and 'Time' not in
-              [d.name for d in current_val.key_dimensions]):
+              [d.name for d in current_val.kdims]):
             raise Exception("Time dimension is missing.")
         else:
             current_val.update(val)

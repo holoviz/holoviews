@@ -36,11 +36,11 @@ class BarsComparisonTest(ComparisonTestCase):
         key_dims2=[Dimension('Cyclists', values='initial')]
         value_dims1=['Count']
         self.bars1 = Bars([('one',8),('two', 10), ('three', 16)],
-                          key_dimensions=key_dims1, value_dimensions=value_dims1)
+                          kdims=key_dims1, vdims=value_dims1)
         self.bars2 = Bars([('one',8),('two', 10), ('three', 17)],
-                          key_dimensions=key_dims1, value_dimensions=value_dims1)
+                          kdims=key_dims1, vdims=value_dims1)
         self.bars3 = Bars([('one',8),('two', 10), ('three', 16)],
-                          key_dimensions=key_dims2, value_dimensions=value_dims1)
+                          kdims=key_dims2, vdims=value_dims1)
 
     def test_bars_equal_1(self):
         self.assertEqual(self.bars1, self.bars1)

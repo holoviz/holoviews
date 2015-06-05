@@ -145,8 +145,8 @@ class TimeSeriesPlot(FullRedrawPlot):
                    zorder=self.zorder, **self.style)
 
     def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
-        xlabel = xlabel if xlabel else str(view.key_dimensions[0])
-        ylabel = ylabel if ylabel else str(view.value_dimensions[0])
+        xlabel = xlabel if xlabel else str(view.kdims[0])
+        ylabel = ylabel if ylabel else str(view.vdims[0])
         return xlabel, ylabel, zlabel
 
 

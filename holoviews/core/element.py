@@ -106,16 +106,16 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         from ..element import Table
         keys = zip(*[self.dimension_values(dim.name)
-                 for dim in self.key_dimensions])
+                 for dim in self.kdims])
         if not keys: keys = [()]
         values = zip(*[self.dimension_values(dim.name)
-                       for dim in self.value_dimensions])
+                       for dim in self.vdims])
         kwargs = {'label': self.label
                   for k, v in self.get_param_values(onlychanged=True)
                   if k in ['group', 'label']}
 
-        params = dict(key_dimensions=self.key_dimensions,
-                      value_dimensions=self.value_dimensions,
+        params = dict(kdims=self.kdims,
+                      vdims=self.vdims,
                       label=self.label)
         if not self.params()['group'].default == self.group:
             params['group'] = self.group
@@ -145,7 +145,7 @@ class NdElement(Element, NdMapping):
     of NdMappings, NdElements also support multi-dimensional
     values. The values held in a multi-valued NdElement are tuples,
     where each component of the tuple maps to a column as described
-    by the value_dimensions parameter.
+    by the value dimensions parameter.
 
     In other words, the data of a NdElement are partitioned into two
     groups: the columns based on the key and the value columns that
@@ -159,7 +159,7 @@ class NdElement(Element, NdMapping):
     group = param.String(default='NdElement', constant=True, doc="""
          The group is used to describe the NdElement.""")
 
-    value_dimensions = param.List(default=[Dimension('Data')], doc="""
+    vdims = param.List(default=[Dimension('Data')], doc="""
         The dimension description(s) of the values held in data tuples
         that map to the value columns of the table.
 
@@ -200,30 +200,30 @@ class NdElement(Element, NdMapping):
         return cols
 
 
-    def _filter_data(self, subtable, value_dimensions):
+    def _filter_data(self, subtable, vdims):
         """
-        Filters value_dimensions in the supplied NdElement data.
+        Filters value dimensions in the supplied NdElement data.
         """
         if isinstance(subtable, tuple): subtable = {(): subtable}
         col_names = self.dimensions('value', label=True)
-        cols = self._filter_columns(value_dimensions, col_names)
+        cols = self._filter_columns(vdims, col_names)
         indices = [col_names.index(col) for col in cols]
-        value_dimensions = [self.value_dimensions[i] for i in indices]
+        vdims = [self.vdims[i] for i in indices]
         items = [(k, tuple(v[i] for i in indices))
                  for (k,v) in subtable.items()]
         if len(items) == 1:
             data = items[0][1]
-            if len(value_dimensions) == 1:
+            if len(vdims) == 1:
                 return data[0]
             else:
                 from ..element.tabular import ItemTable
                 kwargs = {'label': self.label
                           for k, v in self.get_param_values(onlychanged=True)
                           if k in ['group', 'label']}
-                data = list(zip(value_dimensions, data))
+                data = list(zip(vdims, data))
                 return ItemTable(data, **kwargs)
         else:
-            return subtable.clone(items, value_dimensions=value_dimensions)
+            return subtable.clone(items, vdims=vdims)
 
 
     def __getitem__(self, args):
@@ -234,10 +234,9 @@ class NdElement(Element, NdMapping):
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
-        if len(self.value_dimensions) > 1 and not isinstance(subtable, NdElement):
+        if len(self.vdims) > 1 and not isinstance(subtable, NdElement):
             subtable = self.__class__([((), subtable)], label=self.label,
-                                      key_dimensions=[],
-                                      value_dimensions=self.value_dimensions)
+                                      kdims=[], vdims=self.vdims)
 
         # If subtable is not a slice return as reduced type
         if not isinstance(args, tuple): args = (args,)
@@ -281,20 +280,20 @@ class NdElement(Element, NdMapping):
             if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.groupby([d.name for d in split_dims], container_type=HoloMap,
                                                   group_type=self.__class__)
-                reduced_table = self.clone(shared_data=False, key_dimensions=split_dims)
+                reduced_table = self.clone(shared_data=False, kdims=split_dims)
                 for k, table in split_map.items():
                     reduced = []
-                    for vdim in self.value_dimensions:
-                        valtable = table.select(value=vdim.name) if len(self.value_dimensions) > 1 else table
+                    for vdim in self.vdims:
+                        valtable = table.select(value=vdim.name) if len(self.vdims) > 1 else table
                         reduced.append(reduce_fn(valtable.data.values()))
                     reduced_table[k] = reduced
             else:
                 reduced = tuple(reduce_fn(self.dimension_values(vdim.name))
-                                for vdim in self.value_dimensions)
-                reduced_dims = [d for d in self.key_dimensions if d.name not in reduce_map]
+                                for vdim in self.vdims)
+                reduced_dims = [d for d in self.kdims if d.name not in reduce_map]
                 params = dict(group=self.group) if self.group != type(self).__name__ else {}
-                reduced_table = self.__class__([((), reduced)], label=self.label, key_dimensions=reduced_dims,
-                                               value_dimensions=self.value_dimensions, **params)
+                reduced_table = self.__class__([((), reduced)], label=self.label, kdims=reduced_dims,
+                                               vdims=self.vdims, **params)
         return reduced_table
 
 
@@ -447,11 +446,11 @@ class HoloMap(UniformNdMapping):
             # dimension labels for the new view
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
-            dimensions = self.key_dimensions
+            dimensions = self.kdims
             if self_in_other and other_in_self: # superset of each other
                 super_keys = sorted(set(self._dimension_keys() + other._dimension_keys()))
             elif self_in_other: # self is superset
-                dimensions = other.key_dimensions
+                dimensions = other.kdims
                 super_keys = other._dimension_keys()
             elif other_in_self: # self is superset
                 super_keys = self._dimension_keys()
@@ -475,7 +474,7 @@ class HoloMap(UniformNdMapping):
                     items.append((new_key, self[self_key] * other.empty_element))
                 else:
                     items.append((new_key, self.empty_element * other[other_key]))
-            return self.clone(items, key_dimensions=dimensions, label=self._label, group=self._group)
+            return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
@@ -644,8 +643,8 @@ class GridSpace(UniformNdMapping):
     # NOTE: If further composite types supporting Overlaying and Layout these
     #       classes may be moved to core/composite.py
 
-    key_dimensions = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
-                                bounds=(1,2))
+    kdims = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
+                       bounds=(1,2))
 
     def __init__(self, initial_items=None, **params):
         super(GridSpace, self).__init__(initial_items, **params)
@@ -773,10 +772,10 @@ class Collator(NdMapping):
     """
     Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
-    by inserting the Collators key_dimensions on the HoloMaps.
+    by inserting the Collators key dimensions on the HoloMaps.
     If the items in the Collator do not contain HoloMaps
     they will be created. Collator also supports filtering
-    of Tree structures and dropping of constant_dimensions.
+    of Tree structures and dropping of constant dimensions.
 
     Collator can also be subclassed to dynamically load data
     from different locations. This only requires subclassing
@@ -819,7 +818,7 @@ class Collator(NdMapping):
         to be ignored can be supplied.
         """
         constant_dims = self.static_dimensions
-        ndmapping = NdMapping(key_dimensions=self.key_dimensions)
+        ndmapping = NdMapping(kdims=self.kdims)
 
         num_elements = len(self)
         for idx, (key, data) in enumerate(self.data.items()):
@@ -857,7 +856,7 @@ class Collator(NdMapping):
         Return all constant dimensions.
         """
         dimensions = []
-        for dim in self.key_dimensions:
+        for dim in self.kdims:
             if len(set(self.dimension_values(dim.name))) == 1:
                 dimensions.append(dim)
         return dimensions
@@ -875,20 +874,20 @@ class Collator(NdMapping):
         dim_vals = [(dim, val) for dim, val in dims[::-1]
                     if dim not in self.drop]
         if isinstance(item, self.merge_type):
-            new_item = item.clone(constant_dimensions=constant_keys)
+            new_item = item.clone(cdims=constant_keys)
             for dim, val in dim_vals:
                 dim = dim if isinstance(dim, Dimension) else Dimension(dim)
-                if dim not in new_item.key_dimensions:
+                if dim not in new_item.kdims:
                     new_item = new_item.add_dimension(dim, 0, val)
         elif isinstance(item, self._nest_order[self.merge_type]):
             if len(dim_vals):
                 dimensions, key = zip(*dim_vals)
-                new_item = self.merge_type({key: item}, key_dimensions=dimensions,
-                                           constant_dimensions=constant_keys)
+                new_item = self.merge_type({key: item}, kdims=dimensions,
+                                           cdims=constant_keys)
             else:
                 new_item = item
         else:
-            new_item = item.clone(shared_data=False, constant_dimensions=constant_keys)
+            new_item = item.clone(shared_data=False, cdims=constant_keys)
             for k, v in item.items():
                 new_item[k] = self._add_dimensions(v, dims[::-1], constant_keys)
         if isinstance(new_item, Layout):

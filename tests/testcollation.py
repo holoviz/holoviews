@@ -19,7 +19,7 @@ class TestCollation(unittest.TestCase):
         self.phase_boundaries = {(a, b, d): Curve(zip(Bs, mus[a, b, :, i]*a+b))
                                  for i in range(10) for a, b, d in coords}
         self.dimensions = ['alpha', 'beta', 'delta']
-        self.nesting_hmap = HoloMap(self.phase_boundaries, key_dimensions=self.dimensions)
+        self.nesting_hmap = HoloMap(self.phase_boundaries, kdims=self.dimensions)
         self.nested_hmap = self.nesting_hmap.groupby(['alpha'])
         self.nested_overlay = self.nesting_hmap.overlay(['delta'])
         self.nested_grid = self.nested_overlay.grid(['alpha', 'beta'])
@@ -27,15 +27,15 @@ class TestCollation(unittest.TestCase):
 
     def test_collate_hmap(self):
         collated = self.nested_hmap.collate()
-        self.assertEqual(collated.key_dimensions, self.nesting_hmap.key_dimensions)
+        self.assertEqual(collated.kdims, self.nesting_hmap.kdims)
         self.assertEqual(collated.keys(), self.nesting_hmap.keys())
         self.assertEqual(collated.type, self.nesting_hmap.type)
         self.assertEqual(repr(collated), repr(self.nesting_hmap))
 
     def test_collate_ndoverlay(self):
         collated = self.nested_overlay.collate(NdOverlay)
-        ndoverlay = NdOverlay(self.phase_boundaries, key_dimensions=self.dimensions)
-        self.assertEqual(collated.key_dimensions, ndoverlay.key_dimensions)
+        ndoverlay = NdOverlay(self.phase_boundaries, kdims=self.dimensions)
+        self.assertEqual(collated.kdims, ndoverlay.kdims)
         self.assertEqual(collated.keys(), ndoverlay.keys())
         self.assertEqual(repr(collated), repr(ndoverlay))
 
@@ -53,7 +53,7 @@ class TestCollation(unittest.TestCase):
 
     def test_collate_layout_overlay(self):
         layout = self.nested_overlay + self.nested_overlay
-        collated = Collator(key_dimensions=['alpha', 'beta'])
+        collated = Collator(kdims=['alpha', 'beta'])
         for k, v in self.nested_overlay.items():
             collated[k] = v + v
         collated = collated()
@@ -61,7 +61,7 @@ class TestCollation(unittest.TestCase):
 
     def test_collate_layout_hmap(self):
         layout = self.nested_overlay + self.nested_overlay
-        collated = Collator(key_dimensions=['delta'], merge_type=NdOverlay)
+        collated = Collator(kdims=['delta'], merge_type=NdOverlay)
         for k, v in self.nesting_hmap.groupby(['delta']).items():
             collated[k] = v + v
         collated = collated()

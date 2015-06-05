@@ -17,21 +17,21 @@ class TestTable(ComparisonTestCase):
 
     def test_table_init(self):
         self.table1 =Table(zip(self.keys1, self.values1),
-                           key_dimensions = self.key_dims1,
-                           value_dimensions = self.val_dims1)
+                           kdims = self.key_dims1,
+                           vdims = self.val_dims1)
 
     def test_table_index_row_gender(self):
         table =Table(zip(self.keys1, self.values1),
-                      key_dimensions = self.key_dims1,
-                      value_dimensions = self.val_dims1)
+                      kdims = self.key_dims1,
+                      vdims = self.val_dims1)
         row = table['F',:]
         self.assertEquals(type(row), Table)
         self.assertEquals(row.data, OrderedDict([(('F', 12), (10, 0.8))]))
 
     def test_table_index_rows_gender(self):
         table =Table(zip(self.keys1, self.values1),
-                      key_dimensions = self.key_dims1,
-                      value_dimensions = self.val_dims1)
+                      kdims = self.key_dims1,
+                      vdims = self.val_dims1)
         row = table['M',:]
         self.assertEquals(type(row), Table)
         self.assertEquals(row.data,
@@ -39,16 +39,16 @@ class TestTable(ComparisonTestCase):
 
     def test_table_index_row_age(self):
         table =Table(zip(self.keys1, self.values1),
-                      key_dimensions = self.key_dims1,
-                      value_dimensions = self.val_dims1)
+                      kdims = self.key_dims1,
+                      vdims = self.val_dims1)
         row = table[:, 12]
         self.assertEquals(type(row), Table)
         self.assertEquals(row.data, OrderedDict([(('F', 12), (10, 0.8))]))
 
     def test_table_index_item_table(self):
         table =Table(zip(self.keys1, self.values1),
-                      key_dimensions = self.key_dims1,
-                      value_dimensions = self.val_dims1)
+                      kdims = self.key_dims1,
+                      vdims = self.val_dims1)
         itemtable = table['F', 12]
         self.assertEquals(type(itemtable), ItemTable)
         self.assertEquals(itemtable.data, OrderedDict([('Weight', 10), ('Height', 0.8)]))
@@ -56,13 +56,13 @@ class TestTable(ComparisonTestCase):
 
     def test_table_index_value1(self):
         table =Table(zip(self.keys1, self.values1),
-                      key_dimensions = self.key_dims1,
-                      value_dimensions = self.val_dims1)
+                      kdims = self.key_dims1,
+                      vdims = self.val_dims1)
         self.assertEquals(table['F', 12, 'Weight'], 10)
 
     def test_table_index_value2(self):
         table =Table(zip(self.keys1, self.values1),
-                      key_dimensions = self.key_dims1,
-                      value_dimensions = self.val_dims1)
+                      kdims = self.key_dims1,
+                      vdims = self.val_dims1)
         self.assertEquals(table['F', 12, 'Height'], 0.8)
 

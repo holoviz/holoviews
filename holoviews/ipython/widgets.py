@@ -289,7 +289,7 @@ class NdWidget(param.Parameterized):
         self.mpld3 = OutputMagic.options['backend'] == 'd3'
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  key_dimensions=self.dimensions)
+                                  kdims=self.dimensions)
 
         nbagg = CommSocket is not object
         self.nbagg = OutputMagic.options['backend'] == 'nbagg' and nbagg
@@ -447,7 +447,7 @@ class SelectionWidget(NdWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
-        for idx, dim in enumerate(self.mock_obj.key_dimensions):
+        for idx, dim in enumerate(self.mock_obj.kdims):
             dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
             dim_vals = [v for v in dim_vals if v is not None]
             if isnumeric(dim_vals[0]):

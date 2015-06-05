@@ -247,7 +247,7 @@ class image_overlay(ElementOperation):
                 el = Image(np.ones(strongest.data.shape) * self.p.fill,
                             group=spec_dict.get('group','Image'),
                             label=spec_dict.get('label',''))
-                el.value_dimensions[0].range = self.p.default_range
+                el.vdims[0].range = self.p.default_range
             completed.append(el)
         return np.prod(completed)
 
@@ -305,11 +305,11 @@ class gradient(ElementOperation):
 
     def _process(self, matrix, key=None):
 
-        if len(matrix.value_dimensions) != 1:
+        if len(matrix.vdims) != 1:
             raise ValueError("Input matrix to gradient operation must "
                              "have single value dimension.")
 
-        matrix_dim = matrix.value_dimensions[0]
+        matrix_dim = matrix.vdims[0]
 
         data = matrix.data
         r, c = data.shape
@@ -354,7 +354,7 @@ class convolve(ElementOperation):
 
         [target, kernel] = overlay.get(0), overlay.get(1)
 
-        if len(target.value_dimensions) != 1:
+        if len(target.vdims) != 1:
             raise Exception("Convolution requires inputs with single value dimensions.")
 
         xslice = slice(self.p.kernel_roi[0], self.p.kernel_roi[2])
@@ -400,7 +400,7 @@ class contours(ElementOperation):
         contour_set = plt.contour(matrix.data, extent=extent,
                                   levels=self.p.levels)
 
-        contours = NdOverlay(None, key_dimensions=['Levels'])
+        contours = NdOverlay(None, kdims=['Levels'])
         for level, cset in zip(self.p.levels, contour_set.collections):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
@@ -450,7 +450,7 @@ class histogram(ElementOperation):
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
-            selected_dim = [d.name for d in view.value_dimensions + view.key_dimensions][0]
+            selected_dim = [d.name for d in view.vdims + view.kdims][0]
         data = np.array(view.dimension_values(selected_dim))
         weights = np.array(view.dimension_values(self.p.weight_dimension)) if self.p.weight_dimension else None
         hist_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
@@ -468,7 +468,7 @@ class histogram(ElementOperation):
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
 
-        hist_view = Histogram(hist, edges, key_dimensions=[view.get_dimension(selected_dim)],
+        hist_view = Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
                               label=view.label)
 
         return (view << hist_view) if self.p.adjoin else hist_view

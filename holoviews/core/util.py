@@ -488,7 +488,7 @@ def layer_sort(hmap):
    """
    orderings = {}
    for o in hmap:
-      okeys = [(type(v).__name__, v.group, v.label) + k if len(o.key_dimensions) else
+      okeys = [(type(v).__name__, v.group, v.label) + k if len(o.kdims) else
                (type(v).__name__,) + k for k, v in o.data.items()]
       if len(okeys) == 1 and not okeys[0] in orderings:
          orderings[okeys[0]] = []

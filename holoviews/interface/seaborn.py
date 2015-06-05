@@ -28,13 +28,13 @@ class TimeSeries(Element2D):
     supplied.
     """
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('n')],
-                                bounds=(2, 2))
+    kdims = param.List(default=[Dimension('x'), Dimension('n')],
+                       bounds=(2, 2))
 
     group = param.String(default='TimeSeries', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('z')],
-                                  bounds=(1, 1))
+    vdims = param.List(default=[Dimension('z')],
+                       bounds=(1, 1))
 
     def __init__(self, data, xdata=None, **params):
         if isinstance(data, NdMapping):
@@ -69,7 +69,7 @@ class TimeSeries(Element2D):
 
     @property
     def ylabel(self):
-        return str(self.value_dimensions[0])
+        return str(self.vdims[0])
 
 
 
@@ -81,9 +81,9 @@ class Bivariate(Chart):
     and y-data.
     """
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')])
+    kdims = param.List(default=[Dimension('x'), Dimension('y')])
 
-    value_dimensions = param.List(default=[], bounds=(0,0))
+    vdims = param.List(default=[], bounds=(0,0))
 
     group = param.String(default="Bivariate", constant=True)
 
@@ -97,11 +97,11 @@ class Distribution(Chart):
     list. Internally it uses Seaborn to make all the conversions.
     """
 
-    key_dimensions = param.List(default=[Dimension('Value')], bounds=(1,1))
+    kdims = param.List(default=[Dimension('Value')], bounds=(1,1))
 
     group = param.String(default='Distribution', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('Frequency')])
+    vdims = param.List(default=[Dimension('Frequency')])
 
     def _validate_data(self, data):
         data = np.expand_dims(data, 1) if data.ndim == 1 else data
@@ -172,7 +172,7 @@ class DFrame(PandasDFrame):
 
     def distribution(self, dim, mdims=[], **kwargs):
         grouped = self.groupby(mdims, HoloMap) if mdims else HoloMap({0: self})
-        inherited = dict(key_dimensions=[self.get_dimension(dim)],
+        inherited = dict(kdims=[self.get_dimension(dim)],
                          label=self.label)
         kwargs = dict(inherited, **kwargs)
         conversion_fn = lambda x: Distribution(x.data.sort()[dim].dropna(), **kwargs)
@@ -186,7 +186,7 @@ class DFrame(PandasDFrame):
 
     def timeseries(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
         if not isinstance(kdims, list) or not len(kdims) ==2:
-            raise Exception('TimeSeries requires two key_dimensions.')
+            raise Exception('TimeSeries requires two key dimensions.')
         if not isinstance(kdims, list): kdims = [kdims]
         if not isinstance(vdims, list): vdims = [vdims]
 
@@ -199,7 +199,7 @@ class DFrame(PandasDFrame):
                 mdims += [dim for dim in self.dimensions(label=True) if dim not in sel_dims]
         curve_map = self._convert(kdims[0], vdims, mdims, reduce_fn, view_type=Curve, **kwargs)
         return TimeSeries(curve_map.overlay(kdims[1]),
-                          key_dimensions=[self.get_dimension(dim) for dim in kdims],
+                          kdims=[self.get_dimension(dim) for dim in kdims],
                           **kwargs)
 
     @property

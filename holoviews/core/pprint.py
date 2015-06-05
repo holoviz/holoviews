@@ -240,17 +240,17 @@ class PrettyPrinter(object):
         if siblings:
             padding = cls.padding([cls.component_type(el) for el in siblings])
             info.ljust(padding)
-        if len(node.key_dimensions) >= 1:
-            info += cls.tab + '[%s]' % ','.join(d.name for d in node.key_dimensions)
-        if value_dims and len(node.value_dimensions) >= 1:
-            info += cls.tab + '(%s)' % ','.join(d.name for d in node.value_dimensions)
+        if len(node.kdims) >= 1:
+            info += cls.tab + '[%s]' % ','.join(d.name for d in node.kdims)
+        if value_dims and len(node.vdims) >= 1:
+            info += cls.tab + '(%s)' % ','.join(d.name for d in node.vdims)
         return level, [(level, info)]
 
 
     @classmethod
     def ndmapping_info(cls, node, siblings, level, value_dims):
 
-        key_dim_info = '[%s]' % ','.join(d.name for d in node.key_dimensions)
+        key_dim_info = '[%s]' % ','.join(d.name for d in node.kdims)
         first_line = cls.component_type(node) + cls.tab + key_dim_info
         lines = [(level, first_line)]
 

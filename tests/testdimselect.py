@@ -14,14 +14,14 @@ class DimensionedSelectionTest(ComparisonTestCase):
         params = [list(range(3)) for i in range(2)]
         self.img_map = HoloMap({(i, j): self.img_fn()
                                 for i, j in product(*params)},
-                               key_dimensions=['a', 'b'])
+                               kdims=['a', 'b'])
         self.contour_map = HoloMap({(i, j): self.contour_fn()
                                     for i, j in product(*params)},
-                                   key_dimensions=['a', 'b'])
+                                   kdims=['a', 'b'])
         self.ndoverlay_map = self.img_map.overlay('b')
         self.overlay_map = self.img_map * self.contour_map
         self.layout_map = self.ndoverlay_map + self.contour_map
-        self.duplicate_map = self.img_map.clone(key_dimensions=['x', 'y'])
+        self.duplicate_map = self.img_map.clone(kdims=['x', 'y'])
 
         self.overlap1 = HoloMap({i: self.img_fn() for i in range(5)})
         self.overlap2 = HoloMap({i: self.img_fn() for i in range(10)})

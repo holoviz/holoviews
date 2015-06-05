@@ -112,7 +112,7 @@ class ElementOperation(Operation):
         elif isinstance(element, GridSpace):
             # Initialize an empty axis layout
             processed = GridSpace(None, label=element.label,
-                                  key_dimensions=element.key_dimensions)
+                                  kdims=element.kdims)
             # Populate the axis layout
             for pos, cell in element.items():
                 processed[pos] = self(cell, **params)
@@ -195,7 +195,7 @@ class TreeOperation(Operation):
                 if isinstance(processed, list):
                     processed = Layout.from_values(processed)
                 values[key] = processed
-        return Collator(values, key_dimensions=dims)(constant=False)
+        return Collator(values, kdims=dims)(constant=False)
 
 
 

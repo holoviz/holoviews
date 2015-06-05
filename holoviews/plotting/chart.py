@@ -418,7 +418,7 @@ class SideHistogramPlot(HistogramPlot):
                 range_item = [hm for hm in main.split_overlays()[1]
                               if hist_dim in hm.dimensions('all', label=True)][0]
         else:
-            range_item = HoloMap({0: main}, key_dimensions=['Frame'])
+            range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
         if hist_dim in ranges:
             main_range = ranges[hist_dim]
@@ -779,7 +779,7 @@ class BarPlot(ElementPlot):
         """
         gi, ci, si =self.group_index, self.category_index, self.stack_index
         ndims = self.map.last.ndims
-        dims = self.map.last.key_dimensions
+        dims = self.map.last.kdims
         dimensions = []
         values = {}
         for vidx, vtype in zip([gi, ci, si], self._dimensions):
@@ -787,7 +787,7 @@ class BarPlot(ElementPlot):
                 dim = dims[vidx]
                 dimensions.append(dim)
                 vals = self.map.dimension_values(dim.name)
-                params = dict(key_dimensions=[dim])
+                params = dict(kdims=[dim])
             else:
                 dimensions.append(None)
                 vals = [None]
@@ -825,7 +825,7 @@ class BarPlot(ElementPlot):
 
     def __call__(self, ranges=None):
         element = self.map.last
-        vdim = element.value_dimensions[0]
+        vdim = element.vdims[0]
         axis = self.handles['axis']
         key = self.keys[-1]
 
@@ -857,7 +857,7 @@ class BarPlot(ElementPlot):
         # Get style and dimension information
         values = self.values
         gi, ci, si = self.group_index, self.category_index, self.stack_index
-        gdim, cdim, sdim = [element.key_dimensions[i] if i < element.ndims else None
+        gdim, cdim, sdim = [element.kdims[i] if i < element.ndims else None
                             for i in (gi, ci, si) ]
         indices = dict(zip(self._dimensions, (gi, ci, si)))
         style_groups = [sg for sg in self.color_by if indices[sg] < element.ndims]
@@ -919,7 +919,7 @@ class BarPlot(ElementPlot):
                     bars[tuple(val_key)] = bar
                     prev += val if np.isfinite(val) else 0
                     labels.append(label)
-        title = [str(element.key_dimensions[indices[cg]])
+        title = [str(element.kdims[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
         if any(len(l) for l in labels):
             axis.legend(title=', '.join(title))

@@ -260,9 +260,9 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dimensioned(cls, obj1, obj2, msg=None):
         cls.compare_labelled_data(obj1, obj2)
-        cls.compare_dimension_lists(obj1.value_dimensions, obj2.value_dimensions,
+        cls.compare_dimension_lists(obj1.vdims, obj2.vdims,
                                     'Value dimension list')
-        cls.compare_dimension_lists(obj1.key_dimensions, obj2.key_dimensions,
+        cls.compare_dimension_lists(obj1.kdims, obj2.kdims,
                                     'Key dimension list')
 
     @classmethod
@@ -527,7 +527,7 @@ class Comparison(ComparisonInterface):
         if el1.cols != el2.cols:
             raise cls.failureException("ItemTables have different numbers of columns.")
 
-        if [d.name for d in el1.value_dimensions] != [d.name for d in el2.value_dimensions]:
+        if [d.name for d in el1.vdims] != [d.name for d in el2.vdims]:
             raise cls.failureException("ItemTables have different Dimensions.")
 
 

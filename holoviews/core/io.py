@@ -548,8 +548,8 @@ class FileArchive(Archive):
 
     def _dim_formatter(self, obj):
         if not obj: return ''
-        key_dims = obj.traverse(lambda x: x.key_dimensions, [UniformNdMapping])
-        constant_dims = obj.traverse(lambda x: x.constant_dimensions)
+        key_dims = obj.traverse(lambda x: x.kdims, [UniformNdMapping])
+        constant_dims = obj.traverse(lambda x: x.cdims)
         dims = []
         map(dims.extend, key_dims + constant_dims)
         dims = unique_iterator(dims)

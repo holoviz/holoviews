@@ -17,11 +17,11 @@ class ItemTable(Element):
     information (e.g type and units) to be associated per heading.
     """
 
-    key_dimensions = param.List(default=[], bounds=(0, 0), doc="""
+    kdims = param.List(default=[], bounds=(0, 0), doc="""
        ItemTables hold an index Dimension for each value they contain, i.e.
        they are equivalent to the keys.""")
 
-    value_dimensions = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
+    vdims = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
        ItemTables should have only index Dimensions.""")
 
     group = param.String(default="ItemTable", constant=True)
@@ -29,7 +29,7 @@ class ItemTable(Element):
 
     @property
     def rows(self):
-        return len(self.value_dimensions)
+        return len(self.vdims)
 
 
     @property
@@ -46,8 +46,8 @@ class ItemTable(Element):
             data = OrderedDict(data)
         else:
             data = OrderedDict(list(data)) # Python 3
-        if not 'value_dimensions' in params:
-            params['value_dimensions'] = list(data.keys())
+        if not 'vdims' in params:
+            params['vdims'] = list(data.keys())
         str_keys = OrderedDict((k.name if isinstance(k, Dimension)
                                 else k ,v) for (k,v) in data.items())
         super(ItemTable, self).__init__(str_keys, **params)
@@ -133,8 +133,8 @@ class ItemTable(Element):
 
 
     def table(self):
-        return Table(OrderedDict([((), self.values())]), key_dimensions=[],
-                     value_dimensions=self.value_dimensions)
+        return Table(OrderedDict([((), self.values())]), kdims=[],
+                     vdims=self.vdims)
 
     def values(self):
         return tuple(self.data.get(k, np.NaN)
@@ -148,7 +148,7 @@ class Table(NdElement):
     format and is convertible to most other Element types.
     """
 
-    key_dimensions = param.List(default=[Dimension(name="Row")], doc="""
+    kdims = param.List(default=[Dimension(name="Row")], doc="""
          One or more key dimensions. By default, the special 'Row'
          dimension ensures that the table is always indexed by the row
          number.
@@ -187,7 +187,7 @@ class Table(NdElement):
                 raise ValueError("Tables only supports string inner"
                                  "keys when supplied nested dictionary")
         if isinstance(value, ItemTable):
-            if value.value_dimensions != self.value_dimensions:
+            if value.vdims != self.vdims:
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             value = value.data.values()
         super(Table, self).__setitem__(key, value)
@@ -198,7 +198,7 @@ class Table(NdElement):
         Whether this is an indexed table: a table that has a single
         key dimension called 'Row' corresponds to the row number.
         """
-        return self.ndims == 1 and self.key_dimensions[0].name == 'Row'
+        return self.ndims == 1 and self.kdims[0].name == 'Row'
 
     @property
     def rows(self):
@@ -206,7 +206,7 @@ class Table(NdElement):
 
     @property
     def cols(self):
-        return self.ndims + len(self.value_dimensions)
+        return self.ndims + len(self.vdims)
 
 
     def pprint_cell(self, row, col):
@@ -220,8 +220,8 @@ class Table(NdElement):
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif row == 0:
             if col >= ndims:
-                return str(self.value_dimensions[col - ndims])
-            return str(self.key_dimensions[col])
+                return str(self.vdims[col - ndims])
+            return str(self.kdims[col])
         else:
             dim = self.get_dimension(col)
             if col >= ndims:
@@ -268,24 +268,24 @@ class TableConversion(object):
     def __init__(self, table):
         self._table = table
 
-    def _conversion(self, key_dimensions=None, value_dimensions=None, new_type=None, **kwargs):
-        if key_dimensions is None:
-            key_dimensions = self._table._cached_index_names
-        elif key_dimensions and not isinstance(key_dimensions, list): key_dimensions = [key_dimensions]
-        if value_dimensions is None:
-            value_dimensions = self._table._cached_value_names
-        elif value_dimensions and not isinstance(value_dimensions, list): value_dimensions = [value_dimensions]
+    def _conversion(self, kdims=None, vdims=None, new_type=None, **kwargs):
+        if kdims is None:
+            kdims = self._table._cached_index_names
+        elif kdims and not isinstance(kdims, list): kdims = [kdims]
+        if vdims is None:
+            vdims = self._table._cached_value_names
+        elif vdims and not isinstance(vdims, list): vdims = [vdims]
         all_dims = self._table.dimensions(label=True)
-        invalid = [dim for dim in key_dimensions+value_dimensions if dim not in all_dims]
+        invalid = [dim for dim in kdims+vdims if dim not in all_dims]
         if invalid:
             raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
                             (invalid, new_type.__name__))
-        group_dims = [dim for dim in self._table._cached_index_names if not dim in key_dimensions]
-        selected = self._table.select(**{'value': value_dimensions})
-        params = dict({'key_dimensions': [self._table.get_dimension(kd) for kd in key_dimensions],
-                       'value_dimensions': [self._table.get_dimension(vd) for vd in value_dimensions]},
+        group_dims = [dim for dim in self._table._cached_index_names if not dim in kdims]
+        selected = self._table.select(**{'value': vdims})
+        params = dict({'kdims': [self._table.get_dimension(kd) for kd in kdims],
+                       'vdims': [self._table.get_dimension(vd) for vd in vdims]},
                        **kwargs)
-        if len(key_dimensions) == self._table.ndims:
+        if len(kdims) == self._table.ndims:
             return new_type(selected, **params)
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type, **params)
 

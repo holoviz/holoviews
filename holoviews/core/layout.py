@@ -70,7 +70,7 @@ class AdjointLayout(Dimensioned):
     |___________|__|
     """
 
-    key_dimensions = param.List(default=[Dimension('AdjointLayout')], constant=True)
+    kdims = param.List(default=[Dimension('AdjointLayout')], constant=True)
 
     layout_order = ['main', 'right', 'top']
 
@@ -327,11 +327,11 @@ class Layout(AttrTree, Dimensioned):
     _deep_indexable = True
 
     @classmethod
-    def collate(cls, data, key_dimensions):
+    def collate(cls, data, kdims):
         from .element import Collator
         layouts = {k:(v if isinstance(v, Layout) else Layout.from_values([v]))
                       for k,v in data.items()}
-        return Collator(layouts, key_dimensions=key_dimensions)()
+        return Collator(layouts, kdims=kdims)()
 
 
     @classmethod

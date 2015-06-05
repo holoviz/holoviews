@@ -365,7 +365,7 @@ class Dimensioned(LabelledData):
     class to be associated with dimensions. The contents associated
     with dimensions may be partitioned into one of three types
 
-    * key_dimensions: These are the dimensions that can be indexed via
+    * key dimensions: These are the dimensions that can be indexed via
                       the __getitem__ method. Dimension objects
                       supporting key dimensions must support indexing
                       over these dimensions and may also support
@@ -378,7 +378,9 @@ class Dimensioned(LabelledData):
                       object 'obj', then obj[80,175] indexes a weight
                       of 80 and height of 175.
 
-    * value_dimensions: These dimensions correspond to any data held
+                      Accessed using either kdims or key_dimensions.
+
+    * value dimensions: These dimensions correspond to any data held
                         on the Dimensioned object not in the key
                         dimensions. Indexing by value dimension is
                         supported by dimension name (when there are
@@ -386,14 +388,19 @@ class Dimensioned(LabelledData):
                         slicing semantics is supported and all the
                         data associated with that dimension will be
                         returned at once. Note that it is not possible
-                        to mix value_dimensions and deep_dimensions.
+                        to mix value dimensions and deep dimensions.
 
-    * deep_dimensions: These are dynamically computed dimensions that
+                        Accessed using either vdims or value_dimensions.
+
+
+    * deep dimensions: These are dynamically computed dimensions that
                        belong to other Dimensioned objects that are
                        nested in the data. Objects that support this
                        should enable the _deep_indexable flag. Note
-                       that it is not possible to mix value_dimensions
-                       and deep_dimensions.
+                       that it is not possible to mix value dimensions
+                       and deep dimensions.
+
+                       Accessed using either ddims or deep_dimensions.
 
     Dimensioned class support generalized methods for finding the
     range and type of values along a particular Dimension. The range
@@ -405,36 +412,59 @@ class Dimensioned(LabelledData):
     by the value dimensions and ending with the deep dimensions.
     """
 
-    constant_dimensions = param.Dict(default=OrderedDict(), doc="""
-       A dictionary of Dimension:value pairs providing additional
-       dimension information about the object.""")
+    cdims = param.Dict(default=OrderedDict(), doc="""
+       The constant dimensions defined as a dictionary of Dimension:value
+       pairs providing additional dimension information about the object.
 
-    key_dimensions = param.List(bounds=(0, None), constant=True, doc="""
-       The list of dimensions that may be used in indexing (and
-       potential slicing) semantics. The order of the dimensions
-       listed here determines the semantics of each component of a
-       multi-dimensional indexing operation.""")
+       Aliased with constant_dimensions.""")
 
-    value_dimensions = param.List(bounds=(0, None), constant=True, doc="""
-       The list of dimensions used to describe the components of the
-       data. If multiple value dimensions are supplied, a particular
-       value dimension may be indexed by name after the key
-       dimensions.""")
+    kdims = param.List(bounds=(0, None), constant=True, doc="""
+       The key dimensions defined as list of dimensions that may be
+       used in indexing (and potential slicing) semantics. The order
+       of the dimensions listed here determines the semantics of each
+       component of a multi-dimensional indexing operation.
+
+       Aliased with key_dimensions.""")
+
+    vdims = param.List(bounds=(0, None), constant=True, doc="""
+       The value dimensions defined as the list of dimensions used to
+       describe the components of the data. If multiple value
+       dimensions are supplied, a particular value dimension may be
+       indexed by name after the key dimensions.
+
+       Aliased with value_dimensions.""")
 
     group = param.String(default='Dimensioned', constant=True, doc="""
        A string describing the data wrapped by the object.""")
 
-
     __abstract = True
     _sorted = False
-    _dim_groups = ['key_dimensions',
-                   'value_dimensions',
-                   'deep_dimensions']
+    _dim_groups = ['kdims', 'vdims', 'cdims', 'ddims']
+    _dim_aliases = dict(key_dimensions='kdims', value_dimensions='vdims',
+                        constant_dimensions='cdims')
+
+
+    # Long-name aliases
+
+    @property
+    def key_dimensions(self): return self.kdims
+
+    @property
+    def value_dimensions(self): return self.vdims
+
+    @property
+    def constant_dimensions(self): return self.cdims
+
+    @property
+    def deep_dimensions(self): return self.ddims
 
     def __init__(self, data, **params):
-        for group in self._dim_groups[0:2]:
+        for group in self._dim_groups[0:2]+self._dim_aliases.keys():
             if group in params:
-                if 'constant' in group:
+                if group in self._dim_aliases:
+                    params[self._dim_aliases[group]] = params.pop(group)
+                    group = self._dim_aliases[group]
+                if group == 'cdims':
                     dimensions = {d if isinstance(d, Dimension) else Dimension(d): val
                                   for d, val in params.pop(group)}
                 else:
@@ -442,11 +472,11 @@ class Dimensioned(LabelledData):
                                   for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(data, **params)
-        self.ndims = len(self.key_dimensions)
-        constant_dimensions = [(d.name, val) for d, val in self.constant_dimensions.items()]
-        self._cached_constants = OrderedDict(constant_dimensions)
-        self._cached_index_names = [d.name for d in self.key_dimensions]
-        self._cached_value_names = [d.name for d in self.value_dimensions]
+        self.ndims = len(self.kdims)
+        cdims = [(d.name, val) for d, val in self.cdims.items()]
+        self._cached_constants = OrderedDict(cdims)
+        self._cached_index_names = [d.name for d in self.kdims]
+        self._cached_value_names = [d.name for d in self.vdims]
         self._settings = None
 
 
@@ -462,8 +492,9 @@ class Dimensioned(LabelledData):
                 raise Exception("Supplied dimensions %s not found." % dim)
         return dimensions
 
+
     @property
-    def deep_dimensions(self):
+    def ddims(self):
         "The list of deep dimensions"
         if self._deep_indexable and len(self):
             return self.values()[0].dimensions()
@@ -478,16 +509,18 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
-        lambdas = {'key': (lambda x: x.key_dimensions, {'full_breadth': False}),
-                   'value': (lambda x: x.value_dimensions, {}),
-                   'constant': (lambda x: x.constant_dimensions, {})}
+        lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
+                   'v': (lambda x: x.vdims, {}),
+                   'c': (lambda x: x.cdims, {})}
+        aliases = {'key': 'k', 'value': 'v', 'constant': 'c'}
         if selection == 'all':
             dims = [dim for group in self._dim_groups
                     for dim in getattr(self, group)]
         elif isinstance(selection, list):
             dims =  [dim for group in selection
-                     for dim in getattr(self, '%s_dimensions' % group)]
-        elif selection in ['key', 'value', 'constant']:
+                     for dim in getattr(self, '%sdims' % aliases.get(group))]
+        elif aliases.get(selection) in lambdas:
+            selection = aliases.get(selection, selection)
             lmbd, kwargs = lambdas[selection]
             key_traversal = self.traverse(lmbd, **kwargs)
             dims = [dim for keydims in key_traversal for dim in keydims]
@@ -540,7 +573,7 @@ class Dimensioned(LabelledData):
     def __getitem__(self, key):
         """
         Multi-dimensional indexing semantics is determined by the list
-        of key_dimensions. For instance, the first indexing component
+        of key dimensions. For instance, the first indexing component
         will index the first key dimension.
 
         After the key dimensions are given, *either* a value dimension
@@ -558,7 +591,7 @@ class Dimensioned(LabelledData):
         value pairs. Select descends recursively through the
         data structure applying the key dimension selection.
         The 'value' keyword allows selecting the
-        value_dimensions on objects which have any declared.
+        value dimensions on objects which have any declared.
 
         The selection may also be selectively applied to
         specific objects by supplying the selection_specs
@@ -567,7 +600,7 @@ class Dimensioned(LabelledData):
         """
 
         # Apply all indexes applying on this object
-        val_dim = ['value'] if self.value_dimensions else []
+        val_dim = ['value'] if self.vdims else []
         local_dims = self._cached_index_names + val_dim
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in local_dims}
@@ -597,7 +630,7 @@ class Dimensioned(LabelledData):
 
         if type(selection) is not type(self):
             # Apply the selection on the selected object of a different type
-            val_dim = ['value'] if selection.value_dimensions else []
+            val_dim = ['value'] if selection.vdims else []
             key_dims = selection.dimensions('key', label=True) + val_dim
             if any(kw in key_dims for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
@@ -605,7 +638,7 @@ class Dimensioned(LabelledData):
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
-                val_dim = ['value'] if v.value_dimensions else []
+                val_dim = ['value'] if v.vdims else []
                 key_dims = v.dimensions('key', label=True) + val_dim
                 if any(kw in key_dims for kw in kwargs):
                     items.append((k, v.select(selection_specs, **kwargs)))
@@ -645,7 +678,7 @@ class Dimensioned(LabelledData):
             return (None, None)
         soft_range = [r for r in dimension.soft_range
                       if r is not None]
-        if dimension in self.key_dimensions or dimension in self.value_dimensions:
+        if dimension in self.kdims or dimension in self.vdims:
             dim_vals = self.dimension_values(dimension.name)
             return find_range(dim_vals, soft_range)
         dname = dimension.name

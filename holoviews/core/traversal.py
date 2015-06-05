@@ -21,7 +21,7 @@ def uniform(obj):
     is returned.
     """
     from .element import HoloMap
-    dim_groups = obj.traverse(lambda x: tuple(x.key_dimensions),
+    dim_groups = obj.traverse(lambda x: tuple(x.kdims),
                               (HoloMap,))
     if dim_groups:
         dgroups = [[d.name for d in dg] for dg in dim_groups]
@@ -41,7 +41,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
     """
     from .ndmapping import NdMapping
     from .element import HoloMap
-    key_dims = obj.traverse(lambda x: (tuple(x.key_dimensions),
+    key_dims = obj.traverse(lambda x: (tuple(x.kdims),
                                        list(x.data.keys())), (HoloMap,))
     if not key_dims:
         return [Dimension(default_dim)], [(0,)]
@@ -70,7 +70,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
                 unique_keys.append(padded_key)
 
     sorted_keys = NdMapping({key: None for key in unique_keys},
-                            key_dimensions=all_dims).data.keys()
+                            kdims=all_dims).data.keys()
     if subset:
         return all_dims, list(sorted_keys)
     else:

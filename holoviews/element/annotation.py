@@ -20,8 +20,8 @@ class Annotation(Element2D):
     used when multiple Annotations are displayed together.
     """
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                bounds=(2,2))
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2,2))
 
     group = param.String(default='Annotation', constant=True)
 

@@ -25,14 +25,14 @@ class Raster(Element2D):
     specified.
     """
 
-    key_dimensions = param.List(default=[Dimension('x'), Dimension('y')],
-                                  bounds=(2, 2), constant=True, doc="""
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
 
     group = param.String(default='Raster', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
+    vdims = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
 
     def __init__(self, data, extents=None, **params):
@@ -80,7 +80,7 @@ class Raster(Element2D):
             X, Y = samples
             samples = zip(X, Y)
         params = dict(self.get_param_values(onlychanged=True),
-                      value_dimensions=self.value_dimensions)
+                      vdims=self.vdims)
         params.pop('extents', None)
         params.pop('bounds', None)
         if len(sample_values) == self.ndims or len(samples):
@@ -91,7 +91,7 @@ class Raster(Element2D):
             table_data = OrderedDict()
             for c in samples:
                 table_data[c] = self.data[self._coord2matrix(c)]
-            params['key_dimensions'] = self.key_dimensions
+            params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
             dimension, sample_coord = list(sample_values.items())[0]
@@ -99,7 +99,7 @@ class Raster(Element2D):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
-            other_dimension = [d for d in self.key_dimensions if
+            other_dimension = [d for d in self.kdims if
                                d.name != dimension]
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(dimension)
@@ -112,7 +112,7 @@ class Raster(Element2D):
             # Sample data
             x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
             data = list(zip(x_vals, self.data[sample[::-1]]))
-            params['key_dimensions'] = other_dimension
+            params['kdims'] = other_dimension
             return Curve(data, **params)
 
 
@@ -139,11 +139,11 @@ class Raster(Element2D):
             return reduced_view
         else:
             dimension, reduce_fn = reduce_map.items()[0]
-            other_dimension = [d for d in self.key_dimensions if d.name != dimension]
+            other_dimension = [d for d in self.kdims if d.name != dimension]
             x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
             data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(other_dimension[0])))
             params = dict(dict(self.get_param_values(onlychanged=True)),
-                          key_dimensions=other_dimension, value_dimensions=self.value_dimensions)
+                          kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
             params.pop('extents', None)
             return Table(data, **params)
@@ -209,10 +209,10 @@ class HeatMap(Raster):
         dimensions = {group: params.get(group, getattr(self, group))
                       for group in self._dim_groups[:2]}
         if isinstance(data, NdMapping):
-            if 'key_dimensions' not in params:
-                dimensions['key_dimensions'] = data.key_dimensions
-            if 'value_dimensions' not in params:
-                dimensions['value_dimensions'] = data.value_dimensions
+            if 'kdims' not in params:
+                dimensions['kdims'] = data.kdims
+            if 'vdims' not in params:
+                dimensions['vdims'] = data.vdims
         elif isinstance(data, (dict, OrderedDict, type(None))):
             data = NdMapping(data, **dimensions)
         else:
@@ -220,9 +220,9 @@ class HeatMap(Raster):
 
         keys = list(data.keys())
         dim1_keys = NdMapping([(k[0], None) for k in keys],
-                              key_dimensions=[self.key_dimensions[0]]).keys()
+                              kdims=[self.kdims[0]]).keys()
         dim2_keys = NdMapping([(k[1], None) for k in keys],
-                              key_dimensions=[self.key_dimensions[1]]).keys()
+                              kdims=[self.kdims[1]]).keys()
         grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
                      for i2, d2 in enumerate(dim2_keys)]
 
@@ -250,9 +250,9 @@ class HeatMap(Raster):
     def dense_keys(self):
         keys = list(self._data.keys())
         dim1_keys = NdMapping([(k[0], None) for k in keys],
-                              key_dimensions=[self.key_dimensions[0]]).keys()
+                              kdims=[self.kdims[0]]).keys()
         dim2_keys = NdMapping([(k[1], None) for k in keys],
-                              key_dimensions=[self.key_dimensions[1]]).keys()
+                              kdims=[self.kdims[1]]).keys()
         return dim1_keys, dim2_keys
 
 
@@ -296,8 +296,8 @@ class Image(SheetCoordinateSystem, Raster):
 
     group = param.String(default='Image', constant=True)
 
-    value_dimensions = param.List(default=[Dimension('z')],
-                                  bounds=(1, 1), doc="""
+    vdims = param.List(default=[Dimension('z')],
+                       bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
 
@@ -319,9 +319,9 @@ class Image(SheetCoordinateSystem, Raster):
                            **params)
 
         if len(self.data.shape) == 3:
-            if self.data.shape[2] != len(self.value_dimensions):
+            if self.data.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
-                                 % (self.data.shape, len(self.value_dimensions)))
+                                 % (self.data.shape, len(self.vdims)))
 
 
 
@@ -372,7 +372,7 @@ class Image(SheetCoordinateSystem, Raster):
                 data_range = (b, t)
             else:
                 data_range = (l, r)
-        elif dim_idx < len(self.value_dimensions) + 2:
+        elif dim_idx < len(self.vdims) + 2:
             dim_idx -= 2
             data = np.atleast_3d(self.data)[:, :, dim_idx]
             data_range = (np.nanmin(data), np.nanmax(data))
@@ -424,10 +424,10 @@ class RGB(Image):
 
     alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
                                           class_=Dimension, instantiate=False,  doc="""
-        The alpha dimension definition to add the value_dimensions if
+        The alpha dimension definition to add the value dimensions if
         an alpha channel is supplied.""")
 
-    value_dimensions = param.List(
+    vdims = param.List(
         default=[Dimension('R', range=(0,1)), Dimension('G',range=(0,1)),
                  Dimension('B', range=(0,1))], bounds=(3, 4), doc="""
         The dimension description of the data held in the matrix.
@@ -489,9 +489,9 @@ class RGB(Image):
             shapes = [im.data.shape for im in images]
             if not all(shape==shapes[0] for shape in shapes):
                 raise ValueError("Images in the input overlays must contain data of the consistent shape")
-            ranges = [im.value_dimensions[0].range for im in images]
+            ranges = [im.vdims[0].range for im in images]
             if any(None in r for r in ranges):
-                raise ValueError("Ranges must be defined on all the value_dimensions of all the Images")
+                raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
 
@@ -500,13 +500,13 @@ class RGB(Image):
         elif data.shape[2] == 4:
             sliced = data[:,:,:-1]
 
-        if len(params.get('value_dimensions',[])) == 4:
-            alpha_dim = params['value_dimensions'].pop(3)
+        if len(params.get('vdims',[])) == 4:
+            alpha_dim = params['vdims'].pop(3)
             params['alpha_dimension'] = alpha_dim
 
         super(RGB, self).__init__(data if sliced is None else sliced, **params)
         if sliced is not None:
-            self.value_dimensions.append(self.alpha_dimension)
+            self.vdims.append(self.alpha_dimension)
             self.data = data
 
 
@@ -524,7 +524,7 @@ class RGB(Image):
             val_index = vidx - self.ndims
             data = sliced.data[:,:, val_index]
             return Image(data, **dict(self.get_param_values(onlychanged=True),
-                                       value_dimensions=[self.value_dimensions[val_index]]))
+                                       vdims=[self.vdims[val_index]]))
         else:
             return super(RGB, self).__getitem__(coords)
 
@@ -539,10 +539,10 @@ class HSV(RGB):
 
     alpha_dimension = param.ClassSelector(default=Dimension('A',range=(0,1)),
                                           class_=Dimension, instantiate=False,  doc="""
-        The alpha dimension definition to add the value_dimensions if
+        The alpha dimension definition to add the value dimensions if
         an alpha channel is supplied.""")
 
-    value_dimensions = param.List(
+    vdims = param.List(
         default=[Dimension('H', range=(0,1), cyclic=True),
                  Dimension('S',range=(0,1)),
                  Dimension('V', range=(0,1))], bounds=(3, 4), doc="""
@@ -561,7 +561,7 @@ class HSV(RGB):
         hsv = self.hsv_to_rgb(self.data[:,:,0],
                               self.data[:,:,1],
                               self.data[:,:,2])
-        if len(self.value_dimensions) == 4:
+        if len(self.vdims) == 4:
             hsv += (self.data[:,:,3],)
 
         return RGB(np.dstack(hsv), bounds=self.bounds,

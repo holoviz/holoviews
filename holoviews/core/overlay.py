@@ -216,8 +216,8 @@ class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
     over the contained layers.
     """
 
-    key_dimensions = param.List(default=[Dimension('Element')], constant=True, doc="""List
-      of dimensions the NdOverlay can be indexed by.""")
+    kdims = param.List(default=[Dimension('Element')], constant=True, doc="""
+        List of dimensions the NdOverlay can be indexed by.""")
 
     _deep_indexable = True
 

@@ -83,7 +83,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     group = param.String(default='MultiDimensionalMapping', constant=True)
 
-    key_dimensions = param.List(default=[Dimension("Default")], constant=True)
+    kdims = param.List(default=[Dimension("Default")], constant=True)
 
     data_type = None          # Optional type checking of elements
     _deep_indexable = False
@@ -103,9 +103,9 @@ class MultiDimensionalMapping(Dimensioned):
 
         self._next_ind = 0
         self._check_key_type = True
-        self._cached_index_types = [d.type for d in self.key_dimensions]
-        self._cached_index_values = {d.name:d.values for d in self.key_dimensions}
-        self._cached_categorical = any(d.values for d in self.key_dimensions)
+        self._cached_index_types = [d.type for d in self.kdims]
+        self._cached_index_values = {d.name:d.values for d in self.kdims}
+        self._cached_categorical = any(d.values for d in self.kdims)
 
         self._instantiated = not any(v == 'initial' for v in self._cached_index_values.values())
         if initial_items is None: initial_items = []
@@ -188,7 +188,7 @@ class MultiDimensionalMapping(Dimensioned):
         this method applies the type to the supplied key.
         """
         typed_key = ()
-        for dim, key in zip(self.key_dimensions, keys):
+        for dim, key in zip(self.kdims, keys):
             key_type = dim.type
             if key_type is None:
                 typed_key += (key,)
@@ -237,7 +237,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _resort(self):
         if self._sorted:
-            resorted = dimension_sort(self.data, self.key_dimensions,
+            resorted = dimension_sort(self.data, self.kdims,
                                       self._cached_categorical,
                                       self._cached_index_values)
             self.data = OrderedDict(resorted)
@@ -267,7 +267,7 @@ class MultiDimensionalMapping(Dimensioned):
         group_type = group_type if group_type else type(self)
         dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
                          for dim in dimensions))
-        inames, idims = zip(*((dim.name, dim) for dim in self.key_dimensions
+        inames, idims = zip(*((dim.name, dim) for dim in self.kdims
                               if not dim.name in dimensions))
         selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
                                   for key in self.data.keys())
@@ -275,14 +275,14 @@ class MultiDimensionalMapping(Dimensioned):
             selects = group_select(list(selects))
             groups = [(k, group_type(v.reindex(inames), **kwargs))
                       for k, v in iterative_select(self, dimensions, selects)]
-            return container_type(groups, key_dimensions=dims)
+            return container_type(groups, kdims=dims)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
         Create a new object with an additional key dimensions along
         which items are indexed. Requires the dimension name, the
-        desired position in the key_dimensions and a key value that
+        desired position in the key dimensions and a key value that
         will be used across the dimension. This is particularly useful
         for merging several mappings together.
         """
@@ -292,7 +292,7 @@ class MultiDimensionalMapping(Dimensioned):
         if dimension.name in self._cached_index_names:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.key_dimensions[:]
+        dimensions = self.kdims[:]
         dimensions.insert(dim_pos, dimension)
 
         items = OrderedDict()
@@ -301,7 +301,7 @@ class MultiDimensionalMapping(Dimensioned):
             new_key.insert(dim_pos, dim_val)
             items[tuple(new_key)] = val
 
-        return self.clone(items, key_dimensions=dimensions, **kwargs)
+        return self.clone(items, kdims=dimensions, **kwargs)
 
 
     def drop_dimension(self, dimensions):
@@ -314,7 +314,7 @@ class MultiDimensionalMapping(Dimensioned):
         dims = [self.get_dimension(d) for d in dim_labels]
         key_getter = itemgetter(*dim_inds)
         return self.clone([(key_getter(k), v) for k, v in self.data.items()],
-                          key_dimensions=dims)
+                          kdims=dims)
 
 
     def dimension_values(self, dimension):
@@ -361,12 +361,12 @@ class MultiDimensionalMapping(Dimensioned):
                             "to address all values uniquely")
 
         if len(keys):
-            constant_dimensions = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
+            cdims = {self.get_dimension(d): self.dimension_values(d)[0] for d in reduced_dims}
         else:
-            constant_dimensions = {}
+            cdims = {}
         with item_check(indices == sorted(indices)):
-            return self.clone(reindexed_items, key_dimensions=dimensions,
-                              constant_dimensions=constant_dimensions)
+            return self.clone(reindexed_items, kdims=dimensions,
+                              cdims=cdims)
 
 
     @property
@@ -410,7 +410,7 @@ class MultiDimensionalMapping(Dimensioned):
         table = None
         for key, value in self.data.items():
             value = value.table(**kwargs)
-            for idx, (dim, val) in enumerate(zip(self.key_dimensions, key)):
+            for idx, (dim, val) in enumerate(zip(self.kdims, key)):
                 value = value.add_dimension(dim, idx, val)
             if table is None:
                 table = value
@@ -434,8 +434,8 @@ class MultiDimensionalMapping(Dimensioned):
         """
         Updates the current mapping with some other mapping or
         OrderedDict instance, making sure that they are indexed along
-        the same set of dimensions. The order of key_dimensions
-        remains unchanged after the update.
+        the same set of dimensions. The order of key dimensions remains
+        unchanged after the update.
         """
         if isinstance(other, NdMapping):
             dims = [d for d in other._cached_index_names
@@ -553,7 +553,7 @@ class NdMapping(MultiDimensionalMapping):
         else:
             conditions = self._generate_conditions(map_slice)
             items = self.data.items()
-            for cidx, (condition, dim) in enumerate(zip(conditions, self.key_dimensions)):
+            for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims)):
                 values = self._cached_index_values.get(dim.name, None)
                 items = [(k, v) for k, v in items
                          if condition(values.index(k[cidx]) if values else k[cidx])]
@@ -601,7 +601,7 @@ class NdMapping(MultiDimensionalMapping):
         Generates filter conditions used for slicing the data structure.
         """
         conditions = []
-        for dim, dim_slice in zip(self.key_dimensions, map_slice):
+        for dim, dim_slice in zip(self.kdims, map_slice):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:

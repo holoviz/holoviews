@@ -43,24 +43,24 @@ class NdIndexableMappingTest(ComparisonTestCase):
         MultiDimensionalMapping()
 
     def test_idxmapping_init_item_odict(self):
-        MultiDimensionalMapping(self.init_item_odict, key_dimensions=[self.dim1, self.dim2])
+        MultiDimensionalMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
 
     def test_idxmapping_init_item_list(self):
-        MultiDimensionalMapping(self.init_item_list, key_dimensions=[self.dim1, self.dim2])
+        MultiDimensionalMapping(self.init_item_list, kdims=[self.dim1, self.dim2])
 
     def test_idxmapping_init_dimstr(self):
-        MultiDimensionalMapping(self.init_item_odict, key_dimensions=self.dimension_labels)
+        MultiDimensionalMapping(self.init_item_odict, kdims=self.dimension_labels)
 
     def test_idxmapping_init_dimensions(self):
-        MultiDimensionalMapping(self.init_item_odict, key_dimensions=[self.dim1, self.dim2])
+        MultiDimensionalMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
 
     def test_idxmapping_dimension_labels(self):
-        idxmap = MultiDimensionalMapping(self.init_item_odict, key_dimensions=[self.dim1, 'floatdim'])
-        self.assertEqual([d.name for d in idxmap.key_dimensions], self.dimension_labels)
+        idxmap = MultiDimensionalMapping(self.init_item_odict, kdims=[self.dim1, 'floatdim'])
+        self.assertEqual([d.name for d in idxmap.kdims], self.dimension_labels)
 
     def test_idxmapping_ndims(self):
         dims = [self.dim1, self.dim2, 'strdim']
-        idxmap = MultiDimensionalMapping(key_dimensions=dims)
+        idxmap = MultiDimensionalMapping(kdims=dims)
         self.assertEqual(idxmap.ndims, len(dims))
 
     def test_idxmapping_key_len_check(self):
@@ -75,12 +75,12 @@ class NdIndexableMappingTest(ComparisonTestCase):
         data2 = [(2, 'c'), (3, 'd')]
         data3 = [(2, 'e'), (3, 'f')]
 
-        ndmap1 = MultiDimensionalMapping(data1, key_dimensions=[self.dim1])
-        ndmap2 = MultiDimensionalMapping(data2, key_dimensions=[self.dim1])
-        ndmap3 = MultiDimensionalMapping(data3, key_dimensions=[self.dim1])
+        ndmap1 = MultiDimensionalMapping(data1, kdims=[self.dim1])
+        ndmap2 = MultiDimensionalMapping(data2, kdims=[self.dim1])
+        ndmap3 = MultiDimensionalMapping(data3, kdims=[self.dim1])
 
         ndmap_list = [(0.5, ndmap1), (1.5, ndmap2)]
-        nested_ndmap = MultiDimensionalMapping(ndmap_list, key_dimensions=[self.dim2])
+        nested_ndmap = MultiDimensionalMapping(ndmap_list, kdims=[self.dim2])
         nested_ndmap[(0.5,)].update(dict([(0, 'c'), (1, 'd')]))
         self.assertEquals(list(nested_ndmap[0.5].values()), ['c', 'd'])
 
@@ -89,22 +89,22 @@ class NdIndexableMappingTest(ComparisonTestCase):
 
     def test_idxmapping_reindex(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
-        ndmap = MultiDimensionalMapping(data, key_dimensions=[self.dim1, self.dim2])
+        ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
 
         reduced_dims = ['intdim']
         reduced_ndmap = ndmap.reindex(reduced_dims)
 
-        self.assertEqual([d.name for d in reduced_ndmap.key_dimensions], reduced_dims)
+        self.assertEqual([d.name for d in reduced_ndmap.kdims], reduced_dims)
 
     def test_idxmapping_add_dimension(self):
-        ndmap = MultiDimensionalMapping(self.init_items_1D_list, key_dimensions=[self.dim1])
+        ndmap = MultiDimensionalMapping(self.init_items_1D_list, kdims=[self.dim1])
         ndmap2d = ndmap.add_dimension(self.dim2, 0, 0.5)
 
         self.assertEqual(list(ndmap2d.keys()), [(0.5, 1), (0.5, 5)])
-        self.assertEqual(ndmap2d.key_dimensions, [self.dim2, self.dim1])
+        self.assertEqual(ndmap2d.kdims, [self.dim2, self.dim1])
 
     def test_idxmapping_apply_key_type(self):
         data = dict([(0.5, 'a'), (1.5, 'b')])
-        ndmap = MultiDimensionalMapping(data, key_dimensions=[self.dim1])
+        ndmap = MultiDimensionalMapping(data, kdims=[self.dim1])
 
         self.assertEqual(list(ndmap.keys()), [0, 1])

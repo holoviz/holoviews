@@ -72,7 +72,7 @@ class PolygonPlot(ElementPlot):
 
     def _create_polygons(self, element, ranges):
         value = element.level
-        vdim = element.value_dimensions[0]
+        vdim = element.vdims[0]
 
         style = self.style[self.cyclic_index]
         polys = []
@@ -87,7 +87,7 @@ class PolygonPlot(ElementPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        vdim = element.value_dimensions[0]
+        vdim = element.vdims[0]
         collection = self.handles['polygons']
         value = element.level
 

@@ -42,7 +42,7 @@ class TestWidgets(IPTestCase):
         super(TestWidgets, self).setUp()
         im1 = Image(np.array([[1,2],[3,4]]))
         im2 = Image(np.array([[1,2],[3,5]]))
-        holomap = HoloMap(initial_items=[(0,im1), (1,im2)], key_dimensions=['test'])
+        holomap = HoloMap(initial_items=[(0,im1), (1,im2)], kdims=['test'])
         self.plot1 = RasterPlot(im1)
         self.plot2 = RasterPlot(holomap)
 

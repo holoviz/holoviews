@@ -17,14 +17,12 @@ class Surface(Image, Element3D):
                in 3D space defined as (xmin, ymin, zmin,
                xmax, ymax, zmax).""")
 
-    key_dimensions = param.List(default=[Dimension('x'),
-                                         Dimension('y')],
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
                                 bounds=(2,2), doc="""
         The Surface x and y dimensions of the space defined
         by the supplied extent.""")
 
-    value_dimensions = param.List(default=[Dimension('z')],
-                                  bounds=(1,1), doc="""
+    vdims = param.List(default=[Dimension('z')], bounds=(1,1), doc="""
         The Surface height dimension.""")
 
     group = param.String(default='Surface', constant=True)
@@ -55,11 +53,11 @@ class Scatter3D(Element3D, Chart):
     and D the number of key and value dimensions.
     """
 
-    key_dimensions = param.List(default=[Dimension('x'),
-                                         Dimension('y'),
-                                         Dimension('z')])
+    kdims = param.List(default=[Dimension('x'),
+                                Dimension('y'),
+                                Dimension('z')])
 
-    value_dimensions = param.List(default=[], doc="""
+    vdims = param.List(default=[], doc="""
         Scatter3D can have optional value dimensions,
         which may be mapped onto color and size.""")
 

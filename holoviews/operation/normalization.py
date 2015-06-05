@@ -155,7 +155,7 @@ class raster_normalization(Normalization):
         norm_raster = raster.clone(raster.data.copy())
         ranges = self.get_ranges(raster, key)
 
-        for depth, name in enumerate(d.name for d in raster.value_dimensions):
+        for depth, name in enumerate(d.name for d in raster.vdims):
             depth_range = ranges.get(name, (None, None))
             if None in depth_range:  continue
             if depth_range and len(norm_raster.data.shape) == 2:

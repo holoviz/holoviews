@@ -119,7 +119,7 @@ class ElementPlot(Plot):
         self.keys = keys
         if not isinstance(element, HoloMap):
             self.map = HoloMap(initial_items=(0, element),
-                               key_dimensions=['Frame'], id=element.id)
+                               kdims=['Frame'], id=element.id)
         else:
             self.map = element
         self.uniform = uniform
@@ -134,7 +134,7 @@ class ElementPlot(Plot):
         if isinstance(check, Element3D):
             self.projection = '3d'
 
-        dimensions = self.map.key_dimensions if dimensions is None else dimensions
+        dimensions = self.map.kdims if dimensions is None else dimensions
         keys = keys if keys else list(self.map.data.keys())
         plot_opts = Store.lookup_options(self.map.last, 'plot').options
         super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions, adjoined=adjoined,
@@ -144,16 +144,16 @@ class ElementPlot(Plot):
     def _get_frame(self, key):
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)
-            key_dimensions = [d.name for d in self.map.key_dimensions]
+            kdims = [d.name for d in self.map.kdims]
             if self.dimensions is None:
-                dimensions = key_dimensions
+                dimensions = kdims
             else:
                 dimensions = [d.name for d in self.dimensions]
-            if key_dimensions == ['Frame'] and key_dimensions != dimensions:
+            if kdims == ['Frame'] and kdims != dimensions:
                 select = dict(Frame=0)
             else:
                 select = {d: key[dimensions.index(d)]
-                          for d in key_dimensions}
+                          for d in kdims}
         elif isinstance(key, int):
             return self.map.values()[min([key, len(self.map)-1])]
         else:
@@ -543,10 +543,10 @@ class OverlayPlot(ElementPlot):
         display mode (data collapse should already have happened).
         """
         # Compute framewise normalization
-        defaultdim = holomap.ndims == 1 and holomap.key_dimensions[0].name != 'Frame'
+        defaultdim = holomap.ndims == 1 and holomap.kdims[0].name != 'Frame'
 
         if keys and ranges and dimensions and not defaultdim:
-            dim_inds = [dimensions.index(d) for d in holomap.key_dimensions]
+            dim_inds = [dimensions.index(d) for d in holomap.kdims]
             sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
             frame_ranges = OrderedDict([(slckey, self.compute_ranges(holomap, key, ranges[key]))
                                         for key, slckey in zip(keys, sliced_keys) if slckey in holomap.data.keys()])
@@ -609,7 +609,7 @@ class OverlayPlot(ElementPlot):
         title = ''
         legend_data = []
         if issubclass(self.map.type, NdOverlay):
-            dimensions = self.map.last.key_dimensions
+            dimensions = self.map.last.kdims
             for key in self.map.last.data.keys():
                 subplot = self.subplots[key]
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))

@@ -421,7 +421,7 @@ class CompositePlot(Plot):
         Element.
         """
         layout_frame = self.layout.clone(shared_data=False)
-        nthkey_fn = lambda x: zip(tuple(x.name for x in x.key_dimensions),
+        nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
         for path, item in self.layout.items():
             if self.uniform:
@@ -675,14 +675,14 @@ class GridPlot(CompositePlot):
         if tick_fontsize: layout_axis.tick_params(**tick_fontsize)
 
         # Set labels
-        layout_axis.set_xlabel(str(layout.key_dimensions[0]),
+        layout_axis.set_xlabel(str(layout.kdims[0]),
                                **self._fontsize('xlabel'))
         if layout.ndims == 2:
-            layout_axis.set_ylabel(str(layout.key_dimensions[1]),
+            layout_axis.set_ylabel(str(layout.kdims[1]),
                                **self._fontsize('ylabel'))
 
         # Compute and set x- and y-ticks
-        dims = layout.key_dimensions
+        dims = layout.kdims
         keys = layout.keys()
         if layout.ndims == 1:
             dim1_keys = keys
@@ -961,7 +961,7 @@ class LayoutPlot(CompositePlot):
         LayoutPlot.
         """
         layout_items = layout.grid_items()
-        layout_dimensions = layout.key_dimensions if isinstance(layout, NdLayout) else None
+        layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
 
         layouts = {}
         row_heightratios, col_widthratios = {}, {}
