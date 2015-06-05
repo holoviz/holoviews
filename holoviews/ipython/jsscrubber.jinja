@@ -19,14 +19,14 @@
       this.length = num_frames;
       document.getElementById(this.slider_id).max = this.length - 1;
       if(this.cached) {
-	  this.update_cache();
-	  this.update(0, 0);
+		  this.update_cache();
+		  this.update(0, 0);
       } else if(this.nbagg) {
-	  this.update_cache();
-	  this.update(0, 0);
-          this.set_frame(0);
+		  this.update_cache();
+		  this.update(0, 0);
+		  this.set_frame(0);
       } else {
-	  this.dynamic_update(0, 0);
+		  this.dynamic_update(0, 0);
       }
   }
 
@@ -93,12 +93,13 @@
 
   Animation.prototype.update = function(prev, current){
       if(current in this.cache) {
-	  if(prev in this.cache) {
-	      this.cache[prev].hide();
-	  }
-	  this.cache[current].show();
+		  $.each(this.cache, function(index, value) {
+			  value.hide();
+		  });
+		  this.cache[current].show();
       }
   }
+
 
   Animation.prototype.dynamic_update = function(prev, current){
       var kernel = IPython.notebook.kernel;

@@ -93,13 +93,13 @@
     }
 
     NDSlider.prototype.update = function(prev, current){
-      if(current in this.cache) {
-	  if(prev in this.cache) {
-	      this.cache[prev].hide();
-	  }
-	  this.cache[current].show();
-      }
-    }
+		if(current in this.cache) {
+			$.each(this.cache, function(index, value) {
+				value.hide();
+			});
+			this.cache[current].show();
+		}
+	}
 
     NDSlider.prototype.set_frame = function(dim_val, dim_idx){
         this.current_vals[dim_idx] = dim_val
