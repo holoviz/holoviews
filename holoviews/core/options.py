@@ -426,7 +426,8 @@ class OptionTree(AttrTree):
         In addition, closest supports custom options by checking the
         object
         """
-        components = (obj.__class__.__name__, obj.group, obj.label)
+        components = (obj.__class__.__name__, sanitize_identifier(obj.group),
+                      sanitize_identifier(obj.label))
         return self.find(components).options(group)
 
 
