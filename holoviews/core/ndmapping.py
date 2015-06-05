@@ -396,7 +396,7 @@ class MultiDimensionalMapping(Dimensioned):
         for group in self._dim_groups:
             dimensions = getattr(self, group)
             if dimensions:
-                group = aliases[group]
+                group = aliases[group].split('_')[0]
                 info_str += '%s Dimensions: \n' % group.capitalize()
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
