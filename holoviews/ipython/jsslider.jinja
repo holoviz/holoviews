@@ -38,7 +38,7 @@
 		i = Object.keys(this.frames)[i];
 	    }
 	    if(!(i in this.cache)) {
-		this.cache[i] = $('<div />').appendTo("#" + this.img_id);
+		this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
 		if(this.mpld3) {
 		    var cache_id = this.img_id+"_"+i;
 		    this.cache[i].attr("id", cache_id);
@@ -61,7 +61,6 @@
 			this.cache[i].html(this.frames[i]);
 		    }
 		}
-		this.cache[i].hide();
 	    }
 	}
     }
