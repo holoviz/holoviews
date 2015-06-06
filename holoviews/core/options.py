@@ -1024,6 +1024,25 @@ class StoreOptions(object):
 
 
     @classmethod
+    def state(cls, obj, state=None):
+        """
+        Method to capture and restore option state. When called
+        without any state supplied, the current state is
+        returned. Then if this state is supplied back in a later call
+        using the same object, the original state is restored.
+        """
+        if state is None:
+            ids = cls.capture_ids(obj)
+            original_custom_keys = set(Store.custom_options.keys())
+            return (ids, original_custom_keys)
+        else:
+            (ids, original_custom_keys) = state
+            current_custom_keys = set(Store.custom_options.keys())
+            for key in current_custom_keys.difference(original_custom_keys):
+                del Store.custom_options[key]
+                cls.restore_ids(obj, ids)
+
+    @classmethod
     @contextmanager
     def options(cls, obj, options=None, **kwargs):
         """
@@ -1038,16 +1057,12 @@ class StoreOptions(object):
         """
         if (options is None) and kwargs == {}: yield
         else:
+            optstate = cls.state(obj)
             options = cls.merge_options(options, **kwargs)
-            ids = cls.capture_ids(obj)
-            original_custom_keys = set(Store.custom_options.keys())
             cls.set_options(obj, options)
             yield
         if options is not None:
-            current_custom_keys = set(Store.custom_options.keys())
-            for key in current_custom_keys.difference(original_custom_keys):
-                del Store.custom_options[key]
-                cls.restore_ids(obj, ids)
+            cls.state(obj, state=optstate)
 
 
     @classmethod
