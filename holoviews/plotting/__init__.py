@@ -10,6 +10,8 @@ except: basestring = str
 from matplotlib import animation
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
+import matplotlib.tight_bbox as tight_bbox
+from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
 from param.parameterized import bothmethod
 
@@ -138,6 +140,7 @@ class MPLPlotRenderer(Exporter):
 
     # Error messages generated when testing potentially supported formats
     HOLOMAP_FORMAT_ERROR_MESSAGES = {}
+    drawn = {}
 
     def __call__(self, obj, fmt=None):
         """
@@ -226,6 +229,53 @@ class MPLPlotRenderer(Exporter):
         return video
 
 
+    def _compute_bbox(self, fig, kw):
+        """
+        Compute the tight bounding box for each figure once, reducing
+        number of required canvas draw calls from N*2 to N+1 as a
+        function of the number of frames.
+
+        Tight bounding box computing code here mirrors:
+        matplotlib.backend_bases.FigureCanvasBase.print_figure
+        as it hasn't been factored out as a function.
+        """
+        fig_id = id(fig)
+        if kw['bbox_inches'] == 'tight' and kw['format'] == 'png':
+            if not fig_id in MPLPlotRenderer.drawn:
+                fig.set_dpi(self.dpi)
+                fig.canvas.draw()
+                renderer = fig._cachedRenderer
+                bbox_inches = fig.get_tightbbox(renderer)
+                bbox_artists = fig.get_default_bbox_extra_artists()
+                bbox_filtered = []
+                for a in bbox_artists:
+                    bbox = a.get_window_extent(renderer)
+                    if a.get_clip_on():
+                        clip_box = a.get_clip_box()
+                        if clip_box is not None:
+                            bbox = Bbox.intersection(bbox, clip_box)
+                        clip_path = a.get_clip_path()
+                        if clip_path is not None and bbox is not None:
+                            clip_path = clip_path.get_fully_transformed_path()
+                            bbox = Bbox.intersection(bbox,
+                                                     clip_path.get_extents())
+                    if bbox is not None and (bbox.width != 0 or
+                                             bbox.height != 0):
+                        bbox_filtered.append(bbox)
+                if bbox_filtered:
+                    _bbox = Bbox.union(bbox_filtered)
+                    trans = Affine2D().scale(1.0 / self.dpi)
+                    bbox_extra = TransformedBbox(_bbox, trans)
+                    bbox_inches = Bbox.union([bbox_inches, bbox_extra])
+                pad = plt.rcParams['savefig.pad_inches']
+                bbox_inches = bbox_inches.padded(pad)
+                MPLPlotRenderer.drawn[fig_id] = bbox_inches
+                kw['bbox_inches'] = bbox_inches
+            else:
+                kw['bbox_inches'] = MPLPlotRenderer.drawn[fig_id]
+        return kw
+
+
     def figure_data(self, fig, fmt='png', bbox_inches='tight', **kwargs):
         """
         Render matplotlib figure object and return the corresponding data.
@@ -241,6 +291,7 @@ class MPLPlotRenderer(Exporter):
             bbox_inches=bbox_inches,
         )
         kw.update(kwargs)
+        kw = self._compute_bbox(fig, kw)
 
         bytes_io = BytesIO()
         fig.canvas.print_figure(bytes_io, **kw)
