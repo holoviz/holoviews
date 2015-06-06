@@ -385,8 +385,11 @@ class Layout(AttrTree, Dimensioned):
             return cls._from_values(val)
         elif collection:
             val = val[0]
-        return cls(items=[((sanitize_identifier(val.group),
-                            sanitize_identifier(val.label if val.label else 'I')), val)])
+        group = sanitize_identifier(val.group)
+        group = ''.join([group[0].upper(), group[1:]])
+        label = sanitize_identifier(val.label if val.label else 'I')
+        label = ''.join([label[0].upper(), label[1:]])
+        return cls(items=[((group, label), val)])
 
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
