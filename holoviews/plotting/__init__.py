@@ -291,7 +291,12 @@ class MPLPlotRenderer(Exporter):
             bbox_inches=bbox_inches,
         )
         kw.update(kwargs)
-        kw = self._compute_bbox(fig, kw)
+
+        # Attempts to precompute the tight bounding box
+        try:
+            kw = self._compute_bbox(fig, kw)
+        except:
+            pass
 
         bytes_io = BytesIO()
         fig.canvas.print_figure(bytes_io, **kw)
