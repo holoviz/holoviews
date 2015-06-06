@@ -40,7 +40,7 @@ from .archive import notebook_archive
 OutputMagic.ANIMATION_OPTS = ANIMATION_OPTS
 
 # To assist with debugging of display hooks
-ENABLE_TRACEBACKS=True
+ABBREVIATE_TRACEBACKS=True
 
 
 #==================#
@@ -220,9 +220,13 @@ def display_hook(fn):
                 Store.renderer.instance(**options).save(element, filename)
 
             return html
-        except:
+        except Exception as e:
             StoreOptions.state(element, state=optstate)
-            if ENABLE_TRACEBACKS:
+            if ABBREVIATE_TRACEBACKS:
+                info = dict(name=type(e).__name__,
+                            message=str(e).replace('\n','<br>'))
+                return "<b>{name}</b><br>{message}".format(**info)
+            else:
                 traceback.print_exc()
     return wrapped
 
