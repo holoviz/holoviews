@@ -25,7 +25,7 @@ except:
 
 import param
 
-from ..core.options import Store
+from ..core.options import Store, StoreOptions
 from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
@@ -196,6 +196,7 @@ def display_hook(fn):
         ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
         if not ip.display_formatter.formatters['text/plain'].pprint:
             return None
+        optstate = StoreOptions.state(element)
         try:
             widget_mode = OutputMagic.options['widgets']
             map_format  = OutputMagic.options['holomap']
@@ -220,6 +221,7 @@ def display_hook(fn):
 
             return html
         except:
+            StoreOptions.state(element, state=optstate)
             if ENABLE_TRACEBACKS:
                 traceback.print_exc()
     return wrapped
