@@ -341,7 +341,6 @@ class Plot(param.Parameterized):
         if self.subplot:
             return self.handles['axis']
         else:
-            plt.draw()
             fig = self.handles['fig']
             plt.close(fig)
             return fig
@@ -646,7 +645,7 @@ class GridPlot(CompositePlot):
         if self.subplot:
             axis.set_position(self.position)
             axis.set_aspect(float(self.rows)/self.cols)
-            plt.draw()
+            self.handles['fig'].canvas.draw()
             self._adjust_subplots(self.handles['axis'], self.subaxes)
 
 
@@ -863,13 +862,15 @@ class AdjointLayoutPlot(CompositePlot):
         used to position all the Layouts together. This method allows
         LayoutPlots to make final adjustments to the axis positions.
         """
-        if not 'main' in self.subplots:
-            return
-        plt.draw()
-        main_ax = self.subplots['main'].handles['axis']
         checks = [self.view_positions, self.subaxes, self.subplots]
+        right = all('right' in check for check in checks)
+        top = all('top' in check for check in checks)
+        if not 'main' in self.subplots or not (top or right):
+            return
+        self.handles['fig'].canvas.draw()
+        main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
-        if all('right' in check for check in checks):
+        if right:
             ax = self.subaxes['right']
             subplot = self.subplots['right']
             ax.set_position([bbox.x1 + bbox.width * self.border_size,
@@ -877,7 +878,7 @@ class AdjointLayoutPlot(CompositePlot):
                              bbox.width * self.subplot_size, bbox.height])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
-        if all('top' in check for check in checks):
+        if top:
             ax = self.subaxes['top']
             subplot = self.subplots['top']
             ax.set_position([bbox.x0,
