@@ -11,7 +11,7 @@ import param
 
 from ...core import NdOverlay, Overlay
 from ...element import HeatMap, Raster, Scatter, Curve, Points, Bars, Histogram
-from ..plotting import CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot, BarPlot
+from . import CurvePlot, PointPlot, OverlayPlot, RasterPlot, HistogramPlot, BarPlot
 
 
 class PlottingHook(param.ParameterizedFunction):
