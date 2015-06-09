@@ -5,12 +5,13 @@ from tempfile import NamedTemporaryFile
 
 
 from ...core import HoloMap, AdjointLayout
-from ...core.options import Store
+from ...core.options import Store, StoreOptions
 from ...core.io import Exporter
 
 from .plot import MPLPlot
 from .. import MIME_TYPES
 
+from matplotlib import pyplot as plt
 from matplotlib import animation
 import matplotlib.tight_bbox as tight_bbox
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
