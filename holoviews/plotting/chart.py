@@ -304,7 +304,8 @@ class HistogramPlot(ChartPlot):
 
     def get_extents(self, view, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(view, ranges)
-        return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+        y0 = np.min(0, y0)
+        return (y0, x0, y1, x1) if self.orientation == 'vertical' else (x0, y0, x1, y1)
 
 
     def _process_axsettings(self, hist, lims, ticks):
