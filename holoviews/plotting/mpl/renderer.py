@@ -4,11 +4,12 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 
 
-from ...core import HoloMap
+from ...core import HoloMap, AdjointLayout
 from ...core.options import Store
 from ...core.io import Exporter
 
 from .plot import MPLPlot
+from .. import MIME_TYPES
 
 from matplotlib import animation
 import matplotlib.tight_bbox as tight_bbox
@@ -27,6 +28,14 @@ ANIMATION_OPTS = {
     'scrubber': ('html', None, {'fps': 5}, None)
 }
 
+
+
+def opts(el, percent_size):
+    "Returns the plot options with supplied size (if not overridden)"
+    obj = el.last if isinstance(el, HoloMap) else el
+    options = MPLPlotRenderer.get_plot_size(obj, percent_size) #  Store.registry[type(el)].renderer
+    options.update(Store.lookup_options(obj, 'plot').options)
+    return options
 
 
 class MPLPlotRenderer(Exporter):

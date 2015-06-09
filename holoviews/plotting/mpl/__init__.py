@@ -15,15 +15,8 @@ from .tabular import * # pyflakes:ignore (API import)
 from . import pandas # pyflakes:ignore (API import)
 from . import seaborn # pyflakes:ignore (API import)
 
-from renderer import MPLPlotRenderer, ANIMATION_OPTS
+from renderer import MPLPlotRenderer, ANIMATION_OPTS, opts
 
-
-def opts(el, percent_size):
-    "Returns the plot options with supplied size (if not overridden)"
-    obj = el.last if isinstance(el, HoloMap) else el
-    options = MPLPlotRenderer.get_plot_size(obj, percent_size) #  Store.registry[type(el)].renderer
-    options.update(Store.lookup_options(obj, 'plot').options)
-    return options
 
 
 def set_style(key):
