@@ -212,12 +212,6 @@ def isnumeric(val):
         return False
 
 
-def get_plot_size():
-    factor = OutputMagic.options['size'] / 100.0
-    return (MPLPlot.fig_inches[0] * factor,
-            MPLPlot.fig_inches[1] * factor)
-
-
 class CustomCommSocket(CommSocket):
     """
     CustomCommSocket provides communication between the IPython

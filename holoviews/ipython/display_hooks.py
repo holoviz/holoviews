@@ -31,7 +31,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from ..plotting import LayoutPlot, GridPlot, RasterGridPlot
-from ..plotting import ANIMATION_OPTS, HTML_TAGS, MIME_TYPES,  opts, get_plot_size
+from ..plotting import ANIMATION_OPTS, HTML_TAGS, MIME_TYPES,  opts
 from .magics import OutputMagic, OptsMagic
 from .widgets import SelectionWidget, ScrubberWidget
 
