@@ -377,9 +377,12 @@ class MPLPlot(Plot):
         """
         if frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
-        if not self.drawn: self.handles['fig'] = self()
+        if not self.drawn: self.handles['fig'] = self.initialize_plot()
         self.update_frame(self.keys[frame])
         return self.handles['fig']
+
+    def update(self, key):
+        return self.__getitem__(key)
 
 
     def anim(self, start=0, stop=None, fps=30):
@@ -387,7 +390,7 @@ class MPLPlot(Plot):
         Method to return a matplotlib animation. The start and stop
         frames may be specified as well as the fps.
         """
-        figure = self()
+        figure = self.initialize_plot()
         anim = animation.FuncAnimation(figure, self.update_frame,
                                        frames=self.keys,
                                        interval = 1000.0/fps)
@@ -402,9 +405,9 @@ class MPLPlot(Plot):
         return len(self.keys)
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         """
-        Return a matplotlib figure.
+        Initialize the matplotlib figure.
         """
         raise NotImplementedError
 
@@ -570,7 +573,7 @@ class GridPlot(CompositePlot):
                             clone=False)
         norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
         axiswise = any(v.get('axiswise', False) for v in norm_opts.values())
-        
+
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
@@ -645,14 +648,14 @@ class GridPlot(CompositePlot):
         return subplots, subaxes, collapsed_layout
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         # Get the extent of the layout elements (not the whole layout)
         key = self.keys[-1]
         axis = self.handles['axis']
         subplot_kwargs = dict()
         ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
-            subplot(ranges=ranges, **subplot_kwargs)
+            subplot.initialize_plot(ranges=ranges, **subplot_kwargs)
 
         if self.show_title:
             title = axis.set_title(self._format_title(key),
@@ -855,7 +858,7 @@ class AdjointLayoutPlot(CompositePlot):
         super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -872,7 +875,7 @@ class AdjointLayoutPlot(CompositePlot):
             if None in [view, pos, subplot]:
                 ax.set_axis_off()
                 continue
-            subplot(ranges=ranges)
+            subplot.initialize_plot(ranges=ranges)
 
         self.adjust_positions()
         self.drawn = True
@@ -1293,14 +1296,14 @@ class LayoutPlot(CompositePlot):
             self.handles['title'].set_text(self._format_title(key))
 
 
-    def __call__(self):
+    def initialize_plot(self):
         axis = self.handles['axis']
         self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         with matplotlib.rc_context(rc=self.fig_rcparams):
             for subplot in self.subplots.values():
-                subplot(ranges=ranges)
+                subplot.initialize_plot(ranges=ranges)
 
         return self._finalize_axis(None)
 

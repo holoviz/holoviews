@@ -67,7 +67,7 @@ class DFrameViewPlot(ElementPlot):
             self.plot_type = self.map.last.plot_type
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         dfview = self.map.last
         self._validate(dfview)
 

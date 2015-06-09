@@ -99,7 +99,7 @@ class TablePlot(ElementPlot):
             return formatted
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         axis = self.handles['axis']
 

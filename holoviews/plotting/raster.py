@@ -47,7 +47,7 @@ class RasterPlot(ElementPlot):
                 return view.extents
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         view = self.map.last
         axis = self.handles['axis']
 
@@ -230,7 +230,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         return GridPlot._get_frame(self, key)
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         width, height, b_w, b_h, widths, heights = self.border_extents
 
         key = self.keys[-1]

@@ -169,7 +169,7 @@ class MPLPlotRenderer(Exporter):
 
             data = self.anim_data(anim, fmt, writer, **anim_kwargs)
         else:
-            data = self.figure_data(plot(), fmt, **({'dpi':self.dpi} if self.dpi else {}))
+            data = self.figure_data(plot.update(0), fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}

@@ -243,7 +243,7 @@ def element_display(element, size, **kwargs):
     info = process_object(element)
     if info: return info
     if element.__class__ not in Store.registry: return None
-    fig = Store.registry[element.__class__](element, **opts(element, size))()
+    fig = Store.registry[element.__class__](element, **opts(element, size)).update(0)
     return display_figure(fig)
 
 
@@ -260,7 +260,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
         max_frame_warning(max_frames)
         return sanitize_HTML(vmap)
     elif len(mapplot) == 1:
-        fig = mapplot()
+        fig = mapplot.update(0)
         return display_figure(fig)
     elif widget_mode is not None:
         return display_widgets(mapplot)
@@ -287,7 +287,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
                 return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
     if nframes == 1:
-        fig = layoutplot()
+        fig = layoutplot.update(0)
         return display_figure(fig)
     elif widget_mode is not None:
         return display_widgets(layoutplot)
@@ -313,7 +313,7 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
         max_frame_warning(max_frames)
         return sanitize_HTML(grid)
     elif len(gridplot) == 1:
-        fig = gridplot()
+        fig = gridplot.update(0)
         return display_figure(fig)
     if widget_mode is not None:
         return display_widgets(gridplot)

@@ -653,13 +653,13 @@ class OverlayPlot(ElementPlot):
         self.handles['legend_data'] = data
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, key, ranges)
         for plot in self.subplots.values():
-            plot(ranges=ranges)
+            plot.initialize_plot(ranges=ranges)
         self._adjust_legend(axis)
 
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
@@ -740,7 +740,7 @@ class DrawPlot(ElementPlot):
         """
         raise NotImplementedError
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         key = self.keys[-1]
         ranges = self.compute_ranges(self.map, key, ranges)

@@ -101,7 +101,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
     size_index = param.Integer(default=3, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
         points = self.map.last
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
@@ -155,7 +155,7 @@ class SurfacePlot(Plot3D):
 
     style_opts = ['cmap', 'color', 'shade', 'facecolors', 'rstride', 'cstride']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         view = self.map.last
         key = self.keys[-1]
 

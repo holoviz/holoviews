@@ -59,7 +59,7 @@ class RegressionPlot(FullRedrawPlot):
                   'scatter_kws', 'line_kws', 'ci', 'dropna',
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         self._update_plot(self.handles['axis'], self.map.last)
         return self._finalize_axis(self.keys[-1])
 
@@ -90,7 +90,7 @@ class BivariatePlot(FullRedrawPlot):
                   'ci', 'kind', 'bw', 'kernel', 'cumulative',
                   'shade', 'vertical', 'cmap']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         kdeview = self.map.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
@@ -132,7 +132,7 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'ci', 'n_boot', 'err_kws', 'err_palette',
                   'estimator', 'kwargs']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
@@ -166,7 +166,7 @@ class DistributionPlot(FullRedrawPlot):
     style_opts = ['bins', 'hist', 'kde', 'rug', 'fit', 'hist_kws',
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         distview = self.map.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
@@ -246,7 +246,7 @@ class SNSFramePlot(DFrameViewPlot):
         super(SNSFramePlot, self).__init__(view, **params)
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         dfview = self.map.last
         axis = self.handles['axis']
         self._validate(dfview)

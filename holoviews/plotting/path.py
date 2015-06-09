@@ -17,7 +17,7 @@ class PathPlot(ElementPlot):
         self.aspect = 'equal'
         super(PathPlot, self).__init__(*args, **params)
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         lines = self.map.last
         key = self.keys[-1]
         ranges = self.compute_ranges(self.map, key, ranges)
@@ -52,7 +52,7 @@ class PolygonPlot(ElementPlot):
     style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         key = self.keys[-1]
         axis = self.handles['axis']

@@ -108,7 +108,7 @@ class CurvePlot(ChartPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         axis = self.handles['axis']
         key = self.keys[-1]
@@ -163,7 +163,7 @@ class ErrorPlot(ChartPlot):
                   'solid_joinstyle', 'dashes', 'color']
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         axis = self.handles['axis']
         key = self.keys[-1]
@@ -244,7 +244,7 @@ class HistogramPlot(ChartPlot):
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         hist = self.map.last
         key = self.keys[-1]
 
@@ -527,7 +527,7 @@ class PointPlot(ChartPlot):
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         points = self.map.last
         axis = self.handles['axis']
 
@@ -675,7 +675,7 @@ class VectorFieldPlot(ElementPlot):
         return  distances.min()
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         vfield = self.map.last
         axis = self.handles['axis']
 
@@ -823,7 +823,7 @@ class BarPlot(ElementPlot):
         return 0, 0, len(self.values['group']), np.NaN
 
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         element = self.map.last
         vdim = element.vdims[0]
         axis = self.handles['axis']

@@ -17,7 +17,7 @@ class AnnotationPlot(ElementPlot):
         super(AnnotationPlot, self).__init__(annotation, **params)
         self.handles['annotations'] = []
 
-    def __call__(self, ranges=None):
+    def initialize_plot(self, ranges=None):
         annotation = self.map.last
         key = self.keys[-1]
         ranges = self.compute_ranges(self.map, key, ranges)
