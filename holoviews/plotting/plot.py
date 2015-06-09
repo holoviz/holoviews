@@ -381,7 +381,10 @@ class MPLPlot(Plot):
         self.update_frame(self.keys[frame])
         return self.handles['fig']
 
+
     def update(self, key):
+        if len(self) == 1 and key == 0 and not self.drawn:
+            return self.initialize_plot()
         return self.__getitem__(key)
 
 
