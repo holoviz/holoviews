@@ -35,7 +35,16 @@ class Plot(param.Parameterized):
     def update(self, key):
         """
         Update the internal state of the Plot to represent the given
-        key tuple (integers represent frames).
+        key tuple (where integers represent frames). Returns this
+        state.
+        """
+        return self.state
+
+    @property
+    def state(self):
+        """
+        The plotting state that gets updated via the update method and
+        used by the renderer to generate output.
         """
         raise NotImplementedError
 
@@ -387,6 +396,9 @@ class MPLPlot(Plot):
             return self.initialize_plot()
         return self.__getitem__(key)
 
+    @property
+    def state(self):
+        return self.handles['fig']
 
     def anim(self, start=0, stop=None, fps=30):
         """
