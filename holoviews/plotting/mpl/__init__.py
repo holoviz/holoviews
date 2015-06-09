@@ -105,7 +105,3 @@ Store.option_setters.append(default_options)
 
 # Register default Element options
 Store.register_plots(style_aliases=style_aliases)
-
-
-# Defining the most common style options for HoloViews
-GrayNearest = Options(key='style', cmap='gray', interpolation='nearest')

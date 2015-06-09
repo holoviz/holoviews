@@ -32,13 +32,13 @@ MIME_TYPES = {
 }
 
 
+from .mpl import *
+
 def public(obj):
     if not isinstance(obj, type): return False
     baseclasses = [Plot, Cycle]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
-from .mpl import GrayNearest
-from .mpl import GrayNearest
 
-_public = ["MPLPlotRenderer", "GrayNearest"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = ["MPLPlotRenderer"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public
