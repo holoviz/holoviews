@@ -13,10 +13,10 @@ from ..core.options import Store
 from ..core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ..element import Annotation, Table, ItemTable
 from ..operation import Compositor
-from .plot import Plot
+from .plot import MPLPlot
 
 
-class ElementPlot(Plot):
+class ElementPlot(MPLPlot):
 
     apply_ranges = param.Boolean(default=True, doc="""
         Whether to compute the plot bounds from the data itself.""")

@@ -23,7 +23,7 @@ import param
 
 from ..core import OrderedDict, NdMapping
 from ..core.util import ProgressIndicator
-from ..plotting import Plot
+from ..plotting import MPLPlot
 from .magics import OutputMagic
 
 
@@ -214,8 +214,8 @@ def isnumeric(val):
 
 def get_plot_size():
     factor = OutputMagic.options['size'] / 100.0
-    return (Plot.fig_inches[0] * factor,
-            Plot.fig_inches[1] * factor)
+    return (MPLPlot.fig_inches[0] * factor,
+            MPLPlot.fig_inches[1] * factor)
 
 
 class CustomCommSocket(CommSocket):

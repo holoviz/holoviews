@@ -12,7 +12,7 @@ from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, Ho
 from ..core.util import match_spec
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars, Polygons
 from .element import ElementPlot
-from .plot import Plot
+from .plot import MPLPlot
 
 
 class ChartPlot(ElementPlot):
@@ -955,4 +955,4 @@ Store.registry.update({Curve: CurvePlot,
                        VectorField: VectorFieldPlot,
                        ErrorBars: ErrorPlot})
 
-Plot.sideplots.update({Histogram: SideHistogramPlot})
+MPLPlot.sideplots.update({Histogram: SideHistogramPlot})

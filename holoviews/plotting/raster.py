@@ -12,7 +12,7 @@ from ..core import traversal
 from ..core.util import match_spec, max_range
 from ..element.raster import HeatMap, Image, Raster, RGB, HSV
 from .element import ElementPlot, OverlayPlot
-from .plot import Plot, GridPlot
+from .plot import MPLPlot, GridPlot
 
 
 class RasterPlot(ElementPlot):
@@ -198,7 +198,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                  layout_num=1, **params):
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
-        Plot.__init__(self, dimensions=dimensions, keys=keys, **params)
+        MPLPlot.__init__(self, dimensions=dimensions, keys=keys, **params)
         self.layout = layout
         self.cyclic_index = 0
         self.zorder = 0

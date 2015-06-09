@@ -91,12 +91,12 @@ def get_plot_size(obj, percent_size):
     factor = percent_size / 100.0
     plot_type = obj.type if isinstance(obj, HoloMap) else type(obj)
     options = Store.lookup_options(obj, 'plot').options
-    fig_inches = options.get('fig_inches', Plot.fig_inches)
+    fig_inches = options.get('fig_inches', MPLPlot.fig_inches)
     if isinstance(fig_inches, (list, tuple)):
         return (fig_inches[0] * factor,
                 fig_inches[1] * factor)
     else:
-        return Plot.fig_inches * factor 
+        return MPLPlot.fig_inches * factor
 
 
 class MPLPlotRenderer(Exporter):

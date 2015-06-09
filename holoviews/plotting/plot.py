@@ -19,12 +19,37 @@ from ..element import Raster, Table
 
 class Plot(param.Parameterized):
     """
-    A Plot object returns either a matplotlib figure object (when
-    called or indexed) or a matplotlib animation object as
-    appropriate. Plots take element objects such as Image,
-    Contours or Points as inputs and plots them in the
-    appropriate format. As views may vary over time, all plots support
-    animation via the anim() method.
+    Base class of all Plot classes in HoloViews, designed to be
+    general enough to use any plotting package or backend.
+    """
+
+    def __init__(self, **params):
+        super(Plot, self).__init__(**params)
+
+    def __len__(self):
+        """
+        The number of available frames.
+        """
+        raise NotImplementedError
+
+    def update(self, key):
+        """
+        Update the internal state of the Plot to represent the given
+        key tuple (integers represent frames).
+        """
+        raise NotImplementedError
+
+
+
+
+class MPLPlot(Plot):
+    """
+    An MPLPlot object draws a matplotlib figure object when called or
+    indexed but can also return a matplotlib animation object as
+    appropriate. MPLPlots take element objects such as Image, Contours
+    or Points as inputs and plots them in the appropriate format using
+    matplotlib. As HoloMaps are supported, all plots support animation
+    via the anim() method.
     """
 
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
@@ -256,7 +281,7 @@ class Plot(param.Parameterized):
 
     def _get_frame(self, key):
         """
-        Required on each Plot type to get the data corresponding
+        Required on each MPLPlot type to get the data corresponding
         just to the current frame out from the object.
         """
         pass
@@ -400,7 +425,7 @@ class Plot(param.Parameterized):
 
 
 
-class CompositePlot(Plot):
+class CompositePlot(MPLPlot):
     """
     CompositePlot provides a baseclass for plots coordinate multiple
     subplots to form a Layout.
@@ -1244,7 +1269,7 @@ class LayoutPlot(CompositePlot):
                 if pos == 'main':
                     plot_type = Store.registry[vtype]
                 else:
-                    plot_type = Plot.sideplots[vtype]
+                    plot_type = MPLPlot.sideplots[vtype]
             num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
                                       dimensions=self.dimensions,
