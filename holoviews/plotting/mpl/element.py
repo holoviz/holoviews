@@ -8,11 +8,11 @@ import numpy as np
 
 import param
 
-from ..core import util
-from ..core.options import Store
-from ..core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ..element import Annotation, Table, ItemTable
-from ..operation import Compositor
+from ...core import util
+from ...core.options import Store
+from ...core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
+from ...element import Annotation, Table, ItemTable
+from ...operation import Compositor
 from .plot import MPLPlot
 
 

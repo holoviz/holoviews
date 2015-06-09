@@ -23,7 +23,6 @@ import param
 
 from ..core import OrderedDict, NdMapping
 from ..core.util import ProgressIndicator
-from ..plotting import MPLPlot
 from .magics import OutputMagic
 
 

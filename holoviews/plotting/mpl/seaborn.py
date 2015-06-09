@@ -9,10 +9,10 @@ except:
 
 import param
 
-from ..interface.pandas import DFrame, DataFrameView
-from ..interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
-from ..interface.seaborn import DFrame as SNSFrame
-from ..core.options import Store
+from ...interface.pandas import DFrame, DataFrameView
+from ...interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
+from ...interface.seaborn import DFrame as SNSFrame
+from ...core.options import Store
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
 

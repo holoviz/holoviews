@@ -3,9 +3,9 @@ from matplotlib.collections import PatchCollection, LineCollection
 import numpy as np
 import param
 
-from ..core.options import Store
-from ..core.util import match_spec
-from ..element import Path, Box, Bounds, Ellipse, Polygons, Contours
+from ...core.options import Store
+from ...core.util import match_spec
+from ...element import Path, Box, Bounds, Ellipse, Polygons, Contours
 from .element import ElementPlot
 
 

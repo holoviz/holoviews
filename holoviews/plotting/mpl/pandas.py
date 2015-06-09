@@ -5,8 +5,8 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ..core.options import Store
-from ..interface.pandas import DFrame, DataFrameView, pd
+from ...core.options import Store
+from ...interface.pandas import DFrame, DataFrameView, pd
 from .element import ElementPlot
 
 

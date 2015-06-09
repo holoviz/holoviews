@@ -1,9 +1,9 @@
 import numpy as np
 import param
 
-from ..core.options import Store
-from ..core.util import match_spec
-from ..element.chart3d import Scatter3D, Surface
+from ...core.options import Store
+from ...core.util import match_spec
+from ...element.chart3d import Scatter3D, Surface
 from .element import ElementPlot
 from .chart import PointPlot
 
