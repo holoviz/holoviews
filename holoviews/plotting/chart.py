@@ -11,7 +11,7 @@ from ..core.options import Store
 from ..core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
 from ..core.util import match_spec
 from ..element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars, Polygons
-from .element import ElementPlot
+from .element import ElementPlot, LegendPlot
 from .plot import MPLPlot
 
 
@@ -735,7 +735,7 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_clim(ranges[magnitude_dim])
 
 
-class BarPlot(ElementPlot):
+class BarPlot(LegendPlot):
 
     group_index = param.Integer(default=0, doc="""
        Index of the dimension in the supplied Bars
@@ -763,6 +763,13 @@ class BarPlot(ElementPlot):
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
+
+    legend_specs = dict(LegendPlot.legend_specs, **{
+        'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
+                       ncol=3, loc=3, mode="expand", borderaxespad=0.),
+        'bottom': dict(ncol=3, mode="expand", loc=2,
+                       bbox_to_anchor=(0., -0.4, 1., .102),
+                       borderaxespad=0.1)})
 
     _dimensions = OrderedDict([('group', 0),
                                ('category',1),
@@ -833,22 +840,17 @@ class BarPlot(ElementPlot):
         ranges = match_spec(element, ranges)
         dims = element.dimensions('key', label=True)
 
-        self.handles['bars'], xticks = self._create_bars(axis, element)
+        self.handles['bars'], xticks, xlabel = self._create_bars(axis, element)
         self.handles['legend_handle'] = self.handles['bars']
-        self._set_ticks(axis, dims, xticks)
-        return self._finalize_axis(key, ranges=ranges, ylabel=str(vdim))
+        return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
 
 
-    def _set_ticks(self, axis, dims, xticks):
+    def _finalize_ticks(self, axis, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
-        ndims = len(dims)
-        idx = self.group_index if self.group_index < ndims else self.category_index
         ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-        axis.set_xlabel(dims[idx], labelpad=-0.15 if idx < ndims else -0.05)
-        axis.set_xticks(ticks)
-        axis.set_xticklabels(labels)
+        super(BarPlot, self)._finalize_ticks(axis, [ticks, labels], yticks, zticks)
         for t, y in zip(axis.get_xticklabels(), yalignments):
             t.set_y(y)
 
@@ -864,6 +866,7 @@ class BarPlot(ElementPlot):
         style_opts, color_groups, sopts = self._compute_styles(element, style_groups)
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
+        xlabel = ' / '.join([str(d) for d in [cdim, gdim] if d is not None])
 
         # Compute widths
         width = (1-(2.*self.padding)) / len(values['category'])
@@ -886,8 +889,7 @@ class BarPlot(ElementPlot):
                     style_key[idx] = grp_name
                 val_key[gi] = grp_name
                 if ci < ndims:
-                    yalign = -0.125
-                    xticks.append((gidx+0.5, dims[ci], -0.05))
+                    yalign = -0.04
                 else:
                     yalign = 0
                 xticks.append((gidx+0.5, grp_name, yalign))
@@ -921,9 +923,11 @@ class BarPlot(ElementPlot):
                     labels.append(label)
         title = [str(element.kdims[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
-        if any(len(l) for l in labels):
-            axis.legend(title=', '.join(title))
-        return bars, xticks
+        if self.show_legend and any(len(l) for l in labels):
+            leg_spec = self.legend_specs[self.legend_position]
+            if self.legend_cols: leg_spec['ncol'] = self.legend_cols
+            axis.legend(title=', '.join(title), **leg_spec)
+        return bars, xticks, xlabel
 
 
     def update_handles(self, axis, element, key, ranges=None):

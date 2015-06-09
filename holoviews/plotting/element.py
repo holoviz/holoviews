@@ -495,7 +495,35 @@ class ElementPlot(MPLPlot):
         raise NotImplementedError
 
 
-class OverlayPlot(ElementPlot):
+class LegendPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
+    legend_cols = param.Integer(default=None, doc="""
+       Number of legend columns in the legend.""")
+
+    legend_position = param.ObjectSelector(objects=['inner', 'right',
+                                                    'bottom', 'top',
+                                                    'left', 'best'],
+                                           default='inner', doc="""
+        Allows selecting between a number of predefined legend position
+        options. The predefined options may be customized in the
+        legend_specs class attribute.""")
+
+    legend_specs = {'inner': {},
+                    'best': {},
+                    'left':   dict(bbox_to_anchor=(-.15, 1), loc=1),
+                    'right':  dict(bbox_to_anchor=(1.05, 1), loc=2),
+                    'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
+                                   ncol=3, loc=3, mode="expand", borderaxespad=0.),
+                    'bottom': dict(ncol=3, mode="expand", loc=2,
+                                   bbox_to_anchor=(0., -0.25, 1., .102),
+                                   borderaxespad=0.1)}
+
+
+
+class OverlayPlot(LegendPlot):
     """
     OverlayPlot supports compositors processing of Overlays across maps.
     """
@@ -506,26 +534,6 @@ class OverlayPlot(ElementPlot):
         a style_grouping value of 1 will group just by type, a value of 2
         will group by type and group and a value of 3 will group by the
         full specification.""")
-
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
-
-    legend_position = param.ObjectSelector(objects=['inner', 'right',
-                                                    'bottom', 'top',
-                                                    'left'],
-                                           default='inner', doc="""
-        Allows selecting between a number of predefined legend position
-        options. The predefined options may be customized in the
-        legend_specs class attribute.""")
-
-    legend_specs = {'inner': {},
-                    'left':   dict(bbox_to_anchor=(-.15, 1)),
-                    'right':  dict(bbox_to_anchor=(1.25, 1)),
-                    'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
-                                   ncol=3, mode="expand", borderaxespad=0.),
-                    'bottom': dict(ncol=3, mode="expand",
-                                   bbox_to_anchor=(0., -0.25, 1., .102),
-                                   borderaxespad=0.1)}
 
     def __init__(self, overlay, ranges=None, **params):
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
@@ -642,6 +650,7 @@ class OverlayPlot(ElementPlot):
                 legend.set_visible(False)
         else:
             leg_spec = self.legend_specs[self.legend_position]
+            if self.legend_cols: leg_spec['ncol'] = self.legend_cols
             leg = axis.legend(data.keys(), data.values(),
                               title=title, scatterpoints=1,
                               **leg_spec)
