@@ -479,8 +479,17 @@ class RGB(Image):
         return cls(data, bounds=bounds)
 
 
-    def __init__(self, data, **params):
+    def dimension_values(self, dim):
+        """
+        The set of samples available along a particular dimension.
+        """
+        dim_idx = self.get_dimension_index(dim)
+        if self.ndims <= dim_idx < len(self.dimensions()):
+            return np.flipud(self.data[:,:,dim_idx-self.ndims]).T.flatten()
+        return super(RGB, self).dimension_values(dim)
 
+
+    def __init__(self, data, **params):
         sliced = None
         if isinstance(data, Overlay):
             images = data.values()
