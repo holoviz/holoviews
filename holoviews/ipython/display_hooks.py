@@ -45,6 +45,59 @@ ABBREVIATE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
+def render(plot):
+    """
+    Allows the render policy to be changed, e.g to show only the
+    middle frame using middle_frame for testing notebooks.
+
+    See render_anim variable below (default is HTML_video)
+    """
+    try:
+        return render_anim(plot)
+    except Exception as e:
+        return str(e)+'<br/>'+display_figure(plot())
+
+
+def first_frame(plot):
+    "Only display the first frame of an animated plot"
+    return display_figure(plot[0])
+
+def middle_frame(plot):
+    "Only display the (approximately) middle frame of an animated plot"
+    middle_frame = int(len(plot) / 2)
+    return display_figure(plot[middle_frame])
+
+def last_frame(plot):
+    "Only display the last frame of an animated plot"
+    return display_figure(plot[len(plot)])
+
+def sanitize_HTML(obj):
+    "Sanitize text output for HTML display"
+    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
+
+def max_frame_warning(max_frames):
+    sys.stderr.write("Skipping matplotlib display to avoid "
+                     "lengthy animation render times\n"
+                     "[Total item frames exceeds max_frames on OutputMagic (%d)]"
+                     % max_frames)
+
+def dict_to_css(css_dict):
+    """Converts a Python dictionary to a valid CSS specification"""
+    if isinstance(css_dict, dict):
+        return '; '.join("%s: %s" % (k, v) for k, v in css_dict.items())
+    else:
+        raise ValueError("CSS must be supplied as Python dictionary")
+
+def process_object(obj):
+    "Hook to process the object currently being displayed."
+    invalid_options = OptsMagic.process_element(obj)
+    if invalid_options: return invalid_options
+    OutputMagic.info(obj)
+
+
+#==================================================#
+# HTML/Javascript generation given a Plot instance #
+#==================================================#
 
 def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     if extra_args != []:
@@ -75,44 +128,6 @@ def HTML_video(plot):
     raise Exception(msg)
 
 
-def first_frame(plot):
-    "Only display the first frame of an animated plot"
-    return display_figure(plot[0])
-
-def middle_frame(plot):
-    "Only display the (approximately) middle frame of an animated plot"
-    middle_frame = int(len(plot) / 2)
-    return display_figure(plot[middle_frame])
-
-def last_frame(plot):
-    "Only display the last frame of an animated plot"
-    return display_figure(plot[len(plot)])
-
-
-def sanitize_HTML(obj):
-    "Sanitize text output for HTML display"
-    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
-
-def max_frame_warning(max_frames):
-    sys.stderr.write("Skipping matplotlib display to avoid "
-                     "lengthy animation render times\n"
-                     "[Total item frames exceeds max_frames on OutputMagic (%d)]"
-                     % max_frames)
-
-def process_object(obj):
-    "Hook to process the object currently being displayed."
-    invalid_options = OptsMagic.process_element(obj)
-    if invalid_options: return invalid_options
-    OutputMagic.info(obj)
-
-
-def render(plot):
-    try:
-        return render_anim(plot)
-    except Exception as e:
-        return str(e)+'<br/>'+display_figure(plot())
-
-
 def display_widgets(plot):
     "Display widgets applicable to the specified element"
     if OutputMagic.options['holomap'] == 'repr': return None
@@ -135,13 +150,6 @@ def display_widgets(plot):
     widget = ScrubberWidget if widget_format == 'scrubber' else SelectionWidget
     return widget(plot, embed=embed)()
 
-
-def dict_to_css(css_dict):
-    """Converts a Python dictionary to a valid CSS specification"""
-    if isinstance(css_dict, dict):
-        return '; '.join("%s: %s" % (k, v) for k, v in css_dict.items())
-    else:
-        raise ValueError("CSS must be supplied as Python dictionary")
 
 
 def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
@@ -178,6 +186,24 @@ def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
     plt.close(fig)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
+
+def display(plot, widget_mode):
+    """
+    Used by the display hooks to render a plot according to the
+    following policy:
+
+    1. If there is a single frame, render it as a figure.
+    2. If in widget mode, render as a widget
+    3. Otherwise render it as an animation, falling back to a figure
+    if there is an exception.
+    """
+    if len(plot) == 1:
+        fig = plot.update(0)
+        return display_figure(fig)
+    elif widget_mode is not None:
+        return display_widgets(plot)
+    else:
+        return render(plot)
 
 #===============#
 # Display hooks #
@@ -224,24 +250,6 @@ def display_hook(fn):
             else:
                 traceback.print_exc()
     return wrapped
-
-
-def display(plot, widget_mode):
-    """
-    Render a plot appropriately using the following policy:
-
-    1. If there is a single frame, render it as a figure.
-    2. If in widget mode, render as a widget
-    3. Otherwise render it as an animation, falling back to a figure
-    if there is an exception.
-    """
-    if len(plot) == 1:
-        fig = plot.update(0)
-        return display_figure(fig)
-    elif widget_mode is not None:
-        return display_widgets(plot)
-    else:
-        return render(plot)
 
 
 @display_hook
