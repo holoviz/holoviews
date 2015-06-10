@@ -24,6 +24,9 @@ from .interface import *                                             # pyflakes:
 from .operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
 from .element import *                                               # pyflakes:ignore (API import)
 
+DEFAULT_RENDERER='matplotlib'
+
+
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.holoviews.rc",

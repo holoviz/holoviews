@@ -1,4 +1,13 @@
+"""
+HoloViews plotting sub-system the defines the interface to be used by
+any third-party plotting/rendering package.
 
+This file defines the HTML tags used to wrap renderered output for
+display in the IPython Notebook (optional). Currently only a
+matplotlib renderer is supported.
+"""
+
+from .. import DEFAULT_RENDERER
 from ..core.options import Cycle
 from .plot import Plot
 from .renderer import Renderer, MIME_TYPES
@@ -23,13 +32,15 @@ HTML_TAGS = {
     'pdf':  PDF_TAG
 }
 
-from .mpl import *
 
 def public(obj):
     if not isinstance(obj, type): return False
-    baseclasses = [Plot, Cycle]
+    baseclasses = [Plot, Cycle, Renderer]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
+# Load the default renderer
+if DEFAULT_RENDERER=='matplotlib':
+    from .mpl import *
 
-_public = ["MPLRenderer"] + list(set([_k for _k, _v in locals().items() if public(_v)]))
+_public = list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public
