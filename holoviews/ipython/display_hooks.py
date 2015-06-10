@@ -1,13 +1,6 @@
 """
 Definition and registration of display hooks for the IPython Notebook.
 """
-
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-
-try:    from matplotlib import animation
-except: animation = None
-
 from functools import wraps
 import sys, traceback, base64
 
@@ -15,11 +8,6 @@ try:
     import mpld3
 except:
     mpld3 = None
-
-try:
-    from ..plotting.mpl.renderer import MPLRenderer
-except:
-    pass
 
 import param
 
@@ -99,7 +87,7 @@ def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
         if render_anim is not None:
             return render_anim(plot, **kwargs)
 
-        renderer = Store.renderer.instance(dpi=dpi)
+        renderer = plot.renderer.instance(dpi=dpi)
         data = renderer.animation_data(plot, holomap_format, fps, dpi)
 
         b64data = base64.b64encode(data).decode("utf-8")
@@ -134,7 +122,7 @@ def display_frame(plot, figure_format, backend, dpi, css, message, **kwargs):
     needs to be initialized appropriately first.
     """
     if backend == 'nbagg':
-        manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
+        manager = plot.renderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
         if manager is None: return ''
         OutputMagic.nbagg_counter += 1
         manager.show()
@@ -144,7 +132,7 @@ def display_frame(plot, figure_format, backend, dpi, css, message, **kwargs):
         mpld3.plugins.connect(plot.state, mpld3.plugins.MousePosition(fontsize=14))
         html = "<center>" + mpld3.fig_to_html(plot.state) + "<center/>"
     else:
-        renderer = Store.renderer.instance(dpi=dpi)
+        renderer = plot.renderer.instance(dpi=dpi)
         figdata = renderer.figure_data(plot, figure_format)
         w,h = renderer.get_size(plot)
         if figure_format=='svg':
@@ -218,7 +206,13 @@ def display_hook(fn):
                 options = {k:OutputMagic.options[k] for k in keys}
                 if options['holomap']  in OutputMagic.inbuilt_formats:
                     options['holomap'] = None
-                Store.renderer.instance(**options).save(element, filename)
+
+                if isinstance(element, HoloMap):
+                    renderer = Store.registry[element.type].renderer
+                else:
+                    renderer = Store.registry[type(element)].renderer
+
+                renderer.instance(**options).save(element, filename)
 
             return html
         except Exception as e:

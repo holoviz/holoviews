@@ -6,7 +6,6 @@ from tempfile import NamedTemporaryFile
 from ...core import HoloMap, AdjointLayout
 from ...core.options import Store, StoreOptions
 
-from .plot import MPLPlot
 from .. import MIME_TYPES
 from ..renderer import Renderer
 
@@ -102,6 +101,7 @@ class MPLRenderer(Renderer):
         utility. Note that this can be overridden explicitly per object
         using the fig_size and size plot options.
         """
+        from .plot import MPLPlot
         factor = percent_size / 100.0
         plot_type = obj.type if isinstance(obj, HoloMap) else type(obj)
         options = Store.lookup_options(obj, 'plot').options

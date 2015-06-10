@@ -17,6 +17,7 @@ from ...core.util import sanitize_identifier, int_to_roman,\
 from ...element import Raster, Table
 
 from ..plot import Plot
+from .renderer import MPLRenderer
 
 
 class MPLPlot(Plot):
@@ -28,6 +29,8 @@ class MPLPlot(Plot):
     matplotlib. As HoloMaps are supported, all plots support animation
     via the anim() method.
     """
+
+    renderer = MPLRenderer
 
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
         Alpha of the overall figure background.""")
