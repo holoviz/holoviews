@@ -1,4 +1,4 @@
-import os, uuid
+import os, sys, uuid
 import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
@@ -267,6 +267,21 @@ class MPLRenderer(Renderer):
         w, h = plot.state.get_size_inches()
         dpi = plot.state.dpi
         return (w*dpi, h*dpi)
+
+    @bothmethod
+    def animation_data(self_or_cls, plot, holomap_format, fps, dpi):
+        if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+            raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
+        #renderer = Store.renderer.instance(dpi=dpi)
+        anim = plot.anim(fps=fps)
+        (writer, fmt, anim_kwargs, extra_args) = ANIMATION_OPTS[holomap_format]
+
+        if extra_args != []:
+            anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+        if holomap_format=='gif':
+            anim_kwargs['fps'] = fps
+        return self_or_cls._anim_data(anim, fmt, writer, **anim_kwargs)
+
 
 
 class WidgetCommSocket(CommSocket):
