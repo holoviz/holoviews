@@ -2,16 +2,15 @@ import os, sys, math, time, uuid, json
 from unittest import SkipTest
 
 try:
-    from matplotlib.backends.backend_nbagg import CommSocket, new_figure_manager_given_figure
+    from ..plotting.mpl.renderer import WidgetCommSocket
+    from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
     from mpl_toolkits.mplot3d import Axes3D
 except:
-    CommSocket = object
     Axes3D = None
-
+    WidgetCommSocket = None
 try:
     import IPython
     from IPython.core.display import clear_output
-    from IPython.kernel.comm import Comm
 except:
     clear_output = None
     raise SkipTest("IPython extension requires IPython >= 0.12")
@@ -211,30 +210,6 @@ def isnumeric(val):
         return False
 
 
-class CustomCommSocket(CommSocket):
-    """
-    CustomCommSocket provides communication between the IPython
-    kernel and a matplotlib canvas element in the notebook.
-    A CustomCommSocket is required to delay communication
-    between the kernel and the canvas element until the widget
-    has been rendered in the notebook.
-    """
-
-    def __init__(self, manager):
-        self.supports_binary = None
-        self.manager = manager
-        self.uuid = str(uuid.uuid4())
-        self.html = "<div id=%r></div>" % self.uuid
-
-    def start(self):
-        try:
-            self.comm = Comm('matplotlib', data={'id': self.uuid})
-        except AttributeError:
-            raise RuntimeError('Unable to create an IPython notebook Comm '
-                               'instance. Are you in the IPython notebook?')
-        self.comm.on_msg(self.on_message)
-        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
-
 
 class NdWidget(param.Parameterized):
     """
@@ -284,7 +259,7 @@ class NdWidget(param.Parameterized):
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
                                   kdims=self.dimensions)
 
-        nbagg = CommSocket is not object
+        nbagg = WidgetCommSocket is not None
         self.nbagg = OutputMagic.options['backend'] == 'nbagg' and nbagg
 
         self.frames = {}
@@ -303,7 +278,7 @@ class NdWidget(param.Parameterized):
                 if isinstance(ax, Axes3D):
                     ax.mouse_init()
             OutputMagic.nbagg_counter += 1
-            self.comm = CustomCommSocket(self.manager)
+            self.comm = WidgetCommSocket(self.manager)
 
 
     def render_html(self, data):
