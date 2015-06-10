@@ -239,6 +239,9 @@ class NdElement(Element, NdMapping):
 
     def _add_item(self, key, value, sort=True):
         value = (value,) if np.isscalar(value) else tuple(value)
+        if len(value) != len(self.vdims):
+            raise ValueError("%s values must match value dimensions"
+                             % type(self).__name__)
         super(NdElement, self)._add_item(key, value, sort)
 
 
