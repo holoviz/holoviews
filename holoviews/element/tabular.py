@@ -289,35 +289,35 @@ class TableConversion(object):
             return new_type(selected, **params)
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type, **params)
 
-    def bars(self, key_dimensions, value_dimensions, **kwargs):
+    def bars(self, kdims=None, vdims=None, **kwargs):
         from .chart import Bars
-        return self._conversion(key_dimensions, value_dimensions, Bars, **kwargs)
+        return self._conversion(kdims, vdims, Bars, **kwargs)
 
-    def curve(self, key_dimensions, value_dimensions, **kwargs):
+    def curve(self, kdims=None, vdims=None, **kwargs):
         from .chart import Curve
-        return self._conversion(key_dimensions, value_dimensions, Curve, **kwargs)
+        return self._conversion(kdims, vdims, Curve, **kwargs)
 
-    def heatmap(self, key_dimensions, value_dimensions, **kwargs):
+    def heatmap(self, kdims=None, vdims=None, **kwargs):
         from .raster import HeatMap
-        return self._conversion(key_dimensions, value_dimensions, HeatMap, **kwargs)
+        return self._conversion(kdims, value_dimensions, HeatMap, **kwargs)
 
-    def points(self, key_dimensions, value_dimensions, **kwargs):
+    def points(self, kdims=None, vdims=None, **kwargs):
         from .chart import Points
-        return self._conversion(key_dimensions, value_dimensions, Points, **kwargs)
+        return self._conversion(kdims, value_dimensions, Points, **kwargs)
 
-    def scatter(self, key_dimensions, value_dimensions, **kwargs):
+    def scatter(self, kdims=None, vdims=None, **kwargs):
         from .chart import Scatter
-        return self._conversion(key_dimensions, value_dimensions, Scatter, **kwargs)
+        return self._conversion(kdims, vdims, Scatter, **kwargs)
 
-    def scatter3d(self, key_dimensions, value_dimensions, **kwargs):
+    def scatter3d(self, kdims=None, vdims=None, **kwargs):
         from .chart3d import Scatter3D
-        return self._conversion(key_dimensions, value_dimensions, Scatter3D, **kwargs)
+        return self._conversion(kdims, vdims, Scatter3D, **kwargs)
 
-    def surface(self, key_dimensions, value_dimensions, **kwargs):
+    def surface(self, kdims=None, vdims=None, **kwargs):
         from .chart3d import Surface
-        heatmap = self.to_heatmap(key_dimensions, value_dimensions, **kwargs)
+        heatmap = self.to_heatmap(kdims, vdims, **kwargs)
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
-    def vectorfield(self, key_dimensions, value_dimensions, **kwargs):
+    def vectorfield(self, kdims=None, vdims=None, **kwargs):
         from .chart import VectorField
-        return self._conversion(key_dimensions, value_dimensions, VectorField, **kwargs)
+        return self._conversion(kdims, vdims, VectorField, **kwargs)
