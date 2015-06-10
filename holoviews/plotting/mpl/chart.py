@@ -884,31 +884,34 @@ class BarPlot(LegendPlot):
         # computing xticks and drawing bars and applying styles
         for gidx, grp_name in enumerate(values['group']):
             if grp_name is not None:
+                grp = gdim.pprint_value(grp_name)
                 if 'group' in style_groups:
                     idx = style_groups.index('group')
-                    label_key[idx] = gdim.pprint_value(grp_name)
+                    label_key[idx] = grp
                     style_key[idx] = grp_name
                 val_key[gi] = grp_name
                 if ci < ndims:
                     yalign = -0.04
                 else:
                     yalign = 0
-                xticks.append((gidx+0.5, grp_name, yalign))
+                xticks.append((gidx+0.5, grp, yalign))
             for cidx, cat_name in enumerate(values['category']):
                 xpos = gidx+self.padding+(cidx*width)
                 if cat_name is not None:
                     if 'category' in style_groups:
                         idx = style_groups.index('category')
-                        label_key[idx] = gdim.pprint_value(cat_name)
+                        cat = gdim.pprint_value(cat_name)
+                        label_key[idx] = cat
                         style_key[idx] = cat_name
                     val_key[ci] = cat_name
-                    xticks.append((xpos+width/2., cat_name, 0))
+                    xticks.append((xpos+width/2., cat, 0))
                 prev = 0
                 for sidx, stk_name in enumerate(values['stack']):
                     if stk_name is not None:
                         if 'stack' in style_groups:
                             idx = style_groups.index('stack')
-                            label_key[idx] = gdim.pprint_value(stk_name)
+                            stk = gdim.pprint_value(stk_name)
+                            label_key[idx] = stk
                             style_key[idx] = stk_name
                         val_key[si] = stk_name
                     val = element.get(tuple(val_key), (np.NaN,))
