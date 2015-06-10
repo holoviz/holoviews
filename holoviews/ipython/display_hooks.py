@@ -133,20 +133,17 @@ def HTML_video(plot):
 
 def display_widgets(holomap_format, widget_mode, **kwargs):
     "Display widgets applicable to the specified element"
-    widget_mode = OutputMagic.options['widgets']
-    widget_format = OutputMagic.options['holomap']
-
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
-    if not isuniform and widget_format == 'widgets':
+    if not isuniform and holomap_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
                                     % type(plot).__name__)
-        widget_format = 'scrubber'
+        holomap_format = 'scrubber'
 
-    if widget_format == 'auto':
-        widget_format = 'scrubber' if islinear or not isuniform else 'widgets'
+    if holomap_format == 'auto':
+        holomap_format = 'scrubber' if islinear or not isuniform else 'widgets'
 
-    widget = ScrubberWidget if widget_format == 'scrubber' else SelectionWidget
+    widget = ScrubberWidget if holomap_format == 'scrubber' else SelectionWidget
     return widget(plot, embed=(widget_mode == 'embed'), display_options=kwargs)()
 
 
