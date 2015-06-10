@@ -209,13 +209,17 @@ class NdElement(Element, NdMapping):
         else: return element
 
 
-    def reindex(self, kdims, vdims=None):
+    def reindex(self, kdims=None, vdims=None, force=False):
         """
         Create a new object with a re-ordered set of dimensions.
         Allows converting key dimensions to value dimensions
         and vice versa.
         """
-        if vdims is None: vdims = self._cached_value_names
+        if vdims is None:
+            if kdims is None:
+                return super(NdElement, self).reindex(force=force)
+            else:
+                vdims = self._cached_value_names
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
         kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
