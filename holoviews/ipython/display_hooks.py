@@ -245,11 +245,6 @@ def display(plot, widget_mode):
 
 
 @display_hook
-def animation_display(anim, map_format, dpi=72, **kwargs):
-    return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[map_format])
-
-
-@display_hook
 def element_display(element, size, **kwargs):
     if not isinstance(element, ViewableElement): return None
     if type(element) == Element:                 return None
