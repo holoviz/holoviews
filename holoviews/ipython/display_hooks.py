@@ -188,18 +188,17 @@ def display(plot, widget_mode, message=None):
     3. Otherwise render it as an animation, falling back to a figure
     if there is an exception.
     """
-    backend = OutputMagic.options['backend']
+
     figure_format =  OutputMagic.options['fig']
-    holomap_format =  OutputMagic.options['holomap']
-    dpi = OutputMagic.options['dpi']
-    css = OutputMagic.options['css']
-
     if figure_format == 'repr': return None
-
-    kwargs = dict(holomap_format=holomap_format,
+    kwargs = dict(widget_mode=widget_mode,
+                  message=message,
                   figure_format = figure_format,
-                  backend=backend, dpi=dpi, css=css,
-                  widget_mode=widget_mode, message=message)
+                  holomap_format= OutputMagic.options['holomap'],
+                  backend =       OutputMagic.options['backend'],
+                  dpi=            OutputMagic.options['dpi'],
+                  css=            OutputMagic.options['css'],
+                  fps=            OutputMagic.options['fps'])
 
     if len(plot) == 1:
         plot.update(0)
