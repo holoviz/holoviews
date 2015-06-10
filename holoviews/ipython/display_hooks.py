@@ -181,7 +181,6 @@ def display_figure(plot, figure_format='png', backend='mpl',
         (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         html = tag.format(src=src, css=dict_to_css(css))
-    plt.close(plot.state)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
