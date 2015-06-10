@@ -275,17 +275,24 @@ class TableConversion(object):
         if vdims is None:
             vdims = self._table._cached_value_names
         elif vdims and not isinstance(vdims, list): vdims = [vdims]
-        all_dims = self._table.dimensions(label=True)
+        if (any(kd in self._table._cached_value_names for kd in kdims) or
+            any(vd in self._table._cached_index_names for vd in vdims)):
+            new_kdims = [kd for kd in self._table._cached_index_names
+                         if kd not in kdims and kd not in vdims] + kdims
+            selected = self._table.reindex(new_kdims, vdims)
+        else:
+            selected = self._table.select(**{'value': vdims})
+        all_dims = selected.dimensions(label=True)
         invalid = [dim for dim in kdims+vdims if dim not in all_dims]
         if invalid:
             raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
                             (invalid, new_type.__name__))
-        group_dims = [dim for dim in self._table._cached_index_names if not dim in kdims]
-        selected = self._table.select(**{'value': vdims})
-        params = dict({'kdims': [self._table.get_dimension(kd) for kd in kdims],
-                       'vdims': [self._table.get_dimension(vd) for vd in vdims]},
+        group_dims = [dim for dim in selected._cached_index_names if not dim in kdims+vdims]
+
+        params = dict({'kdims': [selected.get_dimension(kd) for kd in kdims],
+                       'vdims': [selected.get_dimension(vd) for vd in vdims]},
                        **kwargs)
-        if len(kdims) == self._table.ndims:
+        if len(kdims) == selected.ndims:
             return new_type(selected, **params)
         return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type, **params)
 
