@@ -50,7 +50,7 @@ def display_animation(plot, **kwargs):
     Allows the animation render policy to be changed, e.g to show only
     the middle frame using middle_frame for testing notebooks.
 
-    See render_anim variable below (default is HTML_video)
+    See render_anim variable below (default is display_video)
     """
     try:
         return render_anim(plot, **kwargs)
@@ -115,7 +115,7 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     return tag.format(src=src, mime_type=mime_type, css=dict_to_css(OutputMagic.options['css']))
 
 
-def HTML_video(plot):
+def display_video(plot):
     if OutputMagic.options['holomap'] == 'repr': return None
     dpi = OutputMagic.options['dpi']
     anim = plot.anim(fps=OutputMagic.options['fps'])
@@ -326,9 +326,9 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
 
 
 
-# HTML_video output by default, but may be set to first_frame,
+# display_video output by default, but may be set to first_frame,
 # middle_frame or last_frame (e.g. for testing purposes)
-render_anim = HTML_video
+render_anim = display_video
 
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
