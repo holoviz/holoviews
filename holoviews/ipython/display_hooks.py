@@ -166,10 +166,10 @@ def display_frame(plot, figure_format, backend, dpi, css, message):
     else:
         renderer = Store.renderer.instance(dpi=dpi)
         figdata = renderer.figure_data(plot, figure_format)
+        w,h = renderer.get_size(plot)
         if figure_format=='svg':
             figdata = figdata.encode("utf-8")
         if figure_format == 'pdf' and 'height' not in css:
-            w, h = plot.state.get_size_inches()
             css['height'] = '%dpx' % (h*dpi*1.15)
         b64 = base64.b64encode(figdata).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
