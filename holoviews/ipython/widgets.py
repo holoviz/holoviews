@@ -306,12 +306,12 @@ class NdWidget(param.Parameterized):
 
     def _plot_figure(self, idx):
         from .display_hooks import display_figure
-        fig = self.plot[idx]
+        self.plot.update(idx)
         if OutputMagic.options['backend'] == 'd3':
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            return mpld3.fig_to_dict(fig)
-        return display_figure(fig, allow_nbagg=False)
+            return mpld3.fig_to_dict(self.plot.state)
+        return display_figure(self.plot, backend='mpl')
 
 
     def update(self, n):

@@ -82,7 +82,8 @@ class MPLRenderer(Renderer):
 
             data = self.anim_data(anim, fmt, writer, **anim_kwargs)
         else:
-            data = self.figure_data(plot.update(0), fmt, **({'dpi':self.dpi} if self.dpi else {}))
+            plot.update(0)
+            data = self.figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
@@ -216,13 +217,14 @@ class MPLRenderer(Renderer):
         return kw
 
 
-    def figure_data(self, fig, fmt='png', bbox_inches='tight', **kwargs):
+    def figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
         """
         Render matplotlib figure object and return the corresponding data.
 
         Similar to IPython.core.pylabtools.print_figure but without
         any IPython dependency.
         """
+        fig = plot.state
         kw = dict(
             format=fmt,
             facecolor=fig.get_facecolor(),

@@ -152,19 +152,13 @@ def display_widgets(plot):
 
 
 
-def display_figure(plot, message=None, allow_nbagg=True, max_width='100%'):
+def display_figure(plot, figure_format='png', backend='mpl',
+                   dpi=70, css={}, message=None, max_width='100%'):
     """
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
     """
-    if OutputMagic.options['fig'] == 'repr': return None
-
-    figure_format = OutputMagic.options['fig']
-    dpi = OutputMagic.options['dpi']
-    css = OutputMagic.options['css']
-    backend = OutputMagic.options['backend']
-
-    fig = plot.state
+    if figure_format == 'repr': return None
     if backend == 'nbagg':
         manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
         if manager is None: return ''
@@ -172,22 +166,22 @@ def display_figure(plot, message=None, allow_nbagg=True, max_width='100%'):
         manager.show()
         return ''
     elif backend == 'd3' and mpld3:
-        fig.dpi = dpi
-        mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-        html = "<center>" + mpld3.fig_to_html(fig) + "<center/>"
+        plot.state.dpi = dpi
+        mpld3.plugins.connect(plot.state, mpld3.plugins.MousePosition(fontsize=14))
+        html = "<center>" + mpld3.fig_to_html(plot.state) + "<center/>"
     else:
         renderer = Store.renderer.instance(dpi=dpi)
-        figdata = renderer.figure_data(fig, figure_format)
+        figdata = renderer.figure_data(plot, figure_format)
         if figure_format=='svg':
             figdata = figdata.encode("utf-8")
         if figure_format == 'pdf' and 'height' not in css:
-            w, h = fig.get_size_inches()
-            css['height'] = '%dpx' % (h*fig.get_dpi()*1.15)
+            w, h = plot.state.get_size_inches()
+            css['height'] = '%dpx' % (h*dpi*1.15)
         b64 = base64.b64encode(figdata).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         html = tag.format(src=src, css=dict_to_css(css))
-    plt.close(fig)
+    plt.close(plot.state)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
@@ -201,9 +195,14 @@ def display(plot, widget_mode):
     3. Otherwise render it as an animation, falling back to a figure
     if there is an exception.
     """
+    backend = OutputMagic.options['backend']
+    figure_format =  OutputMagic.options['fig']
+    dpi = OutputMagic.options['dpi']
+    css = OutputMagic.options['css']
     if len(plot) == 1:
         plot.update(0)
-        return display_figure(plot)
+        return display_figure(plot, figure_format=figure_format,
+                              backend=backend, dpi=dpi, css=css)
     elif widget_mode is not None:
         return display_widgets(plot)
     else:
