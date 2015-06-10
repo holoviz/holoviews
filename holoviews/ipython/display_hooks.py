@@ -55,6 +55,7 @@ def render(plot):
     try:
         return render_anim(plot)
     except Exception as e:
+        plot.update(0)
         return str(e)+'<br/>'+display_frame(plot)
 
 
