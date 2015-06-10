@@ -515,10 +515,11 @@ class RGB(Image):
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
 
-        if len(data.shape) != 3:
-            raise ValueError("Three dimensional matrices or arrays required")
-        elif data.shape[2] == 4:
-            sliced = data[:,:,:-1]
+        if not isinstance(data, Element):
+            if len(data.shape) != 3:
+                raise ValueError("Three dimensional matrices or arrays required")
+            elif data.shape[2] == 4:
+                sliced = data[:,:,:-1]
 
         if len(params.get('vdims',[])) == 4:
             alpha_dim = params['vdims'].pop(3)
