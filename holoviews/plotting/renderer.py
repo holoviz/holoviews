@@ -4,11 +4,20 @@ regardless of plotting package or backend.
 """
 
 import param
-from . import MIME_TYPES
 from ..core.io import Exporter
 from ..core.options import Store
 
 from param.parameterized import bothmethod
+
+MIME_TYPES = {
+    'svg':  'image/svg+xml',
+    'png':  'image/png',
+    'gif':  'image/gif',
+    'webm': 'video/webm',
+    'mp4':  'video/mp4',
+    'pdf':  'application/pdf'
+}
+
 
 class Renderer(Exporter):
     """

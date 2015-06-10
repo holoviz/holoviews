@@ -1,6 +1,7 @@
 
 from ..core.options import Cycle
 from .plot import Plot
+from .renderer import Renderer, MIME_TYPES
 
 # Tags used when matplotlib output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -21,16 +22,6 @@ HTML_TAGS = {
     'mp4':  VIDEO_TAG,
     'pdf':  PDF_TAG
 }
-
-MIME_TYPES = {
-    'svg':  'image/svg+xml',
-    'png':  'image/png',
-    'gif':  'image/gif',
-    'webm': 'video/webm',
-    'mp4':  'video/mp4',
-    'pdf':  'application/pdf'
-}
-
 
 from .mpl import *
 
