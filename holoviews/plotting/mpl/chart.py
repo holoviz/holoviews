@@ -904,9 +904,9 @@ class BarPlot(LegendPlot):
             for cidx, cat_name in enumerate(values['category']):
                 xpos = gidx+self.padding+(cidx*width)
                 if cat_name is not None:
+                    cat = gdim.pprint_value(cat_name)
                     if 'category' in style_groups:
                         idx = style_groups.index('category')
-                        cat = gdim.pprint_value(cat_name)
                         label_key[idx] = cat
                         style_key[idx] = cat_name
                     val_key[ci] = cat_name
