@@ -151,7 +151,7 @@ def display_widgets(holomap_format, widget_mode, **kwargs):
 
 
 
-def display_frame(plot, figure_format='png', backend='mpl', dpi=70, css={}, message=None):
+def display_frame(plot, figure_format, backend, dpi, css, message):
     """
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
