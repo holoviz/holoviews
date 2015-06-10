@@ -61,7 +61,7 @@ class Renderer(Exporter):
     HOLOMAP_FORMAT_ERROR_MESSAGES = {}
 
     def __init__(self, **params):
-        super(MPLRenderer, self).__init__(**params)
+        super(Renderer, self).__init__(**params)
 
 
     def __call__(self, obj, fmt=None):
