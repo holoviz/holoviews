@@ -32,11 +32,16 @@ HTML_TAGS = {
     'pdf':  PDF_TAG
 }
 
+DEFAULT_RENDER_CLASS=None
 
 def public(obj):
+    global DEFAULT_RENDER_CLASS
     if not isinstance(obj, type): return False
-    baseclasses = [Plot, Cycle, Renderer]
-    return any([issubclass(obj, bc) for bc in baseclasses])
+    is_plot_or_cycle = any([issubclass(obj, bc) for bc in [Plot, Cycle]])
+    is_renderer = any([issubclass(obj, bc) for bc in [Renderer]])
+    if is_renderer and (obj is not Renderer):
+        DEFAULT_RENDER_CLASS = obj
+    return (is_plot_or_cycle or is_renderer)
 
 # Load the default renderer
 if DEFAULT_RENDERER=='matplotlib':

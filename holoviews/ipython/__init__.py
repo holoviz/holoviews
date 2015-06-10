@@ -62,6 +62,7 @@ class IPTestCase(ComparisonTestCase):
 # Populating the namespace for keyword evaluation
 from ..core.options import Cycle, Palette, Store # pyflakes:ignore (namespace import)
 import numpy as np                               # pyflakes:ignore (namespace import)
+from ..plotting import DEFAULT_RENDER_CLASS
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
@@ -73,8 +74,9 @@ def load_ipython_extension(ip):
         _loaded = True
         param_ext.load_ipython_extension(ip, verbose=False)
         load_magics(ip)
-        valid_formats = Store.renderer.supported_holomap_formats(OutputMagic.optional_formats)
-        OutputMagic.register_supported_formats(valid_formats)
+        if DEFAULT_RENDER_CLASS is not None:
+            valid_formats = DEFAULT_RENDER_CLASS.supported_holomap_formats(OutputMagic.optional_formats)
+            OutputMagic.register_supported_formats(valid_formats)
         set_display_hooks(ip)
 
 def unload_ipython_extension(ip):
