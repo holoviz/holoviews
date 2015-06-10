@@ -80,7 +80,7 @@ class MPLRenderer(Renderer):
             if extra_args != []:
                 anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
-            data = self.anim_data(anim, fmt, writer, **anim_kwargs)
+            data = self._anim_data(anim, fmt, writer, **anim_kwargs)
         else:
             plot.update(0)
             data = self.figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
@@ -131,7 +131,7 @@ class MPLRenderer(Renderer):
                     if extra_args != []:
                         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
                         renderer = self_or_cls.instance(dpi=72)
-                        renderer.anim_data(anim, fmt, writer, **anim_kwargs)
+                        renderer._anim_data(anim, fmt, writer, **anim_kwargs)
                     plt.close(fig)
                     supported.append(fmt)
                 except Exception as e:
@@ -156,7 +156,7 @@ class MPLRenderer(Renderer):
         with open(filename, 'wb') as f:
             f.write(self_or_cls.encode(rendered))
 
-    def anim_data(self, anim, fmt, writer, **anim_kwargs):
+    def _anim_data(self, anim, fmt, writer, **anim_kwargs):
         """
         Render a matplotlib animation object and return the corresponding data.
         """

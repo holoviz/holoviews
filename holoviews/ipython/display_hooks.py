@@ -89,19 +89,19 @@ def process_object(obj):
 # HTML/Javascript generation given a Plot instance #
 #==================================================#
 
-def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
+
+def animation_data(plot, holomap_format, fps, dpi):
+    if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+        raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
+    renderer = Store.renderer.instance(dpi=dpi)
+    anim = plot.anim(fps=fps)
+    (writer, fmt, anim_kwargs, extra_args) = OutputMagic.ANIMATION_OPTS[holomap_format]
     if extra_args != []:
         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-
-    renderer = Store.renderer.instance(dpi=dpi)
-    data = renderer.anim_data(anim, fmt, writer, **anim_kwargs)
-    b64data = base64.b64encode(data).decode("utf-8")
-    (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
-    src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)
-    return tag.format(src=src, mime_type=mime_type, css=dict_to_css(OutputMagic.options['css']))
+    return renderer._anim_data(anim, fmt, writer, **anim_kwargs)
 
 
-def display_video(plot, **kwargs):
+def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
     """
     Allows the animation render policy to be changed, e.g to show only
     the middle frame using middle_frame for testing notebooks.
@@ -109,26 +109,17 @@ def display_video(plot, **kwargs):
     See render_anim variable below (default is display_video)
     """
     if OutputMagic.options['holomap'] == 'repr': return None
-
     try:
         if render_anim is not None:
             return render_anim(plot, **kwargs)
-        dpi = OutputMagic.options['dpi']
-        anim = plot.anim(fps=OutputMagic.options['fps'])
-        writers = animation.writers.avail
-        current_format = OutputMagic.options['holomap']
-        for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
-            if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
-                try:
-                    return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
-                except: pass
-        msg = "<b>Could not generate %s animation</b>" % current_format
-        if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-            msg = "<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>"
-        raise Exception(msg)
+        data = animation_data(plot, holomap_format, fps, dpi)
+        b64data = base64.b64encode(data).decode("utf-8")
+        (mime_type, tag) = MIME_TYPES[holomap_format], HTML_TAGS[holomap_format]
+        src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)
+        return tag.format(src=src, mime_type=mime_type, css=dict_to_css(css))
     except Exception as e:
         plot.update(0)
-        return str(e)+'<br/>'+display_frame(plot, **kwargs)
+        return str(e)+'<br/>'+display_frame(plot,  dpi=dpi, css=css, **kwargs)
 
 
 def display_widgets(plot, holomap_format, widget_mode, **kwargs):
