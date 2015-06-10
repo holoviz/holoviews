@@ -212,7 +212,7 @@ def display(plot, widget_mode):
 
 def display_hook(fn):
     @wraps(fn)
-    def wrapped(element, **kwargs):
+    def wrapped(element):
         # If pretty printing is off, return None (will fallback to repr)
         ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
         if not ip.display_formatter.formatters['text/plain'].pprint:
@@ -220,17 +220,14 @@ def display_hook(fn):
         optstate = StoreOptions.state(element)
         try:
             widget_mode = OutputMagic.options['widgets']
-            map_format  = OutputMagic.options['holomap']
             # If widget_mode is None, widgets are not being used
-            widget_mode = (widget_mode if map_format in OutputMagic.inbuilt_formats else None)
+            widget_mode = (widget_mode if OutputMagic.options['holomap']
+                           in OutputMagic.inbuilt_formats else None)
             html = fn(element,
                       size=OutputMagic.options['size'],
-                      dpi=OutputMagic.options['dpi'],
                       max_frames=OutputMagic.options['max_frames'],
                       max_branches = OutputMagic.options['max_branches'],
-                      map_format = map_format,
-                      widget_mode = widget_mode,
-                      **kwargs)
+                      widget_mode = widget_mode)
             notebook_archive.add(element, html=html)
             keys = ['fig', 'holomap', 'size', 'fps', 'dpi']
             filename = OutputMagic.options['filename']
@@ -253,7 +250,7 @@ def display_hook(fn):
 
 
 @display_hook
-def element_display(element, size, **kwargs):
+def element_display(element,size, max_frames, max_branches, widget_mode):
     if not isinstance(element, ViewableElement): return None
     if type(element) == Element:                 return None
     info = process_object(element)
@@ -266,7 +263,7 @@ def element_display(element, size, **kwargs):
 
 
 @display_hook
-def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
+def map_display(vmap, size, max_frames, max_branches, widget_mode):
     if not isinstance(vmap, HoloMap): return None
     info = process_object(vmap)
     if info: return info
@@ -282,7 +279,7 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
 
 
 @display_hook
-def layout_display(layout, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
+def layout_display(layout, size, max_frames, max_branches, widget_mode):
     if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
     if not isinstance(layout, (Layout, NdLayout)): return None
     nframes = len(unique_dimkeys(layout)[1])
@@ -303,7 +300,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
 
 
 @display_hook
-def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, **kwargs):
+def grid_display(grid, size, max_frames, max_branches, widget_mode):
     if not isinstance(grid, GridSpace): return None
     info = process_object(grid)
     if info: return info
