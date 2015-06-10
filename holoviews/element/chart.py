@@ -368,8 +368,8 @@ class Histogram(Element2D):
         (values, edges) = values if isinstance(values, tuple) else (values, edges)
         if isinstance(values, Element2D):
             settings = dict(values.get_param_values(onlychanged=True))
-            edges = values.data[:, 0]
-            values = values.data[:, 1]
+            edges = values.data[:, 0].copy()
+            values = values.data[:, 1].copy()
         elif isinstance(values, np.ndarray) and len(values.shape) == 2:
             values = values[:, 0]
             edges = values[:, 1]
