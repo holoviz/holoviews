@@ -3,13 +3,12 @@ import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 
-
 from ...core import HoloMap, AdjointLayout
 from ...core.options import Store, StoreOptions
-from ...core.io import Exporter
 
 from .plot import MPLPlot
 from .. import MIME_TYPES
+from ..renderer import PlotRenderer
 
 from matplotlib import pyplot as plt
 from matplotlib import animation
@@ -39,7 +38,7 @@ def opts(el, percent_size):
     return options
 
 
-class MPLPlotRenderer(Exporter):
+class MPLPlotRenderer(PlotRenderer):
     """
     Exporter used to render data from matplotlib, either to a stream
     or directly to file.
@@ -52,34 +51,6 @@ class MPLPlotRenderer(Exporter):
     figure and animation objects. These match the two primary return
     types of plotting class implemented with matplotlib.
     """
-
-    fig = param.ObjectSelector(default='svg',
-                               objects=['png', 'svg', 'pdf', None], doc="""
-        Output render format for static figures. If None, no figure
-        rendering will occur. """)
-
-    holomap = param.ObjectSelector(default='gif',
-                                   objects=['webm','mp4', 'gif', None], doc="""
-        Output render multi-frame (typically animated) format. If
-        None, no multi-frame rendering will occur.""")
-
-    size=param.Integer(100, doc="""
-        The rendered size as a percentage size""")
-
-    fps=param.Integer(20, doc="""
-        Rendered fps (frames per second) for animated formats.""")
-
-    dpi=param.Integer(None, allow_None=True, doc="""
-        The render resolution in dpi (dots per inch)""")
-
-    info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
-        MPLPlotRenderer does not support the saving of object info metadata""")
-
-    key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
-        MPLPlotRenderer does not support the saving of object key metadata""")
-
-    # Error messages generated when testing potentially supported formats
-    HOLOMAP_FORMAT_ERROR_MESSAGES = {}
     drawn = {}
 
     def __call__(self, obj, fmt=None):
