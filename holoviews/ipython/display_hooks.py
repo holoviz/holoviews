@@ -133,12 +133,8 @@ def HTML_video(plot):
 
 def display_widgets(plot):
     "Display widgets applicable to the specified element"
-    if OutputMagic.options['holomap'] == 'repr': return None
-    if OutputMagic.options['fig'] == 'repr':
-        return  "<center><b>Figure format must not be 'repr' when using widgets.</b></center>"
     widget_mode = OutputMagic.options['widgets']
     widget_format = OutputMagic.options['holomap']
-    assert widget_mode is not None, "Mistaken call to display_widgets method"
 
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
@@ -161,7 +157,6 @@ def display_frame(plot, figure_format='png', backend='mpl',
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
     """
-    if figure_format == 'repr': return None
     if backend == 'nbagg':
         manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
         if manager is None: return ''
@@ -201,6 +196,8 @@ def display(plot, widget_mode):
     figure_format =  OutputMagic.options['fig']
     dpi = OutputMagic.options['dpi']
     css = OutputMagic.options['css']
+
+    if figure_format == 'repr': return None
     if len(plot) == 1:
         plot.update(0)
         return display_frame(plot, figure_format=figure_format,
