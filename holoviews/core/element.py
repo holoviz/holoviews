@@ -193,8 +193,21 @@ class NdElement(Element, NdMapping):
 
     _deep_indexable = False
 
-    def __init__(self, data=None, **params):
-        NdMapping.__init__(self, data, **dict(params, group=params.get('group',self.group)))
+    def __init__(self, data, **params):
+        if isinstance(data, Element):
+            data = data.table()
+        elif isinstance(data, list) and all(np.isscalar(el) for el in data):
+            data = OrderedDict(list(((k,), v) for k, v in enumerate(data)))
+        super(NdElement, self).__init__(data, **params)
+
+
+    def _convert_element(self, element):
+        if isinstance(element, NdElement):
+            return element.data
+        if isinstance(element, Element):
+            return element.table().data
+        else: return element
+
 
     def reindex(self, kdims, vdims=None):
         """
