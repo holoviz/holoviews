@@ -132,7 +132,7 @@ def HTML_video(plot):
     raise Exception(msg)
 
 
-def display_widgets(holomap_format, widget_mode, **kwargs):
+def display_widgets(plot, holomap_format, widget_mode, **kwargs):
     "Display widgets applicable to the specified element"
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
