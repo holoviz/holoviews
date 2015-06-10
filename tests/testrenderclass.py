@@ -26,7 +26,7 @@ def digest_data(data):
 
 
 @attr(optional=1)
-class MPLPlotRendererTest(ComparisonTestCase):
+class MPLRendererTest(ComparisonTestCase):
     """
     Note if not possible to compare the hashes of SVG and WebM formats
     as the hashes are not stable across exports.

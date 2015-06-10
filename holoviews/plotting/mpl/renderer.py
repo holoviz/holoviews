@@ -8,7 +8,7 @@ from ...core.options import Store, StoreOptions
 
 from .plot import MPLPlot
 from .. import MIME_TYPES
-from ..renderer import PlotRenderer
+from ..renderer import Renderer
 
 from matplotlib import pyplot as plt
 from matplotlib import animation
@@ -33,12 +33,12 @@ ANIMATION_OPTS = {
 def opts(el, percent_size):
     "Returns the plot options with supplied size (if not overridden)"
     obj = el.last if isinstance(el, HoloMap) else el
-    options = MPLPlotRenderer.get_plot_size(obj, percent_size) #  Store.registry[type(el)].renderer
+    options = MPLRenderer.get_plot_size(obj, percent_size) #  Store.registry[type(el)].renderer
     options.update(Store.lookup_options(obj, 'plot').options)
     return options
 
 
-class MPLPlotRenderer(PlotRenderer):
+class MPLRenderer(Renderer):
     """
     Exporter used to render data from matplotlib, either to a stream
     or directly to file.
@@ -143,7 +143,7 @@ class MPLPlotRenderer(PlotRenderer):
         supplied format or to the appropriate default.
         """
         if info or key:
-            raise Exception('MPLPlotRenderer does not support saving metadata to file.')
+            raise Exception('MPLRenderer does not support saving metadata to file.')
 
         with StoreOptions.options(obj, options, **kwargs):
             rendered = self_or_cls(obj, fmt)
@@ -179,7 +179,7 @@ class MPLPlotRenderer(PlotRenderer):
         """
         fig_id = id(fig)
         if kw['bbox_inches'] == 'tight' and kw['format'] == 'png':
-            if not fig_id in MPLPlotRenderer.drawn:
+            if not fig_id in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
                 renderer = fig._cachedRenderer
@@ -207,10 +207,10 @@ class MPLPlotRenderer(PlotRenderer):
                     bbox_inches = Bbox.union([bbox_inches, bbox_extra])
                 pad = plt.rcParams['savefig.pad_inches']
                 bbox_inches = bbox_inches.padded(pad)
-                MPLPlotRenderer.drawn[fig_id] = bbox_inches
+                MPLRenderer.drawn[fig_id] = bbox_inches
                 kw['bbox_inches'] = bbox_inches
             else:
-                kw['bbox_inches'] = MPLPlotRenderer.drawn[fig_id]
+                kw['bbox_inches'] = MPLRenderer.drawn[fig_id]
         return kw
 
 
@@ -244,5 +244,5 @@ class MPLPlotRenderer(PlotRenderer):
         return data
 
 
-Store.renderer = MPLPlotRenderer
+Store.renderer = MPLRenderer
 

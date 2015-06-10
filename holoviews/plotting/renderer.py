@@ -10,11 +10,17 @@ from ..core.options import Store
 
 from param.parameterized import bothmethod
 
-class PlotRenderer(Exporter):
+class Renderer(Exporter):
     """
-    The job of a PlotRenderer is to turn the plotting state held
-    within Plot classes into concrete output in the form of the PNG,
-    SVG, MP4 or WebM formats (among others).
+    The job of a Renderer is to turn the plotting state held within
+    Plot classes into concrete, visual output in the form of the PNG,
+    SVG, MP4 or WebM formats (among others). Note that a Renderer is a
+    type of Exporter and must therefore follow the Exporter interface.
+
+    The Renderer needs to be able to use the .state property of the
+    appropriate Plot classes associated with that renderer in order to
+    generate output. The process of 'drawing' is execute by the Plots
+    and the Renderer turns the final plotting state into output.
     """
 
     fig = param.ObjectSelector(default='svg',
@@ -37,16 +43,16 @@ class PlotRenderer(Exporter):
         The render resolution in dpi (dots per inch)""")
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
-        PlotRenderers do not support the saving of object info metadata""")
+        Renderers do not support the saving of object info metadata""")
 
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
-        PlotRenderers do not support the saving of object key metadata""")
+        Renderers do not support the saving of object key metadata""")
 
     # Error messages generated when testing potentially supported formats
     HOLOMAP_FORMAT_ERROR_MESSAGES = {}
 
     def __init__(self, **params):
-        super(MPLPlotRenderer, self).__init__(**params)
+        super(MPLRenderer, self).__init__(**params)
 
 
     def __call__(self, obj, fmt=None):

@@ -15,7 +15,7 @@ from .tabular import * # pyflakes:ignore (API import)
 from . import pandas # pyflakes:ignore (API import)
 from . import seaborn # pyflakes:ignore (API import)
 
-from .renderer import MPLPlotRenderer, ANIMATION_OPTS, opts
+from .renderer import MPLRenderer, ANIMATION_OPTS, opts
 
 
 
