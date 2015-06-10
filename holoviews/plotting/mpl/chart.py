@@ -828,7 +828,13 @@ class BarPlot(LegendPlot):
 
 
     def get_extents(self, element, ranges):
-        return 0, 0, len(self.values['group']), np.NaN
+        ngroups = len(self.values['group'])
+        vdim = element.vdims[0].name
+        if self.stack_index in range(element.ndims):
+            return np.NaN, 0, ngroups, np.NaN
+        else:
+            vrange = ranges[vdim]
+            return np.NaN, vrange[0], ngroups, vrange[1]
 
 
     def initialize_plot(self, ranges=None):
