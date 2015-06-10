@@ -55,7 +55,7 @@ def render(plot):
     try:
         return render_anim(plot)
     except Exception as e:
-        return str(e)+'<br/>'+display_figure(plot())
+        return str(e)+'<br/>'+display_figure(plot)
 
 
 def first_frame(plot):
@@ -152,7 +152,7 @@ def display_widgets(plot):
 
 
 
-def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
+def display_figure(plot, message=None, allow_nbagg=True, max_width='100%'):
     "Display widgets applicable to the specified element"
     if OutputMagic.options['fig'] == 'repr': return None
 
@@ -161,8 +161,9 @@ def display_figure(fig, message=None, allow_nbagg=True, max_width='100%'):
     css = OutputMagic.options['css']
     backend = OutputMagic.options['backend']
 
-    if allow_nbagg and backend == 'nbagg':
-        manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, fig)
+    fig = plot.update(0)
+    if backend == 'nbagg':
+        manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
         if manager is None: return ''
         OutputMagic.nbagg_counter += 1
         manager.show()
@@ -198,8 +199,7 @@ def display(plot, widget_mode):
     if there is an exception.
     """
     if len(plot) == 1:
-        fig = plot.update(0)
-        return display_figure(fig)
+        return display_figure(plot)
     elif widget_mode is not None:
         return display_widgets(plot)
     else:

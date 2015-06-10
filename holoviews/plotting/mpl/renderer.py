@@ -246,12 +246,13 @@ class MPLRenderer(Renderer):
         return data
 
     @classmethod
-    def get_figure_manager(cls, counter, fig):
+    def get_figure_manager(cls, counter, plot):
         try:
             from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
             from mpl_toolkits.mplot3d import Axes3D
         except:
             return None
+        fig = plot.state
         manager = new_figure_manager_given_figure(counter, fig)
         # Need to call mouse_init on each 3D axis to enable rotation support
         for ax in fig.get_axes():

@@ -268,8 +268,8 @@ class NdWidget(param.Parameterized):
             NdWidget.widgets[self.id] = self
 
         if self.nbagg:
-            fig = plot[0]
-            self.manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, fig)
+            plot.update(0)
+            self.manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
             OutputMagic.nbagg_counter += 1
             self.comm = WidgetCommSocket(self.manager)
 
