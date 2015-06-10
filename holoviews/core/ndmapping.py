@@ -333,7 +333,7 @@ class MultiDimensionalMapping(Dimensioned):
             return super(MultiDimensionalMapping, self).dimension_values(dimension)
 
 
-    def reindex(self, dimension_labels=[], force=False):
+    def reindex(self, kdims=[], force=False):
         """
         Create a new object with a re-ordered or reduced set of key
         dimensions.
@@ -343,17 +343,16 @@ class MultiDimensionalMapping(Dimensioned):
         created object as the new labels must be sufficient to address
         each value uniquely.
         """
-        if not len(dimension_labels):
-            dimension_labels = [d for d in self._cached_index_names
-                                if not len(set(self.dimension_values(d))) == 1]
-
-        indices = [self.get_dimension_index(el) for el in dimension_labels]
+        if not len(kdims):
+            kdims = [d for d in self._cached_index_names
+                     if not len(set(self.dimension_values(d))) == 1]
+        indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set(self._cached_index_names).difference(dimension_labels)
-        dimensions = [self.get_dimension(d) for d in dimension_labels
+        reduced_dims = set(self._cached_index_names).difference(kdims)
+        dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
 
         if len(set(keys)) != len(keys) and not force:
