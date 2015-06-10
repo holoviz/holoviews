@@ -59,21 +59,21 @@ def render(plot):
         return str(e)+'<br/>'+display_frame(plot)
 
 
-def first_frame(plot):
+def first_frame(plot, **kwargs):
     "Only display the first frame of an animated plot"
     plot.update(0)
-    return display_frame(plot)
+    return display_frame(plot, **kwargs)
 
-def middle_frame(plot):
+def middle_frame(plot, **kwargs):
     "Only display the (approximately) middle frame of an animated plot"
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
-    return display_frame(plot)
+    return display_frame(plot, **kwargs)
 
-def last_frame(plot):
+def last_frame(plot, **kwargs):
     "Only display the last frame of an animated plot"
     plot.update(len(plot))
-    return display_frame(plot)
+    return display_frame(plot, **kwargs)
 
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
@@ -149,7 +149,7 @@ def display_widgets(plot, holomap_format, widget_mode, **kwargs):
 
 
 
-def display_frame(plot, figure_format, backend, dpi, css, message):
+def display_frame(plot, figure_format, backend, dpi, css, message, **kwargs):
     """
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
