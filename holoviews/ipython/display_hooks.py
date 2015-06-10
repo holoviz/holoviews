@@ -153,7 +153,10 @@ def display_widgets(plot):
 
 
 def display_figure(plot, message=None, allow_nbagg=True, max_width='100%'):
-    "Display widgets applicable to the specified element"
+    """
+    Display specified element as a figure. Note the plot instance
+    needs to be initialized appropriately first.
+    """
     if OutputMagic.options['fig'] == 'repr': return None
 
     figure_format = OutputMagic.options['fig']
@@ -161,7 +164,7 @@ def display_figure(plot, message=None, allow_nbagg=True, max_width='100%'):
     css = OutputMagic.options['css']
     backend = OutputMagic.options['backend']
 
-    fig = plot.update(0)
+    fig = plot.state
     if backend == 'nbagg':
         manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
         if manager is None: return ''
@@ -199,6 +202,7 @@ def display(plot, widget_mode):
     if there is an exception.
     """
     if len(plot) == 1:
+        plot.update(0)
         return display_figure(plot)
     elif widget_mode is not None:
         return display_widgets(plot)
