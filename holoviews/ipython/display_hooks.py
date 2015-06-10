@@ -322,7 +322,6 @@ render_anim = HTML_video
 
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
-    html_formatter.for_type_by_name('matplotlib.animation', 'FuncAnimation', animation_display)
     html_formatter.for_type(Layout, layout_display)
     html_formatter.for_type(ViewableElement, element_display)
     html_formatter.for_type(Overlay, element_display)
