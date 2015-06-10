@@ -1,9 +1,21 @@
+"""
+Public API for all plotting renderers supported by HoloViews,
+regardless of plotting package or backend.
+"""
+
 import param
+from . import MIME_TYPES
 from ..core.io import Exporter
+from ..core.options import Store
 
 from param.parameterized import bothmethod
 
 class PlotRenderer(Exporter):
+    """
+    The job of a PlotRenderer is to turn the plotting state held
+    within Plot classes into concrete output in the form of the PNG,
+    SVG, MP4 or WebM formats (among others).
+    """
 
     fig = param.ObjectSelector(default='svg',
                                objects=['png', 'svg', 'pdf', None], doc="""
@@ -39,9 +51,12 @@ class PlotRenderer(Exporter):
 
     def __call__(self, obj, fmt=None):
         """
-        Render the supplied HoloViews component using the appropriate backend.
+        Render the supplied HoloViews component using the appropriate
+        backend. The output is not a file format but a suitable,
+        in-memory byte stream together with any suitable metadata.
         """
-        raise NotImplementedError
+        # Example of the return format where the first value is the rendered data.
+        return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
     @classmethod
     def get_plot_size(cls, obj, percent_size):

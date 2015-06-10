@@ -1,3 +1,8 @@
+"""
+Public API for all plots supported by HoloViews, regardless of
+plotting package or backend. Every plotting classes must be a subclass
+of this Plot baseclass.
+"""
 import param
 
 class Plot(param.Parameterized):
@@ -30,6 +35,3 @@ class Plot(param.Parameterized):
         used by the renderer to generate output.
         """
         raise NotImplementedError
-
-
-
