@@ -55,21 +55,21 @@ def render(plot):
     try:
         return render_anim(plot)
     except Exception as e:
-        return str(e)+'<br/>'+display_figure(plot)
+        return str(e)+'<br/>'+display_frame(plot)
 
 
 def first_frame(plot):
     "Only display the first frame of an animated plot"
-    return display_figure(plot[0])
+    return display_frame(plot[0])
 
 def middle_frame(plot):
     "Only display the (approximately) middle frame of an animated plot"
     middle_frame = int(len(plot) / 2)
-    return display_figure(plot[middle_frame])
+    return display_frame(plot[middle_frame])
 
 def last_frame(plot):
     "Only display the last frame of an animated plot"
-    return display_figure(plot[len(plot)])
+    return display_frame(plot[len(plot)])
 
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
@@ -152,8 +152,8 @@ def display_widgets(plot):
 
 
 
-def display_figure(plot, figure_format='png', backend='mpl',
-                   dpi=70, css={}, message=None, max_width='100%'):
+def display_frame(plot, figure_format='png', backend='mpl',
+                  dpi=70, css={}, message=None, max_width='100%'):
     """
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
@@ -200,8 +200,8 @@ def display(plot, widget_mode):
     css = OutputMagic.options['css']
     if len(plot) == 1:
         plot.update(0)
-        return display_figure(plot, figure_format=figure_format,
-                              backend=backend, dpi=dpi, css=css)
+        return display_frame(plot, figure_format=figure_format,
+                             backend=backend, dpi=dpi, css=css)
     elif widget_mode is not None:
         return display_widgets(plot)
     else:
