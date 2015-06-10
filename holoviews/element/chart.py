@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import OrderedDict, Dimension, NdMapping, Element2D, NdElement, HoloMap
+from ..core import OrderedDict, Dimension, UniformNdMapping, Element, Element2D, NdElement, HoloMap
 from .tabular import ItemTable, Table
 
 
@@ -26,22 +26,39 @@ class Chart(Element2D):
 
     _null_value = np.array([[], []]).T # For when data is None
 
-    def __init__(self, data, **params):
-        settings = {}
-        if isinstance(data, Chart):
-            settings = dict(data.get_param_values(onlychanged=True))
-            data = data.data
-        elif isinstance(data, NdMapping) or (isinstance(data, list) and data
-                                           and isinstance(data[0], Element2D)):
-            data, settings = self._process_map(data)
-        data = list(data)
-        data = self._null_value if (data is None) or (len(data) == 0) else data
-        if len(data) and not isinstance(data, np.ndarray):
-            data = np.array(data)
+    def __init__(self, data, **kwargs):
+        data, params = self._process_data(data)
+        params.update(kwargs)
+        super(Chart, self).__init__(data, **params)
+        self.data = self._validate_data(self.data)
 
-        settings.update(params)
-        super(Chart, self).__init__(data, **settings)
-        self.data = self._validate_data(data)
+
+    def _convert_element(self, element):
+        if isinstance(element, Chart):
+            return element.data
+        elif isinstance(element, NdElement):
+            return np.vstack([np.concatenate([key, vals])
+                              for key, vals in element.data.items()]).astype(np.float)
+        else:
+            return super(Chart, self)._convert_element(element)
+
+
+    def _process_data(self, data):
+        params = {}
+        if isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
+                                                  and isinstance(data[0], Element2D)):
+            data = np.concatenate([v.data for v in data])
+            params = dict([v for v in ndmap][0].get_param_values(onlychanged=True))
+        elif isinstance(data, Element):
+            pass
+        elif not isinstance(data, np.ndarray):
+            params = {}
+            data = list(data)
+            data = self._null_value if (data is None) or (len(data) == 0) else data
+            if len(data):
+                data = np.array(data)
+
+        return data, params
 
 
     def _validate_data(self, data):
@@ -50,21 +67,6 @@ class Chart(Element2D):
         if not data.shape[1] == len(self.dimensions()):
             raise ValueError("Data has to match number of key and value dimensions")
         return data
-
-
-    def _process_map(self, ndmap):
-        """
-        Base class to process an NdMapping to be collapsed into a Chart.
-        Should return the data and parameters of the new Chart.
-        """
-        if isinstance(ndmap, Table):
-            data = np.vstack([np.concatenate([key, vals])
-                              for key, vals in ndmap.data.items()]).astype(np.float)
-            settings = dict(ndmap.get_param_values(onlychanged=True))
-        else:
-            data = np.concatenate([v.data for v in ndmap])
-            settings = dict([v for v in ndmap][0].get_param_values(onlychanged=True))
-        return data, settings
 
 
     def closest(self, coords):
