@@ -60,16 +60,19 @@ def render(plot):
 
 def first_frame(plot):
     "Only display the first frame of an animated plot"
-    return display_frame(plot[0])
+    plot.update(0)
+    return display_frame(plot)
 
 def middle_frame(plot):
     "Only display the (approximately) middle frame of an animated plot"
     middle_frame = int(len(plot) / 2)
-    return display_frame(plot[middle_frame])
+    plot.update(middle_frame)
+    return display_frame(plot)
 
 def last_frame(plot):
     "Only display the last frame of an animated plot"
-    return display_frame(plot[len(plot)])
+    plot.update(len(plot))
+    return display_frame(plot)
 
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
