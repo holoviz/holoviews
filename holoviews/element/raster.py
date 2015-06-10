@@ -312,21 +312,28 @@ class Image(SheetCoordinateSystem, Raster):
         elif isinstance(bounds, (tuple, list, np.ndarray)):
             l, b, r, t = bounds
             bounds = BoundingBox(points=((l, b), (r, t)))
-        data = np.array([[0]]) if data is None else data
+        if data is None: data = np.array([[0]])
         l, b, r, t = bounds.lbrt()
-        (dim1, dim2) = data.shape[1], data.shape[0]
-        xdensity = xdensity if xdensity else dim1/float(r-l)
-        ydensity = ydensity if ydensity else dim2/float(t-b)
-        SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         extents = extents if extents else (None, None, None, None)
         Element2D.__init__(self, data, extents=extents, bounds=bounds,
                            **params)
+
+        (dim1, dim2) = self.data.shape[1], self.data.shape[0]
+        xdensity = xdensity if xdensity else dim1/float(r-l)
+        ydensity = ydensity if ydensity else dim2/float(t-b)
+        SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
 
         if len(self.data.shape) == 3:
             if self.data.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.data.shape, len(self.vdims)))
 
+
+    def _convert_element(self, data):
+        if isinstance(data, (Raster, HeatMap)):
+            return data.data
+        else:
+            return super(Image, self)._convert_element(data)
 
 
     def closest(self, coords):
