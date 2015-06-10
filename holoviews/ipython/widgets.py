@@ -2,11 +2,8 @@ import os, sys, math, time, uuid, json
 from unittest import SkipTest
 
 try:
-    from ..plotting.mpl.renderer import WidgetCommSocket
-    from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
-    from mpl_toolkits.mplot3d import Axes3D
+    from ..plotting.mpl.renderer import WidgetCommSocket, MPLRenderer
 except:
-    Axes3D = None
     WidgetCommSocket = None
 try:
     import IPython
@@ -272,11 +269,7 @@ class NdWidget(param.Parameterized):
 
         if self.nbagg:
             fig = plot[0]
-            self.manager = new_figure_manager_given_figure(OutputMagic.nbagg_counter, fig)
-            # Need to call mouse_init on each 3D axis to enable rotation support
-            for ax in fig.get_axes():
-                if isinstance(ax, Axes3D):
-                    ax.mouse_init()
+            self.manager = MPLRenderer.get_figure_manager(OutputMagic.nbagg_counter, fig)
             OutputMagic.nbagg_counter += 1
             self.comm = WidgetCommSocket(self.manager)
 
@@ -323,7 +316,6 @@ class NdWidget(param.Parameterized):
 
     def update(self, n):
         if self.nbagg:
-            from .display_hooks import display_figure
             if not self.manager._shown:
                 self.comm.start()
                 self.manager.add_web_socket(self.comm)

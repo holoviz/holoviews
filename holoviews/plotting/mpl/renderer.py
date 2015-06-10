@@ -1,4 +1,4 @@
-import os
+import os, uuid
 import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
@@ -244,6 +244,22 @@ class MPLRenderer(Renderer):
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
+
+    @classmethod
+    def get_figure_manager(cls, counter, fig):
+        try:
+            from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
+            from mpl_toolkits.mplot3d import Axes3D
+        except:
+            return None
+        manager = new_figure_manager_given_figure(counter, fig)
+        # Need to call mouse_init on each 3D axis to enable rotation support
+        for ax in fig.get_axes():
+            if isinstance(ax, Axes3D):
+                ax.mouse_init()
+        return manager
+
+
 
 
 class WidgetCommSocket(CommSocket):
