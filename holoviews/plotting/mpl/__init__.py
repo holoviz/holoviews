@@ -1,5 +1,13 @@
-import os
 
+try:
+    # Switching to 'agg' backend (may be overridden in holoviews.rc)
+    import matplotlib.pyplot as plt
+    plt.switch_backend('agg')
+except:
+    pass
+
+
+import os
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
