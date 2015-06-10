@@ -1,3 +1,4 @@
+import operator
 from itertools import groupby
 from numbers import Number
 import numpy as np
@@ -42,7 +43,31 @@ class Element(ViewableElement, Composable, Overlayable):
     #======================#
 
     def __init__(self, data, **params):
+        convert = isinstance(data, Element)
+        if convert:
+            params = dict(data.get_param_values(onlychanged=True),
+                          **params)
+            element = data
+            data = []
         super(Element, self).__init__(data, **params)
+        if convert:
+            self.data = self._convert_element(element)
+
+
+    def _convert_element(self, element):
+        type_str = self.__class__.__name__
+        type_name = type_str.lower()
+        types = (type(element), type_str)
+        table = element.table()
+        conversion = getattr(table.to, type_name)
+        if conversion is None:
+            return element
+        try:
+            converted = conversion(self._cached_index_names,
+                                   self._cached_value_names)
+        except:
+            raise
+        return converted.data
 
 
     def __getitem__(self, key):
