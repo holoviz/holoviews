@@ -159,24 +159,7 @@ class Table(NdElement):
     group = param.String(default='Table', constant=True, doc="""
          The group is used to describe the Table.""")
 
-    def __init__(self, data=None, **params):
-
-        init_data = data if isinstance(data, NdMapping) else OrderedDict()
-        super(Table, self).__init__(init_data, **params)
-        if isinstance(data, NdMapping): return
-
-        data = {} if data is None else data
-        if self.indexed:
-            if isinstance(data, list):
-                data = OrderedDict(list(enumerate(data)))
-        else:
-            data = dict(data)
-
-        for k in sorted(data.keys()):
-            self[k] = data[k] # Validates input
-
-
-    def __setitem__(self, key, value):
+    def _add_item(self, key, value, sort=True):
         if self.indexed and ((key != len(self)) and (key != (len(self),))):
             raise Exception("Supplied key %s does not correspond to the items row number." % key)
 
@@ -190,7 +173,7 @@ class Table(NdElement):
             if value.vdims != self.vdims:
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             value = value.data.values()
-        super(Table, self).__setitem__(key, value)
+        super(Table, self)._add_item(key, value, sort)
 
     @property
     def indexed(self):
