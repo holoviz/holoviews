@@ -28,15 +28,12 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting.mpl import LayoutPlot, GridPlot, RasterGridPlot, ANIMATION_OPTS, opts
+from ..plotting.mpl import LayoutPlot, GridPlot, RasterGridPlot, opts
 from ..plotting import HTML_TAGS, MIME_TYPES
 from .magics import OutputMagic, OptsMagic
 from .widgets import SelectionWidget, ScrubberWidget
 
 from .archive import notebook_archive
-
-OutputMagic.ANIMATION_OPTS = ANIMATION_OPTS
-
 # To assist with debugging of display hooks
 ABBREVIATE_TRACEBACKS=True
 
@@ -90,17 +87,6 @@ def process_object(obj):
 #==================================================#
 
 
-def animation_data(plot, holomap_format, fps, dpi):
-    if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-        raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
-    renderer = Store.renderer.instance(dpi=dpi)
-    anim = plot.anim(fps=fps)
-    (writer, fmt, anim_kwargs, extra_args) = OutputMagic.ANIMATION_OPTS[holomap_format]
-    if extra_args != []:
-        anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-    return renderer._anim_data(anim, fmt, writer, **anim_kwargs)
-
-
 def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
     """
     Allows the animation render policy to be changed, e.g to show only
@@ -112,7 +98,10 @@ def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
     try:
         if render_anim is not None:
             return render_anim(plot, **kwargs)
-        data = animation_data(plot, holomap_format, fps, dpi)
+
+        renderer = Store.renderer.instance(dpi=dpi)
+        data = renderer.animation_data(plot, holomap_format, fps, dpi)
+
         b64data = base64.b64encode(data).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[holomap_format], HTML_TAGS[holomap_format]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)

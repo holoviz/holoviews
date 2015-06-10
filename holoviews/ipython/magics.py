@@ -301,9 +301,6 @@ class OutputMagic(OptionsMagic):
         try:
             options = self.get_options(line, OrderedDict(OutputMagic.options.items()))
             OutputMagic.options = options
-            # Inform writer of chosen fps
-            if options['holomap'] in ['gif', 'scrubber']:
-                self.ANIMATION_OPTS[options['holomap']][2]['fps'] = options['fps']
         except Exception as e:
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
