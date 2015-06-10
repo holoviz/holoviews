@@ -289,11 +289,11 @@ class TableConversion(object):
 
     def heatmap(self, kdims=None, vdims=None, **kwargs):
         from .raster import HeatMap
-        return self._conversion(kdims, value_dimensions, HeatMap, **kwargs)
+        return self._conversion(kdims, vdims, HeatMap, **kwargs)
 
     def points(self, kdims=None, vdims=None, **kwargs):
         from .chart import Points
-        return self._conversion(kdims, value_dimensions, Points, **kwargs)
+        return self._conversion(kdims, vdims, Points, **kwargs)
 
     def scatter(self, kdims=None, vdims=None, **kwargs):
         from .chart import Scatter
