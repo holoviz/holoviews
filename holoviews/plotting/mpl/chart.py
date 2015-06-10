@@ -831,10 +831,10 @@ class BarPlot(LegendPlot):
         ngroups = len(self.values['group'])
         vdim = element.vdims[0].name
         if self.stack_index in range(element.ndims):
-            return np.NaN, 0, ngroups, np.NaN
+            return 0, 0, ngroups, np.NaN
         else:
             vrange = ranges[vdim]
-            return np.NaN, vrange[0], ngroups, vrange[1]
+            return 0, np.nanmin([vrange[0], 0]), ngroups, vrange[1]
 
 
     def initialize_plot(self, ranges=None):
@@ -924,7 +924,7 @@ class BarPlot(LegendPlot):
                     label = ', '.join(label_key)
                     style = dict(style_opts, label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
-                    bar = axis.bar([xpos], val, width=width , bottom=prev,
+                    bar = axis.bar([xpos], val, width=width, bottom=prev,
                                    **style)
 
                     # Update variables
