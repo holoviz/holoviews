@@ -131,7 +131,7 @@ def HTML_video(plot):
     raise Exception(msg)
 
 
-def display_widgets(plot):
+def display_widgets(holomap_format, widget_mode, **kwargs):
     "Display widgets applicable to the specified element"
     widget_mode = OutputMagic.options['widgets']
     widget_format = OutputMagic.options['holomap']
@@ -141,18 +141,17 @@ def display_widgets(plot):
     if not isuniform and widget_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
                                     % type(plot).__name__)
-        widget_format == 'scrubber'
+        widget_format = 'scrubber'
 
     if widget_format == 'auto':
         widget_format = 'scrubber' if islinear or not isuniform else 'widgets'
-    embed = widget_mode == 'embed'
+
     widget = ScrubberWidget if widget_format == 'scrubber' else SelectionWidget
-    return widget(plot, embed=embed)()
+    return widget(plot, embed=(widget_mode == 'embed'), display_options=kwargs)()
 
 
 
-def display_frame(plot, figure_format='png', backend='mpl',
-                  dpi=70, css={}, message=None, max_width='100%'):
+def display_frame(plot, figure_format='png', backend='mpl', dpi=70, css={}, message=None):
     """
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
@@ -182,7 +181,7 @@ def display_frame(plot, figure_format='png', backend='mpl',
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
-def display(plot, widget_mode):
+def display(plot, widget_mode, message=None):
     """
     Used by the display hooks to render a plot according to the
     following policy:
@@ -194,6 +193,7 @@ def display(plot, widget_mode):
     """
     backend = OutputMagic.options['backend']
     figure_format =  OutputMagic.options['fig']
+    holomap_format =  OutputMagic.options['holomap']
     dpi = OutputMagic.options['dpi']
     css = OutputMagic.options['css']
 
@@ -201,9 +201,14 @@ def display(plot, widget_mode):
     if len(plot) == 1:
         plot.update(0)
         return display_frame(plot, figure_format=figure_format,
-                             backend=backend, dpi=dpi, css=css)
+                             backend=backend, dpi=dpi, css=css,
+                             message=message)
     elif widget_mode is not None:
-        return display_widgets(plot)
+        return display_widgets(plot, holomap_format=holomap_format,
+                               figure_format = figure_format,
+                               backend=backend, dpi=dpi, css=css,
+                               widget_mode=widget_mode,
+                               message=message)
     else:
         return render(plot)
 

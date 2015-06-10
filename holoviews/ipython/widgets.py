@@ -237,6 +237,13 @@ class NdWidget(param.Parameterized):
          from this URL. Data should be served from:
          server_url/fig_{id}/{frame}.""")
 
+    display_options = param.Dict(default=dict(backend=OutputMagic.options['backend'],
+                                              figure_format=OutputMagic.options['fig'],
+                                              dpi=OutputMagic.options['dpi'],
+                                              css=OutputMagic.options['css'],
+                                              message=None), doc="""
+        The display options used to generate individual frames""")
+
     ##############################
     # Javascript include options #
     ##############################
@@ -311,7 +318,7 @@ class NdWidget(param.Parameterized):
             import mpld3
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
             return mpld3.fig_to_dict(self.plot.state)
-        return display_frame(self.plot, backend='mpl')
+        return display_frame(self.plot, **self.display_options)
 
 
     def update(self, n):
