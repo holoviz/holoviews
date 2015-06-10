@@ -303,6 +303,11 @@ class TableConversion(object):
         from .chart3d import Scatter3D
         return self._conversion(kdims, vdims, Scatter3D, **kwargs)
 
+    def raster(self, kdims=None, vdims=None, **kwargs):
+        from .raster import Raster
+        heatmap = self.to_heatmap(kdims, vdims, **kwargs)
+        return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
+
     def surface(self, kdims=None, vdims=None, **kwargs):
         from .chart3d import Surface
         heatmap = self.to_heatmap(kdims, vdims, **kwargs)
