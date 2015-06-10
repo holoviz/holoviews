@@ -45,18 +45,18 @@ ABBREVIATE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
-def render(plot):
+def display_animation(plot, **kwargs):
     """
-    Allows the render policy to be changed, e.g to show only the
-    middle frame using middle_frame for testing notebooks.
+    Allows the animation render policy to be changed, e.g to show only
+    the middle frame using middle_frame for testing notebooks.
 
     See render_anim variable below (default is HTML_video)
     """
     try:
-        return render_anim(plot)
+        return render_anim(plot, **kwargs)
     except Exception as e:
         plot.update(0)
-        return str(e)+'<br/>'+display_frame(plot)
+        return str(e)+'<br/>'+display_frame(plot, **kwargs)
 
 
 def first_frame(plot, **kwargs):
@@ -196,19 +196,19 @@ def display(plot, widget_mode, message=None):
     css = OutputMagic.options['css']
 
     if figure_format == 'repr': return None
+
+    kwargs = dict(holomap_format=holomap_format,
+                  figure_format = figure_format,
+                  backend=backend, dpi=dpi, css=css,
+                  widget_mode=widget_mode, message=message)
+
     if len(plot) == 1:
         plot.update(0)
-        return display_frame(plot, figure_format=figure_format,
-                             backend=backend, dpi=dpi, css=css,
-                             message=message)
+        return display_frame(plot, **kwargs)
     elif widget_mode is not None:
-        return display_widgets(plot, holomap_format=holomap_format,
-                               figure_format = figure_format,
-                               backend=backend, dpi=dpi, css=css,
-                               widget_mode=widget_mode,
-                               message=message)
+        return display_widgets(plot, **kwargs)
     else:
-        return render(plot)
+        return display_animation(plot, **kwargs)
 
 #===============#
 # Display hooks #
