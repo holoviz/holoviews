@@ -171,6 +171,29 @@ class NdElement(Element, NdMapping):
     def __init__(self, data=None, **params):
         NdMapping.__init__(self, data, **dict(params, group=params.get('group',self.group)))
 
+    def reindex(self, kdims, vdims=None):
+        """
+        Create a new object with a re-ordered set of dimensions.
+        Allows converting key dimensions to value dimensions
+        and vice versa.
+        """
+        if vdims is None: vdims = self._cached_value_names
+        key_dims = [self.get_dimension(k) for k in kdims]
+        val_dims = [self.get_dimension(v) for v in vdims]
+        kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
+                  for i, k in enumerate(kdims)]
+        vidxs = [(i, v in self._cached_index_names, self.get_dimension_index(v))
+                  for i, v in enumerate(vdims)]
+        getter = operator.itemgetter(0)
+        items = []
+        for k, v in self.data.items():
+            _, key = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
+                                  for i, iskey, idx in kidxs), key=getter))
+            _, val = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
+                                  for i, iskey, idx in vidxs), key=getter))
+            items.append((key, val))
+        return self.clone(items, kdims=key_dims, vdims=val_dims)
+
 
     def _add_item(self, key, value, sort=True):
         value = (value,) if np.isscalar(value) else tuple(value)
