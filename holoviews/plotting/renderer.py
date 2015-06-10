@@ -91,3 +91,14 @@ class Renderer(Exporter):
         and some options, save the element in a suitable format to disk.
         """
         raise NotImplementedError
+
+    @bothmethod
+    def get_size(self_or_cls, plot):
+        """
+        Return the display size associated with a plot before
+        rendering to any particular format. Used to generate
+        appropriate HTML display.
+
+        Returns a tuple of (width, height) in pixels.
+        """
+        raise NotImplementedError

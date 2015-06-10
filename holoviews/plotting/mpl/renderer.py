@@ -262,7 +262,11 @@ class MPLRenderer(Renderer):
                 ax.mouse_init()
         return manager
 
-
+    @bothmethod
+    def get_size(self_or_cls, plot):
+        w, h = plot.state.get_size_inches()
+        dpi = plot.state.dpi
+        return (w*dpi, h*dpi)
 
 
 class WidgetCommSocket(CommSocket):
