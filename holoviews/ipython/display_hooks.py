@@ -45,20 +45,6 @@ ABBREVIATE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
-def display_animation(plot, **kwargs):
-    """
-    Allows the animation render policy to be changed, e.g to show only
-    the middle frame using middle_frame for testing notebooks.
-
-    See render_anim variable below (default is display_video)
-    """
-    try:
-        return render_anim(plot, **kwargs)
-    except Exception as e:
-        plot.update(0)
-        return str(e)+'<br/>'+display_frame(plot, **kwargs)
-
-
 def first_frame(plot, **kwargs):
     "Only display the first frame of an animated plot"
     plot.update(0)
@@ -115,21 +101,34 @@ def animate(anim, dpi, writer, fmt, anim_kwargs, extra_args):
     return tag.format(src=src, mime_type=mime_type, css=dict_to_css(OutputMagic.options['css']))
 
 
-def display_video(plot):
+def display_video(plot, **kwargs):
+    """
+    Allows the animation render policy to be changed, e.g to show only
+    the middle frame using middle_frame for testing notebooks.
+
+    See render_anim variable below (default is display_video)
+    """
     if OutputMagic.options['holomap'] == 'repr': return None
-    dpi = OutputMagic.options['dpi']
-    anim = plot.anim(fps=OutputMagic.options['fps'])
-    writers = animation.writers.avail
-    current_format = OutputMagic.options['holomap']
-    for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
-        if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
-            try:
-                return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
-            except: pass
-    msg = "<b>Could not generate %s animation</b>" % current_format
-    if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-        msg = "<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>"
-    raise Exception(msg)
+
+    try:
+        if render_anim is not None:
+            return render_anim(plot, **kwargs)
+        dpi = OutputMagic.options['dpi']
+        anim = plot.anim(fps=OutputMagic.options['fps'])
+        writers = animation.writers.avail
+        current_format = OutputMagic.options['holomap']
+        for fmt in [current_format] + list(OutputMagic.ANIMATION_OPTS.keys()):
+            if OutputMagic.ANIMATION_OPTS[fmt][0] in writers:
+                try:
+                    return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[fmt])
+                except: pass
+        msg = "<b>Could not generate %s animation</b>" % current_format
+        if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+            msg = "<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>"
+        raise Exception(msg)
+    except Exception as e:
+        plot.update(0)
+        return str(e)+'<br/>'+display_frame(plot, **kwargs)
 
 
 def display_widgets(plot, holomap_format, widget_mode, **kwargs):
@@ -208,7 +207,7 @@ def display(plot, widget_mode, message=None):
     elif widget_mode is not None:
         return display_widgets(plot, **kwargs)
     else:
-        return display_animation(plot, **kwargs)
+        return display_video(plot, **kwargs)
 
 #===============#
 # Display hooks #
@@ -328,7 +327,7 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
 
 # display_video output by default, but may be set to first_frame,
 # middle_frame or last_frame (e.g. for testing purposes)
-render_anim = display_video
+render_anim = None
 
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
