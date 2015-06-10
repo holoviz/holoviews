@@ -226,6 +226,24 @@ def display_hook(fn):
     return wrapped
 
 
+def display(plot, widget_mode):
+    """
+    Render a plot appropriately using the following policy:
+
+    1. If there is a single frame, render it as a figure.
+    2. If in widget mode, render as a widget
+    3. Otherwise render it as an animation, falling back to a figure
+    if there is an exception.
+    """
+    if len(plot) == 1:
+        fig = plot.update(0)
+        return display_figure(fig)
+    elif widget_mode is not None:
+        return display_widgets(plot)
+    else:
+        return render(plot)
+
+
 @display_hook
 def animation_display(anim, map_format, dpi=72, **kwargs):
     return animate(anim, dpi, *OutputMagic.ANIMATION_OPTS[map_format])
@@ -238,8 +256,10 @@ def element_display(element, size, **kwargs):
     info = process_object(element)
     if info: return info
     if element.__class__ not in Store.registry: return None
-    fig = Store.registry[element.__class__](element, **opts(element, size)).update(0)
-    return display_figure(fig)
+    element_plot = Store.registry[element.__class__](element, **opts(element, size))
+
+    return display(element_plot, False)
+
 
 
 @display_hook
@@ -254,13 +274,8 @@ def map_display(vmap, size, map_format, max_frames, widget_mode, **kwargs):
     elif len(mapplot) > max_frames:
         max_frame_warning(max_frames)
         return sanitize_HTML(vmap)
-    elif len(mapplot) == 1:
-        fig = mapplot.update(0)
-        return display_figure(fig)
-    elif widget_mode is not None:
-        return display_widgets(mapplot)
-    else:
-        return render(mapplot)
+
+    return display(mapplot, widget_mode)
 
 
 @display_hook
@@ -281,13 +296,7 @@ def layout_display(layout, size, map_format, max_frames, max_branches, widget_mo
                 max_frame_warning(max_frames)
                 return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
-    if nframes == 1:
-        fig = layoutplot.update(0)
-        return display_figure(fig)
-    elif widget_mode is not None:
-        return display_widgets(layoutplot)
-    else:
-        return render(layoutplot)
+    return display(layoutplot, widget_mode)
 
 
 @display_hook
@@ -307,13 +316,9 @@ def grid_display(grid, size, map_format, max_frames, max_branches, widget_mode, 
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)
         return sanitize_HTML(grid)
-    elif len(gridplot) == 1:
-        fig = gridplot.update(0)
-        return display_figure(fig)
-    if widget_mode is not None:
-        return display_widgets(gridplot)
-    else:
-        return render(gridplot)
+
+    return display(gridplot, widget_mode)
+
 
 
 # HTML_video output by default, but may be set to first_frame,
