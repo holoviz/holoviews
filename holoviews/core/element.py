@@ -132,18 +132,18 @@ class Element(ViewableElement, Composable, Overlayable):
         from ..element import Table
         keys = zip(*[self.dimension_values(dim.name)
                  for dim in self.kdims])
-        if not keys: keys = [()]
         values = zip(*[self.dimension_values(dim.name)
                        for dim in self.vdims])
         kwargs = {'label': self.label
                   for k, v in self.get_param_values(onlychanged=True)
                   if k in ['group', 'label']}
-
         params = dict(kdims=self.kdims,
                       vdims=self.vdims,
                       label=self.label)
         if not self.params()['group'].default == self.group:
             params['group'] = self.group
+        if not keys: keys = [()]*len(values)
+        if not values: [()]*len(keys)
         return Table(zip(keys, values), **dict(params, **kwargs))
 
 
