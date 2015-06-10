@@ -19,17 +19,6 @@ from matplotlib.backends.backend_nbagg import CommSocket
 import param
 from param.parameterized import bothmethod
 
-# <format name> : (animation writer, format,  anim_kwargs, extra_args)
-ANIMATION_OPTS = {
-    'webm': ('ffmpeg', 'webm', {},
-             ['-vcodec', 'libvpx', '-b', '1000k']),
-    'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
-             ['-pix_fmt', 'yuv420p']),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, []),
-    'scrubber': ('html', None, {'fps': 5}, None)
-}
-
-
 
 def opts(el, percent_size):
     "Returns the plot options with supplied size (if not overridden)"
@@ -54,6 +43,18 @@ class MPLRenderer(Renderer):
     """
     drawn = {}
 
+
+    # <format name> : (animation writer, format,  anim_kwargs, extra_args)
+    ANIMATION_OPTS = {
+        'webm': ('ffmpeg', 'webm', {},
+                 ['-vcodec', 'libvpx', '-b', '1000k']),
+        'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+                 ['-pix_fmt', 'yuv420p']),
+        'gif': ('imagemagick', 'gif', {'fps': 10}, []),
+        'scrubber': ('html', None, {'fps': 5}, None)
+    }
+
+
     def __call__(self, obj, fmt=None):
         """
         Render the supplied HoloViews component using matplotlib.
@@ -74,7 +75,7 @@ class MPLRenderer(Renderer):
             if fmt is None: return
 
         if len(plot) > 1:
-            (writer, _, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
+            (writer, _, anim_kwargs, extra_args) = self.ANIMATION_OPTS[fmt]
             anim = plot.anim(fps=self.fps)
             if extra_args != []:
                 anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
@@ -127,7 +128,7 @@ class MPLRenderer(Renderer):
                 try:
                     fig = plt.figure()
                     anim = animation.FuncAnimation(fig, lambda x: x, frames=[0,1])
-                    (writer, fmt, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
+                    (writer, fmt, anim_kwargs, extra_args) = self_or_cls.ANIMATION_OPTS[fmt]
                     if extra_args != []:
                         anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
                         renderer = self_or_cls.instance(dpi=72)
@@ -274,7 +275,7 @@ class MPLRenderer(Renderer):
             raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
         #renderer = Store.renderer.instance(dpi=dpi)
         anim = plot.anim(fps=fps)
-        (writer, fmt, anim_kwargs, extra_args) = ANIMATION_OPTS[holomap_format]
+        (writer, fmt, anim_kwargs, extra_args) = self_or_cls.ANIMATION_OPTS[holomap_format]
 
         if extra_args != []:
             anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
