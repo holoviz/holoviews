@@ -4,7 +4,7 @@ import colorsys
 import param
 
 from ..core import util
-from ..core import OrderedDict, Dimension, NdMapping, Element2D, Overlay
+from ..core import OrderedDict, Dimension, NdMapping, Element2D, Overlay, Element
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
@@ -215,6 +215,10 @@ class HeatMap(Raster):
                 dimensions['vdims'] = data.vdims
         elif isinstance(data, (dict, OrderedDict, type(None))):
             data = NdMapping(data, **dimensions)
+        elif isinstance(data, Element):
+            data = data.table()
+            if not data.ndims == 2:
+                raise TypeError('HeatMap conversion requires 2 key dimensions')
         else:
             raise TypeError('HeatMap only accepts dict or NdMapping types.')
 
