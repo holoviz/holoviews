@@ -16,7 +16,7 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting.mpl import LayoutPlot, GridPlot, RasterGridPlot, opts
+from ..plotting.mpl import LayoutPlot, GridPlot, RasterGridPlot
 from ..plotting import HTML_TAGS, MIME_TYPES
 from .magics import OutputMagic, OptsMagic
 from .widgets import SelectionWidget, ScrubberWidget
@@ -233,7 +233,9 @@ def element_display(element,size, max_frames, max_branches, widget_mode):
     info = process_object(element)
     if info: return info
     if element.__class__ not in Store.registry: return None
-    element_plot = Store.registry[element.__class__](element, **opts(element, size))
+    plot_class = Store.registry[element.__class__]
+    element_plot = plot_class(element,
+                              **plot_class.renderer.plot_options(element, size))
 
     return display(element_plot, False)
 
@@ -245,7 +247,9 @@ def map_display(vmap, size, max_frames, max_branches, widget_mode):
     info = process_object(vmap)
     if info: return info
     if vmap.type not in Store.registry:  return None
-    mapplot = Store.registry[vmap.type](vmap, **opts(vmap, size))
+
+    plot_class = Store.registry[vmap.type]
+    mapplot = plot_class(vmap, **plot_class.renderer.plot_options(vmap, size))
     if len(mapplot) == 0:
         return sanitize_HTML(vmap)
     elif len(mapplot) > max_frames:
@@ -263,7 +267,10 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
 
     info = process_object(layout)
     if info: return info
-    layoutplot = LayoutPlot(layout, **opts(layout, size))
+
+    layoutplot = LayoutPlot(layout,
+                            **LayoutPlot.renderer.plot_options(layout, size))
+
     if isinstance(layout, Layout):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in list(layout.data.keys())]))
@@ -285,10 +292,11 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
     raster_fn = lambda x: True if isinstance(x, Raster) else False
     all_raster = all(grid.traverse(raster_fn, [Element]))
     if all_raster:
-        plot_type = RasterGridPlot
+        plot_class = RasterGridPlot
     else:
-        plot_type = GridPlot
-    gridplot = plot_type(grid, **opts(grid, size))
+        plot_class = GridPlot
+
+    gridplot = plot_class(grid, **plot_class.renderer.plot_options(grid, size))
 
     if len(gridplot) > max_frames:
         max_frame_warning(max_frames)

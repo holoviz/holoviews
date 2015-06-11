@@ -74,12 +74,14 @@ class Renderer(Exporter):
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
     @classmethod
-    def get_plot_size(cls, obj, percent_size):
+    def plot_options(cls, obj, percent_size):
         """
         Given an object and a percentage size (as supplied by the
-        %output magic) return the appropriate sizing plot
-        option. Default plot sizes at the plotting class level should
-        be taken into account.
+        %output magic) return all the appropriate plot options that
+        would be used to instantiate a plot class for that element.
+
+        Default plot sizes at the plotting class level should be taken
+        into account.
         """
         raise NotImplementedError
 

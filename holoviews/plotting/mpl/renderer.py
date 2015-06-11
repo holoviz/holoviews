@@ -20,14 +20,6 @@ import param
 from param.parameterized import bothmethod
 
 
-def opts(el, percent_size):
-    "Returns the plot options with supplied size (if not overridden)"
-    obj = el.last if isinstance(el, HoloMap) else el
-    options = MPLRenderer.get_plot_size(obj, percent_size) #  Store.registry[type(el)].renderer
-    options.update(Store.lookup_options(obj, 'plot').options)
-    return options
-
-
 class MPLRenderer(Renderer):
     """
     Exporter used to render data from matplotlib, either to a stream
@@ -68,8 +60,7 @@ class MPLRenderer(Renderer):
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
 
-        plot = plotclass(obj, **opts(obj,  self.size))
-
+        plot = plotclass(obj, **self.plot_options(obj, self.size))
         if fmt is None:
             fmt = self.holomap if len(plot) > 1 else self.fig
             if fmt is None: return
@@ -89,7 +80,7 @@ class MPLRenderer(Renderer):
                       'mime_type':MIME_TYPES[fmt]}
 
     @classmethod
-    def get_plot_size(cls, obj, percent_size):
+    def plot_options(cls, obj, percent_size):
         """
         Given a holoviews object and a percentage size, apply heuristics
         to compute a suitable figure size. For instance, scaling layouts
@@ -104,7 +95,7 @@ class MPLRenderer(Renderer):
         """
         from .plot import MPLPlot
         factor = percent_size / 100.0
-        plot_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+        obj = obj.last if isinstance(obj, HoloMap) else obj
         options = Store.lookup_options(obj, 'plot').options
         fig_inches = options.get('fig_inches', MPLPlot.fig_inches)
         if isinstance(fig_inches, (list, tuple)):
@@ -113,7 +104,8 @@ class MPLRenderer(Renderer):
         else:
             fig_inches = MPLPlot.fig_inches * factor
 
-        return dict(fig_inches=fig_inches)
+        return dict({'fig_inches':fig_inches},
+                    **Store.lookup_options(obj, 'plot').options)
 
 
     @bothmethod
