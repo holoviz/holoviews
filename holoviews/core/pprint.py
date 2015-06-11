@@ -147,7 +147,8 @@ class InfoPrinter(object):
     @classmethod
     def options_info(cls, plot_class, ansi=False):
         if plot_class.style_opts:
-            style_info = "\n(Consult matplotlib's documentation for more information.)"
+            backend_name = plot_class.renderer.backend
+            style_info = ("\n(Consult %s's documentation for more information.)" % backend_name)
             style_keywords = '\t%s' % ', '.join(plot_class.style_opts)
             style_msg = '%s\n%s' % (style_keywords, style_info)
         else:
@@ -155,7 +156,7 @@ class InfoPrinter(object):
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi)
         return '\n'.join([ cls.heading('Style Options', ansi=ansi, char="-"), '',
-                           style_msg, '', 
+                           style_msg, '',
                            cls.heading('Plot Options', ansi=ansi, char="-"), '',
                            "The plot options are the parameters of the plotting class:\n",
                            param_info])

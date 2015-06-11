@@ -35,6 +35,7 @@ class MPLRenderer(Renderer):
     """
     drawn = {}
 
+    backend = param.String('matplotlib', doc="The backend name.")
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {

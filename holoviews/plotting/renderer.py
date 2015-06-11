@@ -32,6 +32,11 @@ class Renderer(Exporter):
     and the Renderer turns the final plotting state into output.
     """
 
+    backend = param.String(doc="""
+        The full, lowercase name of the rendering backend or third
+        part plotting package used e.g 'matplotlib' or 'cairo'. To be
+        matched against the DEFAULT_RENDERER string.""")
+
     fig = param.ObjectSelector(default='svg',
                                objects=['png', 'svg', 'pdf', None], doc="""
         Output render format for static figures. If None, no figure
