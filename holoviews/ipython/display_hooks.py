@@ -85,7 +85,7 @@ def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
     if OutputMagic.options['holomap'] == 'repr': return None
     try:
         if render_anim is not None:
-            return render_anim(plot, **kwargs)
+            return render_anim(plot, dpi=dpi, css=css, **kwargs)
 
         renderer = plot.renderer.instance(dpi=dpi)
         data = renderer.animation_data(plot, holomap_format, fps, dpi)
