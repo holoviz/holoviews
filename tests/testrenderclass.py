@@ -6,7 +6,7 @@ from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
-from holoviews import plotting  # pyflakes:ignore (Sets Store.renderer)
+from holoviews.plotting.mpl.renderer import MPLRenderer
 from holoviews import HoloMap, Store, Image, ItemTable
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -44,7 +44,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.unicode_table = ItemTable([('β','Δ1'), ('°C', '3×4')],
                                        label='Poincaré', group='α Festkörperphysik')
 
-        self.renderer = Store.renderer.instance()
+        self.renderer = MPLRenderer.instance()
 
     def test_simple_export_gif(self):
         data = self.renderer(self.map1, fmt='gif')[0]

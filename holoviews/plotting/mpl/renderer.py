@@ -265,7 +265,6 @@ class MPLRenderer(Renderer):
     def animation_data(self_or_cls, plot, holomap_format, fps, dpi):
         if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
             raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
-        #renderer = Store.renderer.instance(dpi=dpi)
         anim = plot.anim(fps=fps)
         (writer, fmt, anim_kwargs, extra_args) = self_or_cls.ANIMATION_OPTS[holomap_format]
 
@@ -301,7 +300,4 @@ class WidgetCommSocket(CommSocket):
                                'instance. Are you in the IPython notebook?')
         self.comm.on_msg(self.on_message)
         self.comm.on_close(lambda close_message: self.manager.clearup_closed())
-
-
-Store.renderer = MPLRenderer
 

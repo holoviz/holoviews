@@ -212,10 +212,7 @@ class OutputMagic(OptionsMagic):
 
 
     def missing_dependency_exception(value, keyword, allowed):
-        errors = getattr(Store.renderer, 'HOLOMAP_FORMAT_ERROR_MESSAGES', {})
-        msg = ("Format %r does not appear to be supported." % value)
-        error_msg = ('\nMessage: %s' % errors[value]) if value in errors else ''
-        raise Exception(msg+error_msg)
+        raise Exception("Format %r does not appear to be supported." % value)
 
     custom_exceptions = {'holomap':missing_dependency_exception}
 
