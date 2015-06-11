@@ -3,8 +3,7 @@ HoloViews plotting sub-system the defines the interface to be used by
 any third-party plotting/rendering package.
 
 This file defines the HTML tags used to wrap renderered output for
-display in the IPython Notebook (optional). Currently only a
-matplotlib renderer is supported.
+display in the IPython Notebook (optional).
 """
 
 from .. import DEFAULT_RENDERER
@@ -12,7 +11,7 @@ from ..core.options import Cycle
 from .plot import Plot
 from .renderer import Renderer, MIME_TYPES
 
-# Tags used when matplotlib output is to be embedded in HTML
+# Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
 VIDEO_TAG = """
 <video controls style='max-width:100%; margin: auto; display: block; {css}'>

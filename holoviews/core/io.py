@@ -70,7 +70,7 @@ class Exporter(param.ParameterizedFunction):
     designed to be very general so here are a few examples:
 
     Pickling:   Native Python, supported by HoloViews.
-    Rendering:  Currently using matplotlib but could use any plotting backend.
+    Rendering:  Any plotting backend may be used (default uses matplotlib)
     Storage:    Saving to a database (e.g SQL), HDF5 etc.
     """
 

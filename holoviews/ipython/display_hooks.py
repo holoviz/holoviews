@@ -51,7 +51,7 @@ def sanitize_HTML(obj):
     return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
 
 def max_frame_warning(max_frames):
-    sys.stderr.write("Skipping matplotlib display to avoid "
+    sys.stderr.write("Skipping regular visual display to avoid "
                      "lengthy animation render times\n"
                      "[Total item frames exceeds max_frames on OutputMagic (%d)]"
                      % max_frames)

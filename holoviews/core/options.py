@@ -9,9 +9,9 @@ There are three classes that form the options system:
 Cycle:
 
    Used to define infinite cycles over a finite set of elements, using
-   either an explicit list or the matplotlib rcParams. For instance, a
-   Cycle object can be used loop a set of display colors for multiple
-   curves on a single axis.
+   either an explicit list or some pre-defined collection (e.g from
+   matplotlib rcParams). For instance, a Cycle object can be used loop
+   a set of display colors for multiple curves on a single axis.
 
 Options:
 

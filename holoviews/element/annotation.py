@@ -79,7 +79,7 @@ class Spline(Annotation):
     Draw a spline using the given handle coordinates and handle
     codes. The constructor accepts a tuple in format (coords, codes).
 
-    Follows matplotlib spline definitions as used in
+    Follows format of matplotlib spline definitions as used in
     matplotlib.path.Path with the following codes:
 
     Path.STOP     : 0

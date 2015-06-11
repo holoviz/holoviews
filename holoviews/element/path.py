@@ -174,8 +174,7 @@ class Ellipse(BaseShape):
 
     Note that as a subclass of Path, internally an Ellipse is a
     sequency of (x,y) sample positions. Ellipse could also be
-    implemented as an annotation that uses a more appropriate
-    matplotlib artist.
+    implemented as an annotation that uses a dedicated ellipse artist.
     """
     x = param.Number(default=0, doc="The x-position of the ellipse center.")
 
