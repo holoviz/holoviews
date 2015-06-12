@@ -28,7 +28,8 @@ setup_args.update(dict(
                 "holoviews.interface",
                 "holoviews.ipython",
                 "holoviews.operation",
-                "holoviews.plotting"],
+                "holoviews.plotting",
+                "holoviews.plotting.mpl"],
     package_data={'holoviews.plotting': ['*.mplstyle'],
                   'holoviews.ipython': ['*.jinja']},
     classifiers = [
