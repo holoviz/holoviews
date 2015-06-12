@@ -30,7 +30,7 @@ setup_args.update(dict(
                 "holoviews.operation",
                 "holoviews.plotting",
                 "holoviews.plotting.mpl"],
-    package_data={'holoviews.plotting': ['*.mplstyle'],
+    package_data={'holoviews.plotting.mpl': ['*.mplstyle'],
                   'holoviews.ipython': ['*.jinja']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
