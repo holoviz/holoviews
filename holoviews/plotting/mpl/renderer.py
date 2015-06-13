@@ -55,14 +55,7 @@ class MPLRenderer(Renderer):
         using matplotlib.
         """
         if not isinstance(obj, Plot):
-            obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-            element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
-            try:
-                plotclass = Store.registry[element_type]
-            except KeyError:
-                raise Exception("No corresponding plot type found for %r" % type(obj))
-
-            plot = plotclass(obj, **self.plot_options(obj, self.size))
+            plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
             plot.update(0)
 
         elif fmt is None:

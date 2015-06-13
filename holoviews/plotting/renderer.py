@@ -6,6 +6,7 @@ regardless of plotting package or backend.
 import param
 from ..core.io import Exporter
 from ..core.options import Store
+from .. import Store, Layout, HoloMap, AdjointLayout
 
 from param.parameterized import bothmethod
 
@@ -75,6 +76,24 @@ class Renderer(Exporter):
         """
         # Example of the return format where the first value is the rendered data.
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+
+
+    @classmethod
+    def plotting_class(cls, obj):
+        """
+        Given an object, return the suitable plotting class needed to
+        render it with the current renderer.
+        """
+        obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+        element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+        try:
+            plotclass = Store.registry[element_type]
+        except KeyError:
+            raise Exception("No corresponding plot type found for %r" % type(obj))
+
+        return plotclass
+
+
 
     @classmethod
     def plot_options(cls, obj, percent_size):
