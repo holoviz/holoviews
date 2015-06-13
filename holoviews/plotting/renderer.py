@@ -68,9 +68,10 @@ class Renderer(Exporter):
 
     def __call__(self, obj, fmt=None):
         """
-        Render the supplied HoloViews component using the appropriate
-        backend. The output is not a file format but a suitable,
-        in-memory byte stream together with any suitable metadata.
+        Render the supplied HoloViews component or plot instance using
+        the appropriate backend. The output is not a file format but a
+        suitable, in-memory byte stream together with any suitable
+        metadata.
         """
         # Example of the return format where the first value is the rendered data.
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
