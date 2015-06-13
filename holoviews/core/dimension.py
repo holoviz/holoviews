@@ -624,7 +624,10 @@ class Dimensioned(LabelledData):
 
         # Apply all indexes applying on this object
         val_dim = ['value'] if self.vdims else []
-        local_dims = self._cached_index_names + val_dim
+        sanitized = {sanitize_identifier(kd): kd
+                     for kd in self._cached_index_names}
+        local_dims = (self._cached_index_names
+                      + sanitized.keys() + val_dim)
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in local_dims}
 
@@ -642,6 +645,7 @@ class Dimensioned(LabelledData):
                     select += [val]
                 else:
                     if isinstance(val, tuple): val = slice(*val)
+                    dim = sanitized.get(dim, dim)
                     select[self.get_dimension_index(dim)] = val
             if self._deep_indexable:
                 selection = self.get(tuple(select),

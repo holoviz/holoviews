@@ -12,6 +12,8 @@ class DimensionedSelectionTest(ComparisonTestCase):
         self.contour_fn = lambda: Contours([np.random.rand(10, 2)
                                             for i in range(2)])
         params = [list(range(3)) for i in range(2)]
+        self.sanitized_map = HoloMap({i: Image(i*np.random.rand(10,10))
+                                      for i in range(1,10)}, kdims=['A B'])
         self.img_map = HoloMap({(i, j): self.img_fn()
                                 for i, j in product(*params)},
                                kdims=['a', 'b'])
@@ -36,6 +38,11 @@ class DimensionedSelectionTest(ComparisonTestCase):
     def test_simple_holoslice(self):
         self.assertEqual(self.img_map.select(a=(1, 3), b=(1, 3)),
                          self.img_map[1:3, 1:3])
+
+
+    def test_sanitized_holoslice(self):
+        self.assertEqual(self.sanitized_map.select(A_B=(1,3)),
+                         self.sanitized_map[1:3])
 
 
     def test_simple_holo_ndoverlay_slice(self):
