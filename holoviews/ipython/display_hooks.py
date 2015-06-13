@@ -283,7 +283,15 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
     if not isinstance(grid, GridSpace): return None
     info = process_object(grid)
     if info: return info
-    plot_class = Store.registry[OutputMagic.backend()][GridSpace]
+
+    raster_fn = lambda x: True if isinstance(x, Raster) else False
+    all_raster = all(grid.traverse(raster_fn, [Element]))
+    if all_raster:
+        from ..plotting.mpl import RasterGridPlot
+        plot_class = RasterGridPlot
+    else:
+        plot_class = Store.registry[OutputMagic.backend()][GridSpace]
+
     gridplot = plot_class(grid, **OutputMagic.renderer().plot_options(grid, size))
 
     if len(gridplot) > max_frames:
