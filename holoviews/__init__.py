@@ -55,7 +55,7 @@ def help(obj, visualization=False, ansi=True, backend='matplotlib'):
                 print("\nTo view the visualization options applicable to this object or class, use:\n\n"
                       "   holoviews.help(obj, visualization=True)\n")
             else:
-                Store.info(obj, ansi=ansi)
+                Store.info(obj, ansi=ansi, backend=backend)
                 return
         info = param.ipython.ParamPager()(obj)
         if ansi is False:

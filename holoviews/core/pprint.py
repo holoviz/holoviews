@@ -61,14 +61,14 @@ class InfoPrinter(object):
 
 
     @classmethod
-    def info(cls, obj, ansi=False):
+    def info(cls, obj, ansi=False, backend='matplotlib'):
         """
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
         """
         isclass = isinstance(obj, type)
         name = obj.__name__ if isclass  else obj.__class__.__name__
-        plot_class = cls.store.registry.get(obj if isclass else type(obj), None)
+        plot_class = cls.store.registry[backend].get(obj if isclass else type(obj), None)
         heading = name if isclass else '{name}: {group} {label}'.format(name=name,
                                                                         group=obj.group,
                                                                         label=obj.label)

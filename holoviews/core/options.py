@@ -719,12 +719,12 @@ class Store(object):
 
 
     @classmethod
-    def info(cls, obj, ansi=True):
+    def info(cls, obj, ansi=True, backend='matplotlib'):
         """
         Show information about a particular object or component class
         including the applicable style and plot options.
         """
-        print(InfoPrinter.info(obj, ansi=ansi))
+        print(InfoPrinter.info(obj, ansi=ansi, backend=backend))
 
     @classmethod
     def loads(cls, pickle_string):
