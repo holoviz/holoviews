@@ -627,7 +627,7 @@ class Dimensioned(LabelledData):
         sanitized = {sanitize_identifier(kd): kd
                      for kd in self._cached_index_names}
         local_dims = (self._cached_index_names
-                      + sanitized.keys() + val_dim)
+                      + list(sanitized.keys()) + val_dim)
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in local_dims}
 
