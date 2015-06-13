@@ -101,6 +101,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     prefix = 'A_'
 
+    _lookup_table = {}
+
     @param.parameterized.bothmethod
     def allowable(self_or_cls, name, disable_leading_underscore=None):
        disabled_reprs = ['javascript', 'jpeg', 'json', 'latex',
@@ -158,7 +160,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
 
     def __call__(self, name, escape=True, version=None):
-        if name in [None, '']: return name
+        if name in [None, '']:
+           return name
+        elif name in self._lookup_table:
+           return self._lookup_table[name]
         name = safe_unicode(name)
         version = self.version if version is None else version
         if not self.allowable(name):
@@ -170,8 +175,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
             name = name[0].upper()+name[1:]
 
         sanitized = (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
-        if not self.prefixed(name, version): return sanitized
-        else:                                return self.prefix + sanitized
+        if self.prefixed(name, version):
+           sanitized = self.prefix + sanitized
+        self._lookup_table[name] = sanitized
+        return sanitized
 
 
     def _process_underscores(self, tokens):
