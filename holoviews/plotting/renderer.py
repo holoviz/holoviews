@@ -37,6 +37,10 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
+    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
+         The available rendering modes. As a minimum, the 'default'
+         mode must be supported.""")
+
     fig = param.ObjectSelector(default='svg',
                                objects=['png', 'svg', 'pdf', None], doc="""
         Output render format for static figures. If None, no figure

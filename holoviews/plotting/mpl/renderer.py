@@ -38,6 +38,12 @@ class MPLRenderer(Renderer):
 
     backend = param.String('matplotlib', doc="The backend name.")
 
+    mode = param.ObjectSelector(default='default',
+                                objects=['default', 'd3', 'nbagg'], doc="""
+         The 'd3' mode uses the mpld3 library whereas the 'nbagg' uses
+         matplotlib'ss the experiemental nbagg backend. """)
+
+
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
         'webm': ('ffmpeg', 'webm', {},
