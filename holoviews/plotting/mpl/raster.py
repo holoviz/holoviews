@@ -235,7 +235,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
         key = self.keys[-1]
         ranges = self.compute_ranges(self.layout, key, ranges)
-        self.handles['projs'] = []
+        self.handles['projs'] = {}
         x, y = b_w, b_h
         for xidx, xkey in enumerate(self._xkeys):
             w = widths[xidx]
@@ -260,7 +260,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 plot.set_clim(valrange)
                 if data is None:
                     plot.set_visible(False)
-                self.handles['projs'].append(plot)
+                self.handles['projs'][(xkey, ykey)] = plot
                 y += h + b_h
                 if xidx == 0:
                     self._yticks.append(y-b_h-h/2.)
@@ -282,16 +282,19 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def update_frame(self, key, ranges=None):
-        grid_values = self._get_frame(key).values()
+        grid = self._get_frame(key)
         ranges = self.compute_ranges(self.layout, key, ranges)
-        for i, plot in enumerate(self.handles['projs']):
-            view = grid_values[i]
-            if view:
-                plot.set_visible(True)
-                data = view.values()[0].data if isinstance(view, CompositeOverlay) else view.data
-                plot.set_data(data)
-            else:
-                plot.set_visible(False)
+        for xkey in self._xkeys:
+            for ykey in self._ykeys:
+                plot = self.handles['projs'][(xkey, ykey)]
+                grid_key = (xkey, ykey) if self.layout.ndims > 1 else (xkey,)
+                element = grid.data.get(grid_key, None)
+                if element:
+                    plot.set_visible(True)
+                    data = element.values()[0].data if isinstance(element, CompositeOverlay) else element.data
+                    plot.set_data(data)
+                else:
+                    plot.set_visible(False)
 
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None

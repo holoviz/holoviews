@@ -443,7 +443,11 @@ class CompositePlot(MPLPlot):
             else:
                 dim_keys = item.traverse(nthkey_fn, (HoloMap,))[0]
             if dim_keys:
-                layout_frame[path] = item.select((HoloMap,), **dict(dim_keys))
+                obj = item.select((HoloMap,), **dict(dim_keys))
+                if isinstance(obj, HoloMap) and len(obj) == 0:
+                    continue
+                else:
+                    layout_frame[path] = obj
             else:
                 layout_frame[path] = item
         return layout_frame
