@@ -16,7 +16,7 @@ except:
     raise SkipTest("Matplotlib required to test widgets")
 
 from holoviews import Image, HoloMap
-from holoviews.plotting import RasterPlot
+from holoviews.plotting.mpl import RasterPlot
 
 def digest_data(data):
     hashfn = sha256()
