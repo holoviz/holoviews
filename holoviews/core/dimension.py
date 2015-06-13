@@ -666,7 +666,9 @@ class Dimensioned(LabelledData):
             items = []
             for k, v in selection.items():
                 val_dim = ['value'] if v.vdims else []
-                key_dims = v.dimensions('key', label=True) + val_dim
+                kdims, skdims = zip(*[(sanitize_identifier(kd), kd)
+                                      for kd in v.dimensions('key', label=True)])
+                key_dims = list(kdims) + list(skdims) + val_dim
                 if any(kw in key_dims for kw in kwargs):
                     items.append((k, v.select(selection_specs, **kwargs)))
                 else:
