@@ -133,7 +133,7 @@ def display_frame(plot, figure_format, backend, dpi, css, message, **kwargs):
         html = "<center>" + mpld3.fig_to_html(plot.state) + "<center/>"
     else:
         renderer = plot.renderer.instance(dpi=dpi)
-        figdata = renderer.figure_data(plot, figure_format)
+        figdata, _ = renderer(plot, figure_format)
         w,h = renderer.get_size(plot)
         if figure_format=='svg':
             figdata = figdata.encode("utf-8")

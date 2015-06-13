@@ -62,9 +62,6 @@ class Renderer(Exporter):
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
-    # Error messages generated when testing potentially supported formats
-    HOLOMAP_FORMAT_ERROR_MESSAGES = {}
-
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
 

@@ -7,6 +7,7 @@ from ...core import HoloMap, AdjointLayout
 from ...core.options import Store, StoreOptions
 
 from .. import MIME_TYPES
+from ..plot import Plot
 from ..renderer import Renderer
 
 from matplotlib import pyplot as plt
@@ -52,30 +53,34 @@ class MPLRenderer(Renderer):
         """
         Render the supplied HoloViews component using matplotlib.
         """
-        if isinstance(obj, AdjointLayout):
-            obj = Layout.from_values(obj)
+        if not isinstance(obj, Plot):
+            obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+            element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+            try:
+                plotclass = Store.registry[element_type]
+            except KeyError:
+                raise Exception("No corresponding plot type found for %r" % type(obj))
 
-        element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
-        try:
-            plotclass = Store.registry[element_type]
-        except KeyError:
-            raise Exception("No corresponding plot type found for %r" % type(obj))
+            if fmt is None:
+                fmt = self.holomap if len(plot) > 1 else self.fig
+                if fmt is None: return
 
-        plot = plotclass(obj, **self.plot_options(obj, self.size))
-        if fmt is None:
-            fmt = self.holomap if len(plot) > 1 else self.fig
-            if fmt is None: return
-
-        if len(plot) > 1:
-            (writer, _, anim_kwargs, extra_args) = self.ANIMATION_OPTS[fmt]
-            anim = plot.anim(fps=self.fps)
-            if extra_args != []:
-                anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-
-            data = self._anim_data(anim, fmt, writer, **anim_kwargs)
-        else:
+            plot = plotclass(obj, **self.plot_options(obj, self.size))
             plot.update(0)
-            data = self.figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
+
+        elif fmt is None:
+            raise Exception("Format must be specified when supplying a plot instance")
+        else:
+            plot = obj
+
+        if fmt in ['png', 'svg', 'pdf']:
+            data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
+        else:
+
+            if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+                raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
+            anim = plot.anim(fps=self.fps)
+            data = self._anim_data(anim, fmt)
 
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
@@ -150,10 +155,71 @@ class MPLRenderer(Renderer):
         with open(filename, 'wb') as f:
             f.write(self_or_cls.encode(rendered))
 
-    def _anim_data(self, anim, fmt, writer, **anim_kwargs):
+
+    @classmethod
+    def get_figure_manager(cls, counter, plot):
+        try:
+            from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
+            from mpl_toolkits.mplot3d import Axes3D
+        except:
+            return None
+        fig = plot.state
+        manager = new_figure_manager_given_figure(counter, fig)
+        # Need to call mouse_init on each 3D axis to enable rotation support
+        for ax in fig.get_axes():
+            if isinstance(ax, Axes3D):
+                ax.mouse_init()
+        return manager
+
+
+    @bothmethod
+    def get_size(self_or_cls, plot):
+        w, h = plot.state.get_size_inches()
+        dpi = plot.state.dpi
+        return (w*dpi, h*dpi)
+
+
+    def _figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
+        """
+        Render matplotlib figure object and return the corresponding data.
+
+        Similar to IPython.core.pylabtools.print_figure but without
+        any IPython dependency.
+        """
+        fig = plot.state
+        kw = dict(
+            format=fmt,
+            facecolor=fig.get_facecolor(),
+            edgecolor=fig.get_edgecolor(),
+            dpi=self.dpi,
+            bbox_inches=bbox_inches,
+        )
+        kw.update(kwargs)
+
+        # Attempts to precompute the tight bounding box
+        try:
+            kw = self._compute_bbox(fig, kw)
+        except:
+            pass
+
+        bytes_io = BytesIO()
+        fig.canvas.print_figure(bytes_io, **kw)
+        data = bytes_io.getvalue()
+        if fmt == 'svg':
+            data = data.decode('utf-8')
+        return data
+
+
+    def _anim_data(self, anim, fmt):
         """
         Render a matplotlib animation object and return the corresponding data.
         """
+        (writer, _, anim_kwargs, extra_args) = self.ANIMATION_OPTS[fmt]
+        if extra_args != []:
+            anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
+        if fmt=='gif':
+            anim_kwargs['fps'] = fps
+
         anim_kwargs = dict(anim_kwargs, **({'dpi':self.dpi} if self.dpi is not None else {}))
         anim_kwargs = dict({'fps':self.fps} if fmt =='gif' else {}, **anim_kwargs)
         if not hasattr(anim, '_encoded_video'):
@@ -209,71 +275,6 @@ class MPLRenderer(Renderer):
             else:
                 kw['bbox_inches'] = MPLRenderer.drawn[fig_id]
         return kw
-
-
-    def figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
-        """
-        Render matplotlib figure object and return the corresponding data.
-
-        Similar to IPython.core.pylabtools.print_figure but without
-        any IPython dependency.
-        """
-        fig = plot.state
-        kw = dict(
-            format=fmt,
-            facecolor=fig.get_facecolor(),
-            edgecolor=fig.get_edgecolor(),
-            dpi=self.dpi,
-            bbox_inches=bbox_inches,
-        )
-        kw.update(kwargs)
-
-        # Attempts to precompute the tight bounding box
-        try:
-            kw = self._compute_bbox(fig, kw)
-        except:
-            pass
-
-        bytes_io = BytesIO()
-        fig.canvas.print_figure(bytes_io, **kw)
-        data = bytes_io.getvalue()
-        if fmt == 'svg':
-            data = data.decode('utf-8')
-        return data
-
-    @classmethod
-    def get_figure_manager(cls, counter, plot):
-        try:
-            from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
-            from mpl_toolkits.mplot3d import Axes3D
-        except:
-            return None
-        fig = plot.state
-        manager = new_figure_manager_given_figure(counter, fig)
-        # Need to call mouse_init on each 3D axis to enable rotation support
-        for ax in fig.get_axes():
-            if isinstance(ax, Axes3D):
-                ax.mouse_init()
-        return manager
-
-    @bothmethod
-    def get_size(self_or_cls, plot):
-        w, h = plot.state.get_size_inches()
-        dpi = plot.state.dpi
-        return (w*dpi, h*dpi)
-
-    @bothmethod
-    def animation_data(self_or_cls, plot, holomap_format, fps, dpi):
-        if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-            raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
-        anim = plot.anim(fps=fps)
-        (writer, fmt, anim_kwargs, extra_args) = self_or_cls.ANIMATION_OPTS[holomap_format]
-
-        if extra_args != []:
-            anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-        if holomap_format=='gif':
-            anim_kwargs['fps'] = fps
-        return self_or_cls._anim_data(anim, fmt, writer, **anim_kwargs)
 
 
 
