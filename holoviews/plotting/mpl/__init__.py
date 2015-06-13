@@ -101,6 +101,9 @@ def default_options(options):
     # Interface
     options.TimeSeries = Options('style', color=Cycle())
 
+
+Store.renderers['matplotlib'] = MPLRenderer
+
 # Register the default options
 Store.option_setters.append(default_options)
 

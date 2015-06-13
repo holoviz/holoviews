@@ -687,6 +687,8 @@ class Store(object):
     object.
     """
 
+    renderers = {} # The set of available Renderers across all backends.
+
     # A mapping from ViewableElement types to their corresponding plot
     # types. Set using the register_plots methods.
     registry = {}
