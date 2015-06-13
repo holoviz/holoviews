@@ -80,11 +80,14 @@ class Renderer(Exporter):
     @classmethod
     def plotting_class(cls, obj):
         """
-        Given an object, return the suitable plotting class needed to
-        render it with the current renderer.
+        Given an object or Element class, return the suitable plotting
+        class needed to render it with the current renderer.
         """
         obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-        element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+        if isinstance(obj, type):
+            element_type = obj
+        else:
+            element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
