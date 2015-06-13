@@ -167,6 +167,17 @@ class OutputMagic(OptionsMagic):
     Magic for easy customising of display options.
     Consult %%output? for more information.
     """
+
+    def list_backends():
+        backends = []
+        for backend in Store.renderers:
+            backends.append(backend)
+            renderer = Store.renderers[backend]
+            modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
+            backends += ['%s:%s' % (backend, mode) for mode in modes]
+        return backends + ['nbagg', 'd3']
+
+
     magic_name = '%output'
     # Formats that are always available
     inbuilt_formats= ['auto', 'widgets', 'scrubber', 'repr']
@@ -174,7 +185,7 @@ class OutputMagic(OptionsMagic):
     optional_formats = ['webm','mp4', 'gif']
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
-    allowed = {'backend'     : ['mpl','d3', 'nbagg'],
+    allowed = {'backend'     : list_backends(),
                'fig'         : ['svg', 'png', 'repr', 'pdf'],
                'holomap'     : inbuilt_formats,
                'widgets'     : ['embed', 'live'],
@@ -191,7 +202,7 @@ class OutputMagic(OptionsMagic):
                                           'max-width', 'min-width', 'max-height',
                                           'min-height', 'outline', 'float']}}
 
-    defaults = OrderedDict([('backend'     , 'mpl'),
+    defaults = OrderedDict([('backend'     , 'matplotlib'),
                             ('fig'         , 'png'),
                             ('holomap'     , 'auto'),
                             ('widgets'     , 'embed'),
@@ -222,6 +233,21 @@ class OutputMagic(OptionsMagic):
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
+
+    @classmethod
+    def renderer(cls, **options):
+        """
+        Return an appropriate renderer instance using the suitable
+        backend and the appropriate mode.
+        """
+        split = cls.options['backend'].split(':')
+        backend, mode = split if len(split)==2 else (split[0], 'default')
+        return Store.renderers[backend].instance(mode=mode, **options)
+
+    @classmethod
+    def backend(cls):
+        "Convenience method as the backend is accessed frequently"
+        return cls.options['backend'].split(':')[0]
 
 
     @classmethod
@@ -271,15 +297,6 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def _validate(cls, options):
         "Validation of edge cases and incompatible options"
-        if options['backend'] == 'd3':
-            try:      import mpld3 # pyflakes:ignore (Testing optional import)
-            except:
-                raise ValueError("Cannot use d3 backend without mpld3. "
-                                 "Please select a different backend")
-            allowed = ['scrubber', 'widgets', 'auto']
-            if options['holomap'] not in allowed:
-                raise ValueError("The D3 backend only supports holomap options %r" % allowed)
-
         if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
             outputwarning.warning("PDF output is experimental, may not be supported"
                                   "by your browser and may change in future.")
