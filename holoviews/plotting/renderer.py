@@ -35,8 +35,7 @@ class Renderer(Exporter):
 
     backend = param.String(doc="""
         The full, lowercase name of the rendering backend or third
-        part plotting package used e.g 'matplotlib' or 'cairo'. To be
-        matched against the DEFAULT_RENDERER string.""")
+        part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
     fig = param.ObjectSelector(default='svg',
                                objects=['png', 'svg', 'pdf', None], doc="""

@@ -24,9 +24,6 @@ from .interface import *                                             # pyflakes:
 from .operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
 from .element import *                                               # pyflakes:ignore (API import)
 
-DEFAULT_RENDERER='matplotlib'
-
-
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.holoviews.rc",
@@ -41,7 +38,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         pass
 
 
-def help(obj, visualization=False, ansi=True):
+def help(obj, visualization=False, ansi=True, backend='matplotlib'):
     """
     Extended version of the built-in help that supports parameterized
     functions and objects. If ansi is set to False, all ANSI color
@@ -53,7 +50,7 @@ def help(obj, visualization=False, ansi=True):
                            and  issubclass(obj,param.Parameterized))
 
     if parameterized_object or parameterized_class:
-        if Store.registry.get(obj if parameterized_class else type(obj), False):
+        if Store.registry[backend].get(obj if parameterized_class else type(obj), False):
             if visualization is False:
                 print("\nTo view the visualization options applicable to this object or class, use:\n\n"
                       "   holoviews.help(obj, visualization=True)\n")

@@ -5,8 +5,6 @@ any third-party plotting/rendering package.
 This file defines the HTML tags used to wrap renderered output for
 display in the IPython Notebook (optional).
 """
-
-from .. import DEFAULT_RENDERER
 from ..core.options import Cycle
 from .plot import Plot
 from .renderer import Renderer, MIME_TYPES
@@ -31,20 +29,12 @@ HTML_TAGS = {
     'pdf':  PDF_TAG
 }
 
-DEFAULT_RENDER_CLASS=None
-
 def public(obj):
-    global DEFAULT_RENDER_CLASS
     if not isinstance(obj, type): return False
     is_plot_or_cycle = any([issubclass(obj, bc) for bc in [Plot, Cycle]])
     is_renderer = any([issubclass(obj, bc) for bc in [Renderer]])
-    if is_renderer and (obj is not Renderer):
-        DEFAULT_RENDER_CLASS = obj
     return (is_plot_or_cycle or is_renderer)
 
-# Load the default renderer
-if DEFAULT_RENDERER=='matplotlib':
-    from .mpl import *
 
 _public = list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public
