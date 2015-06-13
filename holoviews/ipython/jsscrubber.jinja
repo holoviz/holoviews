@@ -236,21 +236,32 @@
           }, 0);
       }
 
-      {% if mpld3 %}
-      if(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded){
-          create_widget();
-      }else {
-          var d3_require = {paths: {"d3" : "{{ d3_url }}"}}
-          require.config(d3_require);
-          require(["d3"], function(d3){
+      var paths = {};
+      paths.underscore = "{{ underscore_url }}";
+      {% if mpld3 == 'true' %}
+      if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
+      	  paths.d3 = "{{ d3_url }}"
+      }
+      var require_conf = {paths: paths};
+      require.config(require_conf);
+      if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
+      	  require(["underscore"], function(d3){
+              create_widget();
+      	  });
+      } else {
+          require(["d3", "underscore"], function(d3){
               window.d3 = d3;
               $.getScript("{{ mpld3_url }}", function(){
                   create_widget();
-              });
+	      });
           });
       }
       {% else %}
-          create_widget();
+	  var require_conf = {paths: paths};
+	  require.config(require_conf);
+      	  require(["underscore"], function(){
+              create_widget();
+	  });
       {% endif %}
   })()
 </script>

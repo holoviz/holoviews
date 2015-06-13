@@ -250,6 +250,7 @@ class NdWidget(param.Parameterized):
 
     mpld3_url = 'https://mpld3.github.io/js/mpld3.v0.3git.js'
     d3_url = 'https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'
+    underscore_url = "https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js"
     widgets = {}
 
     def __init__(self, plot, **params):
@@ -372,6 +373,7 @@ class ScrubberWidget(NdWidget):
                 'server': self.server_url,
                 'mpld3_url': self.mpld3_url,
                 'd3_url': self.d3_url[:-3],
+                'underscore_url': self.underscore_url[:-3],
                 'cached': str(self.embed).lower(),
                 'nbagg': str(self.nbagg).lower(),
                 'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
@@ -470,6 +472,7 @@ class SelectionWidget(NdWidget):
                 'throttle': self.throttle[OutputMagic.options['widgets']],
                 'jqueryui_url': self.jqueryui_url[:-3],
                 'd3_url': self.d3_url[:-3],
+                'underscore_url': self.underscore_url[:-3],
                 'delay': int(1000./OutputMagic.options['fps']),
                 'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
                 'mpld3': str(OutputMagic.options['backend'] == 'd3').lower()}
