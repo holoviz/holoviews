@@ -599,7 +599,7 @@ class OverlayPlot(LegendPlot):
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
                             uniform=self.uniform, show_legend=self.show_legend)
-            plotype = Store.registry[type(vmap.last)]
+            plotype = Store.registry['matplotlib'][type(vmap.last)]
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plotype(vmap, **plotopts)
             if issubclass(plotype, OverlayPlot):
@@ -763,5 +763,5 @@ class DrawPlot(ElementPlot):
 
 
 
-Store.registry.update({NdOverlay: OverlayPlot,
-                       Overlay: OverlayPlot})
+Store.register({NdOverlay: OverlayPlot,
+                Overlay: OverlayPlot}, 'matplotlib')

@@ -25,6 +25,8 @@ from .archive import notebook_archive
 # To assist with debugging of display hooks
 ABBREVIATE_TRACEBACKS=True
 
+BACKEND='matplotlib' # Temporary global variable until the output
+                     # magic is updated appropriately
 
 #==================#
 # Helper functions #
@@ -208,9 +210,9 @@ def display_hook(fn):
                     options['holomap'] = None
 
                 if isinstance(element, HoloMap):
-                    renderer = Store.registry[element.type].renderer
+                    renderer = Store.registry[BACKEND][element.type].renderer
                 else:
-                    renderer = Store.registry[type(element)].renderer
+                    renderer = Store.registry[BACKEND][type(element)].renderer
 
                 renderer.instance(**options).save(element, filename)
 
@@ -232,8 +234,8 @@ def element_display(element,size, max_frames, max_branches, widget_mode):
     if type(element) == Element:                 return None
     info = process_object(element)
     if info: return info
-    if element.__class__ not in Store.registry: return None
-    plot_class = Store.registry[element.__class__]
+    if element.__class__ not in Store.registry[BACKEND]: return None
+    plot_class = Store.registry[BACKEND][element.__class__]
     element_plot = plot_class(element,
                               **plot_class.renderer.plot_options(element, size))
 
@@ -246,9 +248,9 @@ def map_display(vmap, size, max_frames, max_branches, widget_mode):
     if not isinstance(vmap, HoloMap): return None
     info = process_object(vmap)
     if info: return info
-    if vmap.type not in Store.registry:  return None
+    if vmap.type not in Store.registry[BACKEND]:  return None
 
-    plot_class = Store.registry[vmap.type]
+    plot_class = Store.registry[BACKEND][vmap.type]
     mapplot = plot_class(vmap, **plot_class.renderer.plot_options(vmap, size))
     if len(mapplot) == 0:
         return sanitize_HTML(vmap)

@@ -105,10 +105,10 @@ class PolygonPlot(ElementPlot):
             self._draw_colorbar(collection)
 
 
-Store.registry.update({
+Store.register({
     Contours: PathPlot,
     Path:     PathPlot,
     Box:      PathPlot,
     Bounds:   PathPlot,
     Ellipse:  PathPlot,
-    Polygons: PolygonPlot})
+    Polygons: PolygonPlot}, 'matplotlib')

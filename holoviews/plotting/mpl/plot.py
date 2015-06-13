@@ -617,11 +617,13 @@ class GridPlot(CompositePlot):
 
             # Create subplot
             if view is not None:
-                subplot = Store.registry[vtype](view, figure=self.handles['fig'], axis=subax,
-                                                dimensions=self.dimensions, show_title=False,
-                                                subplot=not create_axes, ranges=frame_ranges,
-                                                uniform=self.uniform, keys=self.keys,
-                                                show_legend=False, **dict(opts, **kwargs))
+                plotting_class = Store.registry['matplotlib'][vtype]
+                subplot = plotting_class(view,
+                                         figure=self.handles['fig'], axis=subax,
+                                         dimensions=self.dimensions, show_title=False,
+                                         subplot=not create_axes, ranges=frame_ranges,
+                                         uniform=self.uniform, keys=self.keys,
+                                         show_legend=False, **dict(opts, **kwargs))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
                 subplots[(r, c)] = subplot
             else:
@@ -1260,7 +1262,7 @@ class LayoutPlot(CompositePlot):
                 plotopts['create_axes'] = ax is not None
             else:
                 if pos == 'main':
-                    plot_type = Store.registry[vtype]
+                    plot_type = Store.registry['matplotlib'][vtype]
                 else:
                     plot_type = MPLPlot.sideplots[vtype]
             num = num if len(self.coords) > 1 else 0
@@ -1298,7 +1300,7 @@ class LayoutPlot(CompositePlot):
         return self._finalize_axis(None)
 
 
-Store.registry.update({GridSpace: GridPlot,
-                       NdLayout: LayoutPlot,
-                       Layout: LayoutPlot,
-                       AdjointLayout: AdjointLayoutPlot})
+Store.register({GridSpace: GridPlot,
+                NdLayout: LayoutPlot,
+                Layout: LayoutPlot,
+                AdjointLayout: AdjointLayoutPlot}, 'matplotlib')

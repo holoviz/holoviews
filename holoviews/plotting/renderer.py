@@ -87,7 +87,7 @@ class Renderer(Exporter):
         obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
         element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
         try:
-            plotclass = Store.registry[element_type]
+            plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
 

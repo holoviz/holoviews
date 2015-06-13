@@ -337,9 +337,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         return max([len(self.keys), 1])
 
 
-Store.registry.update({Raster: RasterPlot,
-                       HeatMap: RasterPlot,
-                       Image: RasterPlot,
-                       RGB: RasterPlot,
-                       HSV: RasterPlot})
+Store.register({Raster: RasterPlot,
+                HeatMap: RasterPlot,
+                Image: RasterPlot,
+                RGB: RasterPlot,
+                HSV: RasterPlot}, 'matplotlib')
 

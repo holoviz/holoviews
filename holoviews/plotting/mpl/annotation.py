@@ -127,9 +127,9 @@ class SplinePlot(AnnotationPlot):
 
 
 
-Store.registry.update({
+Store.register({
     VLine: VLinePlot,
     HLine: HLinePlot,
     Arrow: ArrowPlot,
     Spline: SplinePlot,
-    Text: TextPlot})
+    Text: TextPlot}, 'matplotlib')

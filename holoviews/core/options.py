@@ -690,7 +690,7 @@ class Store(object):
     renderers = {} # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
-    # types. Set using the register_plots methods.
+    # types grouped by the backend. Set using the register method.
     registry = {}
 
     # Once register_plotting_classes is called, this OptionTree is populated
@@ -786,7 +786,7 @@ class Store(object):
 
 
     @classmethod
-    def add_style_opts(cls, component, new_options):
+    def add_style_opts(cls, component, new_options, backend='matplotlib'):
         """
         Given a component such as an Element (e.g. Image, Curve) or a
         container (e.g Layout) specify new style options to be
@@ -796,7 +796,7 @@ class Store(object):
         additional style keywords are appropriate for the
         corresponding plotting class.
         """
-        if component not in cls.registry:
+        if component not in cls.registry[backend]:
             raise ValueError("Component %r not registered to a plotting class" % component)
 
         if not isinstance(new_options, list) or not all(isinstance(el, str) for el in new_options):
@@ -804,13 +804,24 @@ class Store(object):
 
         with param.logging_level('CRITICAL'):
             for option in new_options:
-                if option not in cls.registry[component].style_opts:
-                    cls.registry[component].style_opts.append(option)
-        cls.register_plots()
+                if option not in cls.registry[backend][component].style_opts:
+                    cls.registry[backend][component].style_opts.append(option)
+        cls.register_plots(backend=backend)
 
 
     @classmethod
-    def register_plots(cls, style_aliases={}):
+    def register(cls, associations, backend):
+        """
+        Register the supplied dictionary of associations between
+        elements and plotting classes to the specified backend.
+        """
+        if backend not in cls.registry:
+            cls.registry[backend] = {}
+        cls.registry[backend].update(associations)
+
+
+    @classmethod
+    def register_plots(cls, style_aliases={}, backend='matplotlib'):
         """
         Given that the Store.registry dictionary has been populate
         with {<element>:<plot-class>} items, build an OptionTree for the
@@ -831,7 +842,7 @@ class Store(object):
         """
         from .overlay import CompositeOverlay
         path_items = {}
-        for view_class, plot in cls.registry.items():
+        for view_class, plot in cls.registry[backend].items():
             name = view_class.__name__
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
             expanded_opts = [opt for key in plot.style_opts

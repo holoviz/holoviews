@@ -327,10 +327,10 @@ class SNSFramePlot(DFrameViewPlot):
             super(SNSFramePlot, self)._update_plot(axis, view)
 
 
-Store.registry.update({TimeSeries: TimeSeriesPlot,
-                       Bivariate: BivariatePlot,
-                       Distribution: DistributionPlot,
-                       Regression: RegressionPlot,
-                       SNSFrame: SNSFramePlot,
-                       DFrame: SNSFramePlot,
-                       DataFrameView: SNSFramePlot})
+Store.register({TimeSeries: TimeSeriesPlot,
+                Bivariate: BivariatePlot,
+                Distribution: DistributionPlot,
+                Regression: RegressionPlot,
+                SNSFrame: SNSFramePlot,
+                DFrame: SNSFramePlot,
+                DataFrameView: SNSFramePlot}, 'matplotlib')

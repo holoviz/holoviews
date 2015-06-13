@@ -145,5 +145,5 @@ class DFrameViewPlot(ElementPlot):
         self._update_plot(axis, view)
 
 
-Store.registry.update({DataFrameView: DFrameViewPlot,
-                       DFrame: DFrameViewPlot})
+Store.register({DataFrameView: DFrameViewPlot,
+                DFrame: DFrameViewPlot}, 'matplotlib')

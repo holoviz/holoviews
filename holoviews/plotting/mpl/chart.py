@@ -961,12 +961,12 @@ class BarPlot(LegendPlot):
                         prev += height if np.isfinite(height) else 0
 
 
-Store.registry.update({Curve: CurvePlot,
-                       Scatter: PointPlot,
-                       Bars: BarPlot,
-                       Histogram: HistogramPlot,
-                       Points: PointPlot,
-                       VectorField: VectorFieldPlot,
-                       ErrorBars: ErrorPlot})
+Store.register({Curve: CurvePlot,
+                Scatter: PointPlot,
+                Bars: BarPlot,
+                Histogram: HistogramPlot,
+                Points: PointPlot,
+                VectorField: VectorFieldPlot,
+                ErrorBars: ErrorPlot}, 'matplotlib')
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot})

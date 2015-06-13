@@ -184,5 +184,5 @@ class SurfacePlot(Plot3D):
         self.handles['legend_handle'] = self.handles['surface']
 
 
-Store.registry.update({Surface: SurfacePlot,
-                       Scatter3D: Scatter3DPlot})
+Store.register({Surface: SurfacePlot,
+                Scatter3D: Scatter3DPlot}, 'matplotlib')

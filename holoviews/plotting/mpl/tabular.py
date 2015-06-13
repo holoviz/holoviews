@@ -145,5 +145,4 @@ class TablePlot(ElementPlot):
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
 
-Store.registry.update({ItemTable: TablePlot,
-                       Table: TablePlot})
+Store.register({ItemTable: TablePlot, Table: TablePlot}, 'matplotlib')
