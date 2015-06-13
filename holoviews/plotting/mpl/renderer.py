@@ -192,8 +192,6 @@ class MPLRenderer(Renderer):
         (writer, _, anim_kwargs, extra_args) = self.ANIMATION_OPTS[fmt]
         if extra_args != []:
             anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
-        if fmt=='gif':
-            anim_kwargs['fps'] = fps
 
         anim_kwargs = dict(anim_kwargs, **({'dpi':self.dpi} if self.dpi is not None else {}))
         anim_kwargs = dict({'fps':self.fps} if fmt =='gif' else {}, **anim_kwargs)
