@@ -51,7 +51,8 @@ class MPLRenderer(Renderer):
 
     def __call__(self, obj, fmt=None):
         """
-        Render the supplied HoloViews component using matplotlib.
+        Render the supplied HoloViews component or MPLPlot instance
+        using matplotlib.
         """
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
@@ -61,10 +62,6 @@ class MPLRenderer(Renderer):
             except KeyError:
                 raise Exception("No corresponding plot type found for %r" % type(obj))
 
-            if fmt is None:
-                fmt = self.holomap if len(plot) > 1 else self.fig
-                if fmt is None: return
-
             plot = plotclass(obj, **self.plot_options(obj, self.size))
             plot.update(0)
 
@@ -72,6 +69,10 @@ class MPLRenderer(Renderer):
             raise Exception("Format must be specified when supplying a plot instance")
         else:
             plot = obj
+
+        if fmt is None:
+            fmt = self.holomap if len(plot) > 1 else self.fig
+            if fmt is None: return
 
         if fmt in ['png', 'svg', 'pdf']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
