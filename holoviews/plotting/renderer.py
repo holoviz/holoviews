@@ -3,6 +3,8 @@ Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 
+import base64
+
 import param
 from ..core.io import Exporter
 from ..core.options import Store
@@ -10,13 +12,35 @@ from .. import Store, Layout, HoloMap, AdjointLayout
 
 from param.parameterized import bothmethod
 
+# Tags used when visual output is to be embedded in HTML
+IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
+VIDEO_TAG = """
+<video controls style='max-width:100%; margin: auto; display: block; {css}'>
+<source src='{src}' type='{mime_type}'>
+Your browser does not support the video tag.
+</video>"""
+PDF_TAG = "<iframe src='{src}' style='width:100%; margin: auto; display: block; {css}'></iframe>"
+HTML_TAG = "{src}"
+
+HTML_TAGS = {
+    'base64': 'data:{mime_type};base64,{b64}', # Use to embed data
+    'svg':  IMAGE_TAG,
+    'png':  IMAGE_TAG,
+    'gif':  IMAGE_TAG,
+    'webm': VIDEO_TAG,
+    'mp4':  VIDEO_TAG,
+    'pdf':  PDF_TAG,
+    'html': HTML_TAG
+}
+
 MIME_TYPES = {
     'svg':  'image/svg+xml',
     'png':  'image/png',
     'gif':  'image/gif',
     'webm': 'video/webm',
     'mp4':  'video/mp4',
-    'pdf':  'application/pdf'
+    'pdf':  'application/pdf',
+    'html': None
 }
 
 
@@ -79,6 +103,31 @@ class Renderer(Exporter):
         """
         # Example of the return format where the first value is the rendered data.
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+
+
+    def html(self, obj, fmt=None, css={}):
+        """
+        Renders plot or data structure and wraps the output in HTML.
+        """
+        figdata, _ = self(obj, fmt)
+
+        if isinstance(css, dict):
+            css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
+        else:
+            raise ValueError("CSS must be supplied as Python dictionary")
+
+        if fmt == 'html':
+            return figdata
+        else:
+            if fmt == 'svg':
+                figdata = figdata.encode("utf-8")
+            elif fmt == 'pdf' and 'height' not in css:
+                w,h = renderer.get_size(plot)
+                css['height'] = '%dpx' % (h*dpi*1.15)
+            b64 = base64.b64encode(figdata).decode("utf-8")
+            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+            return tag.format(src=src, mime_type=mime_type, css=css)
 
 
     @classmethod

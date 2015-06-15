@@ -2,12 +2,7 @@
 Definition and registration of display hooks for the IPython Notebook.
 """
 from functools import wraps
-import sys, traceback, base64
-
-try:
-    import mpld3
-except:
-    mpld3 = None
+import sys, traceback
 
 import param
 
@@ -16,9 +11,8 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting import HTML_TAGS, MIME_TYPES
+from ..plotting.mpl import LayoutPlot, GridPlot, RasterGridPlot
 from .magics import OutputMagic, OptsMagic
-from .widgets import SelectionWidget, ScrubberWidget
 
 from .archive import notebook_archive
 # To assist with debugging of display hooks
@@ -54,13 +48,6 @@ def max_frame_warning(max_frames):
                      "[Total item frames exceeds max_frames on OutputMagic (%d)]"
                      % max_frames)
 
-def dict_to_css(css_dict):
-    """Converts a Python dictionary to a valid CSS specification"""
-    if isinstance(css_dict, dict):
-        return '; '.join("%s: %s" % (k, v) for k, v in css_dict.items())
-    else:
-        raise ValueError("CSS must be supplied as Python dictionary")
-
 def process_object(obj):
     "Hook to process the object currently being displayed."
     invalid_options = OptsMagic.process_element(obj)
@@ -73,7 +60,7 @@ def process_object(obj):
 #==================================================#
 
 
-def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
+def display_video(plot, renderer, holomap_format, dpi, fps, css, **kwargs):
     """
     Allows the animation render policy to be changed, e.g to show only
     the middle frame using middle_frame for testing notebooks.
@@ -84,20 +71,13 @@ def display_video(plot, holomap_format, dpi, fps, css, **kwargs):
     try:
         if render_anim is not None:
             return render_anim(plot, dpi=dpi, css=css, **kwargs)
-
-        renderer = OutputMagic.renderer(dpi=dpi)
-        data = renderer.animation_data(plot, holomap_format, fps, dpi)
-
-        b64data = base64.b64encode(data).decode("utf-8")
-        (mime_type, tag) = MIME_TYPES[holomap_format], HTML_TAGS[holomap_format]
-        src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64data)
-        return tag.format(src=src, mime_type=mime_type, css=dict_to_css(css))
+        return renderer.html(plot, holomap_format, css)
     except Exception as e:
         plot.update(0)
         return str(e)+'<br/>'+display_frame(plot,  dpi=dpi, css=css, **kwargs)
 
 
-def display_widgets(plot, holomap_format, widget_mode, **kwargs):
+def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
     "Display widgets applicable to the specified element"
     isuniform = plot.uniform
     islinear = bijective(plot.keys)
@@ -109,38 +89,20 @@ def display_widgets(plot, holomap_format, widget_mode, **kwargs):
     if holomap_format == 'auto':
         holomap_format = 'scrubber' if islinear or not isuniform else 'widgets'
 
-    widget = ScrubberWidget if holomap_format == 'scrubber' else SelectionWidget
-    return widget(plot, embed=(widget_mode == 'embed'), display_options=kwargs)()
+    widget = 'scrubber' if holomap_format == 'scrubber' else 'selection'
+    widget_cls = plot.renderer.widgets[widget]
+
+    return widget_cls(plot, renderer=renderer, embed=(widget_mode == 'embed'),
+                      display_options=kwargs)()
 
 
 
-def display_frame(plot, figure_format, backend, dpi, css, message, **kwargs):
+def display_frame(plot, renderer, figure_format, backend, dpi, css, message, **kwargs):
     """
     Display specified element as a figure. Note the plot instance
     needs to be initialized appropriately first.
     """
-    if backend == 'nbagg':
-        manager = plot.renderer.get_figure_manager(OutputMagic.nbagg_counter, plot)
-        if manager is None: return ''
-        OutputMagic.nbagg_counter += 1
-        manager.show()
-        return ''
-    elif backend == 'd3' and mpld3:
-        plot.state.dpi = dpi
-        mpld3.plugins.connect(plot.state, mpld3.plugins.MousePosition(fontsize=14))
-        html = "<center>" + mpld3.fig_to_html(plot.state) + "<center/>"
-    else:
-        renderer = OutputMagic.renderer(dpi=dpi)
-        figdata, _ = renderer(plot, figure_format)
-        w,h = renderer.get_size(plot)
-        if figure_format=='svg':
-            figdata = figdata.encode("utf-8")
-        if figure_format == 'pdf' and 'height' not in css:
-            css['height'] = '%dpx' % (h*dpi*1.15)
-        b64 = base64.b64encode(figdata).decode("utf-8")
-        (mime_type, tag) = MIME_TYPES[figure_format], HTML_TAGS[figure_format]
-        src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-        html = tag.format(src=src, css=dict_to_css(css))
+    html = renderer.html(plot, figure_format, css)
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
@@ -166,13 +128,14 @@ def display(plot, widget_mode, message=None):
                   css=            OutputMagic.options['css'],
                   fps=            OutputMagic.options['fps'])
 
+    renderer = OutputMagic.renderer(dpi=kwargs['dpi'])
     if len(plot) == 1:
         plot.update(0)
-        return display_frame(plot, **kwargs)
+        return display_frame(plot, renderer, **kwargs)
     elif widget_mode is not None:
-        return display_widgets(plot, **kwargs)
+        return display_widgets(plot, renderer, **kwargs)
     else:
-        return display_video(plot, **kwargs)
+        return display_video(plot, renderer, **kwargs)
 
 #===============#
 # Display hooks #

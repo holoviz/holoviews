@@ -3,12 +3,6 @@ import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 
-from ...core import HoloMap, AdjointLayout
-from ...core.options import Store, StoreOptions
-
-from .. import MIME_TYPES
-from ..plot import Plot
-from ..renderer import Renderer
 
 from matplotlib import pyplot as plt
 from matplotlib import animation
@@ -20,6 +14,11 @@ from matplotlib.backends.backend_nbagg import CommSocket
 import param
 from param.parameterized import bothmethod
 
+from ...core import HoloMap, AdjointLayout
+from ...core.options import Store, StoreOptions
+
+from ..plot import Plot
+from ..renderer import Renderer, MIME_TYPES
 
 class MPLRenderer(Renderer):
     """
@@ -84,6 +83,7 @@ class MPLRenderer(Renderer):
 
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
+
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -162,6 +162,18 @@ class MPLRenderer(Renderer):
         any IPython dependency.
         """
         fig = plot.state
+        if self.mode == 'nbagg':
+            manager = self.get_figure_manager(plot)
+            if manager is None: return ''
+            self.nbagg_counter += 1
+            manager.show()
+            return ''
+        elif self.mode == 'd3':
+            import mpld3
+            fig.dpi = self.dpi
+            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
+            return "<center>" + mpld3.fig_to_html(fig) + "<center/>"
+
         kw = dict(
             format=fmt,
             facecolor=fig.get_facecolor(),
