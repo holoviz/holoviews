@@ -13,16 +13,11 @@ from ...core.options import Store
 from ...core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
 from ...element import Annotation, Table, ItemTable
 from ...operation import Compositor
+from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
 
 
-class ElementPlot(MPLPlot):
-
-    apply_ranges = param.Boolean(default=True, doc="""
-        Whether to compute the plot bounds from the data itself.""")
-
-    apply_extents = param.Boolean(default=True, doc="""
-        Whether to apply extent overrides on the Elements""")
+class ElementPlot(GenericElementPlot, MPLPlot):
 
     apply_ticks = param.Boolean(default=True, doc="""
         Whether to apply custom ticks.""")
@@ -113,115 +108,13 @@ class ElementPlot(MPLPlot):
 
     _suppressed = [Table, ItemTable]
 
-    def __init__(self, element, keys=None, ranges=None, dimensions=None, overlaid=0,
-                 cyclic_index=0, style=None, zorder=0, adjoined=None, uniform=True, **params):
-        self.dimensions = dimensions
-        self.keys = keys
-        if not isinstance(element, HoloMap):
-            self.map = HoloMap(initial_items=(0, element),
-                               kdims=['Frame'], id=element.id)
-        else:
-            self.map = element
-        self.uniform = uniform
-        self.adjoined = adjoined
-        self.overlaid = overlaid
-        self.cyclic_index = cyclic_index
-        self.style = Store.lookup_options(self.map.last, 'style') if style is None else style
-        self.zorder = zorder
+    def __init__(self, element, **params):
+        super(ElementPlot, self).__init__(element, **params)
         check = self.map.last
         if isinstance(check, CompositeOverlay):
             check = check.values()[0] # Should check if any are 3D plots
         if isinstance(check, Element3D):
             self.projection = '3d'
-
-        dimensions = self.map.kdims if dimensions is None else dimensions
-        keys = keys if keys else list(self.map.data.keys())
-        plot_opts = Store.lookup_options(self.map.last, 'plot').options
-        super(ElementPlot, self).__init__(keys=keys, dimensions=dimensions, adjoined=adjoined,
-                                          uniform=uniform, **dict(params, **plot_opts))
-
-
-    def _get_frame(self, key):
-        if self.uniform:
-            if not isinstance(key, tuple): key = (key,)
-            kdims = [d.name for d in self.map.kdims]
-            if self.dimensions is None:
-                dimensions = kdims
-            else:
-                dimensions = [d.name for d in self.dimensions]
-            if kdims == ['Frame'] and kdims != dimensions:
-                select = dict(Frame=0)
-            else:
-                select = {d: key[dimensions.index(d)]
-                          for d in kdims}
-        elif isinstance(key, int):
-            return self.map.values()[min([key, len(self.map)-1])]
-        else:
-            select = dict(zip(self.map.dimensions('key', label=True), key))
-        try:
-            selection = self.map.select((HoloMap,), **select)
-        except KeyError:
-            selection = None
-        return selection.last if isinstance(selection, HoloMap) else selection
-
-
-    def get_extents(self, view, ranges):
-        """
-        Gets the extents for the axes from the current View. The globally
-        computed ranges can optionally override the extents.
-        """
-        num = 6 if self.projection == '3d' else 4
-        if self.apply_ranges:
-            if ranges:
-                dims = view.dimensions()
-                x0, x1 = ranges[dims[0].name]
-                y0, y1 = ranges[dims[1].name]
-                if self.projection == '3d':
-                    z0, z1 = ranges[dims[2].name]
-            else:
-                x0, x1 = view.range(0)
-                y0, y1 = view.range(1)
-                if self.projection == '3d':
-                    z0, z1 = view.range(2)
-            if self.projection == '3d':
-                range_extents = (x0, y0, z0, x1, y1, z1)
-            else:
-                range_extents = (x0, y0, x1, y1)
-        else:
-            range_extents = (np.NaN,) * num
-
-        if self.apply_extents:
-            norm_opts = Store.lookup_options(view, 'norm').options
-            if norm_opts.get('framewise', False):
-                extents = view.extents
-            else:
-                extent_list = self.map.traverse(lambda x: x.extents, [Element])
-                extents = util.max_extents(extent_list, self.projection == '3d')
-        else:
-            extents = (np.NaN,) * num
-        return tuple(l1 if l2 is None or not np.isfinite(l2) else l2 for l1, l2 in zip(range_extents, extents))
-
-
-    def _format_title(self, key):
-        frame = self._get_frame(key)
-        if frame is None: return None
-        type_name = type(frame).__name__
-        group = frame.group if frame.group != type_name else ''
-        label = frame.label
-        if self.layout_dimensions:
-            title = ''
-        else:
-            title_format = util.safe_unicode(self.title_format)
-            title = title_format.format(label=util.safe_unicode(label),
-                                        group=util.safe_unicode(group),
-                                        type=type_name)
-        dim_title = self._frame_title(key, 2)
-        if not title or title.isspace():
-            return dim_title
-        elif not dim_title or dim_title.isspace():
-            return title
-        else:
-            return '\n'.join([title, dim_title])
 
 
     def _draw_colorbar(self, artist):
@@ -303,20 +196,6 @@ class ElementPlot(MPLPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
         return super(ElementPlot, self)._finalize_axis(key)
-
-
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
-        # Axis labels
-        dims = view.dimensions()
-        if isinstance(view, CompositeOverlay):
-            dims = dims[view.ndims:]
-        if dims and xlabel is None:
-            xlabel = str(dims[0])
-        if len(dims) >= 2 and ylabel is None:
-            ylabel = str(dims[1])
-        if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
-            zlabel = str(dims[2])
-        return xlabel, ylabel, zlabel
 
 
     def _apply_aspect(self, axis):
@@ -455,6 +334,7 @@ class ElementPlot(MPLPlot):
         tick_fontsize = self._fontsize('ticks','labelsize',common=False)
         if tick_fontsize:  axis.tick_params(**tick_fontsize)
 
+
     def update_frame(self, key, ranges=None):
         """
         Set the plot(s) to the given frame number.  Operates by
@@ -523,90 +403,12 @@ class LegendPlot(ElementPlot):
 
 
 
-class OverlayPlot(LegendPlot):
+class OverlayPlot(GenericOverlayPlot, LegendPlot):
     """
     OverlayPlot supports compositors processing of Overlays across maps.
     """
 
-    style_grouping = param.Integer(default=2,
-                                   doc="""The length of the type.group.label
-        spec that will be used to group Elements into style groups, i.e.
-        a style_grouping value of 1 will group just by type, a value of 2
-        will group by type and group and a value of 3 will group by the
-        full specification.""")
-
-    def __init__(self, overlay, ranges=None, **params):
-        super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
-
-        # Apply data collapse
-        self.map = Compositor.collapse(self.map, None, mode='data')
-        self.map = self._apply_compositor(self.map, ranges, self.keys)
-        self.subplots = self._create_subplots(ranges)
-
-
-    def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
-        """
-        Given a HoloMap compute the appropriate (mapwise or framewise)
-        ranges in order to apply the Compositor collapse operations in
-        display mode (data collapse should already have happened).
-        """
-        # Compute framewise normalization
-        defaultdim = holomap.ndims == 1 and holomap.kdims[0].name != 'Frame'
-
-        if keys and ranges and dimensions and not defaultdim:
-            dim_inds = [dimensions.index(d) for d in holomap.kdims]
-            sliced_keys = [tuple(k[i] for i in dim_inds) for k in keys]
-            frame_ranges = OrderedDict([(slckey, self.compute_ranges(holomap, key, ranges[key]))
-                                        for key, slckey in zip(keys, sliced_keys) if slckey in holomap.data.keys()])
-        else:
-            mapwise_ranges = self.compute_ranges(holomap, None, None)
-            frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
-                                        for key in holomap.keys()])
-        ranges = frame_ranges.values()
-
-        return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
-
-
-    def _create_subplots(self, ranges):
-        subplots = OrderedDict()
-
-        length = self.style_grouping
-        ordering = util.layer_sort(self.map)
-        keys, vmaps = self.map.split_overlays()
-        group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
-        map_lengths = Counter()
-        for m in vmaps:
-            map_lengths[group_fn(m)[:length]] += 1
-
-        zoffset = 0
-        overlay_type = 1 if self.map.type == Overlay else 2
-        group_counter = Counter()
-        for (key, vmap) in zip(keys, vmaps):
-            if self.map.type == Overlay:
-                style_key = (vmap.type.__name__,) + key
-            else:
-                if not isinstance(key, tuple): key = (key,)
-                style_key = group_fn(vmap) + key
-            group_key = style_key[:length]
-            zorder = ordering.index(style_key) + zoffset
-            cyclic_index = group_counter[group_key]
-            group_counter[group_key] += 1
-            group_length = map_lengths[group_key]
-            style = Store.lookup_options(vmap.last, 'style').max_cycles(group_length)
-            plotopts = dict(keys=self.keys, axis=self.handles['axis'], style=style,
-                            cyclic_index=cyclic_index, figure=self.handles['fig'],
-                            zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
-                            layout_dimensions=self.layout_dimensions,
-                            show_title=self.show_title, dimensions=self.dimensions,
-                            uniform=self.uniform, show_legend=self.show_legend)
-            plotype = Store.registry['matplotlib'][type(vmap.last)]
-            if not isinstance(key, tuple): key = (key,)
-            subplots[key] = plotype(vmap, **plotopts)
-            if issubclass(plotype, OverlayPlot):
-                zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
-
-        return subplots
-
+    _passed_handles = ['fig', 'axis']
 
     def _adjust_legend(self, axis):
         """
@@ -672,46 +474,6 @@ class OverlayPlot(LegendPlot):
         self._adjust_legend(axis)
 
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
-
-
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
-        return xlabel, ylabel, zlabel
-
-
-    def get_extents(self, overlay, ranges):
-        extents = []
-        for key, subplot in self.subplots.items():
-            layer = overlay.data.get(key, False)
-            if layer and subplot.apply_ranges and not isinstance(layer, Annotation):
-                if isinstance(layer, CompositeOverlay):
-                    sp_ranges = ranges
-                else:
-                    sp_ranges = util.match_spec(layer, ranges) if ranges else {}
-                extents.append(subplot.get_extents(layer, sp_ranges))
-        return util.max_extents(extents, self.projection == '3d')
-
-
-    def _format_title(self, key):
-        frame = self._get_frame(key)
-        if frame is None: return None
-
-        type_name = type(frame).__name__
-        group = frame.group if frame.group != type_name else ''
-        label = frame.label
-        if self.layout_dimensions:
-            title = ''
-        else:
-            title_format = util.safe_unicode(self.title_format)
-            title = title_format.format(label=util.safe_unicode(label),
-                                        group=util.safe_unicode(group),
-                                        type=type_name)
-        dim_title = self._frame_title(key, 2)
-        if not title or title.isspace():
-            return dim_title
-        elif not dim_title or dim_title.isspace():
-            return title
-        else:
-            return '\n'.join([title, dim_title])
 
 
     def update_frame(self, key, ranges=None):

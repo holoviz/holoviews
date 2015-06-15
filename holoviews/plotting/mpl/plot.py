@@ -16,7 +16,7 @@ from ...core.util import sanitize_identifier, int_to_roman,\
     int_to_alpha, safe_unicode, max_range, basestring
 from ...element import Raster, Table
 
-from ..plot import Plot
+from ..plot import Plot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import MPLRenderer
 
 
@@ -31,6 +31,7 @@ class MPLPlot(Plot):
     """
 
     renderer = MPLRenderer
+    sideplots = {}
 
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
         Alpha of the overall figure background.""")
@@ -72,11 +73,6 @@ class MPLPlot(Plot):
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
 
-    normalize = param.Boolean(default=True, doc="""
-        Whether to compute ranges across all Elements at this level
-        of plotting. Allows selecting normalization at different levels
-        for nested data containers.""")
-
     projection = param.ObjectSelector(default=None,
                                       objects=['3d', 'polar', None], doc="""
         The projection of the plot axis, default of None is equivalent to
@@ -84,12 +80,6 @@ class MPLPlot(Plot):
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
-
-    show_title = param.Boolean(default=True, doc="""
-        Whether to display the plot title.""")
-
-    title_format = param.String(default="{label} {group}", doc="""
-        The formatting string for the title of this plot.""")
 
     fontsize = param.Parameter(default=None, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text. By default,
@@ -102,39 +92,18 @@ class MPLPlot(Plot):
 
           {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
 
-    # A list of matplotlib keyword arguments that may be supplied via a
-    # style options object. Each subclass should override this
-    # parameter to list every option that works correctly.
-    style_opts = []
-
-    # A mapping from ViewableElement types to their corresponding side plot types
-    sideplots = {}
-
-
-    def __init__(self, figure=None, axis=None, dimensions=None, subplots=None,
-                 layout_dimensions=None, uniform=True, keys=None, subplot=False,
-                 adjoined=None, layout_num=0, **params):
-        self.adjoined = adjoined
-        self.subplots = subplots
-        self.subplot = figure is not None or subplot
-        self.dimensions = dimensions
-        self.layout_num = layout_num
-        self.layout_dimensions = layout_dimensions
-        self.keys = keys
-        self.uniform = uniform
-
+    def __init__(self, fig=None, axis=None, **params):
         self._create_fig = True
-        self.drawn = False
+        super(MPLPlot, self).__init__(**params)
         # List of handles to matplotlib objects for animation update
-        self.handles = {} if figure is None else {'fig': figure}
-
-        super(Plot, self).__init__(**params)
         scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
             self.fig_inches = [i*scale for i in self.fig_inches]
         else:
             self.fig_inches *= scale
-        self.handles['axis'] = self._init_axis(axis)
+        fig, axis = self._init_axis(fig, axis)
+        self.handles['fig'] = fig
+        self.handles['axis'] = axis
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -151,154 +120,17 @@ class MPLPlot(Plot):
         return {label:self.fontsize} if common else {}
 
 
-    def compute_ranges(self, obj, key, ranges):
-        """
-        Given an object, a specific key and the normalization options
-        this method will find the specified normalization options on
-        the appropriate OptionTree, group the elements according to
-        the selected normalization option (i.e. either per frame or
-        over the whole animation) and finally compute the dimension
-        ranges in each group. The new set of ranges is returned.
-        """
-        all_table = all(isinstance(el, Table) for el in obj.traverse(lambda x: x, [Element]))
-        if obj is None or not self.normalize or all_table:
-            return OrderedDict()
-        # Get inherited ranges
-        ranges = {} if ranges is None else dict(ranges)
-
-        # Get element identifiers from current object and resolve
-        # with selected normalization options
-        norm_opts = self._get_norm_opts(obj)
-
-        # Traverse displayed object if normalization applies
-        # at this level, and ranges for the group have not
-        # been supplied from a composite plot
-        elements = []
-        return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, (axiswise, framewise) in norm_opts.items():
-            if group in ranges:
-                continue # Skip if ranges are already computed
-            elif not framewise: # Traverse to get all elements
-                elements = obj.traverse(return_fn, [group])
-            elif key is not None: # Traverse to get elements for each frame
-                elements = self._get_frame(key).traverse(return_fn, [group])
-            if not axiswise or ((not framewise or len(elements) == 1) and isinstance(obj, HoloMap)): # Compute new ranges
-                self._compute_group_range(group, elements, ranges)
-        return ranges
-
-
-    def _get_norm_opts(self, obj):
-        """
-        Gets the normalization options for a LabelledData object by
-        traversing the object for to find elements and their ids.
-        The id is then used to select the appropriate OptionsTree,
-        accumulating the normalization options into a dictionary.
-        Returns a dictionary of normalization options for each
-        element in the tree.
-        """
-        norm_opts = {}
-
-        # Get all elements' type.group.label specs and ids
-        type_val_fn = lambda x: (x.id, (type(x).__name__, sanitize_identifier(x.group, escape=False),
-                                        sanitize_identifier(x.label, escape=False))) \
-            if isinstance(x, Element) else None
-        element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
-                         if idspec is not None}
-
-        # Group elements specs by ID and override normalization
-        # options sequentially
-        key_fn = lambda x: -1 if x[0] is None else x[0]
-        id_groups = groupby(sorted(element_specs, key=key_fn), key_fn)
-        for gid, element_spec_group in id_groups:
-            gid = None if gid == -1 else gid
-            group_specs = [el for _, el in element_spec_group]
-            optstree = Store.custom_options.get(gid, Store.options)
-            # Get the normalization options for the current id
-            # and match against customizable elements
-            for opts in optstree:
-                path = tuple(opts.path.split('.')[1:])
-                applies = any(path == spec[:i] for spec in group_specs
-                              for i in range(1, 4))
-                if applies and 'norm' in opts.groups:
-                    nopts = opts['norm'].options
-                    if 'axiswise' in nopts or 'framewise' in nopts:
-                        norm_opts.update({path: (nopts.get('axiswise', False),
-                                                 nopts.get('framewise', False))})
-        element_specs = [spec for eid, spec in element_specs]
-        norm_opts.update({spec: (False, False) for spec in element_specs
-                          if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
-        return norm_opts
-
-
-    @staticmethod
-    def _compute_group_range(group, elements, ranges):
-        # Iterate over all elements in a normalization group
-        # and accumulate their ranges into the supplied dictionary.
-        elements = [el for el in elements if el is not None]
-        group_ranges = OrderedDict()
-        for el in elements:
-            if isinstance(el, (Empty, Table)): continue
-            for dim in el.dimensions(label=True):
-                dim_range = el.range(dim)
-                if dim not in group_ranges:
-                    group_ranges[dim] = []
-                group_ranges[dim].append(dim_range)
-        ranges[group] = OrderedDict((k, max_range(v)) for k, v in group_ranges.items())
-
-
-
-    @classmethod
-    def _deep_options(cls, obj, opt_type, opts, specs=None):
-        """
-        Traverses the supplied object getting all options
-        in opts for the specified opt_type and specs
-        """
-        lookup = lambda x: ((type(x).__name__, x.group, x.label),
-                            {o: Store.lookup_options(x, opt_type).options.get(o, None)
-                             for o in opts})
-        return dict(obj.traverse(lookup, specs))
-
-
-    def _get_frame(self, key):
-        """
-        Required on each MPLPlot type to get the data corresponding
-        just to the current frame out from the object.
-        """
-        pass
-
-
-    def _frame_title(self, key, group_size=2):
-        """
-        Returns the formatted dimension group strings
-        for a particular frame.
-        """
-        if self.layout_dimensions is not None:
-            dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or self.layout_num\
-          and not isinstance(self, GridPlot):
-            return ''
-        else:
-            key = key if isinstance(key, tuple) else (key,)
-            dimensions = self.dimensions
-        dimension_labels = [dim.pprint_value_string(k) for dim, k in
-                            zip(dimensions, key)]
-        groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
-                  for i in range(len(dimension_labels))]
-        return '\n '.join(g for g in groups if g)
-
-
-    def _init_axis(self, axis):
+    def _init_axis(self, fig, axis):
         """
         Return an axis which may need to be initialized from
         a new figure.
         """
-        if not self.subplot and self._create_fig:
+        if not fig and self._create_fig:
             rc_params = self.fig_rcparams
             if self.fig_latex:
                 rc_params['text.usetex'] = True
             with matplotlib.rc_context(rc=rc_params):
                 fig = plt.figure()
-                self.handles['fig'] = fig
                 l, b, r, t = self.fig_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
                 fig.patch.set_alpha(self.fig_alpha)
@@ -309,7 +141,7 @@ class MPLPlot(Plot):
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
 
-        return axis
+        return fig, axis
 
 
     def _subplot_label(self, axis):
@@ -361,12 +193,6 @@ class MPLPlot(Plot):
         self.update_frame(self.keys[frame])
         return self.handles['fig']
 
-
-    def update(self, key):
-        if len(self) == 1 and key == 0 and not self.drawn:
-            return self.initialize_plot()
-        return self.__getitem__(key)
-
     @property
     def state(self):
         return self.handles['fig']
@@ -384,37 +210,8 @@ class MPLPlot(Plot):
         plt.close(figure)
         return anim
 
-    def __len__(self):
-        """
-        Returns the total number of available frames.
-        """
-        return len(self.keys)
 
-
-    def initialize_plot(self, ranges=None):
-        """
-        Initialize the matplotlib figure.
-        """
-        raise NotImplementedError
-
-
-    def update_frame(self, key, ranges=None):
-        """
-        Updates the current frame of the plot.
-        """
-        raise NotImplementedError
-
-
-    def update_handles(self, axis, view, key, ranges=None):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        pass
-
-
-
-class CompositePlot(MPLPlot):
+class CompositePlot(GenericCompositePlot, MPLPlot):
     """
     CompositePlot provides a baseclass for plots coordinate multiple
     subplots to form a Layout.
@@ -426,48 +223,6 @@ class CompositePlot(MPLPlot):
             subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
         self.update_handles(axis, self.layout, key, ranges)
-
-
-    def _get_frame(self, key):
-        """
-        Creates a clone of the Layout with the nth-frame for each
-        Element.
-        """
-        layout_frame = self.layout.clone(shared_data=False)
-        nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
-                                  list(x.data.keys())[min([key[0], len(x)-1])])
-        for path, item in self.layout.items():
-            if self.uniform:
-                dim_keys = zip([d.name for d in self.dimensions
-                                if d in item.dimensions('key')], key)
-            else:
-                dim_keys = item.traverse(nthkey_fn, (HoloMap,))[0]
-            if dim_keys:
-                obj = item.select((HoloMap,), **dict(dim_keys))
-                if isinstance(obj, HoloMap) and len(obj) == 0:
-                    continue
-                else:
-                    layout_frame[path] = obj
-            else:
-                layout_frame[path] = item
-        return layout_frame
-
-
-    def __len__(self):
-        return len(self.keys)
-
-
-    def _format_title(self, key):
-        dim_title = self._frame_title(key, 3)
-        layout = self.layout
-        type_name = type(self.layout).__name__
-        group = layout.group if layout.group != type_name else ''
-        label = layout.label
-        title = safe_unicode(self.title_format).format(label=safe_unicode(label),
-                                                       group=safe_unicode(group),
-                                                       type=type_name)
-        title = '' if title.isspace() else title
-        return '\n'.join([title, dim_title]) if title else dim_title
 
 
 
@@ -618,8 +373,7 @@ class GridPlot(CompositePlot):
             # Create subplot
             if view is not None:
                 plotting_class = Store.registry['matplotlib'][vtype]
-                subplot = plotting_class(view,
-                                         figure=self.handles['fig'], axis=subax,
+                subplot = plotting_class(view, fig=self.handles['fig'], axis=subax,
                                          dimensions=self.dimensions, show_title=False,
                                          subplot=not create_axes, ranges=frame_ranges,
                                          uniform=self.uniform, keys=self.keys,
@@ -919,7 +673,7 @@ class AdjointLayoutPlot(CompositePlot):
         return max([len(self.keys), 1])
 
 
-class LayoutPlot(CompositePlot):
+class LayoutPlot(GenericLayoutPlot, CompositePlot):
     """
     A LayoutPlot accepts either a Layout or a NdLayout and
     displays the elements in a cartesian grid in scanline order.
@@ -952,21 +706,7 @@ class LayoutPlot(CompositePlot):
     fontsize = param.Parameter(default={'title':16}, allow_None=True)
 
     def __init__(self, layout, **params):
-        if not isinstance(layout, (NdLayout, Layout)):
-            raise ValueError("LayoutPlot only accepts Layout objects.")
-        if len(layout.values()) == 0:
-            raise ValueError("Cannot display empty layout")
-
-        self.layout = layout
-        self.subplots = {}
-        self.rows, self.cols = layout.shape
-        self.coords = list(product(range(self.rows),
-                                   range(self.cols)))
-        dimensions, keys = traversal.unique_dimkeys(layout)
-        plotopts = Store.lookup_options(layout, 'plot').options
-        super(LayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                         uniform=traversal.uniform(layout),
-                                         **dict(plotopts, **params))
+        super(LayoutPlot, self).__init__(layout=layout, **params)
         self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
 
 
@@ -1132,7 +872,7 @@ class LayoutPlot(CompositePlot):
             # plotting of AdjointLayouts in the larger grid
             plotopts = Store.lookup_options(view, 'plot').options
             layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
-                                            figure=self.handles['fig'], **plotopts)
+                                            fig=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
             tight = not any(type(p) is GridPlot for p in layout_plot.subplots.values()) and tight
             if layout_key:
@@ -1248,7 +988,7 @@ class LayoutPlot(CompositePlot):
 
             # Override the plotopts as required
             plotopts = dict(sublabel_opts, **plotopts)
-            plotopts.update(override_opts, figure=self.handles['fig'])
+            plotopts.update(override_opts, fig=self.handles['fig'])
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             if isinstance(view, GridSpace):
                 raster_fn = lambda x: True if isinstance(x, Raster) or \
