@@ -107,7 +107,6 @@ class NdWidget(param.Parameterized):
 
 
     def _plot_figure(self, idx):
-        from ..ipython.display_hooks import display_frame
         plot = self.plot.update(idx)
         return self.renderer.html(self.plot, figure_format,
                                   css=self.display_options['css'])

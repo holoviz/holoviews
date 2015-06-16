@@ -56,8 +56,8 @@ class MPLWidget(NdWidget):
         options = self.display_options
         if self.renderer.mode == 'd3':
             options['figure_format'] = 'json'
-        return display_frame(self.plot, self.renderer,
-                             **options)
+        return self.renderer.html(self.plot, figure_format,
+                                  css=self.display_options['css'])
 
 
     def update(self, n):
