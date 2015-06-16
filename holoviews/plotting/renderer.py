@@ -125,9 +125,10 @@ class Renderer(Exporter):
         elif fmt ==  'auto':
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
-        if fmt not in (fig_formats + holomap_formats):
+        all_formats = set(fig_formats + holomap_formats)
+        if fmt not in all_formats:
             raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
-                            % (fmt, self.mode, valid_formats))
+                            % (fmt, self.mode, fig_formats + holomap_formats))
         return plot, fmt
 
     def __call__(self, obj, fmt=None):
@@ -149,12 +150,8 @@ class Renderer(Exporter):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
-        figdata, _ = self(obj, fmt)
-
-        if isinstance(css, dict):
-            css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
-        else:
-            raise ValueError("CSS must be supplied as Python dictionary")
+        plot, fmt =  self._validate(obj, fmt)
+        figdata, _ = self(plot, fmt)
 
         if fmt in ['html', 'json']:
             return figdata
@@ -162,8 +159,14 @@ class Renderer(Exporter):
             if fmt == 'svg':
                 figdata = figdata.encode("utf-8")
             elif fmt == 'pdf' and 'height' not in css:
-                w,h = renderer.get_size(plot)
-                css['height'] = '%dpx' % (h*dpi*1.15)
+                w,h = self.get_size(plot)
+                css['height'] = '%dpx' % (h*self.dpi*1.15)
+
+        if isinstance(css, dict):
+            css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
+        else:
+            raise ValueError("CSS must be supplied as Python dictionary")
+
             b64 = base64.b64encode(figdata).decode("utf-8")
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
