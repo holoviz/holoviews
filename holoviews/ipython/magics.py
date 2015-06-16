@@ -186,7 +186,7 @@ class OutputMagic(OptionsMagic):
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'     : list_backends(),
-               'fig'         : ['svg', 'png', 'repr', 'pdf'],
+               'fig'         : ['svg', 'png', 'repr', 'pdf', 'html'],
                'holomap'     : inbuilt_formats,
                'widgets'     : ['embed', 'live'],
                'fps'         : (0, float('inf')),

@@ -15,7 +15,8 @@ from IPython.nbconvert import HTMLExporter
 import param
 from ..core.io import FileArchive, Pickler
 from ..core.options import Store
-from ..plotting import HTML_TAGS
+from ..plotting.renderer import HTML_TAGS
+
 
 try:  # IPython 3
     from IPython.nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor

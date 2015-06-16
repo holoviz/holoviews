@@ -40,7 +40,8 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html': None
+    'html':  None,
+    'json':  None
 }
 
 
@@ -65,13 +66,11 @@ class Renderer(Exporter):
          The available rendering modes. As a minimum, the 'default'
          mode must be supported.""")
 
-    fig = param.ObjectSelector(default='svg',
-                               objects=['png', 'svg', 'pdf', None], doc="""
+    fig = param.ObjectSelector(default=None, doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='gif',
-                                   objects=['webm','mp4', 'gif', None], doc="""
+    holomap = param.ObjectSelector(default=None, doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -89,6 +88,9 @@ class Renderer(Exporter):
 
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
+
+    # Defines the valid output formats for each mode.
+    mode_formats = {'default': []}
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
@@ -109,6 +111,10 @@ class Renderer(Exporter):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
+        valid_formats = self.mode_formats[self.mode]
+        if fmt not in valid_formats:
+            fmt = valid_formats[0]
+
         figdata, _ = self(obj, fmt)
 
         if isinstance(css, dict):
@@ -116,7 +122,7 @@ class Renderer(Exporter):
         else:
             raise ValueError("CSS must be supplied as Python dictionary")
 
-        if fmt == 'html':
+        if fmt in ['html', 'json']:
             return figdata
         else:
             if fmt == 'svg':

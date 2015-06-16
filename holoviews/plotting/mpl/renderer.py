@@ -37,11 +37,23 @@ class MPLRenderer(Renderer):
 
     backend = param.String('matplotlib', doc="The backend name.")
 
+    fig = param.ObjectSelector(default='svg',
+                               objects=['png', 'svg', 'pdf', None], doc="""
+        Output render format for static figures. If None, no figure
+        rendering will occur. """)
+
+    holomap = param.ObjectSelector(default='gif',
+                                   objects=['webm','mp4', 'gif', None], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
+
     mode = param.ObjectSelector(default='default',
                                 objects=['default', 'd3', 'nbagg'], doc="""
          The 'd3' mode uses the mpld3 library whereas the 'nbagg' uses
-         matplotlib'ss the experiemental nbagg backend. """)
+         matplotlib's the experimental nbagg backend. """)
 
+    widgets = param.Dict(default=dict(selection=SelectionWidget,
+                                      scrubber=ScrubberWidget))
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
@@ -53,6 +65,9 @@ class MPLRenderer(Renderer):
         'scrubber': ('html', None, {'fps': 5}, None)
     }
 
+    mode_formats = {'default': ['png', 'svg', 'pdf'],
+                    'd3': ['html', 'json'],
+                    'nbagg': ['html']}
 
     def __call__(self, obj, fmt=None):
         """
@@ -72,10 +87,9 @@ class MPLRenderer(Renderer):
             fmt = self.holomap if len(plot) > 1 else self.fig
             if fmt is None: return
 
-        if fmt in ['png', 'svg', 'pdf']:
+        if fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
-
             if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
                 raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
             anim = plot.anim(fps=self.fps)
@@ -165,14 +179,17 @@ class MPLRenderer(Renderer):
         if self.mode == 'nbagg':
             manager = self.get_figure_manager(plot)
             if manager is None: return ''
-            self.nbagg_counter += 1
+            self.counter += 1
             manager.show()
             return ''
         elif self.mode == 'd3':
             import mpld3
             fig.dpi = self.dpi
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            return "<center>" + mpld3.fig_to_html(fig) + "<center/>"
+            if fmt == 'json':
+                return mpld3.fig_to_dict(fig)
+            else:
+                return "<center>" + mpld3.fig_to_html(fig) + "<center/>"
 
         kw = dict(
             format=fmt,
@@ -195,6 +212,16 @@ class MPLRenderer(Renderer):
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
+
+
+    def get_figure_manager(self, plot):
+        fig = plot.state
+        manager = new_figure_manager_given_figure(self.counter, fig)
+        # Need to call mouse_init on each 3D axis to enable rotation support
+        for ax in fig.get_axes():
+            if isinstance(ax, Axes3D):
+                ax.mouse_init()
+        return manager
 
 
     def _anim_data(self, anim, fmt):
