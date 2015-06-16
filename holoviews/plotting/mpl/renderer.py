@@ -3,7 +3,7 @@ import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 
-
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib import animation
 import matplotlib.tight_bbox as tight_bbox
