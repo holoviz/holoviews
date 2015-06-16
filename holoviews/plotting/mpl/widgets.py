@@ -53,11 +53,13 @@ class MPLWidget(NdWidget):
     def _plot_figure(self, idx):
         from ...ipython.display_hooks import display_frame
         plot = self.plot.update(idx)
-        options = self.display_options
+        css = self.display_options.get('css', {})
         if self.renderer.mode == 'd3':
-            options['figure_format'] = 'json'
-        return self.renderer.html(self.plot, figure_format,
-                                  css=self.display_options['css'])
+            figure_format = 'json'
+        else:
+            figure_format = self.display_options.get('figure_format',
+                                                     self.renderer.fig)
+        return self.renderer.html(self.plot, figure_format, css=css)
 
 
     def update(self, n):

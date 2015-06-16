@@ -108,8 +108,13 @@ class NdWidget(param.Parameterized):
 
     def _plot_figure(self, idx):
         plot = self.plot.update(idx)
-        return self.renderer.html(self.plot, figure_format,
-                                  css=self.display_options['css'])
+        css = self.display_options.get('css', {})
+        if self.renderer.mode == 'd3':
+            figure_format = 'json'
+        else:
+            figure_format = self.display_options.get('figure_format',
+                                                     self.renderer.fig)
+        return self.renderer.html(self.plot, figure_format, css=css)
 
 
     def update(self, n):
@@ -139,7 +144,7 @@ class ScrubberWidget(NdWidget):
             frames = self.get_frames()
 
         data = {'id': self.id, 'Nframes': len(self.plot),
-                'interval': int(1000./self.display_options['fps']),
+                'interval': int(1000./self.display_options.get('fps', 5)),
                 'frames': frames,
                 'load_json': str(self.export_json).lower(),
                 'server': self.server_url,
@@ -228,7 +233,7 @@ class SelectionWidget(NdWidget):
                 'cached': str(self.embed).lower(),
                 'throttle': self.throttle[self.embed],
                 'CDN': {k: v[:-3] for k, v in self.CDN.items()},
-                'delay': int(1000./self.display_options['fps']),
+                'delay': int(1000./self.display_options.get('fps', 5)),
                 'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
                 'widget_name': type(self).__name__,
                 'widget_template': self.jinjaEnv.get_template(self.base_template)}
