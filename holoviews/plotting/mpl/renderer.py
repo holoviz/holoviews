@@ -65,9 +65,11 @@ class MPLRenderer(Renderer):
         'scrubber': ('html', None, {'fps': 5}, None)
     }
 
-    mode_formats = {'default': ['png', 'svg', 'pdf'],
-                    'd3': ['html', 'json'],
-                    'nbagg': ['html']}
+    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None],
+                           'd3': ['html', 'json', None],
+                           'nbagg': ['html', None]},
+                    'holomap': {m:['webm','mp4', 'gif', None]
+                                for m in ['default', 'd3', 'nbagg']}}
 
     counter = 0
 
@@ -75,24 +77,13 @@ class MPLRenderer(Renderer):
     widgets = {'scrubber': ScrubberWidget,
                'selection': SelectionWidget}
 
-    def __call__(self, obj, fmt=None):
+
+    def __call__(self, obj, fmt='auto'):
         """
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
-        if not isinstance(obj, Plot):
-            plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
-            plot.update(0)
-
-        elif fmt is None:
-            raise Exception("Format must be specified when supplying a plot instance")
-        else:
-            plot = obj
-
-        if fmt is None:
-            fmt = self.holomap if len(plot) > 1 else self.fig
-            if fmt is None: return
-
+        plot, fmt =  self._validate(obj, fmt)
         if fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:

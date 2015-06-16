@@ -11,6 +11,8 @@ from ..core.options import Store
 from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 
+from . import Plot
+
 from param.parameterized import bothmethod
 
 # Tags used when visual output is to be embedded in HTML
@@ -67,11 +69,11 @@ class Renderer(Exporter):
          The available rendering modes. As a minimum, the 'default'
          mode must be supported.""")
 
-    fig = param.ObjectSelector(default=None, doc="""
+    fig = param.ObjectSelector(default='auto', doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default=None, doc="""
+    holomap = param.ObjectSelector(default='auto', doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -91,15 +93,42 @@ class Renderer(Exporter):
         Renderers do not support the saving of object key metadata""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'default': []}
+    mode_formats = {'fig': {'default': [None]}, 'holomap': {'default': [None]}}
 
     # Define appropriate widget classes
-    widgets = {'scrubber': ScrubberWidget,
-               'selection': SelectionWidget}
+    widgets = {'scrubber': ScrubberWidget, 'selection': SelectionWidget}
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
 
+
+    def _validate(self, obj, fmt):
+        """
+        Helper method to be used in the __call__ method to get a
+        suitable plot object and the appropriate format.
+        """
+
+        fig_formats = self.mode_formats['holomap'][self.mode]
+        holomap_formats = self.mode_formats['fig'][self.mode]
+
+        if not isinstance(obj, Plot):
+            plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
+            plot.update(0)
+        elif fmt is None:
+            raise Exception("Format must be specified when supplying a plot instance")
+        else:
+            plot = obj
+
+        if fmt is None: return
+        elif (fmt is None) and len(plot) == 1:
+            fmt = fig_formats[0] if self.fig=='auto' else self.fig
+        elif fmt is None:
+            fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
+
+        if fmt not in (fig_formats + holomap_formats):
+            raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
+                            % (fmt, self.mode, valid_formats))
+        return plot, fmt
 
     def __call__(self, obj, fmt=None):
         """
@@ -108,6 +137,9 @@ class Renderer(Exporter):
         suitable, in-memory byte stream together with any suitable
         metadata.
         """
+        plot, fmt =  self._validate(obj, fmt)
+        # [Backend specific code goes here]
+
         # Example of the return format where the first value is the rendered data.
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
@@ -116,10 +148,6 @@ class Renderer(Exporter):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
-        valid_formats = self.mode_formats[self.mode]
-        if fmt not in valid_formats:
-            fmt = valid_formats[0]
-
         figdata, _ = self(obj, fmt)
 
         if isinstance(css, dict):
