@@ -8,7 +8,7 @@ import numpy as np
 
 try:
     from holoviews.ipython import IPTestCase
-    from holoviews.ipython.widgets import ScrubberWidget, SelectionWidget
+    from holoviews.plotting.mpl.widgets import ScrubberWidget, SelectionWidget
     # Standardize backend due to random inconsistencies
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
@@ -27,8 +27,8 @@ def digest_data(data):
 prefixes =  ['anim', '_anim_slider', '_anim_img',
              '_anim_loop_select', 'textInput', '_anim_widget', 'valMap']
 filters  = [re.compile('{p}[a-f0-9]+'.format(p=p)) for p in prefixes]
-filters += [re.compile('new Animation\([a-z0-9_, "]+\)')]
-filters += [re.compile('new NDSlider\([a-z0-9_, "]+')]
+filters += [re.compile('new ScrubberWidget\([a-z0-9_, "]+')]
+filters += [re.compile('new SelectionWidget\([a-z0-9_, "]+')]
 
 def normalize(data):
     for f in filters:
@@ -50,17 +50,17 @@ class TestWidgets(IPTestCase):
         super(TestWidgets, self).tearDown()
 
     def test_scrubber_widget_1(self):
-        html = normalize(ScrubberWidget(self.plot1)())
-        self.assertEqual(digest_data(html), 'ddad48fb30a629940593542410e99e260e58b0e2730fda9f233927061fb0c6a8')
+        html = normalize(ScrubberWidget(self.plot1, display_options={'figure_format': 'png'})())
+        self.assertEqual(digest_data(html), '4ab1f46145b08f988f78278b08c6c602bd70976709e3dff91223d3492f565746')
 
     def test_selection_widget_1(self):
-        html = normalize(SelectionWidget(self.plot1)())
-        self.assertEqual(digest_data(html), '2e2f0b68de1a35901aedbc9393304018573007526300c3c9b43fe5c8c105a12d')
+        html = normalize(SelectionWidget(self.plot1, display_options={'figure_format': 'png'})())
+        self.assertEqual(digest_data(html), 'e6fac932cb575d793971fc49fd6839dac8ae2b4d646c03a3128d4e74c7a6c234')
 
     def test_scrubber_widget_2(self):
-        html = normalize(ScrubberWidget(self.plot2)())
-        self.assertEqual(digest_data(html), '90e59743637d6649a78bb427870cb412fa7b8be69023f1f6e26409a8f7ab970b')
+        html = normalize(ScrubberWidget(self.plot2, display_options={'figure_format': 'png'})())
+        self.assertEqual(digest_data(html), '59b86f54f6b18062566cd26effbda9b8dc760e55f9eb6b23c60db621e5907828')
 
     def test_selection_widget_2(self):
-        html = normalize(SelectionWidget(self.plot2)())
-        self.assertEqual(digest_data(html), '35b6bec2bf9249f7bc00d19d0e5848f3190de7a3ff47aea3ab8fb89caf891280')
+        html = normalize(SelectionWidget(self.plot2, display_options={'figure_format': 'png'})())
+        self.assertEqual(digest_data(html), 'ddff88dc29a817966997905f9a381ae8ce51f4d322e8d6dfde733249cf951c17')
