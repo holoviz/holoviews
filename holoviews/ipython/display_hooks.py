@@ -22,21 +22,21 @@ ABBREVIATE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
-def first_frame(plot, **kwargs):
+def first_frame(plot, renderer, **kwargs):
     "Only display the first frame of an animated plot"
     plot.update(0)
-    return display_frame(plot, **kwargs)
+    return display_frame(plot, renderer, **kwargs)
 
-def middle_frame(plot, **kwargs):
+def middle_frame(plot, renderer, **kwargs):
     "Only display the (approximately) middle frame of an animated plot"
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
-    return display_frame(plot, **kwargs)
+    return display_frame(plot, renderer, **kwargs)
 
-def last_frame(plot, **kwargs):
+def last_frame(plot, renderer, **kwargs):
     "Only display the last frame of an animated plot"
     plot.update(len(plot))
-    return display_frame(plot, **kwargs)
+    return display_frame(plot, renderer, **kwargs)
 
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
@@ -70,11 +70,11 @@ def display_video(plot, renderer, holomap_format, dpi, fps, css, **kwargs):
     if OutputMagic.options['holomap'] == 'repr': return None
     try:
         if render_anim is not None:
-            return render_anim(plot, dpi=dpi, css=css, **kwargs)
+            return render_anim(plot, renderer, dpi=dpi, css=css, **kwargs)
         return renderer.html(plot, holomap_format, css)
     except Exception as e:
         plot.update(0)
-        return str(e)+'<br/>'+display_frame(plot,  dpi=dpi, css=css, **kwargs)
+        return str(e)+'<br/>'+display_frame(plot, renderer,  dpi=dpi, css=css, **kwargs)
 
 
 def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
