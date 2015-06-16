@@ -28,26 +28,6 @@
     }
     {% endblock %}
 
-
-    {{ widget_name }}.prototype.update_cache = function(){
-	if(this.load_json) {
-	    var frame_len = _.size(this.keyMap);
-	} else {
-	    var frame_len = _.size(this.frames);
-	}
-	for (var i=0; i<frame_len; i++) {
-	    if(!this.load_json) {
-		i = Object.keys(this.frames)[i];
-	    }
-	    if(!(i in this.cache)) {
-		this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
-		var cache_id = this.img_id+"_"+i;
-		this.cache[i].attr("id", cache_id);
-		this.populate_cache(i);
-	    }
-	}
-    }
-
     {% block populate_cache %}
     {{ widget_name }}.prototype.populate_cache = function(idx){
 	if(this.load_json) {
@@ -83,6 +63,26 @@
 	}
     }
     {% endblock %}
+
+
+    {{ widget_name }}.prototype.update_cache = function(){
+	if(this.load_json) {
+	    var frame_len = _.size(this.keyMap);
+	} else {
+	    var frame_len = _.size(this.frames);
+	}
+	for (var i=0; i<frame_len; i++) {
+	    if(!this.load_json) {
+		i = Object.keys(this.frames)[i];
+	    }
+	    if(!(i in this.cache)) {
+		this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
+		var cache_id = this.img_id+"_"+i;
+		this.cache[i].attr("id", cache_id);
+		this.populate_cache(i);
+	    }
+	}
+    }
 
     {{ widget_name }}.prototype.update = function(current){
 	if(current in this.cache) {

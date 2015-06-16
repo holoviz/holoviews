@@ -31,6 +31,39 @@
   }
   {% endblock %}
 
+  {% block populate_cache %}
+  {{ widget_name }}.prototype.populate_cache = function(idx){
+      if(this.load_json) {
+  	  var data_url = "{{ server }}/" + this.fig_id + "/" + idx;
+  	  this.cache[idx].load(data_url);
+      } else {
+  	  this.cache[idx].html(this.frames[idx]);
+      }
+  }
+  {% endblock %}
+
+
+  {% block dynamic_update %}
+  {{ widget_name }}.prototype.dynamic_update = function(current){
+      var kernel = IPython.notebook.kernel;
+      function callback(msg){
+	  /* This callback receives data from Python as a string
+	     in order to parse it correctly quotes are sliced off*/
+	  var data = msg.content.data['text/plain'].slice(1, -1);
+	  this.frames[current] = data;
+	  this.update_cache();
+	  this.update(current);
+      }
+      if(!(current in this.cache)) {
+	  callbacks = {iopub: {output: $.proxy(callback, this)}};
+	  var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+	  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+      } else {
+	  this.update(current);
+      }
+  }
+  {% endblock %}
+
 
   {{ widget_name }}.prototype.get_loop_state = function(){
       var button_group = document[this.loop_select_id].state;
@@ -42,17 +75,6 @@
       }
       return undefined;
   }
-
-  {% block populate_cache %}
-  {{ widget_name }}.prototype.populate_cache = function(idx){
-      if(this.load_json) {
-  	  var data_url = "{{ server }}/" + this.fig_id + "/" + idx;
-  	  this.cache[idx].load(data_url);
-      } else {
-  	  this.cache[idx].html(this.frames[idx]);
-      }
-  }
-  {% endblock %}
 
   {{ widget_name }}.prototype.update_cache = function(){
       if(this.load_json) {
@@ -92,27 +114,6 @@
       }
   }
 
-
-  {{ widget_name }}.prototype.dynamic_update = function(current){
-      var kernel = IPython.notebook.kernel;
-      {% block dynamic_callback %}
-      function callback(msg){
-	  /* This callback receives data from Python as a string
-	     in order to parse it correctly quotes are sliced off*/
-	  var data = msg.content.data['text/plain'].slice(1, -1);
-	  this.frames[current] = data;
-	  this.update_cache();
-	  this.update(current);
-      }
-      {% endblock %}
-      if(!(current in this.cache)) {
-	  callbacks = {iopub: {output: $.proxy(callback, this)}};
-	  var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-	  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-      } else {
-	  this.update(current);
-      }
-  }
 
   {{ widget_name }}.prototype.next_frame = function() {
       this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
