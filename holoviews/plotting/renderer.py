@@ -167,10 +167,10 @@ class Renderer(Exporter):
         else:
             raise ValueError("CSS must be supplied as Python dictionary")
 
-            b64 = base64.b64encode(figdata).decode("utf-8")
-            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
-            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-            return tag.format(src=src, mime_type=mime_type, css=css)
+        b64 = base64.b64encode(figdata).decode("utf-8")
+        (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+        src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+        return tag.format(src=src, mime_type=mime_type, css=css)
 
 
     @classmethod
