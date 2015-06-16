@@ -16,11 +16,11 @@ from ...core.util import sanitize_identifier, int_to_roman,\
     int_to_alpha, safe_unicode, max_range, basestring
 from ...element import Raster, Table
 
-from ..plot import Plot, GenericLayoutPlot, GenericCompositePlot
+from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import MPLRenderer
 
 
-class MPLPlot(Plot):
+class MPLPlot(DimensionedPlot):
     """
     An MPLPlot object draws a matplotlib figure object when called or
     indexed but can also return a matplotlib animation object as

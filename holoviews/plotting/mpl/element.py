@@ -403,7 +403,7 @@ class LegendPlot(ElementPlot):
 
 
 
-class OverlayPlot(GenericOverlayPlot, LegendPlot):
+class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
     OverlayPlot supports compositors processing of Overlays across maps.
     """

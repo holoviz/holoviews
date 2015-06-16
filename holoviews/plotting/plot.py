@@ -12,7 +12,7 @@ import param
 
 from ..core import OrderedDict
 from ..core import util, traversal
-from ..core.element import HoloMap, Element
+from ..core.element import HoloMap, Element, GridSpace
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
@@ -62,7 +62,7 @@ class Plot(param.Parameterized):
 
 
 
-class DimensionedPlot(param.Parameterized):
+class DimensionedPlot(Plot):
     """
     DimensionedPlot implements a number of useful methods
     to compute dimension ranges and titles containing the
@@ -113,8 +113,8 @@ class DimensionedPlot(param.Parameterized):
         """
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or self.layout_num\
-          and not isinstance(self, GridPlot):
+        elif not self.uniform or len(self) == 1 or (self.layout_num\
+            and not isinstance(self, GenericCompositePlot)):
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
@@ -522,26 +522,6 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
 class GenericCompositePlot(DimensionedPlot):
-
-    def _frame_title(self, key, group_size=2):
-        """
-        Returns the formatted dimension group strings
-        for a particular frame.
-        """
-        if self.layout_dimensions is not None:
-            dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or self.layout_num: #\
-          #and not isinstance(self, GridPlot):
-            return ''
-        else:
-            key = key if isinstance(key, tuple) else (key,)
-            dimensions = self.dimensions
-        dimension_labels = [dim.pprint_value_string(k) for dim, k in
-                            zip(dimensions, key)]
-        groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
-                  for i in range(len(dimension_labels))]
-        return '\n '.join(g for g in groups if g)
-
 
     def _get_frame(self, key):
         """
