@@ -119,10 +119,10 @@ class Renderer(Exporter):
         else:
             plot = obj
 
-        if fmt is None: return
-        elif (fmt is None) and len(plot) == 1:
+        if fmt is None: return (None,None)
+        elif fmt =='auto' and len(plot) == 1:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt is None:
+        elif fmt ==  'auto':
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         if fmt not in (fig_formats + holomap_formats):
@@ -138,6 +138,7 @@ class Renderer(Exporter):
         metadata.
         """
         plot, fmt =  self._validate(obj, fmt)
+        if plot is None: return
         # [Backend specific code goes here]
 
         # Example of the return format where the first value is the rendered data.

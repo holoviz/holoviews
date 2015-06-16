@@ -84,6 +84,8 @@ class MPLRenderer(Renderer):
         using matplotlib.
         """
         plot, fmt =  self._validate(obj, fmt)
+        if plot is None: return
+
         if fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
@@ -125,7 +127,7 @@ class MPLRenderer(Renderer):
                     **Store.lookup_options(obj, 'plot').options)
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
+    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
