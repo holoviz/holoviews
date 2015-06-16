@@ -305,12 +305,12 @@ class TableConversion(object):
 
     def raster(self, kdims=None, vdims=None, **kwargs):
         from .raster import Raster
-        heatmap = self.to_heatmap(kdims, vdims, **kwargs)
+        heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
     def surface(self, kdims=None, vdims=None, **kwargs):
         from .chart3d import Surface
-        heatmap = self.to_heatmap(kdims, vdims, **kwargs)
+        heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
     def vectorfield(self, kdims=None, vdims=None, **kwargs):
