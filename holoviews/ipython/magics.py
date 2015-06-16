@@ -49,6 +49,9 @@ class OptionsMagic(Magics):
     # Callables accepting (value, keyword, allowed) for custom exceptions
     custom_exceptions = {}
 
+    # Hidden. Options that won't tab complete (for backward compatibility)
+    hidden = {}
+
     @classmethod
     def get_options(cls, line, options):
         "Given a keyword specification line, validated and compute options"
@@ -101,10 +104,11 @@ class OptionsMagic(Magics):
             if token.strip() in cls.allowed:
                 completion_key = token.strip()
                 break
-        values = [repr(el) for el in cls.allowed.get(completion_key, [])
-                  if not isinstance(el, tuple)]
 
-        return values + [el+'=' for el in cls.allowed.keys()]
+        values = [v for v in cls.allowed.get(completion_key, [])
+                  if v not in cls.hidden.get(completion_key, [])]
+        vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
+        return vreprs + [el+'=' for el in cls.allowed.keys()]
 
     @classmethod
     def pprint(cls):
@@ -177,6 +181,7 @@ class OutputMagic(OptionsMagic):
             backends += ['%s:%s' % (backend, mode) for mode in modes]
         return backends + ['nbagg', 'd3']
 
+    hidden = {'backend':['nbagg', 'd3']}
 
     magic_name = '%output'
     # Formats that are always available
