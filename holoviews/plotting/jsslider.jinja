@@ -55,6 +55,9 @@
 	    this.cache[idx].load(data_url);
 	} else {
 	    this.cache[idx].html(this.frames[idx]);
+	    if (this.embed) {
+		delete this.frames[idx];
+	    }
 	}
     }
     {% endblock %}

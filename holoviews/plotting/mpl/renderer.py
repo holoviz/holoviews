@@ -71,6 +71,10 @@ class MPLRenderer(Renderer):
 
     counter = 0
 
+    # Define appropriate widget classes
+    widgets = {'scrubber': ScrubberWidget,
+               'selection': SelectionWidget}
+
     def __call__(self, obj, fmt=None):
         """
         Render the supplied HoloViews component or MPLPlot instance

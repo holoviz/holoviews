@@ -9,6 +9,7 @@ import param
 from ..core.io import Exporter
 from ..core.options import Store
 from .. import Store, Layout, HoloMap, AdjointLayout
+from .widgets import ScrubberWidget, SelectionWidget
 
 from param.parameterized import bothmethod
 
@@ -91,6 +92,10 @@ class Renderer(Exporter):
 
     # Defines the valid output formats for each mode.
     mode_formats = {'default': []}
+
+    # Define appropriate widget classes
+    widgets = {'scrubber': ScrubberWidget,
+               'selection': SelectionWidget}
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
