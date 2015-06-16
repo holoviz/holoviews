@@ -1,6 +1,6 @@
 <script language="javascript">
-    /* Define the NDSlider class */
-    function NDSlider(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mpld3_enabled, nbagg, cached){
+    /* Define the {{ widget_name }} class */
+    function {{ widget_name }}(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached){
         this.frames = frames;
         this.fig_id = "fig_" + id;
         this.img_id = "_anim_img" + id;
@@ -10,99 +10,89 @@
         this.current_frame = 0;
         this.current_vals = dim_vals;
         this.load_json = load_json;
-        this.mpld3 = mpld3_enabled;
-		this.nbagg = nbagg;
+        this.mode = mode;
         this.notFound = notFound;
-		this.cached = cached;
-		this.cache = {};
-		if(this.cached) {
-			this.update_cache();
-			this.update(0);
-		} else if(this.nbagg) {
-			this.update_cache();
-			this.update(0);
-            this.set_frame(this.current_vals[0], 0);
-		} else {
-			this.dynamic_update(0);
-		}
+	this.cached = cached;
+	this.cache = {};
+	this.init_slider(this.current_vals[0]);
     }
 
-    NDSlider.prototype.update_cache = function(){
-		if(this.load_json) {
-			var frame_len = _.size(this.keyMap);
-		} else {
-			var frame_len = _.size(this.frames);
-		}
-		for (var i=0; i<frame_len; i++) {
-			if(!this.load_json) {
-				i = Object.keys(this.frames)[i];
-			}
-			if(!(i in this.cache)) {
-				this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
-				if(this.mpld3) {
-					var cache_id = this.img_id+"_"+i;
-					this.cache[i].attr("id", cache_id);
-				}
-				if(this.load_json) {
-					var data_url = "{{ server }}/" + this.fig_id + "/" + i;
-					if(this.mpld3) {
-						$.getJSON(data_url, (function(cache_id) {
-							return function(data) {
-								mpld3.draw_figure(cache_id, data);
-							};
-						}(cache_id)));
-					} else {
-						this.cache[i].load(data_url);
-					}
-				} else {
-					if(this.mpld3) {
-						mpld3.draw_figure(cache_id, this.frames[i]);
-					} else {
-						this.cache[i].html(this.frames[i]);
-					}
-				}
-			}
-		}
-    }
-
-    NDSlider.prototype.dynamic_update = function(current){
-		var kernel = IPython.notebook.kernel;
-		if(this.nbagg) {
-			function callback(msg) { }
-		} else {
-			function callback(msg){
-				/* This callback receives data from Python as a string
-				   in order to parse it correctly quotes are sliced off*/
-				var data = msg.content.data['text/plain'].slice(1, -1);
-				if(this.mpld3){
-					data = JSON.parse(data)[0];
-				}
-				this.frames[current] = data;
-				this.update_cache();
-				this.update(current);
-			}
-		}
-		if(this.nbagg || !(current in this.cache)) {
-			callbacks = {iopub: {output: $.proxy(callback, this)}};
-			var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-			kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-		} else {
-			this.update(current);
-		}
-    }
-
-    NDSlider.prototype.update = function(current){
-		if(current in this.cache) {
-			$.each(this.cache, function(index, value) {
-				value.hide();
-			});
-			this.cache[current].show();
-		}
+    {% block init_slider %}
+    {{ widget_name }}.prototype.init_slider = function(init_val){
+	if(this.cached) {
+	    this.update_cache();
+	    this.update(0);
+	} else {
+	    this.dynamic_update(0);
 	}
+    }
+    {% endblock %}
 
-    NDSlider.prototype.set_frame = function(dim_val, dim_idx){
-        this.current_vals[dim_idx] = dim_val
-        var key = "("
+
+    {{ widget_name }}.prototype.update_cache = function(){
+	if(this.load_json) {
+	    var frame_len = _.size(this.keyMap);
+	} else {
+	    var frame_len = _.size(this.frames);
+	}
+	for (var i=0; i<frame_len; i++) {
+	    if(!this.load_json) {
+		i = Object.keys(this.frames)[i];
+	    }
+	    if(!(i in this.cache)) {
+		this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
+		var cache_id = this.img_id+"_"+i;
+		this.cache[i].attr("id", cache_id);
+		this.populate_cache(i);
+	    }
+	}
+    }
+
+    {% block populate_cache %}
+    {{ widget_name }}.prototype.populate_cache = function(idx){
+	if(this.load_json) {
+	    var data_url = "{{ server }}/" + this.fig_id + "/" + idx;
+	    this.cache[idx].load(data_url);
+	} else {
+	    this.cache[idx].html(this.frames[idx]);
+	}
+    }
+    {% endblock %}
+
+
+    {% block dynamic_update %}
+    {{ widget_name }}.prototype.dynamic_update = function(current){
+	function callback(msg){
+	    /* This callback receives data from Python as a string
+	       in order to parse it correctly quotes are sliced off*/
+	    var data = msg.content.data['text/plain'].slice(1, -1);
+	    this.frames[current] = data;
+	    this.update_cache();
+	    this.update(current);
+	}
+        if(!(current in this.cache)) {
+	    var kernel = IPython.notebook.kernel;
+	    callbacks = {iopub: {output: $.proxy(callback, this)}};
+	    var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+	    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+	} else {
+	    this.update(current);
+	}
+    }
+    {% endblock %}
+
+    {{ widget_name }}.prototype.update = function(current){
+	if(current in this.cache) {
+	    $.each(this.cache, function(index, value) {
+		value.hide();
+	    });
+	    this.cache[current].show();
+	}
+    }
+
+    {{ widget_name }}.prototype.set_frame = function(dim_val, dim_idx){
+        this.current_vals[dim_idx] = dim_val;
+        var key = "(";
         for (var i=0; i<this.slider_ids.length; i++)
         {
             val = this.current_vals[i];
@@ -117,15 +107,16 @@
             else if(this.slider_ids.length == 1) { key += ',';}
         }
         key += ")";
-		var current = this.keyMap[key];
-		this.current_frame = current;
-		if(this.cached) {
-			this.update(current)
-		} else {
+	var current = this.keyMap[key];
+	this.current_frame = current;
+	if(this.cached) {
+	    this.update(current)
+	} else {
             this.dynamic_update(current)
-		}
+	}
     }
 </script>
+
 
 <style>
 div.hololayout {
@@ -157,7 +148,6 @@ div.hologroup {
     padding-right: 0.6em;
 }
 
-
 .holoselect {
     width: 100%;
     margin-left: 0;
@@ -169,7 +159,6 @@ div.hologroup {
     padding-left:  0.5em;
     padding-right: 0;
 }
-
 </style>
 
 <div class="hololayout row row-fluid">
@@ -204,7 +193,7 @@ div.hologroup {
         var jQuery = window.jQuery,
         // check for old versions of jQuery
         oldjQuery = jQuery && !!jQuery.fn.jquery.match(/^1\.[0-4](\.|$)/),
-        jquery_path = 'https://code.jquery.com/jquery-1.11.1.min',
+        jquery_path = '',
         paths = {},
         noConflict;
         var jQueryUI = jQuery.ui;
@@ -218,7 +207,7 @@ div.hologroup {
             define('jquery', [], function() { return jQuery; });
         }
         if (!jQueryUI) {
-            paths.jQueryUI = "{{ jqueryui_url }}"
+            paths.jQueryUI = "{{ CDN['jQueryUI'] }}"
         } else {
             define('jQueryUI', [], function() { return jQuery.ui; });
         }
@@ -307,7 +296,7 @@ div.hologroup {
 
 
 <script language="javascript">
-    /* Instantiate the NDSlider class. */
+    /* Instantiate the {{ widget_name }} class. */
     /* The IDs given should match those used in the template above. */
     (function() {
         var widget_ids = new Array({{ Nwidget }});
@@ -321,38 +310,19 @@ div.hologroup {
 
     	function create_widget() {
             setTimeout(function() {
-	            anim{{ id }} = new NDSlider(frame_data, "{{ id }}", widget_ids,
-                        keyMap, dim_vals, notFound, {{ load_json }}, {{ mpld3 }}, {{ nbagg }}, {{ cached }});
-	        }, 0);
-	    }
+	            anim{{ id }} = new {{ widget_name }}(frame_data, "{{ id }}", widget_ids,
+                        keyMap, dim_vals, notFound, {{ load_json }}, {{ mode }}, {{ cached }});
+	    }, 0);
+	}	
 
+	{% block create_widget %}
+	var require_conf = {paths: paths};
 	var paths = {};
-	paths.underscore = "{{ underscore_url }}";
-	{% if mpld3 == 'true' %}
-	if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
-      	    paths.d3 = "{{ d3_url }}"
-	}
-	var require_conf = {paths: paths};
-	require.config(require_conf);
-	if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
-      	    require(["underscore"], function(d3){
-		create_widget();
-      	    });
-	} else {
-            require(["d3", "underscore"], function(d3){
-		window.d3 = d3;
-		$.getScript("{{ mpld3_url }}", function(){
-                    create_widget();
-		});
-            });
-	}
-	{% else %}
-	var require_conf = {paths: paths};
+	paths.underscore = "{{ CDN['underscore'] }}";
 	require.config(require_conf);
       	require(["underscore"], function(){
             create_widget();
 	});
-      {% endif %}
-
+	{% endblock %}
     })();
 </script>

@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 import matplotlib.tight_bbox as tight_bbox
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-
-from matplotlib.backends.backend_nbagg import CommSocket
+from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
+from mpl_toolkits.mplot3d import Axes3D
 
 import param
 from param.parameterized import bothmethod
@@ -19,6 +19,8 @@ from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
+from .widgets import SelectionWidget, ScrubberWidget
+
 
 class MPLRenderer(Renderer):
     """
@@ -52,8 +54,6 @@ class MPLRenderer(Renderer):
          The 'd3' mode uses the mpld3 library whereas the 'nbagg' uses
          matplotlib's the experimental nbagg backend. """)
 
-    widgets = param.Dict(default=dict(selection=SelectionWidget,
-                                      scrubber=ScrubberWidget))
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
@@ -68,6 +68,8 @@ class MPLRenderer(Renderer):
     mode_formats = {'default': ['png', 'svg', 'pdf'],
                     'd3': ['html', 'json'],
                     'nbagg': ['html']}
+
+    counter = 0
 
     def __call__(self, obj, fmt=None):
         """
@@ -143,22 +145,6 @@ class MPLRenderer(Renderer):
         filename ='%s.%s' % (basename, info['file-ext'])
         with open(filename, 'wb') as f:
             f.write(self_or_cls.encode(rendered))
-
-
-    @classmethod
-    def get_figure_manager(cls, counter, plot):
-        try:
-            from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
-            from mpl_toolkits.mplot3d import Axes3D
-        except:
-            return None
-        fig = plot.state
-        manager = new_figure_manager_given_figure(counter, fig)
-        # Need to call mouse_init on each 3D axis to enable rotation support
-        for ax in fig.get_axes():
-            if isinstance(ax, Axes3D):
-                ax.mouse_init()
-        return manager
 
 
     @bothmethod
@@ -287,31 +273,3 @@ class MPLRenderer(Renderer):
             else:
                 kw['bbox_inches'] = MPLRenderer.drawn[fig_id]
         return kw
-
-
-
-class WidgetCommSocket(CommSocket):
-    """
-    CustomCommSocket provides communication between the IPython
-    kernel and a matplotlib canvas element in the notebook.
-    A CustomCommSocket is required to delay communication
-    between the kernel and the canvas element until the widget
-    has been rendered in the notebook.
-    """
-
-    def __init__(self, manager):
-        self.supports_binary = None
-        self.manager = manager
-        self.uuid = str(uuid.uuid4())
-        self.html = "<div id=%r></div>" % self.uuid
-
-    def start(self):
-        from IPython.kernel.comm import Comm
-        try:
-            self.comm = Comm('matplotlib', data={'id': self.uuid})
-        except AttributeError:
-            raise RuntimeError('Unable to create an IPython notebook Comm '
-                               'instance. Are you in the IPython notebook?')
-        self.comm.on_msg(self.on_message)
-        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
-

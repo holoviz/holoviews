@@ -1,6 +1,6 @@
 <script language="javascript">
-  /* Define the Animation class */
-  function Animation(frames, num_frames, id, interval, load_json, mpld3, nbagg, cached){
+  /* Define the {{ widget_name }} class */
+  function {{ widget_name }}(frames, num_frames, id, interval, load_json, mode, cached){
       this.img_id = "_anim_img" + id;
       this.slider_id = "_anim_slider" + id;
       this.loop_select_id = "_anim_loop_select" + id;
@@ -11,26 +11,28 @@
       this.direction = 0;
       this.timer = null;
       this.load_json = load_json;
-      this.mpld3 = mpld3;
-      this.nbagg = nbagg;
+      this.mode = mode;
       this.cached = cached;
       this.frames = frames;
       this.cache = {};
       this.length = num_frames;
       document.getElementById(this.slider_id).max = this.length - 1;
-      if(this.cached) {
-		  this.update_cache();
-		  this.update(0);
-      } else if(this.nbagg) {
-		  this.update_cache();
-		  this.update(0);
-		  this.set_frame(0);
-      } else {
-		  this.dynamic_update(0, 0);
-      }
+      this.init_slider(0);
   }
 
-  Animation.prototype.get_loop_state = function(){
+  {% block init_slider %}
+  {{ widget_name }}.prototype.init_slider = function(init_val){
+      if(this.cached) {
+  	  this.update_cache();
+  	  this.update(0);
+      } else {
+  	  this.dynamic_update(0);
+      }
+  }
+  {% endblock %}
+
+
+  {{ widget_name }}.prototype.get_loop_state = function(){
       var button_group = document[this.loop_select_id].state;
       for (var i = 0; i < button_group.length; i++) {
           var button = button_group[i];
@@ -41,45 +43,37 @@
       return undefined;
   }
 
-  Animation.prototype.update_cache = function(){
+  {% block populate_cache %}
+  {{ widget_name }}.prototype.populate_cache = function(idx){
       if(this.load_json) {
-		  var frame_len = _.size(this.keyMap);
+  	  var data_url = "{{ server }}/" + this.fig_id + "/" + idx;
+  	  this.cache[idx].load(data_url);
       } else {
-		  var frame_len = _.size(this.frames);
+  	  this.cache[idx].html(this.frames[idx]);
       }
-      for (var i=0; i<_.size(this.frames); i++) {
-		  if(!this.load_json) {
-			  i = Object.keys(this.frames)[i];
-		  }
-		  if(!(i in this.cache)) {
-			  this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
-			  if(this.mpld3) {
-				  var cache_id = this.img_id+"_"+i;
-				  this.cache[i].attr("id", cache_id);
-			  }
-			  if(this.load_json) {
-				  var data_url = "{{ server }}/" + this.fig_id + "/" + i;
-				  if(this.mpld3) {
-					  $.getJSON(data_url, (function(cache_id) {
-						  return function(data) {
-							  mpld3.draw_figure(cache_id, data);
-						  };
-					  }(cache_id)));
-				  } else {
-					  this.cache[i].load(data_url);
-				  }
-			  } else {
-				  if(this.mpld3) {
-					  mpld3.draw_figure(cache_id, this.frames[i]);
-				  } else {
-					  this.cache[i].html(this.frames[i]);
-				  }
-			  }
-		  }
+  }
+  {% endblock %}
+
+  {{ widget_name }}.prototype.update_cache = function(){
+      if(this.load_json) {
+	  var frame_len = _.size(this.keyMap);
+      } else {
+	  var frame_len = _.size(this.frames);
+      }
+      for (var i=0; i<frame_len; i++) {
+	  if(!this.load_json) {
+	      i = Object.keys(this.frames)[i];
+	  }
+	  if(!(i in this.cache)) {
+	      this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
+	      var cache_id = this.img_id+"_"+i;
+	      this.cache[i].attr("id", cache_id);
+	      this.populate_cache(i);
+	  }
       }
   }
 
-  Animation.prototype.set_frame = function(frame){
+  {{ widget_name }}.prototype.set_frame = function(frame){
       this.current_frame = frame;
       document.getElementById(this.slider_id).value = this.current_frame;
       if(this.cached) {
@@ -89,65 +83,60 @@
       }
   }
 
-  Animation.prototype.update = function(current){
+  {{ widget_name }}.prototype.update = function(current){
       if(current in this.cache) {
-		  $.each(this.cache, function(index, value) {
-			  value.hide();
-		  });
-		  this.cache[current].show();
+	  $.each(this.cache, function(index, value) {
+	      value.hide();
+	  });
+	  this.cache[current].show();
       }
   }
 
 
-  Animation.prototype.dynamic_update = function(current){
+  {{ widget_name }}.prototype.dynamic_update = function(current){
       var kernel = IPython.notebook.kernel;
-      if(this.nbagg) {
-		  function callback(msg) { }
-      } else {
-		  function callback(msg){
-			  /* This callback receives data from Python as a string
-				 in order to parse it correctly quotes are sliced off*/
-			  var data = msg.content.data['text/plain'].slice(1, -1);
-			  if(this.mpld3){
-				  data = JSON.parse(data)[0];
-			  }
-			  this.frames[current] = data;
-			  this.update_cache();
-			  this.update(current);
-		  }
+      {% block dynamic_callback %}
+      function callback(msg){
+	  /* This callback receives data from Python as a string
+	     in order to parse it correctly quotes are sliced off*/
+	  var data = msg.content.data['text/plain'].slice(1, -1);
+	  this.frames[current] = data;
+	  this.update_cache();
+	  this.update(current);
       }
-      if(this.nbagg || !(current in this.cache)) {
-		  callbacks = {iopub: {output: $.proxy(callback, this)}};
-		  var cmd = "holoviews.ipython.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-		  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+      {% endblock %}
+      if(!(current in this.cache)) {
+	  callbacks = {iopub: {output: $.proxy(callback, this)}};
+	  var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+	  kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
       } else {
-		  this.update(current);
+	  this.update(current);
       }
   }
 
-  Animation.prototype.next_frame = function() {
+  {{ widget_name }}.prototype.next_frame = function() {
       this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
   }
-  Animation.prototype.previous_frame = function() {
+  {{ widget_name }}.prototype.previous_frame = function() {
       this.set_frame(Math.max(0, this.current_frame - 1));
   }
-  Animation.prototype.first_frame = function() {
+  {{ widget_name }}.prototype.first_frame = function() {
       this.set_frame(0);
   }
-  Animation.prototype.last_frame = function() {
+  {{ widget_name }}.prototype.last_frame = function() {
       this.set_frame(this.length - 1);
   }
-  Animation.prototype.slower = function() {
+  {{ widget_name }}.prototype.slower = function() {
       this.interval /= 0.7;
       if(this.direction > 0){this.play_animation();}
       else if(this.direction < 0){this.reverse_animation();}
   }
-  Animation.prototype.faster = function() {
+  {{ widget_name }}.prototype.faster = function() {
       this.interval *= 0.7;
       if(this.direction > 0){this.play_animation();}
       else if(this.direction < 0){this.reverse_animation();}
   }
-  Animation.prototype.anim_step_forward = function() {
+  {{ widget_name }}.prototype.anim_step_forward = function() {
       this.current_frame += 1;
       if(this.current_frame < this.length){
           this.set_frame(this.current_frame);
@@ -164,7 +153,7 @@
           }
       }
   }
-  Animation.prototype.anim_step_reverse = function() {
+  {{ widget_name }}.prototype.anim_step_reverse = function() {
       this.current_frame -= 1;
       if(this.current_frame >= 0){
           this.set_frame(this.current_frame);
@@ -181,20 +170,20 @@
           }
       }
   }
-  Animation.prototype.pause_animation = function() {
+  {{ widget_name }}.prototype.pause_animation = function() {
       this.direction = 0;
       if (this.timer){
           clearInterval(this.timer);
           this.timer = null;
       }
   }
-  Animation.prototype.play_animation = function() {
+  {{ widget_name }}.prototype.play_animation = function() {
       this.pause_animation();
       this.direction = 1;
       var t = this;
       if (!this.timer) this.timer = setInterval(function(){t.anim_step_forward();}, this.interval);
   }
-  Animation.prototype.reverse_animation = function() {
+  {{ widget_name }}.prototype.reverse_animation = function() {
       this.pause_animation();
       this.direction = -1;
       var t = this;
@@ -225,43 +214,25 @@
 
 
 <script language="javascript">
-  /* Instantiate the Animation class. */
+  /* Instantiate the {{ widget_name }} class. */
   /* The IDs given should match those used in the template above. */
   (function() {
       var frame_data = {{ frames | safe }};
 
       function create_widget() {
           setTimeout(function() {
-              anim{{ id }} = new Animation(frame_data, {{ Nframes }}, "{{ id }}", {{ interval }}, {{ load_json }}, {{ mpld3 }}, {{ nbagg }}, {{ cached }});
+              anim{{ id }} = new {{ widget_name }}(frame_data, {{ Nframes }}, "{{ id }}", {{ interval }}, {{ load_json }}, {{ mode }}, {{ cached }});
           }, 0);
       }
 
-      var paths = {};
-      paths.underscore = "{{ underscore_url }}";
-      {% if mpld3 == 'true' %}
-      if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
-      	  paths.d3 = "{{ d3_url }}"
-      }
+      {% block create_widget %}
       var require_conf = {paths: paths};
+      var paths = {};
+      paths.underscore = "{{ CDN['underscore'] }}";
       require.config(require_conf);
-      if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
-      	  require(["underscore"], function(d3){
-              create_widget();
-      	  });
-      } else {
-          require(["d3", "underscore"], function(d3){
-              window.d3 = d3;
-              $.getScript("{{ mpld3_url }}", function(){
-                  create_widget();
-	      });
-          });
-      }
-      {% else %}
-	  var require_conf = {paths: paths};
-	  require.config(require_conf);
-      	  require(["underscore"], function(){
-              create_widget();
-	  });
-      {% endif %}
+      require(["underscore"], function(){
+          create_widget();
+      });
+      {% endblock %}
   })()
 </script>
