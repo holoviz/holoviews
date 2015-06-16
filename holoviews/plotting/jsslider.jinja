@@ -214,6 +214,7 @@ div.hologroup {
         } else {
             define('jQueryUI', [], function() { return jQuery.ui; });
         }
+	paths.underscore = "{{ CDN['underscore'] }}";
         var jquery_require = {paths: paths,
                               shim: {
                                   "jQueryUI": {
@@ -222,7 +223,7 @@ div.hologroup {
                                   }
 	                     }}
         require.config(jquery_require);
-        require(["jquery", "jQueryUI"], function(args){
+        require(["jquery", "jQueryUI", "underscore"], function(args){
             if (noConflict) $.noConflict(true);
             var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
@@ -319,9 +320,9 @@ div.hologroup {
 	}	
 
 	{% block create_widget %}
-	var require_conf = {paths: paths};
 	var paths = {};
 	paths.underscore = "{{ CDN['underscore'] }}";
+	var require_conf = {paths: paths};
 	require.config(require_conf);
       	require(["underscore"], function(){
             create_widget();

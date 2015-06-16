@@ -1,9 +1,5 @@
 {% extends widget_template %}
 
-// Rename backend to mode
-// Consider factoring out only the callback in the template subclass
-// Conditional extends may allow loading, updating, caching code to be shared across widgets
-
 {% block init_slider %}
 {{ widget_name }}.prototype.init_slider = function(init_val){
     if(this.mode == 'nbagg') {
@@ -75,22 +71,22 @@
 
 
 {% block create_widget %}
+{% if mode == "'d3'" %}
 var paths = {};
 paths.underscore = "{{ CDN['underscore'] }}";
-{% if mode == 'd3' %}
 if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
-    paths.d3 = "{{ CDN['d3'] }}"
+    paths.d3 = "{{ CDN['d3'] }}";
 }
 var require_conf = {paths: paths};
 require.config(require_conf);
-if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
+if ((typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
     require(["underscore"], function(d3){
 	create_widget();
     });
 } else {
     require(["d3", "underscore"], function(d3){
 	window.d3 = d3;
-	$.getScript("{{ CDN['mpld3'] }}", function(){
+	$.getScript("{{ CDN['mpld3'] }}.js", function(){
             create_widget();
 	});
     });
