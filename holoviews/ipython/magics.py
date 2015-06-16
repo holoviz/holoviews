@@ -297,6 +297,11 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def _validate(cls, options):
         "Validation of edge cases and incompatible options"
+        if options['backend'] in ['nbagg', 'd3']:
+            msg = ("'{backend}' option is to be deprecated. "
+                   + "Use 'matplotlib:{backend}' instead.").format(backend=options['backend'])
+            outputwarning.warning(msg)
+            options['backend'] = ('matplotlib:%s' % options['backend'])
         if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
             outputwarning.warning("PDF output is experimental, may not be supported"
                                   "by your browser and may change in future.")
