@@ -666,8 +666,8 @@ class Dimensioned(LabelledData):
             items = []
             for k, v in selection.items():
                 val_dim = ['value'] if v.vdims else []
-                dims = zip(*[(sanitize_identifier(kd), kd)
-                             for kd in v.dimensions('key', label=True)])
+                dims = list(zip(*[(sanitize_identifier(kd), kd)
+                                  for kd in v.dimensions('key', label=True)]))
                 kdims, skdims = dims if dims else ([], [])
                 key_dims = list(kdims) + list(skdims) + val_dim
                 if any(kw in key_dims for kw in kwargs):
