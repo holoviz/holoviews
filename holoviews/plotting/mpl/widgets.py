@@ -40,9 +40,6 @@ class MPLWidget(NdWidget):
 
     template = param.String(default='widget.jinja')
 
-    last_frame = []
-
-
     def __init__(self, plot, renderer=None, **params):
         super(MPLWidget, self).__init__(plot, renderer, **params)
         if self.renderer.mode == 'nbagg':
