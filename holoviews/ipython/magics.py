@@ -270,8 +270,11 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def switch_backend(cls, options):
         backend = options['backend']
+        Store.current_backend = backend
         unchanged = (cls.last_backend is None) or (backend == cls.last_backend)
         cls.last_backend = backend
+
+
 
         for i, key in enumerate(['fig', 'holomap']):
             value = options[key] if unchanged else None
@@ -428,7 +431,7 @@ class CompositorMagic(Magics):
             for definition in CompositorSpec.parse(line.strip(), ns=self.shell.user_ns):
                 group = {'style':Options(), 'style':Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
-                Store.options[type_name + '.' + definition.group] = group
+                Store.options()[type_name + '.' + definition.group] = group
                 Compositor.register(definition)
         else:
             print("For help with the %compositor magic, call %compositor?\n")
@@ -464,9 +467,9 @@ class OptsCompleter(object):
     @classmethod
     def setup_completer(cls):
         "Get the dictionary of valid completions"
-        for element in Store.options.keys():
+        for element in Store.options().keys():
             try:
-                options = Store.options['.'.join(element)]
+                options = Store.options()['.'.join(element)]
                 plotkws = options['plot'].allowed_keywords
                 stylekws = options['style'].allowed_keywords
                 dotted = '.'.join(element)
@@ -632,7 +635,7 @@ class OptsMagic(Magics):
                 display(HTML(self._format_options_error(e)))
                 return
 
-            StoreOptions.apply_customizations(spec, Store.options)
+            StoreOptions.apply_customizations(spec, Store.options())
         OptsMagic.error_message = None
 
 
