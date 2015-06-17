@@ -136,11 +136,11 @@ class ScrubberWidget(NdWidget):
     base_template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
+    template = param.String('jsscrubber.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
+
     def __call__(self):
-        if self.embed:
-            frames = self.frames
-        else:
-            frames = self.get_frames()
+        frames = self.get_frames()
 
         data = {'id': self.id, 'Nframes': len(self.plot),
                 'interval': int(1000./self.display_options.get('fps', 5)),
@@ -176,6 +176,9 @@ class SelectionWidget(NdWidget):
     """
 
     base_template = param.String('jsslider.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
+
+    template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
     ##############################
