@@ -65,6 +65,41 @@ class Plot(param.Parameterized):
         return Store.lookup_options(cls.renderer.backend, obj, group)
 
 
+class PlotWrapper(object):
+    """
+    Wrapper to select the plotting class based on a function of the
+    plotted object. Optionally a list of plots to draw plot and style
+    options from may be supplied.
+    """
+
+    def __init__(self, fn, plots=[]):
+        self.function = fn
+        self.plots = plots
+
+
+    def __call__(self, obj, **kwargs):
+        return self.function(obj, **kwargs)
+
+
+    @property
+    def style_opts(self):
+        opts = []
+        for cls in self.plots:
+            opts += cls.style_opts
+        return opts
+
+
+    @style_opts.setter
+    def style_opts(self, val):
+        for cls in self.plots:
+           cls.style_opts = val
+
+
+    def params(self):
+        return {p:None for cls in self.plots
+                for p in dict(cls.params())}
+
+
 class DimensionedPlot(Plot):
     """
     DimensionedPlot implements a number of useful methods
