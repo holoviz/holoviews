@@ -40,12 +40,12 @@ class MPLRenderer(Renderer):
     backend = param.String('matplotlib', doc="The backend name.")
 
     fig = param.ObjectSelector(default='svg',
-                               objects=['png', 'svg', 'pdf', None], doc="""
+                               objects=['png', 'svg', 'pdf', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='gif',
-                                   objects=['webm','mp4', 'gif', None], doc="""
+                                   objects=['webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -65,10 +65,10 @@ class MPLRenderer(Renderer):
         'scrubber': ('html', None, {'fps': 5}, None)
     }
 
-    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None],
-                           'd3': ['html', 'json', None],
-                           'nbagg': ['html', None]},
-                    'holomap': {m:['webm','mp4', 'gif', None]
+    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
+                           'd3': ['html', 'json', None, 'auto'],
+                           'nbagg': ['html', None, 'auto']},
+                    'holomap': {m:['webm','mp4', 'gif', None, 'auto', 'html']
                                 for m in ['default', 'd3', 'nbagg']}}
 
     counter = 0
