@@ -48,13 +48,13 @@ class TestStoreOptionsCall(ComparisonTestCase):
             dict(plot={'Curve.Curve':{'show_grid':False}},
                  style={'Curve.Curve':{'color':'k'}}))
 
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'plot').kwargs['show_grid'], False)
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.II, 'plot').kwargs['show_grid'], False)
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'style').kwargs['color'], 'k')
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.II, 'style').kwargs['color'], 'k')
 
     def test_overlay_options_complete(self):
@@ -66,13 +66,13 @@ class TestStoreOptionsCall(ComparisonTestCase):
             {'Curve.Curve':{'plot':{'show_grid':True},
                             'style':{'color':'b'}}})
 
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'plot').kwargs['show_grid'], True)
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.II, 'plot').kwargs['show_grid'], True)
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.I, 'style').kwargs['color'], 'b')
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             o.Curve.II, 'style').kwargs['color'], 'b')
 
     def test_layout_options_short_style(self):
@@ -81,7 +81,7 @@ class TestStoreOptionsCall(ComparisonTestCase):
         """
         im = Image(np.random.rand(10,10))
         layout = (im + im)({'Layout':dict(plot={'hspace':5})})
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 5)
 
     def test_layout_options_long_style(self):
@@ -90,7 +90,7 @@ class TestStoreOptionsCall(ComparisonTestCase):
         """
         im = Image(np.random.rand(10,10))
         layout = (im + im)({'Layout':dict(plot={'hspace':10})})
-        self.assertEqual(Store.lookup_options(
+        self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 10)
 
 

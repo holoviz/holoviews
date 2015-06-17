@@ -30,7 +30,7 @@ class TestOptsMagic(ExtensionTestCase):
         self.cell("from holoviews.element import Image")
 
     def tearDown(self):
-        Store.custom_options = {}
+        Store.custom_options(val = {})
         super(TestOptsMagic, self).tearDown()
 
 
@@ -42,9 +42,10 @@ class TestOptsMagic(ExtensionTestCase):
         self.cell_magic('opts', " Image (cmap='hot')", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
-        assert 0 in Store.custom_options, "Custom OptionTree creation failed"
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
         self.assertEqual(
-            Store.lookup_options(self.get_object('mat1'), 'style').options.get('cmap',None),'hot')
+            Store.lookup_options('matplotlib',
+                                 self.get_object('mat1'), 'style').options.get('cmap',None),'hot')
 
 
     def test_cell_opts_plot(self):
@@ -55,9 +56,10 @@ class TestOptsMagic(ExtensionTestCase):
         self.cell_magic('opts', " Image [show_title=False]", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
-        assert 0 in Store.custom_options, "Custom OptionTree creation failed"
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
         self.assertEqual(
-            Store.lookup_options(self.get_object('mat1'), 'plot').options.get('show_title',True),False)
+            Store.lookup_options('matplotlib',
+                                 self.get_object('mat1'), 'plot').options.get('show_title',True),False)
 
 
     def test_cell_opts_norm(self):
@@ -68,9 +70,10 @@ class TestOptsMagic(ExtensionTestCase):
         self.cell_magic('opts', " Image {+axiswise}", 'mat1')
         self.assertEqual(self.get_object('mat1').id, 0)
 
-        assert 0 in Store.custom_options, "Custom OptionTree creation failed"
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
         self.assertEqual(
-            Store.lookup_options(self.get_object('mat1'), 'norm').options.get('axiswise',True), True)
+            Store.lookup_options('matplotlib',
+                                 self.get_object('mat1'), 'norm').options.get('axiswise',True), True)
 
 
 

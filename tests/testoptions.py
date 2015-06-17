@@ -183,18 +183,23 @@ class TestStoreInheritance(ComparisonTestCase):
     """
 
     def setUp(self):
-        self.store_copy = OptionTree(sorted(Store.options.items()),
+        self.store_copy = OptionTree(sorted(Store.options().items()),
                                 groups={'style': Options(),
                                         'plot': Options(),
                                         'norm': Options()})
 
-        Store.options = OptionTree(groups={'plot':  Options(),
-                                           'style': Options()})
+        self.backend = 'matplotlib'
+        Store.current_backend = self.backend
+        Store.options(val=OptionTree(groups={'plot':  Options(),
+                                             'style': Options()}))
+
+        options = Store.options()
+
         self.default_plot = dict(plot1='plot1', plot2='plot2')
-        Store.options.Histogram = Options('plot', **self.default_plot)
+        options.Histogram = Options('plot', **self.default_plot)
 
         self.default_style = dict(style1='style1', style2='style2')
-        Store.options.Histogram = Options('style', **self.default_style)
+        options.Histogram = Options('style', **self.default_style)
 
         data = [np.random.normal() for i in range(10000)]
         frequencies, edges = np.histogram(data, 20)
@@ -202,49 +207,52 @@ class TestStoreInheritance(ComparisonTestCase):
         super(TestStoreInheritance, self).setUp()
 
 
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
+
     def tearDown(self):
-        Store.options = self.store_copy
+        Store.options(val=self.store_copy)
         super(TestStoreInheritance, self).tearDown()
 
     def test_original_style_options(self):
-        self.assertEqual(Store.lookup_options(self.hist, 'style').options,
+        self.assertEqual(self.lookup_options(self.hist, 'style').options,
                          self.default_style)
 
     def test_original_plot_options(self):
-        self.assertEqual(Store.lookup_options(self.hist, 'plot').options,
+        self.assertEqual(self.lookup_options(self.hist, 'plot').options,
                          self.default_plot)
 
     def test_plot_inheritance_addition(self):
         "Adding an element"
         hist2 = self.hist(plot={'plot3':'plot3'})
-        self.assertEqual(Store.lookup_options(hist2, 'plot').options,
+        self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot1', plot2='plot2', plot3='plot3'))
         # Check style works as expected
-        self.assertEqual(Store.lookup_options(hist2, 'style').options, self.default_style)
+        self.assertEqual(self.lookup_options(hist2, 'style').options, self.default_style)
 
     def test_plot_inheritance_override(self):
         "Overriding an element"
         hist2 = self.hist(plot={'plot1':'plot_child'})
-        self.assertEqual(Store.lookup_options(hist2, 'plot').options,
+        self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot_child', plot2='plot2'))
         # Check style works as expected
-        self.assertEqual(Store.lookup_options(hist2, 'style').options, self.default_style)
+        self.assertEqual(self.lookup_options(hist2, 'style').options, self.default_style)
 
     def test_style_inheritance_addition(self):
         "Adding an element"
         hist2 = self.hist(style={'style3':'style3'})
-        self.assertEqual(Store.lookup_options(hist2, 'style').options,
+        self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style1', style2='style2', style3='style3'))
         # Check plot options works as expected
-        self.assertEqual(Store.lookup_options(hist2, 'plot').options, self.default_plot)
+        self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
     def test_style_inheritance_override(self):
         "Overriding an element"
         hist2 = self.hist(style={'style1':'style_child'})
-        self.assertEqual(Store.lookup_options(hist2, 'style').options,
+        self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style_child', style2='style2'))
         # Check plot options works as expected
-        self.assertEqual(Store.lookup_options(hist2, 'plot').options, self.default_plot)
+        self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
 
 class TestOptionTreeFind(ComparisonTestCase):
@@ -266,12 +274,12 @@ class TestOptionTreeFind(ComparisonTestCase):
         options.XType.Bar = self.opts6
 
         self.options = options
-        self.original_options = Store.options
-        Store.options = OptionTree(groups={'group':  Options()})
+        self.original_options = Store.options()
+        Store.options(val = OptionTree(groups={'group':  Options()}))
 
 
     def tearDown(self):
-        Store.options = self.original_options
+        Store.options(val=self.original_options)
 
 
     def test_optiontree_find1(self):
