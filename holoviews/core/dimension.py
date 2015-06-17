@@ -378,7 +378,6 @@ class LabelledData(param.Parameterized):
                     for backend, info in  backend_info.items():
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
-                        print info
                         Store._custom_options[backend][Store.load_counter_offset + custom_id] = info[backend]
 
                     d.pop(match)
