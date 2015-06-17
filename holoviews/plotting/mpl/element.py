@@ -522,8 +522,3 @@ class DrawPlot(ElementPlot):
     def update_handles(self, axis, element, key, ranges=None):
         if self.zorder == 0 and axis: axis.cla()
         self.draw(axis, element, ranges)
-
-
-
-Store.register({NdOverlay: OverlayPlot,
-                Overlay: OverlayPlot}, 'matplotlib')

@@ -124,12 +124,3 @@ class SplinePlot(AnnotationPlot):
                                   facecolor='none', **opts)
         axis.add_patch(patch)
         return [patch]
-
-
-
-Store.register({
-    VLine: VLinePlot,
-    HLine: HLinePlot,
-    Arrow: ArrowPlot,
-    Spline: SplinePlot,
-    Text: TextPlot}, 'matplotlib')

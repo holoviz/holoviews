@@ -106,12 +106,3 @@ class PolygonPlot(ElementPlot):
             collection.set_clim(ranges[vdim.name])
         if self.colorbar:
             self._draw_colorbar(collection)
-
-
-Store.register({
-    Contours: PathPlot,
-    Path:     PathPlot,
-    Box:      PathPlot,
-    Bounds:   PathPlot,
-    Ellipse:  PathPlot,
-    Polygons: PolygonPlot}, 'matplotlib')

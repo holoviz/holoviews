@@ -182,7 +182,3 @@ class SurfacePlot(Plot3D):
         elif self.plot_type == "contour":
             self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
         self.handles['legend_handle'] = self.handles['surface']
-
-
-Store.register({Surface: SurfacePlot,
-                Scatter3D: Scatter3DPlot}, 'matplotlib')

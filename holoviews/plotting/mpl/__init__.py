@@ -13,6 +13,7 @@ from matplotlib import rc_params_from_file
 
 from ...core.options import Cycle, Palette, Options, StoreOptions
 from ...core import Dimension, Layout, NdLayout, Overlay, HoloMap
+from ...core.element import * # pyflakes:ignore (API import)
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .chart3d import * # pyflakes:ignore (API import)
@@ -107,5 +108,56 @@ Store.renderers['matplotlib'] = MPLRenderer
 # Register the default options
 Store.option_setters.append(default_options)
 
-# Register default Element options
+# Register default Elements
+Store.register({Curve: CurvePlot,
+                Scatter: PointPlot,
+                Bars: BarPlot,
+                Histogram: HistogramPlot,
+                Points: PointPlot,
+                VectorField: VectorFieldPlot,
+                ErrorBars: ErrorPlot,
+
+                # General plots
+                GridSpace: GridPlot,
+                NdLayout: LayoutPlot,
+                Layout: LayoutPlot,
+                AdjointLayout: AdjointLayoutPlot,
+
+                # Element plots
+                NdOverlay: OverlayPlot,
+                Overlay: OverlayPlot,
+
+                # Chart 3D
+                Surface: SurfacePlot,
+                Scatter3D: Scatter3DPlot,
+
+                # Tabular plots
+                ItemTable: TablePlot,
+                Table: TablePlot,
+
+                # Raster plots
+                Raster: RasterPlot,
+                HeatMap: RasterPlot,
+                Image: RasterPlot,
+                RGB: RasterPlot,
+                HSV: RasterPlot,
+
+                # Annotation plots
+                VLine: VLinePlot,
+                HLine: HLinePlot,
+                Arrow: ArrowPlot,
+                Spline: SplinePlot,
+                Text: TextPlot,
+
+                # Path plots
+                Contours: PathPlot,
+                Path:     PathPlot,
+                Box:      PathPlot,
+                Bounds:   PathPlot,
+                Ellipse:  PathPlot,
+                Polygons: PolygonPlot}, 'matplotlib')
+
+
 Store.register_plots(style_aliases=style_aliases)
+
+MPLPlot.sideplots.update({Histogram: SideHistogramPlot})

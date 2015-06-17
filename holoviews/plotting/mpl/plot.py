@@ -1038,9 +1038,3 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 subplot.initialize_plot(ranges=ranges)
 
         return self._finalize_axis(None)
-
-
-Store.register({GridSpace: GridPlot,
-                NdLayout: LayoutPlot,
-                Layout: LayoutPlot,
-                AdjointLayout: AdjointLayoutPlot}, 'matplotlib')

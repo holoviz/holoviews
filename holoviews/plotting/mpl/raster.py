@@ -335,11 +335,3 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     def __len__(self):
         return max([len(self.keys), 1])
-
-
-Store.register({Raster: RasterPlot,
-                HeatMap: RasterPlot,
-                Image: RasterPlot,
-                RGB: RasterPlot,
-                HSV: RasterPlot}, 'matplotlib')
-
