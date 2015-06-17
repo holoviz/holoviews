@@ -23,7 +23,8 @@ class PathPlot(ElementPlot):
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(lines, ranges)
         style = self.style[self.cyclic_index]
-        line_segments = LineCollection(lines.data, zorder=self.zorder, **style)
+        line_segments = LineCollection(lines.data, label=lines.label,
+                                       zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
         self.handles['axis'].add_collection(line_segments)
 
@@ -80,7 +81,7 @@ class PolygonPlot(ElementPlot):
             if segments.shape[0]:
                 polys.append(Polygon(segments))
         collection = PatchCollection(polys, clim=ranges[vdim.name],
-                                     zorder=self.zorder, **style)
+                                     zorder=self.zorder, label=lines.label, **style)
         if value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(polys)))
         return collection, polys
