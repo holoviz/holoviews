@@ -446,7 +446,7 @@ class OptionTree(AttrTree):
             replacement = root_name + ('' if len(target) == len(root_name) else '.')
             option_key = target.replace(replacement,'')
             match = Store.options().find(option_key)
-            if match is not Store.options:
+            if match is not Store.options():
                 return match.options(group)
             else:
                 return Options()
