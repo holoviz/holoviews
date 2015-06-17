@@ -446,7 +446,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for handle, label in zip(all_handles, all_labels):
             if handle and (handle not in data) and label:
                 data[handle] = label
-        if not len(data) > 1 or not self.show_legend:
+        if not len(set(data.values())) > 1 or not self.show_legend:
             legend = axis.get_legend()
             if legend:
                 legend.set_visible(False)

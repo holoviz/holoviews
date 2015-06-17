@@ -127,7 +127,8 @@ class CurvePlot(ChartPlot):
 
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
-        line_segment = axis.plot(data[:, 0], data[:, 1],
+        legend = element.label if self.show_legend else ''
+        line_segment = axis.plot(data[:, 0], data[:, 1], label=legend,
                                  zorder=self.zorder, **style)[0]
 
         self.handles['line_segment'] = line_segment
@@ -263,7 +264,8 @@ class HistogramPlot(ChartPlot):
 
         # Plot bars and make any adjustments
         style = self.style[self.cyclic_index]
-        bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, **style)
+        legend = hist.label if self.show_legend else ''
+        bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, label=legend, **style)
         self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
         self.handles['legend_handle'] = bars
 
@@ -550,7 +552,9 @@ class PointPlot(ChartPlot):
         else:
             style['c'] = color
         edgecolor = style.pop('edgecolors', 'none')
-        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, edgecolors=edgecolor, **style)
+        legend = points.label if self.show_legend else ''
+        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
+                                   edgecolors=edgecolor, **style)
         self.handles['paths'] = scatterplot
         self.handles['legend_handle'] = scatterplot
 
@@ -695,7 +699,8 @@ class VectorFieldPlot(ElementPlot):
 
         if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
 
-        quiver = axis.quiver(*args, zorder=self.zorder, units='x',
+        legend = vfield.label if self.show_legend else ''
+        quiver = axis.quiver(*args, zorder=self.zorder, units='x', label=legend,
                               scale_units='x', scale = scale, angles = angles ,
                               **({k:v for k,v in kwargs.items() if k!='color'}
                                  if colorized else kwargs))
