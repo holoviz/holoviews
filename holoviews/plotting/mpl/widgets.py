@@ -48,8 +48,7 @@ class MPLWidget(NdWidget):
 
 
     def _plot_figure(self, idx):
-        from ...ipython.display_hooks import display_frame
-        plot = self.plot.update(idx)
+        self.plot.update(idx)
         css = self.display_options.get('css', {})
         if self.renderer.mode == 'd3':
             figure_format = 'json'
@@ -100,9 +99,7 @@ class MPLWidget(NdWidget):
         return frames
 
 
-
     def initialize_connection(self, plot):
-        nbagg = WidgetCommSocket is not None
         plot.update(0)
         self.manager = self.renderer.get_figure_manager(plot)
         self.comm = WidgetCommSocket(self.manager)

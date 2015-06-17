@@ -1,4 +1,4 @@
-import os, sys, math, time, uuid, json, glob
+import os, uuid, json
 
 import param
 
@@ -100,7 +100,7 @@ class NdWidget(param.Parameterized):
             if not os.path.isdir(self.json_path):
                 os.mkdir(self.json_path)
             with open(self.json_path+'/fig_%s.json' % self.id, 'wb') as f:
-                json.dump(frames, f, **encoder)
+                json.dump(frames, f)
             frames = {}
         return frames
 

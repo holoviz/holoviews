@@ -227,9 +227,9 @@
       }
 
       {% block create_widget %}
-      var require_conf = {paths: paths};
       var paths = {};
       paths.underscore = "{{ CDN['underscore'] }}";
+      var require_conf = {paths: paths};
       require.config(require_conf);
       require(["underscore"], function(){
           create_widget();
