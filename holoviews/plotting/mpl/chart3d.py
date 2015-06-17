@@ -119,7 +119,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         sz = points.data[:, self.size_index] if self.size_index < ndims else None
         cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
-        style = Store.lookup_options(points, 'style')[self.cyclic_index]
+        style = self.lookup_options(points, 'style')[self.cyclic_index]
         if sz is not None and self.scaling_factor > 1:
             style['s'] = self._compute_size(sz, style)
         if cs is not None:
@@ -172,7 +172,7 @@ class SurfacePlot(Plot3D):
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
 
-        style_opts = Store.lookup_options(element, 'style')[self.cyclic_index]
+        style_opts = self.lookup_options(element, 'style')[self.cyclic_index]
         style_opts['vmin'] = zmin
         style_opts['vmax'] = zmax
         if self.plot_type == "wireframe":

@@ -278,7 +278,7 @@ class GridPlot(CompositePlot):
         self.layout = layout
         self.cols, self.rows = layout.shape
         self.layout_num = layout_num
-        extra_opts = Store.lookup_options(layout, 'plot').options
+        extra_opts = self.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
             dimensions, keys = traversal.unique_dimkeys(layout)
         if 'uniform' not in params:
@@ -333,7 +333,7 @@ class GridPlot(CompositePlot):
             # Create subplot
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
-                opts = Store.lookup_options(view, 'plot').options
+                opts = self.lookup_options(view, 'plot').options
 
             # Create axes
             kwargs = {}
@@ -741,7 +741,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # Get aspects
             main = layout_view.main
             main = main.last if isinstance(main, HoloMap) else main
-            main_options = Store.lookup_options(main, 'plot').options if main else {}
+            main_options = self.lookup_options(main, 'plot').options if main else {}
             if main and not isinstance(main_options.get('aspect', 1), basestring):
                 main_aspect = main_options.get('aspect', 1)
                 main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
@@ -870,7 +870,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
             # Generate the AdjointLayoutsPlot which will coordinate
             # plotting of AdjointLayouts in the larger grid
-            plotopts = Store.lookup_options(view, 'plot').options
+            plotopts = self.lookup_options(view, 'plot').options
             layout_plot = AdjointLayoutPlot(adjoint_layout, layout_type, subaxes, subplots,
                                             fig=self.handles['fig'], **plotopts)
             layout_subplots[(r, c)] = layout_plot
@@ -953,7 +953,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # Determine projection type for plot
             components = view.traverse(lambda x: x)
             projs = ['3d' if isinstance(c, Element3D) else
-                     Store.lookup_options(c, 'plot').options.get('projection', None)
+                     self.lookup_options(c, 'plot').options.get('projection', None)
                      for c in components]
             projs = [p for p in projs if p is not None]
             if len(set(projs)) > 1:
@@ -967,7 +967,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 continue
 
             # Customize plotopts depending on position.
-            plotopts = Store.lookup_options(view, 'plot').options
+            plotopts = self.lookup_options(view, 'plot').options
 
             # Options common for any subplot
             override_opts = {}

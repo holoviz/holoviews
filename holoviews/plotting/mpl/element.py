@@ -346,7 +346,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         view = self._get_frame(key)
         if view is not None:
-            self.set_param(**Store.lookup_options(view, 'plot').options)
+            self.set_param(**self.lookup_options(view, 'plot').options)
         axis = self.handles['axis']
 
         axes_visible = view is not None or self.overlaid

@@ -254,7 +254,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
                     data = pane.data
                 ranges = self.compute_ranges(vmap, key, ranges)
-                opts = Store.lookup_options(pane, 'style')[self.cyclic_index]
+                opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 valrange = match_spec(pane, ranges)[pane.vdims[0].name]
                 plot.set_clim(valrange)

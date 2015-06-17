@@ -60,6 +60,9 @@ class Plot(param.Parameterized):
         """
         raise NotImplementedError
 
+    @classmethod
+    def lookup_options(cls, obj, group):
+        return Store.lookup_options(cls.renderer.backend, obj, group)
 
 
 class DimensionedPlot(Plot):
@@ -188,7 +191,9 @@ class DimensionedPlot(Plot):
         for gid, element_spec_group in id_groups:
             gid = None if gid == -1 else gid
             group_specs = [el for _, el in element_spec_group]
-            optstree = Store.custom_options.get(gid, Store.options)
+
+            backend = self.renderer.backend
+            optstree = Store._custom_options[backend].get(gid, Store._options[backend])
             # Get the normalization options for the current id
             # and match against customizable elements
             for opts in optstree:
@@ -229,7 +234,7 @@ class DimensionedPlot(Plot):
         in opts for the specified opt_type and specs
         """
         lookup = lambda x: ((type(x).__name__, x.group, x.label),
-                            {o: Store.lookup_options(x, opt_type).options.get(o, None)
+                            {o: cls.lookup_options(x, opt_type).options.get(o, None)
                              for o in opts})
         return dict(obj.traverse(lookup, specs))
 
@@ -271,10 +276,10 @@ class GenericElementPlot(DimensionedPlot):
                                kdims=['Frame'], id=element.id)
         else:
             self.map = element
-        self.style = Store.lookup_options(self.map.last, 'style') if style is None else style
+        self.style = self.lookup_options(self.map.last, 'style') if style is None else style
         dimensions = self.map.kdims if dimensions is None else dimensions
         keys = keys if keys else list(self.map.data.keys())
-        plot_opts = Store.lookup_options(self.map.last, 'plot').options
+        plot_opts = self.lookup_options(self.map.last, 'plot').options
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions, **dict(params, **plot_opts))
 
 
@@ -328,7 +333,7 @@ class GenericElementPlot(DimensionedPlot):
             range_extents = (np.NaN,) * num
 
         if self.apply_extents:
-            norm_opts = Store.lookup_options(view, 'norm').options
+            norm_opts = self.lookup_options(view, 'norm').options
             if norm_opts.get('framewise', False):
                 extents = view.extents
             else:
@@ -464,7 +469,7 @@ class GenericOverlayPlot(GenericElementPlot):
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
-            style = Store.lookup_options(vmap.last, 'style').max_cycles(group_length)
+            style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
             plotopts = dict(keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
@@ -584,7 +589,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
         dimensions, keys = traversal.unique_dimkeys(layout)
-        plotopts = Store.lookup_options(layout, 'plot').options
+        plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
                                              uniform=traversal.uniform(layout),
                                              **dict(plotopts, **params))

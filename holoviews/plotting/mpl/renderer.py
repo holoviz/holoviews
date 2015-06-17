@@ -115,7 +115,7 @@ class MPLRenderer(Renderer):
         from .plot import MPLPlot
         factor = percent_size / 100.0
         obj = obj.last if isinstance(obj, HoloMap) else obj
-        options = Store.lookup_options(obj, 'plot').options
+        options = Store.lookup_options(cls.backend, obj, 'plot').options
         fig_inches = options.get('fig_inches', MPLPlot.fig_inches)
         if isinstance(fig_inches, (list, tuple)):
             fig_inches =  (fig_inches[0] * factor,
@@ -124,7 +124,7 @@ class MPLRenderer(Renderer):
             fig_inches = MPLPlot.fig_inches * factor
 
         return dict({'fig_inches':fig_inches},
-                    **Store.lookup_options(obj, 'plot').options)
+                    **Store.lookup_options(cls.backend, obj, 'plot').options)
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):

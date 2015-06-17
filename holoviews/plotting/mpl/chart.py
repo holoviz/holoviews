@@ -426,7 +426,7 @@ class SideHistogramPlot(HistogramPlot):
         if hist_dim in ranges:
             main_range = ranges[hist_dim]
         else:
-            framewise = Store.lookup_options(range_item.last, 'norm').options.get('framewise')
+            framewise = self.lookup_options(range_item.last, 'norm').options.get('framewise')
             if framewise and range_item.get(key, False):
                 main_range = range_item.get(key, False).range(hist_dim)
             else:
@@ -448,7 +448,7 @@ class SideHistogramPlot(HistogramPlot):
                           if hist_dim in ov.dimensions('value', label=True)][0]
 
         if isinstance(range_item, (Raster, Points, Polygons)):
-            style = Store.lookup_options(range_item, 'style')[self.cyclic_index]
+            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
         else:
@@ -816,7 +816,7 @@ class BarPlot(LegendPlot):
         any combination of the 'group', 'category'
         and 'stack'.
         """
-        style = Store.lookup_options(element, 'style')[0]
+        style = self.lookup_options(element, 'style')[0]
         sopts = []
         for sopt in ['color', 'hatch']:
             if sopt in style:
@@ -826,7 +826,7 @@ class BarPlot(LegendPlot):
         for sg in style_groups:
             color_groups.append(self.values[sg])
         style_product = list(product(*color_groups))
-        wrapped_style = Store.lookup_options(element, 'style').max_cycles(len(style_product))
+        wrapped_style = self.lookup_options(element, 'style').max_cycles(len(style_product))
         color_groups = {k:tuple(wrapped_style[n][sopt] for sopt in sopts)
                         for n,k in enumerate(style_product)}
         return style, color_groups, sopts
