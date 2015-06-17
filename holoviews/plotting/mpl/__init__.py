@@ -68,45 +68,7 @@ style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
                  'markerfacecolor': ['mfc'], 'markersize': ['ms']}
 
-def default_options(options):
-    # Charts
-    options.Curve = Options('style', color=Cycle(), linewidth=2)
-    options.Scatter = Options('style', color=Cycle(), marker='o')
-    options.ErrorBars = Options('style', ecolor='k')
-    options.Bars = Options('style', ec='k', color=Cycle())
-    options.Histogram = Options('style', ec='k', fc=Cycle())
-    options.Points = Options('style', color=Cycle(), marker='o')
-    options.Scatter3D = Options('style', color=Cycle(), marker='o')
-    # Rasters
-    options.Image = Options('style', cmap='hot', interpolation='nearest')
-    options.Raster = Options('style', cmap='hot', interpolation='nearest')
-    options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
-    options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
-    options.RGB = Options('style', interpolation='nearest')
-    # Composites
-    options.Layout = Options('plot', sublabel_format='{Alpha}')
-    options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
-                                                  'axes.titlesize': 'small'})
-    # Annotations
-    options.VLine = Options('style', color=Cycle())
-    options.HLine = Options('style', color=Cycle())
-    options.Spline = Options('style', linewidth=2, ec='r')
-    options.Text = Options('style', fontsize=13)
-    options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
-    # Paths
-    options.Contours = Options('style', color=Cycle())
-    options.Path = Options('style', color=Cycle())
-    options.Box = Options('style', color=Cycle())
-    options.Bounds = Options('style', color=Cycle())
-    options.Ellipse = Options('style', color=Cycle())
-    # Interface
-    options.TimeSeries = Options('style', color=Cycle())
-
-
 Store.renderers['matplotlib'] = MPLRenderer
-
-# Register the default options
-Store.option_setters.append(default_options)
 
 # Register default Elements
 Store.register({Curve: CurvePlot,
@@ -155,9 +117,43 @@ Store.register({Curve: CurvePlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
-                Polygons: PolygonPlot}, 'matplotlib')
+                Polygons: PolygonPlot}, 'matplotlib', style_aliases=style_aliases)
 
-
-Store.register_plots(style_aliases=style_aliases)
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot})
+
+
+options = Store.options(backend='matplotlib')
+# Charts
+options.Curve = Options('style', color=Cycle(), linewidth=2)
+options.Scatter = Options('style', color=Cycle(), marker='o')
+options.ErrorBars = Options('style', ecolor='k')
+options.Bars = Options('style', ec='k', color=Cycle())
+options.Histogram = Options('style', ec='k', fc=Cycle())
+options.Points = Options('style', color=Cycle(), marker='o')
+options.Scatter3D = Options('style', color=Cycle(), marker='o')
+# Rasters
+options.Image = Options('style', cmap='hot', interpolation='nearest')
+options.Raster = Options('style', cmap='hot', interpolation='nearest')
+options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
+options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
+options.RGB = Options('style', interpolation='nearest')
+# Composites
+options.Layout = Options('plot', sublabel_format='{Alpha}')
+options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
+                                              'axes.titlesize': 'small'})
+# Annotations
+options.VLine = Options('style', color=Cycle())
+options.HLine = Options('style', color=Cycle())
+options.Spline = Options('style', linewidth=2, ec='r')
+options.Text = Options('style', fontsize=13)
+options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
+# Paths
+options.Contours = Options('style', color=Cycle())
+options.Path = Options('style', color=Cycle())
+options.Box = Options('style', color=Cycle())
+options.Bounds = Options('style', color=Cycle())
+options.Ellipse = Options('style', color=Cycle())
+# Interface
+options.TimeSeries = Options('style', color=Cycle())
+

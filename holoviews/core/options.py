@@ -829,14 +829,38 @@ class Store(object):
 
 
     @classmethod
-    def register(cls, associations, backend):
+    def register(cls, associations, backend, style_aliases={}):
         """
         Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
         """
+        from .overlay import CompositeOverlay
         if backend not in cls.registry:
             cls.registry[backend] = {}
         cls.registry[backend].update(associations)
+
+        groups = ['style', 'plot', 'norm']
+        if backend not in cls._options:
+            cls._options[backend] =  OptionTree([], groups={k:Options() for k in groups})
+
+        for view_class, plot in cls.registry[backend].items():
+            expanded_opts = [opt for key in plot.style_opts
+                             for opt in style_aliases.get(key, [])]
+            style_opts = sorted(set(expanded_opts + plot.style_opts))
+            plot_opts = [k for k in plot.params().keys() if k not in ['name']]
+
+            with param.logging_level('CRITICAL'):
+                plot.style_opts = style_opts
+
+            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
+            if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
+                 opt_groups.update({'style': Options(allowed_keywords=style_opts),
+                                    'norm':  Options(framewise=False, axiswise=False,
+                                                     allowed_keywords=['framewise',
+                                                                       'axiswise'])})
+            name = view_class.__name__
+            if name not  in cls._options[backend]:
+                cls._options[backend][name] = opt_groups
 
 
     @classmethod
