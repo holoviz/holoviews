@@ -708,18 +708,20 @@ class Store(object):
     current_backend = 'matplotlib'
 
     @classmethod
-    def options(cls, val=None):
+    def options(cls, val=None, backend=None):
+        backend = cls.current_backend if backend is None else backend
         if val is None:
-            return cls._options[cls.current_backend]
+            return cls._options[backend]
         else:
-            cls._options[cls.current_backend] = val
+            cls._options[backend] = val
 
     @classmethod
-    def custom_options(cls, val=None):
+    def custom_options(cls, val=None, backend=None):
+        backend = cls.current_backend if backend is None else backend
         if val is None:
-            return cls._custom_options[cls.current_backend]
+            return cls._custom_options[backend]
         else:
-            cls._custom_options[cls.current_backend] = val
+            cls._custom_options[backend] = val
 
     @classmethod
     def load(cls, filename):

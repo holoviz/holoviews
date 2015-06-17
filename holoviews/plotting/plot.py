@@ -193,7 +193,8 @@ class DimensionedPlot(Plot):
             group_specs = [el for _, el in element_spec_group]
 
             backend = self.renderer.backend
-            optstree = Store._custom_options[backend].get(gid, Store._options[backend])
+            optstree = Store.custom_options(
+                backend=backend).get(gid, Store.options(backend=backend))
             # Get the normalization options for the current id
             # and match against customizable elements
             for opts in optstree:
