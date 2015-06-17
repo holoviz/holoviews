@@ -349,7 +349,8 @@ class LabelledData(param.Parameterized):
             if Store.save_option_state and (obj_dict.get('id', None) is not None):
                 custom_key = '_custom_option_%d' % obj_dict['id']
                 if custom_key not in obj_dict:
-                    obj_dict[custom_key] = Store.custom_options[obj_dict['id']]
+                    obj_dict[custom_key] = {backend:s[obj_dict['id']]
+                                            for backend,s in Store._custom_options.items()}
             else:
                 obj_dict['id'] = None
         except:
@@ -369,12 +370,23 @@ class LabelledData(param.Parameterized):
                 matches = [k for k in d if k.startswith('_custom_option')]
                 for match in matches:
                     custom_id = int(match.split('_')[-1])
-                    Store.custom_options[Store.load_counter_offset + custom_id] = d[match]
+
+                    backend_info = (d[match] if all(isinstance(d,dict)
+                                                    for d in d[match].values())
+                                    else {'matplotlib':d[match]})
+
+                    for backend, info in  backend_info.items():
+                        if backend not in Store._custom_options:
+                            Store._custom_options[backend] = {}
+                        print info
+                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info[backend]
+
                     d.pop(match)
+
                 if d['id'] is not None:
                     d['id'] += Store.load_counter_offset
-            else:
-                d['id'] = None
+                else:
+                    d['id'] = None
         except:
             self.warning("Could not unpickle custom style information.")
         self.__dict__.update(d)

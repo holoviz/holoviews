@@ -727,7 +727,8 @@ class Store(object):
         Equivalent to pickle.load except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
+        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
+                                   if cls.custom_options() else 0)
         val = pickle.load(filename)
         cls.load_counter_offset = None
         return val
@@ -738,7 +739,8 @@ class Store(object):
         Equivalent to pickle.loads except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = max(cls.custom_options) if cls.custom_options else 0
+        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
+                                   if cls.custom_options() else 0)
         val = pickle.loads(pickle_string)
         cls.load_counter_offset = None
         return val
