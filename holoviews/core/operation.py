@@ -195,7 +195,7 @@ class TreeOperation(Operation):
                 if isinstance(processed, list):
                     processed = Layout.from_values(processed)
                 values[key] = processed
-        return Collator(values, kdims=dims)(constant=False)
+        return Collator(values, kdims=dims)(drop_constant=False)
 
 
 
