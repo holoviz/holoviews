@@ -441,11 +441,11 @@ class OptionTree(AttrTree):
             target = self.path
         if self.groups.get(group, None) is None:
             return None
-        if self.parent is None and target and (self is not Store.options):
+        if self.parent is None and target and (self is not Store.options()):
             root_name = self.__class__.__name__
             replacement = root_name + ('' if len(target) == len(root_name) else '.')
             option_key = target.replace(replacement,'')
-            match = Store.options.find(option_key)
+            match = Store.options().find(option_key)
             if match is not Store.options:
                 return match.options(group)
             else:
@@ -693,18 +693,33 @@ class Store(object):
     # types grouped by the backend. Set using the register method.
     registry = {}
 
-    # Once register_plotting_classes is called, this OptionTree is populated
-    options = OptionTree(groups={'plot':  Options(),
-                                 'style': Options(),
-                                 'norm':  Options()})
+    # Once register_plotting_classes is called, this OptionTree is
+    # populated for the given backend.
+    _options = {}
 
     # A list of hooks to call after registering the plot and style options
     option_setters = []
 
-    # A dictionary of custom OptionTree by custom object id
-    custom_options = {}
+    # A dictionary of custom OptionTree by custom object id by backend
+    _custom_options = {'matplotlib':{}}
     load_counter_offset = None
     save_option_state = False
+
+    current_backend = 'matplotlib'
+
+    @classmethod
+    def options(cls, val=None):
+        if val is None:
+            return cls._options[cls.current_backend]
+        else:
+            cls._options[cls.current_backend] = val
+
+    @classmethod
+    def custom_options(cls, val=None):
+        if val is None:
+            return cls._custom_options[cls.current_backend]
+        else:
+            cls._custom_options[cls.current_backend] = val
 
     @classmethod
     def load(cls, filename):
@@ -760,16 +775,16 @@ class Store(object):
 
 
     @classmethod
-    def lookup_options(cls, obj, group):
+    def lookup_options(cls, backend, obj, group):
         if obj.id is None:
-            return cls.options.closest(obj, group)
-        elif obj.id in cls.custom_options:
-            return cls.custom_options[obj.id].closest(obj, group)
+            return cls._options[backend].closest(obj, group)
+        elif obj.id in cls._custom_options[backend]:
+            return cls._custom_options[backend][obj.id].closest(obj, group)
         else:
             raise KeyError("No custom settings defined for object with id %d" % obj.id)
 
     @classmethod
-    def lookup(cls, obj):
+    def lookup(cls, backend, obj):
         """
         Given an object, lookup the corresponding customized option
         tree if a single custom tree is applicable.
@@ -781,11 +796,11 @@ class Store(object):
             idlist = ",".join([str(el) for el in sorted(ids)])
             raise Exception("Object contains elements combined across "
                             "multiple custom trees (ids %s)" % idlist)
-        return cls.custom_options[list(ids)[0]]
+        return cls._custom_options[backend][list(ids)[0]]
 
 
     @classmethod
-    def add_style_opts(cls, component, new_options, backend='matplotlib'):
+    def add_style_opts(cls, component, new_options, backend=None):
         """
         Given a component such as an Element (e.g. Image, Curve) or a
         container (e.g Layout) specify new style options to be
@@ -795,6 +810,7 @@ class Store(object):
         additional style keywords are appropriate for the
         corresponding plotting class.
         """
+        backend = cls.current_backend if backend is None else backend
         if component not in cls.registry[backend]:
             raise ValueError("Component %r not registered to a plotting class" % component)
 
@@ -858,13 +874,13 @@ class Store(object):
                                                                       'axiswise'])})
             path_items[name] = opt_groups
 
-        cls.options = OptionTree(sorted(path_items.items()),
-                                  groups={'style': Options(),
-                                          'plot': Options(),
-                                          'norm': Options()})
+        cls._options[backend] = OptionTree(sorted(path_items.items()),
+                                          groups={'style': Options(),
+                                                  'plot': Options(),
+                                                  'norm': Options()})
 
         for fn in cls.option_setters:
-            fn(cls.options)
+            fn(cls._options[backend])
 
 
 class StoreOptions(object):
@@ -892,7 +908,7 @@ class StoreOptions(object):
         matching the applied_keys. This method can only be called if
         there is a tree with a matching id in Store.custom_options
         """
-        if not new_id in Store.custom_options:
+        if not new_id in Store.custom_options():
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
@@ -939,8 +955,8 @@ class StoreOptions(object):
         Given a specification, validated it against the default
         options tree (Store.options)
         """
-        options = OptionTree(items=Store.options.data.items(),
-                             groups=Store.options.groups)
+        options = OptionTree(items=Store.options().data.items(),
+                             groups=Store.options().groups)
         return cls.apply_customizations(spec, options)
 
 
@@ -979,19 +995,19 @@ class StoreOptions(object):
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
-        store_ids = Store.custom_options.keys()
+        store_ids = Store.custom_options().keys()
         offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
         obj_ids = [None] if len(obj_ids)==0 else obj_ids
         for tree_id in obj_ids:
             if tree_id is not None:
-                original = Store.custom_options[tree_id]
+                original = Store.custom_options()[tree_id]
                 clone = OptionTree(items = original.items(),
                                    groups = original.groups)
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
                 clones[offset] = OptionTree(groups={group: Options()
-                                                    for group in Store.options.groups})
+                                                    for group in Store.options().groups})
                 id_mapping.append((None, offset))
 
         return {k:cls.apply_customizations(options, t) if options else t
@@ -1010,7 +1026,7 @@ class StoreOptions(object):
         >>> sorted(merged['Curve']['style'].items())
         [('color', 'b'), ('linewidth', 10)]
         """
-        groups = set(Store.options.groups.keys())
+        groups = set(Store.options().groups.keys())
         if (options is not None and set(options.keys()) <= groups):
             kwargs, options = options, None
         elif (options is not None and any(k in groups for k in options)):
@@ -1045,13 +1061,13 @@ class StoreOptions(object):
         """
         if state is None:
             ids = cls.capture_ids(obj)
-            original_custom_keys = set(Store.custom_options.keys())
+            original_custom_keys = set(Store.custom_options().keys())
             return (ids, original_custom_keys)
         else:
             (ids, original_custom_keys) = state
-            current_custom_keys = set(Store.custom_options.keys())
+            current_custom_keys = set(Store.custom_options().keys())
             for key in current_custom_keys.difference(original_custom_keys):
-                del Store.custom_options[key]
+                del Store.custom_options()[key]
                 cls.restore_ids(obj, ids)
 
     @classmethod
@@ -1124,7 +1140,7 @@ class StoreOptions(object):
         options = cls.merge_options(options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
-        Store.custom_options.update(custom_trees)
+        Store.custom_options().update(custom_trees)
         for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj
