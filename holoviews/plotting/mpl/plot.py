@@ -16,7 +16,7 @@ from ...core.util import sanitize_identifier, int_to_roman,\
     int_to_alpha, safe_unicode, max_range, basestring
 from ...element import Raster, Table
 
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
+from ..plot import DimensionedPlot, PlotWrapper, GenericLayoutPlot, GenericCompositePlot
 from .renderer import MPLRenderer
 
 
@@ -991,20 +991,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             plotopts.update(override_opts, fig=self.handles['fig'])
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             if isinstance(view, GridSpace):
-                raster_fn = lambda x: True if isinstance(x, Raster) or \
-                                  (not isinstance(x, Element)) else False
-                all_raster = all(view.traverse(raster_fn))
-                if all_raster:
-                    from .raster import RasterGridPlot
-                    plot_type = RasterGridPlot
-                else:
-                    plot_type = GridPlot
                 plotopts['create_axes'] = ax is not None
+            if pos == 'main':
+                plot_type = Store.registry['matplotlib'][vtype]
             else:
-                if pos == 'main':
-                    plot_type = Store.registry['matplotlib'][vtype]
-                else:
-                    plot_type = MPLPlot.sideplots[vtype]
+                plot_type = MPLPlot.sideplots[vtype]
             num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
                                       dimensions=self.dimensions,
@@ -1012,10 +1003,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, layout_num=num,
                                       **plotopts)
-            if issubclass(plot_type, CompositePlot):
-                adjoint_clone[pos] = subplots[pos].layout
-            else:
+            if isinstance(view, (Element, HoloMap, CompositeOverlay)):
                 adjoint_clone[pos] = subplots[pos].map
+            else:
+                adjoint_clone[pos] = subplots[pos].layout
         return subplots, adjoint_clone, projections
 
 

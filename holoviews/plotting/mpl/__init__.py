@@ -14,6 +14,7 @@ from matplotlib import rc_params_from_file
 from ...core.options import Cycle, Palette, Options, StoreOptions
 from ...core import Dimension, Layout, NdLayout, Overlay, HoloMap
 from ...core.element import * # pyflakes:ignore (API import)
+from ..plot import PlotWrapper
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .chart3d import * # pyflakes:ignore (API import)
@@ -69,6 +70,21 @@ style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'markerfacecolor': ['mfc'], 'markersize': ['ms']}
 
 Store.renderers['matplotlib'] = MPLRenderer
+
+# Defines a wrapper around GridPlot and RasterGridPlot
+# switching to RasterGridPlot if the plot only contains
+# Raster Elements
+BasicGridPlot = GridPlot
+def grid_wrapper(grid, **kwargs):
+    raster_fn = lambda x: True if isinstance(x, Raster) else False
+    all_raster = all(grid.traverse(raster_fn, [Element]))
+    if all_raster:
+        plot_class = RasterGridPlot
+    else:
+        plot_class = BasicGridPlot
+    return plot_class(grid, **kwargs)
+
+GridPlot = PlotWrapper(grid_wrapper, plots=[GridPlot, RasterGridPlot])
 
 # Register default Elements
 Store.register({Curve: CurvePlot,

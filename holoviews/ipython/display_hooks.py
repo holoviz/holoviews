@@ -11,7 +11,6 @@ from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
     NdOverlay, GridSpace, Layout, Overlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
-from ..plotting.mpl import LayoutPlot, GridPlot, RasterGridPlot
 from .magics import OutputMagic, OptsMagic
 
 from .archive import notebook_archive
@@ -247,14 +246,7 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
     info = process_object(grid)
     if info: return info
 
-    raster_fn = lambda x: True if isinstance(x, Raster) else False
-    all_raster = all(grid.traverse(raster_fn, [Element]))
-    if all_raster:
-        from ..plotting.mpl import RasterGridPlot
-        plot_class = RasterGridPlot
-    else:
-        plot_class = Store.registry[OutputMagic.backend()][GridSpace]
-
+    plot_class = Store.registry[OutputMagic.backend()][GridSpace]
     gridplot = plot_class(grid, **OutputMagic.renderer().plot_options(grid, size))
 
     if len(gridplot) > max_frames:
