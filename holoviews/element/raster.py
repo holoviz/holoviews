@@ -404,15 +404,13 @@ class Image(SheetCoordinateSystem, Raster):
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
-            shape = self.data.shape[dim_idx]
-            dim_min, dim_max = [(l, r), (b, t)][dim_idx]
-            dim_len = self.data.shape[abs(dim_idx-1)]
-            half_unit = (dim_max - dim_min)/dim_len/2.
-            coord_fn = (lambda v: (0, v)) if dim_idx else (lambda v: (v, 0))
-            linspace = np.linspace(dim_min+half_unit, dim_max-half_unit, dim_len)
-            coords = [self.closest(coord_fn(v))[dim_idx]
-                      for v in linspace] * shape
-            return coords if dim_idx else sorted(coords)
+            dim1, dim2 = self.data.shape
+            d1_half_unit = (r - l)/dim1/2.
+            d2_half_unit = (t - b)/dim2/2.
+            d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
+            d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
+            X, Y = np.meshgrid(d2lin, d1lin)
+            return X.flatten() if dim_idx else Y.flatten()
         elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
         else:
