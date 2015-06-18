@@ -136,8 +136,8 @@ Store.register({Curve: CurvePlot,
                 Polygons: PolygonPlot}, 'matplotlib', style_aliases=style_aliases)
 
 
-MPLPlot.sideplots.update({Histogram: SideHistogramPlot})
-
+MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
+                          GridSpace: GridPlot})
 
 options = Store.options(backend='matplotlib')
 # Charts
