@@ -75,7 +75,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
 
-    xticks = param.Integer(default=5, doc="""
+    xticks = param.Parameter(default=None, doc="""
         Number of ticks along the x-axis.""")
 
     xticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
@@ -84,7 +84,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
-    yticks = param.Integer(default=5, doc="""
+    yticks = param.Parameter(default=None, doc="""
         Number of ticks along the y-axis.""")
 
     yticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
@@ -96,7 +96,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     zrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
-    zticks = param.Integer(default=5, doc="""
+    zticks = param.Parameter(default=None, doc="""
         Number of ticks along the z-axis.""")
 
     zticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
@@ -281,7 +281,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             log_locator = ticker.LogLocator(numticks=self.xticks,
                                             subs=range(1,10))
             axis.xaxis.set_major_locator(log_locator)
-        elif self.xticks:
+        elif self.xticks is not None:
             axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
 
         for tick in axis.get_xticklabels():
@@ -296,7 +296,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             log_locator = ticker.LogLocator(numticks=self.yticks,
                                             subs=range(1,10))
             axis.yaxis.set_major_locator(log_locator)
-        elif self.yticks:
+        elif self.yticks is not None:
             axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
 
         if not self.projection == '3d':
@@ -310,7 +310,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             log_locator = ticker.LogLocator(numticks=self.zticks,
                                             subs=range(1,10))
             axis.zaxis.set_major_locator(log_locator)
-        else:
+        elif self.zticks is not None:
             axis.zaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
 
         if self.projection == '3d':

@@ -291,11 +291,13 @@ class HistogramPlot(ChartPlot):
         Compute the ticks either as cyclic values in degrees or as roughly
         evenly spaced bin centers.
         """
+        if self.xticks is None:
+            return None
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.xticks)
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
-        else:
+        elif self.xticks:
             dim = view.get_dimension(0)
             inds = np.linspace(0, len(edges)-1, self.xticks, dtype=np.int)
             xvals = [edges[i] for i in inds]

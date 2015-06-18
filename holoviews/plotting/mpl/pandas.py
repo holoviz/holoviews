@@ -51,10 +51,10 @@ class DFrameViewPlot(ElementPlot):
                                          'hist_kwds', 'density_kwds'],
                       'autocorrelation': ['kwds']}
 
-    xticks = param.Number(default=0, doc="""
+    xticks = param.Number(default=None, doc="""
         By default we don't mess with Pandas based tickmarks""")
 
-    yticks = param.Number(default=0, doc="""
+    yticks = param.Number(default=None, doc="""
         By default we don't mess with Pandas based tickmarks""")
 
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
