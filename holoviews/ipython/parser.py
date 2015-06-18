@@ -238,7 +238,7 @@ class OptsSpec(Parser):
 
 
     @classmethod
-    def parse(cls, line, ns={}, merge_keywords=True):
+    def parse(cls, line, ns={}):
         """
         Parse an options specification, returning a dictionary with
         path keys and {'plot':<options>, 'style':<options>} values.
@@ -258,17 +258,17 @@ class OptsSpec(Parser):
 
             normalization = cls.process_normalization(group)
             if normalization is not None:
-                options['norm'] = Options(merge_keywords=merge_keywords, **normalization)
+                options['norm'] = Options(**normalization)
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
                 opts = cls.todict(plotopts, 'brackets', ns=ns)
-                options['plot'] = Options(merge_keywords=merge_keywords, **{cls.aliases.get(k,k):v for k,v in opts.items()})
+                options['plot'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
 
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
                 opts = cls.todict(styleopts, 'parens', ns=ns)
-                options['style'] = Options(merge_keywords=merge_keywords, **{cls.aliases.get(k,k):v for k,v in opts.items()})
+                options['style'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
 
             if group['pathspec'] in parse:
                 # Update in case same pathspec accidentally repeated by the user.

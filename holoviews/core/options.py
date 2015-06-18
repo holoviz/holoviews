@@ -207,7 +207,7 @@ class Options(param.Parameterized):
        Optional specification of the options key name. For instance,
        key could be 'plot' or 'style'.""")
 
-    merge_keywords = param.Boolean(default=False, doc="""
+    merge_keywords = param.Boolean(default=True, doc="""
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
