@@ -849,7 +849,9 @@ class Store(object):
 
         groups = ['style', 'plot', 'norm']
         if backend not in cls._options:
-            cls._options[backend] =  OptionTree([], groups={k:Options() for k in groups})
+            cls._options[backend] = OptionTree([], groups={k:Options() for k in groups})
+        if backend not in cls._custom_options:
+            cls._custom_options[backend] = {}
 
         for view_class, plot in cls.registry[backend].items():
             expanded_opts = [opt for key in plot.style_opts
@@ -866,8 +868,9 @@ class Store(object):
                                     'norm':  Options(framewise=False, axiswise=False,
                                                      allowed_keywords=['framewise',
                                                                        'axiswise'])})
+
             name = view_class.__name__
-            if name not  in cls._options[backend]:
+            if name not in cls._options[backend]:
                 cls._options[backend][name] = opt_groups
 
 
