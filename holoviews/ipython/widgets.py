@@ -21,6 +21,9 @@ class ProgressBar(ProgressIndicator):
     """
     A simple text progress bar suitable for both the IPython notebook
     and the IPython interactive prompt.
+
+    ProgressBars are automatically nested if a previous instantiated
+    progress bars has not achieved 100% completion.
     """
 
     display = param.ObjectSelector(default='stdout',
@@ -49,12 +52,17 @@ class ProgressBar(ProgressIndicator):
 
     cache = {}
 
+    current_progress = []
+
     def __init__(self, **params):
         self.start_time = None
+        self._stdout_display(0, False)
+        ProgressBar.current_progress.append(self)
         super(ProgressBar,self).__init__(**params)
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
+
         if self.start_time is None: self.start_time = time.time()
         span = (self.percent_range[1]-self.percent_range[0])
         percentage = self.percent_range[0] + ((percentage/100.0) * span)
@@ -65,12 +73,15 @@ class ProgressBar(ProgressIndicator):
                 elapsed = time.time() -  self.start_time
                 if clear_output and not ipython2: clear_output()
                 if clear_output and ipython2: clear_output(wait=True)
-                sys.stdout.write('\r' + '100%% %s %02d:%02d:%02d'
-                                 % (self.label.lower(), elapsed//3600,
-                                    elapsed//60, elapsed%60))
-                return
+                self.out = '\r' + ('100%% %s %02d:%02d:%02d'
+                                   % (self.label.lower(), elapsed//3600,
+                                      elapsed//60, elapsed%60))
+                output = ''.join([pg.out for pg in self.current_progress])
+                sys.stdout.write(output)
             else:
                 self._stdout_display(percentage)
+            if percentage == 100:
+                ProgressBar.current_progress.pop()
             return
 
         if 'socket' not in self.cache:
@@ -80,20 +91,24 @@ class ProgressBar(ProgressIndicator):
             self.cache['socket'].send('%s|%s' % (percentage, self.label))
 
 
-    def _stdout_display(self, percentage):
+    def _stdout_display(self, percentage, display=True):
         if clear_output and not ipython2: clear_output()
         if clear_output and ipython2: clear_output(wait=True)
         percent_per_char = 100.0 / self.width
         char_count = int(math.floor(percentage/percent_per_char)
                          if percentage<100.0 else self.width)
         blank_count = self.width - char_count
-        sys.stdout.write('\r' + "%s[%s%s] %0.1f%%"
-                         % (self.label+':\n' if self.label else '',
-                            self.fill_char * char_count,
-                            ' '*len(self.fill_char) * blank_count,
-                            percentage))
-        sys.stdout.flush()
-        time.sleep(0.0001)
+        prefix = '\n' if len(self.current_progress) > 1 else ''
+        self.out =  prefix + ("%s[%s%s] %0.1f%%" %
+                              (self.label+':\n' if self.label else '',
+                               self.fill_char * char_count,
+                               ' '*len(self.fill_char) * blank_count,
+                               percentage))
+        if display:
+            sys.stdout.write(''.join([pg.out for pg in self.current_progress]))
+            sys.stdout.flush()
+            time.sleep(0.0001)
+
 
     def _get_socket(self, min_port=8080, max_port=8100, max_tries=20):
         import zmq
