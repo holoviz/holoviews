@@ -140,12 +140,16 @@ MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           GridSpace: GridPlot})
 
 options = Store.options(backend='matplotlib')
+
+# Default option definitions
+# Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
+
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
 options.Scatter = Options('style', color=Cycle(), marker='o')
 options.ErrorBars = Options('style', ecolor='k')
 options.Bars = Options('style', ec='k', color=Cycle())
-options.Histogram = Options('style', ec='k', fc=Cycle())
+options.Histogram = Options('style', ec='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o')
 options.Scatter3D = Options('style', color=Cycle(), marker='o')
 # Rasters
@@ -159,7 +163,7 @@ options.Layout = Options('plot', sublabel_format='{Alpha}')
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
-options.Spline = Options('style', linewidth=2, ec='r')
+options.Spline = Options('style', linewidth=2, edgecolor='g')
 options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
