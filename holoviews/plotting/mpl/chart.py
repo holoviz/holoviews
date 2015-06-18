@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ...core.options import Store
 from ...core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
 from ...core.util import match_spec
 from ...element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars, Polygons

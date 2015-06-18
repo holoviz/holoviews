@@ -6,7 +6,6 @@ import param
 
 from ...element import ItemTable, Table
 from .element import ElementPlot
-from ...core.options import Store
 from ...core.util import safe_unicode
 
 
