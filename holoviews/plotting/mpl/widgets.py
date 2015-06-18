@@ -1,11 +1,12 @@
 import uuid, os, json
-
-from matplotlib.backends.backend_nbagg import CommSocket
-
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
+try:
+    from matplotlib.backends.backend_nbagg import CommSocket
+except:
+    CommSocket = object
 
 class WidgetCommSocket(CommSocket):
     """
