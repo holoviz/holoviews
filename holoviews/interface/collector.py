@@ -539,9 +539,6 @@ class Collector(AttrTree):
         (self.fixed, attrtree.fixed) = (False, False)
 
         for i, t in enumerate(np.diff(times)):
-            if update_progress:
-                interval_hook.percent_range = (completion[i], completion[i+1])
-
             interval_hook(float(t))
 
             # An empty attrtree buffer stops analysis repeatedly
@@ -553,6 +550,10 @@ class Collector(AttrTree):
                 else:
                     task(attrtree_buffer, self.time_fn(), times)
                     attrtree.update(attrtree_buffer)
+                if update_progress:
+                    interval_hook.percent_range = (completion[i],
+                                                   completion[i+1])
+            interval_hook(0)
 
         (self.fixed, attrtree.fixed) = (True, True)
         return attrtree
