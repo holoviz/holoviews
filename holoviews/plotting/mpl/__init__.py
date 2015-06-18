@@ -163,7 +163,7 @@ options.Layout = Options('plot', sublabel_format='{Alpha}')
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
-options.Spline = Options('style', linewidth=2, edgecolor='g')
+options.Spline = Options('style', linewidth=2, edgecolor='r')
 options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
