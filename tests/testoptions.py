@@ -2,6 +2,7 @@ import numpy as np
 from holoviews import Store, Histogram
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews import plotting
 
 class TestOptions(ComparisonTestCase):
 
@@ -148,10 +149,10 @@ class TestOptionTree(ComparisonTestCase):
         opts4 = Options(kw4='value4')
         options.MyType.Child = {'group1':opts3, 'group2':opts4}
 
-        self.assertEqual(options.MyType.Child['group1'].options,
+        self.assertEqual(options.MyType.Child.options('group1').kwargs,
                          {'kw1':'value1', 'kw3':'value3'})
 
-        self.assertEqual(options.MyType.Child['group2'].options,
+        self.assertEqual(options.MyType.Child.options('group2').kwargs,
                          {'kw2':'value2', 'kw4':'value4'})
 
     def test_optiontree_inheritance_flipped(self):
@@ -169,10 +170,10 @@ class TestOptionTree(ComparisonTestCase):
         opts2 = Options(kw2='value2')
         options.MyType = {'group1':opts1, 'group2':opts2}
 
-        self.assertEqual(options.MyType.Child['group1'].options,
+        self.assertEqual(options.MyType.Child.options('group1').kwargs,
                          {'kw1':'value1', 'kw3':'value3'})
 
-        self.assertEqual(options.MyType.Child['group2'].options,
+        self.assertEqual(options.MyType.Child.options('group2').kwargs,
                          {'kw2':'value2', 'kw4':'value4'})
 
 
