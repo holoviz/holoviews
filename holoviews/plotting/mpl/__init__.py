@@ -152,6 +152,8 @@ options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o')
 options.Scatter3D = Options('style', color=Cycle(), marker='o')
+options.Scatter3D = Options('plot', fig_size=150)
+options.Surface = Options('plot', fig_size=150)
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')
