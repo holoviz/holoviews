@@ -8,7 +8,6 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 import matplotlib.tight_bbox as tight_bbox
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
 from mpl_toolkits.mplot3d import Axes3D
 
 import param
@@ -198,6 +197,7 @@ class MPLRenderer(Renderer):
 
 
     def get_figure_manager(self, plot):
+        from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
         fig = plot.state
         manager = new_figure_manager_given_figure(self.counter, fig)
         # Need to call mouse_init on each 3D axis to enable rotation support
