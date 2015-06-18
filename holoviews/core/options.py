@@ -207,8 +207,11 @@ class Options(param.Parameterized):
        Optional specification of the options key name. For instance,
        key could be 'plot' or 'style'.""")
 
+    merge_keywords = param.Boolean(default=False, doc="""
+       Whether to merge with the existing keywords if the corresponding
+       node already exists""")
 
-    def __init__(self, key=None, allowed_keywords=None, **kwargs):
+    def __init__(self, key=None, allowed_keywords=None, merge_keywords=False, **kwargs):
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
                 raise OptionError(kwarg, allowed_keywords)
@@ -216,7 +219,8 @@ class Options(param.Parameterized):
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
         allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
-        super(Options, self).__init__(allowed_keywords=allowed_keywords, key=key)
+        super(Options, self).__init__(allowed_keywords=allowed_keywords,
+                                      merge_keywords=merge_keywords, key=key)
 
 
     def __call__(self, allowed_keywords=None, **kwargs):
@@ -318,18 +322,20 @@ class OptionTree(AttrTree):
         new Options which are passed in.
         """
         override_kwargs = dict(options.kwargs)
-        if not self._instantiated:
-            override_kwargs['allowed_keywords'] = options.allowed_keywords
-        elif identifier in self.children:
-            override_kwargs['allowed_keywords'] = self[identifier][group_name].allowed_keywords
+        allowed_kws = [] if options.allowed_keywords is None else options.allowed_keywords
+        old_allowed = self[identifier][group_name].allowed_keywords if identifier in self.children else []
+        old_allowed = [] if old_allowed is None else old_allowed
+        override_kwargs['allowed_keywords'] = sorted(allowed_kws + old_allowed)
 
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
         current_node = self[identifier] if identifier in self.children else self
         group_options = current_node.groups[group_name]
+
         try:
-            return group_options(**override_kwargs)
+            return (group_options(**override_kwargs)
+                    if options.merge_keywords else Options(group_name, **override_kwargs))
         except OptionError as e:
             raise OptionError(e.invalid_keyword,
                               e.allowed_keywords,
@@ -388,6 +394,7 @@ class OptionTree(AttrTree):
             new_node = OptionTree(data, identifier=identifier, parent=self, groups=new_groups)
         else:
             raise ValueError('OptionTree only accepts a dictionary of Options.')
+
         super(OptionTree, self).__setattr__(identifier, new_node)
 
         if isinstance(val, OptionTree):
