@@ -409,7 +409,7 @@ class Image(SheetCoordinateSystem, Raster):
             d2_half_unit = (t - b)/dim2/2.
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
             d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
-            X, Y = np.meshgrid(d2lin, d1lin)
+            X, Y = np.meshgrid(d1lin, d2lin)
             return X.flatten() if dim_idx else Y.flatten()
         elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
