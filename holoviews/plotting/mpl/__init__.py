@@ -156,8 +156,6 @@ options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 options.RGB = Options('style', interpolation='nearest')
 # Composites
 options.Layout = Options('plot', sublabel_format='{Alpha}')
-options.GridSpace = Options('style', **{'font.size': 10, 'axes.labelsize': 'small',
-                                              'axes.titlesize': 'small'})
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
