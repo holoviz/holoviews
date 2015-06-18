@@ -211,7 +211,7 @@ class Options(param.Parameterized):
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
-    def __init__(self, key=None, allowed_keywords=None, merge_keywords=False, **kwargs):
+    def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
                 raise OptionError(kwarg, allowed_keywords)
