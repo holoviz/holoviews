@@ -7,11 +7,10 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ...core import OrderedDict, NdMapping, ViewableElement, CompositeOverlay, HoloMap
+from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
 from ...core.util import match_spec
-from ...element import Scatter, Curve, Histogram, Bars, Points, Raster, VectorField, ErrorBars, Polygons
+from ...element import Points, Raster, Polygons
 from .element import ElementPlot, LegendPlot
-from .plot import MPLPlot
 
 
 class ChartPlot(ElementPlot):

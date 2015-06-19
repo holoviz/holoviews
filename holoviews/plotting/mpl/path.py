@@ -4,7 +4,6 @@ import numpy as np
 import param
 
 from ...core.util import match_spec
-from ...element import Path, Box, Bounds, Ellipse, Polygons, Contours
 from .element import ElementPlot
 
 

@@ -1,4 +1,4 @@
-import uuid, os, json
+import uuid, json
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget

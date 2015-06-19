@@ -6,11 +6,10 @@ from matplotlib import pyplot as plt
 
 import param
 
-from ...core.options import Store
 from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range
-from ...element.raster import HeatMap, Image, Raster, RGB, HSV
+from ...element.raster import HeatMap, Image, Raster, RGB
 from .element import ElementPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 

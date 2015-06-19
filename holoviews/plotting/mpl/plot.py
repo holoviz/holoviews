@@ -1,4 +1,3 @@
-from itertools import product, groupby
 from collections import defaultdict
 
 import numpy as np
@@ -9,14 +8,13 @@ from matplotlib import gridspec, animation
 
 import param
 from ...core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, Element, CompositeOverlay, Element3D, Empty
+    GridSpace, Element, CompositeOverlay, Element3D, Empty
 from ...core.options import Store, Compositor
 from ...core import traversal
-from ...core.util import sanitize_identifier, int_to_roman,\
-    int_to_alpha, safe_unicode, max_range, basestring
-from ...element import Raster, Table
+from ...core.util import int_to_roman,\
+    int_to_alpha, basestring
 
-from ..plot import DimensionedPlot, PlotWrapper, GenericLayoutPlot, GenericCompositePlot
+from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import MPLRenderer
 
 

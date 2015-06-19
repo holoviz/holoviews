@@ -11,9 +11,9 @@ import os
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
-from ...core.options import Cycle, Palette, Options, StoreOptions
-from ...core import Dimension, Layout, NdLayout, Overlay, HoloMap
-from ...core.element import * # pyflakes:ignore (API import)
+from ...core import Dimension, Layout, GridSpace, AdjointLayout, NdOverlay
+from ...core.options import Cycle, Palette, Options
+from ...element import * # pyflakes:ignore (API import)
 from ..plot import PlotWrapper
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)

@@ -2,7 +2,6 @@ import matplotlib
 from matplotlib import patches as patches
 
 from ...core.util import match_spec
-from ...element import VLine, HLine, Arrow, Spline, Text
 from .element import ElementPlot
 
 
