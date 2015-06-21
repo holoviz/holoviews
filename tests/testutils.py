@@ -184,7 +184,7 @@ class TestSanitizationPy3(ComparisonTestCase):
         self.assertEqual(sanitized, 'α')
 
     def test_simple_a_pound_sanitized_py3(self):
-        sanitized = sanitize_identifier('a $', version=3)
+        sanitized = sanitize_identifier('a £', version=3)
         self.assertEqual(sanitized, 'A_pound')
 
     def test_capital_delta_sanitized_py3(self):
