@@ -220,7 +220,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
                                                          self.substitutions,
                                                          self.transforms)
                     sanitized.extend([chars] if chars else [])
-                    sanitized.append(short)
+                    if short != '':
+                       sanitized.append(short)
                     chars = ''
             if chars:
                 sanitized.extend([chars])
