@@ -65,7 +65,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        names.""")
 
     eliminations = param.List(['extended', 'accent', 'small', 'letter', 'sign', 'digit',
-                               'latin', 'greek', 'arabic-indic', 'with'], doc="""
+                               'latin', 'greek', 'arabic-indic', 'with', 'dollar'], doc="""
        Lowercase strings to be eliminated from the unicode names in
        order to shorten the sanitized name ( lowercase). Redundant
        strings should be removed but too much elimination could cause
