@@ -73,9 +73,9 @@ class TestSanitizationPy2(ComparisonTestCase):
     def setUp(self):
         if py_version != 2: raise SkipTest
 
-    def test_simple_dollar_sanitized_py2(self):
-        sanitized = sanitize_identifier('$', version=2)
-        self.assertEqual(sanitized, 'dollar')
+    def test_simple_pound_sanitized_py2(self):
+        sanitized = sanitize_identifier('£', version=2)
+        self.assertEqual(sanitized, 'pound')
 
     def test_simple_digit_sanitized_py2(self):
         sanitized = sanitize_identifier('0', version=2)
@@ -89,9 +89,9 @@ class TestSanitizationPy2(ComparisonTestCase):
         sanitized = sanitize_identifier('α', version=2)
         self.assertEqual(sanitized, 'alpha')
 
-    def test_simple_a_dollar_sanitized_py2(self):
-        sanitized = sanitize_identifier('a $', version=2)
-        self.assertEqual(sanitized, 'A_dollar')
+    def test_simple_a_pound_sanitized_py2(self):
+        sanitized = sanitize_identifier('a £', version=2)
+        self.assertEqual(sanitized, 'A_pound')
 
     def test_capital_delta_sanitized_py2(self):
         sanitized = sanitize_identifier('Δ', version=2)
@@ -167,9 +167,9 @@ class TestSanitizationPy3(ComparisonTestCase):
     def setUp(self):
         if py_version != 3: raise SkipTest
 
-    def test_simple_dollar_sanitized_py3(self):
-        sanitized = sanitize_identifier('$', version=3)
-        self.assertEqual(sanitized, 'dollar')
+    def test_simple_pound_sanitized_py3(self):
+        sanitized = sanitize_identifier('£', version=3)
+        self.assertEqual(sanitized, 'pound')
 
     def test_simple_digit_sanitized_py3(self):
         sanitized = sanitize_identifier('0', version=3)
@@ -183,9 +183,9 @@ class TestSanitizationPy3(ComparisonTestCase):
         sanitized = sanitize_identifier('α', version=3)
         self.assertEqual(sanitized, 'α')
 
-    def test_simple_a_dollar_sanitized_py3(self):
+    def test_simple_a_pound_sanitized_py3(self):
         sanitized = sanitize_identifier('a $', version=3)
-        self.assertEqual(sanitized, 'A_dollar')
+        self.assertEqual(sanitized, 'A_pound')
 
     def test_capital_delta_sanitized_py3(self):
         sanitized = sanitize_identifier('Δ', version=3)
