@@ -153,6 +153,12 @@ class TestSanitizationPy2(ComparisonTestCase):
         sanitized = sanitize_identifier('^Festkörperphysik', version=2)
         self.assertEqual(sanitized, 'power_Festkorperphysik')
 
+    def test_custom_dollar_removal_py2(self):
+        sanitize_identifier.eliminations.extend(['dollar'])
+        sanitized = sanitize_identifier('$E$', version=2)
+        self.assertEqual(sanitized, 'E')
+        sanitize_identifier.eliminations.remove('dollar')
+
 
 class TestSanitizationPy3(ComparisonTestCase):
     """
@@ -240,6 +246,12 @@ class TestSanitizationPy3(ComparisonTestCase):
     def test_power_umlaut_sanitized_py3(self):
         sanitized = sanitize_identifier('^Festkörperphysik', version=3)
         self.assertEqual(sanitized, 'power_Festkörperphysik')
+
+    def test_custom_dollar_removal_py2(self):
+        sanitize_identifier.eliminations.extend(['dollar'])
+        sanitized = sanitize_identifier('$E$', version=3)
+        self.assertEqual(sanitized, 'E')
+        sanitize_identifier.eliminations.remove('dollar')
 
 
 class TestFindRange(unittest.TestCase):
