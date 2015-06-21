@@ -267,13 +267,13 @@ class TestFindRange(unittest.TestCase):
 
     def test_soft_range(self):
         self.assertEqual(find_range(self.float_vals, soft_range=(np.NaN, 100)), (-0.1424, 100))
-    
+
 
 class TestMaxRange(unittest.TestCase):
     """
     Tests for max_range function.
     """
-    
+
     def setUp(self):
         self.ranges1 = [(-0.2, 0.5), (0, 1), (-0.37, 1.02), (np.NaN, 0.3)]
         self.ranges2 = [(np.NaN, np.NaN), (np.NaN, np.NaN)]
