@@ -108,8 +108,8 @@ class Renderer(Exporter):
         suitable plot object and the appropriate format.
         """
 
-        fig_formats = self.mode_formats['holomap'][self.mode]
-        holomap_formats = self.mode_formats['fig'][self.mode]
+        fig_formats = self.mode_formats['fig'][self.mode]
+        holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if not isinstance(obj, Plot):
             plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
