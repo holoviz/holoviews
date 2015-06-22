@@ -65,39 +65,55 @@ class Plot(param.Parameterized):
         return Store.lookup_options(cls.renderer.backend, obj, group)
 
 
-class PlotWrapper(object):
+class PlotSelector(object):
     """
-    Wrapper to select the plotting class based on a function of the
-    plotted object. Optionally a list of plots to draw plot and style
-    options from may be supplied.
+    Proxy that allows dynamic selection of a plotting class based on a
+    function of the plotted object. Behaves like a Plot class and
+    presents the same parameterized interface.
     """
+    def __init__(self, selector, plot_classes):
+        """
+        The selector function accepts a component instance and returns
+        the appropriate key to index plot_classes dictionary.
+        """
+        self.selector = selector
+        self.plot_classes = OrderedDict(plot_classes)
+        interface = self._define_interface(self.plot_classes.values())
+        self.style_opts, self.plot_options = interface
 
-    def __init__(self, fn, plots=[]):
-        self.function = fn
-        self.plots = plots
+
+    def _define_interface(self, plots):
+        parameters = [{k:v.precedence for k,v in plot.params().items()
+                       if ((v.precedence is None) or (v.precedence >= 0))}
+                      for plot in plots]
+        param_sets = [set(params.keys()) for params in parameters]
+        if not all(pset == param_sets[0] for pset in param_sets):
+            raise Exception("All selectable plot classes must have identical plot options.")
+        styles= [plot.style_opts for plot in plots]
+
+        if not all(style == styles[0] for style in styles):
+            raise Exception("All selectable plot classes must have identical style options.")
+        return styles[0], parameters[0]
 
 
     def __call__(self, obj, **kwargs):
-        return self.function(obj, **kwargs)
+        key = self.selector(obj)
+        if key not in self.plot_classes:
+            msg = "Key %s returned by selector not in set: %s"
+            raise Exception(msg  % (key, ', '.join(self.plot_classes.keys())))
+        return self.plot_classes[key](obj, **kwargs)
 
 
-    @property
-    def style_opts(self):
-        opts = []
-        for cls in self.plots:
-            opts += cls.style_opts
-        return opts
-
-
-    @style_opts.setter
-    def style_opts(self, val):
-        for cls in self.plots:
-           cls.style_opts = val
-
+    def __setattr__(self, label, value):
+        try:
+            return super(PlotSelector, self).__setattr__(label, value)
+        except:
+            raise Exception("Please set class parameters directly on classes %s"
+                            % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
 
     def params(self):
-        return {p:None for cls in self.plots
-                for p in dict(cls.params())}
+        return self.plot_options
+
 
 
 class DimensionedPlot(Plot):

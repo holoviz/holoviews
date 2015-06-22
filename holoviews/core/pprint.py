@@ -69,6 +69,9 @@ class InfoPrinter(object):
         isclass = isinstance(obj, type)
         name = obj.__name__ if isclass  else obj.__class__.__name__
         plot_class = cls.store.registry[backend].get(obj if isclass else type(obj), None)
+        # Special case to handle PlotSelectors
+        if hasattr(plot_class, 'plot_classes'):
+            plot_class = plot_class.plot_classes.values()[0]
         heading = name if isclass else '{name}: {group} {label}'.format(name=name,
                                                                         group=obj.group,
                                                                         label=obj.label)

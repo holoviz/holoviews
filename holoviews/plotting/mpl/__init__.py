@@ -14,7 +14,7 @@ from matplotlib import rc_params_from_file
 from ...core import Dimension, Layout, GridSpace, AdjointLayout, NdOverlay
 from ...core.options import Cycle, Palette, Options
 from ...element import * # pyflakes:ignore (API import)
-from ..plot import PlotWrapper
+from ..plot import PlotSelector
 from .annotation import * # pyflakes:ignore (API import)
 from .chart import * # pyflakes:ignore (API import)
 from .chart3d import * # pyflakes:ignore (API import)
@@ -75,16 +75,14 @@ Store.renderers['matplotlib'] = MPLRenderer
 # switching to RasterGridPlot if the plot only contains
 # Raster Elements
 BasicGridPlot = GridPlot
-def grid_wrapper(grid, **kwargs):
+def grid_selector(grid):
     raster_fn = lambda x: True if isinstance(x, Raster) else False
     all_raster = all(grid.traverse(raster_fn, [Element]))
-    if all_raster:
-        plot_class = RasterGridPlot
-    else:
-        plot_class = BasicGridPlot
-    return plot_class(grid, **kwargs)
+    return 'RasterGridPlot' if all_raster else 'GridPlot'
 
-GridPlot = PlotWrapper(grid_wrapper, plots=[GridPlot, RasterGridPlot])
+GridPlot = PlotSelector(grid_selector,
+                        plot_classes=[('GridPlot', BasicGridPlot),
+                                      ('RasterGridPlot', RasterGridPlot)])
 
 # Register default Elements
 Store.register({Curve: CurvePlot,

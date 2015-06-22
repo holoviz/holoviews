@@ -182,6 +182,34 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     equivalent using subplots.
     """
 
+    # Parameters inherited from OverlayPlot that are not part of the
+    # GridPlot interface. Some of these may be enabled in future in
+    # conjunction with GridPlot.
+
+    apply_extents = param.Parameter(precedence=-1)
+    apply_ranges = param.Parameter(precedence=-1)
+    apply_ticks = param.Parameter(precedence=-1)
+    bgcolor = param.Parameter(precedence=-1)
+    hidden_labels = param.Parameter(precedence=-1)
+    invert_xaxis = param.Parameter(precedence=-1)
+    invert_yaxis = param.Parameter(precedence=-1)
+    legend_cols = param.Parameter(precedence=-1)
+    legend_position = param.Parameter(precedence=-1)
+    logx = param.Parameter(precedence=-1)
+    logy = param.Parameter(precedence=-1)
+    logz = param.Parameter(precedence=-1)
+    orientation = param.Parameter(precedence=-1)
+    show_grid = param.Parameter(precedence=-1)
+    style_grouping = param.Parameter(precedence=-1)
+    xticker = param.Parameter(precedence=-1)
+    xticks = param.Parameter(precedence=-1)
+    yticker = param.Parameter(precedence=-1)
+    yticks = param.Parameter(precedence=-1)
+    zaxis = param.Parameter(precedence=-1)
+    zrotation = param.Parameter(precedence=-1)
+    zticker = param.Parameter(precedence=-1)
+    zticks = param.Parameter(precedence=-1)
+
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
                  layout_num=1, **params):
         if not keys or not dimensions:
