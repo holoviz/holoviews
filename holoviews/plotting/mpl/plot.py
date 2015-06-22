@@ -487,7 +487,6 @@ class GridPlot(CompositePlot):
             layout_axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
 
         axis = layout_axis
-        disabled_spines = []
         if self.xaxis is not None:
             axis.xaxis.set_ticks_position(self.xaxis)
             axis.xaxis.set_label_position(self.xaxis)
