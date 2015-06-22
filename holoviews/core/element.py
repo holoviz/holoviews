@@ -193,7 +193,7 @@ class NdElement(Element, NdMapping):
 
     _deep_indexable = False
 
-    def __init__(self, data, **params):
+    def __init__(self, data=None, **params):
         if isinstance(data, Element):
             data = data.table()
         elif isinstance(data, list) and all(np.isscalar(el) for el in data):
