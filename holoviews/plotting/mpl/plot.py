@@ -230,7 +230,7 @@ class GridPlot(CompositePlot):
     object.
     """
 
-    aspect = param.Parameter(default='auto', doc="""
+    aspect = param.Parameter(default='equal', doc="""
         Aspect ratios on GridPlot should be automatically determined.""")
 
     padding = param.Number(default=0.1, doc="""
@@ -249,8 +249,6 @@ class GridPlot(CompositePlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
-
-    show_title = param.Boolean(default=False)
 
     tick_format = param.String(default="%.2f", doc="""
         Formatting string for the GridPlot ticklabels.""")
@@ -416,7 +414,8 @@ class GridPlot(CompositePlot):
     def _readjust_axes(self, axis):
         if self.subplot:
             axis.set_position(self.position)
-            axis.set_aspect(float(self.rows)/self.cols)
+            if self.aspect == 'equal':
+                axis.set_aspect(float(self.rows)/self.cols)
             self.handles['fig'].canvas.draw()
             self._adjust_subplots(self.handles['axis'], self.subaxes)
 

@@ -182,17 +182,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     equivalent using subplots.
     """
 
-    aspect = param.Parameter(default='equal', doc="""
-        Aspect ratios on RasterGridPlot should be automatically determined.""")
-
-    border = param.Number(default=10, doc="""
-        Aggregate border as a fraction of total plot size.""")
-
-    show_title = param.Boolean(default=True)
-
-    style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
-                  'filterrad']
-
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
                  layout_num=1, **params):
         if not keys or not dimensions:
@@ -324,10 +313,10 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         widths = [extent[0]-extent[1] for extent in width_extents]
         heights = [extent[0]-extent[1] for extent in height_extents]
         width, height = np.sum(widths), np.sum(heights)
-        border_width = (width/10.)/(len(widths)+1)
-        border_height = (height/10.)/(len(heights)+1)
-        width += width/10.
-        height += height/10.
+        border_width = (width*self.padding)/(len(widths)+1)
+        border_height = (height*self.padding)/(len(heights)+1)
+        width += width*self.padding
+        height += height*self.padding
 
         return width, height, border_width, border_height, widths, heights
 
