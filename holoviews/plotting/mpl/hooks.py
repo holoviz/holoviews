@@ -121,7 +121,7 @@ class BarPlugin(MplD3Plugin):
                                               hoffset=self.hoffset, css=self.css)
             plugins.connect(fig, tooltip)
 
-    
+
 
 
 class HistogramPlugin(MplD3Plugin):
