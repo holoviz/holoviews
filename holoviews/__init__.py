@@ -38,7 +38,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         pass
 
 
-def help(obj, visualization=False, ansi=True, backend='matplotlib'):
+def help(obj, visualization=True, ansi=True, backend='matplotlib'):
     """
     Extended version of the built-in help that supports parameterized
     functions and objects. If ansi is set to False, all ANSI color
