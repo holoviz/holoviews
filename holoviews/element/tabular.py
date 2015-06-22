@@ -233,7 +233,6 @@ class Table(NdElement):
         return TableConversion(self)
 
     def dframe(self, value_label='data'):
-        import pandas
         dframe = super(Table, self).dframe(value_label=value_label)
         # Drop 'Row' column as it is redundant with dframe index
         if self.indexed: del dframe['Row']
