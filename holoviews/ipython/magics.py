@@ -408,8 +408,8 @@ class OutputMagic(OptionsMagic):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            OutputMagic.options = self.switch_backend(restore_copy)
-
+            OutputMagic.options = restore_copy
+            Store.current_backend = restore_copy['backend']
 
 
 @magics_class
