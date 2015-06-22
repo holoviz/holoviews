@@ -151,8 +151,7 @@ class DimensionedPlot(Plot):
         """
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or (self.layout_num\
-            and not isinstance(self, GenericCompositePlot)):
+        elif not self.uniform or len(self) == 1 or self.subplot:
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
@@ -603,7 +602,12 @@ class GenericCompositePlot(DimensionedPlot):
                                                        group=safe_unicode(group),
                                                        type=type_name)
         title = '' if title.isspace() else title
-        return '\n'.join([title, dim_title]) if title else dim_title
+        if not title:
+            return dim_title
+        elif not dim_title:
+            return title
+        else:
+            return '\n'.join([title, dim_title])
 
 
 
