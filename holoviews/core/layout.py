@@ -133,6 +133,11 @@ class AdjointLayout(Dimensioned):
         pass
 
 
+    def relabel(self, label=None, group=None, depth=1):
+        # Identical to standard relabel method except for default depth of 1
+        return super(AdjointLayout, self).relabel(label=label, group=group, depth=depth)
+
+
     def get(self, key, default=None):
         return self.data[key] if key in self.data else default
 
