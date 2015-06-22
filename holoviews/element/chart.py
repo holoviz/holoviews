@@ -47,8 +47,8 @@ class Chart(Element2D):
         params = {}
         if isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
                                                   and isinstance(data[0], Element2D)):
+            params = dict([v for v in data][0].get_param_values(onlychanged=True))
             data = np.concatenate([v.data for v in data])
-            params = dict([v for v in ndmap][0].get_param_values(onlychanged=True))
         elif isinstance(data, Element):
             pass
         elif not isinstance(data, np.ndarray):
