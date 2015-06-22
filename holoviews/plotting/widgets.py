@@ -108,7 +108,7 @@ class NdWidget(param.Parameterized):
     def _plot_figure(self, idx):
         plot = self.plot.update(idx)
         css = self.display_options.get('css', {})
-        if self.renderer.mode == 'd3':
+        if self.renderer.mode == 'mpld3':
             figure_format = 'json'
         else:
             figure_format = self.display_options.get('figure_format',

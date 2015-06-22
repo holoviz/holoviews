@@ -49,8 +49,8 @@ class MPLRenderer(Renderer):
         None, no multi-frame rendering will occur.""")
 
     mode = param.ObjectSelector(default='default',
-                                objects=['default', 'd3', 'nbagg'], doc="""
-         The 'd3' mode uses the mpld3 library whereas the 'nbagg' uses
+                                objects=['default', 'mpld3', 'nbagg'], doc="""
+         The 'mpld3' mode uses the mpld3 library whereas the 'nbagg' uses
          matplotlib's the experimental nbagg backend. """)
 
 
@@ -65,10 +65,10 @@ class MPLRenderer(Renderer):
     }
 
     mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
-                           'd3': ['html', 'json', None, 'auto'],
+                           'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
                     'holomap': {m:['webm','mp4', 'gif', None, 'auto', 'html']
-                                for m in ['default', 'd3', 'nbagg']}}
+                                for m in ['default', 'mpld3', 'nbagg']}}
 
     counter = 0
 
@@ -164,7 +164,7 @@ class MPLRenderer(Renderer):
             self.counter += 1
             manager.show()
             return ''
-        elif self.mode == 'd3':
+        elif self.mode == 'mpld3':
             import mpld3
             fig.dpi = self.dpi
             mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))

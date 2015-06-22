@@ -51,7 +51,7 @@ class MPLWidget(NdWidget):
     def _plot_figure(self, idx):
         self.plot.update(idx)
         css = self.display_options.get('css', {})
-        if self.renderer.mode == 'd3':
+        if self.renderer.mode == 'mpld3':
             figure_format = 'json'
         else:
             figure_format = self.display_options.get('figure_format',
@@ -69,7 +69,7 @@ class MPLWidget(NdWidget):
             fig.canvas.draw_idle()
             return ''
         frame = self._plot_figure(n)
-        if self.renderer.mode == 'd3':
+        if self.renderer.mode == 'mpld3':
             frame = self.encode_frames({0: frame})
         return frame
 
@@ -82,7 +82,7 @@ class MPLWidget(NdWidget):
             frames = self.frames
         else:
             frames = {0: self._plot_figure(0)}
-            if self.renderer.mode == 'd3':
+            if self.renderer.mode == 'mpld3':
                 self.frames[0] = frames
             else:
                 self.frames.update(frames)
@@ -90,7 +90,7 @@ class MPLWidget(NdWidget):
 
 
     def encode_frames(self, frames):
-        if self.renderer.mode == 'd3':
+        if self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
             frames = {idx: frame for idx, frame in frames.items()}

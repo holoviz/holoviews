@@ -259,18 +259,20 @@ class OutputMagic(OptionsMagic):
     backend_settings = {k:{} for k in backend_formats.keys()}
     last_backend = None
 
+    _backend_aliases = {'d3':'matplotlib:mpld3', 'nbagg':'matplotlib:nbagg'}
+
     @classmethod
     def update_allowed_options(cls, key, value):
         "Update the allowed figure and holomap formats based on the backend"
         if key != 'backend': return
-        (fig_formats, map_formats) = cls.backend_formats[value]
+        (fig_formats, map_formats) = cls.backend_formats[cls._backend_aliases.get(value, value)]
         cls.allowed['fig'] = [el for el in fig_formats if el is not None]
         cls.allowed['holomap'] = [el for el in map_formats if el is not None]
 
     @classmethod
     def switch_backend(cls, options):
         backend = options['backend']
-        Store.current_backend = backend
+        Store.current_backend = backend if (':' not in backend) else backend.split(':')[0]
         unchanged = (cls.last_backend is None) or (backend == cls.last_backend)
         cls.last_backend = backend
 
@@ -368,11 +370,11 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def _validate(cls, options):
         "Validation of edge cases and incompatible options"
-        if options['backend'] in ['nbagg', 'd3']:
-            msg = ("'{backend}' option is to be deprecated. "
-                   + "Use 'matplotlib:{backend}' instead.").format(backend=options['backend'])
-            outputwarning.warning(msg)
-            options['backend'] = ('matplotlib:%s' % options['backend'])
+        if options['backend'] in ['d3', 'nbagg']:
+            backend = cls._backend_aliases[options['backend']]
+            outputwarning.warning("'%s' option is to be deprecated. Use '%s'"
+                                  % (options['backend'], backend))
+            options['backend'] = backend
         if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
             outputwarning.warning("PDF output is experimental, may not be supported"
                                   "by your browser and may change in future.")
