@@ -421,6 +421,13 @@ class Layout(AttrTree, Dimensioned):
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
 
 
+    def relabel(self, label=None, group=None, depth=0):
+        # Standard relabel method except _max_cols and _display transferred
+        relabelled = super(Layout, self).relabel(label=label, group=group, depth=depth)
+        relabelled.__dict__['_max_cols'] = self.__dict__['_max_cols']
+        relabelled.__dict__['_display'] = self.__dict__['_display']
+        return relabelled
+
     def clone(self, *args, **overrides):
         """
         Clone method for Layout matches Dimensioned.clone except the
