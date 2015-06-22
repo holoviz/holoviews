@@ -38,12 +38,12 @@ class MPLRenderer(Renderer):
 
     backend = param.String('matplotlib', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='svg',
+    fig = param.ObjectSelector(default='auto',
                                objects=['png', 'svg', 'pdf', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='gif',
+    holomap = param.ObjectSelector(default='auto',
                                    objects=['webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
