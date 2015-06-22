@@ -310,8 +310,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.yaxis.set_major_locator(log_locator)
         elif self.yticks is not None:
-            if self.xticks == 0:
-                axis.set_xticks([])
+            if self.yticks == 0:
+                axis.set_yticks([])
             elif isinstance(self.yticks, int):
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
             elif isinstance(self.yticks, list):
@@ -340,6 +340,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.zaxis.set_major_locator(log_locator)
         elif self.zticks is not None:
+            if self.zticks == 0:
+                axis.set_zticks([])
             if isinstance(self.zticks, int):
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
             elif isinstance(self.zticks, list):
