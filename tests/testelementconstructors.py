@@ -34,4 +34,4 @@ class ElementConstructorTest(ComparisonTestCase):
         self.assertEqual(Path([(self.xs, self.sin), (self.xs, self.cos)]), self.path)
 
     def test_path_ziplist_construct(self):
-        self.assertEqual(Path([zip(self.xs, self.sin), zip(self.xs, self.cos)]), self.path)
+        self.assertEqual(Path([list(zip(self.xs, self.sin)), list(zip(self.xs, self.cos))]), self.path)
