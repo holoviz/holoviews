@@ -282,7 +282,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.xaxis.set_major_locator(log_locator)
         elif self.xticks is not None:
-            if isinstance(self.xticks, int):
+            if self.xticks == 0:
+                axis.set_xticks([])
+            elif isinstance(self.xticks, int):
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
             elif isinstance(self.xticks, list):
                 if all(isinstance(t, tuple) for t in self.xticks):
@@ -294,8 +296,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_xticks(xticks)
                 axis.set_xticklabels(xlabels)
 
-        for tick in axis.get_xticklabels():
-            tick.set_rotation(self.xrotation)
+        if self.xticks != 0:
+            for tick in axis.get_xticklabels():
+                tick.set_rotation(self.xrotation)
 
         if self.yticker:
             axis.yaxis.set_major_locator(self.yticker)
@@ -307,7 +310,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.yaxis.set_major_locator(log_locator)
         elif self.yticks is not None:
-            if isinstance(self.yticks, int):
+            if self.xticks == 0:
+                axis.set_xticks([])
+            elif isinstance(self.yticks, int):
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
             elif isinstance(self.yticks, list):
                 if all(isinstance(t, tuple) for t in self.yticks):
@@ -318,6 +323,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             for t in self.yticks])
                 axis.set_yticks(yticks)
                 axis.set_yticklabels(ylabels)
+
+        if self.yticks != 0:
+            for tick in axis.get_yticklabels():
+                tick.set_rotation(self.yrotation)
 
         if not self.projection == '3d':
             pass
@@ -343,7 +352,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_zticks(zticks)
                 axis.set_yticklabels(zlabels)
 
-        if self.projection == '3d':
+        if self.projection == '3d' and self.zticks != 0:
             for tick in axis.get_zticklabels():
                 tick.set_rotation(self.zrotation)
 
