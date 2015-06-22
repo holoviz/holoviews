@@ -285,7 +285,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if isinstance(self.xticks, int):
                 axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
             elif isinstance(self.xticks, list):
-                print self.xticks
                 if all(isinstance(t, tuple) for t in self.xticks):
                     xticks, xlabels = zip(*self.xticks)
                 else:
