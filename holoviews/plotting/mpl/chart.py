@@ -857,12 +857,12 @@ class BarPlot(LegendPlot):
         return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
 
 
-    def _finalize_ticks(self, axis, xticks, yticks, zticks):
+    def _finalize_ticks(self, axis, view, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
         ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-        super(BarPlot, self)._finalize_ticks(axis, [ticks, labels], yticks, zticks)
+        super(BarPlot, self)._finalize_ticks(axis, view, [ticks, labels], yticks, zticks)
         for t, y in zip(axis.get_xticklabels(), yalignments):
             t.set_y(y)
 
