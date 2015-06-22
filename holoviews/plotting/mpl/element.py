@@ -182,7 +182,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._subplot_label(axis)
             self._finalize_axes(axis)
             if self.apply_ticks:
-                self._finalize_ticks(axis, xticks, yticks, zticks)
+                self._finalize_ticks(axis, view, xticks, yticks, zticks)
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title,
@@ -241,7 +241,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.invert_yaxis()
 
 
-    def _finalize_ticks(self, axis, xticks, yticks, zticks):
+    def _finalize_ticks(self, axis, view, xticks, yticks, zticks):
         if not self.projection == '3d':
             disabled_spines = []
             if self.xaxis is not None:
@@ -282,7 +282,18 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.xaxis.set_major_locator(log_locator)
         elif self.xticks is not None:
-            axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
+            if isinstance(self.xticks, int):
+                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
+            elif isinstance(self.xticks, list):
+                print self.xticks
+                if all(isinstance(t, tuple) for t in self.xticks):
+                    xticks, xlabels = zip(*self.xticks)
+                else:
+                    xdim = view.get_dimension(0)
+                    xticks, xlabels = zip(*[(t, xdim.pprint_value(t))
+                                            for t in self.xticks])
+                axis.set_xticks(xticks)
+                axis.set_xticklabels(xlabels)
 
         for tick in axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
@@ -297,7 +308,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.yaxis.set_major_locator(log_locator)
         elif self.yticks is not None:
-            axis.yaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
+            if isinstance(self.yticks, int):
+                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
+            elif isinstance(self.yticks, list):
+                if all(isinstance(t, tuple) for t in self.yticks):
+                    yticks, ylabels = zip(*self.yticks)
+                else:
+                    ydim = view.get_dimension(1)
+                    yticks, ylabels = zip(*[(t, ydim.pprint_value(t))
+                                            for t in self.yticks])
+                axis.set_yticks(yticks)
+                axis.set_yticklabels(ylabels)
 
         if not self.projection == '3d':
             pass
@@ -311,7 +332,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                             subs=range(1,10))
             axis.zaxis.set_major_locator(log_locator)
         elif self.zticks is not None:
-            axis.zaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
+            if isinstance(self.zticks, int):
+                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
+            elif isinstance(self.zticks, list):
+                if all(isinstance(t, tuple) for t in self.zticks):
+                    zticks, zlabels = zip(*self.zticks)
+                else:
+                    zdim = view.get_dimension(0)
+                    zticks, zlabels = zip(*[(t, zdim.pprint_value(t))
+                                            for t in self.zticks])
+                axis.set_zticks(zticks)
+                axis.set_yticklabels(zlabels)
 
         if self.projection == '3d':
             for tick in axis.get_zticklabels():
