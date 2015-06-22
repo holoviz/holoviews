@@ -276,8 +276,6 @@ class OutputMagic(OptionsMagic):
         unchanged = (cls.last_backend is None) or (backend == cls.last_backend)
         cls.last_backend = backend
 
-
-
         for i, key in enumerate(['fig', 'holomap']):
             value = options[key] if unchanged else None
             allowed = [el for el in cls.backend_formats[backend][i] if el is not None]
@@ -410,7 +408,7 @@ class OutputMagic(OptionsMagic):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            OutputMagic.options = restore_copy
+            OutputMagic.options = self.switch_backend(restore_copy)
 
 
 
