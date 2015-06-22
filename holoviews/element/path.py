@@ -19,15 +19,14 @@ from ..core import Dimension, Element2D
 
 class Path(Element2D):
     """
+    The Path Element contains a list of Paths stored as Nx2 numpy
+    arrays. The data may be supplied in one of the following ways:
 
-    The input data is a list of paths. Each path may be an Nx2 numpy
-    arrays or some input that may be converted to such an array, for
-    instance, a list of coordinate tuples. Alternatively a tuple of
-    x and y-values of matching lengths may be supplied and will be
-    expanded to the list of arrays format.
-
-    Each point in the path array corresponds to an X,Y coordinate
-    along the specified path.
+    1) A list of Nx2 numpy arrays.
+    2) A list of lists containing x/y coordinate tuples.
+    3) A tuple containing an array of length N with the x-values and a
+       second array of shape NxP, where P is the number of paths.
+    4) A list of tuples each containing separate x and y values.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -44,11 +43,11 @@ class Path(Element2D):
                 y = np.atleast_2d(y).T
             if len(x) != y.shape[0]:
                 raise ValueError("Path x and y values must be the same length.")
-            data = [np.vstack((x, y[:, i])).T for i in range(y.shape[1])]
-        elif not isinstance(data, list):
-            raise ValueError("Path data must be a list paths (Nx2 coordinates)")
+            data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
+        elif isinstance(data, list) and all(isinstance(path, tuple) for path in data):
+            data = [np.column_stack(path) for path in data]
         elif len(data) >= 1:
-            data = [np.array(p) if not isinstance(p, np.ndarray) else p for p in data ]
+            data = [np.array(p) if not isinstance(p, np.ndarray) else p for p in data]
         super(Path, self).__init__(data, **params)
 
 

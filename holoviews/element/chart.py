@@ -9,20 +9,25 @@ from .tabular import ItemTable, Table
 
 class Chart(Element2D):
     """
-    The data held within an Array is a numpy array of shape (n, m).
-    Element2D objects are sliceable along the X dimension allowing easy
-    selection of subsets of the data.
+    The data held within Chart is a numpy array of shape (N, D),
+    where N is the number of samples and D the number of dimensions.
+    Chart Elements are sliceable along up to two key dimensions.
+    The data may be supplied in one of three formats:
+
+    1) As a numpy array of shape (N, D).
+    2) As a list of length N containing tuples of length D.
+    3) As a tuple of length D containing iterables of length N.
     """
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
-        Dimensions on Element2Ds determine the number of indexable
-        dimensions.""")
+        The key dimensions of the Chart, determining the number of
+        indexable dimensions.""")
 
     group = param.String(default='Chart', constant=True)
 
-    vdims = param.List(default=[Dimension('y')], bounds=(1,3), doc="""
-        Dimensions on Element2Ds determine the number of indexable
-        dimensions.""")
+    vdims = param.List(default=[Dimension('y')], bounds=(1,None), doc="""
+        The value dimensions of the Chart, usually corresponding to a
+        number of dependent variables.""")
 
     _null_value = np.array([[], []]).T # For when data is None
 
@@ -51,8 +56,9 @@ class Chart(Element2D):
             data = np.concatenate([v.data for v in data])
         elif isinstance(data, Element):
             pass
+        elif isinstance(data, tuple):
+            data = np.column_stack(data)
         elif not isinstance(data, np.ndarray):
-            params = {}
             data = list(data)
             data = self._null_value if (data is None) or (len(data) == 0) else data
             if len(data):
