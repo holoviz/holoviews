@@ -316,7 +316,7 @@ class OptionTree(AttrTree):
 
 
     @classmethod
-    def merge_options(cls, options=None, **kwargs):
+    def merge_options(cls, groups, options=None,**kwargs):
         """
         Given a full options dictionary and options groups specified
         as a keywords such as return the full set of merged options:
@@ -327,7 +327,7 @@ class OptionTree(AttrTree):
         >>> sorted(merged['Curve']['style'].items())
         [('color', 'b'), ('linewidth', 10)]
         """
-        groups = set(Store.options().groups.keys())
+        groups = set(groups)
         if (options is not None and set(options.keys()) <= groups):
             kwargs, options = options, None
         elif (options is not None and any(k in groups for k in options)):
@@ -1126,7 +1126,8 @@ class StoreOptions(object):
         if (options is None) and kwargs == {}: yield
         else:
             optstate = cls.state(obj)
-            options = OptionTree.merge_options(options, **kwargs)
+            groups = Store.options().groups.keys()
+            options = OptionTree.merge_options(groups, options, **kwargs)
             cls.set_options(obj, options)
             yield
         if options is not None:
@@ -1177,7 +1178,7 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        options = OptionTree.merge_options(options, **kwargs)
+        options = OptionTree.merge_options(Store.options().groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         Store.custom_options().update(custom_trees)
