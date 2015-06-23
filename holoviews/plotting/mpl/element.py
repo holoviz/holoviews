@@ -180,13 +180,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             self._apply_aspect(axis)
             self._subplot_label(axis)
-            self._finalize_axes(axis)
             if self.apply_ticks:
                 self._finalize_ticks(axis, view, xticks, yticks, zticks)
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title,
                                                 **self._fontsize('title'))
+        # Always called to ensure log and inverted axes are applied
+        self._finalize_axes(axis)
 
         for hook in self.finalize_hooks:
             try:
@@ -222,9 +223,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
             l, r = (c if np.isfinite(c) else None for c in (l, r))
+            if self.invert_xaxis or axis.xaxis_inverted():
+                r, l = l, r
             if not l == r:
                 axis.set_xlim((l, r))
             b, t = (c if np.isfinite(c) else None for c in (b, t))
+            if self.invert_yaxis or axis.yaxis_inverted():
+                t, b = b, t
             if not b == t:
                 axis.set_ylim((b, t))
 
@@ -234,11 +239,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.set_xscale('log')
         elif self.logy:
             axis.set_yscale('log')
-
-        if self.invert_xaxis:
-            axis.invert_xaxis()
-        if self.invert_yaxis:
-            axis.invert_yaxis()
 
 
     def _finalize_ticks(self, axis, view, xticks, yticks, zticks):
