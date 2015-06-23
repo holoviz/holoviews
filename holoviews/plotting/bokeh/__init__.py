@@ -29,6 +29,9 @@ Store.register({Overlay: OverlayPlot,
                 ErrorBars: ErrorPlot,
                 Text: TextPlot}, 'bokeh')
 
+Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
+                                           '#6d904f', '#8b8b8b']
+
 options = Store.options(backend='bokeh')
 options.Scatter = Options('style', color=Cycle())
 options.Curve = Options('style', color=Cycle(), line_width=2)
