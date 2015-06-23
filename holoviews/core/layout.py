@@ -104,33 +104,16 @@ class AdjointLayout(Dimensioned):
         else:
             return 'AdjointLayout'
 
-
-    @group.setter
-    def group(self, group):
-        """
-        AdjointLayout always inherits the group from its main
-        Element, however due to param inheritance a setter is
-        needed.
-        """
-        pass
-
-
     @property
     def label(self):
-        if self.main:
-            return self.main.label
-        else:
-            return ''
+        return self.main.label if self.main else ''
 
 
+    # Both group and label need empty setters due to param inheritance
+    @group.setter
+    def group(self, group): pass
     @label.setter
-    def label(self, label):
-        """
-        AdjointLayout always inherits the label from its main
-        Element, however due to param inheritance a setter is
-        needed.
-        """
-        pass
+    def label(self, label): pass
 
 
     def relabel(self, label=None, group=None, depth=1):
