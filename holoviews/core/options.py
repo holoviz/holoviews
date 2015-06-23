@@ -491,13 +491,36 @@ class OptionTree(AttrTree):
                               **self.groups[group].kwargs))
 
     def __repr__(self):
-        if len(self) == 0:
-            if self.parent is None:
-                return '--+'
-            else:
-                values = ', '.join([repr(group) for group in self.groups.values()])
-                return "%s: %s" % (self.identifier, values)
-        return super(OptionTree, self).__repr__()
+        """
+        Evalable representation of the OptionTree.
+        """
+        groups = self.__dict__['groups']
+        # Tab and group entry separators
+        tab, gsep = '   ', ',\n\n'
+        # Entry seperator and group specifications
+        esep, gspecs = (",\n"+(tab*2)), []
+
+        for group in groups.keys():
+            especs = []
+            if groups[group].kwargs != {}:
+                especs.append(('.', groups[group].kwargs))
+
+            for t, v in sorted(self.items()):
+                kwargs = v.groups[group].kwargs
+                if group=='norm' and (kwargs == dict(axiswise=False,framewise=False)):
+                    continue
+                if kwargs:
+                    especs.append(('.'.join(t), kwargs))
+
+            if especs:
+                format_kws = [(t,'dict(%s)'
+                               % ', '.join('%s=%r' % (k,v) for k,v in sorted(kws.items())))
+                              for t,kws in especs]
+                ljust = max(len(t) for t,_ in format_kws)
+                entries = (tab*2) + esep.join([(tab*2)+'%r : %s' % (t.ljust(ljust),v) for t,v in format_kws])
+                gspecs.append('%s%s={\n%s}' % (tab,group, entries))
+
+        return 'OptionTree(groups=%s,\n%s\n)' % (groups.keys(), gsep.join(gspecs))
 
 
 
