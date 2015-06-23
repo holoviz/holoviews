@@ -346,22 +346,22 @@ class GridPlot(CompositePlot):
                 # Disable subplot axes depending on shared axis options
                 # and the position in the grid
                 if (self.shared_xaxis or self.shared_yaxis) and not axiswise:
-                    hidden_labels = []
                     if c == 0 and r != 0:
                         subax.xaxis.set_ticks_position('none')
-                        hidden_labels += ['x']
+                        kwargs['xaxis'] = 'bottom-bare'
                     if c != 0 and r == 0 and not layout.ndims == 1:
                         subax.yaxis.set_ticks_position('none')
-                        hidden_labels += ['y']
+                        kwargs['yaxis'] = 'left-bare'
                     if r != 0 and c != 0:
-                        hidden_labels += ['x', 'y']
+                        kwargs['xaxis'] = 'bottom-bare'
+                        kwargs['yaxis'] = 'left-bare'
                     if not self.shared_xaxis:
-                        hidden_labels += ['x']
+                        kwargs['xaxis'] = 'bottom-bare'
                     if not self.shared_yaxis:
-                        hidden_labels += ['y']
-                    kwargs['hidden_labels'] = list(set(hidden_labels))
+                        kwargs['yaxis'] = 'left-bare'
                 else:
-                    kwargs['hidden_labels'] = ['x', 'y']
+                    kwargs['xaxis'] = 'bottom-bare'
+                    kwargs['yaxis'] = 'left-bare'
                 subaxes[(r, c)] = subax
             else:
                 subax = None

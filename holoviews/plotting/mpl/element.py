@@ -32,11 +32,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
-    hidden_labels = param.List(default=[], doc="""
-        Accepts a list containing any combination of x, y and z, disabling
-        the axes labels (ticks, ticklabels, axis label) without disabling
-        the axis entirely.""")
-
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -65,12 +60,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Whether to show a Cartesian grid on the plot.""")
 
     xaxis = param.ObjectSelector(default='bottom',
-                                      objects=['top', 'bottom', None], doc="""
-        Whether and where to display the xaxis.""")
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel.""")
 
     yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', None], doc="""
-        Whether and where to display the yaxis.""")
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel.""")
 
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
@@ -245,19 +244,27 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if not self.projection == '3d':
             disabled_spines = []
             if self.xaxis is not None:
-                if self.xaxis == 'top':
+                if 'bare' in self.xaxis:
+                    axis.set_xticklabels([])
+                    axis.xaxis.set_ticks_position('none')
+                    axis.set_xlabel('')
+                if 'top' in self.xaxis:
                     axis.xaxis.set_ticks_position("top")
                     axis.xaxis.set_label_position("top")
-                elif self.xaxis == 'bottom':
+                elif 'bottom' in self.xaxis:
                     axis.xaxis.set_ticks_position("bottom")
             else:
                 axis.xaxis.set_visible(False)
                 disabled_spines.extend(['top', 'bottom'])
 
             if self.yaxis is not None:
-                if self.yaxis == 'left':
+                if 'bare' in self.yaxis:
+                    axis.set_yticklabels([])
+                    axis.yaxis.set_ticks_position('none')
+                    axis.set_ylabel('')
+                if 'left' in self.yaxis:
                     axis.yaxis.set_ticks_position("left")
-                elif self.yaxis == 'right':
+                elif 'right' in self.yaxis:
                     axis.yaxis.set_ticks_position("right")
                     axis.yaxis.set_label_position("right")
             else:
@@ -268,9 +275,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.spines[pos].set_visible(False)
 
         if not self.overlaid and not self.show_frame and self.projection != 'polar':
-
-            axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
-            axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
+            xaxis = self.xaxis if self.xaxis else ''
+            yaxis = self.yaxis if self.yaxis else ''
+            axis.spines['top' if self.xaxis == 'bare' or 'bottom' in xaxis else 'bottom'].set_visible(False)
+            axis.spines['right' if self.yaxis == 'bare' or 'left' in yaxis else 'left'].set_visible(False)
 
         if xticks:
             axis.set_xticks(xticks[0])
@@ -360,19 +368,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.projection == '3d' and self.zticks != 0:
             for tick in axis.get_zticklabels():
                 tick.set_rotation(self.zrotation)
-
-        if 'x' in self.hidden_labels:
-            axis.set_xticklabels([])
-            axis.xaxis.set_ticks_position('none')
-            axis.set_xlabel('')
-        if 'y' in self.hidden_labels:
-            axis.set_yticklabels([])
-            axis.yaxis.set_ticks_position('none')
-            axis.set_ylabel('')
-        if 'z' in self.hidden_labels:
-            axis.set_zticklabels([])
-            axis.zaxis.set_ticks_position('none')
-            axis.set_zlabel('')
 
         tick_fontsize = self._fontsize('ticks','labelsize',common=False)
         if tick_fontsize:  axis.tick_params(**tick_fontsize)

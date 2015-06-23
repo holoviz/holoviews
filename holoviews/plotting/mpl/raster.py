@@ -190,7 +190,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     apply_ranges = param.Parameter(precedence=-1)
     apply_ticks = param.Parameter(precedence=-1)
     bgcolor = param.Parameter(precedence=-1)
-    hidden_labels = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
