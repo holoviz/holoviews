@@ -304,21 +304,39 @@ class OptionTree(AttrTree):
     given an object and a mode. For a given node of the tree, the
     options method computes a Options object containing the result of
     inheritance for a given group up to the root of the tree.
+
+    When constructing an OptionTree, you can specify the option groups
+    as a list (i.e empty initial option groups at the root) or as a
+    dictionary (e.g groups={'style':Option()}). You can also
+    initialize the OptionTree with the options argument together with
+    the **kwargs - see StoreOptions.merge_options for more information
+    on the options specification syntax.
+
+    You can use the string specifier '.' to refer to the root node in
+    the options specification. This acts as an alternative was of
+    specifying the options groups of the current node. Note that this
+    approach method may only be used with the group lists format.
     """
 
     def __init__(self, items=None, identifier=None, parent=None,
                  groups=None, options=None, **kwargs):
+
         if groups is None:
             raise ValueError('Please supply groups list or dictionary')
-        if isinstance(groups, list):
-            groups = {g:Options() for g in groups}
+        _groups = {g:Options() for g in groups} if isinstance(groups, list) else groups
 
-        self.__dict__['groups'] = groups
+        self.__dict__['groups'] = _groups
         self.__dict__['_instantiated'] = False
         AttrTree.__init__(self, items, identifier, parent)
         self.__dict__['_instantiated'] = True
 
-        options = StoreOptions.merge_options(groups.keys(), options, **kwargs)
+        options = StoreOptions.merge_options(_groups.keys(), options, **kwargs)
+        root_groups = options.pop('.', None)
+        if root_groups and isinstance(groups, list):
+            self.__dict__['groups'] = {g:Options(**root_groups.get(g,{})) for g in _groups.keys()}
+        elif root_groups:
+            raise Exception("Group specification as a dictionary only supported if "
+                            "the root node '.' syntax not used in the options.")
         if options:
             StoreOptions.apply_customizations(options, self)
 
