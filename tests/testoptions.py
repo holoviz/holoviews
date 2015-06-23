@@ -270,7 +270,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
         self.options = options
         self.original_options = Store.options()
-        Store.options(val = OptionTree(groups=['group'])
+        Store.options(val = OptionTree(groups=['group']))
 
 
     def tearDown(self):
