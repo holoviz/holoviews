@@ -501,24 +501,28 @@ class OptionTree(AttrTree):
         esep, gspecs = (",\n"+(tab*2)), []
 
         for group in groups.keys():
-            especs = []
+            especs, accumulator = [], []
             if groups[group].kwargs != {}:
-                especs.append(('.', groups[group].kwargs))
+                accumulator.append(('.', groups[group].kwargs))
 
             for t, v in sorted(self.items()):
                 kwargs = v.groups[group].kwargs
-                if group=='norm' and (kwargs == dict(axiswise=False,framewise=False)):
+                accumulator.append(('.'.join(t), kwargs))
+
+            for (t, kws) in accumulator:
+                if group=='norm' and all(kws[k] is False for k in ['axiswise','framewise']):
                     continue
-                if kwargs:
-                    especs.append(('.'.join(t), kwargs))
+                elif kws:
+                    especs.append((t, kws))
 
             if especs:
                 format_kws = [(t,'dict(%s)'
                                % ', '.join('%s=%r' % (k,v) for k,v in sorted(kws.items())))
                               for t,kws in especs]
                 ljust = max(len(t) for t,_ in format_kws)
-                entries = (tab*2) + esep.join([(tab*2)+'%r : %s' % (t.ljust(ljust),v) for t,v in format_kws])
-                gspecs.append('%s%s={\n%s}' % (tab,group, entries))
+                sep = (tab*2) if len(format_kws) >1 else ''
+                entries = sep + esep.join([sep+'%r : %s' % (t.ljust(ljust),v) for t,v in format_kws])
+                gspecs.append(('%s%s={\n%s}' if len(format_kws)>1 else '%s%s={%s}') % (tab,group, entries))
 
         return 'OptionTree(groups=%s,\n%s\n)' % (groups.keys(), gsep.join(gspecs))
 
