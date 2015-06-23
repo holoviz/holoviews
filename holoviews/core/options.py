@@ -471,18 +471,13 @@ class OptionTree(AttrTree):
         return Options(**dict(self.parent.options(group,target=target).kwargs,
                               **self.groups[group].kwargs))
 
-
-    def _node_identifier(self, node):
-        if node.parent is None:
-            return '--+'
-        else:
-            values = ', '.join([repr(group) for group in node.groups.values()])
-            return "%s: %s" % (node.identifier, values)
-
-
     def __repr__(self):
         if len(self) == 0:
-            return self._node_identifier(self)
+            if self.parent is None:
+                return '--+'
+            else:
+                values = ', '.join([repr(group) for group in self.groups.values()])
+                return "%s: %s" % (self.identifier, values)
         return super(OptionTree, self).__repr__()
 
 
