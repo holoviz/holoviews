@@ -114,7 +114,8 @@ class Cycle(param.Parameterized):
 
 
     def __repr__(self):
-        return "%s(%s)" % (type(self).__name__, self.values)
+        return "%s(values=%s)" % (type(self).__name__,
+                                  [str(el) for el in self.values])
 
 
 
