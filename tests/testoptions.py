@@ -111,21 +111,21 @@ class TestCycle(ComparisonTestCase):
 
 class TestOptionTree(ComparisonTestCase):
 
-    def test_optiontree_init(self):
-        OptionTree(groups={'group1':  Options(),
-                           'group2': Options()})
+    def test_optiontree_init_1(self):
+        OptionTree(groups=['group1', 'group2'])
+
+    def test_optiontree_init_2(self):
+        OptionTree(groups=['group1', 'group2'])
 
     def test_optiontree_setter_getter(self):
-        options = OptionTree(groups={'group1':  Options(),
-                                     'group2': Options()})
+        options = OptionTree(groups=['group1', 'group2'])
         opts = Options('group1', kw1='value')
         options.MyType = opts
         self.assertEqual(options.MyType['group1'], opts)
         self.assertEqual(options.MyType['group1'].options, {'kw1':'value'})
 
     def test_optiontree_dict_setter_getter(self):
-        options = OptionTree(groups={'group1':  Options(),
-                                     'group2': Options()})
+        options = OptionTree(groups=['group1', 'group2'])
 
         opts1 = Options(kw1='value1')
         opts2 = Options(kw2='value2')
@@ -138,8 +138,7 @@ class TestOptionTree(ComparisonTestCase):
         self.assertEqual(options.MyType['group2'].options, {'kw2':'value2'})
 
     def test_optiontree_inheritance(self):
-        options = OptionTree(groups={'group1':  Options(),
-                                     'group2': Options()})
+        options = OptionTree(groups=['group1', 'group2'])
 
         opts1 = Options(kw1='value1')
         opts2 = Options(kw2='value2')
@@ -159,8 +158,7 @@ class TestOptionTree(ComparisonTestCase):
         """
         Tests for ordering problems manifested in issue #93
         """
-        options = OptionTree(groups={'group1':  Options(),
-                                     'group2': Options()})
+        options = OptionTree(groups=['group1', 'group2'])
 
         opts3 = Options(kw3='value3')
         opts4 = Options(kw4='value4')
@@ -185,14 +183,10 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def setUp(self):
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                groups={'style': Options(),
-                                        'plot': Options(),
-                                        'norm': Options()})
-
+                                     groups=['style', 'plot', 'norm'])
         self.backend = 'matplotlib'
         Store.current_backend = self.backend
-        Store.options(val=OptionTree(groups={'plot':  Options(),
-                                             'style': Options()}))
+        Store.options(val=OptionTree(groups=['plot', 'style']))
 
         options = Store.options()
 
@@ -259,7 +253,7 @@ class TestStoreInheritance(ComparisonTestCase):
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
-        options = OptionTree(groups={'group':  Options()})
+        options = OptionTree(groups=['group'])
         self.opts1 = Options('group', kw1='value1')
         self.opts2 = Options('group', kw2='value2')
         self.opts3 = Options('group', kw3='value3')
@@ -276,7 +270,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
         self.options = options
         self.original_options = Store.options()
-        Store.options(val = OptionTree(groups={'group':  Options()}))
+        Store.options(val = OptionTree(groups=['group'])
 
 
     def tearDown(self):

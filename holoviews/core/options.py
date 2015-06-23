@@ -308,7 +308,10 @@ class OptionTree(AttrTree):
 
     def __init__(self, items=None, identifier=None, parent=None, groups=None):
         if groups is None:
-            raise ValueError('Please supply groups dictionary')
+            raise ValueError('Please supply groups list or dictionary')
+        if isinstance(groups, list):
+            groups = {g:Options() for g in groups}
+
         self.__dict__['groups'] = groups
         self.__dict__['_instantiated'] = False
         AttrTree.__init__(self, items, identifier, parent)
@@ -887,7 +890,7 @@ class Store(object):
 
         groups = ['style', 'plot', 'norm']
         if backend not in cls._options:
-            cls._options[backend] = OptionTree([], groups={k:Options() for k in groups})
+            cls._options[backend] = OptionTree([], groups=groups)
         if backend not in cls._custom_options:
             cls._custom_options[backend] = {}
 
@@ -952,9 +955,7 @@ class Store(object):
             path_items[name] = opt_groups
 
         cls._options[backend] = OptionTree(sorted(path_items.items()),
-                                          groups={'style': Options(),
-                                                  'plot': Options(),
-                                                  'norm': Options()})
+                                          groups=['style', 'plot', 'norm'])
 
         for fn in cls.option_setters:
             fn(cls._options[backend])
@@ -1083,8 +1084,7 @@ class StoreOptions(object):
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
-                clones[offset] = OptionTree(groups={group: Options()
-                                                    for group in Store.options().groups})
+                clones[offset] = OptionTree(groups=Store.options().groups)
                 id_mapping.append((None, offset))
 
         return {k:cls.apply_customizations(options, t) if options else t

@@ -14,19 +14,19 @@ class TestOptionTreeMerge(ComparisonTestCase):
                                    'style': {'cmap': 'Blues'}}}
 
     def test_full_spec_format(self):
-        out = OptionTree.merge_options(options={
-            'Image':{'plot':dict(fig_size=150),
-                     'style': dict(cmap='Blues')}})
+        out = OptionTree.merge_options(['plot', 'style'],
+               options={ 'Image':{'plot':dict(fig_size=150),
+                                  'style': dict(cmap='Blues')}})
         self.assertEqual(out, self.expected)
 
     def test_options_partitioned_format(self):
-        out = OptionTree.merge_options(
+        out = OptionTree.merge_options(['plot', 'style'],
             options = dict(plot={'Image':dict(fig_size=150)},
                            style={'Image':dict(cmap='Blues')}))
         self.assertEqual(out, self.expected)
 
     def test_partitioned_format(self):
-        out = OptionTree.merge_options(
+        out = OptionTree.merge_options(['plot', 'style'],
             plot={'Image':dict(fig_size=150)},
             style={'Image':dict(cmap='Blues')})
         self.assertEqual(out, self.expected)
