@@ -298,7 +298,8 @@ class HistogramPlot(ChartPlot):
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         elif self.xticks:
             dim = view.get_dimension(0)
-            inds = np.linspace(0, len(edges)-1, self.xticks, dtype=np.int)
+            inds = np.linspace(0, len(edges), self.xticks, dtype=np.int)
+            edges = list(edges) + [edges[-1] + widths[-1]]
             xvals = [edges[i] for i in inds]
             labels = [dim.pprint_value(v) for v in xvals]
         return [xvals, labels]
