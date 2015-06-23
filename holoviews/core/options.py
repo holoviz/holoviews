@@ -326,7 +326,7 @@ class OptionTree(AttrTree):
 
         >>> options={'Curve':{'style':dict(color='b')}}
         >>> style={'Curve':{'linewidth':10 }}
-        >>> merged = StoreOptions.merge_options(options, style=style)
+        >>> merged = OptionTree.merge_options(['style'], options, style=style)
         >>> sorted(merged['Curve']['style'].items())
         [('color', 'b'), ('linewidth', 10)]
         """
