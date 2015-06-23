@@ -76,19 +76,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Whether to display the z-axis.""")
 
     xticks = param.Parameter(default=None, doc="""
-        Number of ticks along the x-axis.""")
-
-    xticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
-        Allows supplying a matplotlib x-tick locator.""")
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
 
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
     yticks = param.Parameter(default=None, doc="""
-        Number of ticks along the y-axis.""")
-
-    yticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
-        Allows supplying a matplotlib y-tick locator.""")
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -97,10 +97,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Rotation angle of the xticks.""")
 
     zticks = param.Parameter(default=None, doc="""
-        Number of ticks along the z-axis.""")
-
-    zticker = param.ClassSelector(default=None, class_=ticker.Locator, doc="""
-        Allows supplying a matplotlib z-tick locator.""")
+        Ticks along z-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
@@ -272,20 +272,21 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.spines['right' if self.yaxis == 'left' else 'left'].set_visible(False)
             axis.spines['bottom' if self.xaxis == 'top' else 'top'].set_visible(False)
 
-        if self.xticker:
-            axis.xaxis.set_major_locator(self.xticker)
-        elif xticks:
+        if xticks:
             axis.set_xticks(xticks[0])
             axis.set_xticklabels(xticks[1])
-        elif self.logx:
-            log_locator = ticker.LogLocator(numticks=self.xticks,
-                                            subs=range(1,10))
-            axis.xaxis.set_major_locator(log_locator)
         elif self.xticks is not None:
-            if self.xticks == 0:
+            if isinstance(self.xticks, ticker.Locator):
+                axis.xaxis.set_major_locator(self.xticks)
+            elif self.xticks == 0:
                 axis.set_xticks([])
             elif isinstance(self.xticks, int):
-                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.xticks))
+                if self.logx:
+                    locator = ticker.LogLocator(numticks=self.xticks,
+                                                subs=range(1,10))
+                else:
+                    locator = ticker.MaxNLocator(self.xticks)
+                axis.xaxis.set_major_locator(locator)
             elif isinstance(self.xticks, list):
                 if all(isinstance(t, tuple) for t in self.xticks):
                     xticks, xlabels = zip(*self.xticks)
@@ -300,20 +301,21 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             for tick in axis.get_xticklabels():
                 tick.set_rotation(self.xrotation)
 
-        if self.yticker:
-            axis.yaxis.set_major_locator(self.yticker)
-        elif yticks:
+        if yticks:
             axis.set_yticks(yticks[0])
             axis.set_yticklabels(yticks[1])
-        elif self.logy:
-            log_locator = ticker.LogLocator(numticks=self.yticks,
-                                            subs=range(1,10))
-            axis.yaxis.set_major_locator(log_locator)
         elif self.yticks is not None:
-            if self.yticks == 0:
+            if isinstance(self.yticks, ticker.Locator):
+                axis.yaxis.set_major_locator(self.yticks)
+            elif self.yticks == 0:
                 axis.set_yticks([])
             elif isinstance(self.yticks, int):
-                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.yticks))
+                if self.logy:
+                    locator = ticker.LogLocator(numticks=self.yticks,
+                                                subs=range(1,10))
+                else:
+                    locator = ticker.MaxNLocator(self.yticks)
+                axis.yaxis.set_major_locator(locator)
             elif isinstance(self.yticks, list):
                 if all(isinstance(t, tuple) for t in self.yticks):
                     yticks, ylabels = zip(*self.yticks)
@@ -330,29 +332,30 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
         if not self.projection == '3d':
             pass
-        elif self.zticker:
-            axis.zaxis.set_major_locator(self.zticker)
         elif zticks:
             axis.set_zticks(zticks[0])
             axis.set_zticklabels(zticks[1])
-        elif self.logz:
-            log_locator = ticker.LogLocator(numticks=self.zticks,
-                                            subs=range(1,10))
-            axis.zaxis.set_major_locator(log_locator)
         elif self.zticks is not None:
-            if self.zticks == 0:
+            if isinstance(self.zticks, ticker.Locator):
+                axis.zaxis.set_major_locator(self.zticks)
+            elif self.zticks == 0:
                 axis.set_zticks([])
-            if isinstance(self.zticks, int):
-                axis.xaxis.set_major_locator(ticker.MaxNLocator(self.zticks))
+            elif isinstance(self.zticks, int):
+                if self.logz:
+                    locator = ticker.LogLocator(numticks=self.zticks,
+                                                subs=range(1,10))
+                else:
+                    locator = ticker.MaxNLocator(self.zticks)
+                axis.zaxis.set_major_locator(locator)
             elif isinstance(self.zticks, list):
                 if all(isinstance(t, tuple) for t in self.zticks):
                     zticks, zlabels = zip(*self.zticks)
                 else:
-                    zdim = view.get_dimension(0)
+                    zdim = view.get_dimension(2)
                     zticks, zlabels = zip(*[(t, zdim.pprint_value(t))
                                             for t in self.zticks])
                 axis.set_zticks(zticks)
-                axis.set_yticklabels(zlabels)
+                axis.set_zticklabels(zlabels)
 
         if self.projection == '3d' and self.zticks != 0:
             for tick in axis.get_zticklabels():
