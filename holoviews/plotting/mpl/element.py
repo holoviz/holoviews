@@ -223,12 +223,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
             l, r = (c if np.isfinite(c) else None for c in (l, r))
-            if self.invert_xaxis or axis.xaxis_inverted():
+            if self.invert_xaxis or (self.drawn and axis.xaxis_inverted()):
                 r, l = l, r
             if not l == r:
                 axis.set_xlim((l, r))
             b, t = (c if np.isfinite(c) else None for c in (b, t))
-            if self.invert_yaxis or axis.yaxis_inverted():
+            if self.invert_yaxis or (self.drawn and axis.yaxis_inverted()):
                 t, b = b, t
             if not b == t:
                 axis.set_ylim((b, t))
