@@ -4,29 +4,29 @@ Store as used by the %opts magic.
 """
 import numpy as np
 from holoviews import Overlay, Curve, Image
-from holoviews.core.options import Store, StoreOptions, OptionTree
+from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
 
-class TestOptionTreeMerge(ComparisonTestCase):
+class TestStoreOptionsMerge(ComparisonTestCase):
 
     def setUp(self):
         self.expected = {'Image': {'plot': {'fig_size': 150},
                                    'style': {'cmap': 'Blues'}}}
 
     def test_full_spec_format(self):
-        out = OptionTree.merge_options(['plot', 'style'],
+        out = StoreOptions.merge_options(['plot', 'style'],
                options={ 'Image':{'plot':dict(fig_size=150),
                                   'style': dict(cmap='Blues')}})
         self.assertEqual(out, self.expected)
 
     def test_options_partitioned_format(self):
-        out = OptionTree.merge_options(['plot', 'style'],
+        out = StoreOptions.merge_options(['plot', 'style'],
             options = dict(plot={'Image':dict(fig_size=150)},
                            style={'Image':dict(cmap='Blues')}))
         self.assertEqual(out, self.expected)
 
     def test_partitioned_format(self):
-        out = OptionTree.merge_options(['plot', 'style'],
+        out = StoreOptions.merge_options(['plot', 'style'],
             plot={'Image':dict(fig_size=150)},
             style={'Image':dict(cmap='Blues')})
         self.assertEqual(out, self.expected)

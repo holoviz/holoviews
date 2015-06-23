@@ -318,46 +318,9 @@ class OptionTree(AttrTree):
         AttrTree.__init__(self, items, identifier, parent)
         self.__dict__['_instantiated'] = True
 
-        options = self.merge_options(groups.keys(), options, **kwargs)
+        options = StoreOptions.merge_options(groups.keys(), options, **kwargs)
         if options:
             StoreOptions.apply_customizations(options, self)
-
-    @classmethod
-    def merge_options(cls, groups, options=None,**kwargs):
-        """
-        Given a full options dictionary and options groups specified
-        as a keywords such as return the full set of merged options:
-
-        >>> options={'Curve':{'style':dict(color='b')}}
-        >>> style={'Curve':{'linewidth':10 }}
-        >>> merged = OptionTree.merge_options(['style'], options, style=style)
-        >>> sorted(merged['Curve']['style'].items())
-        [('color', 'b'), ('linewidth', 10)]
-        """
-        groups = set(groups)
-        if (options is not None and set(options.keys()) <= groups):
-            kwargs, options = options, None
-        elif (options is not None and any(k in groups for k in options)):
-              raise Exception("All keys must be a subset of %s"
-                              % ', '.join(groups))
-
-        options = {} if (options is None) else dict(**options)
-        all_keys = set(k for d in kwargs.values() for k in d)
-        for spec_key in all_keys:
-            additions = {}
-            for k, d in kwargs.items():
-                if spec_key in d:
-                    kws = d[spec_key]
-                    additions.update({k:kws})
-            if spec_key not in options:
-                options[spec_key] = {}
-            for key in additions:
-                if key in options[spec_key]:
-                    options[spec_key][key].update(additions[key])
-                else:
-                    options[spec_key][key] = additions[key]
-        return options
-
 
 
     def _merge_options(self, identifier, group_name, options):
@@ -965,12 +928,19 @@ class Store(object):
             fn(cls._options[backend])
 
 
+
 class StoreOptions(object):
     """
     A collection of utilities for advanced users for creating and
     setting customized option tress on the Store. Designed for use by
     either advanced users or the %opts line and cell magics which use
     this machinery.
+
+    This class also holds general classmethods for working with
+    OptionTree instances: as OptionTrees are designed for attribute
+    access it is best to minimize the number of methods implemented on
+    that class and implement the necessary utilities on StoreOptions
+    instead.
     """
 
     #===============#
@@ -1096,6 +1066,43 @@ class StoreOptions(object):
 
 
     @classmethod
+    def merge_options(cls, groups, options=None,**kwargs):
+        """
+        Given a full options dictionary and options groups specified
+        as a keywords such as return the full set of merged options:
+
+        >>> options={'Curve':{'style':dict(color='b')}}
+        >>> style={'Curve':{'linewidth':10 }}
+        >>> merged = StoreOptions.merge_options(['style'], options, style=style)
+        >>> sorted(merged['Curve']['style'].items())
+        [('color', 'b'), ('linewidth', 10)]
+        """
+        groups = set(groups)
+        if (options is not None and set(options.keys()) <= groups):
+            kwargs, options = options, None
+        elif (options is not None and any(k in groups for k in options)):
+              raise Exception("All keys must be a subset of %s"
+                              % ', '.join(groups))
+
+        options = {} if (options is None) else dict(**options)
+        all_keys = set(k for d in kwargs.values() for k in d)
+        for spec_key in all_keys:
+            additions = {}
+            for k, d in kwargs.items():
+                if spec_key in d:
+                    kws = d[spec_key]
+                    additions.update({k:kws})
+            if spec_key not in options:
+                options[spec_key] = {}
+            for key in additions:
+                if key in options[spec_key]:
+                    options[spec_key][key].update(additions[key])
+                else:
+                    options[spec_key][key] = additions[key]
+        return options
+
+
+    @classmethod
     def state(cls, obj, state=None):
         """
         Method to capture and restore option state. When called
@@ -1131,7 +1138,7 @@ class StoreOptions(object):
         else:
             optstate = cls.state(obj)
             groups = Store.options().groups.keys()
-            options = OptionTree.merge_options(groups, options, **kwargs)
+            options = cls.merge_options(groups, options, **kwargs)
             cls.set_options(obj, options)
             yield
         if options is not None:
@@ -1182,7 +1189,7 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        options = OptionTree.merge_options(Store.options().groups.keys(), options, **kwargs)
+        options = cls.merge_options(Store.options().groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         Store.custom_options().update(custom_trees)
