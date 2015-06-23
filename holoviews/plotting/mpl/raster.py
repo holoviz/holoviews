@@ -65,6 +65,8 @@ class RasterPlot(ElementPlot):
             l, b, r, t = view.bounds.lbrt()
         else:
             l, b, r, t = view.extents
+        if self.invert_yaxis and isinstance(view, Raster):
+            b, t = t, b
 
         if isinstance(view, RGB):
             data = view.rgb.data
