@@ -58,12 +58,18 @@ class ElementPlot(GenericElementPlot, BokehPlot):
         title = self._format_title(key)
         xlabel, ylabel, zlabel = self._axis_labels(view, subplots, xlabel, ylabel, zlabel)
 
+
+        # Try finding shared ranges in other plots in the same Layout
         if plots:
             for plot in plots:
                 if plot.xaxis[0].axis_label == xlabel:
                     plot_kwargs['x_range'] = plot.x_range
+                if plot.xaxis[0].axis_label == ylabel:
+                    plot_kwargs['y_range'] = plot.x_range
                 if plot.yaxis[0].axis_label == ylabel:
                     plot_kwargs['y_range'] = plot.y_range
+                if plot.yaxis[0].axis_label == xlabel:
+                    plot_kwargs['x_range'] = plot.y_range
 
         if not 'x_range' in plot_kwargs:
             if 'x_range' in ranges:
