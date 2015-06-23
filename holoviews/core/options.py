@@ -315,6 +315,44 @@ class OptionTree(AttrTree):
         self.__dict__['_instantiated'] = True
 
 
+    @classmethod
+    def merge_options(cls, options=None, **kwargs):
+        """
+        Given a full options dictionary and options groups specified
+        as a keywords such as return the full set of merged options:
+
+        >>> options={'Curve':{'style':dict(color='b')}}
+        >>> style={'Curve':{'linewidth':10 }}
+        >>> merged = StoreOptions.merge_options(options, style=style)
+        >>> sorted(merged['Curve']['style'].items())
+        [('color', 'b'), ('linewidth', 10)]
+        """
+        groups = set(Store.options().groups.keys())
+        if (options is not None and set(options.keys()) <= groups):
+            kwargs, options = options, None
+        elif (options is not None and any(k in groups for k in options)):
+              raise Exception("All keys must be a subset of %s"
+                              % ', '.join(groups))
+
+        options = {} if (options is None) else dict(**options)
+        all_keys = set(k for d in kwargs.values() for k in d)
+        for spec_key in all_keys:
+            additions = {}
+            for k, d in kwargs.items():
+                if spec_key in d:
+                    kws = d[spec_key]
+                    additions.update({k:kws})
+            if spec_key not in options:
+                options[spec_key] = {}
+            for key in additions:
+                if key in options[spec_key]:
+                    options[spec_key][key].update(additions[key])
+                else:
+                    options[spec_key][key] = additions[key]
+        return options
+
+
+
     def _merge_options(self, identifier, group_name, options):
         """
         Computes a merged Options object for the given group
@@ -1054,43 +1092,6 @@ class StoreOptions(object):
 
 
     @classmethod
-    def merge_options(cls, options=None, **kwargs):
-        """
-        Given a full options dictionary and options groups specified
-        as a keywords such as return the full set of merged options:
-
-        >>> options={'Curve':{'style':dict(color='b')}}
-        >>> style={'Curve':{'linewidth':10 }}
-        >>> merged = StoreOptions.merge_options(options, style=style)
-        >>> sorted(merged['Curve']['style'].items())
-        [('color', 'b'), ('linewidth', 10)]
-        """
-        groups = set(Store.options().groups.keys())
-        if (options is not None and set(options.keys()) <= groups):
-            kwargs, options = options, None
-        elif (options is not None and any(k in groups for k in options)):
-              raise Exception("All keys must be a subset of %s"
-                              % ', '.join(groups))
-
-        options = {} if (options is None) else dict(**options)
-        all_keys = set(k for d in kwargs.values() for k in d)
-        for spec_key in all_keys:
-            additions = {}
-            for k, d in kwargs.items():
-                if spec_key in d:
-                    kws = d[spec_key]
-                    additions.update({k:kws})
-            if spec_key not in options:
-                options[spec_key] = {}
-            for key in additions:
-                if key in options[spec_key]:
-                    options[spec_key][key].update(additions[key])
-                else:
-                    options[spec_key][key] = additions[key]
-        return options
-
-
-    @classmethod
     def state(cls, obj, state=None):
         """
         Method to capture and restore option state. When called
@@ -1125,7 +1126,7 @@ class StoreOptions(object):
         if (options is None) and kwargs == {}: yield
         else:
             optstate = cls.state(obj)
-            options = cls.merge_options(options, **kwargs)
+            options = OptionTree.merge_options(options, **kwargs)
             cls.set_options(obj, options)
             yield
         if options is not None:
@@ -1176,7 +1177,7 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        options = cls.merge_options(options, **kwargs)
+        options = OptionTree.merge_options(options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         Store.custom_options().update(custom_trees)
