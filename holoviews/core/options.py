@@ -306,7 +306,8 @@ class OptionTree(AttrTree):
     inheritance for a given group up to the root of the tree.
     """
 
-    def __init__(self, items=None, identifier=None, parent=None, groups=None):
+    def __init__(self, items=None, identifier=None, parent=None,
+                 groups=None, options=None, **kwargs):
         if groups is None:
             raise ValueError('Please supply groups list or dictionary')
         if isinstance(groups, list):
@@ -317,6 +318,9 @@ class OptionTree(AttrTree):
         AttrTree.__init__(self, items, identifier, parent)
         self.__dict__['_instantiated'] = True
 
+        options = self.merge_options(groups.keys(), options, **kwargs)
+        if options:
+            StoreOptions.apply_customizations(options, self)
 
     @classmethod
     def merge_options(cls, groups, options=None,**kwargs):
