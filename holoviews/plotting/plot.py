@@ -71,27 +71,27 @@ class PlotSelector(object):
     function of the plotted object. Behaves like a Plot class and
     presents the same parameterized interface.
     """
-    def __init__(self, selector, plot_classes):
+    def __init__(self, selector, plot_classes, allow_mismatch=False):
         """
         The selector function accepts a component instance and returns
         the appropriate key to index plot_classes dictionary.
         """
         self.selector = selector
         self.plot_classes = OrderedDict(plot_classes)
-        interface = self._define_interface(self.plot_classes.values())
+        interface = self._define_interface(self.plot_classes.values(), allow_mismatch)
         self.style_opts, self.plot_options = interface
 
 
-    def _define_interface(self, plots):
+    def _define_interface(self, plots, allow_mismatch):
         parameters = [{k:v.precedence for k,v in plot.params().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
-        if not all(pset == param_sets[0] for pset in param_sets):
+        if not allow_mismatch and not all(pset == param_sets[0] for pset in param_sets):
             raise Exception("All selectable plot classes must have identical plot options.")
         styles= [plot.style_opts for plot in plots]
 
-        if not all(style == styles[0] for style in styles):
+        if not allow_mismatch and not all(style == styles[0] for style in styles):
             raise Exception("All selectable plot classes must have identical style options.")
         return styles[0], parameters[0]
 
