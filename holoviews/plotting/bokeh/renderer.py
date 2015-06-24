@@ -30,6 +30,7 @@ class BokehRenderer(Renderer):
         """
         # Example of the return format where the first value is the rendered data.
         html = self.figure_data(obj)
+        html = '<center>%s</center>' % html
         return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
 
