@@ -1,12 +1,18 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout
 from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram
 from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text
+from ...interface.seaborn import Bivariate, TimeSeries
 from ...core.options import Options, Cycle, OptionTree
+from ..plot import PlotSelector
+from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot
 from .plot import *
 from .element import *
 from .renderer import BokehRenderer
 
 Store.renderers['bokeh'] = BokehRenderer
+
+def wrapper(obj):
+    return 'bokeh'
 
 Store.register({Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
@@ -21,6 +27,8 @@ Store.register({Overlay: OverlayPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
                 Path: PathPlot,
+                TimeSeries: PlotSelector(wrapper, [('mpl', TimeSeriesPlot), ('bokeh', BokehMPLWrapper)], True),
+                Bivariate: PlotSelector(wrapper, [('mpl', BivariatePlot), ('bokeh', BokehMPLWrapper)], True),
                 Contours: PathPlot,
                 Path:     PathPlot,
                 Box:      PathPlot,

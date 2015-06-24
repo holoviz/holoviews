@@ -5,8 +5,9 @@ import param
 from bokeh.plotting import figure, gridplot
 from bokeh.models import ColumnDataSource
 from bokeh.models import GlyphRenderer
+from bokeh import mpl
 
-from ...core import OrderedDict, Dimension
+from ...core import OrderedDict, Dimension, Store
 from ...core.util import match_spec
 from ...element import Chart, Image, HeatMap, RGB, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -150,6 +151,26 @@ class ElementPlot(GenericElementPlot, BokehPlot):
         self._update_datasource(source, element)
         self._update_plot(key, plot)
 
+
+class BokehMPLWrapper(ElementPlot):
+
+    def __init__(self, element, plot=None, subplot=False, **params):
+        self.subplot = subplot
+        super(ElementPlot, self).__init__(element, **params)
+        plot = Store.registry['matplotlib'][type(element)]
+        self.mplplot = plot(element, **self.lookup_options(element, 'plot').options)
+
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None):
+        self.mplplot.initialize_plot(ranges)
+        plot = mpl.to_bokeh(self.mplplot.state)
+        self.handles['plot'] = plot
+        return plot
+
+
+    def update_frame(self, key, ranges=None, plot=None):
+        self.mplplot.update_frame(key, ranges)
+        self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
