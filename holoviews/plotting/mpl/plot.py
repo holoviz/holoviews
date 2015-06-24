@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
-import matplotlib
+import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # pyflakes:ignore (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
@@ -127,7 +127,7 @@ class MPLPlot(DimensionedPlot):
             rc_params = self.fig_rcparams
             if self.fig_latex:
                 rc_params['text.usetex'] = True
-            with matplotlib.rc_context(rc=rc_params):
+            with mpl.rc_context(rc=rc_params):
                 fig = plt.figure()
                 l, b, r, t = self.fig_bounds
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
@@ -207,6 +207,16 @@ class MPLPlot(DimensionedPlot):
         # Close the figure handle
         plt.close(figure)
         return anim
+
+    def update(self, key):
+        rc_params = self.fig_rcparams
+        if self.fig_latex:
+            rc_params['text.usetex'] = True
+        mpl.rcParams.update(rc_params)
+        if len(self) == 1 and key == 0 and not self.drawn:
+            return self.initialize_plot()
+        return self.__getitem__(key)
+
 
 
 class CompositePlot(GenericCompositePlot, MPLPlot):
@@ -854,13 +864,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 obj = AdjointLayout([])
             else:
                 layout_count += 1
-            with matplotlib.rc_context(rc=self.fig_rcparams):
-                subaxes = [plt.subplot(self.gs[ind], projection=proj)
-                           for ind, proj in zip(gsinds, projs)]
-                subplot_data = self._create_subplots(obj, positions,
-                                                     layout_dimensions, frame_ranges,
-                                                     dict(zip(positions, subaxes)),
-                                                     num=0 if empty else layout_count)
+            subaxes = [plt.subplot(self.gs[ind], projection=proj)
+                       for ind, proj in zip(gsinds, projs)]
+            subplot_data = self._create_subplots(obj, positions,
+                                                 layout_dimensions, frame_ranges,
+                                                 dict(zip(positions, subaxes)),
+                                                 num=0 if empty else layout_count)
             subplots, adjoint_layout, _ = subplot_data
             layout_axes[(r, c)] = subaxes
 
@@ -1020,8 +1029,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         self.update_handles(axis, None, self.keys[-1])
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        with matplotlib.rc_context(rc=self.fig_rcparams):
-            for subplot in self.subplots.values():
-                subplot.initialize_plot(ranges=ranges)
+        for subplot in self.subplots.values():
+            subplot.initialize_plot(ranges=ranges)
 
         return self._finalize_axis(None)
