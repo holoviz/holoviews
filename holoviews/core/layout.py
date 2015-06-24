@@ -351,6 +351,7 @@ class Layout(AttrTree, Dimensioned):
         count = 2
         for path, item in items:
             new_path, count = cls.new_path(path, item, paths, count)
+            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
             path_items.append(item)
             paths.append(new_path)
         return list(zip(paths, path_items))
