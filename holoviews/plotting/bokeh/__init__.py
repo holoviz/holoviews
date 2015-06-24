@@ -1,5 +1,5 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout
-from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB
+from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram
 from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text
 from ...core.options import Options, Cycle, OptionTree
 from .plot import *
@@ -17,6 +17,7 @@ Store.register({Overlay: OverlayPlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 Raster: RasterPlot,
+                Histogram: HistogramPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
                 Path: PathPlot,
@@ -38,3 +39,4 @@ options.Curve = Options('style', color=Cycle(), line_width=2)
 options.Polygons = Options('style', color=Cycle())
 options.LinkedScatter = Options('style', size=12, color=Cycle(),
                                 marker=Cycle(values=['circle', 'square', 'triangle', 'diamond', 'inverted_triangle']))
+options.Histogram = Options('style', fill_color="#036564", line_color="#033649")

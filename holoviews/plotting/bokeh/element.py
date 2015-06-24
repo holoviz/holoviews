@@ -255,6 +255,20 @@ class PathPlot(ElementPlot):
                                                 legend=element.label, **style)
 
 
+class HistogramPlot(ElementPlot):
+
+    style_opts = ['color'] + line_properties + fill_properties
+
+    def get_data(self, element):
+        return dict(top=element.values, left=element.edges[:-1],
+                    right=element.edges[1:])
+
+    def init_glyph(self, element, plot, source, style):
+        self.handles['lines'] = plot.quad(top='top', bottom=0, left='left',
+                                          right='right', source=source,
+                                          legend=element.label, **style)
+
+
 class ErrorPlot(PathPlot):
 
     horizontal = param.Boolean(default=False)
