@@ -201,6 +201,12 @@ def element_display(element,size, max_frames, max_branches, widget_mode):
 @display_hook
 def map_display(vmap, size, max_frames, max_branches, widget_mode):
     if not isinstance(vmap, HoloMap): return None
+
+    if vmap.type is Layout:
+        return(("<center><b>HoloMap of %s objects cannot be displayed.<br></b>" % vmap.type.__name__)
+               + "Please call the <tt>collate</tt> method to generate a displayable Layout.<br>"
+               + "<i>For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)</i></center>" )
+
     info = process_object(vmap)
     if info: return info
     if vmap.type not in Store.registry[OutputMagic.backend()]:  return None
