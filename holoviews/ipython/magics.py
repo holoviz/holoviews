@@ -234,7 +234,7 @@ class OutputMagic(OptionsMagic):
 
     defaults = OrderedDict([('backend'     , 'matplotlib'),
                             ('fig'         , 'png'),
-                            ('holomap'     , 'auto'),
+                            ('holomap'     , 'widgets'),
                             ('widgets'     , 'embed'),
                             ('fps'         , 20),
                             ('max_frames'  , 500),
