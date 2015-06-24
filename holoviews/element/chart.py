@@ -385,7 +385,10 @@ class Histogram(Element2D):
             edges, values = zip(*values)
         else:
             values = np.array(values)
-            edges = np.array(edges, dtype=np.float)
+            if edges is None:
+                edges = np.arange(len(values), dtype=np.float)
+            else:
+                edges = np.array(edges, dtype=np.float)
 
         if len(edges) == len(values):
             widths = list(set(np.diff(edges)))
