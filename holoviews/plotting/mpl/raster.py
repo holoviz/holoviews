@@ -16,6 +16,11 @@ from .plot import MPLPlot, GridPlot
 
 class RasterPlot(ElementPlot):
 
+    aspect = param.Parameter(default='equal', doc="""
+        Raster elements respect the aspect ratio of the
+        Images by default but may be set to an explicit
+        aspect ratio or to 'square'.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
