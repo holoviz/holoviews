@@ -76,7 +76,6 @@ class InfoPrinter(object):
                                                                         group=obj.group,
                                                                         label=obj.label)
         prefix = heading
-
         lines = [prefix, cls.object_info(obj, name, ansi=ansi)]
 
         if not isclass:
@@ -221,6 +220,8 @@ class PrettyPrinter(object):
         """
         if hasattr(node, 'children'):
             (lvl, lines) = (level, [(level, cls.component_type(node))])
+        elif hasattr(node, 'main'):
+            (lvl, lines) = cls.adjointlayout_info(node, siblings, level, value_dims)
         elif getattr(node, '_deep_indexable', False):
             (lvl, lines) = cls.ndmapping_info(node, siblings, level, value_dims)
         else:
@@ -249,6 +250,17 @@ class PrettyPrinter(object):
         if value_dims and len(node.vdims) >= 1:
             info += cls.tab + '(%s)' % ','.join(d.name for d in node.vdims)
         return level, [(level, info)]
+
+
+    @classmethod
+    def adjointlayout_info(cls, node, siblings, level, value_dims):
+        first_line = cls.component_type(node)
+        lines = [(level, first_line)]
+        additional_lines = []
+        for component in list(node.data.values()):
+            additional_lines += cls.recurse(component, level=level)
+        lines += cls.shift(additional_lines, 1)
+        return level, lines
 
 
     @classmethod
