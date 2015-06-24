@@ -265,7 +265,9 @@ class RasterPlot(ElementPlot):
 
     
 class PathPlot(ElementPlot):
-    
+
+    style_opts = ['color'] + line_properties
+
     def get_data(self, element):
         xs = [path[:, 0] for path in element.data]
         ys = [path[:, 1] for path in element.data]
