@@ -10,13 +10,13 @@ potential pitfalls we hope to help users avoid:
 **A:** Yes! The IPython support makes a lot of tasks easier, and
 helps keep your data objects separate from the customization options,
 but everything available in IPython can also be done directly from
-Python.  For instance, you can render an object directly to disk, with
-custom options, like this:
+Python.  For instance, in HoloViews 1.3.0 you can render an object 
+directly to disk, with custom options, like this:
 
 .. code:: python
 
   from holoviews import Store
-  renderer = Store.renderer.instance(fig='svg', holomap='gif')
+  renderer = Store.renderers['matplotlib'].instance(fig='svg', holomap='gif')
   renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'jet'}))
 
 This process is described in detail in the 
