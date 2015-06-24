@@ -4,6 +4,7 @@ regardless of plotting package or backend.
 """
 
 import base64
+from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
@@ -224,3 +225,13 @@ class Renderer(Exporter):
         Returns a tuple of (width, height) in pixels.
         """
         raise NotImplementedError
+
+    @classmethod
+    @contextmanager
+    def state(cls):
+        """
+        Context manager to handle global state for a backend,
+        allowing Plot classes to temporarily override that state.
+        """
+        yield
+

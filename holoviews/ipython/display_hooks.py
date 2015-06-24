@@ -128,13 +128,14 @@ def display(plot, widget_mode, message=None):
                   fps=            OutputMagic.options['fps'])
 
     renderer = OutputMagic.renderer(dpi=kwargs['dpi'])
-    if len(plot) == 1:
-        plot.update(0)
-        return display_frame(plot, renderer, **kwargs)
-    elif widget_mode is not None:
-        return display_widgets(plot, renderer, **kwargs)
-    else:
-        return display_video(plot, renderer, **kwargs)
+    with renderer.state():
+        if len(plot) == 1:
+            plot.update(0)
+            return display_frame(plot, renderer, **kwargs)
+        elif widget_mode is not None:
+            return display_widgets(plot, renderer, **kwargs)
+        else:
+            return display_video(plot, renderer, **kwargs)
 
 #===============#
 # Display hooks #

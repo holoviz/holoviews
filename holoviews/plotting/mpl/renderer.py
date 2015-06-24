@@ -2,6 +2,7 @@ import os, sys, uuid
 import warnings
 from io import BytesIO
 from tempfile import NamedTemporaryFile
+from contextlib import contextmanager
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -270,3 +271,12 @@ class MPLRenderer(Renderer):
             else:
                 kw['bbox_inches'] = MPLRenderer.drawn[fig_id]
         return kw
+
+    @classmethod
+    @contextmanager
+    def state(cls):
+        try:
+            cls._rcParams = dict(mpl.rcParams)
+            yield
+        finally:
+            mpl.rcParams = cls._rcParams
