@@ -379,8 +379,8 @@ class Histogram(Element2D):
             edges = values.data[:, 0].copy()
             values = values.data[:, 1].copy()
         elif isinstance(values, np.ndarray) and len(values.shape) == 2:
-            values = values[:, 0]
-            edges = values[:, 1]
+            edges = values[:, 0]
+            values = values[:, 1]
         elif all(isinstance(el, tuple) for el in values):
             edges, values = zip(*values)
         else:
