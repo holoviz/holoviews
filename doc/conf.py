@@ -8,6 +8,8 @@ from builder.shared_conf import * # pyflakes:ignore (API import)
 paths = ['../param/', '.', '..']
 add_paths(paths)
 
+from ..setup import setup_args
+
 # Declare information specific to this project.
 project = u'HoloViews'
 authors = u'IOAM: Jean-Luc R. Stevens, Philipp Rudiger, and James A. Bednar'
@@ -20,18 +22,20 @@ description = 'Composable, declarative data structures for building even complex
 # built documents.
 #
 # The short X.Y version.
-version = '2014.05.14'
+version = setup_args['version']
 # The full version, including alpha/beta/rc tags.
-release = '2014.05.14'
+release = setup_args['version']
 
+
+rst_epilog = """
+.. _zip archive: notebooks-{version}.zip
+.. _tutorial notebooks: Tutorials/notebooks-{version}.zip
+""".format(version=version)
 
 # Override IOAM theme
 import sphinx_rtd_theme
-
 html_theme = "sphinx_rtd_theme"
-
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
 html_logo = '_static/holoviews_logo.png'
 
 # -------------------------------------------------------------------------

@@ -5,8 +5,9 @@ HoloViews Tutorials
 The HoloViews tutorials are the best way to learn what HoloViews can
 do and how to use it.  The web site has static copies of each
 tutorial, but it is much more effective to install HoloViews and try
-it out live for yourself, using the notebook files in this
-`zip archive <notebook-1.2.0.zip>`_.
+it out live for yourself, using the notebook files in this `zip
+archive`_.
+
 
 Introductory Tutorials
 ----------------------
