@@ -193,13 +193,20 @@ def element_display(element,size, max_frames, max_branches, widget_mode):
     return render_plot(element_plot, False)
 
 
+class Warning(param.Parameterized): pass
+display_warning = Warning(name='Warning')
 
 @display_hook
 def map_display(vmap, size, max_frames, max_branches, widget_mode):
     if not isinstance(vmap, HoloMap): return None
 
     if not displayable(vmap):
-        return undisplayable_info(vmap, html=True)
+        display_warning.warning("Call the collate method on HoloMap to get "
+                                "the data into recommended format."
+                                "\nPlease consult the nesting hierarchy "
+                                "diagram of the Composing Data tutorial "
+                                "(http://git.io/vtIQh)")
+        return display(vmap.collate(), raw=True)
 
     info = process_object(vmap)
     if info: return info
@@ -222,7 +229,20 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
     if not isinstance(layout, (Layout, NdLayout)): return None
 
     if not displayable(layout):
-        return undisplayable_info(layout, html=True)
+        try:
+            display_warning.warning("Call the collate method on component HoloMap(s) to get "
+                                    "the data into recommended format."
+                                    "\nPlease consult the nesting hierarchy "
+                                    "diagram of the Composing Data tutorial "
+                                    "(http://git.io/vtIQh)")
+            expanded = []
+            for el in layout.values():
+                if isinstance(el, HoloMap) and not displayable(el):
+                    collated_layout = Layout.from_values(el.collate())
+                    expanded.extend(collated_layout.values())
+            layout = Layout(expanded)
+        except:
+            return undisplayable_info(layout, html=True)
 
     nframes = len(unique_dimkeys(layout)[1])
 
