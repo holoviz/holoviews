@@ -41,41 +41,56 @@ ____________
 
 HoloViews is compatible with Python `2.7, 3.3, and 3.4 <https://travis-ci.org/ioam/holoviews>`_.
 
-HoloViews requires `Param <http://ioam.github.com/param/>`_ and
-`Numpy <http://numpy.org>`_, neither of which has any required dependencies,
+HoloViews requires `Param <http://ioam.github.com/param/>`_ and `Numpy
+<http://numpy.org>`_, neither of which has any required dependencies,
 and so it should be very easy to integrate HoloViews into your
 workflow or as part of another project.
 
-For plotting, HoloViews uses `Matplotlib <http://matplotlib.org/>`_,
-which most scientists and engineers using Python will already have
-installed.  HoloViews is pure Python, but it also provides optional
-extensions enabled with ``%load_ext`` above that make it integrate
-well with `IPython Notebook <http://ipython.org/notebook/>`_ 2 and 3.
-
-Matplotlib and IPython Notebook can be installed using your operating
-system's package manager, as part of a scientific Python distribution like
-`Anaconda <http://continuum.io/downloads>`_ (particularly convenient on
-systems shipped without pip, such as Windows or Mac), or by using pip::
-
-  pip install matplotlib 'ipython[notebook]'
-
-You can then obtain the latest public release of HoloViews and its
-core dependencies (`Param <http://ioam.github.com/param/>`_ and
-`Numpy <http://numpy.org>`_) using pip::
+For a minimal install, you can obtain HoloViews along with the latest
+public releases its core dependencies (`Param
+<http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_)
+using pip::
 
   pip install holoviews
-  
+
+
+For plotting, HoloViews uses `Matplotlib <http://matplotlib.org/>`_,
+as the default plotting backend which most scientists and engineers
+using Python will already have installed.  HoloViews is pure Python,
+but it also provides optional extensions enabled with ``%load_ext``
+above that make it integrate well with `IPython Notebook
+<http://ipython.org/notebook/>`_ 2 and 3.
+
+The easiest way to get the latest version of all the recommended
+packages for working with HoloViews in the IPython Notebook is also
+via pip::
+
+  pip install 'holoviews[recommended]'
+
+This will install Matplotlib and IPython Notebook if they are not
+already available as part of a scientific Python distribution such as
+`Anaconda <http://continuum.io/downloads>`_ (particularly convenient
+on systems shipped without pip, such as Windows or Mac).
+
 We also support the following install option::
 
   pip install 'holoviews[extras]'
 
-In addition to HoloViews and its required dependencies, ``[extras]``
-installs the optional `mpld3 <http://mpld3.github.io/>`_, 
-`pandas <http://pandas.pydata.org/>`_
-and `Seaborn <http://stanford.edu/~mwaskom/software/seaborn/index.html>`_
+In addition to the required and recommended packages, this also
+installs the optional `mpld3 <http://mpld3.github.io/>`_, `pandas
+<http://pandas.pydata.org/>`_ and `Seaborn
+<http://stanford.edu/~mwaskom/software/seaborn/index.html>`_
 libraries.
 
-To get the latest development version you can instead clone our git repositories::
+Lastly, to get everything including `cyordereddict
+<https://pypi.python.org/pypi/cyordereddict>`_ to enable optional
+speed optimizations and `nose <https://pypi.python.org/pypi/nose/>`_
+for running unit tests, you can use::
+
+  pip install 'holoviews[all]'
+
+To get the latest development version you can instead clone our git
+repositories::
 
   git clone git://github.com/ioam/param.git
   git clone git://github.com/ioam/holoviews.git
