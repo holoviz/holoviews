@@ -4,11 +4,12 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 import sys, traceback
 
+import IPython
 import param
 
 from ..core.options import Store, StoreOptions
-from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
-    NdOverlay, GridSpace, Layout, Overlay, displayable, undisplayable_info
+from ..core import Element, ViewableElement, UniformNdMapping, HoloMap, AdjointLayout, NdLayout,\
+    NdOverlay, GridSpace, Layout, Overlay, displayable, undisplayable_info, CompositeOverlay
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from .magics import OutputMagic, OptsMagic
@@ -105,7 +106,7 @@ def display_frame(plot, renderer, figure_format, backend, dpi, css, message, **k
     return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
 
 
-def display(plot, widget_mode, message=None):
+def render_plot(plot, widget_mode, message=None):
     """
     Used by the display hooks to render a plot according to the
     following policy:
@@ -145,10 +146,6 @@ def display(plot, widget_mode, message=None):
 def display_hook(fn):
     @wraps(fn)
     def wrapped(element):
-        # If pretty printing is off, return None (will fallback to repr)
-        ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
-        if not ip.display_formatter.formatters['text/plain'].pprint:
-            return None
         optstate = StoreOptions.state(element)
         try:
             widget_mode = OutputMagic.options['widgets']
@@ -194,7 +191,7 @@ def element_display(element,size, max_frames, max_branches, widget_mode):
     element_plot = plot_class(element,
                               **OutputMagic.renderer().plot_options(element, size))
 
-    return display(element_plot, False)
+    return render_plot(element_plot, False)
 
 
 
@@ -217,7 +214,7 @@ def map_display(vmap, size, max_frames, max_branches, widget_mode):
         max_frame_warning(max_frames)
         return sanitize_HTML(vmap)
 
-    return display(mapplot, widget_mode)
+    return render_plot(mapplot, widget_mode)
 
 
 @display_hook
@@ -246,7 +243,7 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
                 max_frame_warning(max_frames)
                 return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
-    return display(layoutplot, widget_mode)
+    return render_plot(layoutplot, widget_mode)
 
 
 @display_hook
@@ -266,8 +263,35 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
         max_frame_warning(max_frames)
         return sanitize_HTML(grid)
 
-    return display(gridplot, widget_mode)
+    return render_plot(gridplot, widget_mode)
 
+
+def display(obj, raw=False):
+    """
+    Renders any HoloViews object to HTML and displays it
+    using the IPython display function. If raw is enabled
+    the raw HTML is returned instead of displaying it directly.
+    """
+
+    if isinstance(obj, GridSpace):
+        html = grid_display(obj)
+    elif isinstance(obj, (CompositeOverlay, ViewableElement)):
+        html = element_display(obj)
+    elif isinstance(obj, (Layout, NdLayout, AdjointLayout)):
+        html = layout_display(obj)
+    elif isinstance(obj, HoloMap):
+        html = map_display(obj)
+    else:
+        return repr(obj) if raw else IPython.display.display(obj)
+    return html if raw else IPython.display.display(IPython.display.HTML(html))
+
+
+def pprint_display(obj):
+    # If pretty printing is off, return None (will fallback to repr)
+    ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
+    if not ip.display_formatter.formatters['text/plain'].pprint:
+        return None
+    return display(obj, raw=True)
 
 
 # display_video output by default, but may be set to first_frame,
@@ -276,11 +300,7 @@ render_anim = None
 
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
-    html_formatter.for_type(Layout, layout_display)
-    html_formatter.for_type(ViewableElement, element_display)
-    html_formatter.for_type(Overlay, element_display)
-    html_formatter.for_type(NdOverlay, element_display)
-    html_formatter.for_type(HoloMap, map_display)
-    html_formatter.for_type(AdjointLayout, layout_display)
-    html_formatter.for_type(NdLayout, layout_display)
-    html_formatter.for_type(GridSpace, grid_display)
+    html_formatter.for_type(ViewableElement, pprint_display)
+    html_formatter.for_type(UniformNdMapping, pprint_display)
+    html_formatter.for_type(AdjointLayout, pprint_display)
+    html_formatter.for_type(Layout, pprint_display)
