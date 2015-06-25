@@ -564,7 +564,7 @@ class HoloMap(UniformNdMapping):
             raise TypeError('Cannot append {0} to a AdjointLayout'.format(type(other).__name__))
 
 
-    def collate(self, merge_type=None):
+    def collate(self, merge_type=None, drop=[], drop_constant=False):
         """
         Collation allows collapsing nested HoloMaps by merging
         their dimensions. In the simple case a HoloMap containing
@@ -575,8 +575,14 @@ class HoloMap(UniformNdMapping):
         one Layout containing HoloMaps indexed by Time. Changing
         the merge_type will allow merging the outer Dimension
         into any other UniformNdMapping type.
+
+        Specific dimensions may be dropped if they are redundant
+        by supplying them in a list. Enabling drop_constant allows
+        ignoring any non-varying dimensions during collation.
         """
-        return Collator(self, merge_type=merge_type if merge_type else self.__class__)()
+        merge_type=merge_type if merge_type else self.__class__
+        return Collator(self, merge_type=merge_type, drop=drop,
+                        drop_constant=drop_constant)()
 
 
     def collapse(self, dimensions=None, function=None, **kwargs):
@@ -857,11 +863,19 @@ class Collator(NdMapping):
         List of dimensions to drop when collating data, specified
         as strings.""")
 
+    drop_constant = param.Boolean(default=False, doc="""
+        Whether to demote any non-varying key dimensions to
+        constant dimensions.""")
+
+    filters = param.List(default=[], doc="""
+        List of paths to drop when collating data, specified
+        as strings or tuples.""")
+
     transform_fn = param.Callable(default=None, doc="""
-        If supplied the transform_fn is passed the data to be collated
-        as input and can apply some transformation for it. For example
-        it can load references from disk before they are collated into
-        a displayable HoloViews object.""")
+        If supplied the function will be applied on each Collator
+        value during collation. This may be used to apply an operation
+        to the data or load references from disk before they are collated
+        into a displayable HoloViews object.""")
 
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
@@ -877,7 +891,7 @@ class Collator(NdMapping):
                    NdLayout: (GridSpace, HoloMap, ViewableElement),
                    NdOverlay: Element}
 
-    def __call__(self, path_filters=[], merge=True, drop_constant=True):
+    def __call__(self):
         """
         Filter each Layout in the Collator with the supplied
         path_filters. If merge is set to True all Layouts are
@@ -891,31 +905,28 @@ class Collator(NdMapping):
         num_elements = len(self)
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
-                data = data.filter(path_filters)
+                data = data.filter(self.filters)
             if self.transform_fn:
                 data = self.transform_fn(data)
 
-            if merge:
-                dim_keys = zip(self._cached_index_names, key)
-                varying_keys = [(d, k) for d, k in dim_keys if not drop_constant or
-                                (d not in constant_dims and d not in self.drop)]
-                constant_keys = [(d if isinstance(d, Dimension) else Dimension(d), k)
-                                 for d, k in dim_keys if d in constant_dims
-                                 and d not in self.drop and drop_constant]
-                if varying_keys or constant_keys:
-                    data = self._add_dimensions(data, varying_keys,
-                                                dict(constant_keys))
+            dim_keys = zip(self._cached_index_names, key)
+            varying_keys = [(d, k) for d, k in dim_keys if not self.drop_constant or
+                            (d not in constant_dims and d not in self.drop)]
+            constant_keys = [(d if isinstance(d, Dimension) else Dimension(d), k)
+                             for d, k in dim_keys if d in constant_dims
+                             and d not in self.drop and self.drop_constant]
+            if varying_keys or constant_keys:
+                data = self._add_dimensions(data, varying_keys,
+                                            dict(constant_keys))
             ndmapping[key] = data
             if self.progress_bar is not None:
                 self.progress_bar(float(idx+1)/num_elements*100)
 
-        if merge:
-            components = ndmapping.values()
-            accumulator = ndmapping.last.clone(components[0].data)
-            for component in components:
-                accumulator.update(component)
-            return accumulator
-        return ndmapping
+        components = ndmapping.values()
+        accumulator = ndmapping.last.clone(components[0].data)
+        for component in components:
+            accumulator.update(component)
+        return accumulator
 
 
     @property
