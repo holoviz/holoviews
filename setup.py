@@ -6,10 +6,23 @@ try:
 except ImportError:
     from distutils.core import setup
 
-setup_args = {}
 
+setup_args = {}
 install_requires = ['param>=1.3.2', 'numpy>=1.0']
-extras_require = {'extras': ['jinja2', 'mpld3', 'pandas', 'seaborn', 'nose', 'cyordereddict']}
+extras_require={}
+
+# Notebook dependencies of IPython 3
+extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornado',
+                                           'jsonschema',  'ipython', 'pygments']
+# IPython Notebook + matplotlib + Lancet
+extras_require['recommended'] = (extras_require['notebook-dependencies']
+                                 + ['matplotlib', 'lancet-ioam'])
+# Additional, useful third-party packages
+extras_require['extras'] = ['pandas', 'seaborn', 'mpld3']
+# Everything including cyordereddict (optimization) and nosetests
+extras_require['all'] = (extras_require['recommended']
+                         + extras_require['extras']
+                         + ['cyordereddict', 'nose'])
 
 setup_args.update(dict(
     name='holoviews',
