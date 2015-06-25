@@ -14,7 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import param
 from param.parameterized import bothmethod
 
-from ...core import HoloMap, AdjointLayout
+from ...core import HoloMap, AdjointLayout, displayable, undisplayable_info
 from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
@@ -83,6 +83,9 @@ class MPLRenderer(Renderer):
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
+        if not isinstance(obj, Plot) and not displayable(obj):
+            raise Exception(undisplayable_info(obj, html=False))
+
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
