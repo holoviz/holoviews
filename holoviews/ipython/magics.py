@@ -589,6 +589,21 @@ class OptsMagic(Magics):
 
         cls.opts_spec = spec
 
+    @classmethod
+    def _partition_lines(cls, line, cell):
+        """
+        Check the code for additional use of %%opts. Enables
+        multi-line use of %%opts in a single call to the magic.
+        """
+        specs, code = [line], []
+        for line in cell.splitlines():
+            line = line.strip()
+            if line.startswith('%%opts'):
+                specs.append(line.strip()[7:])
+            else:
+                code.append(line)
+        return ' '.join(specs), '\n'.join(code)
+
 
     @line_cell_magic
     def opts(self, line='', cell=None):
@@ -617,6 +632,7 @@ class OptsMagic(Magics):
         More information may be found in the class docstring of
         ipython.parser.OptsSpec.
         """
+        line, cell = self._partition_lines(line, cell)
         try:
             spec = OptsSpec.parse(line, ns=self.shell.user_ns)
         except SyntaxError:
