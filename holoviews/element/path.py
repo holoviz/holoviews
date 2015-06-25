@@ -64,6 +64,15 @@ class Path(Element2D):
         return self.clone(extents=(xstart, ystart, xstop, ystop))
 
 
+    @classmethod
+    def collapse_data(cls, data_list, function=None, **kwargs):
+        if function is None:
+            return [path for paths in data_list for path in paths]
+        else:
+            raise Exception("Path types are not uniformly sampled and"
+                            "therefore cannot be collapsed with a function.")
+
+
     def __len__(self):
         return len(self.data)
 
