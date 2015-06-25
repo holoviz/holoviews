@@ -11,6 +11,19 @@ from .io import FileArchive
 archive = FileArchive()
 
 
+def displayable(obj):
+    """
+    Predicate that returns whether the object is displayable or not
+    (i.e whether the object obeys the nesting hierarchy
+    """
+    if isinstance(obj, HoloMap):
+        return not (obj.type in [Layout, GridSpace])
+    if isinstance(obj, (GridSpace, Layout)):
+        for el in obj.values():
+            if not displayable(el):
+                return False
+        return True
+    return True
 def formatter(fmt):
     def inner(x, pos=None): return (fmt % x)
     return inner
