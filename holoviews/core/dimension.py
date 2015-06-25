@@ -738,7 +738,8 @@ class Dimensioned(LabelledData):
     def __call__(self, options=None, **kwargs):
         """
         Apply the supplied options to a clone of the object which is
-        then returned.
+        then returned. Note that if no options are supplied at all,
+        all ids are reset.
         """
         groups = set(Store.options().groups.keys())
         if kwargs and set(kwargs) <= groups:
@@ -757,7 +758,11 @@ class Dimensioned(LabelledData):
                 identifier = self.__class__.__name__
 
             kwargs = {k:{identifier:v} for k,v in kwargs.items()}
-        deep_clone = self.map(lambda x: x.clone(id=x.id))
+
+        if options is None and kwargs=={}:
+            deep_clone = self.map(lambda x: x.clone(id=None))
+        else:
+            deep_clone = self.map(lambda x: x.clone(id=x.id))
         StoreOptions.set_options(deep_clone, options, **kwargs)
         return deep_clone
 
