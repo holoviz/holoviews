@@ -481,10 +481,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         all_handles = list(legends[0]) + list(autohandles)
         all_labels = list(legends[1]) + list(autolabels)
         data = OrderedDict()
+        show_legend = self.lookup_options(self.map.last, 'plot').options.get('show_legend', None)
+        used_labels = []
         for handle, label in zip(all_handles, all_labels):
-            if handle and (handle not in data) and label:
+            if handle and (handle not in data) and label and label not in used_labels:
                 data[handle] = label
-        if not len(set(data.values())) > 1 or not self.show_legend:
+                used_labels.append(label)
+        if (not len(set(data.values())) > 1 and not show_legend) or not self.show_legend:
             legend = axis.get_legend()
             if legend:
                 legend.set_visible(False)
