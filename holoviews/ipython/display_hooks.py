@@ -8,7 +8,7 @@ import param
 
 from ..core.options import Store, StoreOptions
 from ..core import Element, ViewableElement, HoloMap, AdjointLayout, NdLayout,\
-    NdOverlay, GridSpace, Layout, Overlay
+    NdOverlay, GridSpace, Layout, Overlay, displayable, undisplayable_info
 from ..core.traversal import unique_dimkeys, bijective
 from ..element import Raster
 from .magics import OutputMagic, OptsMagic
@@ -202,10 +202,8 @@ def element_display(element,size, max_frames, max_branches, widget_mode):
 def map_display(vmap, size, max_frames, max_branches, widget_mode):
     if not isinstance(vmap, HoloMap): return None
 
-    if vmap.type is Layout:
-        return(("<center><b>HoloMap of %s objects cannot be displayed.<br></b>" % vmap.type.__name__)
-               + "Please call the <tt>collate</tt> method to generate a displayable Layout.<br>"
-               + "<i>For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)</i></center>" )
+    if not displayable(vmap):
+        return undisplayable_info(vmap, html=True)
 
     info = process_object(vmap)
     if info: return info
@@ -226,6 +224,10 @@ def map_display(vmap, size, max_frames, max_branches, widget_mode):
 def layout_display(layout, size, max_frames, max_branches, widget_mode):
     if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
     if not isinstance(layout, (Layout, NdLayout)): return None
+
+    if not displayable(layout):
+        return undisplayable_info(layout, html=True)
+
     nframes = len(unique_dimkeys(layout)[1])
 
     info = process_object(layout)
@@ -250,6 +252,10 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
 @display_hook
 def grid_display(grid, size, max_frames, max_branches, widget_mode):
     if not isinstance(grid, GridSpace): return None
+
+    if not displayable(grid):
+        return undisplayable_info(grid, html=True)
+
     info = process_object(grid)
     if info: return info
 
