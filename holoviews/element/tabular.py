@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Dimension, Element, NdElement, HoloMap, NdMapping
+from ..core import OrderedDict, Dimension, Element, NdElement, HoloMap
 
 
 class ItemTable(Element):

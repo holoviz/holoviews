@@ -1,20 +1,19 @@
-import os, sys, uuid
-import warnings
+import sys
+
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
-from matplotlib import animation
-import matplotlib.tight_bbox as tight_bbox
+
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from mpl_toolkits.mplot3d import Axes3D
 
 import param
 from param.parameterized import bothmethod
 
-from ...core import HoloMap, AdjointLayout, displayable, undisplayable_info
+from ...core import HoloMap, displayable, undisplayable_info
 from ...core.options import Store, StoreOptions
 
 from ..plot import Plot

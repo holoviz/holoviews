@@ -10,7 +10,6 @@ from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
-from .util import sanitize_identifier
 
 
 class Element(ViewableElement, Composable, Overlayable):

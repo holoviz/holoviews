@@ -1,4 +1,4 @@
-from ..core.operation import ElementOperation, MapOperation, TreeOperation
+from ..core.operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
 from ..core.options import Compositor
 
 from .element import *      # pyflakes:ignore (API import)

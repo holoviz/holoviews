@@ -1,5 +1,4 @@
 import math
-from collections import Counter
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
@@ -9,9 +8,8 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import OrderedDict, Element, NdOverlay, Overlay, HoloMap, CompositeOverlay, Element3D
-from ...element import Annotation, Table, ItemTable
-from ...operation import Compositor
+from ...core import OrderedDict, NdOverlay, HoloMap, CompositeOverlay, Element3D
+from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
 

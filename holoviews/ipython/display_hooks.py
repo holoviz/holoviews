@@ -9,9 +9,8 @@ import param
 
 from ..core.options import Store, StoreOptions
 from ..core import Element, ViewableElement, UniformNdMapping, HoloMap, AdjointLayout, NdLayout,\
-    NdOverlay, GridSpace, Layout, Overlay, displayable, undisplayable_info, CompositeOverlay
+    GridSpace, Layout, displayable, undisplayable_info, CompositeOverlay
 from ..core.traversal import unique_dimkeys, bijective
-from ..element import Raster
 from .magics import OutputMagic, OptsMagic
 
 from .archive import notebook_archive
