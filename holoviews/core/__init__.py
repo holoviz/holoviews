@@ -24,6 +24,30 @@ def displayable(obj):
                 return False
         return True
     return True
+
+
+def undisplayable_info(obj, html=False):
+    "Generate helpful message regarding an undisplayable object"
+
+    collate = '<tt>collate</tt>' if html else 'collate'
+    info = "For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)"
+    if isinstance(obj, HoloMap):
+        error = "HoloMap of %s objects cannot be displayed." % obj.type.__name__
+        remedy = "Please call the %s method to generate a displayable object" % collate
+    elif isinstance(obj, Layout):
+        error = "Layout containing HoloMaps of Layout or GridSpace objects cannot be displayed."
+        remedy = "Please call the %s method on the appropriate elements." % collate
+    elif isinstance(obj, GridSpace):
+        error = "GridSpace containing HoloMaps of Layouts cannot be displayed."
+        remedy = "Please call the %s method on the appropriate elements." % collate
+
+    if not html:
+        return '\n'.join([error, remedy, info])
+    else:
+        return "<center>{msg}</center>".format(msg=('<br>'.join(
+            ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
+
+
 def formatter(fmt):
     def inner(x, pos=None): return (fmt % x)
     return inner
