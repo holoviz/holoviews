@@ -292,6 +292,9 @@ class NdLayout(UniformNdMapping):
         return self.clone(last_items)
 
 
+# To be removed after 1.3.0
+class Warning(param.Parameterized): pass
+collate_deprecation = Warning(name='Deprecation Warning')
 
 class Layout(AttrTree, Dimensioned):
     """
@@ -315,7 +318,13 @@ class Layout(AttrTree, Dimensioned):
     _deep_indexable = True
 
     @classmethod
-    def collate(cls, data, kdims):
+    def collate(cls, data, kdims=None, key_dimensions=None):
+        kdims = key_dimensions if (kdims is None) else kdims
+        if kdims is None:
+            raise Exception("Please specify the key dimensions.")
+
+        collate_deprecation.warning("Layout.collate will be deprecated after version 1.3.0."
+                                    "\nUse HoloMap.collate instead (see HoloViews homepage for example usage)")
         from .element import Collator
         layouts = {k:(v if isinstance(v, Layout) else Layout.from_values([v]))
                       for k,v in data.items()}
