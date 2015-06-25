@@ -595,7 +595,7 @@ class OptsMagic(Magics):
         Check the code for additional use of %%opts. Enables
         multi-line use of %%opts in a single call to the magic.
         """
-        if cell is None: return line
+        if cell is None: return (line, cell)
         specs, code = [line], []
         for line in cell.splitlines():
             line = line.strip()
