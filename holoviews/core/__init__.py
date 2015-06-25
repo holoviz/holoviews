@@ -17,8 +17,8 @@ def displayable(obj):
     (i.e whether the object obeys the nesting hierarchy
     """
     if isinstance(obj, HoloMap):
-        return not (obj.type in [Layout, GridSpace])
-    if isinstance(obj, (GridSpace, Layout)):
+        return not (obj.type in [Layout, GridSpace, NdLayout])
+    if isinstance(obj, (GridSpace, Layout, NdLayout)):
         for el in obj.values():
             if not displayable(el):
                 return False
