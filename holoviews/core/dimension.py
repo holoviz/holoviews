@@ -329,14 +329,15 @@ class LabelledData(param.Parameterized):
         specification applies.
         """
         applies = specs is None or any(self.matches(spec) for spec in specs)
-        mapped = map_fn(self) if applies else self
+
         if self._deep_indexable:
-            deep_mapped = mapped.clone(shared_data=False) if clone else mapped
-            for k, v in mapped.items():
+            deep_mapped = self.clone(shared_data=False) if clone else self
+            for k, v in self.items():
                 deep_mapped[k] = v.map(map_fn, specs, clone)
+            if applies: deep_mapped = map_fn(deep_mapped)
             return deep_mapped
         else:
-            return mapped
+            return map_fn(self) if applies else self
 
 
     def __getstate__(self):
