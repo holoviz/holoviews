@@ -120,9 +120,10 @@ class MPLRenderer(Renderer):
         obj = obj.last if isinstance(obj, HoloMap) else obj
         options = Store.lookup_options(cls.backend, obj, 'plot').options
         fig_inches = options.get('fig_inches', MPLPlot.fig_inches)
+
         if isinstance(fig_inches, (list, tuple)):
-            fig_inches =  (fig_inches[0] * factor,
-                           fig_inches[1] * factor)
+            fig_inches =  (None if fig_inches[0] is None else fig_inches[0] * factor,
+                           None if fig_inches[1] is None else fig_inches[1] * factor)
         else:
             fig_inches = MPLPlot.fig_inches * factor
 

@@ -1,3 +1,5 @@
+from __future__ import division
+
 from collections import defaultdict
 
 import numpy as np
@@ -45,7 +47,8 @@ class MPLPlot(DimensionedPlot):
         an integer in which case it will be used to autocompute a
         size. Alternatively may be set with an explicit tuple or list,
         in which case it will be applied directly after being scaled
-        by fig_size.""")
+        by fig_size. If either the width or height is set to None,
+        it will be computed automatically.""")
 
     fig_latex = param.Boolean(default=False, doc="""
         Whether to use LaTeX text in the overall figure.""")
@@ -96,7 +99,8 @@ class MPLPlot(DimensionedPlot):
         # List of handles to matplotlib objects for animation update
         scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
-            self.fig_inches = [i*scale for i in self.fig_inches]
+            self.fig_inches = [None if i is None else i*scale
+                               for i in self.fig_inches]
         else:
             self.fig_inches *= scale
         fig, axis = self._init_axis(fig, axis)
@@ -130,12 +134,18 @@ class MPLPlot(DimensionedPlot):
             with mpl.rc_context(rc=rc_params):
                 fig = plt.figure()
                 l, b, r, t = self.fig_bounds
+                inches = self.fig_inches
                 fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
                 fig.patch.set_alpha(self.fig_alpha)
-                if isinstance(self.fig_inches, (tuple, list)):
-                    fig.set_size_inches(list(self.fig_inches))
+                if isinstance(inches, (tuple, list)):
+                    inches = list(inches)
+                    if inches[0] is None:
+                        inches[0] = inches[1]
+                    elif inches[1] is None:
+                        inches[1] = inches[0]
+                    fig.set_size_inches(list(inches))
                 else:
-                    fig.set_size_inches([self.fig_inches, self.fig_inches])
+                    fig.set_size_inches([inches, inches])
                 axis = fig.add_subplot(111, projection=self.projection)
                 axis.set_aspect('auto')
 
@@ -312,11 +322,18 @@ class GridPlot(CompositePlot):
         # Expand small grids to a sensible viewing size
         expand_factor = 1 + (max_dim - 1) * 0.1
         scale_factor = expand_factor * shape_factor
-        if not isinstance(self.fig_inches, (tuple, list)):
+        cols, rows = self.layout.shape
+        if isinstance(self.fig_inches, (tuple, list)):
+            fig_inches = list(self.fig_inches)
+            if fig_inches[0] is None:
+                fig_inches[0] = fig_inches[1] * (cols/rows)
+            if fig_inches[1] is None:
+                fig_inches[1] = fig_inches[0] * (rows/cols)
+            return fig_inches
+        else:
             fig_inches = (self.fig_inches,)*2
-        else: fig_inches = self.fig_inches
-        return (scale_factor * self.layout.shape[0] * fig_inches[0],
-                scale_factor * self.layout.shape[1] * fig_inches[1])
+            return (scale_factor * cols * fig_inches[0],
+                    scale_factor * rows * fig_inches[1])
 
 
     def _create_subplots(self, layout, axis, ranges, create_axes):
@@ -804,13 +821,21 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         hr_list = [hr for hrs in height_ratios for hr in hrs]
 
         # Compute and set the plot size if not explicitly supplied
+        col_ars = [ar for ars in col_aspect_ratios for ar in ars]
+        row_ars = [ar for ars in row_aspect_ratios for ar in ars]
+        width = len(col_ars[::2]) + sum(col_ars[1::2])
+        yscale = sum(col_ars)/sum(row_ars)
+        xinches, yinches = None, None
         if not isinstance(self.fig_inches, (tuple, list)):
-            col_ars = [ar for ars in col_aspect_ratios for ar in ars]
-            row_ars = [ar for ars in row_aspect_ratios for ar in ars]
-            width = len(col_ars[::2]) + sum(col_ars[1::2])
             xinches = self.fig_inches * width
-            yscale = sum(col_ars)/sum(row_ars)
             yinches = xinches/yscale
+        elif self.fig_inches[0] is None:
+            xinches = self.fig_inches[1] * yscale
+            yinches = self.fig_inches[1]
+        elif self.fig_inches[1] is None:
+            xinches = self.fig_inches[0]
+            yinches = self.fig_inches[0] / yscale
+        if xinches and yinches:
             self.handles['fig'].set_size_inches([xinches, yinches])
 
         self.gs = gridspec.GridSpec(rows, cols,
