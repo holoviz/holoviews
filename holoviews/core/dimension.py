@@ -749,17 +749,24 @@ class Dimensioned(LabelledData):
                 raise Exception("The %s options must be specified using dictionary groups" %
                                 ','.join(repr(k) for k in kwargs.keys()))
 
-            sanitized_group = sanitize_identifier(self.group)
-            if self.label:
-                identifier = ('%s.%s.%s' % (self.__class__.__name__,
-                                            sanitized_group,
-                                            sanitize_identifier(self.label)))
-            elif  sanitized_group != self.__class__.__name__:
-                identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
-            else:
-                identifier = self.__class__.__name__
+            # Check whether the user is specifying targets (such as 'Image.Foo')
+            entries = Store.options().children
+            targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
+            if any(targets) and not all(targets):
+                raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
+            elif not any(targets):
+                # Not targets specified - add current object as target
+                sanitized_group = sanitize_identifier(self.group)
+                if self.label:
+                    identifier = ('%s.%s.%s' % (self._class__.__name__,
+                                                sanitized_group,
+                                                sanitize_identifier(self.label)))
+                elif  sanitized_group != self.__class__.__name__:
+                    identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
+                else:
+                    identifier = self.__class__.__name_
 
-            kwargs = {k:{identifier:v} for k,v in kwargs.items()}
+                kwargs = {k:{identifier:v} for k,v in kwargs.items()}
 
         if options is None and kwargs=={}:
             deep_clone = self.map(lambda x: x.clone(id=None))
