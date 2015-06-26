@@ -201,11 +201,12 @@ def map_display(vmap, size, max_frames, max_branches, widget_mode):
     if not isinstance(vmap, HoloMap): return None
 
     if not displayable(vmap):
-        display_warning.warning("Call the collate method on HoloMap to get "
-                                "the data into recommended format."
-                                "\nPlease consult the nesting hierarchy "
-                                "diagram of the Composing Data tutorial "
-                                "(http://git.io/vtIQh)")
+        display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
+                                "to access your data or control how it appears; "
+                                "we recommend calling .collate() on the HoloMap "
+                                "in order to follow the recommended nesting "
+                                "structure shown in the Composing Data tutorial"
+                                "(http://git.io/vtIQh)" % vmap.type.__name__)
         return display(vmap.collate(), raw=True)
 
     info = process_object(vmap)
@@ -230,11 +231,12 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
 
     if not displayable(layout):
         try:
-            display_warning.warning("Call the collate method on component HoloMap(s) to get "
-                                    "the data into recommended format."
-                                    "\nPlease consult the nesting hierarchy "
-                                    "diagram of the Composing Data tutorial "
-                                    "(http://git.io/vtIQh)")
+            display_warning.warning(
+                "Layout contains HoloMaps which are not nested in the "
+                "recommended format for accessing your data; calling "
+                ".collate() on these objects will resolve any violations "
+                "of the recommended nesting presented in the Composing Data "
+                "tutorial  (http://git.io/vtIQh)")
             expanded = []
             for el in layout.values():
                 if isinstance(el, HoloMap) and not displayable(el):
@@ -291,7 +293,6 @@ def display(obj, raw=False):
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
-
     if isinstance(obj, GridSpace):
         html = grid_display(obj)
     elif isinstance(obj, (CompositeOverlay, ViewableElement)):
