@@ -108,11 +108,11 @@ class Renderer(Exporter):
         Helper method to be used in the __call__ method to get a
         suitable plot object and the appropriate format.
         """
-
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if not isinstance(obj, Plot):
+            obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
             plot.update(0)
         elif fmt is None:
@@ -180,7 +180,8 @@ class Renderer(Exporter):
         Given an object or Element class, return the suitable plotting
         class needed to render it with the current renderer.
         """
-        obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+        if isinstance(obj, AdjointLayout) or obj is AdjointLayout:
+            obj  = Layout
         if isinstance(obj, type):
             element_type = obj
         else:
@@ -189,7 +190,6 @@ class Renderer(Exporter):
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
-
         return plotclass
 
 
