@@ -755,6 +755,7 @@ class Dimensioned(LabelledData):
             if any(targets) and not all(targets):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
             elif not any(targets):
+                print "??????"
                 # Not targets specified - add current object as target
                 sanitized_group = sanitize_identifier(self.group)
                 if self.label:
@@ -764,7 +765,7 @@ class Dimensioned(LabelledData):
                 elif  sanitized_group != self.__class__.__name__:
                     identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
                 else:
-                    identifier = self.__class__.__name_
+                    identifier = self.__class__.__name__
 
                 kwargs = {k:{identifier:v} for k,v in kwargs.items()}
 
