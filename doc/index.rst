@@ -61,9 +61,13 @@ but it also provides optional extensions enabled with ``%load_ext``
 above that make it integrate well with `IPython Notebook
 <http://ipython.org/notebook/>`_ 2 and 3.
 
-The easiest way to get the latest version of all the recommended
-packages for working with HoloViews in the IPython Notebook is also
-via pip::
+The quickest and easiest way to get the latest version of all the
+packages recommended for working with HoloViews in the IPython
+Notebook is via `conda <http://conda.pydata.org/docs/>`_::
+
+  conda install -c ioam holoviews
+
+Alternatively, you can also use pip::
 
   pip install 'holoviews[recommended]'
 
