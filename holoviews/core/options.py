@@ -923,52 +923,6 @@ class Store(object):
                 cls._options[backend][name] = opt_groups
 
 
-    @classmethod
-    def register_plots(cls, style_aliases={}, backend='matplotlib'):
-        """
-        Given that the Store.registry dictionary has been populate
-        with {<element>:<plot-class>} items, build an OptionTree for the
-        supported plot types, registering allowed plotting and style
-        keywords.
-
-        This is designed to be backend independent but makes the
-        following assumptions:
-
-        * Plotting classes are param.Parameterized objects.
-
-        * Plotting classes have a style_opts list of keywords used to
-          control the display style of the output.
-
-        * Overlay plotting is a function of the overlaid elements and
-          only has plot options (and not style or normalization
-          options).
-        """
-        from .overlay import CompositeOverlay
-        path_items = {}
-        for view_class, plot in cls.registry[backend].items():
-            name = view_class.__name__
-            plot_opts = [k for k in plot.params().keys() if k not in ['name']]
-            expanded_opts = [opt for key in plot.style_opts
-                             for opt in style_aliases.get(key, [])]
-            style_opts = sorted(set(expanded_opts + plot.style_opts))
-            with param.logging_level('CRITICAL'):
-                plot.style_opts = style_opts
-            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
-
-            if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
-                opt_groups.update({'style': Options(allowed_keywords=style_opts),
-                                   'norm':  Options(framewise=False, axiswise=False,
-                                                    allowed_keywords=['framewise',
-                                                                      'axiswise'])})
-            path_items[name] = opt_groups
-
-        cls._options[backend] = OptionTree(sorted(path_items.items()),
-                                          groups=['style', 'plot', 'norm'])
-
-        for fn in cls.option_setters:
-            fn(cls._options[backend])
-
-
 
 class StoreOptions(object):
     """
