@@ -598,8 +598,7 @@ class OptsMagic(Magics):
         if cell is None: return (line, cell)
         specs, code = [line], []
         for line in cell.splitlines():
-            line = line.strip()
-            if line.startswith('%%opts'):
+            if line.strip().startswith('%%opts'):
                 specs.append(line.strip()[7:])
             else:
                 code.append(line)
