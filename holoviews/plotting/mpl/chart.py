@@ -393,8 +393,11 @@ class SideHistogramPlot(HistogramPlot):
 
     def _process_axsettings(self, hist, lims, ticks):
         axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
+        label = 'ylabel' if self.orientation == 'vertical' else 'xlabel'
         if not self.show_xlabel:
-            axsettings['ylabel' if self.orientation == 'vertical' else 'xlabel'] = ''
+            axsettings[label] = ''
+        else:
+            axsettings[label] = str(hist.kdims[0])
         return axsettings
 
 
