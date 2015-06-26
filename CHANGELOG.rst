@@ -1,7 +1,7 @@
 Version 1.3.0
 -------------
 
-Since the last release we closed over 34 issues and have made 374
+Since the last release we closed over 34 issues and have made 380
 commits mostly focused on fixing bugs, cleaning up the API and
 working extensively on the plotting and rendering system to
 ensure HoloViews is fully backend independent.
@@ -9,8 +9,6 @@ ensure HoloViews is fully backend independent.
 We'd again like to thank our growing user base for all their input,
 which has helped us in making the API more understandable and
 fixing a number of important bugs.
-
-
 
 Highlights/Features:
 
@@ -57,7 +55,8 @@ API Changes
 * Changed backend options in %output magic, ``nbagg`` and ``d3`` are
   now modes of the matplotlib backend and can be selected with
   ``backend='matplotlib:nbagg'`` and ``backend='matplotlib:mpld3'``
-  respectively.
+  respectively. The 'd3' and 'nbagg' options remain supported but will
+  be deprecated in future.
   
   
 Version 1.2.0
