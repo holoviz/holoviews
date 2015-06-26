@@ -10,18 +10,7 @@ We'd again like to thank our growing user base for all their input,
 which has helped us in making the API more understandable and
 fixing a number of important bugs.
 
-API Changes
 
-* Renamed key_dimensions and value_dimensions to kdims and vdims
-  respectively, while providing backward compatibility for passing
-  and accessing the long names (8feb7d2).
-* Combined x/y/zticker plot options into x/y/zticks parameters which
-  now accept an explicit number of ticks, an explicit list of tick
-  positions (and labels), and a matplotlib tick locator.
-* Changed backend options in %output magic, ``nbagg`` and ``d3`` are
-  now modes of the matplotlib backend and can be selected with
-  ``backend='matplotlib:nbagg'`` and ``backend='matplotlib:mpld3'``
-  respectively.
 
 Highlights/Features:
 
@@ -34,27 +23,43 @@ Highlights/Features:
 * Table column widths now adapt to cell contents (be90a54).
 * Defaulting to matplotlib ticking behavior (62e1e58).
 * Allowed specifying fixed figure sizes to matplotlib via
-  ``fig_inches`` tuples of the form (width, None) and (None, height)
+  ``fig_inches`` tuples using (width, None) and (None, height) formats
   (632facd).
-* Added more valid data formats to ``Chart``/``Path``/``Histogram``
-constructors (2297375).
+* Constructors of ``Chart``, ``Path`` and ``Histogram`` classes now support
+  additional data formats (2297375).
 * ``ScrubberWidget`` now supports all figure formats (c317db4).
 * Allowed customizing legend positions on ``Bars`` Elements (5a12882).
 * Support for multiple colorbars on one axis (aac7b92).
 * ``.reindex`` on ``NdElement`` types now support converting between
-  key and value dimensions allowing more powerful conversions.
-* Support for casting between ``Element`` types (cdaab4e, b2ad91b,
+  key and value dimensions allowing more powerful conversions. (03ac3ce)
+* Improved support for casting between ``Element`` types (cdaab4e, b2ad91b,
   ce7fe2d, 865b4d5).
+* The ``%%opts`` cell magic may now be used multiple times in the same
+  cell (2a77fd0)
 * Matplotlib rcParams can now be set correctly per figure (751210f).
-* Improved ``OptionTree`` repr (2f824c1).
-* ``holoviews.ipython`` module is now independent of the backends.
-* Widgets now make use of jinja2 template inheritance.
+* Improved ``OptionTree`` repr which now works with eval (2f824c1).
+* Refactor of rendering system and IPython extension to allow easy
+  swapping of plotting backend (#141)
 * Large plotting optimization by computing tight ``bbox_inches`` once
   (e34e339).
 * Widgets now cache frames in the DOM, avoiding flickering in some
-  browsers (fc7dd2b).
+  browsers and make use of jinja2 template inheritance. (fc7dd2b)
+  
 
+API Changes
 
+* Renamed key_dimensions and value_dimensions to kdims and vdims
+  respectively, while providing backward compatibility for passing
+  and accessing the long names (8feb7d2).
+* Combined x/y/zticker plot options into x/y/zticks parameters which
+  now accept an explicit number of ticks, an explicit list of tick
+  positions (and labels), and a matplotlib tick locator.
+* Changed backend options in %output magic, ``nbagg`` and ``d3`` are
+  now modes of the matplotlib backend and can be selected with
+  ``backend='matplotlib:nbagg'`` and ``backend='matplotlib:mpld3'``
+  respectively.
+  
+  
 Version 1.2.0
 -------------
 
