@@ -59,11 +59,11 @@ class TimeSeries(Element2D):
             return super(TimeSeries, self).dimension_values(dimension)
 
 
-    def sample(self, **samples):
+    def sample(self, samples=[], **sample_values):
         raise NotImplementedError('Cannot sample a TimeSeries.')
 
 
-    def reduce(self, **dimreduce_map):
+    def reduce(self, dimensions=[], function=None, **reduce_map):
         raise NotImplementedError('Reduction of TimeSeries not '
                                   'implemented.')
 

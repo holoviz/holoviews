@@ -584,7 +584,9 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            return [d.name for d in self.dimensions()].index(dim)
+            sanitized = {sanitize_identifier(kd): kd
+                         for kd in self._cached_index_names}
+            return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))

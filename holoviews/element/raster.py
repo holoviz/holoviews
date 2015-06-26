@@ -99,10 +99,12 @@ class Raster(Element2D):
                 raise ValueError(
                     'Raster sampling requires coordinates not slices,'
                     'use regular slicing syntax.')
-            other_dimension = [d for d in self.kdims if
-                               d.name != dimension]
             # Indices inverted for indexing
             sample_ind = self.get_dimension_index(dimension)
+            if sample_ind is None:
+                raise Exception("Dimension %s not found during sampling" % dimension)
+            other_dimension = [d for i, d in enumerate(self.kdims) if
+                               i != sample_ind]
 
             # Generate sample slice
             sample = [slice(None) for i in range(self.ndims)]
@@ -123,15 +125,7 @@ class Raster(Element2D):
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
         """
-        dimensions = self._valid_dimensions(dimensions)
-        if dimensions and reduce_map:
-            raise Exception("Pass reduced dimensions either as an argument"
-                            "or as part of the kwargs not both.")
-        elif dimensions:
-            reduce_map = {d: function for d in dimensions}
-        elif not reduce_map:
-            reduce_map = {d: function for d in self._cached_index_names}
-
+        reduce_map = self._reduce_map(dimensions, function, reduce_map)
         if len(reduce_map) == self.ndims:
             reduced_view = self
             for dim, reduce_fn in reduce_map.items():

@@ -139,7 +139,7 @@ class Chart(Element2D):
 
     def sample(self, samples=[]):
         """
-        Allows sampling of Element2D objects using the default
+        Allows sampling of Chart Elements using the default
         syntax of providing a map of dimensions and sample pairs.
         """
         sample_data = OrderedDict()
@@ -158,14 +158,7 @@ class Chart(Element2D):
         Allows collapsing of Chart objects using the supplied map of
         dimensions and reduce functions.
         """
-        dimensions = self._valid_dimensions(dimensions)
-        if dimensions and reduce_map:
-            raise Exception("Pass reduced dimensions either as an argument"
-                            "or as part of the kwargs not both.")
-        elif dimensions:
-            reduce_map = {dimensions[0]: function}
-        elif not reduce_map:
-            reduce_map = {d: function for d in self._cached_index_names}
+        reduce_map = self._reduce_map(dimensions, function, reduce_map)
 
         if len(reduce_map) > 1:
             raise ValueError("Chart Elements may only be reduced to a point.")
@@ -425,7 +418,7 @@ class Histogram(Element2D):
             return super(Histogram, self).dimension_values(dim)
 
 
-    def sample(self, **samples):
+    def sample(self, samples=[], **sample_values):
         raise NotImplementedError('Cannot sample a Histogram.')
 
 

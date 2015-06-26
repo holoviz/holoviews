@@ -10,7 +10,7 @@ from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
-
+from .util import sanitize_identifier
 
 class Element(ViewableElement, Composable, Overlayable):
     """
@@ -103,24 +103,39 @@ class Element(ViewableElement, Composable, Overlayable):
         return coords
 
 
-    def sample(self, **samples):
+    def sample(self, samples=[], **sample_values):
         """
-        Base class signature to demonstrate API for sampling Views.
-        To sample a ViewableElement kwargs, where the keyword matches a Dimension
-        in the ViewableElement and the value matches a corresponding entry in the
-        data.
+        Base class signature to demonstrate API for sampling Elements.
+        To sample an Element supply either a list of sampels or keyword
+        arguments, where the key should match an existing key dimension
+        on the Element.
         """
         raise NotImplementedError
 
 
-    def reduce(self, **reduce_map):
+    def reduce(self, dimensions=[], function=None, **reduce_map):
         """
         Base class signature to demonstrate API for reducing Elements,
         using some reduce function, e.g. np.mean, which is applied
         along a particular Dimension. The dimensions and reduce functions
-        should be passed as keyword arguments.
+        should be passed as keyword arguments or as a list of dimensions
+        and a single function.
         """
         raise NotImplementedError
+
+
+    def _reduce_map(self, dimensions, function, reduce_map):
+        dimensions = self._valid_dimensions(dimensions)
+        if dimensions and reduce_map:
+            raise Exception("Pass reduced dimensions either as an argument"
+                            "or as part of the kwargs not both.")
+        elif dimensions:
+            reduce_map = {dimensions[0]: function}
+        elif not reduce_map:
+            reduce_map = {d: function for d in self._cached_index_names}
+        sanitized = {sanitize_identifier(kd): kd
+                     for kd in self._cached_index_names}
+        return {sanitized.get(d, d): fn for d, fn in reduce_map.items()}
 
 
     def table(self, **kwargs):
@@ -333,12 +348,8 @@ class NdElement(Element, NdMapping):
         the dimension name and reduce_fn as kwargs. Reduces
         dimensionality of Table until only an ItemTable is left.
         """
-        dimensions = self._valid_dimensions(dimensions)
-        if dimensions and reduce_map:
-            raise Exception("Pass reduced dimensions either as an argument"
-                            "or as part of the kwargs not both.")
-        elif dimensions:
-            reduce_map = {d: function for d in dimensions}
+        reduce_map = self._reduce_map(dimensions, function, reduce_map)
+
         dim_labels = self._cached_index_names
         reduced_table = self
         for reduce_fn, group in groupby(reduce_map.items(), lambda x: x[1]):
@@ -666,6 +677,7 @@ class HoloMap(UniformNdMapping):
         reduced_items = [(k, v.reduce(dimensions, function, **reduce_map))
                          for k, v in self.items()]
         return self.clone(reduced_items).table()
+
 
     def relabel(self, label=None, group=None, depth=1):
         # Identical to standard relabel method except for default depth of 1
