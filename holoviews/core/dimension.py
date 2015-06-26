@@ -758,7 +758,7 @@ class Dimensioned(LabelledData):
                 # Not targets specified - add current object as target
                 sanitized_group = sanitize_identifier(self.group)
                 if self.label:
-                    identifier = ('%s.%s.%s' % (self._class__.__name__,
+                    identifier = ('%s.%s.%s' % (self.__class__.__name__,
                                                 sanitized_group,
                                                 sanitize_identifier(self.label)))
                 elif  sanitized_group != self.__class__.__name__:
