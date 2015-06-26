@@ -47,7 +47,7 @@ and so it should be very easy to integrate HoloViews into your
 workflow or as part of another project.
 
 For a minimal install, you can obtain HoloViews along with the latest
-public releases its core dependencies (`Param
+public releases of its core dependencies (`Param
 <http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_)
 using pip::
 
@@ -55,7 +55,7 @@ using pip::
 
 
 For plotting, HoloViews uses `Matplotlib <http://matplotlib.org/>`_,
-as the default plotting backend which most scientists and engineers
+as its default backend, which most scientists and engineers
 using Python will already have installed.  HoloViews is pure Python,
 but it also provides optional extensions enabled with ``%load_ext``
 above that make it integrate well with `IPython Notebook
@@ -81,7 +81,7 @@ We also support the following install option::
 
   pip install 'holoviews[extras]'
 
-In addition to the required and recommended packages, this also
+In addition to the required and recommended packages, this command also
 installs the optional `mpld3 <http://mpld3.github.io/>`_, `pandas
 <http://pandas.pydata.org/>`_ and `Seaborn
 <http://stanford.edu/~mwaskom/software/seaborn/index.html>`_
