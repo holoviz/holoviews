@@ -240,7 +240,7 @@ class MPLRenderer(Renderer):
         as it hasn't been factored out as a function.
         """
         fig_id = id(fig)
-        if kw['bbox_inches'] == 'tight' and kw['format'] == 'png':
+        if kw['bbox_inches'] == 'tight':
             if not fig_id in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
