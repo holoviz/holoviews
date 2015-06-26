@@ -146,14 +146,6 @@ web. Useful tricks to reduce file size include:
 
 **Q: How do I create a Layout or Overlay object from an arbitrary list?**
 
-For lists of non-iterable elements (e.g. a collection of ``Image``
-elements), the Numpy ``np.sum`` and ``np.prod`` functions work well.
-However, these functions don't work for iterable elements such as 
-``Curve``, for which the currently recommended approach is to
-import the ``Overlay`` or ``Layout`` as appropriate and use 
-the ``from_values`` classmethod. In the next release, you will also
-be able to pass such a list directly to the constructor of ``Overlay``
-or ``Layout``.
-
-
-
+You can supply the list of elements directly to the ``Layout`` and
+``Overlay`` constructors. For instance, you can use
+``hv.Layout(elements)`` or ``hv.Overlay(elements)``.
