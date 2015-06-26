@@ -62,7 +62,7 @@ appearance of my object?**
 present the available style and plotting options for that object.
 
 The same information is also available using
-``holoviews.help(obj, visualization=True)``. For more
+``holoviews.help(obj)``. For more
 information on customizing the display of an object,
 see our `Options Tutorial <Tutorials/Options>`_.
 
