@@ -259,7 +259,7 @@ class LabelledData(param.Parameterized):
         keywords = [('label',label), ('group',group)]
         obj = self.clone(self.data,
                          **{k:v for k,v in keywords if v is not None})
-        if (depth > 0) and hasattr(obj, '_deep_indexable'):
+        if (depth > 0) and getattr(obj, '_deep_indexable', False):
             for k, v in obj.items():
                 obj[k] =  v.relabel(group=group, label=label, depth=depth-1)
         return obj
