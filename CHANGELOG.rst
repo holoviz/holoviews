@@ -1,3 +1,60 @@
+Version 1.3.0
+-------------
+
+Since the last release we closed over 34 issues and have made 374
+commits mostly focused on fixing bugs, cleaning up the API and
+working extensively on the plotting and rendering system to
+ensure HoloViews is fully backend independent.
+
+We'd again like to thank our growing user base for all their input,
+which has helped us in making the API more understandable and
+fixing a number of important bugs.
+
+API Changes
+
+* Renamed key_dimensions and value_dimensions to kdims and vdims
+  respectively, while providing backward compatibility for passing
+  and accessing the long names (8feb7d2).
+* Combined x/y/zticker plot options into x/y/zticks parameters which
+  now accept an explicit number of ticks, an explicit list of tick
+  positions (and labels), and a matplotlib tick locator.
+* Changed backend options in %output magic, ``nbagg`` and ``d3`` are
+  now modes of the matplotlib backend and can be selected with
+  ``backend='matplotlib:nbagg'`` and ``backend='matplotlib:mpld3'``
+  respectively.
+
+Highlights/Features:
+
+* Allowed display of data structures which do not match the
+  recommended nesting hierarchy (67b28f3, fbd89c3).
+* Dimensions now sanitized for ``.select``, ``.sample`` and
+  ``.reduce`` calls (6685633, 00b5a66).
+* Added ``holoviews.ipython.display`` function to render (and display)
+  any HoloViews object, useful for IPython interact widgets (0fa49cd).
+* Table column widths now adapt to cell contents (be90a54).
+* Defaulting to matplotlib ticking behavior (62e1e58).
+* Allowed specifying fixed figure sizes to matplotlib via
+  ``fig_inches`` tuples of the form (width, None) and (None, height)
+  (632facd).
+* Added more valid data formats to ``Chart``/``Path``/``Histogram``
+constructors (2297375).
+* ``ScrubberWidget`` now supports all figure formats (c317db4).
+* Allowed customizing legend positions on ``Bars`` Elements (5a12882).
+* Support for multiple colorbars on one axis (aac7b92).
+* ``.reindex`` on ``NdElement`` types now support converting between
+  key and value dimensions allowing more powerful conversions.
+* Support for casting between ``Element`` types (cdaab4e, b2ad91b,
+  ce7fe2d, 865b4d5).
+* Matplotlib rcParams can now be set correctly per figure (751210f).
+* Improved ``OptionTree`` repr (2f824c1).
+* ``holoviews.ipython`` module is now independent of the backends.
+* Widgets now make use of jinja2 template inheritance.
+* Large plotting optimization by computing tight ``bbox_inches`` once
+  (e34e339).
+* Widgets now cache frames in the DOM, avoiding flickering in some
+  browsers (fc7dd2b).
+
+
 Version 1.2.0
 -------------
 
