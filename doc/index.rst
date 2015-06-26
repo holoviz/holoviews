@@ -63,7 +63,8 @@ above that make it integrate well with `IPython Notebook
 
 The quickest and easiest way to get the latest version of all the
 packages recommended for working with HoloViews in the IPython
-Notebook is via `conda <http://conda.pydata.org/docs/>`_::
+Notebook is via `conda <http://conda.pydata.org/docs/>`_ (e.g using
+`miniconda <http://conda.pydata.org/miniconda.html>`_)::
 
   conda install -c ioam holoviews
 
