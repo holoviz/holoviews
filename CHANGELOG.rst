@@ -42,6 +42,8 @@ Highlights/Features:
   (e34e339).
 * Widgets now cache frames in the DOM, avoiding flickering in some
   browsers and make use of jinja2 template inheritance. (fc7dd2b)
+* Calling a HoloViews object without arguments now clears any
+  associated custom styles. (9e8c343)
   
 
 API Changes
