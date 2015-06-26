@@ -1,10 +1,9 @@
 import math
+
 from matplotlib import ticker
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
-
 import numpy as np
-
 import param
 
 from ...core import util
@@ -103,6 +102,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     style_opts = []
 
     _suppressed = [Table, ItemTable]
+    _colorbars = {}
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -114,13 +114,24 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 
     def _draw_colorbar(self, artist):
-        if 'cax' not in self.handles:
-            axis = self.handles['axis']
-            divider = make_axes_locatable(axis)
-            self.handles['cax'] = divider.append_axes('right', size="5%", pad=0.05)
-        self.handles['cbar'] = plt.colorbar(artist, cax=self.handles['cax'])
-        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
-            self.handles['cbar'].solids.set_edgecolor("face")
+        axis = self.handles['axis']
+        ax_colorbars = ElementPlot._colorbars.get(id(axis), [])
+        divider = make_axes_locatable(axis)
+        colorbars = []
+        cax = divider.new_horizontal(pad=0.05, size='5%')
+        self.handles['fig'].add_axes(cax)
+        cbar = plt.colorbar(artist, cax=cax)
+        colorbars.append((artist, cax))
+        if ax_colorbars:
+            for artist, cax in ax_colorbars:
+                self.handles['fig'].delaxes(cax)
+                cax = divider.new_horizontal(pad='20%', size='5%')
+                self.handles['fig'].add_axes(cax)
+                cbar = plt.colorbar(artist, cax=cax)
+                if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
+                    cbar.solids.set_edgecolor("face")
+                colorbars.append((artist, cax))
+        ElementPlot._colorbars[id(axis)] = colorbars
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
