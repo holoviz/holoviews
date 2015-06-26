@@ -57,6 +57,10 @@ API Changes
   ``backend='matplotlib:nbagg'`` and ``backend='matplotlib:mpld3'``
   respectively. The 'd3' and 'nbagg' options remain supported but will
   be deprecated in future.
+* Customizations should no longer be applied directly to ``Store.options``;  
+  the ``Store.options(backend='matplotlib')`` object should be
+  customized instead.  There is no longer a need to call the
+  deprecated ``Store.register_plots`` method.
   
   
 Version 1.2.0
