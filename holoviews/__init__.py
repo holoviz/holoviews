@@ -32,7 +32,10 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         filename = os.path.expanduser(rcfile)
         with open(filename) as f:
             code = compile(f.read(), filename, 'exec')
-            exec(code)
+            try:
+                exec(code)
+            except Exception as e:
+                print("Warning: Could not load %r [%r]" % (filename, str(e)))
         break
     except IOError:
         pass
