@@ -95,9 +95,6 @@ Features
 .. |holoviewsDocs| image:: http://doozy.inf.ed.ac.uk:8010/png?builder=holoviews_docs
 .. _holoviewsDocs: http://doozy.inf.ed.ac.uk:8010/waterfall
 
-.. |holoviewsDocs| image:: http://doozy.inf.ed.ac.uk:8010/png?builder=holoviews_docs
-.. _holoviewsDocs: http://doozy.inf.ed.ac.uk:8010/waterfall
-
 .. |Downloads| image:: https://img.shields.io/pypi/dm/holoviews.svg
 .. _Downloads: https://pypi.python.org/pypi/holoviews
 
