@@ -510,7 +510,7 @@ class OptionTree(AttrTree):
                 accumulator.append(('.'.join(t), kwargs))
 
             for (t, kws) in accumulator:
-                if group=='norm' and all(kws[k] is False for k in ['axiswise','framewise']):
+                if group=='norm' and all(kws.get(k, False) is False for k in ['axiswise','framewise']):
                     continue
                 elif kws:
                     especs.append((t, kws))
