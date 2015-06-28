@@ -847,6 +847,12 @@ class DynamicMap(HoloMap):
 
         self.counter = 0 if self.interval == 'open' else None
 
+        if self.interval == 'closed':
+            for kdim in self.kdims:
+                if None in kdim.range:
+                    raise Exception("In closed interval mode all key "
+                                    "dimensions ranges need specified ranges")
+
     def clone(self, data=None, shared_data=True, *args, **overrides):
         """
         Overrides Dimensioned clone to avoid checking items if data
