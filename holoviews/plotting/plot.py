@@ -12,7 +12,7 @@ import param
 
 from ..core import OrderedDict
 from ..core import util, traversal
-from ..core.element import HoloMap, Element
+from ..core.element import HoloMap, DynamicMap, Element
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
@@ -322,7 +322,7 @@ class GenericElementPlot(DimensionedPlot):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
-        if not isinstance(element, HoloMap):
+        if not isinstance(element, (HoloMap, DynamicMap)):
             self.map = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
         else:
@@ -352,7 +352,7 @@ class GenericElementPlot(DimensionedPlot):
         else:
             select = dict(zip(self.map.dimensions('key', label=True), key))
         try:
-            selection = self.map.select((HoloMap,), **select)
+            selection = self.map.select((HoloMap, DynamicMap), **select)
         except KeyError:
             selection = None
         return selection.last if isinstance(selection, HoloMap) else selection

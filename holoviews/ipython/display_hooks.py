@@ -9,7 +9,7 @@ import param
 
 from ..core.options import Store, StoreOptions
 from ..core import Element, ViewableElement, UniformNdMapping, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, displayable, undisplayable_info, CompositeOverlay
+    GridSpace, Layout, CompositeOverlay, DynamicMap, displayable, undisplayable_info
 from ..core.traversal import unique_dimkeys, bijective
 from .magics import OutputMagic, OptsMagic
 
@@ -198,7 +198,7 @@ display_warning = Warning(name='Warning')
 
 @display_hook
 def map_display(vmap, size, max_frames, max_branches, widget_mode):
-    if not isinstance(vmap, HoloMap): return None
+    if not isinstance(vmap, (HoloMap, DynamicMap)): return None
 
     if not displayable(vmap):
         display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
@@ -299,7 +299,7 @@ def display(obj, raw=False):
         html = element_display(obj)
     elif isinstance(obj, (Layout, NdLayout, AdjointLayout)):
         html = layout_display(obj)
-    elif isinstance(obj, HoloMap):
+    elif isinstance(obj, (HoloMap, DynamicMap)):
         html = map_display(obj)
     else:
         return repr(obj) if raw else IPython.display.display(obj)
