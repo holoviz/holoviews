@@ -1,6 +1,5 @@
 import operator
 import inspect
-import types
 
 from itertools import groupby
 from numbers import Number
