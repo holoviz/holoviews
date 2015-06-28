@@ -822,12 +822,13 @@ class DynamicMap(HoloMap):
       supported.
       """)
 
-    interval = param.ObjectSelector(default='closed',
+    interval = param.ObjectSelector(default='open',
                                     objects=['open', 'closed', 'both'], doc="""
        Whether the dynamic map operates on a closed interval (requests
        to the supplied function are guaranteed to be within a known,
        finite interval) or an open interval (for instance for a
        simulation that can may run for an unknown length of time).""")
+
 
     cache_size = param.Integer(default=10, doc="""
        The number of entries to cache for fast access. This is an LRU
