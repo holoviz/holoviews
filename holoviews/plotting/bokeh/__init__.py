@@ -1,4 +1,4 @@
-from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout
+from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
 from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram
 from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text
 from ...interface.seaborn import Bivariate, TimeSeries
@@ -19,6 +19,7 @@ Store.register({Overlay: OverlayPlot,
                 Curve: CurvePlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
+                GridSpace: GridPlot,
                 LinkedScatter: LinkedScatterPlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
