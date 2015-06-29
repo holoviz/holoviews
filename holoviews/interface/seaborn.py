@@ -83,7 +83,7 @@ class Bivariate(Chart):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')])
 
-    vdims = param.List(default=[], bounds=(0,0))
+    vdims = param.List(default=[], bounds=(0,1))
 
     group = param.String(default="Bivariate", constant=True)
 
