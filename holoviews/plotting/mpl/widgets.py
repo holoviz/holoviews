@@ -98,7 +98,7 @@ class MPLWidget(NdWidget):
             frames = json.dumps(frames, **encoder)
         else:
             frames = {idx: frame for idx, frame in frames.items()}
-        return frames
+        return super(MPLWidget, self).encode_frames(frames)
 
 
     def initialize_connection(self, plot):
