@@ -152,6 +152,17 @@ class DimensionedPlot(Plot):
         super(DimensionedPlot, self).__init__(**params)
 
 
+    def __getitem__(self, frame):
+        """
+        Get the state of the Plot for a given frame number.
+        """
+        if frame > len(self):
+            self.warning("Showing last frame available: %d" % len(self))
+        if not self.drawn: self.handles['fig'] = self.initialize_plot()
+        self.update_frame(self.keys[frame])
+        return self.state
+
+
     def _get_frame(self, key):
         """
         Required on each MPLPlot type to get the data corresponding

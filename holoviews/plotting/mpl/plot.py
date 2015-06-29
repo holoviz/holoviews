@@ -191,16 +191,6 @@ class MPLPlot(DimensionedPlot):
             return fig
 
 
-    def __getitem__(self, frame):
-        """
-        Get the matplotlib figure at the given frame number.
-        """
-        if frame > len(self):
-            self.warning("Showing last frame available: %d" % len(self))
-        if not self.drawn: self.handles['fig'] = self.initialize_plot()
-        self.update_frame(self.keys[frame])
-        return self.handles['fig']
-
     @property
     def state(self):
         return self.handles['fig']
