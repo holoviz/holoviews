@@ -330,7 +330,7 @@ class GridPlot(CompositePlot):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
                             clone=False)
         norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = any(v.get('axiswise', False) for v in norm_opts.values())
+        axiswise = all(v.get('axiswise', False) for v in norm_opts.values())
 
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
