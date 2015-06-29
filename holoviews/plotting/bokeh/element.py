@@ -138,7 +138,7 @@ class ElementPlot(GenericElementPlot, BokehPlot):
             source.data[k] = v
 
     
-    def initialize_plot(self, ranges=None, plot=None, plots=None):
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         element = self.map.last
         key = self.keys[-1]
 
