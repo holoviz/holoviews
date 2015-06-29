@@ -4,8 +4,10 @@ import param
 
 from bokeh.io import gridplot
 
-from ...core import OrderedDict
+from ...core import OrderedDict, CompositeOverlay, Element
 from ...core import Store, Layout, AdjointLayout, NdLayout, Empty, GridSpace, HoloMap
+from ...core.options import Compositor
+from ...core import traversal
 from ..plot import Plot, GenericCompositePlot, GenericLayoutPlot
 from .renderer import BokehRenderer
 
@@ -30,7 +32,6 @@ class BokehPlot(Plot):
         """
         return self.state
 
-
     @property
     def state(self):
         """
@@ -39,7 +40,130 @@ class BokehPlot(Plot):
         """
         return self.handles['plot']
 
+    def update(self, key):
+        """
+        Update the internal state of the Plot to represent the given
+        key tuple (where integers represent frames). Returns this
+        state.
+        """
+        if not self.drawn:
+            self.initialize_plot()
+        return self.__getitem__(key)
+
+
+class GridPlot(GenericCompositePlot, BokehPlot):
+    """
+    Plot a group of elements in a grid layout based on a GridSpace element
+    object.
+    """
+
+    def __init__(self, layout, ranges=None, keys=None, dimensions=None,
+                 layout_num=1, **params):
+        if not isinstance(layout, GridSpace):
+            raise Exception("GridPlot only accepts GridSpace.")
+        self.layout = layout
+        self.cols, self.rows = layout.shape
+        self.layout_num = layout_num
+        extra_opts = self.lookup_options(layout, 'plot').options
+        if not keys or not dimensions:
+            dimensions, keys = traversal.unique_dimkeys(layout)
+        if 'uniform' not in params:
+            params['uniform'] = traversal.uniform(layout)
+
+        super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                       **dict(extra_opts, **params))
+        self.subplots, self.layout = self._create_subplots(layout, ranges)
+
+
+    def _create_subplots(self, layout, ranges):
+        layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
+                            clone=False)
+        norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
+        axiswise = any(v.get('axiswise', False) for v in norm_opts.values())
+
+        subplots = OrderedDict()
+        frame_ranges = self.compute_ranges(layout, None, ranges)
+        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+                                    for key in self.keys])
+        collapsed_layout = layout.clone(shared_data=False, id=layout.id)
+        for i, coord in enumerate(layout.keys(full_grid=True)):
+            r = i % self.cols
+            c = i // self.cols
+
+            if not isinstance(coord, tuple): coord = (coord,)
+            view = layout.data.get(coord, None)
+            # Create subplot
+            if view is not None:
+                vtype = view.type if isinstance(view, HoloMap) else view.__class__
+                opts = self.lookup_options(view, 'plot').options
+
+            # Create axes
+            kwargs = {}
+            if c == 0 and r != 0:
+                kwargs['xaxis'] = 'bottom-bare'
+                kwargs['width'] = 175
+            if c != 0 and r == 0 and not layout.ndims == 1:
+                kwargs['yaxis'] = 'left-bare'
+                kwargs['height'] = 175
+            if c == 0 and r == 0:
+                kwargs['width'] = 175
+                kwargs['height'] = 175
+            if r != 0 and c != 0:
+                kwargs['xaxis'] = 'bottom-bare'
+                kwargs['yaxis'] = 'left-bare'
+
+            if 'width' not in kwargs:
+                kwargs['width'] = 125
+            if 'height' not in kwargs:
+                kwargs['height'] = 125
+
+            # Create subplot
+            if view is not None:
+                plotting_class = Store.registry[self.renderer.backend][vtype]
+                subplot = plotting_class(view, dimensions=self.dimensions, show_title=False,
+                                         subplot=True, ranges=frame_ranges,
+                                         uniform=self.uniform, keys=self.keys, **dict(opts, **kwargs))
+                collapsed_layout[coord] = subplot.layout if isinstance(subplot, GenericCompositePlot) else subplot.map
+                subplots[coord] = subplot
+        return subplots, collapsed_layout
+
+
+    def initialize_plot(self, ranges=None):
+        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        plots = [[] for r in range(self.rows)]
+        passed_plots = []
+        for i, coord in enumerate(self.layout.keys(full_grid=True)):
+            r = i % self.cols
+            subplot = self.subplots.get(coord, None)
+            if subplot is not None:
+                plot = subplot.initialize_plot(ranges=ranges, plots=passed_plots)
+                plots[r].append(plot)
+                passed_plots.append(plots[r][-1])
+            else:
+                plots[r].append(None)
+                passed_plots.append(None)
+        self.handles['plot'] = gridplot(plots[::-1])
+        self.handles['plots'] = plots
+
+        return self.handles['plot']
     
+
+    def update_frame(self, key, ranges=None):
+        """
+        Update the internal state of the Plot to represent the given
+        key tuple (where integers represent frames). Returns this
+        state.
+        """
+        ranges = self.compute_ranges(self.layout, key, ranges)
+        plots = self.handles['plots']
+        for i, coord in enumerate(self.layout.keys(full_grid=True)):
+            r = i % self.cols
+            c = i // self.cols
+            subplot = self.subplots.get(coord, None)
+            if subplot is not None:
+                subplot.update_frame(key, ranges, plots[r][c])
+
+
 
 class LayoutPlot(GenericLayoutPlot, BokehPlot):
     
@@ -182,16 +306,6 @@ class LayoutPlot(GenericLayoutPlot, BokehPlot):
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges, plots[r][c])
-            
-    def update(self, key):
-        """
-        Update the internal state of the Plot to represent the given
-        key tuple (where integers represent frames). Returns this
-        state.
-        """
-        self.initialize_plot()
-        self.update_frame(key)
-        return self.state
 
 
 class AdjointLayoutPlot(GenericCompositePlot, BokehPlot):
