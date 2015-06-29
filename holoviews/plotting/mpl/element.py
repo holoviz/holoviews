@@ -122,17 +122,22 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _draw_colorbar(self, artist):
         axis = self.handles['axis']
         ax_colorbars = ElementPlot._colorbars.get(id(axis), [])
-        divider = make_axes_locatable(axis)
+
+        create = 'cax' not in self.handles
         colorbars = []
-        cax = divider.new_horizontal(pad=0.05, size='5%')
-        self._create_cbar(artist, cax)
-        colorbars.append((artist, cax))
-        if ax_colorbars:
-            for artist, cax in ax_colorbars:
-                self.handles['fig'].delaxes(cax)
-                cax = divider.new_horizontal(pad='20%', size='5%')
-                self._create_cbar(artist, cax)
-                colorbars.append((artist, cax))
+        if create:
+            divider = make_axes_locatable(axis)
+            cax = divider.new_horizontal(pad=0.05, size='5%')
+            self.handles['cax'] = cax
+            self._create_cbar(artist, cax)
+            colorbars.append((artist, cax))
+            if ax_colorbars:
+                if not create: divider = make_axes_locatable(axis)
+                for artist, cax in ax_colorbars:
+                    self.handles['fig'].delaxes(cax)
+                    cax = divider.new_horizontal(pad='20%', size='5%')
+                    self._create_cbar(artist, cax)
+                    colorbars.append((artist, cax))
         ElementPlot._colorbars[id(axis)] = colorbars
 
 
