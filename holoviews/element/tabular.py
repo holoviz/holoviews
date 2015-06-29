@@ -264,6 +264,8 @@ class TableConversion(object):
             selected = self._table.reindex(new_kdims, vdims)
         else:
             selected = self._table.select(**{'value': vdims})
+            if kdims != self._table._cached_index_names:
+                selected = self._table.reindex(kdims)
         all_dims = selected.dimensions(label=True)
         invalid = [dim for dim in kdims+vdims if dim not in all_dims]
         if invalid:
