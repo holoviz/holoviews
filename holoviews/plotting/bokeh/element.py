@@ -172,7 +172,11 @@ class BokehMPLWrapper(ElementPlot):
     def __init__(self, element, plot=None, subplot=False, **params):
         self.subplot = subplot
         super(ElementPlot, self).__init__(element, **params)
-        plot = Store.registry['matplotlib'][type(element)]
+        if isinstance(element, HoloMap):
+            etype = element.type
+        else:
+            etype = type(element)
+        plot = Store.registry['matplotlib'][etype]
         self.mplplot = plot(element, **self.lookup_options(element, 'plot').options)
 
 
@@ -184,8 +188,9 @@ class BokehMPLWrapper(ElementPlot):
 
 
     def update_frame(self, key, ranges=None, plot=None):
-        self.mplplot.update_frame(key, ranges)
-        self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
+        if key in self.map:
+            self.mplplot.update_frame(key, ranges)
+            self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
