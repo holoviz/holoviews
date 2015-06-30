@@ -294,7 +294,7 @@ class Spread(ErrorBars):
     the data is always expanded to an Nx4 array.
     """
 
-    group = param.String(default='Spread')
+    group = param.String(default='Spread', constant=True)
 
 
 class Bars(NdElement):
