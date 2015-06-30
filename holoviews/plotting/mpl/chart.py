@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
-from ...core.util import match_spec
+from ...core.util import match_spec, max_range
 from ...element import Points, Raster, Polygons
 from .element import ElementPlot, LegendPlot
 
@@ -210,6 +210,60 @@ class ErrorPlot(ChartPlot):
             for i, path in enumerate(paths):
                 path.vertices = np.array([[data[i, 0], bdata[i]],
                                           [data[i, 0], tdata[i]]])
+
+
+class SpreadPlot(ChartPlot):
+    """
+    SpreadPlot plots the Spread Element type.
+    """
+
+    style_opts = ['alpha', 'color', 'linestyle', 'linewidth',
+                  'edgecolor', 'facecolor', 'hatch']
+
+    def __init__(self, *args, **kwargs):
+        super(SpreadPlot, self).__init__(*args, **kwargs)
+        self._extent = None
+
+
+    def initialize_plot(self, ranges=None):
+        element = self.map.last
+        axis = self.handles['axis']
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = match_spec(element, ranges)
+        self.update_handles(axis, element, key, ranges)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
+
+
+    def get_extents(self, view, ranges):
+        x0, y0, x1, y1 = super(SpreadPlot, self).get_extents(view, ranges)
+        normopts = self.lookup_options(view, 'norm')
+        if normopts.options.get('framewise', False):
+            y0 = view.data[:, 1] - view.data[:, 2]
+            y1 = view.data[:, 1] + view.data[:, 3]
+        else:
+            if not self._extent:
+                max_spread = lambda x: (np.min(x.data[:, 1] - x.data[:, 2]),
+                                        np.max(x.data[:,1] + x.data[:, 3]))
+                y0, y1 = max_range(self.map.traverse(max_spread, (type(view),)))
+                self._extent = (y0, y1)
+            else:
+                y0, y1 = self._extent
+        return x0, y0, x1, y1
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        if 'paths' in self.handles:
+            self.handles['paths'].remove()
+        paths = axis.fill_between(element.data[:, 0],
+                                  element.data[:, 1]-element.data[:, 2],
+                                  element.data[:, 1]+element.data[:, 3],
+                                  zorder=self.zorder,
+                                  label=element.label if self.show_legend else None,
+                                  **self.style[self.cyclic_index])
+        self.handles['paths'] = paths
 
 
 

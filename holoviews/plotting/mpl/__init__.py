@@ -92,6 +92,7 @@ Store.register({Curve: CurvePlot,
                 Points: PointPlot,
                 VectorField: VectorFieldPlot,
                 ErrorBars: ErrorPlot,
+                Spread: SpreadPlot,
 
                 # General plots
                 GridSpace: GridPlot,
@@ -146,6 +147,7 @@ options = Store.options(backend='matplotlib')
 options.Curve = Options('style', color=Cycle(), linewidth=2)
 options.Scatter = Options('style', color=Cycle(), marker='o')
 options.ErrorBars = Options('style', ecolor='k')
+options.Spread = Options('style', color=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o')

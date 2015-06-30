@@ -283,6 +283,19 @@ class ErrorBars(Chart):
             return data
 
 
+class Spread(ErrorBars):
+    """
+    Spread is a Chart Element type respresenting a spread of
+    values as given by a mean and standard error or confidence
+    intervals. Just like the ErrorBars Element type, mean and
+    deviations from the mean should be supplied as either an
+    Nx3 or Nx4 array representing the x-values, mean values
+    and symmetric or assymetric errors respective. Internally
+    the data is always expanded to an Nx4 array.
+    """
+
+    group = param.String(default='Spread')
+
 
 class Bars(NdElement):
     """
