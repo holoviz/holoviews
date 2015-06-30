@@ -127,7 +127,7 @@ def render_plot(plot, widget_mode, message=None):
                   css=            OutputMagic.options['css'],
                   fps=            OutputMagic.options['fps'])
 
-    renderer = OutputMagic.renderer(dpi=kwargs['dpi'])
+    renderer = OutputMagic.renderer(dpi=kwargs['dpi'], fps=kwargs['fps'])
     with renderer.state():
         if len(plot) == 1:
             plot.update(0)
