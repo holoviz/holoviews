@@ -8,7 +8,7 @@ from bokeh.models import GlyphRenderer
 from bokeh import mpl
 
 from ...core import OrderedDict, Dimension, Store, HoloMap
-from ...core.util import match_spec
+from ...core.util import match_spec, max_range
 from ...element import Chart, Image, HeatMap, RGB, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
 
@@ -339,6 +339,44 @@ class PolygonPlot(PathPlot):
     def init_glyph(self, element, plot, source, style):
         self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
                                                legend=element.label, **style)
+
+
+class SpreadPlot(ElementPlot):
+
+    style_opts = ['color'] + line_properties + fill_properties
+
+    def __init__(self, *args, **kwargs):
+        super(SpreadPlot, self).__init__(*args, **kwargs)
+        self._extent = None
+
+    def get_data(self, element):
+        lower = element.data[:, 1] - element.data[:, 2]
+        upper = element.data[:, 1] + element.data[:, 3]
+        band_x = np.append(element.data[:, 0], element.data[::-1, 0])
+        band_y = np.append(lower, upper[::-1])
+        return dict(xs=[band_x], ys=[band_y])
+        
+    def init_glyph(self, element, plot, source, style):
+        self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
+                                               legend=element.label, **style)
+
+    def get_extents(self, view, ranges):
+        x0, y0, x1, y1 = super(SpreadPlot, self).get_extents(view, ranges)
+        normopts = self.lookup_options(view, 'norm')
+        if normopts.options.get('framewise', False):
+            y0 = view.data[:, 1] - view.data[:, 2]
+            y1 = view.data[:, 1] + view.data[:, 3]
+        else:
+            if not self._extent:
+                max_spread = lambda x: (np.min(x.data[:, 1] - x.data[:, 2]),
+                                        np.max(x.data[:,1] + x.data[:, 3]))
+                y0, y1 = max_range(self.map.traverse(max_spread, (type(view),)))
+                self._extent = (y0, y1)
+            else:
+                y0, y1 = self._extent
+        return x0, y0, x1, y1
+
+
 
 class TextPlot(ElementPlot):
 

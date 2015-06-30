@@ -1,5 +1,5 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
-from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram
+from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram, Spread
 from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text
 from ...interface.seaborn import Bivariate, TimeSeries
 from ...core.options import Options, Cycle, OptionTree
@@ -19,6 +19,7 @@ Store.register({Overlay: OverlayPlot,
                 Curve: CurvePlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
+                Spread: SpreadPlot,
                 GridSpace: GridPlot,
                 LinkedScatter: LinkedScatterPlot,
                 Image: RasterPlot,
@@ -46,6 +47,7 @@ options = Store.options(backend='bokeh')
 options.Scatter = Options('style', color=Cycle())
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.Polygons = Options('style', color=Cycle())
+options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.LinkedScatter = Options('style', size=12, color=Cycle(),
                                 marker=Cycle(values=['circle', 'square', 'triangle', 'diamond', 'inverted_triangle']))
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
