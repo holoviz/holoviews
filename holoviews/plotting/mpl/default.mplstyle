@@ -16,7 +16,7 @@ figure.facecolor: ffffff
 figure.figsize: 6.0,4.0
 
 font.size:11
-font.family: DejaVu Sans
+font.family: DejaVu Sans, Bitstream Vera Sans
 
 grid.linewidth: 1.0
 grid.color: black
