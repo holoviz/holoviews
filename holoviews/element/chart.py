@@ -276,14 +276,11 @@ class ErrorBars(Chart):
     vdims = param.List(default=[Dimension('lerror'), Dimension('uerror')],
                        bounds=(2,2), constant=True)
 
-    def __init__(self, data, **params):
-        data = list(data)
-        data = self._null_value if (data is None) or (len(data) == 0) else data
-        if len(data) and not isinstance(data, np.ndarray):
-            data = np.array(data)
+    def _validate_data(self, data):
         if data.shape[1] == 3:
-            data = np.hstack([data, np.atleast_2d(data[:, 2]).T])
-        super(ErrorBars, self).__init__(data, **params)
+            return np.column_stack([data, data[:, 2]])
+        else:
+            return data
 
 
 
