@@ -296,6 +296,17 @@ class Spread(ErrorBars):
 
     group = param.String(default='Spread', constant=True)
 
+    def range(self, dim, data_range=True):
+        drange = super(ErrorBars, self).range(dim, data_range)
+        didx = self.get_dimension_index(dim)
+        if didx == 1 and data_range:
+            lower = np.nanmin(self.data[:, 1] - self.data[:, 2])
+            upper = np.nanmax(self.data[:, 1] + self.data[:, 3])
+            return util.max_range([(lower, upper), drange])
+        else:
+            return drange
+
+
 
 class Bars(NdElement):
     """
