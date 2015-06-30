@@ -16,7 +16,6 @@ from ..core.element import HoloMap, Element
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
-from ..core.util import safe_unicode
 from ..element import Table, Annotation
 
 
@@ -187,7 +186,7 @@ class DimensionedPlot(Plot):
                             zip(dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
-        return '\n '.join(g for g in groups if g)
+        return util.safe_unicode('\n '.join(g for g in groups if g))
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -413,11 +412,11 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(view, CompositeOverlay):
             dims = dims[view.ndims:]
         if dims and xlabel is None:
-            xlabel = str(dims[0])
+            xlabel = util.safe_unicode(str(dims[0]))
         if len(dims) >= 2 and ylabel is None:
-            ylabel = str(dims[1])
+            ylabel = util.safe_unicode(str(dims[1]))
         if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
-            zlabel = str(dims[2])
+            zlabel = util.safe_unicode(str(dims[2]))
         return xlabel, ylabel, zlabel
 
 
@@ -623,11 +622,11 @@ class GenericCompositePlot(DimensionedPlot):
         dim_title = self._frame_title(key, 3)
         layout = self.layout
         type_name = type(self.layout).__name__
-        group = layout.group if layout.group != type_name else ''
-        label = layout.label
-        title = safe_unicode(self.title_format).format(label=safe_unicode(label),
-                                                       group=safe_unicode(group),
-                                                       type=type_name)
+        group = util.safe_unicode(layout.group if layout.group != type_name else '')
+        label = util.safe_unicode(layout.label)
+        title = util.safe_unicode(self.title_format).format(label=label,
+                                                            group=group,
+                                                            type=type_name)
         title = '' if title.isspace() else title
         if not title:
             return dim_title
