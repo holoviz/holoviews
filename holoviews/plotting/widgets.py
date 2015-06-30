@@ -3,6 +3,7 @@ import os, uuid, json
 import param
 
 from ..core import OrderedDict, NdMapping
+from ..core.util import sanitize_identifier, safe_unicode
 
 def isnumeric(val):
     try:
@@ -199,9 +200,9 @@ class SelectionWidget(NdWidget):
             else:
                 widget_type = 'dropdown'
             init_dim_vals.append(dim_vals[0])
-            dim_str = dim.name.replace(' ', '_').replace('$', '').replace('\\', '')
+            dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
-            widgets.append(dict(dim=dim_str, dim_idx=idx, vals=repr(dim_vals),
+            widgets.append(dict(dim=sanitize_identifier(dim_str), dim_label=dim_str, dim_idx=idx, vals=repr(dim_vals),
                                 type=widget_type, visibility=visibility))
             dimensions.append(dim_str)
         return widgets, dimensions, init_dim_vals
