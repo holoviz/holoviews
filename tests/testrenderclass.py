@@ -49,17 +49,17 @@ class MPLRendererTest(ComparisonTestCase):
     def test_simple_export_gif(self):
         data = self.renderer(self.map1, fmt='gif')[0]
         self.assertEqual(digest_data(data),
-                         '3ae99baf8765381db448421a5343aea318f04b9a6a3fadc3c97d3093339e6789')
+                         '95258c17d10620f20604c9cbd17e6b65e886a6163c96d6574f3eb812e0f149c2')
 
     def test_simple_export_gif_double_size(self):
         data = self.renderer.instance(size=200)(self.map1, fmt='gif')[0]
         self.assertEqual(digest_data(data),
-                         '99134eda29e76ceba217c00878116af9cdb5cf733430235137f2c53486607837')
+                         'fbe6d753df1471315cbd83d370379591af0fdea114601c5ce1a615777749ca91')
 
     def test_simple_export_gif_half_fps(self):
-        data = self.renderer.instance(fps=10)(self.map1, fmt='gif', )[0]
+        data = self.renderer.instance(fps=5)(self.map1, fmt='gif', )[0]
         self.assertEqual(digest_data(data),
-                         '3ae99baf8765381db448421a5343aea318f04b9a6a3fadc3c97d3093339e6789')
+                         'add756aa3caeb4c5f2396cdd5bd0122128c6a1275de9d3a44a0c21a734c4d5f4')
 
     def test_simple_export_png1(self):
         data = self.renderer(self.image1, fmt='png')[0]
