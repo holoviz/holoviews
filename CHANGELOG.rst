@@ -1,3 +1,26 @@
+Version 1.3.1
+-------------
+
+Minor bugfix release to address a number of issues that weren't caught
+in time for the 1.3.0 release with the addition of a small number of
+features:
+
+Features:
+
+* Introduced new ``Spread`` element to plot errors and confidence
+  intervals (30d3184).
+* ``ErrorBars`` and ``Spread`` elements now allow most Chart
+  constructor types (f013deb).
+
+Bug fixes:
+
+* Fixed unicode handling for dimension labels (061e9af).
+* Handling of invalid dimension label characters in widgets (a101b9e).
+* Fixed setting of fps option for MPLRenderer video output (c61b9df).
+* Fix for multiple and animated colorbars (5e1e4b5).
+* Fix to Chart slices starting or ending at zero (edd0039).
+
+
 Version 1.3.0
 -------------
 
