@@ -102,8 +102,8 @@ class Chart(Element2D):
         lower_bounds, upper_bounds = [], []
         for idx, slc in enumerate(slices):
             if isinstance(slc, slice):
-                start = slc.start if slc.start else -float("inf")
-                stop = slc.stop if slc.stop else float("inf")
+                start = -float("inf") if slc.start is None else slc.start
+                stop = float("inf") if slc.stop is None else slc.stop
 
                 clip_start = start <= data[:, idx]
                 clip_stop = data[:, idx] < stop
