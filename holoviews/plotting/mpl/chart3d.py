@@ -153,7 +153,8 @@ class SurfacePlot(Plot3D):
                                               'contour'], doc="""
         Specifies the type of visualization for the Surface object.""")
 
-    style_opts = ['cmap', 'color', 'shade', 'facecolors', 'rstride', 'cstride']
+    style_opts = ['antialiased', 'cmap', 'color', 'shade',
+                  'linewidth', 'facecolors', 'rstride', 'cstride']
 
     def initialize_plot(self, ranges=None):
         view = self.map.last
