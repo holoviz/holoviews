@@ -59,7 +59,7 @@ as its default backend, which most scientists and engineers
 using Python will already have installed.  HoloViews is pure Python,
 but it also provides optional extensions enabled with ``%load_ext``
 above that make it integrate well with `IPython Notebook
-<http://ipython.org/notebook/>`_ 2 and 3.
+<http://ipython.org/notebook>`_ 2 and 3.
 
 The quickest and easiest way to get the latest version of all the
 packages recommended for working with HoloViews in the IPython
