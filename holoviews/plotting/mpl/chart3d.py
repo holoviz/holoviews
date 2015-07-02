@@ -145,6 +145,8 @@ class SurfacePlot(Plot3D):
     styling options including strides and colors.
     """
 
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a colorbar to the plot.""")
 
     plot_type = param.ObjectSelector(default='surface',
                                      objects=['surface', 'wireframe',
@@ -171,12 +173,21 @@ class SurfacePlot(Plot3D):
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
 
         style_opts = self.lookup_options(element, 'style')[self.cyclic_index]
-        style_opts['vmin'] = zmin
-        style_opts['vmax'] = zmax
+
         if self.plot_type == "wireframe":
             self.handles['surface'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
         elif self.plot_type == "surface":
+            style_opts['vmin'] = zmin
+            style_opts['vmax'] = zmax
             self.handles['surface'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
         elif self.plot_type == "contour":
             self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
+        if not self.drawn and self.colorbar and not self.plot_type == "wireframe":
+            self._draw_colorbar(self.handles['surface'])
+
         self.handles['legend_handle'] = self.handles['surface']
+
+    def _draw_colorbar(self, artist):
+        fig = self.handles['fig']
+        ax = self.handles['axis']
+        fig.colorbar(artist, shrink=0.85, ax=ax)
