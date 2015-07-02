@@ -112,8 +112,10 @@ class Raster(Element2D):
             sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[abs(sample_ind-1)]
 
             # Sample data
-            x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
-            data = list(zip(x_vals, self.data[sample[::-1]]))
+            x_vals = self.dimension_values(other_dimension[0].name, unique=True)
+            ydata = self.data[sample[::-1]]
+            if hasattr(self, 'bounds') and sample_ind == 0: ydata = ydata[::-1]
+            data = list(zip(x_vals, ydata))
             params['kdims'] = other_dimension
             return Curve(data, **params)
 
