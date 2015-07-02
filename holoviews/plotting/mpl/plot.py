@@ -683,7 +683,7 @@ class AdjointLayoutPlot(CompositePlot):
 
 
     def __len__(self):
-        return max([len(self.keys), 1])
+        return max([1 if self.keys is None else len(self.keys), 1])
 
 
 class LayoutPlot(GenericLayoutPlot, CompositePlot):
