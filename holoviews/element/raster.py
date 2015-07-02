@@ -143,7 +143,7 @@ class Raster(Element2D):
             return Table(data, **params)
 
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, unique=False):
         """
         The set of samples available along a particular dimension.
         """
@@ -151,8 +151,9 @@ class Raster(Element2D):
         if dim_idx in [0, 1]:
             shape = self.data.shape[abs(dim_idx)]
             dim_max = self.data.shape[abs(dim_idx-1)]
-            linspace = list(range(0, dim_max))
-            coords = linspace * shape
+            coords = list(range(0, dim_max))
+            if not unique:
+                coords = coords * shape
             return coords if dim_idx else sorted(coords)
         elif dim_idx == 2:
             return self.data.T.flatten()
@@ -254,7 +255,7 @@ class HeatMap(Raster):
         return dim1_keys, dim2_keys
 
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, unique=True):
         if isinstance(dim, int):
             dim = self.get_dimension(dim)
 
@@ -391,20 +392,23 @@ class Image(SheetCoordinateSystem, Raster):
         return self.sheet2matrixidx(*coord)
 
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, unique=False):
         """
         The set of samples available along a particular dimension.
         """
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
-            dim1, dim2 = self.data.shape
+            dim2, dim1 = self.data.shape
             d1_half_unit = (r - l)/dim1/2.
             d2_half_unit = (t - b)/dim2/2.
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
             d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
-            X, Y = np.meshgrid(d1lin, d2lin)
-            return X.flatten() if dim_idx else Y.flatten()
+            if unique:
+                return d2lin if dim_idx else d1lin
+            else:
+                X, Y = np.meshgrid(d1lin, d2lin)
+                return Y.flatten() if dim_idx else X.flatten()
         elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
         else:
@@ -482,14 +486,14 @@ class RGB(Image):
         return cls(data, bounds=bounds)
 
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, unique=False):
         """
         The set of samples available along a particular dimension.
         """
         dim_idx = self.get_dimension_index(dim)
         if self.ndims <= dim_idx < len(self.dimensions()):
             return np.flipud(self.data[:,:,dim_idx-self.ndims]).T.flatten()
-        return super(RGB, self).dimension_values(dim)
+        return super(RGB, self).dimension_values(dim, unique=True)
 
 
     def __init__(self, data, **params):
