@@ -464,6 +464,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
     _passed_handles = ['fig', 'axis']
 
+    def __init__(self, overlay, ranges=None, **params):
+        if overlay.traverse(lambda x: x, (Element3D,)):
+            params['projection'] = '3d'
+        super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+
     def _adjust_legend(self, axis):
         """
         Accumulate the legend handles and labels for all subplots
