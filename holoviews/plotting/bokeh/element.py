@@ -9,7 +9,7 @@ from bokeh import mpl
 
 from ...core import OrderedDict, Dimension, Store, HoloMap
 from ...core.util import match_spec, max_range
-from ...element import Chart, Image, HeatMap, RGB, Raster
+from ...element import Chart, Image, HeatMap, RGB, Raster, HLine, VLine
 from ..plot import GenericElementPlot, GenericOverlayPlot
 
 from .plot import BokehPlot
@@ -390,6 +390,28 @@ class TextPlot(ElementPlot):
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
+
+class LineAnnotationPlot(ElementPlot):
+
+    style_opts = line_properties
+
+    def get_data(self, element):
+        if isinstance(element, HLine):
+            angle = 0
+            x, y = 0, element.data
+        elif isinstance(element, VLine):
+            angle = 90
+            x, y = element.data, 0
+        return dict(x=x, y=y, angle=angle, length=100)
+
+    def init_glyph(self, element, plot, source, style):
+        self.handles['line'] = plot.ray(x='x', y='y', length='length', angle='angle', source=source)
+
+
+    def get_extents(self, element, ranges=None):
+        return None, None, None, None
+
 
 
 class LinkedScatter(Chart):

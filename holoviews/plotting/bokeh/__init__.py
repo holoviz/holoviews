@@ -1,6 +1,6 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
 from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram, Spread
-from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text
+from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text, HLine, VLine
 from ...interface.seaborn import Bivariate, TimeSeries
 from ...core.options import Options, Cycle, OptionTree
 from ..plot import PlotSelector
@@ -20,6 +20,8 @@ Store.register({Overlay: OverlayPlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
                 Spread: SpreadPlot,
+                HLine: LineAnnotationPlot,
+                VLine: LineAnnotationPlot,
                 GridSpace: GridPlot,
                 LinkedScatter: LinkedScatterPlot,
                 Image: RasterPlot,
