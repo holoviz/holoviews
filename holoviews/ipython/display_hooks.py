@@ -236,7 +236,7 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
                 "recommended format for accessing your data; calling "
                 ".collate() on these objects will resolve any violations "
                 "of the recommended nesting presented in the Composing Data "
-                "tutorial  (http://git.io/vtIQh)")
+                "tutorial (http://git.io/vqs03)")
             expanded = []
             for el in layout.values():
                 if isinstance(el, HoloMap) and not displayable(el):
