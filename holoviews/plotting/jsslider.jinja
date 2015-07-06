@@ -322,7 +322,12 @@ div.hologroup {
 	{% block create_widget %}
 	var paths = {};
 	paths.underscore = "{{ CDN['underscore'] }}";
-	var require_conf = {paths: paths};
+	var require_conf = {paths: paths,
+			    shim: {
+				underscore: {
+				    exports: '_'
+				}
+			    }}
 	require.config(require_conf);
       	require(["underscore"], function(){
             create_widget();
