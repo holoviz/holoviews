@@ -13,6 +13,7 @@ Bug fixes:
 * Fixed inversion inversion of y-range during sampling (6ff81bb).
 * Fixed overlaying of 3D elements (787d511).
 * Ensuring that underscore.js is loaded in widgets (f2f6378).
+* Fixed Python3 issue in Overlay.get (8ceabe3).
 
 
 Version 1.3.1
