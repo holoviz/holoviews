@@ -26,7 +26,7 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.3.1",
+    version="1.3.2",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Composable, declarative data structures for building complex visualizations easily.',
