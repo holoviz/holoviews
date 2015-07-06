@@ -218,15 +218,15 @@ div.hologroup {
         var jquery_require = {paths: paths,
                               shim: {
                                   "jQueryUI": {
-                                      export:"$" ,
+                                      exports:"$" ,
                                       deps: ['jquery']
-                                  }
+                                  },
 				  "underscore": {
 				      exports: '_'
 				  }
 	                      }}
         require.config(jquery_require);
-        require(["jquery", "jQueryUI", "underscore"], function(_, $){
+        require(["jquery", "jQueryUI", "underscore"], function(){
             if (noConflict) $.noConflict(true);
             var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
