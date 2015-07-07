@@ -203,7 +203,7 @@ div.hologroup {
         // check for jQuery
         if (!jQuery || oldjQuery) {
             // load if it's not available or doesn't meet min standards
-            paths.jQuery = jQuery;
+            paths.jquery = jQuery;
             noConflict = !!oldjQuery;
         } else {
             // register the current jQuery
@@ -218,7 +218,7 @@ div.hologroup {
         var jquery_require = {paths: paths,
                               shim: {
                                   "jQueryUI": {
-                                      exports:"$" ,
+                                      exports:"$",
                                       deps: ['jquery']
                                   },
 				  "underscore": {
@@ -226,7 +226,7 @@ div.hologroup {
 				  }
 	                      }}
         require.config(jquery_require);
-        require(["jquery", "jQueryUI", "underscore"], function(){
+        require(["jquery", "jQueryUI", "underscore"], function($, jUI, _){
             if (noConflict) $.noConflict(true);
             var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
