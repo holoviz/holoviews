@@ -8,7 +8,7 @@ import numpy as np
 import param
 
 from ..core import ElementOperation, NdOverlay, Overlay
-from ..core.util import find_minmax
+from ..core.util import find_minmax, sanitize_identifier
 from ..element.chart import Histogram, Curve
 from ..element.raster import Image, RGB
 from ..element.path import Contours
@@ -204,7 +204,7 @@ class image_overlay(ElementOperation):
 
         strength = 1
         for key in ['group', 'label']:
-            attr_value = getattr(el, key)
+            attr_value = sanitize_identifier(getattr(el, key))
             if key in spec_dict:
                 if spec_dict[key] != attr_value: return None
                 strength += 1
