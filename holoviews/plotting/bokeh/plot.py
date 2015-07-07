@@ -62,7 +62,7 @@ class GridPlot(GenericCompositePlot, BokehPlot):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
         self.layout = layout
-        self.cols, self.rows = layout.shape
+        self.rows, self.cols = layout.shape
         self.layout_num = layout_num
         extra_opts = self.lookup_options(layout, 'plot').options
         if not keys or not dimensions:
@@ -130,7 +130,7 @@ class GridPlot(GenericCompositePlot, BokehPlot):
 
     def initialize_plot(self, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        plots = [[] for r in range(self.rows)]
+        plots = [[] for r in range(self.cols)]
         passed_plots = []
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
