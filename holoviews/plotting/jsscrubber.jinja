@@ -78,9 +78,9 @@
 
   {{ widget_name }}.prototype.update_cache = function(){
       if(this.load_json) {
-	  var frame_len = _.size(this.keyMap);
+	  var frame_len = Object.keys(this.keyMap).length;
       } else {
-	  var frame_len = _.size(this.frames);
+	  var frame_len = Object.keys(this.frames).length;
       }
       for (var i=0; i<frame_len; i++) {
 	  if(!this.load_json) {
@@ -227,13 +227,7 @@
       }
 
       {% block create_widget %}
-      var paths = {};
-      paths.underscore = "{{ CDN['underscore'] }}";
-      var require_conf = {paths: paths};
-      require.config(require_conf);
-      require(["underscore"], function(){
-          create_widget();
-      });
+      create_widget();
       {% endblock %}
   })()
 </script>

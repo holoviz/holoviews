@@ -110,9 +110,9 @@ class Overlay(Layout, CompositeOverlay):
 
     def get(self, identifier, default=None):
         if isinstance(identifier, int):
-            values = self.data.values()
+            values = list(self.data.values())
             if 0 <= identifier < len(values):
-                return self.data.values()[identifier]
+                return values[identifier]
             else:
                 return default
         return super(Overlay, self).get(identifier, default)
