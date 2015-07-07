@@ -129,12 +129,12 @@ class ElementPlot(GenericElementPlot, BokehPlot):
             yaxis.ticker.num_minor_ticks = 0
 
 
-    def _init_datasource(self, element):
-        return ColumnDataSource(data=self.get_data(element))
+    def _init_datasource(self, element, ranges=None):
+        return ColumnDataSource(data=self.get_data(element, ranges))
 
 
-    def _update_datasource(self, source, element):
-        for k, v in self.get_data(element).items():
+    def _update_datasource(self, source, element, ranges):
+        for k, v in self.get_data(element, ranges).items():
             source.data[k] = v
 
     
@@ -147,11 +147,11 @@ class ElementPlot(GenericElementPlot, BokehPlot):
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
         if source is None:
-            source = self._init_datasource(element)
+            source = self._init_datasource(element, ranges)
         style = self.style[self.cyclic_index]
         self.handles['plot'] = plot
         self.handles['source'] = source
-        self.init_glyph(element, plot, source, style)
+        self.init_glyph(element, plot, source, style, ranges)
         self._update_plot(key, plot)
 
         return plot
@@ -163,7 +163,7 @@ class ElementPlot(GenericElementPlot, BokehPlot):
         element = self._get_frame(key)
         if element:
             source = self.handles['source']
-            self._update_datasource(source, element)
+            self._update_datasource(source, element, ranges)
             self._update_plot(key, plot)
 
 
@@ -238,10 +238,10 @@ class PointPlot(ElementPlot):
 
     style_opts = ['marker', 'color'] + line_properties + fill_properties
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         return dict(x=element.data[:, 0], y=element.data[:, 1])
     
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         plot.scatter(x='x', y='y', source=source, legend=element.label, **style)
 
 
@@ -249,10 +249,10 @@ class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
     
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         return dict(x=element.data[:, 0], y=element.data[:, 1])
     
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         plot.line(x='x', y='y', source=source, legend=element.label, **style)
 
 
@@ -261,7 +261,7 @@ class RasterPlot(ElementPlot):
     
     style_opts = ['palette']
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
@@ -275,7 +275,7 @@ class RasterPlot(ElementPlot):
             img = (img * 255).view(dtype=np.uint32)[:, :, 0]
         return dict(image=[img], x=[l], y=[b], dw=[r-l], dh=[t-b])
     
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         kwargs = dict(style, image='image', x='x', y='y', dw='dw',
                       dh='dh', source=source, legend=element.label, **style)
         if isinstance(element, RGB):
@@ -288,12 +288,12 @@ class PathPlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         xs = [path[:, 0] for path in element.data]
         ys = [path[:, 1] for path in element.data]
         return dict(xs=xs, ys=ys)
 
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         self.handles['lines'] = plot.multi_line(xs='xs', ys='ys', source=source, 
                                                 legend=element.label, **style)
 
@@ -302,11 +302,11 @@ class HistogramPlot(ElementPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         return dict(top=element.values, left=element.edges[:-1],
                     right=element.edges[1:])
 
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         self.handles['lines'] = plot.quad(top='top', bottom=0, left='left',
                                           right='right', source=source,
                                           legend=element.label, **style)
@@ -318,7 +318,7 @@ class ErrorPlot(PathPlot):
 
     style_opts = ['color'] + line_properties
     
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         data = element.data
         err_xs = []
         err_ys = []
@@ -336,7 +336,7 @@ class PolygonPlot(PathPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
         
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
                                                legend=element.label, **style)
 
@@ -349,14 +349,14 @@ class SpreadPlot(ElementPlot):
         super(SpreadPlot, self).__init__(*args, **kwargs)
         self._extent = None
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         lower = element.data[:, 1] - element.data[:, 2]
         upper = element.data[:, 1] + element.data[:, 3]
         band_x = np.append(element.data[:, 0], element.data[::-1, 0])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y])
         
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
                                                legend=element.label, **style)
 
@@ -382,10 +382,10 @@ class TextPlot(ElementPlot):
 
     style_opts = text_properties
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         return dict(x=[element.x], y=[element.y], text=[element.text])
 
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         self.handles['text'] = plot.text(x='x', y='y', text='text', source=source, **style)
 
     def get_extents(self, element, ranges=None):
@@ -396,7 +396,7 @@ class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
 
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         if isinstance(element, HLine):
             angle = 0
             x, y = 0, element.data
@@ -405,7 +405,7 @@ class LineAnnotationPlot(ElementPlot):
             x, y = element.data, 0
         return dict(x=x, y=y, angle=angle, length=100)
 
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         self.handles['line'] = plot.ray(x='x', y='y', length='length', angle='angle', source=source)
 
 
@@ -429,7 +429,7 @@ class LinkedScatterPlot(ElementPlot):
     
     style_opts = ['color', 'marker', 'size'] + fill_properties + line_properties
     
-    def get_data(self, element):
+    def get_data(self, element, ranges=None):
         return {d: element.dimension_values(d) for d in element.dimensions(label=True)}
 
     def permutations(self, element):
@@ -465,7 +465,7 @@ class LinkedScatterPlot(ElementPlot):
         
         return plot
     
-    def init_glyph(self, element, plot, source, style):
+    def init_glyph(self, element, plot, source, style, ranges):
         for idx, (d1, d2) in enumerate(self.permutations(element)):
             plot[d1, d2].scatter(x=d1, y=d2, source=source, legend=element.label, **style[idx])
 
