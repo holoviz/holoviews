@@ -5,6 +5,7 @@ import param
 from bokeh.plotting import figure, gridplot
 from bokeh.models import ColumnDataSource
 from bokeh.models import GlyphRenderer
+from bokeh.models.mappers import LinearColorMapper
 from bokeh import mpl
 
 from ...core import OrderedDict, Dimension, Store, HoloMap
@@ -276,8 +277,15 @@ class RasterPlot(ElementPlot):
         return dict(image=[img], x=[l], y=[b], dw=[r-l], dh=[t-b])
     
     def init_glyph(self, element, plot, source, style, ranges):
+        if not isinstance(element, RGB):
+            val_dim = [d.name for d in element.vdims][0]
+            low, high = ranges.get(val_dim)
+            palette = self.style[self.cyclic_index].get('palette', 'Greys9')
+            mapper = LinearColorMapper(palette, low=low, high=high)
+        style.pop('palette', None)
         kwargs = dict(style, image='image', x='x', y='y', dw='dw',
-                      dh='dh', source=source, legend=element.label, **style)
+                      dh='dh', color_mapper=mapper, source=source,
+                      legend=element.label, **style)
         if isinstance(element, RGB):
             self.handles['img'] = plot.image_rgba(**kwargs)
         else:
