@@ -25,6 +25,7 @@ class PathPlot(ElementPlot):
         line_segments = LineCollection(lines.data, label=label,
                                        zorder=self.zorder, **style)
         self.handles['line_segments'] = line_segments
+        self.handles['legend_handle'] = line_segments
         self.handles['axis'].add_collection(line_segments)
 
         return self._finalize_axis(key, ranges=ranges)

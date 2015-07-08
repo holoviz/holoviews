@@ -568,7 +568,7 @@ class Dimensioned(LabelledData):
     def get_dimension(self, dimension, default=None):
         "Access a Dimension object by name or index."
         all_dims = self.dimensions()
-        if isinstance(dimension, int):
+        if isinstance(dimension, int) and dimension < len(all_dims):
             return all_dims[dimension]
         else:
             return {dim.name: dim for dim in all_dims}.get(dimension, default)

@@ -168,14 +168,18 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 # Tick formatting
                 xdim, ydim = view.get_dimension(0), view.get_dimension(1)
                 xformat, yformat = None, None
-                if xdim.formatter:
+                if xdim is None:
+                    pass
+                elif xdim.formatter:
                     xformat = xdim.formatter
                 elif xdim.type_formatters.get(xdim.type):
                     xformat = xdim.type_formatters[xdim.type]
                 if xformat:
                     axis.xaxis.set_major_formatter(xformat)
 
-                if ydim.formatter:
+                if ydim is None:
+                    pass
+                elif ydim.formatter:
                     yformat = ydim.formatter
                 elif ydim.type_formatters.get(ydim.type):
                     yformat = ydim.type_formatters[ydim.type]
