@@ -172,7 +172,8 @@ class RasterPlot(ElementPlot):
                 b, t = t, b
 
         val_dim = [d.name for d in view.vdims][0]
-        im.set_clim(ranges.get(val_dim))
+        opts = self.style[self.cyclic_index]
+        im.set_clim(opts.get('clims', ranges.get(val_dim)))
         im.set_extent((l, r, b, t))
         xticks, yticks = self._compute_ticks(view, ranges)
         return {'xticks': xticks, 'yticks': yticks}
