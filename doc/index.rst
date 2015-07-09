@@ -6,7 +6,7 @@
 Introduction
 ____________
 
-**Composable, declarative data structures for building even complex visualizations easily.**
+**Stop plotting your data - annotate your data and let it visualize itself.**
 
 
 ..
