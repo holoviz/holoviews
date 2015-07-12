@@ -64,7 +64,7 @@ class PolygonPlot(ElementPlot):
         self.handles['polys'] = polys
 
         if self.colorbar:
-            self._draw_colorbar(collection)
+            self._draw_colorbar(collection, element)
 
         self.handles['polygons'] = collection
 
@@ -103,5 +103,3 @@ class PolygonPlot(ElementPlot):
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim(ranges[vdim.name])
-        if self.colorbar:
-            self._draw_colorbar(collection)

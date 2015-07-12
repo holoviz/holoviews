@@ -603,8 +603,8 @@ class PointPlot(ChartPlot):
             val_dim = points.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
-        if self.colorbar:
-            self._draw_colorbar(scatterplot)
+            if self.colorbar:
+                self._draw_colorbar(scatterplot, element, val_dim)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -632,9 +632,6 @@ class PointPlot(ChartPlot):
                 ranges = match_spec(element, ranges)
                 paths.set_clim(ranges[val_dim])
                 paths.set_array(cs)
-        if self.colorbar:
-            self._draw_colorbar(paths)
-
 
 
 

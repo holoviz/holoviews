@@ -112,32 +112,52 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if isinstance(check, Element3D):
             self.projection = '3d'
 
-    def _create_cbar(self, artist, cax):
-        self.handles['fig'].add_axes(cax)
-        cbar = plt.colorbar(artist, cax=cax)
+    def _adjust_cbar(self, cbar, label):
         if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
             cbar.solids.set_edgecolor("face")
+        cbar.set_label(label)
 
 
-    def _draw_colorbar(self, artist):
+    def _draw_colorbar(self, artist, element, dim=None):
         axis = self.handles['axis']
         ax_colorbars = ElementPlot._colorbars.get(id(axis), [])
+        specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
+        spec = util.get_spec(element)
 
-        create = 'cax' not in self.handles
+        # Get colorbar label
+        if dim is None:
+            label = str(element.vdims[0])
+        else:
+            if not isinstance(dim, Dimension):
+                dim = element.get_dimension(dim)
+            label = str(dim)
+
         colorbars = []
-        if create:
-            divider = make_axes_locatable(axis)
-            cax = divider.new_horizontal(pad=0.05, size='5%')
+        created = False
+        if spec[:2] not in specs:
+            cbar = plt.colorbar(artist,fraction=0.046, pad=0.04, ax=axis)
+            cax = cbar.ax
+            self._adjust_cbar(cbar, label)
             self.handles['cax'] = cax
-            self._create_cbar(artist, cax)
-            colorbars.append((artist, cax))
-            if ax_colorbars:
-                if not create: divider = make_axes_locatable(axis)
-                for artist, cax in ax_colorbars:
-                    self.handles['fig'].delaxes(cax)
-                    cax = divider.new_horizontal(pad='20%', size='5%')
-                    self._create_cbar(artist, cax)
-                    colorbars.append((artist, cax))
+            colorbars.append((artist, cax, spec, label))
+            ax_colorbars.extend(colorbars)
+            specs.append(spec[:2])
+            created = True
+        divider = None
+        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
+            ctuple = (artist, cax, spec, label)
+            if ctuple not in colorbars:
+                colorbars.append(ctuple)
+            if spec[:2] in specs and not (created and len(ax_colorbars) > 1):
+                continue
+            if divider is None:
+                divider = make_axes_locatable(axis)
+            self.handles['fig'].delaxes(cax)
+            cax = divider.new_horizontal(pad='{0}%'.format(2+i*30), size='5%')
+            self.handles['fig'].add_axes(cax)
+            cbar = plt.colorbar(artist, cax=cax)
+            self._adjust_cbar(cbar, label)
+
         ElementPlot._colorbars[id(axis)] = colorbars
 
 

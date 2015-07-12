@@ -85,6 +85,12 @@ class Plot3D(ElementPlot):
         super(Plot3D, self).update_frame(*args, **kwargs)
 
 
+    def _draw_colorbar(self, artist):
+        fig = self.handles['fig']
+        ax = self.handles['axis']
+        fig.colorbar(artist, shrink=0.7, ax=ax)
+
+
 
 class Scatter3DPlot(Plot3D, PointPlot):
     """
@@ -134,6 +140,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
             ranges = self.compute_ranges(self.map, key, ranges)
             ranges = match_spec(points, ranges)
             scatterplot.set_clim(ranges[val_dim])
+            if self.colorbar:
+                self._draw_colorbar(scatterplot, element, val_dim)
 
 
 
@@ -184,11 +192,6 @@ class SurfacePlot(Plot3D):
         elif self.plot_type == "contour":
             self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
         if not self.drawn and self.colorbar and not self.plot_type == "wireframe":
-            self._draw_colorbar(self.handles['surface'])
+            self._draw_colorbar(self.handles['surface'], element)
 
         self.handles['legend_handle'] = self.handles['surface']
-
-    def _draw_colorbar(self, artist):
-        fig = self.handles['fig']
-        ax = self.handles['axis']
-        fig.colorbar(artist, shrink=0.85, ax=ax)

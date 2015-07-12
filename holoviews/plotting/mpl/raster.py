@@ -91,7 +91,7 @@ class RasterPlot(ElementPlot):
             im.set_clim(clims)
         self.handles['im'] = im
         if self.colorbar:
-            self._draw_colorbar(im)
+            self._draw_colorbar(im, element)
 
         if isinstance(view, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
@@ -160,8 +160,6 @@ class RasterPlot(ElementPlot):
 
         if isinstance(view, HeatMap) and self.show_values:
            self._annotate_values(view)
-        if self.colorbar:
-            self._draw_colorbar(im)
 
         xdim, ydim = view.kdims
         if isinstance(view, Image):
