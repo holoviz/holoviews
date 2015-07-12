@@ -165,13 +165,13 @@ class SurfacePlot(Plot3D):
                   'linewidth', 'facecolors', 'rstride', 'cstride']
 
     def initialize_plot(self, ranges=None):
-        view = self.map.last
+        element = self.map.last
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
-        ranges = match_spec(view, ranges)
+        ranges = match_spec(element, ranges)
 
-        self.update_handles(self.handles['axis'], view, key, ranges)
+        self.update_handles(self.handles['axis'], element, key, ranges)
         return self._finalize_axis(key, ranges=ranges)
 
 
