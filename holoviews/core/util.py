@@ -552,3 +552,10 @@ def iterative_select(obj, dimensions, selects, depth=None):
             items.append((s, obj.select(**{dimensions[-1]: s[-1]})))
     return items
 
+
+def get_spec(obj):
+   """
+   Gets the spec from any labeled data object.
+   """
+   return (obj.__class__.__name__,
+           obj.group, obj.label)
