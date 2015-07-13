@@ -406,8 +406,11 @@ class contours(ElementOperation):
         else:
             contour_fn = plt.contour
             contour_type = Contours
-        if isinstance(element, Raster):
+        if type(element) is Raster:
+            data = [np.flipud(element.data)]
+        elif isinstance(element, Raster):
             data = [element.data]
+        
         elif isinstance(element, QuadMesh):
             data = (element.dimension_values(0, True),
                     element.dimension_values(1, True),
