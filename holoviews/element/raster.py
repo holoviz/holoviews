@@ -9,6 +9,7 @@ from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
 from .tabular import Table
+from .util import compute_edges
 
 
 class Raster(Element2D):
@@ -25,12 +26,12 @@ class Raster(Element2D):
     specified.
     """
 
+    group = param.String(default='Raster', constant=True)
+
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
-
-    group = param.String(default='Raster', constant=True)
 
     vdims = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
@@ -40,6 +41,11 @@ class Raster(Element2D):
             (d1, d2) = data.shape[:2]
             extents = (0, 0, d2, d1)
         super(Raster, self).__init__(data, extents=extents, **params)
+
+
+    @property
+    def _zdata(self):
+        return self.data
 
 
     def __getitem__(self, slices):
@@ -90,7 +96,7 @@ class Raster(Element2D):
                                        sample_values.items()])])
             table_data = OrderedDict()
             for c in samples:
-                table_data[c] = self.data[self._coord2matrix(c)]
+                table_data[c] = self._zdata[self._coord2matrix(c)]
             params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
@@ -113,7 +119,7 @@ class Raster(Element2D):
 
             # Sample data
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
-            ydata = self.data[sample[::-1]]
+            ydata = self._zdata[sample[::-1]]
             if hasattr(self, 'bounds') and sample_ind == 0: ydata = ydata[::-1]
             data = list(zip(x_vals, ydata))
             params['kdims'] = other_dimension
@@ -137,7 +143,7 @@ class Raster(Element2D):
             dimension, reduce_fn = reduce_map.items()[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
-            data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(other_dimension[0])))
+            data = zip(x_vals, reduce_fn(self._zdata, axis=self.get_dimension_index(other_dimension[0])))
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
