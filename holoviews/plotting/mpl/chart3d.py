@@ -85,10 +85,19 @@ class Plot3D(ElementPlot):
         super(Plot3D, self).update_frame(*args, **kwargs)
 
 
-    def _draw_colorbar(self, artist):
+    def _draw_colorbar(self, artist, element, dim=None):
         fig = self.handles['fig']
         ax = self.handles['axis']
-        fig.colorbar(artist, shrink=0.7, ax=ax)
+        # Get colorbar label
+        if dim is None:
+            label = str(element.vdims[0])
+        else:
+            if not isinstance(dim, Dimension):
+                dim = element.get_dimension(dim)
+            label = str(dim)
+        cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
+        self.handles['cax'] = cbar.ax
+        self._adjust_cbar(cbar, label)
 
 
 
