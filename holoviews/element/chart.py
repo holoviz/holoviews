@@ -5,7 +5,7 @@ import param
 from ..core import util
 from ..core import OrderedDict, Dimension, UniformNdMapping, Element, Element2D, NdElement, HoloMap
 from .tabular import ItemTable, Table
-
+from .util import compute_edges
 
 class Chart(Element2D):
     """
@@ -405,13 +405,7 @@ class Histogram(Element2D):
                 edges = np.array(edges, dtype=np.float)
 
         if len(edges) == len(values):
-            widths = list(set(np.diff(edges)))
-            if len(widths) == 1:
-                width = widths[0]
-            else:
-                raise Exception('Centered bins have to be of equal width.')
-            edges -= width/2.
-            edges = np.concatenate([edges, [edges[-1]+width]])
+            edges = compute_edges(edges)
         return values, edges, settings
 
 
