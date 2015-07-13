@@ -140,6 +140,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[RGB] =         cls.compare_rgb
         cls.equality_type_funcs[HSV] =         cls.compare_hsv
         cls.equality_type_funcs[Raster] =      cls.compare_raster
+        cls.equality_type_funcs[QuadMesh] =    cls.compare_quadmesh
         cls.equality_type_funcs[Surface] =     cls.compare_surface
         cls.equality_type_funcs[HeatMap] =     cls.compare_heatmap
 
@@ -490,6 +491,13 @@ class Comparison(ComparisonInterface):
     def compare_raster(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
         cls.compare_arrays(el1.data, el2.data, 'Raster data')
+
+    @classmethod
+    def compare_quadmesh(cls, el1, el2, msg=None):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data[0], el2.data[0], 'QuadMesh x-data')
+        cls.compare_arrays(el1.data[1], el2.data[1], 'QuadMesh y-data')
+        cls.compare_arrays(el1.data[2], el2.data[2], 'QuadMesh z-data')
 
     @classmethod
     def compare_heatmap(cls, el1, el2, msg=None):
