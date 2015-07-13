@@ -190,6 +190,150 @@ class Raster(Element2D):
 
 
 
+class QuadMesh(Raster):
+    """
+    QuadMesh is a Raster type to hold x- and y- bin values
+    with associated values. The x- and y-values of the QuadMesh
+    may be supplied either as the edges of each bin allowing
+    uneven sampling or as the bin centers, which will be converted
+    to evenly sampled edges.
+
+    As a secondary but less supported mode QuadMesh can contain
+    a mesh of quadrilateral coordinates that is not laid out in
+    a grid. The data should then be supplied as three separate
+    2D arrays for the x-/y-coordinates and grid values.
+    """
+
+    group = param.String(default="QuadMesh", constant=True)
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+
+    vdims = param.List(default=[Dimension('z')])
+
+    def __init__(self, data, **params):
+        data = self._process_data(data)
+        Element2D.__init__(self, data, **params)
+        self.data = self._validate_data(self.data)
+        self._grid = self.data[0].ndim == 1
+
+
+    def _process_data(self, data):
+        data = tuple(np.array(el) for el in data)
+        x, y, zarray = data
+        ys, xs = zarray.shape
+        if x.ndim == 1 and len(x) == xs:
+            x = compute_edges(x)
+        if y.ndim == 1 and len(y) == ys:
+            y = compute_edges(y)
+        return (x, y, zarray)
+
+
+    @property
+    def _zdata(self):
+        return self.data[2]
+
+
+    def _validate_data(self, data):
+        x, y, z = data
+        if not z.ndim == 2:
+            raise ValueError("Z-values must be 2D array")
+
+        ys, xs = z.shape
+        shape_errors = []
+        if x.ndim == 1 and xs+1 != len(x):
+            shape_errors.append('x')
+        if x.ndim == 1 and ys+1 != len(y):
+            shape_errors.append('y')
+        if shape_errors:
+            raise ValueError("%s-edges must match shape of z-array." %
+                             '/'.join(shape_errors))
+        return data
+
+
+    def __getitem__(self, slices):
+        if not self._grid:
+            raise IndexError("Indexing of non-grid based QuadMesh"
+                             "currently not supported")
+        if not isinstance(slices, tuple): slices = (slices, slice(None))
+        slc_types = [isinstance(sl, slice) for sl in slices]
+        if not any(slc_types):
+            indices = []
+            for idx, data in zip(slices, self.data[:self.ndims]):
+                indices.append(np.digitize([idx], data)-1)
+            return self.data[2][tuple(indices[::-1])]
+        else:
+            sliced_data, indices = [], []
+            for slc, data in zip(slices, self.data[:self.ndims]):
+                if isinstance(slc, slice):
+                    low, high = slc.start, slc.stop
+                    lidx = ([None] if low is None else
+                            max((np.digitize([low], data)-1, 0)))[0]
+                    hidx = ([None] if high is None else
+                            np.digitize([high], data))[0]
+                    sliced_data.append(data[lidx:hidx])
+                    indices.append(slice(lidx, (hidx if hidx is None else hidx-1)))
+                else:
+                    index = (np.digitize([slc], data)-1)[0]
+                    sliced_data.append(data[index:index+2])
+                    indices.append(index)
+            z = np.atleast_2d(self.data[2][tuple(indices[::-1])])
+            if not all(slc_types) and not slc_types[0]:
+                z = z.T
+            return self.clone(tuple(sliced_data+[z]))
+
+
+    @classmethod
+    def collapse_data(cls, data_list, function, **kwargs):
+        """
+        Allows collapsing the data of a number of QuadMesh
+        Elements with a function.
+        """
+        if not self._grid:
+            raise Exception("Collapsing of non-grid based QuadMesh"
+                            "currently not supported")
+        xs, ys, zs = zip(data_list)
+        if isinstance(function, np.ufunc):
+            z = function.reduce(zs)
+        else:
+            z = function(np.dstack(zs), axis=-1, **kwargs)
+        return xs[0], ys[0], z
+
+
+    def _coord2matrix(self, coord):
+        return tuple((np.digitize([coord[i]], self.data[i])-1)[0]
+                     for i in [1, 0])
+
+
+    def range(self, dimension):
+        idx = self.get_dimension_index(dimension)
+        if idx in [0, 1]:
+            data = self.data[idx]
+            return np.min(data), np.max(data)
+        elif idx == 2:
+            data = self.data[idx]
+            return np.nanmin(data), np.nanmax(data)
+        super(QuadMesh, self).range(dimension)
+
+
+    def dimension_values(self, dimension, unique=False):
+        idx = self.get_dimension_index(dimension)
+        data = self.data[idx]
+        if idx in [0, 1]:
+            if not self._grid:
+                return data.flatten()
+            odim = 1 if unique else self.data[2].shape[idx]
+            vals = np.tile(np.convolve(data, np.ones((2,))/2, mode='valid'), odim)
+            if idx:
+                return np.sort(vals)
+            else:
+                return vals
+        elif idx == 2:
+            return data.flatten()
+        else:
+            return super(QuadMesh, self).dimension_values(idx)
+
+
+
 class HeatMap(Raster):
     """
     HeatMap is an atomic Element used to visualize two dimensional

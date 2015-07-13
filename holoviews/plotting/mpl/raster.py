@@ -179,6 +179,54 @@ class RasterPlot(ElementPlot):
         return {'xticks': xticks, 'yticks': yticks}
 
 
+class QuadMeshPlot(ElementPlot):
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a colorbar to the plot.""")
+
+    style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
+                  'linestyles', 'linewidths', 'hatch', 'visible']
+
+    def initialize_plot(self, ranges=None):
+        key = self.map.keys()[-1]
+        element = self.map.last
+        axis = self.handles['axis']
+
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = match_spec(element, ranges)
+        self._init_cmesh(axis, element, ranges)
+
+        return self._finalize_axis(key, ranges)
+
+    def _init_cmesh(self, axis, element, ranges):
+        opts = self.style[self.cyclic_index]
+        if 'cmesh' in self.handles:
+            self.handles['cmesh'].remove()
+        clims = opts.get('clims', ranges.get(element.get_dimension(2).name))
+        data = np.ma.array(element.data[2],
+                           mask=np.logical_not(np.isfinite(element.data[2])))
+        cmesh_data = list(element.data[:2]) + [data]
+        self.handles['cmesh'] = axis.pcolormesh(*cmesh_data, vmin=clims[0],
+                                                vmax=clims[1], zorder=self.zorder,
+                                                **opts)
+        if self.colorbar:
+            self._draw_colorbar(self.handles['cmesh'], element)
+        self.handles['locs'] = np.concatenate(element.data[:2])
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        cmesh = self.handles['cmesh']
+        opts = self.style[self.cyclic_index]
+        locs = np.concatenate(element.data[:2])
+        if (locs != self.handles['locs']).any():
+            self._init_cmesh(axis, element, ranges)
+        else:
+            data = np.ma.array(element.data[2],
+                           mask=np.logical_not(np.isfinite(element.data[2])))
+            cmesh.set_array(data.ravel())
+            clims = opts.get('clims', ranges.get(element.get_dimension(2).name))
+            cmesh.set_clim(clims)
+
 
 class RasterGridPlot(GridPlot, OverlayPlot):
     """

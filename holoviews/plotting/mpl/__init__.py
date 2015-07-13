@@ -113,6 +113,7 @@ Store.register({Curve: CurvePlot,
                 Table: TablePlot,
 
                 # Raster plots
+                QuadMesh: QuadMeshPlot,
                 Raster: RasterPlot,
                 HeatMap: RasterPlot,
                 Image: RasterPlot,
@@ -157,6 +158,7 @@ options.Surface = Options('plot', fig_size=150)
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')
+options.QuadMesh = Options('style', cmap='hot')
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
 options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 options.RGB = Options('style', interpolation='nearest')
