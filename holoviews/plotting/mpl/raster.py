@@ -158,7 +158,7 @@ class RasterPlot(ElementPlot):
         im = self.handles.get('im', None)
         data = np.ma.array(element.data,
                            mask=np.logical_not(np.isfinite(element.data)))
-        im.set_data(element.data)
+        im.set_data(data)
 
         if isinstance(element, HeatMap) and self.show_values:
            self._annotate_values(element)

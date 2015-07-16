@@ -603,7 +603,7 @@ class PointPlot(ChartPlot):
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
             if self.colorbar:
-                self._draw_colorbar(scatterplot, element, val_dim)
+                self._draw_colorbar(scatterplot, points, val_dim)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
