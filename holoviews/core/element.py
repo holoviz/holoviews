@@ -56,7 +56,6 @@ class Element(ViewableElement, Composable, Overlayable):
     def _convert_element(self, element):
         type_str = self.__class__.__name__
         type_name = type_str.lower()
-        types = (type(element), type_str)
         table = element.table()
         conversion = getattr(table.to, type_name)
         if conversion is None:

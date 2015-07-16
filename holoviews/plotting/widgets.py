@@ -108,7 +108,7 @@ class NdWidget(param.Parameterized):
 
     def _plot_figure(self, idx):
         with self.renderer.state():
-            plot = self.plot.update(idx)
+            self.plot.update(idx)
             css = self.display_options.get('css', {})
             figure_format = self.display_options.get('figure_format',
                                                      self.renderer.fig)

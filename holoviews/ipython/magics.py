@@ -114,8 +114,8 @@ class OptionsMagic(Magics):
                 completion_key = token.strip()
                 break
 
-        values = [v for v in cls.allowed.get(completion_key, [])
-                  if v not in cls.hidden.get(completion_key, [])]
+        values = [val for val in cls.allowed.get(completion_key, [])
+                  if val not in cls.hidden.get(completion_key, [])]
         vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
         return vreprs + [el+'=' for el in cls.allowed.keys()]
 

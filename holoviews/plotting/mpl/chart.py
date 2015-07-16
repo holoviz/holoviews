@@ -887,7 +887,6 @@ class BarPlot(LegendPlot):
 
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(element, ranges)
-        dims = element.dimensions('key', label=True)
 
         self.handles['bars'], xticks, xlabel = self._create_bars(axis, element)
         self.handles['legend_handle'] = self.handles['bars']
