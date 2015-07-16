@@ -793,8 +793,8 @@ class UniformNdMapping(NdMapping):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            for val, dim in reversed(zip(key, self._cached_index_names)):
-                dim = dim.replace(' ', '_')
+            key_dims = reversed(list(zip(key, self._cached_index_names)))
+            for val, dim in key_dims:
                 dimn = 1
                 while dim in view_frame:
                     dim = dim+'_%d' % dimn
