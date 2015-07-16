@@ -140,7 +140,7 @@ class Raster(Element2D):
                 reduced_view = reduced_view.reduce(**{dim: reduce_fn})
             return reduced_view
         else:
-            dimension, reduce_fn = reduce_map.items()[0]
+            dimension, reduce_fn = list(reduce_map.items())[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
             data = zip(x_vals, reduce_fn(self._zdata, axis=self.get_dimension_index(other_dimension[0])))
