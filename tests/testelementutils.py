@@ -1,5 +1,3 @@
-import unittest
-
 import numpy as np
 
 from holoviews.element.util import compute_edges

@@ -8,7 +8,8 @@ display in the IPython Notebook (optional).
 
 from ..core.options import Cycle
 from .plot import Plot
-from .renderer import Renderer, HTML_TAGS
+from .renderer import Renderer, HTML_TAGS # pyflakes:ignore (API import)
+from . import mpl                         # pyflakes:ignore (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False
@@ -16,7 +17,6 @@ def public(obj):
     is_renderer = any([issubclass(obj, bc) for bc in [Renderer]])
     return (is_plot_or_cycle or is_renderer)
 
-from . import mpl # pyflakes:ignore (API import)
 
 _public = list(set([_k for _k, _v in locals().items() if public(_v)]))
 __all__ = _public

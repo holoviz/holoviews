@@ -7,7 +7,7 @@ import unittest
 
 import numpy as np
 
-from holoviews.core import Collator, HoloMap, NdOverlay, NdLayout, GridSpace
+from holoviews.core import Collator, HoloMap, NdOverlay
 from holoviews.element import Curve
 
 class TestCollation(unittest.TestCase):

@@ -8,7 +8,6 @@ from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
-from ..core.options import Store
 from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 

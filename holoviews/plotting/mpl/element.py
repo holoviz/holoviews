@@ -7,7 +7,7 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import OrderedDict, NdOverlay, HoloMap, CompositeOverlay, Element3D
+from ...core import OrderedDict, NdOverlay, HoloMap, CompositeOverlay, Element3D, Dimension
 from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot

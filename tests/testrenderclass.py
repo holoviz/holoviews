@@ -7,7 +7,7 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews.plotting.mpl.renderer import MPLRenderer
-from holoviews import HoloMap, Store, Image, ItemTable
+from holoviews import HoloMap, Image, ItemTable
 from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr

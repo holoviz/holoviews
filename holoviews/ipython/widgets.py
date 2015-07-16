@@ -1,4 +1,4 @@
-import os, sys, math, time, uuid, json
+import sys, math, time
 from unittest import SkipTest
 
 try:
@@ -12,9 +12,7 @@ except:
 ipython2 = hasattr(IPython, 'version_info') and (IPython.version_info[0] == 2)
 
 import param
-
 from ..core.util import ProgressIndicator
-from .magics import OutputMagic
 
 
 class ProgressBar(ProgressIndicator):
