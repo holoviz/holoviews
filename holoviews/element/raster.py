@@ -142,8 +142,11 @@ class Raster(Element2D):
         else:
             dimension, reduce_fn = list(reduce_map.items())[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
-            x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
-            data = zip(x_vals, reduce_fn(self._zdata, axis=self.get_dimension_index(other_dimension[0])))
+            oidx = self.get_dimension_index(other_dimension[0])
+            x_vals = self.dimension_values(other_dimension[0].name, unique=True)
+            if oidx: x_vals = np.sort(x_vals)
+            reduced = reduce_fn(self._zdata, axis=oidx)
+            data = zip(x_vals, reduced if not oidx else reduced[::-1])
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
