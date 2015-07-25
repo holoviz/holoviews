@@ -202,7 +202,7 @@ class QuadMeshPlot(ElementPlot):
         opts = self.style[self.cyclic_index]
         if 'cmesh' in self.handles:
             self.handles['cmesh'].remove()
-        clims = opts.get('clims', ranges.get(element.get_dimension(2).name))
+        clims = opts.get('clim', ranges.get(element.get_dimension(2).name))
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
