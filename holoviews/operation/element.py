@@ -423,7 +423,8 @@ class contours(ElementOperation):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
             contours[level] = contour_type(lines, level=level, group=self.p.group,
-                                           label=element.label)
+                                           label=element.label, kdims=element.kdims,
+                                           vdims=element.vdims)
 
         plt.close(figure_handle)
         if self.p.filled:
