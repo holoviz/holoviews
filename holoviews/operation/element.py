@@ -394,10 +394,14 @@ class contours(ElementOperation):
     filled = param.Boolean(default=False, doc="""
         Whether to generate filled contours""")
 
+    overlaid = param.Boolean(default=True, doc="""
+        Whether to overlay the contour on the supplied Element.""")
 
     def _process(self, element, key=None):
-        from matplotlib import pyplot as plt
-
+        try:
+            from matplotlib import pyplot as plt
+        except ImportError:
+            raise ImportError("contours operation requires matplotlib.")
         figure_handle = plt.figure()
         extent = element.range(0) + element.range(1)[::-1]
         if self.p.filled:
@@ -427,11 +431,9 @@ class contours(ElementOperation):
                                            vdims=element.vdims)
 
         plt.close(figure_handle)
-        if self.p.filled:
-            return contours
-        else:
-            return element * contours
-
+        if self.p.overlaid:
+            contours = element * contours
+        return contours
 
 
 class histogram(ElementOperation):
