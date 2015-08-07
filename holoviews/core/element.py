@@ -289,6 +289,9 @@ class NdElement(Element, Tabular):
                 return super(NdElement, self).reindex(force=force)
             else:
                 vdims = self._cached_value_names
+        elif kdims is None:
+            kdims = [d for d in (self._cached_index_names + self._cached_value_names)
+                     if d not in vdims]
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
         kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
@@ -303,7 +306,10 @@ class NdElement(Element, Tabular):
             _, val = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
                                   for i, iskey, idx in vidxs), key=getter))
             items.append((key, val))
-        return self.clone(items, kdims=key_dims, vdims=val_dims)
+        reindexed = self.clone(items, kdims=key_dims, vdims=val_dims)
+        if not force and len(reindexed) != len(items):
+            raise KeyError("Cannot reindex as not all resulting keys are unique.")
+        return reindexed
 
 
     def _add_item(self, key, value, sort=True):
