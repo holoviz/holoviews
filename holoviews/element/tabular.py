@@ -184,47 +184,6 @@ class Table(NdElement):
         return self.ndims == 1 and self.kdims[0].name == 'Row'
 
     @property
-    def rows(self):
-        return len(self.data) + 1
-
-    @property
-    def cols(self):
-        return self.ndims + len(self.vdims)
-
-
-    def pprint_cell(self, row, col):
-        """
-        Get the formatted cell value for the given row and column indices.
-        """
-        ndims = self.ndims
-        if col >= self.cols:
-            raise Exception("Maximum column index is %d" % self.cols-1)
-        elif row >= self.rows:
-            raise Exception("Maximum row index is %d" % self.rows-1)
-        elif row == 0:
-            if col >= ndims:
-                return str(self.vdims[col - ndims])
-            return str(self.kdims[col])
-        else:
-            dim = self.get_dimension(col)
-            if col >= ndims:
-                row_values = self.values()[row-1]
-                val = row_values[col - ndims]
-            else:
-                row_data = list(self.data.keys())[row-1]
-                val = row_data[col]
-            return dim.pprint_value(val)
-
-
-    def cell_type(self, row, col):
-        """
-        Returns the cell type given a row and column index. The common
-        basic cell types are 'data' and 'heading'.
-        """
-        return 'heading' if row == 0 else 'data'
-
-
-    @property
     def to(self):
         """
         Property to create a conversion table with methods to convert

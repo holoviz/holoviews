@@ -168,6 +168,62 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
 
+class Tabular(NdMapping):
+    """
+    Baseclass to give an NdMapping objects an API to generate a
+    table representation.
+    """
+
+    __abstract = True
+
+    @property
+    def rows(self):
+        return len(self.data) + 1
+
+    @property
+    def cols(self):
+        return self.ndims + max([1, len(self.vdims)])
+
+
+    def pprint_cell(self, row, col):
+        """
+        Get the formatted cell value for the given row and column indices.
+        """
+        ndims = self.ndims
+        if col >= self.cols:
+            raise Exception("Maximum column index is %d" % self.cols-1)
+        elif row >= self.rows:
+            raise Exception("Maximum row index is %d" % self.rows-1)
+        elif row == 0:
+            if col >= ndims:
+                if self.vdims:
+                    return str(self.vdims[col - ndims])
+                else:
+                    return ''
+            return str(self.kdims[col])
+        else:
+            dim = self.get_dimension(col)
+            if col >= ndims:
+                row_values = self.values()[row-1]
+                if self.vdims:
+                    val = row_values[col - ndims]
+                else:
+                    val = row_values
+            else:
+                row_data = list(self.data.keys())[row-1]
+                val = row_data[col]
+            return dim.pprint_value(val)
+
+
+    def cell_type(self, row, col):
+        """
+        Returns the cell type given a row and column index. The common
+        basic cell types are 'data' and 'heading'.
+        """
+        return 'heading' if row == 0 else 'data'
+
+
+
 class Element2D(Element):
 
     extents = param.Tuple(default=(None, None, None, None),
@@ -176,7 +232,7 @@ class Element2D(Element):
               defining the (left, bottom, right and top) edges.""")
 
 
-class NdElement(Element, NdMapping):
+class NdElement(Element, Tabular):
     """
     An NdElement is an Element that stores the contained data as
     an NdMapping. In addition to the usual multi-dimensional keys
