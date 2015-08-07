@@ -15,6 +15,7 @@ Archives: A collection of HoloViews objects that are first collected
 from __future__ import absolute_import
 
 import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
+from collections import defaultdict
 
 from io import BytesIO
 from hashlib import sha256
@@ -22,11 +23,12 @@ from hashlib import sha256
 import param
 from param.parameterized import bothmethod
 
+from .dimension import LabelledData
+from .element import Collator
+from .layout import Layout
+from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .options import Store
 from .util import unique_iterator, sanitize_identifier
-from .ndmapping import OrderedDict, UniformNdMapping
-from .layout import Layout
-from .dimension import LabelledData
 
 
 class Reference(param.Parameterized):
@@ -180,12 +182,17 @@ class Importer(param.ParameterizedFunction):
 
 
     @bothmethod
-    def load(self_or_cls, src, entry=None):
+    def load(self_or_cls, src, entries=None):
         """
         Given some source (e.g. a filename, a network connection etc),
         return the loaded HoloViews object.
         """
         raise NotImplementedError("Importer load method not implemented.")
+
+
+    @bothmethod
+    def loader(self_or_cls, kwargs):
+        return self_or_cls.load(**kwargs)
 
 
     @bothmethod
@@ -396,6 +403,58 @@ class Unpickler(Importer):
     def entries(self_or_cls, filename):
         with zipfile.ZipFile(filename, 'r') as f:
             return [el for el in f.namelist() if el != 'metadata']
+
+    @bothmethod
+    def collect(self_or_cls, files, drop=[], metadata=True):
+        """
+        Given a list or NdMapping type containing file paths return a
+        Layout of Collators, which can be called to load a given set
+        of files using the current Importer.
+
+        If supplied as a list each file is expected to disambiguate
+        itself with contained metadata. If an NdMapping type is
+        supplied additional key dimensions may be supplied as long as
+        they do not clash with the file metadata. Any key dimension
+        may be dropped by name by supplying a drop argument.
+        """
+        aslist = not isinstance(files, NdMapping)
+        if aslist:
+            files = Collator(files, vdims=['filename'])
+            file_kdims = []
+        else:
+            file_kdims = files.kdims
+        drop_extra = files.drop if isinstance(files, Collator) else []
+
+        mdata_dims = []
+        if metadata:
+            fnames = [fname[0] if isinstance(fname, tuple) else fname
+                      for fname in files.values()]
+            mdata_dims = {kdim for fname in fnames
+                          for kdim in self_or_cls.key(fname).keys()}
+        file_dims = set(files.dimensions('key', label=True))
+        added_dims = set(mdata_dims) - file_dims
+        overlap_dims = file_dims & set(mdata_dims)
+        kwargs = dict(kdims=file_kdims + sorted(added_dims),
+                      vdims=['filename', 'entries'],
+                      value_transform=self_or_cls.loader,
+                      drop=drop_extra + drop)
+        layout_data = defaultdict(lambda: Collator(None, **kwargs))
+
+        for key, fname in files.data.items():
+            fname = fname[0] if isinstance(fname, tuple) else fname
+            mdata = self_or_cls.key(fname) if metadata else {}
+            for odim in overlap_dims:
+                kval = key[files.get_dimension_index(odim)]
+                if kval != mdata[odim]:
+                    raise KeyError("Metadata supplies inconsistent "
+                                   "value for dimension %s" % odim)
+            mkey = tuple(mdata.get(d, None) for d in added_dims)
+            key = mkey if aslist else key + mkey
+            if isinstance(fname, tuple) and len(fname) == 1:
+                (fname,) = fname
+            for entry in self_or_cls.entries(fname):
+                layout_data[entry][key] = (fname, [entry])
+        return Layout(layout_data.items())
 
 
 
