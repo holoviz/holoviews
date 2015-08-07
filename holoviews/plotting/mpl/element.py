@@ -7,7 +7,7 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import OrderedDict, NdOverlay, HoloMap, CompositeOverlay, Element3D, Dimension
+from ...core import Dimension, OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay, Element3D
 from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
@@ -101,7 +101,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    _suppressed = [Table, ItemTable]
+    _suppressed = [Table, Collator, ItemTable]
     _colorbars = {}
 
     def __init__(self, element, **params):

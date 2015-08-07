@@ -11,7 +11,7 @@ import os
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
-from ...core import Dimension, Layout, GridSpace, AdjointLayout, NdOverlay
+from ...core import Layout, NdOverlay, Collator
 from ...core.options import Cycle, Palette, Options
 from ...element import * # pyflakes:ignore (API import)
 from ..plot import PlotSelector
@@ -111,6 +111,7 @@ Store.register({Curve: CurvePlot,
                 # Tabular plots
                 ItemTable: TablePlot,
                 Table: TablePlot,
+                Collator: TablePlot,
 
                 # Raster plots
                 QuadMesh: QuadMeshPlot,

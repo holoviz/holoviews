@@ -10,7 +10,7 @@ from matplotlib import gridspec, animation
 
 import param
 from ...core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Element, CompositeOverlay, Element3D, Empty
+    GridSpace, Element, CompositeOverlay, Element3D, Empty, Collator
 from ...core.options import Store, Compositor
 from ...core import traversal
 from ...core.util import int_to_roman,\
@@ -1023,7 +1023,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, layout_num=num,
                                       **plotopts)
-            if isinstance(view, (Element, HoloMap, CompositeOverlay)):
+            if isinstance(view, (Element, HoloMap, Collator, CompositeOverlay)):
                 adjoint_clone[pos] = subplots[pos].map
             else:
                 adjoint_clone[pos] = subplots[pos].layout

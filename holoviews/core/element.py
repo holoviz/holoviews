@@ -493,7 +493,7 @@ class HoloMap(UniformNdMapping):
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (ViewableElement, UniformNdMapping, Layout)
+    data_type = (ViewableElement, NdMapping, Layout)
 
     def overlay(self, dimensions, **kwargs):
         """
