@@ -914,7 +914,7 @@ class GridSpace(UniformNdMapping):
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
 
 
-class Collator(NdMapping):
+class Collator(NdElement):
     """
     Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
@@ -922,13 +922,6 @@ class Collator(NdMapping):
     If the items in the Collator do not contain HoloMaps
     they will be created. Collator also supports filtering
     of Tree structures and dropping of constant dimensions.
-
-    Collator can also be subclassed to dynamically load data
-    from different locations. This only requires subclassing
-    the _process_data method, which should return the data
-    to be merged, e.g. the Collator may contain a number of
-    filenames as values, which the _process_data can
-    dynamically load (and then merge) during the call.
     """
 
     drop = param.List(default=[], doc="""
@@ -943,7 +936,9 @@ class Collator(NdMapping):
         List of paths to drop when collating data, specified
         as strings or tuples.""")
 
-    transform_fn = param.Callable(default=None, doc="""
+    group = param.String(default='Collator')
+
+    value_transform = param.Callable(default=None, doc="""
         If supplied the function will be applied on each Collator
         value during collation. This may be used to apply an operation
         to the data or load references from disk before they are collated
@@ -957,6 +952,7 @@ class Collator(NdMapping):
                                      is_instance=False,instantiate=False)
 
     _deep_indexable = False
+    _auxiliary_component = False
 
     _nest_order = {HoloMap: ViewableElement,
                    GridSpace: (HoloMap, ViewableElement),
@@ -978,8 +974,12 @@ class Collator(NdMapping):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
-            if self.transform_fn:
-                data = self.transform_fn(data)
+            if len(self.vdims):
+                vargs = dict(zip(self.dimensions('value', label=True), data))
+                data = self.value_transform(vargs)
+            if not isinstance(data, Dimensioned):
+                raise ValueError("Collator values must be Dimensioned objects "
+                                 "before collation.")
 
             dim_keys = zip(self._cached_index_names, key)
             varying_keys = [(d, k) for d, k in dim_keys if not self.drop_constant or
@@ -1045,6 +1045,7 @@ class Collator(NdMapping):
             new_item.fixed = True
 
         return new_item
+
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
