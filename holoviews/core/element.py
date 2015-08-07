@@ -938,11 +938,6 @@ class Collator(NdElement):
 
     group = param.String(default='Collator')
 
-    value_transform = param.Callable(default=None, doc="""
-        If supplied the function will be applied on each Collator
-        value during collation. This may be used to apply an operation
-        to the data or load references from disk before they are collated
-        into a displayable HoloViews object.""")
 
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
@@ -950,6 +945,16 @@ class Collator(NdElement):
 
     merge_type = param.ClassSelector(class_=NdMapping, default=HoloMap,
                                      is_instance=False,instantiate=False)
+
+    value_transform = param.Callable(default=None, doc="""
+        If supplied the function will be applied on each Collator
+        value during collation. This may be used to apply an operation
+        to the data or load references from disk before they are collated
+        into a displayable HoloViews object.""")
+
+    vdims = param.List(default=[], doc="""
+         Collator operates on HoloViews objects, if vdims are specified
+         a value_transform function must also be supplied.""")
 
     _deep_indexable = False
     _auxiliary_component = False
@@ -999,6 +1004,10 @@ class Collator(NdElement):
         for component in components:
             accumulator.update(component)
         return accumulator
+
+
+    def _add_item(self, key, value, sort=True):
+        Tabular._add_item(self, key, value, sort)
 
 
     @property
