@@ -3,7 +3,7 @@ from holoviews import Store, Histogram
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
 
-Options.skip_and_warn = False
+Options.skip_invalid = False
 
 class TestOptions(ComparisonTestCase):
 

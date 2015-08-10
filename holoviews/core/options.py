@@ -212,21 +212,27 @@ class Options(param.Parameterized):
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
-    # Skip invalid keywords and generate appropriate warning(s)
-    skip_and_warn = True
+    skip_invalid = param.Boolean(default=True, doc="""
+       Whether all Options instances should skip invalid keywords or
+       raise and exception. May only be specified at the class level.""")
+
+    skip_warnings = param.Boolean(default=True, doc="""
+       Whether all Options instances should generate warnings when
+       skipping over invalid keywords or not. May only be specified at
+       the class level.""")
 
     def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
-                if self.skip_and_warn:
+                if self.skip_invalid:
                     kwargs.pop(kwarg)
                     invalid_kws.append(kwarg)
                 else:
                     raise OptionError(kwarg, allowed_keywords)
 
-        if invalid_kws:
+        if invalid_kws and self.skip_warnings:
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
 
@@ -1010,11 +1016,11 @@ class StoreOptions(object):
 
 
     @classmethod
-    def validate_spec(cls, spec, skip=Options.skip_and_warn):
+    def validate_spec(cls, spec, skip=Options.skip_invalid):
         """
         Given a specification, validated it against the default
         options tree (Store.options). Only tends to be useful when
-        invalid keywords generate exceptions as opposed to warnings.
+        invalid keywords generate exceptions instead of skipping.
         """
         if skip: return
         options = OptionTree(items=Store.options().data.items(),
