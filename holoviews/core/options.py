@@ -1010,11 +1010,13 @@ class StoreOptions(object):
 
 
     @classmethod
-    def validate_spec(cls, spec):
+    def validate_spec(cls, spec, skip=Options.skip_and_warn):
         """
         Given a specification, validated it against the default
-        options tree (Store.options)
+        options tree (Store.options). Only tends to be useful when
+        invalid keywords generate exceptions as opposed to warnings.
         """
+        if skip: return
         options = OptionTree(items=Store.options().data.items(),
                              groups=Store.options().groups)
         return cls.apply_customizations(spec, options)
