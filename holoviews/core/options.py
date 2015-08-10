@@ -1053,8 +1053,18 @@ class StoreOptions(object):
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
-                clones[offset] = OptionTree(groups=Store.options().groups)
+                clone = OptionTree(groups=Store.options().groups)
+                clones[offset] = clone
                 id_mapping.append((None, offset))
+
+           # Nodes needed to ensure allowed_keywords is respected
+            for (k,v) in Store.options().items():
+                if k in [(opt.split('.')[0],) for opt in options]:
+                    group = {grp:Options(
+                        allowed_keywords=opt.allowed_keywords)
+                             for (grp, opt) in
+                             Store.options()[k].groups.items()}
+                    clone[k] = group
 
         return {k:cls.apply_customizations(options, t) if options else t
                 for k,t in clones.items()}, id_mapping
