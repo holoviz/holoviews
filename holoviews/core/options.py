@@ -212,10 +212,23 @@ class Options(param.Parameterized):
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
+    # Skip invalid keywords and generate appropriate warning(s)
+    skip_and_warn = True
+
     def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
+
+        invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
-                raise OptionError(kwarg, allowed_keywords)
+                if self.skip_and_warn:
+                    kwargs.pop(kwarg)
+                    invalid_kws.append(kwarg)
+                else:
+                    raise OptionError(kwarg, allowed_keywords)
+
+        if invalid_kws:
+            self.warning("Invalid options %s, valid options are: %s"
+                         % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)

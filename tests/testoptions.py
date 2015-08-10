@@ -3,6 +3,8 @@ from holoviews import Store, Histogram
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
 
+Options.skip_and_warn = False
+
 class TestOptions(ComparisonTestCase):
 
     def test_options_init(self):
