@@ -216,7 +216,7 @@ class Options(param.Parameterized):
        Whether all Options instances should skip invalid keywords or
        raise and exception. May only be specified at the class level.""")
 
-    skip_warnings = param.Boolean(default=True, doc="""
+    warn_on_skip = param.Boolean(default=True, doc="""
        Whether all Options instances should generate warnings when
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
@@ -232,7 +232,7 @@ class Options(param.Parameterized):
                 else:
                     raise OptionError(kwarg, allowed_keywords)
 
-        if invalid_kws and self.skip_warnings:
+        if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
 
