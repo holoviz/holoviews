@@ -327,7 +327,7 @@ class HistogramPlot(ChartPlot):
         Compute the ticks either as cyclic values in degrees or as roughly
         evenly spaced bin centers.
         """
-        if self.xticks is None:
+        if self.xticks is None or not isinstance(self.xticks, int):
             return None
         if self.cyclic:
             x0, x1, _, _ = lims
