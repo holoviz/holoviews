@@ -113,13 +113,19 @@ class Chart(Element2D):
                 lower_bounds.append(lbound if slc.start is None else slc.start)
                 upper_bounds.append(ubound if slc.stop is None else slc.stop)
             else:
-                data_index = data[:, idx] == slc
-                if not any(data_index):
-                    raise IndexError("Value %s not found in data." % slc)
-                data = data[data_index, :]
+                if self.ndims == 1:
+                    data_index = np.argmin(np.abs(data[:, idx] - slc))
+                    data = data[data_index, :]
+                else:
+                    raise KeyError("Only 1D Chart types may be indexed.")
         if not any(isinstance(slc, slice) for slc in slices):
-            data = data[:, self.ndims:]
-            return data[0] if data.shape[1] == 1 else data
+            if data.ndim == 1:
+                data = data[self.ndims:]
+                dims = data.shape[0]
+            else:
+                data = data[:, self.ndims:]
+                dims = data.shape[1]
+            return data[0] if dims == 1 else data
         if self.ndims == 1:
             lower_bounds.append(None)
             upper_bounds.append(None)
