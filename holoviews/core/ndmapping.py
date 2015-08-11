@@ -209,9 +209,14 @@ class MultiDimensionalMapping(Dimensioned):
         """
         Partitions key into key and deep dimension groups. If only key
         indices are supplied, the data is indexed with an empty tuple.
+        Keys with indices than there are dimensions will be padded.
         """
         if not isinstance(key, tuple):
             key = (key,)
+        if len(key) < self.ndims:
+            num_pad = self.ndims - len(key)
+            key = key + (slice(None),) * num_pad
+
         map_slice = key[:self.ndims]
         if self._check_key_type:
             map_slice = self._apply_key_type(map_slice)
