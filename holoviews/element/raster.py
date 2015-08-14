@@ -9,6 +9,7 @@ from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
 from .tabular import Table
+from .util import compute_edges
 
 
 class Raster(Element2D):
@@ -25,12 +26,12 @@ class Raster(Element2D):
     specified.
     """
 
+    group = param.String(default='Raster', constant=True)
+
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2), constant=True, doc="""
         The label of the x- and y-dimension of the Raster in form
         of a string or dimension object.""")
-
-    group = param.String(default='Raster', constant=True)
 
     vdims = param.List(default=[Dimension('z')], bounds=(1, 1), doc="""
         The dimension description of the data held in the data array.""")
@@ -40,6 +41,11 @@ class Raster(Element2D):
             (d1, d2) = data.shape[:2]
             extents = (0, 0, d2, d1)
         super(Raster, self).__init__(data, extents=extents, **params)
+
+
+    @property
+    def _zdata(self):
+        return self.data
 
 
     def __getitem__(self, slices):
@@ -90,7 +96,7 @@ class Raster(Element2D):
                                        sample_values.items()])])
             table_data = OrderedDict()
             for c in samples:
-                table_data[c] = self.data[self._coord2matrix(c)]
+                table_data[c] = self._zdata[self._coord2matrix(c)]
             params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
@@ -113,7 +119,7 @@ class Raster(Element2D):
 
             # Sample data
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
-            ydata = self.data[sample[::-1]]
+            ydata = self._zdata[sample[::-1]]
             if hasattr(self, 'bounds') and sample_ind == 0: ydata = ydata[::-1]
             data = list(zip(x_vals, ydata))
             params['kdims'] = other_dimension
@@ -134,10 +140,13 @@ class Raster(Element2D):
                 reduced_view = reduced_view.reduce(**{dim: reduce_fn})
             return reduced_view
         else:
-            dimension, reduce_fn = reduce_map.items()[0]
+            dimension, reduce_fn = list(reduce_map.items())[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
-            x_vals = sorted(set(self.dimension_values(other_dimension[0].name)))
-            data = zip(x_vals, reduce_fn(self.data, axis=self.get_dimension_index(other_dimension[0])))
+            oidx = self.get_dimension_index(other_dimension[0])
+            x_vals = self.dimension_values(other_dimension[0].name, unique=True)
+            if oidx: x_vals = np.sort(x_vals)
+            reduced = reduce_fn(self._zdata, axis=oidx)
+            data = zip(x_vals, reduced if not oidx else reduced[::-1])
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
@@ -181,6 +190,150 @@ class Raster(Element2D):
         elif self.depth == 4:  return 'rgba'
         else:
             raise Exception("Mode cannot be determined from the depth")
+
+
+
+class QuadMesh(Raster):
+    """
+    QuadMesh is a Raster type to hold x- and y- bin values
+    with associated values. The x- and y-values of the QuadMesh
+    may be supplied either as the edges of each bin allowing
+    uneven sampling or as the bin centers, which will be converted
+    to evenly sampled edges.
+
+    As a secondary but less supported mode QuadMesh can contain
+    a mesh of quadrilateral coordinates that is not laid out in
+    a grid. The data should then be supplied as three separate
+    2D arrays for the x-/y-coordinates and grid values.
+    """
+
+    group = param.String(default="QuadMesh", constant=True)
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+
+    vdims = param.List(default=[Dimension('z')])
+
+    def __init__(self, data, **params):
+        data = self._process_data(data)
+        Element2D.__init__(self, data, **params)
+        self.data = self._validate_data(self.data)
+        self._grid = self.data[0].ndim == 1
+
+
+    def _process_data(self, data):
+        data = tuple(np.array(el) for el in data)
+        x, y, zarray = data
+        ys, xs = zarray.shape
+        if x.ndim == 1 and len(x) == xs:
+            x = compute_edges(x)
+        if y.ndim == 1 and len(y) == ys:
+            y = compute_edges(y)
+        return (x, y, zarray)
+
+
+    @property
+    def _zdata(self):
+        return self.data[2]
+
+
+    def _validate_data(self, data):
+        x, y, z = data
+        if not z.ndim == 2:
+            raise ValueError("Z-values must be 2D array")
+
+        ys, xs = z.shape
+        shape_errors = []
+        if x.ndim == 1 and xs+1 != len(x):
+            shape_errors.append('x')
+        if x.ndim == 1 and ys+1 != len(y):
+            shape_errors.append('y')
+        if shape_errors:
+            raise ValueError("%s-edges must match shape of z-array." %
+                             '/'.join(shape_errors))
+        return data
+
+
+    def __getitem__(self, slices):
+        if not self._grid:
+            raise IndexError("Indexing of non-grid based QuadMesh"
+                             "currently not supported")
+        if not isinstance(slices, tuple): slices = (slices, slice(None))
+        slc_types = [isinstance(sl, slice) for sl in slices]
+        if not any(slc_types):
+            indices = []
+            for idx, data in zip(slices, self.data[:self.ndims]):
+                indices.append(np.digitize([idx], data)-1)
+            return self.data[2][tuple(indices[::-1])]
+        else:
+            sliced_data, indices = [], []
+            for slc, data in zip(slices, self.data[:self.ndims]):
+                if isinstance(slc, slice):
+                    low, high = slc.start, slc.stop
+                    lidx = ([None] if low is None else
+                            max((np.digitize([low], data)-1, 0)))[0]
+                    hidx = ([None] if high is None else
+                            np.digitize([high], data))[0]
+                    sliced_data.append(data[lidx:hidx])
+                    indices.append(slice(lidx, (hidx if hidx is None else hidx-1)))
+                else:
+                    index = (np.digitize([slc], data)-1)[0]
+                    sliced_data.append(data[index:index+2])
+                    indices.append(index)
+            z = np.atleast_2d(self.data[2][tuple(indices[::-1])])
+            if not all(slc_types) and not slc_types[0]:
+                z = z.T
+            return self.clone(tuple(sliced_data+[z]))
+
+
+    @classmethod
+    def collapse_data(cls, data_list, function, **kwargs):
+        """
+        Allows collapsing the data of a number of QuadMesh
+        Elements with a function.
+        """
+        if not self._grid:
+            raise Exception("Collapsing of non-grid based QuadMesh"
+                            "currently not supported")
+        xs, ys, zs = zip(data_list)
+        if isinstance(function, np.ufunc):
+            z = function.reduce(zs)
+        else:
+            z = function(np.dstack(zs), axis=-1, **kwargs)
+        return xs[0], ys[0], z
+
+
+    def _coord2matrix(self, coord):
+        return tuple((np.digitize([coord[i]], self.data[i])-1)[0]
+                     for i in [1, 0])
+
+
+    def range(self, dimension):
+        idx = self.get_dimension_index(dimension)
+        if idx in [0, 1]:
+            data = self.data[idx]
+            return np.min(data), np.max(data)
+        elif idx == 2:
+            data = self.data[idx]
+            return np.nanmin(data), np.nanmax(data)
+        super(QuadMesh, self).range(dimension)
+
+
+    def dimension_values(self, dimension, unique=False):
+        idx = self.get_dimension_index(dimension)
+        data = self.data[idx]
+        if idx in [0, 1]:
+            if not self._grid:
+                return data.flatten()
+            odim = 1 if unique else self.data[2].shape[idx]
+            vals = np.tile(np.convolve(data, np.ones((2,))/2, mode='valid'), odim)
+            if idx:
+                return np.sort(vals)
+            else:
+                return vals
+        elif idx == 2:
+            return data.flatten()
+        else:
+            return super(QuadMesh, self).dimension_values(idx)
 
 
 

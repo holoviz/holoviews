@@ -10,8 +10,8 @@ import param
 from ..core import ElementOperation, NdOverlay, Overlay
 from ..core.util import find_minmax, sanitize_identifier
 from ..element.chart import Histogram, Curve
-from ..element.raster import Image, RGB
-from ..element.path import Contours
+from ..element.raster import Raster, Image, RGB, QuadMesh
+from ..element.path import Contours, Polygons
 
 
 def identity(x,k): return x
@@ -391,25 +391,49 @@ class contours(ElementOperation):
     group = param.String(default='Level', doc="""
         The group assigned to the output contours.""")
 
+    filled = param.Boolean(default=False, doc="""
+        Whether to generate filled contours""")
 
-    def _process(self, matrix, key=None):
-        from matplotlib import pyplot as plt
+    overlaid = param.Boolean(default=True, doc="""
+        Whether to overlay the contour on the supplied Element.""")
 
+    def _process(self, element, key=None):
+        try:
+            from matplotlib import pyplot as plt
+        except ImportError:
+            raise ImportError("contours operation requires matplotlib.")
         figure_handle = plt.figure()
-        extent = matrix.range(0) + matrix.range(1)[::-1]
-        contour_set = plt.contour(matrix.data, extent=extent,
-                                  levels=self.p.levels)
+        extent = element.range(0) + element.range(1)[::-1]
+        if self.p.filled:
+            contour_fn = plt.contourf
+            contour_type = Polygons
+        else:
+            contour_fn = plt.contour
+            contour_type = Contours
+        if type(element) is Raster:
+            data = [np.flipud(element.data)]
+        elif isinstance(element, Raster):
+            data = [element.data]
+        
+        elif isinstance(element, QuadMesh):
+            data = (element.dimension_values(0, True),
+                    element.dimension_values(1, True),
+                    element.data[2])
+        contour_set = contour_fn(*data, extent=extent,
+                                 levels=self.p.levels)
 
         contours = NdOverlay(None, kdims=['Levels'])
         for level, cset in zip(self.p.levels, contour_set.collections):
             paths = cset.get_paths()
             lines = [path.vertices for path in paths]
-            contours[level] = Contours(lines, group=self.p.group,
-                                       label=matrix.label)
+            contours[level] = contour_type(lines, level=level, group=self.p.group,
+                                           label=element.label, kdims=element.kdims,
+                                           vdims=element.vdims)
 
         plt.close(figure_handle)
-        return matrix * contours
-
+        if self.p.overlaid:
+            contours = element * contours
+        return contours
 
 
 class histogram(ElementOperation):

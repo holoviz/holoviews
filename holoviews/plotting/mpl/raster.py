@@ -40,43 +40,43 @@ class RasterPlot(ElementPlot):
             self.invert_yaxis = not self.invert_yaxis
 
 
-    def get_extents(self, view, ranges):
-        extents = super(RasterPlot, self).get_extents(view, ranges)
+    def get_extents(self, element, ranges):
+        extents = super(RasterPlot, self).get_extents(element, ranges)
         if self.situate_axes:
             return extents
         else:
-            if isinstance(view, Image):
-                return view.bounds.lbrt()
+            if isinstance(element, Image):
+                return element.bounds.lbrt()
             else:
-                return view.extents
+                return element.extents
 
 
     def initialize_plot(self, ranges=None):
-        view = self.map.last
+        element = self.map.last
         axis = self.handles['axis']
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
-        ranges = match_spec(view, ranges)
+        ranges = match_spec(element, ranges)
 
-        xticks, yticks = self._compute_ticks(view, ranges)
+        xticks, yticks = self._compute_ticks(element, ranges)
 
         opts = self.style[self.cyclic_index]
-        data = view.data
+        data = element.data
         clims = opts.pop('clims', None)
-        if view.depth != 1:
+        if element.depth != 1:
             opts.pop('cmap', None)
 
-        if isinstance(view, Image):
-            l, b, r, t = view.bounds.lbrt()
+        if isinstance(element, Image):
+            l, b, r, t = element.bounds.lbrt()
         else:
-            l, b, r, t = view.extents
-        if self.invert_yaxis and type(view) is Raster:
+            l, b, r, t = element.extents
+        if self.invert_yaxis and type(element) is Raster:
             b, t = t, b
 
-        if isinstance(view, RGB):
-            data = view.rgb.data
-        elif isinstance(view, HeatMap):
-            data = view.data
+        if isinstance(element, RGB):
+            data = element.rgb.data
+        elif isinstance(element, HeatMap):
+            data = element.data
             data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
             cmap_name = opts.pop('cmap', None)
             cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
@@ -85,31 +85,31 @@ class RasterPlot(ElementPlot):
 
         im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
         if clims is None:
-            val_dim = [d.name for d in view.vdims][0]
+            val_dim = [d.name for d in element.vdims][0]
             clims = ranges.get(val_dim)
         if 'norm' not in opts:
             im.set_clim(clims)
         self.handles['im'] = im
         if self.colorbar:
-            self._draw_colorbar(im)
+            self._draw_colorbar(im, element)
 
-        if isinstance(view, HeatMap):
+        if isinstance(element, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
             self.handles['annotations'] = {}
 
             if self.show_values:
-                self._annotate_values(view)
+                self._annotate_values(element)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges,
                                    xticks=xticks, yticks=yticks)
 
 
-    def _compute_ticks(self, view, ranges):
-        if isinstance(view, HeatMap):
-            xdim, ydim = view.kdims
-            dim1_keys, dim2_keys = view.dense_keys()
+    def _compute_ticks(self, element, ranges):
+        if isinstance(element, HeatMap):
+            xdim, ydim = element.kdims
+            dim1_keys, dim2_keys = element.dense_keys()
             num_x, num_y = len(dim1_keys), len(dim2_keys)
-            x0, y0, x1, y1 = view.extents
+            x0, y0, x1, y1 = element.extents
             xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
             xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
             ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
@@ -120,10 +120,10 @@ class RasterPlot(ElementPlot):
             return None, None
 
 
-    def _annotate_values(self, view):
+    def _annotate_values(self, element):
         axis = self.handles['axis']
-        val_dim = view.vdims[0]
-        dim1_keys, dim2_keys = view.dense_keys()
+        val_dim = element.vdims[0]
+        dim1_keys, dim2_keys = element.dense_keys()
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xstep, ystep = 1.0/num_x, 1.0/num_y
         xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
@@ -131,11 +131,11 @@ class RasterPlot(ElementPlot):
         coords = product(dim1_keys, dim2_keys)
         plot_coords = product(xpos, ypos)
         for plot_coord, coord in zip(plot_coords, coords):
-            if isinstance(view, HeatMap):
-                val = view._data.get(coord, np.NaN)
+            if isinstance(element, HeatMap):
+                val = element._data.get(coord, np.NaN)
                 val = val[0] if isinstance(val, tuple) else val
             else:
-                val = view[coord]
+                val = element[coord]
             val = val_dim.type(val) if val_dim.type else val
             val = val[0] if isinstance(val, tuple) else val
             text = val_dim.pprint_value(val)
@@ -154,29 +154,78 @@ class RasterPlot(ElementPlot):
             annotation.remove()
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges=None):
         im = self.handles.get('im', None)
-        im.set_data(view.data)
+        data = np.ma.array(element.data,
+                           mask=np.logical_not(np.isfinite(element.data)))
+        im.set_data(data)
 
-        if isinstance(view, HeatMap) and self.show_values:
-           self._annotate_values(view)
-        if self.colorbar:
-            self._draw_colorbar(im)
+        if isinstance(element, HeatMap) and self.show_values:
+           self._annotate_values(element)
 
-        xdim, ydim = view.kdims
-        if isinstance(view, Image):
-            l, b, r, t = view.bounds.lbrt()
+        xdim, ydim = element.kdims
+        if isinstance(element, Image):
+            l, b, r, t = element.bounds.lbrt()
         else:
-            l, b, r, t = view.extents
-            if type(view) == Raster:
+            l, b, r, t = element.extents
+            if type(element) == Raster:
                 b, t = t, b
 
-        val_dim = [d.name for d in view.vdims][0]
-        im.set_clim(ranges.get(val_dim))
+        val_dim = [d.name for d in element.vdims][0]
+        opts = self.style[self.cyclic_index]
+        im.set_clim(opts.get('clims', ranges.get(val_dim)))
         im.set_extent((l, r, b, t))
-        xticks, yticks = self._compute_ticks(view, ranges)
+        xticks, yticks = self._compute_ticks(element, ranges)
         return {'xticks': xticks, 'yticks': yticks}
 
+
+class QuadMeshPlot(ElementPlot):
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a colorbar to the plot.""")
+
+    style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
+                  'linestyles', 'linewidths', 'hatch', 'visible']
+
+    def initialize_plot(self, ranges=None):
+        key = self.map.keys()[-1]
+        element = self.map.last
+        axis = self.handles['axis']
+
+        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = match_spec(element, ranges)
+        self._init_cmesh(axis, element, ranges)
+
+        return self._finalize_axis(key, ranges)
+
+    def _init_cmesh(self, axis, element, ranges):
+        opts = self.style[self.cyclic_index]
+        if 'cmesh' in self.handles:
+            self.handles['cmesh'].remove()
+        clims = opts.get('clim', ranges.get(element.get_dimension(2).name))
+        data = np.ma.array(element.data[2],
+                           mask=np.logical_not(np.isfinite(element.data[2])))
+        cmesh_data = list(element.data[:2]) + [data]
+        self.handles['cmesh'] = axis.pcolormesh(*cmesh_data, vmin=clims[0],
+                                                vmax=clims[1], zorder=self.zorder,
+                                                **opts)
+        if self.colorbar:
+            self._draw_colorbar(self.handles['cmesh'], element)
+        self.handles['locs'] = np.concatenate(element.data[:2])
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        cmesh = self.handles['cmesh']
+        opts = self.style[self.cyclic_index]
+        locs = np.concatenate(element.data[:2])
+        if (locs != self.handles['locs']).any():
+            self._init_cmesh(axis, element, ranges)
+        else:
+            data = np.ma.array(element.data[2],
+                           mask=np.logical_not(np.isfinite(element.data[2])))
+            cmesh.set_array(data.ravel())
+            clims = opts.get('clims', ranges.get(element.get_dimension(2).name))
+            cmesh.set_clim(clims)
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):

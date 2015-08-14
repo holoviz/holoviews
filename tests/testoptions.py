@@ -2,7 +2,8 @@ import numpy as np
 from holoviews import Store, Histogram
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting
+
+Options.skip_invalid = False
 
 class TestOptions(ComparisonTestCase):
 

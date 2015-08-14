@@ -11,7 +11,7 @@ import os
 from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
-from ...core import Dimension, Layout, GridSpace, AdjointLayout, NdOverlay
+from ...core import Layout, NdOverlay, Collator
 from ...core.options import Cycle, Palette, Options
 from ...element import * # pyflakes:ignore (API import)
 from ..plot import PlotSelector
@@ -111,8 +111,10 @@ Store.register({Curve: CurvePlot,
                 # Tabular plots
                 ItemTable: TablePlot,
                 Table: TablePlot,
+                Collator: TablePlot,
 
                 # Raster plots
+                QuadMesh: QuadMeshPlot,
                 Raster: RasterPlot,
                 HeatMap: RasterPlot,
                 Image: RasterPlot,
@@ -157,6 +159,7 @@ options.Surface = Options('plot', fig_size=150)
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')
+options.QuadMesh = Options('style', cmap='hot')
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
 options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 options.RGB = Options('style', interpolation='nearest')

@@ -56,7 +56,6 @@ class Element(ViewableElement, Composable, Overlayable):
     def _convert_element(self, element):
         type_str = self.__class__.__name__
         type_name = type_str.lower()
-        types = (type(element), type_str)
         table = element.table()
         conversion = getattr(table.to, type_name)
         if conversion is None:
@@ -169,6 +168,62 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
 
+class Tabular(NdMapping):
+    """
+    Baseclass to give an NdMapping objects an API to generate a
+    table representation.
+    """
+
+    __abstract = True
+
+    @property
+    def rows(self):
+        return len(self.data) + 1
+
+    @property
+    def cols(self):
+        return self.ndims + max([1, len(self.vdims)])
+
+
+    def pprint_cell(self, row, col):
+        """
+        Get the formatted cell value for the given row and column indices.
+        """
+        ndims = self.ndims
+        if col >= self.cols:
+            raise Exception("Maximum column index is %d" % self.cols-1)
+        elif row >= self.rows:
+            raise Exception("Maximum row index is %d" % self.rows-1)
+        elif row == 0:
+            if col >= ndims:
+                if self.vdims:
+                    return str(self.vdims[col - ndims])
+                else:
+                    return ''
+            return str(self.kdims[col])
+        else:
+            dim = self.get_dimension(col)
+            if col >= ndims:
+                row_values = self.values()[row-1]
+                if self.vdims:
+                    val = row_values[col - ndims]
+                else:
+                    val = row_values
+            else:
+                row_data = list(self.data.keys())[row-1]
+                val = row_data[col]
+            return dim.pprint_value(val)
+
+
+    def cell_type(self, row, col):
+        """
+        Returns the cell type given a row and column index. The common
+        basic cell types are 'data' and 'heading'.
+        """
+        return 'heading' if row == 0 else 'data'
+
+
+
 class Element2D(Element):
 
     extents = param.Tuple(default=(None, None, None, None),
@@ -177,7 +232,7 @@ class Element2D(Element):
               defining the (left, bottom, right and top) edges.""")
 
 
-class NdElement(Element, NdMapping):
+class NdElement(Element, Tabular):
     """
     An NdElement is an Element that stores the contained data as
     an NdMapping. In addition to the usual multi-dimensional keys
@@ -234,6 +289,9 @@ class NdElement(Element, NdMapping):
                 return super(NdElement, self).reindex(force=force)
             else:
                 vdims = self._cached_value_names
+        elif kdims is None:
+            kdims = [d for d in (self._cached_index_names + self._cached_value_names)
+                     if d not in vdims]
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
         kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
@@ -248,7 +306,10 @@ class NdElement(Element, NdMapping):
             _, val = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
                                   for i, iskey, idx in vidxs), key=getter))
             items.append((key, val))
-        return self.clone(items, kdims=key_dims, vdims=val_dims)
+        reindexed = self.clone(items, kdims=key_dims, vdims=val_dims)
+        if not force and len(reindexed) != len(items):
+            raise KeyError("Cannot reindex as not all resulting keys are unique.")
+        return reindexed
 
 
     def _add_item(self, key, value, sort=True):
@@ -432,7 +493,7 @@ class HoloMap(UniformNdMapping):
     the x- and y-dimension limits and labels.
     """
 
-    data_type = (ViewableElement, UniformNdMapping, Layout)
+    data_type = (ViewableElement, NdMapping, Layout)
 
     def overlay(self, dimensions, **kwargs):
         """
@@ -853,7 +914,7 @@ class GridSpace(UniformNdMapping):
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
 
 
-class Collator(NdMapping):
+class Collator(NdElement):
     """
     Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
@@ -861,13 +922,6 @@ class Collator(NdMapping):
     If the items in the Collator do not contain HoloMaps
     they will be created. Collator also supports filtering
     of Tree structures and dropping of constant dimensions.
-
-    Collator can also be subclassed to dynamically load data
-    from different locations. This only requires subclassing
-    the _process_data method, which should return the data
-    to be merged, e.g. the Collator may contain a number of
-    filenames as values, which the _process_data can
-    dynamically load (and then merge) during the call.
     """
 
     drop = param.List(default=[], doc="""
@@ -882,11 +936,8 @@ class Collator(NdMapping):
         List of paths to drop when collating data, specified
         as strings or tuples.""")
 
-    transform_fn = param.Callable(default=None, doc="""
-        If supplied the function will be applied on each Collator
-        value during collation. This may be used to apply an operation
-        to the data or load references from disk before they are collated
-        into a displayable HoloViews object.""")
+    group = param.String(default='Collator')
+
 
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
@@ -895,7 +946,18 @@ class Collator(NdMapping):
     merge_type = param.ClassSelector(class_=NdMapping, default=HoloMap,
                                      is_instance=False,instantiate=False)
 
+    value_transform = param.Callable(default=None, doc="""
+        If supplied the function will be applied on each Collator
+        value during collation. This may be used to apply an operation
+        to the data or load references from disk before they are collated
+        into a displayable HoloViews object.""")
+
+    vdims = param.List(default=[], doc="""
+         Collator operates on HoloViews objects, if vdims are specified
+         a value_transform function must also be supplied.""")
+
     _deep_indexable = False
+    _auxiliary_component = False
 
     _nest_order = {HoloMap: ViewableElement,
                    GridSpace: (HoloMap, ViewableElement),
@@ -917,8 +979,12 @@ class Collator(NdMapping):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
-            if self.transform_fn:
-                data = self.transform_fn(data)
+            if len(self.vdims):
+                vargs = dict(zip(self.dimensions('value', label=True), data))
+                data = self.value_transform(vargs)
+            if not isinstance(data, Dimensioned):
+                raise ValueError("Collator values must be Dimensioned objects "
+                                 "before collation.")
 
             dim_keys = zip(self._cached_index_names, key)
             varying_keys = [(d, k) for d, k in dim_keys if not self.drop_constant or
@@ -938,6 +1004,10 @@ class Collator(NdMapping):
         for component in components:
             accumulator.update(component)
         return accumulator
+
+
+    def _add_item(self, key, value, sort=True):
+        Tabular._add_item(self, key, value, sort)
 
 
     @property
@@ -984,6 +1054,7 @@ class Collator(NdMapping):
             new_item.fixed = True
 
         return new_item
+
 
 
 __all__ = list(set([_k for _k, _v in locals().items()

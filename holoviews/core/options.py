@@ -212,10 +212,29 @@ class Options(param.Parameterized):
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
+    skip_invalid = param.Boolean(default=True, doc="""
+       Whether all Options instances should skip invalid keywords or
+       raise and exception. May only be specified at the class level.""")
+
+    warn_on_skip = param.Boolean(default=True, doc="""
+       Whether all Options instances should generate warnings when
+       skipping over invalid keywords or not. May only be specified at
+       the class level.""")
+
     def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
+
+        invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
-                raise OptionError(kwarg, allowed_keywords)
+                if self.skip_invalid:
+                    kwargs.pop(kwarg)
+                    invalid_kws.append(kwarg)
+                else:
+                    raise OptionError(kwarg, allowed_keywords)
+
+        if invalid_kws and self.warn_on_skip:
+            self.warning("Invalid options %s, valid options are: %s"
+                         % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
@@ -997,11 +1016,13 @@ class StoreOptions(object):
 
 
     @classmethod
-    def validate_spec(cls, spec):
+    def validate_spec(cls, spec, skip=Options.skip_invalid):
         """
         Given a specification, validated it against the default
-        options tree (Store.options)
+        options tree (Store.options). Only tends to be useful when
+        invalid keywords generate exceptions instead of skipping.
         """
+        if skip: return
         options = OptionTree(items=Store.options().data.items(),
                              groups=Store.options().groups)
         return cls.apply_customizations(spec, options)
@@ -1053,8 +1074,18 @@ class StoreOptions(object):
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
-                clones[offset] = OptionTree(groups=Store.options().groups)
+                clone = OptionTree(groups=Store.options().groups)
+                clones[offset] = clone
                 id_mapping.append((None, offset))
+
+           # Nodes needed to ensure allowed_keywords is respected
+            for (k,v) in Store.options().items():
+                if k in [(opt.split('.')[0],) for opt in options]:
+                    group = {grp:Options(
+                        allowed_keywords=opt.allowed_keywords)
+                             for (grp, opt) in
+                             Store.options()[k].groups.items()}
+                    clone[k] = group
 
         return {k:cls.apply_customizations(options, t) if options else t
                 for k,t in clones.items()}, id_mapping

@@ -94,6 +94,7 @@ class Dimension(param.Parameterized):
 
     # Defines default formatting by type
     type_formatters = {}
+    unit_format = ' ({unit})'
 
     def __init__(self, name, **params):
         """
@@ -119,7 +120,7 @@ class Dimension(param.Parameterized):
     @property
     def pprint_label(self):
         "The pretty-printed label string for the Dimension"
-        unit = '' if self.unit is None else ' (%s)' % self.unit
+        unit = '' if self.unit is None else self.unit_format.format(unit=self.unit)
         return self.name + unit
 
 

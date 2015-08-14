@@ -31,8 +31,8 @@ class PathPlot(ElementPlot):
         return self._finalize_axis(key, ranges=ranges)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        self.handles['line_segments'].set_paths(view.data)
+    def update_handles(self, axis, element, key, ranges=None):
+        self.handles['line_segments'].set_paths(element.data)
         visible = self.style[self.cyclic_index].get('visible', True)
         self.handles['line_segments'].set_visible(visible)
 
@@ -64,7 +64,7 @@ class PolygonPlot(ElementPlot):
         self.handles['polys'] = polys
 
         if self.colorbar:
-            self._draw_colorbar(collection)
+            self._draw_colorbar(collection, element)
 
         self.handles['polygons'] = collection
 
@@ -103,5 +103,3 @@ class PolygonPlot(ElementPlot):
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim(ranges[vdim.name])
-        if self.colorbar:
-            self._draw_colorbar(collection)

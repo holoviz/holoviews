@@ -1,6 +1,7 @@
 import numpy as np
 import param
 
+from ...core import Dimension
 from ...core.util import match_spec
 from .element import ElementPlot
 from .chart import PointPlot
@@ -85,6 +86,21 @@ class Plot3D(ElementPlot):
         super(Plot3D, self).update_frame(*args, **kwargs)
 
 
+    def _draw_colorbar(self, artist, element, dim=None):
+        fig = self.handles['fig']
+        ax = self.handles['axis']
+        # Get colorbar label
+        if dim is None:
+            label = str(element.vdims[0])
+        else:
+            if not isinstance(dim, Dimension):
+                dim = element.get_dimension(dim)
+            label = str(dim)
+        cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
+        self.handles['cax'] = cbar.ax
+        self._adjust_cbar(cbar, label)
+
+
 
 class Scatter3DPlot(Plot3D, PointPlot):
     """
@@ -134,6 +150,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
             ranges = self.compute_ranges(self.map, key, ranges)
             ranges = match_spec(points, ranges)
             scatterplot.set_clim(ranges[val_dim])
+            if self.colorbar:
+                self._draw_colorbar(scatterplot, points, val_dim)
 
 
 
@@ -157,13 +175,13 @@ class SurfacePlot(Plot3D):
                   'linewidth', 'facecolors', 'rstride', 'cstride']
 
     def initialize_plot(self, ranges=None):
-        view = self.map.last
+        element = self.map.last
         key = self.keys[-1]
 
         ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
-        ranges = match_spec(view, ranges)
+        ranges = match_spec(element, ranges)
 
-        self.update_handles(self.handles['axis'], view, key, ranges)
+        self.update_handles(self.handles['axis'], element, key, ranges)
         return self._finalize_axis(key, ranges=ranges)
 
 
@@ -184,11 +202,6 @@ class SurfacePlot(Plot3D):
         elif self.plot_type == "contour":
             self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
         if not self.drawn and self.colorbar and not self.plot_type == "wireframe":
-            self._draw_colorbar(self.handles['surface'])
+            self._draw_colorbar(self.handles['surface'], element)
 
         self.handles['legend_handle'] = self.handles['surface']
-
-    def _draw_colorbar(self, artist):
-        fig = self.handles['fig']
-        ax = self.handles['axis']
-        fig.colorbar(artist, shrink=0.85, ax=ax)

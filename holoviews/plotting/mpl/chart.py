@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
-from ...core.util import match_spec, max_range
+from ...core.util import match_spec
 from ...element import Points, Raster, Polygons
 from .element import ElementPlot, LegendPlot
 
@@ -134,10 +134,10 @@ class CurvePlot(ChartPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        data = view.data
+    def update_handles(self, axis, element, key, ranges=None):
+        data = element.data
         if self.cyclic_range is not None:
-            data = self._cyclic_curves(view)
+            data = self._cyclic_curves(element)
         self.handles['line_segment'].set_xdata(data[:, 0])
         self.handles['line_segment'].set_ydata(data[:, 1])
 
@@ -184,8 +184,8 @@ class ErrorPlot(ChartPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        data = view.data
+    def update_handles(self, axis, element, key, ranges=None):
+        data = element.data
         bottoms = self.handles['bottoms']
         tops = self.handles['tops']
         verts = self.handles['verts']
@@ -322,19 +322,19 @@ class HistogramPlot(ChartPlot):
         return edges, hist_vals, widths, lims
 
 
-    def _compute_ticks(self, view, edges, widths, lims):
+    def _compute_ticks(self, element, edges, widths, lims):
         """
         Compute the ticks either as cyclic values in degrees or as roughly
         evenly spaced bin centers.
         """
-        if self.xticks is None:
+        if self.xticks is None or not isinstance(self.xticks, int):
             return None
         if self.cyclic:
             x0, x1, _, _ = lims
             xvals = np.linspace(x0, x1, self.xticks)
             labels = ["%.0f" % np.rad2deg(x) + '\N{DEGREE SIGN}' for x in xvals]
         elif self.xticks:
-            dim = view.get_dimension(0)
+            dim = element.get_dimension(0)
             inds = np.linspace(0, len(edges), self.xticks, dtype=np.int)
             edges = list(edges) + [edges[-1] + widths[-1]]
             xvals = [edges[i] for i in inds]
@@ -342,8 +342,8 @@ class HistogramPlot(ChartPlot):
         return [xvals, labels]
 
 
-    def get_extents(self, view, ranges):
-        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(view, ranges)
+    def get_extents(self, element, ranges):
+        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
         y0 = np.nanmin([0, y0])
         return (y0, x0, y1, x1) if self.orientation == 'vertical' else (x0, y0, x1, y1)
 
@@ -382,17 +382,17 @@ class HistogramPlot(ChartPlot):
                 bar.set_width(width)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges=None):
         """
         Update the plot for an animation.
         :param axis:
         """
         # Process values, axes and style
-        edges, hvals, widths, lims = self._process_hist(view)
+        edges, hvals, widths, lims = self._process_hist(element)
 
-        ticks = self._compute_ticks(view, edges, widths, lims)
-        ax_settings = self._process_axsettings(view, lims, ticks)
-        self._update_artists(key, view, edges, hvals, widths, lims, ranges)
+        ticks = self._compute_ticks(element, edges, widths, lims)
+        ax_settings = self._process_axsettings(element, lims, ticks)
+        self._update_artists(key, element, edges, hvals, widths, lims, ranges)
         return ax_settings
 
 
@@ -438,24 +438,23 @@ class SideHistogramPlot(HistogramPlot):
         return axsettings
 
 
-    def _update_artists(self, n, view, edges, hvals, widths, lims, ranges):
-        super(SideHistogramPlot, self)._update_artists(n, view, edges, hvals, widths, lims, ranges)
-        self._update_plot(n, view, self.handles['bars'], lims, ranges)
+    def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
+        super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
+        self._update_plot(n, element, self.handles['bars'], lims, ranges)
 
 
-    def _update_plot(self, key, view, bars, lims, ranges):
+    def _update_plot(self, key, element, bars, lims, ranges):
         """
         Process the bars and draw the offset line as necessary. If a
         color map is set in the style of the 'main' ViewableElement object, color
         the bars appropriately, respecting the required normalization
         settings.
         """
-        hist = view
         main = self.adjoined.main
-        y0, y1 = hist.range(1)
+        y0, y1 = element.range(1)
         offset = self.offset * y1
 
-        hist_dim = hist.get_dimension(0).name
+        hist_dim = element.get_dimension(0).name
         range_item = main
         if isinstance(main, HoloMap):
             if issubclass(main.type, CompositeOverlay):
@@ -603,8 +602,8 @@ class PointPlot(ChartPlot):
             val_dim = points.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
-        if self.colorbar:
-            self._draw_colorbar(scatterplot)
+            if self.colorbar:
+                self._draw_colorbar(scatterplot, points, val_dim)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -632,9 +631,6 @@ class PointPlot(ChartPlot):
                 ranges = match_spec(element, ranges)
                 paths.set_clim(ranges[val_dim])
                 paths.set_array(cs)
-        if self.colorbar:
-            self._draw_colorbar(paths)
-
 
 
 
@@ -762,13 +758,13 @@ class VectorFieldPlot(ElementPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        self.handles['quiver'].set_offsets(view.data[:,0:2])
+    def update_handles(self, axis, element, key, ranges=None):
+        self.handles['quiver'].set_offsets(element.data[:,0:2])
         input_scale = self.handles['input_scale']
         ranges = self.compute_ranges(self.map, key, ranges)
-        ranges = match_spec(view, ranges)
+        ranges = match_spec(element, ranges)
 
-        xs, ys, angles, lens, colors, scale = self._get_info(view, input_scale, ranges)
+        xs, ys, angles, lens, colors, scale = self._get_info(element, input_scale, ranges)
 
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['quiver']
@@ -778,7 +774,7 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_array(colors)
 
         if self.color_dim == 'magnitude':
-            magnitude_dim = view.get_dimension(3).name
+            magnitude_dim = element.get_dimension(3).name
             quiver.set_clim(ranges[magnitude_dim])
 
 
@@ -891,19 +887,18 @@ class BarPlot(LegendPlot):
 
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(element, ranges)
-        dims = element.dimensions('key', label=True)
 
         self.handles['bars'], xticks, xlabel = self._create_bars(axis, element)
         self.handles['legend_handle'] = self.handles['bars']
         return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
 
 
-    def _finalize_ticks(self, axis, view, xticks, yticks, zticks):
+    def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
         ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-        super(BarPlot, self)._finalize_ticks(axis, view, [ticks, labels], yticks, zticks)
+        super(BarPlot, self)._finalize_ticks(axis, element, [ticks, labels], yticks, zticks)
         for t, y in zip(axis.get_xticklabels(), yalignments):
             t.set_y(y)
 

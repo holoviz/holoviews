@@ -3,7 +3,7 @@ Tests for the Chart Element types.
 """
 
 import numpy as np
-from holoviews import OrderedDict, Dimension, Chart, Curve, ItemTable
+from holoviews import OrderedDict, Chart, Curve, ItemTable
 from holoviews.element.comparison import ComparisonTestCase
 
 class ChartTest(ComparisonTestCase):

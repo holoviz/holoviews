@@ -3,8 +3,7 @@
 holoviews
 =========
 
-**Composable, declarative data structures for building even complex
-visualizations easily.**
+**Stop plotting your data - annotate your data and let it visualize itself.**
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
 `Numpy <http://www.numpy.org/>`_ and is designed to work 

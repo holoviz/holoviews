@@ -5,7 +5,7 @@ import param
 from ..core import util
 from ..core import OrderedDict, Dimension, UniformNdMapping, Element, Element2D, NdElement, HoloMap
 from .tabular import ItemTable, Table
-
+from .util import compute_edges
 
 class Chart(Element2D):
     """
@@ -113,13 +113,19 @@ class Chart(Element2D):
                 lower_bounds.append(lbound if slc.start is None else slc.start)
                 upper_bounds.append(ubound if slc.stop is None else slc.stop)
             else:
-                data_index = data[:, idx] == slc
-                if not any(data_index):
-                    raise IndexError("Value %s not found in data." % slc)
-                data = data[data_index, :]
+                if self.ndims == 1:
+                    data_index = np.argmin(np.abs(data[:, idx] - slc))
+                    data = data[data_index, :]
+                else:
+                    raise KeyError("Only 1D Chart types may be indexed.")
         if not any(isinstance(slc, slice) for slc in slices):
-            data = data[:, self.ndims:]
-            return data[0] if data.shape[1] == 1 else data
+            if data.ndim == 1:
+                data = data[self.ndims:]
+                dims = data.shape[0]
+            else:
+                data = data[:, self.ndims:]
+                dims = data.shape[1]
+            return data[0] if dims == 1 else data
         if self.ndims == 1:
             lower_bounds.append(None)
             upper_bounds.append(None)
@@ -405,13 +411,7 @@ class Histogram(Element2D):
                 edges = np.array(edges, dtype=np.float)
 
         if len(edges) == len(values):
-            widths = list(set(np.diff(edges)))
-            if len(widths) == 1:
-                width = widths[0]
-            else:
-                raise Exception('Centered bins have to be of equal width.')
-            edges -= width/2.
-            edges = np.concatenate([edges, [edges[-1]+width]])
+            edges = compute_edges(edges)
         return values, edges, settings
 
 

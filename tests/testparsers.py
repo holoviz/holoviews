@@ -2,9 +2,10 @@
 Tests of the parsers implemented in ipython.parsers
 """
 from holoviews.element.comparison import ComparisonTestCase
+from unittest import SkipTest
 
 try:
-    import pyparsing
+    import pyparsing     # pyflakes:ignore (import test)
 except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing parsers")
 
@@ -108,13 +109,13 @@ class OptsNormPlotOptionsTests(ComparisonTestCase):
                    {'norm': Options(axiswise=True, framewise=False)}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
-    def test_norm_opts_simple_1(self):
+    def test_norm_opts_simple_2(self):
         line = "Layout {+axiswise +framewise}"
         expected= {'Layout':
                    {'norm': Options(axiswise=True, framewise=True)}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
-    def test_norm_opts_simple_explicit_1(self):
+    def test_norm_opts_simple_explicit_2(self):
         line = "Layout norm{+axiswise +framewise}"
         expected= {'Layout':
                    {'norm': Options(axiswise=True, framewise=True)}}

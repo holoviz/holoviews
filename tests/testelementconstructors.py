@@ -2,8 +2,6 @@ import numpy as np
 
 from holoviews import Curve, Path, Histogram
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.interface.collector import ViewRef
-
 
 class ElementConstructorTest(ComparisonTestCase):
     """

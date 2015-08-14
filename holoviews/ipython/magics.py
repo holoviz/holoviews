@@ -80,8 +80,11 @@ class OptionsMagic(Magics):
                     wrong_type = {k: v for k, v in value.items()
                                   if not isinstance(v, allowed[k])}
                     if wrong_type:
-                        raise ValueError(("Value %r for %r option's %r attribute not of type %r" %
-                                          (v, keyword, k, allowed[k])))
+                        errors = []
+                        for k,v in wrong_type.items():
+                            errors.append("Value %r for %r option's %r attribute not of type %r" %
+                                          (v, keyword, k, allowed[k]))
+                        raise ValueError('\n'.join(errors))
                 elif isinstance(allowed, list) and value not in allowed:
                     if keyword in cls.custom_exceptions:
                         cls.custom_exceptions[keyword](value, keyword, allowed)
@@ -114,8 +117,8 @@ class OptionsMagic(Magics):
                 completion_key = token.strip()
                 break
 
-        values = [v for v in cls.allowed.get(completion_key, [])
-                  if v not in cls.hidden.get(completion_key, [])]
+        values = [val for val in cls.allowed.get(completion_key, [])
+                  if val not in cls.hidden.get(completion_key, [])]
         vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
         return vreprs + [el+'=' for el in cls.allowed.keys()]
 
