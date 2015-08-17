@@ -78,7 +78,7 @@ class ProgressBar(ProgressIndicator):
                 sys.stdout.write(output)
             else:
                 self._stdout_display(percentage)
-            if percentage == 100:
+            if percentage == 100 and ProgressBar.current_progress:
                 ProgressBar.current_progress.pop()
             return
 
