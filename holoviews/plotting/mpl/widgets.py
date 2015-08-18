@@ -1,4 +1,4 @@
-import uuid, json
+import uuid, json, warnings
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
@@ -7,7 +7,7 @@ try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from matplotlib.backends.backend_nbagg import CommSocket
-except:
+except ImportError:
     CommSocket = object
 
 class WidgetCommSocket(CommSocket):
