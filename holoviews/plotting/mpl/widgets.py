@@ -4,7 +4,9 @@ import param
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 try:
-    from matplotlib.backends.backend_nbagg import CommSocket
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from matplotlib.backends.backend_nbagg import CommSocket
 except:
     CommSocket = object
 
