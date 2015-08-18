@@ -1,11 +1,13 @@
-import uuid, json
+import uuid, json, warnings
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 try:
-    from matplotlib.backends.backend_nbagg import CommSocket
-except:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from matplotlib.backends.backend_nbagg import CommSocket
+except ImportError:
     CommSocket = object
 
 class WidgetCommSocket(CommSocket):
@@ -24,7 +26,13 @@ class WidgetCommSocket(CommSocket):
         self.html = "<div id=%r></div>" % self.uuid
 
     def start(self):
-        from IPython.kernel.comm import Comm
+        try:
+            # Jupyter/IPython 4.0
+            from ipykernel.comm import Comm
+        except:
+            # IPython <=3.0
+            from IPython.kernel.comm import Comm
+
         try:
             self.comm = Comm('matplotlib', data={'id': self.uuid})
         except AttributeError:
