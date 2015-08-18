@@ -96,6 +96,8 @@ class GridPlot(GenericCompositePlot, BokehPlot):
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.lookup_options(view, 'plot').options
+            else:
+                vtype = None
 
             # Create axes
             kwargs = {}
@@ -118,12 +120,17 @@ class GridPlot(GenericCompositePlot, BokehPlot):
                 kwargs['height'] = 125
 
             # Create subplot
-            if view is not None:
-                plotting_class = Store.registry[self.renderer.backend][vtype]
+            plotting_class = Store.registry[self.renderer.backend].get(vtype, None)
+            if plotting_class is None:
+                if view is not None:
+                    self.warning("Bokeh plotting class for %s type not found, object will"
+                                 "not be rendered." % vtype.__name__)
+            else:
                 subplot = plotting_class(view, dimensions=self.dimensions, show_title=False,
-                                         subplot=True, ranges=frame_ranges,
-                                         uniform=self.uniform, keys=self.keys, **dict(opts, **kwargs))
-                collapsed_layout[coord] = subplot.layout if isinstance(subplot, GenericCompositePlot) else subplot.map
+                                         subplot=True, ranges=frame_ranges, uniform=self.uniform,
+                                         keys=self.keys, **dict(opts, **kwargs))
+                collapsed_layout[coord] = (subplot.layout if isinstance(subplot, GenericCompositePlot)
+                                           else subplot.map)
                 subplots[coord] = subplot
         return subplots, collapsed_layout
 
@@ -261,8 +268,12 @@ class LayoutPlot(GenericLayoutPlot, BokehPlot):
             plotopts = dict(sublabel_opts, **plotopts)
             plotopts.update(override_opts)
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
-            if pos == 'main':
-                plot_type = Store.registry[self.renderer.backend][vtype]
+            plot_type = Store.registry[self.renderer.backend].get(vtype, None)
+            if plot_type is None:
+                self.warning("Bokeh plotting class for %s type not found, object will "
+                             "not be rendered." % vtype.__name__)
+                continue
+            plot_type = Store.registry[self.renderer.backend][vtype]
             num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(view, keys=self.keys,
                                       dimensions=self.dimensions,
