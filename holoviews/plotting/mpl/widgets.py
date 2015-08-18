@@ -24,7 +24,13 @@ class WidgetCommSocket(CommSocket):
         self.html = "<div id=%r></div>" % self.uuid
 
     def start(self):
-        from IPython.kernel.comm import Comm
+        try:
+            # Jupyter/IPython 4.0
+            from ipykernel.comm import Comm
+        except:
+            # IPython <=3.0
+            from IPython.kernel.comm import Comm
+
         try:
             self.comm = Comm('matplotlib', data={'id': self.uuid})
         except AttributeError:
