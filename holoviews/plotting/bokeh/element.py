@@ -22,6 +22,16 @@ class ElementPlot(GenericElementPlot, BokehPlot):
 
     bgcolor = param.Parameter(default='white')
     
+    shared_axes = param.Boolean(default=False, doc="""
+        Whether to invert the share axes across plots
+        for linked panning and zooming.""")
+
+    invert_xaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot x-axis.""")
+
+    invert_yaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot y-axis.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -74,7 +84,7 @@ class ElementPlot(GenericElementPlot, BokehPlot):
         xlabel, ylabel, zlabel = self._axis_labels(view, subplots, xlabel, ylabel, zlabel)
 
         # Try finding shared ranges in other plots in the same Layout
-        if plots:
+        if plots and self.shared_axes:
             for plot in plots:
                 if plot is None or not hasattr(plot, 'xaxis'): continue
                 if plot.xaxis[0].axis_label == xlabel:
@@ -93,6 +103,8 @@ class ElementPlot(GenericElementPlot, BokehPlot):
                 l, _, r, _ = self.get_extents(view, ranges)
                 if all(x is not None for x in (l, r)):
                     plot_kwargs['x_range'] = [l, r]
+        if self.invert_xaxis:
+            plot_kwargs['x_ranges'] = plot_kwargs['x_ranges'][::-1]
                 
         if not 'y_range' in plot_kwargs:
             if 'y_range' in ranges:
@@ -101,6 +113,8 @@ class ElementPlot(GenericElementPlot, BokehPlot):
                 _, b, _, t = self.get_extents(view, ranges)
                 if all(y is not None for y in (b, t)):
                     plot_kwargs['y_range'] = [b, t]
+        if self.invert_yaxis:
+            plot_kwargs['y_range'] = plot_kwargs['y_range'][::-1]
 
         plot = figure(x_axis_type=x_axis_type, x_axis_label=xlabel, min_border=2,
                       y_axis_type=y_axis_type, y_axis_label=ylabel, tools=self.tools,
