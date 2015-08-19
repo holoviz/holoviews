@@ -96,7 +96,8 @@ class NdWidget(param.Parameterized):
 
 
     def encode_frames(self, frames):
-        frames = {idx: frame for idx, frame in frames.items()}
+        if isinstance(frames, dict):
+            frames = {idx: frame for idx, frame in frames.items()}
         if self.export_json:
             if not os.path.isdir(self.json_path):
                 os.mkdir(self.json_path)
