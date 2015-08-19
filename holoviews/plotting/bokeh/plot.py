@@ -123,13 +123,15 @@ class GridPlot(GenericCompositePlot, BokehPlot):
             plotting_class = Store.registry[self.renderer.backend].get(vtype, None)
             if plotting_class is None:
                 if view is not None:
-                    self.warning("Bokeh plotting class for %s type not found, object will"
-                                 "not be rendered." % vtype.__name__)
+                    self.warning("Bokeh plotting class for %s type not found, "
+                                 "object will not be rendered." % vtype.__name__)
             else:
-                subplot = plotting_class(view, dimensions=self.dimensions, show_title=False,
-                                         subplot=True, ranges=frame_ranges, uniform=self.uniform,
+                subplot = plotting_class(view, dimensions=self.dimensions,
+                                         show_title=False, subplot=True,
+                                         ranges=frame_ranges, uniform=self.uniform,
                                          keys=self.keys, **dict(opts, **kwargs))
-                collapsed_layout[coord] = (subplot.layout if isinstance(subplot, GenericCompositePlot)
+                collapsed_layout[coord] = (subplot.layout
+                                           if isinstance(subplot, GenericCompositePlot)
                                            else subplot.map)
                 subplots[coord] = subplot
         return subplots, collapsed_layout
