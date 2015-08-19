@@ -58,6 +58,7 @@ class ElementPlot(GenericElementPlot, BokehPlot):
     def __init__(self, element, plot=None, subplot=False, **params):
         self.subplot = subplot
         super(ElementPlot, self).__init__(element, **params)
+        self.style = self.style[self.cyclic_index]
         self.handles = {} if plot is None else self.handles['plot']
 
     
@@ -149,10 +150,9 @@ class ElementPlot(GenericElementPlot, BokehPlot):
             plot = self._init_plot(key, ranges=ranges, plots=plots)
         if source is None:
             source = self._init_datasource(element, ranges)
-        style = self.style[self.cyclic_index]
         self.handles['plot'] = plot
         self.handles['source'] = source
-        self.init_glyph(element, plot, source, style, ranges)
+        self.init_glyph(element, plot, source, ranges)
         self._update_plot(key, plot)
 
         return plot
@@ -242,8 +242,8 @@ class PointPlot(ElementPlot):
     def get_data(self, element, ranges=None):
         return dict(x=element.data[:, 0], y=element.data[:, 1])
     
-    def init_glyph(self, element, plot, source, style, ranges):
-        plot.scatter(x='x', y='y', source=source, legend=element.label, **style)
+    def init_glyph(self, element, plot, source, ranges):
+        plot.scatter(x='x', y='y', source=source, legend=element.label, **self.style)
 
 
 class CurvePlot(ElementPlot):
@@ -253,8 +253,8 @@ class CurvePlot(ElementPlot):
     def get_data(self, element, ranges=None):
         return dict(x=element.data[:, 0], y=element.data[:, 1])
     
-    def init_glyph(self, element, plot, source, style, ranges):
-        plot.line(x='x', y='y', source=source, legend=element.label, **style)
+    def init_glyph(self, element, plot, source, ranges):
+        plot.line(x='x', y='y', source=source, legend=element.label, **self.style)
 
 
 
@@ -301,9 +301,9 @@ class PathPlot(ElementPlot):
         ys = [path[:, 1] for path in element.data]
         return dict(xs=xs, ys=ys)
 
-    def init_glyph(self, element, plot, source, style, ranges):
+    def init_glyph(self, element, plot, source, ranges):
         self.handles['lines'] = plot.multi_line(xs='xs', ys='ys', source=source, 
-                                                legend=element.label, **style)
+                                                legend=element.label, **self.style)
 
 
 class HistogramPlot(ElementPlot):
@@ -314,10 +314,10 @@ class HistogramPlot(ElementPlot):
         return dict(top=element.values, left=element.edges[:-1],
                     right=element.edges[1:])
 
-    def init_glyph(self, element, plot, source, style, ranges):
+    def init_glyph(self, element, plot, source, ranges):
         self.handles['lines'] = plot.quad(top='top', bottom=0, left='left',
                                           right='right', source=source,
-                                          legend=element.label, **style)
+                                          legend=element.label, **self.style)
 
 
 class ErrorPlot(PathPlot):
@@ -344,9 +344,9 @@ class PolygonPlot(PathPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
         
-    def init_glyph(self, element, plot, source, style, ranges):
+    def init_glyph(self, element, plot, source, ranges):
         self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
-                                               legend=element.label, **style)
+                                               legend=element.label, **self.style)
 
 
 class SpreadPlot(ElementPlot):
@@ -364,9 +364,9 @@ class SpreadPlot(ElementPlot):
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y])
         
-    def init_glyph(self, element, plot, source, style, ranges):
+    def init_glyph(self, element, plot, source, ranges):
         self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
-                                               legend=element.label, **style)
+                                               legend=element.label, **self.style)
 
     def get_extents(self, view, ranges):
         x0, y0, x1, y1 = super(SpreadPlot, self).get_extents(view, ranges)
@@ -393,8 +393,9 @@ class TextPlot(ElementPlot):
     def get_data(self, element, ranges=None):
         return dict(x=[element.x], y=[element.y], text=[element.text])
 
-    def init_glyph(self, element, plot, source, style, ranges):
-        self.handles['text'] = plot.text(x='x', y='y', text='text', source=source, **style)
+    def init_glyph(self, element, plot, source, ranges):
+        self.handles['text'] = plot.text(x='x', y='y', text='text',
+                                         source=source, **self.style)
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
@@ -413,8 +414,9 @@ class LineAnnotationPlot(ElementPlot):
             x, y = element.data, 0
         return dict(x=x, y=y, angle=angle, length=100)
 
-    def init_glyph(self, element, plot, source, style, ranges):
-        self.handles['line'] = plot.ray(x='x', y='y', length='length', angle='angle', source=source)
+    def init_glyph(self, element, plot, source, ranges):
+        self.handles['line'] = plot.ray(x='x', y='y', length='length',
+                                        angle='angle', source=source, **self.style)
 
 
     def get_extents(self, element, ranges=None):
@@ -467,15 +469,14 @@ class LinkedScatterPlot(ElementPlot):
         self.handles['plot'] = gridplot(grid_plots)
         
         source = self._init_datasource(element)
-        style = self.style
         self.handles['source'] = source
-        self.init_glyph(element, plots, source, style)
+        self.init_glyph(element, plots, source)
         
         return plot
     
-    def init_glyph(self, element, plot, source, style, ranges):
+    def init_glyph(self, element, plot, source, ranges):
         for idx, (d1, d2) in enumerate(self.permutations(element)):
-            plot[d1, d2].scatter(x=d1, y=d2, source=source, legend=element.label, **style[idx])
+            plot[d1, d2].scatter(x=d1, y=d2, source=source, legend=element.label, **self.style[idx])
 
             
     def update_frame(self, key, ranges=None, plot=None):
