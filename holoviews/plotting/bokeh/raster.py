@@ -55,7 +55,11 @@ class RGBPlot(RasterPlot):
         if img.ndim == 3:
             if img.shape[2] == 3: # alpha channel not included
                 img = np.dstack([img, np.ones(img.shape[:2])])
-            data['image'] = [(img * 255).view(dtype=np.uint32)[:, :, 0]]
+            img = (img*255).astype(np.uint8)
+            N, M, _ = img.shape
+            #convert image NxM dtype=uint32
+            img = img.view(dtype=np.uint32).reshape((N, M))
+            data['image'] = [img]
         return data
 
 
