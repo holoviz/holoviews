@@ -52,10 +52,29 @@ Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
 
 options = Store.options(backend='bokeh')
-options.Scatter = Options('style', color=Cycle())
+
+# Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Polygons = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle())
+options.ErrorBars = Options('style', color='k')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.LinkedScatter = Options('style', size=12, color=Cycle(),
-                                marker=Cycle(values=['circle', 'square', 'triangle', 'diamond', 'inverted_triangle']))
+                                marker=Cycle(values=['circle', 'square', 'triangle',
+                                                     'diamond', 'inverted_triangle']))
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
+options.Points = Options('style', color=Cycle())
+
+# Paths
+options.Contours = Options('style', color=Cycle())
+options.Path = Options('style', color=Cycle())
+options.Box = Options('style', color='black')
+options.Bounds = Options('style', color='black')
+options.Ellipse = Options('style', color='black')
+options.Polygons = Options('style', color=Cycle())
+
+# Rasters
+options.Image = Options('style', cmap='hot')
+options.Raster = Options('style', cmap='hot')
+options.QuadMesh = Options('style', cmap='hot')
+options.HeatMap = Options('style', cmap='RdYlBu_r')
+
