@@ -215,7 +215,10 @@ def is_type(df, baseType):
 
 
 def is_number(df):
-    return is_type(df, np.number)
+    try:
+        return is_type(df, np.number)
+    except:
+        return False
 
 
 class DFrame(DataFrameView):
