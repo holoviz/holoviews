@@ -567,9 +567,9 @@ class PointPlot(ChartPlot):
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
 
-    size_norm = param.ObjectSelector(objects=['truncate', 'absolute', 'normalize'],
-                                     default='truncate', doc="""
-      Defines whether the sizes are truncated, absolute or normalized.""")
+    size_fn = param.Callable(default=np.abs, doc="""
+      Function applied to size values before applying scaling,
+      to remove values lower than zero.""")
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
@@ -617,7 +617,7 @@ class PointPlot(ChartPlot):
         sizes = element.data[:, self.size_index]
         val_dim = element.dimensions(label=True)[self.size_index]
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_norm, self.scaling_factor,
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor,
                              ms, ranges[val_dim])
 
 
