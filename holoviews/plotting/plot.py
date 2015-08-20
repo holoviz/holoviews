@@ -520,6 +520,13 @@ class GenericOverlayPlot(GenericElementPlot):
         overlay_type = 1 if self.map.type == Overlay else 2
         group_counter = Counter()
         for (key, vmap) in zip(keys, vmaps):
+            vtype = type(vmap.last)
+            plottype = Store.registry[self.renderer.backend].get(vtype, None)
+            if plottype is None:
+                self.warning("No plotting class for %s type and %s backend "
+                             "found. " % (vtype.__name__, self.renderer.backend))
+                continue
+
             if self.map.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
             else:
@@ -537,10 +544,10 @@ class GenericOverlayPlot(GenericElementPlot):
                             show_title=self.show_title, dimensions=self.dimensions,
                             uniform=self.uniform, show_legend=self.show_legend,
                             **{k: v for k, v in self.handles.items() if k in self._passed_handles})
-            plotype = Store.registry[self.renderer.backend][type(vmap.last)]
+
             if not isinstance(key, tuple): key = (key,)
-            subplots[key] = plotype(vmap, **plotopts)
-            if issubclass(plotype, GenericOverlayPlot):
+            subplots[key] = plottype(vmap, **plotopts)
+            if issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
 
         return subplots
