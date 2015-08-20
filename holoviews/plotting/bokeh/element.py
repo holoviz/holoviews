@@ -1,14 +1,11 @@
-from itertools import combinations
-import numpy as np
 import param
 
-from bokeh.plotting import figure, gridplot
+from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
-from bokeh.models import GlyphRenderer
 from bokeh import mpl
 
-from ...core import OrderedDict, Store, HoloMap
-from ...core.util import match_spec, max_range
+from ...core import Store, HoloMap
+from ...core.util import match_spec
 from ..plot import GenericElementPlot, GenericOverlayPlot
 
 from .plot import BokehPlot
@@ -16,13 +13,11 @@ from .plot import BokehPlot
 
 class ElementPlot(GenericElementPlot, BokehPlot):
     
-    aspect = param.Parameter(default=1)
+    aspect = param.Parameter(default=1, doc="""
+        Aspect ratio of the plot set as width/height.""")
 
-    bgcolor = param.Parameter(default='white')
-    
-    shared_axes = param.Boolean(default=False, doc="""
-        Whether to invert the share axes across plots
-        for linked panning and zooming.""")
+    bgcolor = param.Parameter(default='white', doc="""
+        Background color of the plot.""")
 
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
@@ -30,26 +25,35 @@ class ElementPlot(GenericElementPlot, BokehPlot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
+    plot_size = param.Integer(default=300, doc="""
+        Size of the plot in pixels scaled by the aspect.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    xlog = param.Boolean(default=False)
+    shared_axes = param.Boolean(default=False, doc="""
+        Whether to invert the share axes across plots
+        for linked panning and zooming.""")
+
+    title_color = param.Parameter(default=None, doc="""
+        Color of the title defined as recognized color string, hex RGB value
+        or RGB tuple.""")
+
+    title_font = param.String(default=None, doc="""
+        Title font to apply to the plot.""")
+
+    title_size = param.String(default=10, doc="""
+        Title font size to apply to the plot.""")
+
+    xlog = param.Boolean(default=False, doc="""
+        Whether the x-axis of the plot will be a log axis.""")
     
-    ylog = param.Boolean(default=False)
+    ylog = param.Boolean(default=False, doc="""
+        Whether the x-axis of the plot will be a log axis.""")
     
-    width = param.Integer(default=300)
-    
-    height = param.Integer(default=300)
-
-    title_color = param.Parameter(default=None)
-
-    title_font = param.String(default=None)
-
-    title_size = param.String(default=None)
-
-    tools = param.String(default="pan,wheel_zoom,box_zoom,reset,resize")
-
-    select = param.Boolean(default=True)
+    tools = param.List(default=['pan', 'wheel_zoom', 'box_zoom',
+                                'reset', 'resize'], doc="""
+        A list of plugin tools to use on the plot.""")
 
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
@@ -114,9 +118,12 @@ class ElementPlot(GenericElementPlot, BokehPlot):
         if self.invert_yaxis:
             plot_kwargs['y_range'] = plot_kwargs['y_range'][::-1]
 
+        tools = ','.join(self.tools)
         plot = figure(x_axis_type=x_axis_type, x_axis_label=xlabel, min_border=2,
-                      y_axis_type=y_axis_type, y_axis_label=ylabel, tools=self.tools,
-                      title=title, width=self.width, height=self.height, **plot_kwargs)
+                      y_axis_type=y_axis_type, y_axis_label=ylabel, tools=tools,
+                      title=title, width=self.plot_size*self.aspect,
+                      height=self.plot_size/self.aspect,
+                      **plot_kwargs)
         return plot
 
 
