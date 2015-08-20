@@ -76,7 +76,7 @@ class Dimension(param.Parameterized):
         may be an inbuilt constructor (such as int, str, float) or a
         custom class object.""")
 
-    unit = param.String(default=None, doc="""
+    unit = param.String(default=None, allow_None=True, doc="""
         Optional unit string associated with the Dimension. For
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
@@ -569,6 +569,8 @@ class Dimensioned(LabelledData):
     def get_dimension(self, dimension, default=None):
         "Access a Dimension object by name or index."
         all_dims = self.dimensions()
+        if isinstance(dimension, Dimension):
+            dimension = dimension.name
         if isinstance(dimension, int) and dimension < len(all_dims):
             return all_dims[dimension]
         else:
