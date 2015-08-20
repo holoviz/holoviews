@@ -589,7 +589,7 @@ class PointPlot(ChartPlot):
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
-            style['s'] = self._compute_size(points, style, ranges)
+            style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
         if cs is not None:
@@ -613,12 +613,10 @@ class PointPlot(ChartPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
-    def _compute_size(self, element, opts, ranges):
+    def _compute_size(self, element, opts):
         sizes = element.data[:, self.size_index]
-        val_dim = element.dimensions(label=True)[self.size_index]
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_fn, self.scaling_factor,
-                             ms, ranges[val_dim])
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
 
 
     def update_handles(self, axis, element, key, ranges=None):
@@ -627,7 +625,8 @@ class PointPlot(ChartPlot):
         ndims = element.data.shape[1]
         dims = element.dimensions(label=True)
         if self.size_index < ndims:
-            paths.set_sizes(self._compute_size(sz, opts, ranges))
+            opts = self.style[self.cyclic_index]
+            paths.set_sizes(self._compute_size(element, opts))
         if self.color_index < ndims:
             cs = element.data[:, self.color_index]
             val_dim = dims[self.color_index]
