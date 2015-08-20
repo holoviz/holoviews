@@ -10,6 +10,7 @@ import param
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
 from ...core.util import match_spec
 from ...element import Points, Raster, Polygons
+from ..util import compute_sizes
 from .element import ElementPlot, LegendPlot
 
 
@@ -566,6 +567,10 @@ class PointPlot(ChartPlot):
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
 
+    size_norm = param.ObjectSelector(objects=['truncate', 'absolute', 'normalize'],
+                                     default='truncate', doc="""
+      Defines whether the sizes are truncated, absolute or normalized.""")
+
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
@@ -580,12 +585,12 @@ class PointPlot(ChartPlot):
         ndims = points.data.shape[1]
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        sz = points.data[:, self.size_index] if self.size_index < ndims else None
         cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
         style = self.style[self.cyclic_index]
-        if sz is not None and self.scaling_factor > 1:
-            style['s'] = self._compute_size(sz, style)
+        if self.size_index < ndims and self.scaling_factor > 1:
+            style['s'] = self._compute_size(points, style, ranges)
+
         color = style.pop('color', None)
         if cs is not None:
             style['c'] = cs
@@ -608,29 +613,26 @@ class PointPlot(ChartPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
-    def _compute_size(self, sizes, opts):
+    def _compute_size(self, element, opts, ranges):
+        sizes = element.data[:, self.size_index]
+        val_dim = element.dimensions(label=True)[self.size_index]
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        sizes = np.ma.array(sizes, mask=sizes<=0)
-        return (ms*self.scaling_factor**sizes)
+        return compute_sizes(sizes, self.size_norm, self.scaling_factor,
+                             ms, ranges[val_dim])
 
 
     def update_handles(self, axis, element, key, ranges=None):
         paths = self.handles['paths']
         paths.set_offsets(element.data[:, 0:2])
         ndims = element.data.shape[1]
-        if ndims > 2:
-            sz = element.data[:, self.size_index] if self.size_index < ndims else None
-            cs = element.data[:, self.color_index] if self.color_index < ndims else None
-            opts = self.style[0]
-
-            if sz is not None and self.scaling_factor > 1:
-                paths.set_sizes(self._compute_size(sz, opts))
-            if cs is not None:
-                val_dim = element.dimensions(label=True)[self.color_index]
-                ranges = self.compute_ranges(self.map, key, ranges)
-                ranges = match_spec(element, ranges)
-                paths.set_clim(ranges[val_dim])
-                paths.set_array(cs)
+        dims = element.dimensions(label=True)
+        if self.size_index < ndims:
+            paths.set_sizes(self._compute_size(sz, opts, ranges))
+        if self.color_index < ndims:
+            cs = element.data[:, self.color_index]
+            val_dim = dims[self.color_index]
+            paths.set_clim(ranges[val_dim])
+            paths.set_array(cs)
 
 
 
