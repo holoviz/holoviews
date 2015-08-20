@@ -42,13 +42,10 @@ class PointPlot(ElementPlot):
         cmap = self.style.get('palette', self.style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
             cmap = get_cmap(cmap)
-            val_dim = dims[self.color_index]
-            clims = ranges.get(val_dim)
             colors = element.data[:, self.color_index]
             data['color'] = map_colors(colors, ranges, cmap)
         if self.size_index < len(dims):
             val_dim = dims[self.size_index]
-            clims = ranges.get(val_dim)
             ms = self.style.get('size', 1)
             sizes = element.data[:, self.size_index]
             data['size'] = compute_sizes(sizes, self.size_fn,
