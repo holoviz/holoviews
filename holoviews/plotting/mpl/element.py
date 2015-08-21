@@ -102,7 +102,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     style_opts = []
 
     _suppressed = [Table, Collator, ItemTable]
-    _colorbars = {}
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -111,54 +110,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             check = check.values()[0] # Should check if any are 3D plots
         if isinstance(check, Element3D):
             self.projection = '3d'
-
-    def _adjust_cbar(self, cbar, label):
-        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
-            cbar.solids.set_edgecolor("face")
-        cbar.set_label(label)
-
-
-    def _draw_colorbar(self, artist, element, dim=None):
-        axis = self.handles['axis']
-        ax_colorbars = ElementPlot._colorbars.get(id(axis), [])
-        specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
-        spec = util.get_spec(element)
-
-        # Get colorbar label
-        if dim is None:
-            label = str(element.vdims[0])
-        else:
-            if not isinstance(dim, Dimension):
-                dim = element.get_dimension(dim)
-            label = str(dim)
-
-        colorbars = []
-        created = False
-        if spec[:2] not in specs:
-            cbar = plt.colorbar(artist,fraction=0.046, pad=0.04, ax=axis)
-            cax = cbar.ax
-            self._adjust_cbar(cbar, label)
-            self.handles['cax'] = cax
-            colorbars.append((artist, cax, spec, label))
-            ax_colorbars.extend(colorbars)
-            specs.append(spec[:2])
-            created = True
-        divider = None
-        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
-            ctuple = (artist, cax, spec, label)
-            if ctuple not in colorbars:
-                colorbars.append(ctuple)
-            if spec[:2] in specs and not (created and len(ax_colorbars) > 1):
-                continue
-            if divider is None:
-                divider = make_axes_locatable(axis)
-            self.handles['fig'].delaxes(cax)
-            cax = divider.new_horizontal(pad='{0}%'.format(2+i*30), size='5%')
-            self.handles['fig'].add_axes(cax)
-            cbar = plt.colorbar(artist, cax=cax)
-            self._adjust_cbar(cbar, label)
-
-        ElementPlot._colorbars[id(axis)] = colorbars
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
@@ -451,6 +402,86 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         :param axis:
         """
         raise NotImplementedError
+
+
+
+class ColorbarPlot(ElementPlot):
+
+    cbarticks = param.Parameter(default=None, doc="""
+        Ticks along colorbar-axis specified as an integer, explicit
+        list of tick locations, list of tuples containing the
+        locations and labels or a matplotlib tick locator object. If
+        set to None default matplotlib ticking behavior is
+        applied.""")
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to draw a colorbar.""")
+
+    _colorbars = {}
+
+    def _adjust_cbar(self, cbar, label, dim):
+        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
+            cbar.solids.set_edgecolor("face")
+        cbar.set_label(label)
+        if isinstance(self.cbarticks, ticker.Locator):
+            cbar.set_major_locator(self.cbarticks)
+        elif self.cbarticks == 0:
+            cbar.set_ticks([])
+        elif isinstance(self.cbarticks, int):
+            locator = ticker.MaxNLocator(self.cbarticks)
+            cbar.set_major_locator(locator)
+        elif isinstance(self.cbarticks, list):
+            if all(isinstance(t, tuple) for t in self.cbarticks):
+                ticks, labels = zip(*self.cbarticks)
+            else:
+                ticks, labels = zip(*[(t, dim.pprint_value(t))
+                                        for t in self.cbarticks])
+            cbar.set_ticks(ticks)
+            cbar.set_ticklabels(labels)
+
+
+    def _draw_colorbar(self, artist, element, dim=None):
+        axis = self.handles['axis']
+        ax_colorbars = ColorbarPlot._colorbars.get(id(axis), [])
+        specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
+        spec = util.get_spec(element)
+
+        # Get colorbar label
+        dim = element.get_dimension(dim)
+        if dim is None:
+            dim = element.vdims[0]
+            label = str(dim)
+        else:
+            label = str(dim)
+
+        colorbars = []
+        created = False
+        if spec[:2] not in specs:
+            cbar = plt.colorbar(artist,fraction=0.046, pad=0.04, ax=axis)
+            cax = cbar.ax
+            self._adjust_cbar(cbar, label, dim)
+            self.handles['cax'] = cax
+            colorbars.append((artist, cax, spec, label))
+            ax_colorbars.extend(colorbars)
+            specs.append(spec[:2])
+            created = True
+        divider = None
+        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
+            ctuple = (artist, cax, spec, label)
+            if ctuple not in colorbars:
+                colorbars.append(ctuple)
+            if spec[:2] in specs and not (created and len(ax_colorbars) > 1):
+                continue
+            if divider is None:
+                divider = make_axes_locatable(axis)
+            self.handles['fig'].delaxes(cax)
+            cax = divider.new_horizontal(pad='{0}%'.format(2+i*30), size='5%')
+            self.handles['fig'].add_axes(cax)
+            cbar = plt.colorbar(artist, cax=cax)
+            self._adjust_cbar(cbar, label, dim)
+
+        ColorbarPlot._colorbars[id(axis)] = colorbars
+
 
 
 class LegendPlot(ElementPlot):

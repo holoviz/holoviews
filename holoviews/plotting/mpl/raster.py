@@ -10,11 +10,11 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range
 from ...element.raster import HeatMap, Image, Raster, RGB
-from .element import ElementPlot, OverlayPlot
+from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 
 
-class RasterPlot(ElementPlot):
+class RasterPlot(ColorbarPlot):
 
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
@@ -179,10 +179,7 @@ class RasterPlot(ElementPlot):
         return {'xticks': xticks, 'yticks': yticks}
 
 
-class QuadMeshPlot(ElementPlot):
-
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to add a colorbar to the plot.""")
+class QuadMeshPlot(ColorbarPlot):
 
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']

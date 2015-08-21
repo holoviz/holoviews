@@ -11,7 +11,7 @@ from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
 from ...core.util import match_spec
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes
-from .element import ElementPlot, LegendPlot
+from .element import ElementPlot, ColorbarPlot, LegendPlot
 
 
 class ChartPlot(ElementPlot):
@@ -541,14 +541,11 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(ChartPlot):
+class PointPlot(ChartPlot, ColorbarPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
     """
-
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to add a colorbar to the plot.""")
 
     color_index = param.Integer(default=3, doc="""
       Index of the dimension from which the color will the drawn""")
