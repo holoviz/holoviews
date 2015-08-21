@@ -13,9 +13,6 @@ from .plot import BokehPlot
 
 class ElementPlot(BokehPlot, GenericElementPlot):
     
-    aspect = param.Parameter(default=1, doc="""
-        Aspect ratio of the plot set as width/height.""")
-
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
 
@@ -25,13 +22,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
-    plot_size = param.Integer(default=300, doc="""
-        Size of the plot in pixels scaled by the aspect.""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    shared_axes = param.Boolean(default=False, doc="""
+    shared_axes = param.Boolean(default=True, doc="""
         Whether to invert the share axes across plots
         for linked panning and zooming.""")
 
@@ -42,7 +36,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     title_font = param.String(default=None, doc="""
         Title font to apply to the plot.""")
 
-    title_size = param.Number(default=10, doc="""
+    title_size = param.Number(default=None, doc="""
         Title font size to apply to the plot.""")
 
     xlog = param.Boolean(default=False, doc="""
@@ -121,8 +115,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tools = ','.join(self.tools)
         plot = figure(x_axis_type=x_axis_type, x_axis_label=xlabel, min_border=2,
                       y_axis_type=y_axis_type, y_axis_label=ylabel, tools=tools,
-                      title=title, width=self.plot_size*self.aspect,
-                      height=self.plot_size/self.aspect,
+                      title=title, width=self.width, height=self.height,
                       **plot_kwargs)
         return plot
 
