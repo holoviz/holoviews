@@ -23,14 +23,6 @@ class BokehPlot(Plot):
     height = param.Integer(default=300)
     
     renderer = BokehRenderer
-    
-    def update(self, key):
-        """
-        Update the internal state of the Plot to represent the given
-        key tuple (where integers represent frames). Returns this
-        state.
-        """
-        return self.state
 
     @property
     def state(self):
@@ -40,13 +32,13 @@ class BokehPlot(Plot):
         """
         return self.handles['plot']
 
-    def update(self, key):
+    def update(self, key, redraw=True):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
         """
-        if not self.drawn:
+        if redraw:
             self.initialize_plot()
         return self.__getitem__(key)
 
