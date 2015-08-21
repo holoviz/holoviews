@@ -282,17 +282,21 @@ class OutputMagic(OptionsMagic):
         for i, key in enumerate(['fig', 'holomap']):
             value = options[key] if unchanged else None
             allowed = [el for el in cls.backend_formats[backend][i] if el is not None]
-            if (value is not None) and (value not in allowed):
-                raise Exception("Option %r not in allowed list: %s" % (value, ', '.join(allowed)))
-            if value is not None:
-                cls.backend_settings[backend][key] = value
-            else:
+            if value is None:
                 settings = cls.backend_settings[backend]
                 if key not in settings:
                     # First element of the list is the default format
-                    options[key] = cls.backend_formats[backend][i][0]
+                    value = cls.backend_formats[backend][i][0]
                 elif key in settings:
-                    options[key] = settings[key]
+                    value = settings[key]
+            if (value not in allowed) and (cls.backend_settings[backend][key] in allowed):
+                value = cls.backend_settings[backend][key]
+            if value not in allowed:
+                raise Exception("Option %r not in allowed list: %s" % (value, ', '.join(allowed)))
+            options[key] = value
+            cls.backend_settings[backend][key] = value
+
+
         return options
 
 
