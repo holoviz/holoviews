@@ -5,6 +5,9 @@ from .widgets import ScrubberWidget, SelectionWidget
 from param.parameterized import bothmethod
 
 from bokeh.embed import file_html, notebook_div
+from bokeh.plot_object import PlotObject
+from bokeh.protocol import serialize_json
+
 
 class BokehRenderer(Renderer):
 
@@ -13,7 +16,7 @@ class BokehRenderer(Renderer):
     session = None
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html']}, 'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': ['html', 'json']}, 'holomap': {'default': [None]}}
     widgets = {'scrubber': ScrubberWidget,
                'selection': SelectionWidget}
 
@@ -29,9 +32,19 @@ class BokehRenderer(Renderer):
         in-memory byte stream together with any suitable metadata.
         """
         # Example of the return format where the first value is the rendered data.
-        html = self.figure_data(obj)
-        html = '<center>%s</center>' % html
-        return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+        if fmt == 'html':
+            html = self.figure_data(obj)
+            html = '<center>%s</center>' % html
+            return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+        elif fmt == 'json':
+            datasources = obj.state.select({'type': PlotObject})
+            data = {}
+            for src in datasources:
+                id = src.ref['id']
+                mode = src.ref['type']
+                json = src.vm_serialize(changed_only=True)
+                data[id] = {'mode': mode, 'data': json}
+            return serialize_json(data), {'file-ext':json, 'mime_type':MIME_TYPES[fmt]}
 
 
     def figure_data(self, plot, fmt='html', **kwargs):

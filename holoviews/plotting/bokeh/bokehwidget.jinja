@@ -1,0 +1,36 @@
+{% extends widget_template %}
+
+
+{% block init_slider %}
+{{ widget_name }}.prototype.init_slider = function(init_val){
+    this.update_cache();
+    this.update(0);
+    if(!(this.cached)) {
+	this.dynamic_update(0);
+    }
+}
+{% endblock %}
+
+
+{% block dynamic_update %}
+{{ widget_name }}.prototype.dynamic_update = function(current){
+    function callback(msg){
+	/* This callback receives data from Python as a string
+	   in order to parse it correctly quotes are sliced off*/
+	if (msg.msg_type == "execute_result") {
+	    var data = msg.content.data['text/plain'].slice(1, -1);
+	    data = JSON.parse(data);
+	    $.each(data, function(id, value) {
+		var ds = Bokeh.Collections(value.mode).get(id);
+		if (ds != undefined) {
+		    ds.set(value.data);
+		}
+	    });
+	}
+    }
+    var kernel = IPython.notebook.kernel;
+    callbacks = {iopub: {output: $.proxy(callback, this)}};
+    var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+}
+{% endblock %}
