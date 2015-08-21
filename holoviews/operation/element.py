@@ -316,9 +316,12 @@ class gradient(ElementOperation):
         dx = np.diff(data, 1, axis=1)[0:r-1, 0:c-1]
         dy = np.diff(data, 1, axis=0)[0:r-1, 0:c-1]
 
-        cyclic_range = None if not matrix_dim.cyclic else matrix_dim.range
+        cyclic_range = None if not matrix_dim.cyclic else np.diff(matrix_dim.range)
         if cyclic_range is not None: # Wrap into the specified range
-            raise NotImplementedError('Cyclic ranges are currently not supported')
+            # shift values such that wrapping works ok
+            dx += matrix_dim.range[0]
+            dy += matrix_dim.range[0]
+
             # Convert negative differences to an equivalent positive value
             dx = dx % cyclic_range
             dy = dy % cyclic_range
@@ -327,6 +330,9 @@ class gradient(ElementOperation):
             # and decrease from there
             dx = 0.5 * cyclic_range - np.abs(dx - 0.5 * cyclic_range)
             dy = 0.5 * cyclic_range - np.abs(dy - 0.5 * cyclic_range)
+
+            dx -= matrix_dim.range[0]
+            dy -= matrix_dim.range[0]
 
         return Image(np.sqrt(dx * dx + dy * dy), matrix.bounds, group=self.p.group)
 
