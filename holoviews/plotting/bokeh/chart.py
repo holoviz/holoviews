@@ -50,7 +50,7 @@ class PointPlot(ElementPlot):
             sizes = element.data[:, self.size_index]
             data['size'] = compute_sizes(sizes, self.size_fn,
                                          self.scaling_factor,
-                                         ms, ranges[val_dim])
+                                         ms)
 
         return dict(x=element.data[:, 0], y=element.data[:, 1], **data)
 
