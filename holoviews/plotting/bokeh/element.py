@@ -195,8 +195,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 class BokehMPLWrapper(ElementPlot):
 
-    def __init__(self, element, plot=None, subplot=False, **params):
-        self.subplot = subplot
+    def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
         if isinstance(element, HoloMap):
             etype = element.type
