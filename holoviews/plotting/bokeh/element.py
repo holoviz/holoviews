@@ -44,6 +44,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     
     ylog = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
     
     tools = param.List(default=['pan', 'wheel_zoom', 'box_zoom',
                                 'reset', 'resize'], doc="""
@@ -143,6 +146,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             yaxis.ticker.num_minor_ticks = 0
 
 
+    def _process_legend(self):
+        if not self.overlaid and not self.show_legend:
+            for l in self.handles['plot'].legend:
+                l.legends[:] = []
+                l.border_line_alpha = 0
+
+
     def _init_datasource(self, element, ranges=None):
         return ColumnDataSource(data=self.get_data(element, ranges))
 
@@ -166,6 +176,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['source'] = source
         self.init_glyph(element, plot, source, ranges)
         self._update_plot(key, plot)
+        self._process_legend()
+        self.drawn = True
 
         return plot
 
@@ -206,8 +218,59 @@ class BokehMPLWrapper(ElementPlot):
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
 
 
+line_properties = ['line_width', 'line_color', 'line_alpha',
+                   'line_join', 'line_cap', 'line_dash']
+
+fill_properties = ['fill_color', 'fill_alpha']
+
+text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
+                   'text_alpha', 'text_align', 'text_baseline']
+
+legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
+                     'glyph_height', 'legend_padding', 'legend_spacing']
+
+
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
     
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
+    legend_position = param.ObjectSelector(objects=["top_right", "top_left",
+                                                    "bottom_left", "bottom_right"],
+                                           default="top_right", doc="""
+        Allows selecting between a number of predefined legend position
+        options. The predefined options may be customized in the
+        legend_specs class attribute.""")
+
+
+    style_opts = legend_dimensions + line_properties + text_properties
+
+    def _process_legend(self):
+        plot = self.handles['plot']
+        if not self.show_legend:
+            super(OverlayPlot, self)._process_legend()
+            return
+
+        options = {}
+        for k, v in self.style.items():
+            if k in line_properties:
+                k = 'border_' + k
+            elif k in text_properties:
+                k = 'label_' + k
+            options[k] = v
+
+        legend_labels = []
+        plot.legend[0].set(**options)
+        plot.legend.orientation = self.legend_position
+        legends = plot.legend[0].legends
+        new_legends = []
+        for label, l in legends:
+            if label in legend_labels:
+               continue
+            legend_labels.append(label)
+            new_legends.append((label, l))
+        plot.legend[0].legends[:] = new_legends
+
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         """
@@ -226,6 +289,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges, plot, plots)
 
+        self._process_legend()
+
         return plot
 
         
@@ -239,10 +304,3 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             subplot.update_frame(key, ranges, plot)
 
 
-line_properties = ['line_width', 'line_color', 'line_alpha',
-                   'line_join', 'line_cap', 'line_dash']
-
-fill_properties = ['fill_color', 'fill_alpha']
-
-text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
-                   'text_alpha', 'text_align', 'text_baseline']
