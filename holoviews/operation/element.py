@@ -316,8 +316,9 @@ class gradient(ElementOperation):
         dx = np.diff(data, 1, axis=1)[0:r-1, 0:c-1]
         dy = np.diff(data, 1, axis=0)[0:r-1, 0:c-1]
 
-        cyclic_range = 1.0 if not matrix_dim.cyclic else matrix_dim.range
+        cyclic_range = None if not matrix_dim.cyclic else matrix_dim.range
         if cyclic_range is not None: # Wrap into the specified range
+            raise NotImplementedError('Cyclic ranges are currently not supported')
             # Convert negative differences to an equivalent positive value
             dx = dx % cyclic_range
             dy = dy % cyclic_range
