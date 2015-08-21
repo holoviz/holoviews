@@ -16,8 +16,9 @@ class BokehWidget(NdWidget):
         return frames
 
     def _plot_figure(self, idx):
-        self.plot.update(idx, not self.initialized)
-        figure_format = 'html' if self.embed or not self.initialized else 'json'
+        redraw = self.embed or not self.initialized
+        self.plot.update(idx, redraw)
+        figure_format = 'html' if redraw else 'json'
         self.initialized = True
         return self.renderer.html(self.plot, figure_format)
 

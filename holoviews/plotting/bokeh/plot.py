@@ -144,6 +144,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                 passed_plots.append(None)
         self.handles['plot'] = gridplot(plots[::-1])
         self.handles['plots'] = plots
+        self.drawn = True
 
         return self.handles['plot']
     
@@ -294,6 +295,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 
         self.handles['plot'] = gridplot(plots)
         self.handles['plots'] = plots
+        self.drawn = True
 
         return self.handles['plot']
 
@@ -344,6 +346,7 @@ class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
             # If no view object or empty position, disable the axis
             if subplot:
                 plot = subplot.initialize_plot(ranges=ranges, plots=plots)
+        self.drawn = True
         return plot
     
     def update_frame(self, key, ranges=None, plot=None):
