@@ -42,7 +42,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     title_font = param.String(default=None, doc="""
         Title font to apply to the plot.""")
 
-    title_size = param.String(default=10, doc="""
+    title_size = param.Number(default=10, doc="""
         Title font size to apply to the plot.""")
 
     xlog = param.Boolean(default=False, doc="""
