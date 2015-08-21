@@ -412,7 +412,8 @@ class OutputMagic(OptionsMagic):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             OutputMagic.options = restore_copy
-            Store.current_backend = restore_copy['backend']
+            backend = restore_copy['backend']
+            Store.current_backend = backend if (':' not in backend) else backend.split(':')[0]
 
 
 @magics_class
