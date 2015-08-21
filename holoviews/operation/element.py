@@ -316,8 +316,12 @@ class gradient(ElementOperation):
         dx = np.diff(data, 1, axis=1)[0:r-1, 0:c-1]
         dy = np.diff(data, 1, axis=0)[0:r-1, 0:c-1]
 
+        if  matrix_dim.cyclic and (None in matrix_dim.range):
+            raise Exception("Cyclic range must be specified to compute "
+                            "the gradient of cyclic quantities")
         cyclic_range = None if not matrix_dim.cyclic else np.diff(matrix_dim.range)
         if cyclic_range is not None: # Wrap into the specified range
+            raise NotImplementedError("Cyclic ranges are not supported currently")
             # shift values such that wrapping works ok
             dx += matrix_dim.range[0]
             dy += matrix_dim.range[0]
