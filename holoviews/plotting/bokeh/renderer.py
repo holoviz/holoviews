@@ -13,10 +13,10 @@ class BokehRenderer(Renderer):
 
     backend = 'bokeh'
 
-    session = None
-
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json']}, 'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': ['html', 'json']},
+                    'holomap': {'default': [None]}}
+
     widgets = {'scrubber': ScrubberWidget,
                'selection': SelectionWidget}
 
