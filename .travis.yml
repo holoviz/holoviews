@@ -20,6 +20,7 @@ install:
   - pip install git+git://github.com/ioam/param.git
   - pip install jinja2 tornado pyzmq matplotlib==1.4.2
   - pip install ipython
+  - pip install jupyter
   - pip install pandas
 
 before-script:
