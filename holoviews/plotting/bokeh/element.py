@@ -174,7 +174,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['plot'] = plot
         self.handles['source'] = source
         self.init_glyph(element, plot, source, ranges)
-        self._update_plot(key, plot)
+        if not self.overlaid:
+            self._update_plot(key, plot)
         self._process_legend()
         self.drawn = True
 
@@ -188,7 +189,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if element:
             source = self.handles['source']
             self._update_datasource(source, element, ranges)
-            self._update_plot(key, plot)
+            if not self.overlaid:
+                self._update_plot(key, plot)
 
 
 class BokehMPLWrapper(ElementPlot):
