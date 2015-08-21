@@ -64,8 +64,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel.""")
     
-    def __init__(self, element, plot=None, subplot=False, **params):
-        self.subplot = subplot
+    def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
         self.style = self.style[self.cyclic_index]
         self.handles = {} if plot is None else self.handles['plot']
