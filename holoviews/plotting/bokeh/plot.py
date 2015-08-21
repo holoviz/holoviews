@@ -38,12 +38,11 @@ class BokehPlot(Plot):
         key tuple (where integers represent frames). Returns this
         state.
         """
-        if redraw:
-            self.initialize_plot()
+        self.drawn = not redraw
         return self.__getitem__(key)
 
 
-class GridPlot(GenericCompositePlot, BokehPlot):
+class GridPlot(BokehPlot, GenericCompositePlot):
     """
     Plot a group of elements in a grid layout based on a GridSpace element
     object.
@@ -166,7 +165,7 @@ class GridPlot(GenericCompositePlot, BokehPlot):
 
 
 
-class LayoutPlot(GenericLayoutPlot, BokehPlot):
+class LayoutPlot(BokehPlot, GenericLayoutPlot):
     
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
@@ -313,7 +312,7 @@ class LayoutPlot(GenericLayoutPlot, BokehPlot):
                 subplot.update_frame(key, ranges, plots[r][c])
 
 
-class AdjointLayoutPlot(GenericCompositePlot, BokehPlot):
+class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
     
     layout_dict = {'Single':          {'width_ratios': [4],
                                    'height_ratios': [4],

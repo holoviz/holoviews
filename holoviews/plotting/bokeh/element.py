@@ -11,7 +11,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
 
 
-class ElementPlot(GenericElementPlot, BokehPlot):
+class ElementPlot(BokehPlot, GenericElementPlot):
     
     aspect = param.Parameter(default=1, doc="""
         Aspect ratio of the plot set as width/height.""")
