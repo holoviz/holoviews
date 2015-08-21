@@ -56,7 +56,7 @@ options = Store.options(backend='bokeh')
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.Scatter = Options('style', color=Cycle())
-options.ErrorBars = Options('style', color='k')
+options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.LinkedScatter = Options('style', size=12, color=Cycle(),
                                 marker=Cycle(values=['circle', 'square', 'triangle',
