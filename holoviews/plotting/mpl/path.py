@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from ...core.util import match_spec
-from .element import ElementPlot
+from .element import ElementPlot, ColorbarPlot
 
 
 class PathPlot(ElementPlot):
@@ -38,7 +38,7 @@ class PathPlot(ElementPlot):
 
 
 
-class PolygonPlot(ElementPlot):
+class PolygonPlot(ColorbarPlot):
     """
     PolygonPlot draws the polygon paths in the supplied Polygons
     object. If the Polygon has an associated value the color of
@@ -46,9 +46,6 @@ class PolygonPlot(ElementPlot):
     supplied facecolor will apply. Facecolor also determines the color
     for non-finite values.
     """
-
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to draw a colorbar.""")
 
     style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
