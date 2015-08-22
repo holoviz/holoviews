@@ -461,6 +461,7 @@ class ColorbarPlot(ElementPlot):
             cax = cbar.ax
             self._adjust_cbar(cbar, label, dim)
             self.handles['cax'] = cax
+            self.handles['cbar'] = cbar
             colorbars.append((artist, cax, spec, label))
             ax_colorbars.extend(colorbars)
             specs.append(spec[:2])
