@@ -11,6 +11,20 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
 
 
+# Define shared style properties for bokeh plots
+line_properties = ['line_width', 'line_color', 'line_alpha',
+                   'line_join', 'line_cap', 'line_dash']
+
+fill_properties = ['fill_color', 'fill_alpha']
+
+text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
+                   'text_alpha', 'text_align', 'text_baseline']
+
+legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
+                     'glyph_height', 'legend_padding', 'legend_spacing']
+
+
+
 class ElementPlot(BokehPlot, GenericElementPlot):
     
     bgcolor = param.Parameter(default='white', doc="""
@@ -75,6 +89,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         x_axis_type = 'log' if self.xlog else 'linear'
         
         view = self._get_frame(key)
+        """
+        Initializes Bokeh figure to draw Element into and sets basic figure and axis
+        attributes including axes types, labels, titles and plot height and width.
+        """
         subplots = list(self.subplots.values()) if self.subplots else []
 
         plot_kwargs = {}
@@ -103,7 +121,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_kwargs['x_range'] = [l, r]
         if self.invert_xaxis:
             plot_kwargs['x_ranges'] = plot_kwargs['x_ranges'][::-1]
-                
+
         if not 'y_range' in plot_kwargs:
             if 'y_range' in ranges:
                 plot_kwargs['y_range'] = ranges['y_range']
@@ -146,6 +164,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _process_legend(self):
+        """
+        Disables legends if show_legend is disabled.
+        """
         if not self.overlaid and not self.show_legend:
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
@@ -153,15 +174,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _init_datasource(self, element, ranges=None):
+        """
+        Initializes a data source to be passed into the bokeh glyph.
+        """
         return ColumnDataSource(data=self.get_data(element, ranges))
 
 
     def _update_datasource(self, source, element, ranges):
+        """
+        Update datasource with data for a new frame.
+        """
         for k, v in self.get_data(element, ranges).items():
             source.data[k] = v
 
     
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        """
+        Initializes a new plot object with the last available frame.
+        """
         element = self.map.last
         key = self.keys[-1]
 
@@ -183,6 +213,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def update_frame(self, key, ranges=None, plot=None):
+        """
+        Updates an existing plot with data corresponding
+        to the key.
+        """
+
         if plot is None:
             plot = self.handles['plot']
         element = self._get_frame(key)
@@ -194,6 +229,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
 class BokehMPLWrapper(ElementPlot):
+    """
+    Wraps an existing HoloViews matplotlib plot and converts
+    it to bokeh.
+    """
 
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -216,18 +255,6 @@ class BokehMPLWrapper(ElementPlot):
         if key in self.map:
             self.mplplot.update_frame(key, ranges)
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
-
-
-line_properties = ['line_width', 'line_color', 'line_alpha',
-                   'line_join', 'line_cap', 'line_dash']
-
-fill_properties = ['fill_color', 'fill_alpha']
-
-text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
-                   'text_alpha', 'text_align', 'text_baseline']
-
-legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
-                     'glyph_height', 'legend_padding', 'legend_spacing']
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
