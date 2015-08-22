@@ -241,10 +241,12 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         subplot_opts = dict(show_title=False, adjoined=layout)
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
-            view = layout.get(pos, None)
+            element = layout.get(pos, None)
+            if element is None:
+                continue
             
             # Customize plotopts depending on position.
-            plotopts = self.lookup_options(view, 'plot').options
+            plotopts = self.lookup_options(element, 'plot').options
 
             # Options common for any subplot
             override_opts = {}
@@ -253,15 +255,13 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 own_params = self.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
-                if not isinstance(view, GridSpace):
-                    override_opts = dict(aspect='square')
             else:
                 continue
             
             # Override the plotopts as required
             plotopts = dict(sublabel_opts, **plotopts)
             plotopts.update(override_opts)
-            vtype = view.type if isinstance(view, HoloMap) else view.__class__
+            vtype = element.type if isinstance(element, HoloMap) else element.__class__
             plot_type = Store.registry[self.renderer.backend].get(vtype, None)
             if plot_type is None:
                 self.warning("Bokeh plotting class for %s type not found, object will "
@@ -269,7 +269,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 continue
             plot_type = Store.registry[self.renderer.backend][vtype]
             num = num if len(self.coords) > 1 else 0
-            subplots[pos] = plot_type(view, keys=self.keys,
+            subplots[pos] = plot_type(element, keys=self.keys,
                                       dimensions=self.dimensions,
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
@@ -284,7 +284,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
     def initialize_plot(self, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        plots = [[]]*self.rows
+        plots = [[] for i in range(self.rows)]
         passed_plots = []
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
