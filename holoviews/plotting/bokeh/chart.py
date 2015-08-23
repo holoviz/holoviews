@@ -34,7 +34,8 @@ class PointPlot(ElementPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = ['cmap', 'palette', 'marker', 'size', 'alpha', 'color'] + line_properties + fill_properties
+    style_opts = (['cmap', 'palette', 'marker', 'size', 'alpha', 'color'] +
+                  line_properties + fill_properties)
 
     def get_data(self, element, ranges=None):
         dims = element.dimensions(label=True)
@@ -43,28 +44,32 @@ class PointPlot(ElementPlot):
         if self.color_index < len(dims) and cmap:
             cmap = get_cmap(cmap)
             colors = element.data[:, self.color_index]
-            data['color'] = map_colors(colors, ranges, cmap)
+            data[dims[self.color_index]] = map_colors(colors, ranges, cmap)
         if self.size_index < len(dims):
             val_dim = dims[self.size_index]
             ms = self.style.get('size', 1)
             sizes = element.data[:, self.size_index]
-            data['size'] = compute_sizes(sizes, self.size_fn,
-                                         self.scaling_factor,
-                                         ms)
+            data[dims[self.size_index]] = compute_sizes(sizes, self.size_fn,
+                                                        self.scaling_factor, ms)
+        data[dims[0]] = element.data[:, 0]
+        data[dims[1]] = element.data[:, 1]
+        return data
 
-        return dict(x=element.data[:, 0], y=element.data[:, 1], **data)
+    def _glyph_kwargs(self, element):
+        dims = element.dimensions(label=True)
+        kwargs = dict(self.style, x=dims[0], y=dims[1])
+        if self.color_index < len(dims):
+            kwargs['fill_color'] = dims[self.color_index]
+            kwargs.pop('cmap', None)
+        if self.size_index < len(dims):
+            kwargs.pop('size', None)
+            kwargs['size'] = dims[self.size_index]
+        return kwargs
 
 
     def init_glyph(self, element, plot, source, ranges):
-        style = dict(self.style)
-        if 'color' in source.data:
-            style['fill_color'] = 'color'
-            style.pop('cmap', None)
-        if 'size' in source.data:
-            style.pop('size', None)
-            style['size'] = 'size'
-
-        plot.scatter(x='x', y='y', source=source, legend=element.label, **style)
+        plot.scatter(source=source, legend=element.label,
+                     **self._glyph_kwargs(element))
 
 
 
