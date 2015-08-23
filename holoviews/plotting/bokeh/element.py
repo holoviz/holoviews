@@ -85,19 +85,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     
     def _init_plot(self, key, plots, title=None, ranges=None, xlabel=None, ylabel=None, zlabel=None):
-        y_axis_type = 'log' if self.ylog else 'linear'
-        x_axis_type = 'log' if self.xlog else 'linear'
-        
-        view = self._get_frame(key)
         """
         Initializes Bokeh figure to draw Element into and sets basic figure and axis
         attributes including axes types, labels, titles and plot height and width.
         """
+
+        y_axis_type = 'log' if self.ylog else 'linear'
+        x_axis_type = 'log' if self.xlog else 'linear'
+
+        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
 
         plot_kwargs = {}
         title = self._format_title(key) if self.show_title else None
-        xlabel, ylabel, zlabel = self._axis_labels(view, subplots, xlabel, ylabel, zlabel)
+        xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
 
         # Try finding shared ranges in other plots in the same Layout
         if plots and self.shared_axes:
@@ -116,7 +117,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'x_range' in ranges:
                 plot_kwargs['x_range'] = ranges['x_range']
             else:
-                l, _, r, _ = self.get_extents(view, ranges)
+                l, _, r, _ = self.get_extents(element, ranges)
                 if all(x is not None for x in (l, r)):
                     plot_kwargs['x_range'] = [l, r]
         if self.invert_xaxis:
@@ -126,7 +127,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'y_range' in ranges:
                 plot_kwargs['y_range'] = ranges['y_range']
             else:
-                _, b, _, t = self.get_extents(view, ranges)
+                _, b, _, t = self.get_extents(element, ranges)
                 if all(y is not None for y in (b, t)):
                     plot_kwargs['y_range'] = [b, t]
         if self.invert_yaxis:
