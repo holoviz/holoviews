@@ -1,7 +1,7 @@
 import param
 
 from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, HoverTool
 from bokeh import mpl
 
 from ...core import Store, HoloMap
@@ -133,7 +133,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_yaxis:
             plot_kwargs['y_range'] = plot_kwargs['y_range'][::-1]
 
-        tools = ','.join(self.tools)
+        tools = list(self.tools)
+        if 'hover' in tools:
+            tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
+            tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
+
         plot = figure(x_axis_type=x_axis_type, x_axis_label=xlabel, min_border=2,
                       y_axis_type=y_axis_type, y_axis_label=ylabel, tools=tools,
                       title=title, width=self.width, height=self.height,
