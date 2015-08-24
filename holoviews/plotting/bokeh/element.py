@@ -316,13 +316,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
-        """
-        Plot all the views contained in the AdjointLayout Object using axes
-        appropriate to the layout configuration. All the axes are
-        supplied by LayoutPlot - the purpose of the call is to
-        invoke subplots with correct options and styles and hide any
-        empty axes as necessary.
-        """
         key = self.keys[-1]
         ranges = self.compute_ranges(self.map, key, ranges)
         if plot is None:
