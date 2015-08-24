@@ -43,10 +43,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether to invert the share axes across plots
         for linked panning and zooming.""")
 
-    title_color = param.Parameter(default='black', doc="""
-        Color of the title defined as recognized color string,
-        hex RGB value tuple.""")
-
     title_font = param.String(default=None, doc="""
         Title font to apply to the plot.""")
 
@@ -159,8 +155,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         plot.title = self._format_title(key) if self.show_title else None
         plot.background_fill = self.bgcolor
-        if self.title_color:
-            plot.title_text_color = self.title_color
+        plot.title_text_color = 'black'
         if self.title_font:
             plot.title_text_font = self.title_font
         if self.title_size:
