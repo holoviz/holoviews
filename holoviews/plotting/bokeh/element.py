@@ -153,7 +153,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.title = self._format_title(key) if self.show_title else None
         plot.background_fill = self.bgcolor
         plot.title_text_color = 'black'
-        plot.title_text_font = self.title_font
+        plot.title_text_font = None
         if self.title_size:
             plot.title_text_font_size = self.title_size
         if self.xaxis in ['bottom-bare' or None]:
