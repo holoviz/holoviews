@@ -32,13 +32,12 @@ class BokehRenderer(Renderer):
             html = '<center>%s</center>' % html
             return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
         elif fmt == 'json':
-            datasources = obj.state.select({'type': PlotObject})
+            plotobjects = obj.state.select({'type': PlotObject})
             data = {}
-            for src in datasources:
-                id = src.ref['id']
-                mode = src.ref['type']
-                json = src.vm_serialize(changed_only=True)
-                data[id] = {'mode': mode, 'data': json}
+            for plotobj in plotobjects:
+                json = plotobj.vm_serialize(changed_only=True)
+                data[plotobj.ref['id']] = {'mode': plotobj.ref['type'],
+                                           'data': json}
             return serialize_json(data), {'file-ext':json, 'mime_type':MIME_TYPES[fmt]}
 
 
