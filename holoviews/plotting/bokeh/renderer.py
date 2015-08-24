@@ -4,7 +4,7 @@ from .widgets import ScrubberWidget, SelectionWidget
 
 from param.parameterized import bothmethod
 
-from bokeh.embed import file_html, notebook_div
+from bokeh.embed import notebook_div
 from bokeh.plot_object import PlotObject
 from bokeh.protocol import serialize_json
 
