@@ -32,14 +32,6 @@ class BokehPlot(Plot):
         """
         return self.handles['plot']
 
-    def update(self, key, redraw=True):
-        """
-        Update the internal state of the Plot to represent the given
-        key tuple (where integers represent frames). Returns this
-        state.
-        """
-        self.drawn = not redraw
-        return self.__getitem__(key)
 
 
 class GridPlot(BokehPlot, GenericCompositePlot):
