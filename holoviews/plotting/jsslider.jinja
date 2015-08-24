@@ -84,6 +84,7 @@
 	}
     }
 
+    {% block update %}
     {{ widget_name }}.prototype.update = function(current){
 	if(current in this.cache) {
 	    $.each(this.cache, function(index, value) {
@@ -92,6 +93,7 @@
 	    this.cache[current].show();
 	}
     }
+    {% endblock %}
 
     {{ widget_name }}.prototype.set_frame = function(dim_val, dim_idx){
         this.current_vals[dim_idx] = dim_val;
