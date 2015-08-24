@@ -19,9 +19,9 @@ class BokehPlot(Plot):
     """
 
     width = param.Integer(default=300)
-    
+
     height = param.Integer(default=300)
-    
+
     renderer = BokehRenderer
 
     @property
@@ -147,7 +147,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         self.drawn = True
 
         return self.handles['plot']
-    
+
 
     def update_frame(self, key, ranges=None):
         """
@@ -167,12 +167,12 @@ class GridPlot(BokehPlot, GenericCompositePlot):
 
 
 class LayoutPlot(BokehPlot, GenericLayoutPlot):
-    
+
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
         self.layout, self.subplots = self._init_layout(layout)
-    
-    
+
+
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
@@ -244,7 +244,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             element = layout.get(pos, None)
             if element is None:
                 continue
-            
+
             # Customize plotopts depending on position.
             plotopts = self.lookup_options(element, 'plot').options
 
@@ -257,7 +257,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                                  if 'sublabel_' in k}
             else:
                 continue
-            
+
             # Override the plotopts as required
             plotopts = dict(sublabel_opts, **plotopts)
             plotopts.update(override_opts)
@@ -289,17 +289,17 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
-                plots[r].append(subplot.initialize_plot(ranges=ranges, 
+                plots[r].append(subplot.initialize_plot(ranges=ranges,
                                                         plots=passed_plots))
                 passed_plots.append(plots[r][-1])
-                
+
         self.handles['plot'] = gridplot(plots)
         self.handles['plots'] = plots
         self.drawn = True
 
         return self.handles['plot']
 
-        
+
     def update_frame(self, key, ranges=None):
         """
         Update the internal state of the Plot to represent the given
@@ -315,11 +315,11 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
 
 class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
-    
+
     layout_dict = {'Single':          {'width_ratios': [4],
                                    'height_ratios': [4],
                                    'positions': ['main']}}
-    
+
     def __init__(self, layout, layout_type, subplots, **params):
         # The AdjointLayout ViewableElement object
         self.layout = layout
@@ -348,7 +348,7 @@ class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
                 plot = subplot.initialize_plot(ranges=ranges, plots=plots)
         self.drawn = True
         return plot
-    
+
     def update_frame(self, key, ranges=None, plot=None):
         plot = None
         for pos in ['main']:

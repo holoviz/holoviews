@@ -8,7 +8,7 @@ from .util import mplcmap_to_palette
 
 
 class RasterPlot(ElementPlot):
-    
+
     style_opts = ['palette', 'cmap']
 
     def __init__(self, *args, **kwargs):
@@ -28,7 +28,7 @@ class RasterPlot(ElementPlot):
             b = t
         return dict(image=[np.flipud(img)], x=[l], y=[b], dw=[r-l], dh=[dh])
 
-    
+
     def init_glyph(self, element, plot, source, ranges):
         style = {k: v for k, v in self.style.items() if k not in ['palette', 'cmap']}
         val_dim = [d.name for d in element.vdims][0]

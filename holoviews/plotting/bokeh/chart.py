@@ -76,10 +76,10 @@ class PointPlot(ElementPlot):
 class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
-    
+
     def get_data(self, element, ranges=None):
         return dict(x=element.data[:, 0], y=element.data[:, 1])
-    
+
     def init_glyph(self, element, plot, source, ranges):
         plot.line(x='x', y='y', source=source, legend=element.label, **self.style)
 
@@ -98,9 +98,9 @@ class SpreadPlot(ElementPlot):
         band_x = np.append(element.data[:, 0], element.data[::-1, 0])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y])
-        
+
     def init_glyph(self, element, plot, source, ranges):
-        self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source, 
+        self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source,
                                                legend=element.label, **self.style)
 
     def get_extents(self, view, ranges):
@@ -139,7 +139,7 @@ class ErrorPlot(PathPlot):
     horizontal = param.Boolean(default=False)
 
     style_opts = ['color'] + line_properties
-    
+
     def get_data(self, element, ranges=None):
         data = element.data
         err_xs = []
@@ -152,6 +152,3 @@ class ErrorPlot(PathPlot):
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
         return dict(xs=err_xs, ys=err_ys)
-
-
-

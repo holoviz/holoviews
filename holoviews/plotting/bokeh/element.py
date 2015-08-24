@@ -26,7 +26,7 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
-    
+
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
 
@@ -55,13 +55,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     xlog = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
-    
+
     ylog = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
-    
+
     tools = param.List(default=['pan', 'wheel_zoom', 'box_zoom',
                                 'reset', 'resize'], doc="""
         A list of plugin tools to use on the plot.""")
@@ -77,13 +77,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel.""")
-    
+
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
         self.style = self.style[self.cyclic_index]
         self.handles = {} if plot is None else self.handles['plot']
 
-    
+
     def _init_plot(self, key, plots, title=None, ranges=None, xlabel=None, ylabel=None, zlabel=None):
         """
         Initializes Bokeh figure to draw Element into and sets basic figure and axis
@@ -195,7 +195,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in self.get_data(element, ranges).items():
             source.data[k] = v
 
-    
+
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
         Initializes a new plot object with the last available frame.
@@ -266,7 +266,7 @@ class BokehMPLWrapper(ElementPlot):
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
-    
+
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
@@ -320,7 +320,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
         self.handles['plot'] = plot
-        
+
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges, plot, plots)
 
@@ -328,7 +328,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         return plot
 
-        
+
     def update_frame(self, key, ranges=None, plot=None):
         """
         Update the internal state of the Plot to represent the given
@@ -337,5 +337,3 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         """
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges, plot)
-
-

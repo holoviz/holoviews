@@ -72,4 +72,3 @@ options.Image = Options('style', cmap='hot')
 options.Raster = Options('style', cmap='hot')
 options.QuadMesh = Options('style', cmap='hot')
 options.HeatMap = Options('style', cmap='RdYlBu_r')
-
