@@ -29,7 +29,7 @@ class RasterPlot(ElementPlot):
         return dict(image=[np.flipud(img)], x=[l], y=[b], dw=[r-l], dh=[dh])
 
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         style = {k: v for k, v in self.style.items() if k not in ['palette', 'cmap']}
         val_dim = [d.name for d in element.vdims][0]
         low, high = ranges.get(val_dim)
@@ -63,7 +63,7 @@ class RGBPlot(RasterPlot):
         return data
 
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         kwargs = dict(image='image', x='x', y='y', dw='dw',
                       dh='dh', source=source, legend=element.label, **self.style)
         self.handles['img'] = plot.image_rgba(**kwargs)

@@ -211,7 +211,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in self.get_data(element, ranges).items():
             source.data[k] = v
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         """
         Returns a Bokeh glyph object.
         """
@@ -232,7 +232,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(element, ranges)
         self.handles['plot'] = plot
         self.handles['source'] = source
-        self.init_glyph(element, plot, source, ranges)
+        self._init_glyph(element, plot, source, ranges)
         if not self.overlaid:
             self._update_plot(key, element, plot)
         self._process_legend()

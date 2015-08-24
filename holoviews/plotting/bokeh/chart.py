@@ -67,7 +67,7 @@ class PointPlot(ElementPlot):
         return kwargs
 
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         plot.scatter(source=source, legend=element.label,
                      **self._glyph_kwargs(element))
 
@@ -80,7 +80,7 @@ class CurvePlot(ElementPlot):
     def get_data(self, element, ranges=None):
         return dict(x=element.data[:, 0], y=element.data[:, 1])
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         plot.line(x='x', y='y', source=source, legend=element.label, **self.style)
 
 
@@ -99,7 +99,7 @@ class SpreadPlot(ElementPlot):
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y])
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source,
                                                legend=element.label, **self.style)
 
@@ -128,7 +128,7 @@ class HistogramPlot(ElementPlot):
         return dict(top=element.values, left=element.edges[:-1],
                     right=element.edges[1:])
 
-    def init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, ranges):
         self.handles['lines'] = plot.quad(top='top', bottom=0, left='left',
                                           right='right', source=source,
                                           legend=element.label, **self.style)
