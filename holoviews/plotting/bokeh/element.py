@@ -181,6 +181,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l.border_line_alpha = 0
 
 
+    def get_data(self, element, ranges=None):
+        """
+        Returns the data from an element in the appropriate format for
+        initializing or updating a ColumnDataSource.
+        """
+        raise NotImplementedError
+
+
     def _init_datasource(self, element, ranges=None):
         """
         Initializes a data source to be passed into the bokeh glyph.
