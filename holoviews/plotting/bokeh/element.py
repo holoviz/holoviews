@@ -1,6 +1,6 @@
 import param
 
-from bokeh.plotting import figure
+import bokeh.plotting
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh import mpl
 
@@ -138,10 +138,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
 
-        plot = figure(x_axis_type=x_axis_type, x_axis_label=xlabel, min_border=2,
-                      y_axis_type=y_axis_type, y_axis_label=ylabel, tools=tools,
-                      title=title, width=self.width, height=self.height,
-                      **plot_kwargs)
+        plot = bokeh.plotting.figure(title=title,
+                                     width=self.width,
+                                     height=self.height,
+                                     x_axis_type=x_axis_type,
+                                     x_axis_label=xlabel,
+                                     y_axis_type=y_axis_type,
+                                     y_axis_label=ylabel,
+                                     min_border=2,
+                                     tools=tools,
+                                     **plot_kwargs)
         return plot
 
 
