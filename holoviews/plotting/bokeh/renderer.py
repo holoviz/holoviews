@@ -20,11 +20,6 @@ class BokehRenderer(Renderer):
     widgets = {'scrubber': ScrubberWidget,
                'selection': SelectionWidget}
 
-
-    def __init__(self, **params):
-        super(BokehRenderer, self).__init__(**params)
-
-
     def __call__(self, obj, fmt=None):
         """
         Render the supplied HoloViews component using the appropriate
