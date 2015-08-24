@@ -8,7 +8,7 @@ from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot
 
 from .annotation import TextPlot, LineAnnotationPlot
 from .element import OverlayPlot, BokehMPLWrapper
-from .chart import PointPlot, CurvePlot, SpreadPlot, ErrorPlot, LinkedScatter, LinkedScatterPlot, HistogramPlot
+from .chart import PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot
@@ -25,7 +25,6 @@ Store.register({Overlay: OverlayPlot,
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
                 GridSpace: GridPlot,
-                LinkedScatter: LinkedScatterPlot,
                 Image: RasterPlot,
                 RGB: RGBPlot,
                 Raster: RasterPlot,
@@ -57,9 +56,6 @@ options.Curve = Options('style', color=Cycle(), line_width=2)
 options.Scatter = Options('style', color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
-options.LinkedScatter = Options('style', size=12, color=Cycle(),
-                                marker=Cycle(values=['circle', 'square', 'triangle',
-                                                     'diamond', 'inverted_triangle']))
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
 options.Points = Options('style', color=Cycle())
 
