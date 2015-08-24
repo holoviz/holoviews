@@ -153,7 +153,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def _update_plot(self, key, element, plot):
+    def _update_plot(self, key, plot, element=None):
         """
         Updates plot parameters on every frame
         """
@@ -234,7 +234,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['source'] = source
         self._init_glyph(element, plot, source, ranges)
         if not self.overlaid:
-            self._update_plot(key, element, plot)
+            self._update_plot(key, plot, element)
         self._process_legend()
         self.drawn = True
 
@@ -254,7 +254,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source = self.handles['source']
             self._update_datasource(source, element, ranges)
             if not self.overlaid:
-                self._update_plot(key, element, plot)
+                self._update_plot(key, plot, element)
 
 
 class BokehMPLWrapper(ElementPlot):
