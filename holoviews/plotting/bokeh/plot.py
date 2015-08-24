@@ -316,9 +316,9 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
 class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
 
-    layout_dict = {'Single':          {'width_ratios': [4],
-                                   'height_ratios': [4],
-                                   'positions': ['main']}}
+    layout_dict = {'Single': {'width_ratios': [4],
+                              'height_ratios': [4],
+                              'positions': ['main']}}
 
     def __init__(self, layout, layout_type, subplots, **params):
         # The AdjointLayout ViewableElement object
