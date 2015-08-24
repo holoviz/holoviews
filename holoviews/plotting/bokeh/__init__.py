@@ -16,9 +16,6 @@ from .renderer import BokehRenderer
 
 Store.renderers['bokeh'] = BokehRenderer
 
-def wrapper(obj):
-    return 'bokeh'
-
 Store.register({Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 Curve: CurvePlot,
@@ -37,8 +34,10 @@ Store.register({Overlay: OverlayPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
                 Path: PathPlot,
-                TimeSeries: PlotSelector(wrapper, [('mpl', TimeSeriesPlot), ('bokeh', BokehMPLWrapper)], True),
-                Bivariate: PlotSelector(wrapper, [('mpl', BivariatePlot), ('bokeh', BokehMPLWrapper)], True),
+                TimeSeries: PlotSelector(lambda x: 'bokeh',
+                                         [('mpl', TimeSeriesPlot), ('bokeh', BokehMPLWrapper)], True),
+                Bivariate: PlotSelector(lambda x: 'bokeh',
+                                        [('mpl', BivariatePlot), ('bokeh', BokehMPLWrapper)], True),
                 Contours: PathPlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
