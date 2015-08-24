@@ -85,7 +85,7 @@ class NdWidget(param.Parameterized):
     def get_frames(self):
         if self.embed:
             frames = OrderedDict([(idx, self._plot_figure(idx))
-                                  for idx in range(len(plot))])
+                                  for idx in range(len(self.plot))])
         else:
             frames = {0: self._plot_figure(0)}
         return self.encode_frames(frames)
