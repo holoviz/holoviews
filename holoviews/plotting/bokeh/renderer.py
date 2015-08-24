@@ -27,6 +27,8 @@ class BokehRenderer(Renderer):
         in-memory byte stream together with any suitable metadata.
         """
         # Example of the return format where the first value is the rendered data.
+
+        plot, fmt =  self._validate(obj, fmt)
         if fmt == 'html':
             html = self.figure_data(obj)
             html = '<center>%s</center>' % html
