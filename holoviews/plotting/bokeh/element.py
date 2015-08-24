@@ -83,6 +83,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.style = self.style[self.cyclic_index]
         self.handles = {} if plot is None else self.handles['plot']
 
+    def _init_tools(self, element):
+        tools = list(self.tools)
+        if 'hover' in tools:
+            tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
+            tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
+        return tools
+
 
     def _init_plot(self, key, plots, title=None, ranges=None, xlabel=None, ylabel=None, zlabel=None):
         """
@@ -133,11 +140,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.invert_yaxis:
             plot_kwargs['y_range'] = plot_kwargs['y_range'][::-1]
 
-        tools = list(self.tools)
-        if 'hover' in tools:
-            tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
-            tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
-
         plot = bokeh.plotting.figure(title=title,
                                      width=self.width,
                                      height=self.height,
@@ -146,7 +148,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      y_axis_type=y_axis_type,
                                      y_axis_label=ylabel,
                                      min_border=2,
-                                     tools=tools,
+                                     tools=self._init_tools(element),
                                      **plot_kwargs)
         return plot
 
