@@ -203,6 +203,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in self.get_data(element, ranges).items():
             source.data[k] = v
 
+    def init_glyph(self, element, plot, source, ranges):
+        """
+        Returns a Bokeh glyph object.
+        """
+        raise NotImplementedError
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
