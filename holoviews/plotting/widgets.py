@@ -69,12 +69,7 @@ class NdWidget(param.Parameterized):
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
                                   kdims=self.dimensions)
 
-        self.frames = {}
-        if self.embed:
-            self.frames = OrderedDict([(idx, self._plot_figure(idx))
-                                       for idx in range(len(plot))])
-        else:
-            NdWidget.widgets[self.id] = self
+        NdWidget.widgets[self.id] = self
 
         # Set up jinja2 templating
         import jinja2
@@ -89,7 +84,8 @@ class NdWidget(param.Parameterized):
 
     def get_frames(self):
         if self.embed:
-            frames = self.frames
+            frames = OrderedDict([(idx, self._plot_figure(idx))
+                                  for idx in range(len(plot))])
         else:
             frames = {0: self._plot_figure(0)}
         return self.encode_frames(frames)
