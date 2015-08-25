@@ -1,8 +1,9 @@
-import param
-
+import numpy as np
 import bokeh.plotting
 from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models.tickers import Ticker, FixedTicker
 from bokeh import mpl
+import param
 
 from ...core import Store, HoloMap
 from ...core.util import match_spec
@@ -73,6 +74,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                           'bottom-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel.""")
+
+    xticks = param.Parameter(default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
+    xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
+    yticks = param.Parameter(default=None, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
+    yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
 
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -170,6 +189,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_props['axis_label'] = ''
             axis_props['major_label_text_font_size'] = '0pt'
             axis_props['major_tick_line_color'] = None
+        else:
+            rotation = self.xrotation if axis == 'x' else self.yrotation
+            if rotation:
+                axis_props['major_label_orientation'] = np.radians(rotation)
+            ticker = self.xticks if axis == 'x' else self.yticks
+            if isinstance(ticker, Ticker):
+                axis_props['ticker'] = ticker
+            elif isinstance(ticker, int):
+                axis_props['ticker'] = Ticker(desired_num_ticks=ticker)
+            elif isinstance(ticker, list):
+                if all(isinstance(t, tuple) for t in ticker):
+                    pass
+                else:
+                    axis_props['ticker'] = FixedTicker(ticks=ticker)
         return axis_props
 
 
