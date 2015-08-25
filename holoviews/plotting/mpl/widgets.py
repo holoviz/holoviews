@@ -91,10 +91,6 @@ class MPLWidget(NdWidget):
             frames = super(MPLWidget, self).get_frames()
         else:
             frames = {0: self._plot_figure(0)}
-            if self.renderer.mode == 'mpld3':
-                self.frames[0] = frames
-            else:
-                self.frames.update(frames)
         return self.encode_frames(frames)
 
 
