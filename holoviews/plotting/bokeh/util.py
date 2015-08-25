@@ -66,4 +66,5 @@ def mpl_to_bokeh(properties):
             new_properties[k] = colors.ColorConverter.colors.get(v, v)
         else:
             new_properties[k] = v
+    new_properties.pop('cmap', None)
     return new_properties

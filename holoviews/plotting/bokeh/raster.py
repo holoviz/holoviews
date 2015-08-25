@@ -9,7 +9,7 @@ from .util import mplcmap_to_palette
 
 class RasterPlot(ElementPlot):
 
-    style_opts = ['palette', 'cmap']
+    style_opts = ['cmap']
     _plot_method = 'image'
 
     def __init__(self, *args, **kwargs):
@@ -35,14 +35,11 @@ class RasterPlot(ElementPlot):
     def _glyph_properties(self, plot, element, source, ranges):
         properties = super(RasterPlot, self)._glyph_properties(plot, element,
                                                                source, ranges)
-        properties = {k: v for k, v in properties.items()
-                      if k not in ['palette', 'cmap']}
+        properties = {k: v for k, v in properties.items()}
         val_dim = [d.name for d in element.vdims][0]
         low, high = ranges.get(val_dim)
         if 'cmap' in properties:
-            palette = mplcmap_to_palette(properties.get('cmap'))
-        else:
-            palette = properties.get('palette', 'Greys9')
+            palette = mplcmap_to_palette(properties.pop('cmap', None))
         properties['color_mapper'] = LinearColorMapper(palette, low=low, high=high)
         return properties
 
