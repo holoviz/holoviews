@@ -40,6 +40,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
+    lod = param.Dict(default={'factor': 10, 'interval': 300,
+                              'threshold': 2000, 'timeout': 500}, doc="""
+        Bokeh plots offer "Level of Detail" (LOD) capability to
+        accomodate large (but not huge) amounts of data. The available
+        options are:
+
+          * factor    - Decimation factor to use when applying
+                        decimation.
+          * interval  - Interval (in ms) downsampling will be enabled
+                        after an interactive event.
+          * threshold - Number of samples before downsampling is enabled.
+          * timeout   - Timeout (in ms) for checking whether interactive
+                        tool events are still occurring.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -184,6 +198,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['background_fill'] = self.bgcolor
         if self.border is not None:
             plot_props['min_border'] = self.border
+        lod = dict(self.defaults()['lod'], **self.lod)
+        for lod_prop, v in lod.items():
+            plot_props['lod_'+lod_prop] = v
         return plot_props
 
 
