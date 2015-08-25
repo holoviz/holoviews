@@ -122,6 +122,14 @@ class DimensionedPlot(Plot):
     dimension values.
     """
 
+    fontsize = param.Parameter(default=None, allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
+
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
 
@@ -187,6 +195,20 @@ class DimensionedPlot(Plot):
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         return util.safe_unicode('\n '.join(g for g in groups if g))
+
+
+    def _fontsize(self, key, label='fontsize', common=True):
+        """
+        To be used as kwargs e.g: **self._fontsize('title')
+        """
+        if not self.fontsize:
+            return {}
+        if isinstance(self.fontsize, dict):
+            if key not in self.fontsize:
+                return {}
+            else:
+                return {label:self.fontsize[key]}
+        return {label:self.fontsize} if common else {}
 
 
     def compute_ranges(self, obj, key, ranges):
