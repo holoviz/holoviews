@@ -393,6 +393,9 @@ class OutputMagic(OptionsMagic):
             try:
                 import bokeh
                 import bokeh.io
+                if not cls.bokeh_loaded:
+                    outputwarning.warning("Some elements and plot options are "
+                                          "not supported by Bokeh library and backend.")
             except:
                 raise ImportError("Could not import one of bokeh, pandas or scipy.")
 
