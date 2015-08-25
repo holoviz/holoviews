@@ -247,7 +247,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _glyph_properties(self, plot, element, source, ranges):
-        return self.lookup_options(element, 'style')[self.cyclic_index]
+        properties = self.lookup_options(element, 'style')[self.cyclic_index]
+        return mpl_to_bokeh(properties)
 
 
     def _update_glyph(self, glyph, properties):

@@ -34,7 +34,7 @@ class PointPlot(ElementPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 'alpha', 'color'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color'] +
                   line_properties + fill_properties)
 
     def get_data(self, element, ranges=None):

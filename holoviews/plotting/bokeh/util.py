@@ -8,6 +8,19 @@ except ImportError:
 
 from bokeh.enums import Palette
 
+# Conversion between matplotlib and bokeh markers
+markers = {'s': {'marker': 'square'},
+           'd': {'marker': 'diamond'},
+           '^': {'marker': 'triangle', 'orientation': 0},
+           '>': {'marker': 'triangle', 'orientation': np.pi/2},
+           'v': {'marker': 'triangle', 'orientation': np.pi},
+           '<': {'marker': 'triangle', 'orientation': -np.pi/2},
+           '1': {'marker': 'triangle', 'orientation': 0},
+           '2': {'marker': 'triangle', 'orientation': np.pi/2},
+           '3': {'marker': 'triangle', 'orientation': np.pi},
+           '4': {'marker': 'triangle', 'orientation': -np.pi/2}}
+
+
 def mplcmap_to_palette(cmap):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
@@ -35,3 +48,22 @@ def map_colors(arr, crange, cmap):
     """
     arr = (arr - arr.min()) / (arr.max()-arr.min())
     return [colors.rgb2hex(cmap(c)) for c in arr]
+
+
+def mpl_to_bokeh(properties):
+    """
+    Utility to process style properties converting any
+    matplotlib specific options to their nearest bokeh
+    equivalent.
+    """
+    new_properties = {}
+    for k, v in properties.items():
+        if k == 's':
+            new_properties['size'] = v
+        elif k == 'marker':
+            new_properties.update(markers.get(v, {'marker': v}))
+        elif k == 'color' or k.endswith('_color'):
+            new_properties[k] = colors.ColorConverter.colors.get(v, v)
+        else:
+            new_properties[k] = v
+    return new_properties
