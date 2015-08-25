@@ -52,10 +52,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         A list of plugin tools to use on the plot.""")
 
     xaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', 'bare', 'left-bare',
-                                               'right-bare', None], doc="""
-        Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel.""")
+                                 objects=['left', 'right', 'bare',
+                                          'left-bare', 'right-bare',
+                                          None], doc="""
+        Whether and where to display the xaxis, bare options allow
+        suppressing all axis labels including ticks and xlabel.""")
 
     xlog = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -65,14 +66,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     xticks = param.Parameter(default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None
-        default bokeh ticking behavior is applied.""")
+        tick locations or bokeh Ticker object. If set to None default
+        bokeh ticking behavior is applied.""")
 
     yaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom', 'bare', 'top-bare',
-                                          'bottom-bare', None], doc="""
-        Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel.""")
+                                 objects=['top', 'bottom',
+                                          'bare', 'top-bare',
+                                          'bottom-bare', None],
+                                 doc="""
+        Whether and where to display the yaxis, bare options allow
+        suppressing all axis labels including ticks and ylabel.""")
 
     ylog = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -85,7 +88,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tick locations or bokeh Ticker object. If set to None
         default bokeh ticking behavior is applied.""")
 
-    _plot_method = None # A string corresponding to the glyph being drawn by the ElementPlot
+    # A string corresponding to the glyph being drawn by the
+    # ElementPlot
+    _plot_method = None
 
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -93,10 +98,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _init_tools(self, element):
+        """
+        Processes the list of tools to be supplied to the plot.
+        """
         tools = list(self.tools)
         if 'hover' in tools:
             tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
+
         return tools
 
 
@@ -163,6 +172,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _plot_properties(self, key, plot, element):
+        """
+        Returns a dictionary of plot properties.
+        """
         title_font = self._fontsize('title', 'title_text_font_size')
         plot_props = dict(plot_height=self.height, plot_width=self.width,
                           title_text_color='black', **title_font)
@@ -176,6 +188,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _axis_properties(self, axis, key, plot, element):
+        """
+        Returns a dictionary of axis properties depending
+        on the specified axis.
+        """
         axis_props = {}
         if ((axis == 'x' and self.xaxis in ['left-bare' or None]) or
             (axis == 'y' and self.yaxis in ['bottom-bare' or None])):
@@ -218,19 +234,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l.border_line_alpha = 0
 
 
-    def _source_mapping(self, element):
-        """
-        This method should return a dictionary that maps
-        between glyph keyword arguments and the name of
-        the data in the data source.
-        """
-        raise NotImplementedError
-
-
     def get_data(self, element, ranges=None):
         """
         Returns the data from an element in the appropriate format for
-        initializing or updating a ColumnDataSource.
+        initializing or updating a ColumnDataSource and a dictionary
+        which maps the expected keywords arguments of a glyph to
+        the column in the datasource.
         """
         raise NotImplementedError
 
@@ -364,9 +373,12 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    legend_position = param.ObjectSelector(objects=["top_right", "top_left",
-                                                    "bottom_left", "bottom_right"],
-                                           default="top_right", doc="""
+    legend_position = param.ObjectSelector(objects=["top_right",
+                                                    "top_left",
+                                                    "bottom_left",
+                                                    "bottom_right"],
+                                                    default="top_right",
+                                                    doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
         legend_specs class attribute.""")

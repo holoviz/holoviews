@@ -18,9 +18,11 @@ class BokehPlot(Plot):
     plotting interface for Bokeh based plots.
     """
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, doc="""
+        Width of the plot in pixels""")
 
-    height = param.Integer(default=300)
+    height = param.Integer(default=300, doc="""
+        Height of the plot in pixels""")
 
     renderer = BokehRenderer
 
