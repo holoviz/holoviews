@@ -254,6 +254,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a Bokeh glyph object.
         """
+        properties = mpl_to_bokeh(properties)
         getattr(plot, self._plot_method)(**dict(properties, **mapping))
 
 
@@ -261,7 +262,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties = self.lookup_options(element, 'style')[self.cyclic_index]
         properties['legend'] = element.label
         properties['source'] = source
-        return mpl_to_bokeh(properties)
+        return properties
 
 
     def _update_glyph(self, glyph, properties, mapping):
