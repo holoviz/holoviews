@@ -47,18 +47,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether to invert the share axes across plots
         for linked panning and zooming.""")
 
-    title_size = param.String(default='12pt', doc="""
-        Title font size to apply to the plot.""")
-
-    xlog = param.Boolean(default=False, doc="""
-        Whether the x-axis of the plot will be a log axis.""")
-
-    ylog = param.Boolean(default=False, doc="""
-        Whether the x-axis of the plot will be a log axis.""")
-
-    show_legend = param.Boolean(default=False, doc="""
-        Whether to show legend for the plot.""")
-
     tools = param.List(default=['pan', 'wheel_zoom', 'box_zoom',
                                 'reset', 'resize'], doc="""
         A list of plugin tools to use on the plot.""")
@@ -69,29 +57,33 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether and where to display the xaxis, bare options allow suppressing
         all axis labels including ticks and xlabel.""")
 
+    xlog = param.Boolean(default=False, doc="""
+        Whether the x-axis of the plot will be a log axis.""")
+
+    xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
+    xticks = param.Parameter(default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations or bokeh Ticker object. If set to None
+        default bokeh ticking behavior is applied.""")
+
     yaxis = param.ObjectSelector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel.""")
 
-    xticks = param.Parameter(default=None, doc="""
-        Ticks along x-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
+    ylog = param.Boolean(default=False, doc="""
+        Whether the x-axis of the plot will be a log axis.""")
 
-    xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
+    yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
     yticks = param.Parameter(default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
-
-    yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        tick locations or bokeh Ticker object. If set to None
+        default bokeh ticking behavior is applied.""")
 
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
