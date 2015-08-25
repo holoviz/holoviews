@@ -10,6 +10,7 @@ from .util import mplcmap_to_palette
 class RasterPlot(ElementPlot):
 
     style_opts = ['palette', 'cmap']
+    _plot_method = 'image'
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -26,13 +27,16 @@ class RasterPlot(ElementPlot):
         dh = t-b
         if type(element) is Raster:
             b = t
-        return dict(image=[np.flipud(img)], x=[l], y=[b], dw=[r-l], dh=[dh])
+        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        return (dict(image=[np.flipud(img)], x=[l],
+                     y=[b], dw=[r-l], dh=[dh]), mapping)
 
 
     def _glyph_properties(self, plot, element, source, ranges):
         properties = super(RasterPlot, self)._glyph_properties(plot, element,
-                                                              source, ranges)
-        properties = {k: v for k, v in properties if k not in ['palette', 'cmap']}
+                                                               source, ranges)
+        properties = {k: v for k, v in properties.items()
+                      if k not in ['palette', 'cmap']}
         val_dim = [d.name for d in element.vdims][0]
         low, high = ranges.get(val_dim)
         if 'cmap' in properties:
@@ -43,18 +47,13 @@ class RasterPlot(ElementPlot):
         return properties
 
 
-    def _init_glyph(self, element, plot, source, properties):
-        plot.image(image='image', x='x', y='y', dw='dw', dh='dh',
-                   source=source, legend=element.label, **properties)
-
-
-
 class RGBPlot(RasterPlot):
 
     style_opts = []
+    _plot_method = 'image_rgba'
 
     def get_data(self, element, ranges=None):
-        data = super(RGBPlot, self).get_data(element, ranges)
+        data, mapping = super(RGBPlot, self).get_data(element, ranges)
         img = data['image'][0]
         if img.ndim == 3:
             if img.shape[2] == 3: # alpha channel not included
@@ -64,10 +63,8 @@ class RGBPlot(RasterPlot):
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
             data['image'] = [img]
-        return data
+        return data, mapping
 
-
-    def _init_glyph(self, element, plot, source, properties):
-        plot.image_rgba(image='image', x='x', y='y', dw='dw',
-                        dh='dh', source=source, legend=element.label,
-                        **properties)
+    def _glyph_properties(self, plot, element, source, ranges):
+        return ElementPlot._glyph_properties(self, plot, element,
+                                             source, ranges)

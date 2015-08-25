@@ -6,7 +6,7 @@ from bokeh import mpl
 import param
 
 from ...core import Store, HoloMap
-from ...core.util import match_spec
+from ...core import util
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
 from .util import mpl_to_bokeh
@@ -84,6 +84,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Ticks along y-axis specified as an integer, explicit list of
         tick locations or bokeh Ticker object. If set to None
         default bokeh ticking behavior is applied.""")
+
+    _plot_method = None # A string corresponding to the glyph being drawn by the ElementPlot
 
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -216,6 +218,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l.border_line_alpha = 0
 
 
+    def _source_mapping(self, element):
+        """
+        This method should return a dictionary that maps
+        between glyph keyword arguments and the name of
+        the data in the data source.
+        """
+        raise NotImplementedError
+
+
     def get_data(self, element, ranges=None):
         """
         Returns the data from an element in the appropriate format for
@@ -224,36 +235,39 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         raise NotImplementedError
 
 
-    def _init_datasource(self, element, ranges=None):
+    def _init_datasource(self, data):
         """
         Initializes a data source to be passed into the bokeh glyph.
         """
-        return ColumnDataSource(data=self.get_data(element, ranges))
+        return ColumnDataSource(data=data)
 
 
-    def _update_datasource(self, source, element, ranges):
+    def _update_datasource(self, source, data):
         """
         Update datasource with data for a new frame.
         """
-        for k, v in self.get_data(element, ranges).items():
+        for k, v in data.items():
             source.data[k] = v
 
 
-    def _init_glyph(self, element, plot, source, properties):
+    def _init_glyph(self, plot, mapping, properties):
         """
         Returns a Bokeh glyph object.
         """
-        raise NotImplementedError
+        getattr(plot, self._plot_method)(**dict(properties, **mapping))
 
 
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.lookup_options(element, 'style')[self.cyclic_index]
+        properties['legend'] = element.label
+        properties['source'] = source
         return mpl_to_bokeh(properties)
 
 
-    def _update_glyph(self, glyph, properties):
+    def _update_glyph(self, glyph, properties, mapping):
         allowed_properties = glyph.properties()
-        glyph.set(**{k: v for k, v in properties.items()
+        merged = dict(properties, **mapping)
+        glyph.set(**{k: v for k, v in merged.items()
                      if k in allowed_properties})
 
 
@@ -265,15 +279,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         element = self.map.last
         key = self.keys[-1]
         ranges = self.compute_ranges(self.map, key, ranges)
-        ranges = match_spec(element, ranges)
+        ranges = util.match_spec(element, ranges)
 
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
+        data, mapping = self.get_data(element, ranges)
         if source is None:
-            source = self._init_datasource(element, ranges)
+            source = self._init_datasource(data)
         properties = self._glyph_properties(plot, element, source, ranges)
-        self._init_glyph(element, plot, source, properties)
+        self._init_glyph(plot, mapping, properties)
         glyph = plot.renderers[-1].glyph
         self.handles['plot']   = plot
         self.handles['source'] = source
@@ -297,15 +312,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not element:
             return
 
+        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = util.match_spec(element, ranges)
+
         if plot is None:
             plot = self.handles['plot']
         source = self.handles['source']
-        self._update_datasource(source, element, ranges)
+        data, mapping = self.get_data(element, ranges)
+        self._update_datasource(source, data)
         if not self.overlaid:
             self._update_plot(key, plot, element)
-        properties = self._glyph_properties(plot, element,
-                                            source, ranges)
-        self._update_glyph(self.handles['glyph'], properties)
 
 
 
@@ -339,6 +355,7 @@ class BokehMPLWrapper(ElementPlot):
         if key in self.map:
             self.mplplot.update_frame(key, ranges)
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
+
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):

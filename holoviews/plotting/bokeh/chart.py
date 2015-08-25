@@ -7,7 +7,7 @@ from ...core.util import max_range
 from ...element import Chart
 from ..util import compute_sizes
 from .element import ElementPlot, line_properties, fill_properties
-from .path import PathPlot
+from .path import PathPlot, PolygonPlot
 from .util import map_colors, get_cmap
 
 
@@ -37,17 +37,23 @@ class PointPlot(ElementPlot):
     style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color'] +
                   line_properties + fill_properties)
 
+    _plot_method = 'scatter'
+
     def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
+
+        mapping = dict(x= dims[0], y=dims[1])
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
+            mapping['fill_color'] = dims[self.color_index]
             cmap = get_cmap(cmap)
             colors = element.data[:, self.color_index]
             data[dims[self.color_index]] = map_colors(colors, ranges, cmap)
         if self.size_index < len(dims):
+            mapping['size'] = dims[self.size_index]
             val_dim = dims[self.size_index]
             ms = style.get('size', 1)
             sizes = element.data[:, self.size_index]
@@ -55,43 +61,21 @@ class PointPlot(ElementPlot):
                                                         self.scaling_factor, ms)
         data[dims[0]] = element.data[:, 0]
         data[dims[1]] = element.data[:, 1]
-        return data
-
-
-    def _glyph_properties(self, plot, element, source, ranges):
-        dims = element.dimensions(label=True)
-        properties = super(PointPlot, self)._glyph_properties(plot, element,
-                                                              source, ranges)
-        properties['x'] = dims[0]
-        properties['y'] = dims[1]
-        if self.color_index < len(dims):
-            properties['fill_color'] = dims[self.color_index]
-            properties.pop('cmap', None)
-            properties.pop('palette', None)
-        if self.size_index < len(dims):
-            properties['size'] = dims[self.size_index]
-        return properties
-
-
-    def _init_glyph(self, element, plot, source, properties):
-        plot.scatter(source=source, legend=element.label,
-                     **properties)
+        return data, mapping
 
 
 
 class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
+    _plot_method = 'line'
 
     def get_data(self, element, ranges=None):
-        return dict(x=element.data[:, 0], y=element.data[:, 1])
-
-    def _init_glyph(self, element, plot, source, properties):
-        plot.line(x='x', y='y', source=source, legend=element.label,
-                  **properties)
+        return (dict(x=element.data[:, 0], y=element.data[:, 1]),
+                dict(x='x', y='y'))
 
 
-class SpreadPlot(ElementPlot):
+class SpreadPlot(PolygonPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
 
@@ -99,19 +83,12 @@ class SpreadPlot(ElementPlot):
         super(SpreadPlot, self).__init__(*args, **kwargs)
         self._extent = None
 
-
     def get_data(self, element, ranges=None):
         lower = element.data[:, 1] - element.data[:, 2]
         upper = element.data[:, 1] + element.data[:, 3]
         band_x = np.append(element.data[:, 0], element.data[::-1, 0])
         band_y = np.append(lower, upper[::-1])
-        return dict(xs=[band_x], ys=[band_y])
-
-
-    def _init_glyph(self, element, plot, source, properties):
-        plot.patches(xs='xs', ys='ys', source=source, legend=element.label,
-                     **properties)
-
+        return dict(xs=[band_x], ys=[band_y]), self._mapping
 
     def get_extents(self, view, ranges):
         x0, y0, x1, y1 = super(SpreadPlot, self).get_extents(view, ranges)
@@ -133,14 +110,13 @@ class SpreadPlot(ElementPlot):
 class HistogramPlot(ElementPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
+    _plot_method = 'quad'
 
     def get_data(self, element, ranges=None):
-        return dict(top=element.values, left=element.edges[:-1],
-                    right=element.edges[1:])
+        mapping = dict(top='top', bottom=0, left='left', right='right')
+        return (dict(top=element.values, left=element.edges[:-1],
+                     right=element.edges[1:]), mapping)
 
-    def _init_glyph(self, element, plot, source, properties):
-        plot.quad(top='top', bottom=0, left='left', right='right',
-                  source=source, legend=element.label, **properties)
 
 
 class ErrorPlot(PathPlot):
@@ -160,4 +136,4 @@ class ErrorPlot(PathPlot):
             else:
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
-        return dict(xs=err_xs, ys=err_ys)
+        return (dict(xs=err_xs, ys=err_ys), self._mapping)

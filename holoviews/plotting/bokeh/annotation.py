@@ -7,13 +7,12 @@ from .element import ElementPlot, text_properties, line_properties
 class TextPlot(ElementPlot):
 
     style_opts = text_properties
+    _plot_method = 'text'
 
     def get_data(self, element, ranges=None):
-        return dict(x=[element.x], y=[element.y], text=[element.text])
-
-    def _init_glyph(self, element, plot, source, properties):
-        plot.text(x='x', y='y', text='text', source=source,
-                  **properties)
+        mapping = dict(x='x', y='y', text='text')
+        return (dict(x=[element.x], y=[element.y],
+                     text=[element.text]), mapping)
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
@@ -22,6 +21,7 @@ class TextPlot(ElementPlot):
 class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
+    _plot_method = 'ray'
 
     def get_data(self, element, ranges=None):
         if isinstance(element, HLine):
@@ -30,13 +30,8 @@ class LineAnnotationPlot(ElementPlot):
         elif isinstance(element, VLine):
             angle = np.pi/2
             x, y = element.data, 0
-        return dict(x=[x], y=[y], angle=[angle], length=[100])
-
-
-    def _init_glyph(self, element, plot, source, properties):
-        plot.ray(x='x', y='y', length='length', angle='angle',
-                 source=source, **properties)
-
+        return (dict(x=[x], y=[y], angle=[angle], length=[100]),
+                dict(x='x', y='y', angle='angle', length='length'))
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
