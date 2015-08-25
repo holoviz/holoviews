@@ -11,9 +11,9 @@ class TextPlot(ElementPlot):
     def get_data(self, element, ranges=None):
         return dict(x=[element.x], y=[element.y], text=[element.text])
 
-    def _init_glyph(self, element, plot, source, ranges):
-        self.handles['text'] = plot.text(x='x', y='y', text='text',
-                                         source=source, **self.style)
+    def _init_glyph(self, element, plot, source, properties):
+        plot.text(x='x', y='y', text='text', source=source,
+                  **properties)
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
@@ -33,9 +33,9 @@ class LineAnnotationPlot(ElementPlot):
         return dict(x=[x], y=[y], angle=[angle], length=[100])
 
 
-    def _init_glyph(self, element, plot, source, ranges):
-        self.handles['line'] = plot.ray(x='x', y='y', length='length',
-                                        angle='angle', source=source, **self.style)
+    def _init_glyph(self, element, plot, source, properties):
+        plot.ray(x='x', y='y', length='length', angle='angle',
+                 source=source, **properties)
 
 
     def get_extents(self, element, ranges=None):

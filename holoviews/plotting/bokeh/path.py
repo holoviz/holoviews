@@ -10,16 +10,15 @@ class PathPlot(ElementPlot):
         ys = [path[:, 1] for path in element.data]
         return dict(xs=xs, ys=ys)
 
-    def _init_glyph(self, element, plot, source, ranges):
-        paths = plot.multi_line(xs='xs', ys='ys', source=source,
-                                legend=element.label, **self.style)
-        self.handles['lines'] = paths
+    def _init_glyph(self, element, plot, source, properties):
+        plot.multi_line(xs='xs', ys='ys', source=source,
+                        legend=element.label, **properties)
 
 
 class PolygonPlot(PathPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
 
-    def _init_glyph(self, element, plot, source, ranges):
-        self.handles['patches'] = plot.patches(xs='xs', ys='ys', source=source,
-                                               legend=element.label, **self.style)
+    def _init_glyph(self, element, plot, source, properties):
+        plot.patches(xs='xs', ys='ys', source=source, legend=element.label,
+                     **properties)

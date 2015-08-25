@@ -8,8 +8,8 @@ import param
 from ...core import Store, HoloMap
 from ...core.util import match_spec
 from ..plot import GenericElementPlot, GenericOverlayPlot
-
 from .plot import BokehPlot
+from .util import mpl_to_bokeh
 
 
 # Define shared style properties for bokeh plots
@@ -87,7 +87,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def __init__(self, element, plot=None, **params):
         super(ElementPlot, self).__init__(element, **params)
-        self.style = self.style[self.cyclic_index]
         self.handles = {} if plot is None else self.handles['plot']
 
 
@@ -240,29 +239,46 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source.data[k] = v
 
 
-    def _init_glyph(self, element, plot, source, ranges):
+    def _init_glyph(self, element, plot, source, properties):
         """
         Returns a Bokeh glyph object.
         """
         raise NotImplementedError
 
 
+    def _glyph_properties(self, plot, element, source, ranges):
+        return self.lookup_options(element, 'style')[self.cyclic_index]
+
+
+    def _update_glyph(self, glyph, properties):
+        allowed_properties = glyph.properties()
+        glyph.set(**{k: v for k, v in properties.items()
+                     if k in allowed_properties})
+
+
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
         Initializes a new plot object with the last available frame.
         """
+        # Get element key and ranges for frame
         element = self.map.last
         key = self.keys[-1]
-
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(element, ranges)
+
+        # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
         if source is None:
             source = self._init_datasource(element, ranges)
-        self.handles['plot'] = plot
+        properties = self._glyph_properties(plot, element, source, ranges)
+        self._init_glyph(element, plot, source, properties)
+        glyph = plot.renderers[-1].glyph
+        self.handles['plot']   = plot
         self.handles['source'] = source
-        self._init_glyph(element, plot, source, ranges)
+        self.handles['glyph']  = glyph
+
+        # Update plot, source and glyph
         if not self.overlaid:
             self._update_plot(key, plot, element)
         self._process_legend()
@@ -276,15 +292,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
+        element = self._get_frame(key)
+        if not element:
+            return
 
         if plot is None:
             plot = self.handles['plot']
-        element = self._get_frame(key)
-        if element:
-            source = self.handles['source']
-            self._update_datasource(source, element, ranges)
-            if not self.overlaid:
-                self._update_plot(key, plot, element)
+        source = self.handles['source']
+        self._update_datasource(source, element, ranges)
+        if not self.overlaid:
+            self._update_plot(key, plot, element)
+        properties = self._glyph_properties(plot, element,
+                                            source, ranges)
+        self._update_glyph(self.handles['glyph'], properties)
 
 
 
@@ -331,7 +351,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
-
 
     style_opts = legend_dimensions + line_properties + text_properties
 
