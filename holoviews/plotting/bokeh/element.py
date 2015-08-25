@@ -61,8 +61,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether to invert the share axes across plots
         for linked panning and zooming.""")
 
-    tools = param.List(default=['pan', 'wheel_zoom', 'box_zoom',
-                                'reset', 'resize'], doc="""
+    default_tools = param.List(default=['save', 'pan', 'wheel_zoom',
+                                        'box_zoom', 'resize', 'reset'],
+        doc="A list of plugin tools to use on the plot.")
+
+    tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
     xaxis = param.ObjectSelector(default='left',
@@ -115,11 +118,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Processes the list of tools to be supplied to the plot.
         """
-        tools = list(self.tools)
+        tools = self.default_tools + self.tools
         if 'hover' in tools:
             tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
-
         return tools
 
 
