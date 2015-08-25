@@ -265,6 +265,9 @@ class BokehMPLWrapper(ElementPlot):
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
+        element = self.map.last
+        key = self.keys[-1]
+
         self.mplplot.initialize_plot(ranges)
         plot = mpl.to_bokeh(self.mplplot.state)
         self.handles['plot'] = plot
