@@ -85,17 +85,17 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             # Create axes
             kwargs = {}
             if c == 0 and r != 0:
-                kwargs['xaxis'] = 'bottom-bare'
+                kwargs['xaxis'] = 'left-bare'
                 kwargs['width'] = 175
             if c != 0 and r == 0 and not layout.ndims == 1:
-                kwargs['yaxis'] = 'left-bare'
+                kwargs['yaxis'] = 'bottom-bare'
                 kwargs['height'] = 175
             if c == 0 and r == 0:
                 kwargs['width'] = 175
                 kwargs['height'] = 175
             if r != 0 and c != 0:
-                kwargs['xaxis'] = 'bottom-bare'
-                kwargs['yaxis'] = 'left-bare'
+                kwargs['xaxis'] = 'left-bare'
+                kwargs['yaxis'] = 'bottom-bare'
 
             if 'width' not in kwargs:
                 kwargs['width'] = 125
