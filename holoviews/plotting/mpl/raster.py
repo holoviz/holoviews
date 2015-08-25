@@ -368,7 +368,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                             yticks=(self._yticks, self._process_ticklabels(self._ykeys, ydim)))
 
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
         return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel

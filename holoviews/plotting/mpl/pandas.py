@@ -93,7 +93,7 @@ class DFrameViewPlot(ElementPlot):
         return style
 
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         if view.x and not xlabel:
             xlabel = str(view.get_dimension(view.x))
         if view.x2 and not ylabel:
