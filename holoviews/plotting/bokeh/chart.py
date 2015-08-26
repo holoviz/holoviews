@@ -81,7 +81,6 @@ class SpreadPlot(PolygonPlot):
 
     def __init__(self, *args, **kwargs):
         super(SpreadPlot, self).__init__(*args, **kwargs)
-        self._extent = None
 
     def get_data(self, element, ranges=None):
         lower = element.data[:, 1] - element.data[:, 2]
@@ -89,22 +88,6 @@ class SpreadPlot(PolygonPlot):
         band_x = np.append(element.data[:, 0], element.data[::-1, 0])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y]), self._mapping
-
-    def get_extents(self, view, ranges):
-        x0, y0, x1, y1 = super(SpreadPlot, self).get_extents(view, ranges)
-        normopts = self.lookup_options(view, 'norm')
-        if normopts.options.get('framewise', False):
-            y0 = view.data[:, 1] - view.data[:, 2]
-            y1 = view.data[:, 1] + view.data[:, 3]
-        else:
-            if not self._extent:
-                max_spread = lambda x: (np.min(x.data[:, 1] - x.data[:, 2]),
-                                        np.max(x.data[:,1] + x.data[:, 3]))
-                y0, y1 = max_range(self.map.traverse(max_spread, (type(view),)))
-                self._extent = (y0, y1)
-            else:
-                y0, y1 = self._extent
-        return x0, y0, x1, y1
 
 
 class HistogramPlot(ElementPlot):
