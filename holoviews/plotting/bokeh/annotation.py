@@ -24,13 +24,18 @@ class LineAnnotationPlot(ElementPlot):
     _plot_method = 'ray'
 
     def get_data(self, element, ranges=None):
+        plot = self.handles['plot']
         if isinstance(element, HLine):
+            low, high = plot.x_range.start, plot.x_range.end
+            length = high-low
             angle = 0
-            x, y = 0, element.data
+            x, y = low, element.data
         elif isinstance(element, VLine):
+            low, high = plot.y_range.start, plot.y_range.end
+            length = high-low
             angle = np.pi/2
-            x, y = element.data, 0
-        return (dict(x=[x], y=[y], angle=[angle], length=[100]),
+            x, y = element.data, low
+        return (dict(x=[x], y=[y], angle=[angle], length=[length]),
                 dict(x='x', y='y', angle='angle', length='length'))
 
     def get_extents(self, element, ranges=None):
