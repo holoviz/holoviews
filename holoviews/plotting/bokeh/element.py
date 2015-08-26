@@ -313,14 +313,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
+        self.handles['plot']   = plot
+
         data, mapping = self.get_data(element, ranges)
         if source is None:
             source = self._init_datasource(data)
+        self.handles['source'] = source
+
         properties = self._glyph_properties(plot, element, source, ranges)
         self._init_glyph(plot, mapping, properties)
         glyph = plot.renderers[-1].glyph
-        self.handles['plot']   = plot
-        self.handles['source'] = source
         self.handles['glyph']  = glyph
 
         # Update plot, source and glyph
