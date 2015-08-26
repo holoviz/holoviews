@@ -2,35 +2,22 @@
 
 {% block init_slider %}
 {{ widget_name }}.prototype.init_slider = function(init_val){
-    this.initialized = false;
-    this.update_cache();
-    this.update(0);
-    if(this.cached) {
-	var frame_len = Object.keys(this.keyMap).length;
-	for (var frame=0; frame<frame_len; frame++) {
-	    this.dynamic_update(frame);
-	}
-    } else {
-	this.dynamic_update(0);
-    }
-    this.initialized = true;
+    $.each(this.frames, $.proxy(function(index, frame) {
+	this.frames[index] = JSON.parse(frame);
+    }, this));
 }
 {% endblock %}
 
 {% block update %}
 {{ widget_name }}.prototype.update = function(current){
-    if (!(this.initialized) && current == 0) {
-    	this.cache[current].show();
-    } else if (this.initialized || !(self.cached)) {
-    	var data = this.cache[current];
-	data = JSON.parse(data.attr("data"));
-    	$.each(data, function(id, value) {
-    	    var ds = Bokeh.Collections(value.mode).get(id);
-    	    if (ds != undefined) {
-    		ds.set(value.data);
-    	    }
-    	});
-    }
+    var data = this.frames[current];
+
+    $.each(data, function(id, value) {
+    	var ds = Bokeh.Collections(value.mode).get(id);
+    	if (ds != undefined) {
+    	    ds.set(value.data);
+    	}
+    });
 }
 {% endblock %}
 
@@ -41,13 +28,11 @@
 	   in order to parse it correctly quotes are sliced off*/
 	if (msg.msg_type == "execute_result") {
 	    var data = msg.content.data['text/plain'].slice(1, -1);
-	    this.cache[current] = $('<div />').appendTo("#" + this.img_id).attr("data", data).hide();
-	    if (initialized) {
-		this.update(current);
-	    }
+	    this.frames[current] = JSON.parse(data);
+	    this.update(current);
 	}
     }
-    if(!(current in this.cache) || !(this.initialized)) {
+    if(!(current in this.frames)) {
 	var kernel = IPython.notebook.kernel;
 	callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
 	var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
@@ -56,4 +41,8 @@
 	this.update(current);
     }
 }
+{% endblock %}
+
+{% block init_frame %}
+{{ init_frame }}
 {% endblock %}

@@ -7,25 +7,23 @@ class BokehWidget(NdWidget):
 
     template = param.String(default='./bokehwidget.jinja')
 
-    def __init__(self, plot, renderer=None, **params):
-        super(BokehWidget, self).__init__(plot, renderer, **params)
-        self.initialized = False
-
-
-    def get_frames(self):
-        frames = {0: self._plot_figure(0)}
-        return self.encode_frames(frames)
+    def _get_data(self):
+        # Get initial frame to draw immediately
+        init_frame = self._plot_figure(0, fig_format='html')
+        data = super(BokehWidget, self)._get_data()
+        return dict(data, init_frame=init_frame)
 
     def encode_frames(self, frames):
         frames = json.dumps(frames).replace('</', r'<\/')
         return frames
 
-    def _plot_figure(self, idx):
-        redraw = not self.initialized
+    def _plot_figure(self, idx, fig_format='json'):
+        """
+        Returns the figure in html format on the
+        first call and
+        """
         self.plot.update(idx)
-        figure_format = 'html' if redraw else 'json'
-        self.initialized = True
-        return self.renderer.html(self.plot, figure_format)
+        return self.renderer.html(self.plot, fig_format)
 
 
 
