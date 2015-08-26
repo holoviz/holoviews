@@ -437,6 +437,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         ranges = self.compute_ranges(self.map, key, ranges)
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
+        if not self.overlaid:
+            self._update_plot(key, plot, self.map.last)
         self.handles['plot'] = plot
 
         for subplot in self.subplots.values():

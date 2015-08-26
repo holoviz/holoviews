@@ -430,7 +430,7 @@ class GenericElementPlot(DimensionedPlot):
 
     def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         # Axis labels
-        dims = view.dimensions()
+        dims = view.dimensions('all')
         if isinstance(view, CompositeOverlay):
             dims = dims[view.ndims:]
         if dims and xlabel is None:
@@ -573,10 +573,6 @@ class GenericOverlayPlot(GenericElementPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
 
         return subplots
-
-
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        return xlabel, ylabel, zlabel
 
 
     def get_extents(self, overlay, ranges):
