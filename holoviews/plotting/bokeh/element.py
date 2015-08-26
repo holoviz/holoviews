@@ -411,7 +411,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             return
 
         options = {}
-        for k, v in self.style.items():
+        properties = self.lookup_options(self.map.last, 'style')[self.cyclic_index]
+        for k, v in properties.items():
             if k in line_properties:
                 k = 'border_' + k
             elif k in text_properties:
