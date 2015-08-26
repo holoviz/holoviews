@@ -77,6 +77,25 @@ class NdWidget(param.Parameterized):
         self.jinjaEnv = jinja2.Environment(loader=templateLoader)
 
 
+    def __call__(self):
+        return self.render_html(self._get_data())
+
+
+    def _get_data(self):
+        delay = int(1000./self.display_options.get('fps', 5))
+        CDN = {k: v[:-3] for k, v in self.CDN.items()}
+        template = self.jinjaEnv.get_template(self.base_template)
+        name = type(self).__name__
+        cached = str(self.embed).lower()
+        load_json = str(self.export_json).lower()
+        mode = repr(self.renderer.mode)
+        return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
+                    server=self.server_url, cached=cached,
+                    load_json=load_json, mode=mode, id=self.id,
+                    Nframes=len(self.plot), widget_name=name,
+                    widget_template=template)
+
+
     def render_html(self, data):
         template = self.jinjaEnv.get_template(self.template)
         return template.render(**data)
@@ -134,22 +153,6 @@ class ScrubberWidget(NdWidget):
 
     template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
-
-    def __call__(self):
-        frames = self.get_frames()
-
-        data = {'id': self.id, 'Nframes': len(self.plot),
-                'interval': int(1000./self.display_options.get('fps', 5)),
-                'frames': frames,
-                'load_json': str(self.export_json).lower(),
-                'server': self.server_url,
-                'CDN': {k: v[:-3] for k, v in self.CDN.items()},
-                'cached': str(self.embed).lower(),
-                'mode': repr(self.renderer.mode),
-                'widget_name': type(self).__name__,
-                'widget_template': self.jinjaEnv.get_template(self.base_template)}
-
-        return self.render_html(data)
 
 
 
@@ -215,25 +218,15 @@ class SelectionWidget(NdWidget):
         return json.dumps(key_data)
 
 
-    def __call__(self):
+    def _get_data(self):
+        data = super(SelectionWidget, self)._get_data()
         widgets, dimensions, init_dim_vals = self.get_widgets()
         key_data = self.get_key_data()
-        frames = self.get_frames()
+        notfound_msg = "<h2 style='vertical-align: middle>No frame at selected dimension value.<h2>"
+        throttle = self.throttle[self.embed]
+        return dict(data, Nframes=len(self.mock_obj),
+                    Nwidget=self.mock_obj.ndims,
+                    dimensions=dimensions, key_data=key_data,
+                    widgets=widgets, init_dim_vals=init_dim_vals,
+                    throttle=throttle, notFound=notfound_msg)
 
-        data = {'id': self.id, 'Nframes': len(self.mock_obj),
-                'Nwidget': self.mock_obj.ndims,
-                'frames': frames, 'dimensions': dimensions,
-                'key_data': key_data, 'widgets': widgets,
-                'init_dim_vals': init_dim_vals,
-                'load_json': str(self.export_json).lower(),
-                'mode': repr(self.renderer.mode),
-                'server': self.server_url,
-                'cached': str(self.embed).lower(),
-                'throttle': self.throttle[self.embed],
-                'CDN': {k: v[:-3] for k, v in self.CDN.items()},
-                'delay': int(1000./self.display_options.get('fps', 5)),
-                'notFound': "<h2 style='vertical-align: middle'>No frame at selected dimension value.<h2>",
-                'widget_name': type(self).__name__,
-                'widget_template': self.jinjaEnv.get_template(self.base_template)}
-
-        return self.render_html(data)

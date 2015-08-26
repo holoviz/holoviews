@@ -168,7 +168,10 @@ div.hologroup {
 
 <div class="hololayout row row-fluid">
     <div class="holoframe span9 col-xs-8 col-md-9">
-      <div id="_anim_img{{ id }}"></div>
+      <div id="_anim_img{{ id }}">
+        {% block init_frame %}
+        {% endblock %}
+      </div>
     </div>
     <div class="span3 col-xs-4 col-md-3">
     <form class="holoform well">
