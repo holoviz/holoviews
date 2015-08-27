@@ -15,14 +15,23 @@ notifications:
     on_failure: change # [always|never|change] default: always
 
 install:
-  - pip install -U pip wheel
-  - pip install coveralls
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
+      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION path.py==7.6.1 bokeh pandas scipy jupyter ipython matplotlib param
+  - source activate test-environment
+  - python setup.py install
   - pip install git+git://github.com/ioam/param.git
-  - pip install jinja2 tornado pyzmq matplotlib==1.4.2
-  - pip install ipython
-  - pip install jupyter
-  - pip install pandas
-  - pip install bokeh scipy
+  - pip install coveralls
 
 before-script:
   - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
