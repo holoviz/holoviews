@@ -3,11 +3,11 @@ import param
 
 from ...core import Dimension
 from ...core.util import match_spec
-from .element import ElementPlot
+from .element import ColorbarPlot
 from .chart import PointPlot
 
 
-class Plot3D(ElementPlot):
+class Plot3D(ColorbarPlot):
     """
     Plot3D provides a common baseclass for mplot3d based
     plots.
@@ -91,14 +91,14 @@ class Plot3D(ElementPlot):
         ax = self.handles['axis']
         # Get colorbar label
         if dim is None:
-            label = str(element.vdims[0])
-        else:
-            if not isinstance(dim, Dimension):
-                dim = element.get_dimension(dim)
-            label = str(dim)
+            dim = element.vdims[0]
+
+        elif not isinstance(dim, Dimension):
+            dim = element.get_dimension(dim)
+        label = str(dim)
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
         self.handles['cax'] = cbar.ax
-        self._adjust_cbar(cbar, label)
+        self._adjust_cbar(cbar, label, dim)
 
 
 
