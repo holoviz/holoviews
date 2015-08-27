@@ -21,22 +21,23 @@ class TextPlot(ElementPlot):
 class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
-    _plot_method = 'ray'
+    _plot_method = 'segment'
 
     def get_data(self, element, ranges=None):
         plot = self.handles['plot']
         if isinstance(element, HLine):
-            low, high = plot.x_range.start, plot.x_range.end
-            length = high-low
-            angle = 0
-            x, y = low, element.data
+            x0 = plot.x_range.start
+            y0 = element.data
+            x1 = plot.x_range.end
+            y1 = element.data
         elif isinstance(element, VLine):
-            low, high = plot.y_range.start, plot.y_range.end
-            length = high-low
-            angle = np.pi/2
-            x, y = element.data, low
-        return (dict(x=[x], y=[y], angle=[angle], length=[length]),
-                dict(x='x', y='y', angle='angle', length='length'))
+            x0 = element.data
+            y0 = plot.y_range.start
+            x1 = element.data
+            y1 = plot.y_range.end
+        return (dict(x0=[x0], y0=[y0], x1=[x1], y1=[y1]),
+                dict(x0='x0', y0='y0', x1='x1', y1='y1'))
+
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
