@@ -408,8 +408,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
     def _process_legend(self):
         plot = self.handles['plot']
-        if not self.show_legend or not len(plot.legend):
-            super(OverlayPlot, self)._process_legend()
+        if not self.show_legend or len(plot.legend) >= 1:
+            for l in plot.legend:
+                l.legends[:] = []
+                l.border_line_alpha = 0
             return
 
         options = {}
