@@ -129,7 +129,7 @@ class Element(ViewableElement, Composable, Overlayable):
             raise Exception("Pass reduced dimensions either as an argument"
                             "or as part of the kwargs not both.")
         elif dimensions:
-            reduce_map = {dimensions[0]: function}
+            reduce_map = {d: function for d in dimensions}
         elif not reduce_map:
             reduce_map = {d: function for d in self._cached_index_names}
         sanitized = {sanitize_identifier(kd): kd
