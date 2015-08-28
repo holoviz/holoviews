@@ -193,7 +193,10 @@
 </script>
 
 <div class="animation" align="center">
-    <div id="_anim_img{{ id }}"></div>
+    <div id="_anim_img{{ id }}">
+        {% block init_frame %}
+        {% endblock %}
+    </div>
     <br>
     <input id="_anim_slider{{ id }}" type="range" style="width:350px" name="points" min="0" max="1" step="1" value="0" oninput="anim{{ id }}.set_frame(parseInt(this.value));"></input>
     <br>
@@ -222,7 +225,7 @@
 
       function create_widget() {
           setTimeout(function() {
-              anim{{ id }} = new {{ widget_name }}(frame_data, {{ Nframes }}, "{{ id }}", {{ interval }}, {{ load_json }}, {{ mode }}, {{ cached }});
+              anim{{ id }} = new {{ widget_name }}(frame_data, {{ Nframes }}, "{{ id }}", {{ delay }}, {{ load_json }}, {{ mode }}, {{ cached }});
           }, 0);
       }
 

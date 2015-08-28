@@ -70,27 +70,27 @@ class PlotSelector(object):
     function of the plotted object. Behaves like a Plot class and
     presents the same parameterized interface.
     """
-    def __init__(self, selector, plot_classes):
+    def __init__(self, selector, plot_classes, allow_mismatch=False):
         """
         The selector function accepts a component instance and returns
         the appropriate key to index plot_classes dictionary.
         """
         self.selector = selector
         self.plot_classes = OrderedDict(plot_classes)
-        interface = self._define_interface(self.plot_classes.values())
+        interface = self._define_interface(self.plot_classes.values(), allow_mismatch)
         self.style_opts, self.plot_options = interface
 
 
-    def _define_interface(self, plots):
+    def _define_interface(self, plots, allow_mismatch):
         parameters = [{k:v.precedence for k,v in plot.params().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
-        if not all(pset == param_sets[0] for pset in param_sets):
+        if not allow_mismatch and not all(pset == param_sets[0] for pset in param_sets):
             raise Exception("All selectable plot classes must have identical plot options.")
         styles= [plot.style_opts for plot in plots]
 
-        if not all(style == styles[0] for style in styles):
+        if not allow_mismatch and not all(style == styles[0] for style in styles):
             raise Exception("All selectable plot classes must have identical style options.")
         return styles[0], parameters[0]
 
@@ -121,6 +121,14 @@ class DimensionedPlot(Plot):
     to compute dimension ranges and titles containing the
     dimension values.
     """
+
+    fontsize = param.Parameter(default=None, allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
@@ -187,6 +195,20 @@ class DimensionedPlot(Plot):
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         return util.safe_unicode('\n '.join(g for g in groups if g))
+
+
+    def _fontsize(self, key, label='fontsize', common=True):
+        """
+        To be used as kwargs e.g: **self._fontsize('title')
+        """
+        if not self.fontsize:
+            return {}
+        if isinstance(self.fontsize, dict):
+            if key not in self.fontsize:
+                return {}
+            else:
+                return {label:self.fontsize[key]}
+        return {label:self.fontsize} if common else {}
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -406,9 +428,9 @@ class GenericElementPlot(DimensionedPlot):
                      l2 for l1, l2 in zip(range_extents, extents))
 
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         # Axis labels
-        dims = view.dimensions()
+        dims = view.dimensions('all')
         if isinstance(view, CompositeOverlay):
             dims = dims[view.ndims:]
         if dims and xlabel is None:
@@ -551,10 +573,6 @@ class GenericOverlayPlot(GenericElementPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
 
         return subplots
-
-
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
-        return xlabel, ylabel, zlabel
 
 
     def get_extents(self, overlay, ranges):

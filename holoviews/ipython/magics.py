@@ -254,6 +254,8 @@ class OutputMagic(OptionsMagic):
     # Used to disable info output in testing
     _disable_info_output = False
 
+    bokeh_loaded = False
+
     #==========================#
     # Backend state management #
     #==========================#
@@ -387,6 +389,19 @@ class OutputMagic(OptionsMagic):
             outputwarning.warning("The widget mode must be set to 'live' for matplotlib:nbagg."
                                   "\nSwitching widget mode to 'live'.")
             options['widgets'] = 'live'
+        if options['backend']=='bokeh':
+            try:
+                import bokeh
+                import bokeh.io
+                if not cls.bokeh_loaded:
+                    outputwarning.warning("Some elements and plot options are "
+                                          "not supported by Bokeh library and backend.")
+            except:
+                raise ImportError("Could not import one of bokeh, pandas or scipy.")
+
+            if not cls.bokeh_loaded:
+                bokeh.io.load_notebook()
+                cls.bokeh_loaded = True
         return options
 
 

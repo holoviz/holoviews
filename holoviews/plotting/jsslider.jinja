@@ -84,6 +84,7 @@
 	}
     }
 
+    {% block update %}
     {{ widget_name }}.prototype.update = function(current){
 	if(current in this.cache) {
 	    $.each(this.cache, function(index, value) {
@@ -92,6 +93,7 @@
 	    this.cache[current].show();
 	}
     }
+    {% endblock %}
 
     {{ widget_name }}.prototype.set_frame = function(dim_val, dim_idx){
         this.current_vals[dim_idx] = dim_val;
@@ -166,7 +168,10 @@ div.hologroup {
 
 <div class="hololayout row row-fluid">
     <div class="holoframe span9 col-xs-8 col-md-9">
-      <div id="_anim_img{{ id }}"></div>
+      <div id="_anim_img{{ id }}">
+        {% block init_frame %}
+        {% endblock %}
+      </div>
     </div>
     <div class="span3 col-xs-4 col-md-3">
     <form class="holoform well">

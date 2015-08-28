@@ -144,7 +144,7 @@ class TimeSeriesPlot(FullRedrawPlot):
         sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
                    zorder=self.zorder, **self.style)
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         xlabel = xlabel if xlabel else str(view.kdims[0])
         ylabel = ylabel if ylabel else str(view.vdims[0])
         return xlabel, ylabel, zlabel
