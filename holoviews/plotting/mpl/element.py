@@ -126,18 +126,18 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.bgcolor:
             axis.set_axis_bgcolor(self.bgcolor)
 
-        view = self._get_frame(key)
+        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
             suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots
                            if isinstance(sp.map, HoloMap))
-            if view is not None and not suppress:
-                xlabel, ylabel, zlabel = self._axis_labels(view, subplots, xlabel, ylabel, zlabel)
-                self._finalize_limits(axis, view, subplots, ranges)
+            if element is not None and not suppress:
+                xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
+                self._finalize_limits(axis, element, subplots, ranges)
 
                 # Tick formatting
-                xdim, ydim = view.get_dimension(0), view.get_dimension(1)
+                xdim, ydim = element.get_dimension(0), element.get_dimension(1)
                 xformat, yformat = None, None
                 if xdim is None:
                     pass
@@ -171,7 +171,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._apply_aspect(axis)
             self._subplot_label(axis)
             if self.apply_ticks:
-                self._finalize_ticks(axis, view, xticks, yticks, zticks)
+                self._finalize_ticks(axis, element, xticks, yticks, zticks)
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title,
@@ -181,7 +181,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
         for hook in self.finalize_hooks:
             try:
-                hook(self, view)
+                hook(self, element)
             except Exception as e:
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
