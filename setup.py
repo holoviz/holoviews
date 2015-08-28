@@ -45,8 +45,10 @@ setup_args.update(dict(
                 "holoviews.ipython",
                 "holoviews.operation",
                 "holoviews.plotting",
-                "holoviews.plotting.mpl"],
+                "holoviews.plotting.mpl",
+                "holoviews.plotting.bokeh"],
     package_data={'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja'],
+                  'holoviews.plotting.bokeh': ['*.jinja'],
                   'holoviews.plotting': ['*.jinja']},
     classifiers = [
         "License :: OSI Approved :: BSD License",
