@@ -495,11 +495,13 @@ class HoloMap(UniformNdMapping):
 
     data_type = (ViewableElement, NdMapping, Layout)
 
-    def overlay(self, dimensions, **kwargs):
+    def overlay(self, dimensions=None, **kwargs):
         """
         Splits the UniformNdMapping along a specified number of dimensions and
         overlays items in the split out Maps.
         """
+        if dimensions is None:
+            dimensions = self.kdims
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
@@ -510,11 +512,13 @@ class HoloMap(UniformNdMapping):
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
 
 
-    def grid(self, dimensions, **kwargs):
+    def grid(self, dimensions=None, **kwargs):
         """
         GridSpace takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a GridSpace.
         """
+        if dimensions is None:
+            dimensions = self.kdims
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
@@ -522,11 +526,13 @@ class HoloMap(UniformNdMapping):
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
-    def layout(self, dimensions, **kwargs):
+    def layout(self, dimensions=None, **kwargs):
         """
         GridSpace takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a GridSpace.
         """
+        if dimensions is None:
+            dimensions = self.kdims
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
