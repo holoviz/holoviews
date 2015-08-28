@@ -130,17 +130,17 @@ class CurvePlot(ChartPlot):
         line_segment = axis.plot(data[:, 0], data[:, 1], label=legend,
                                  zorder=self.zorder, **style)[0]
 
-        self.handles['line_segment'] = line_segment
-        self.handles['legend_handle'] = line_segment
+        self.handles['artist'] = line_segment
         return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
     def update_handles(self, axis, element, key, ranges=None):
         data = element.data
+        artist = self.handles['artist']
         if self.cyclic_range is not None:
             data = self._cyclic_curves(element)
-        self.handles['line_segment'].set_xdata(data[:, 0])
-        self.handles['line_segment'].set_ydata(data[:, 1])
+        artist.set_xdata(data[:, 0])
+        artist.set_ydata(data[:, 1])
 
 
 
@@ -302,8 +302,7 @@ class HistogramPlot(ChartPlot):
         style = self.style[self.cyclic_index]
         legend = hist.label if self.show_legend else ''
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, label=legend, **style)
-        self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
-        self.handles['legend_handle'] = bars
+        self.handles['artist'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -371,7 +370,7 @@ class HistogramPlot(ChartPlot):
         Update all the artists in the histogram. Subclassable to
         allow updating of further artists.
         """
-        plot_vals = zip(self.handles['bars'], edges, hvals, widths)
+        plot_vals = zip(self.handles['artist'], edges, hvals, widths)
         for bar, edge, height, width in plot_vals:
             if self.orientation == 'vertical':
                 bar.set_y(edge)
@@ -441,7 +440,7 @@ class SideHistogramPlot(HistogramPlot):
 
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
         super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
-        self._update_plot(n, element, self.handles['bars'], lims, ranges)
+        self._update_plot(n, element, self.handles['artist'], lims, ranges)
 
 
     def _update_plot(self, key, element, bars, lims, ranges):
@@ -597,15 +596,12 @@ class PointPlot(ChartPlot, ColorbarPlot):
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
                                    edgecolors=edgecolor, **style)
-        self.handles['paths'] = scatterplot
-        self.handles['legend_handle'] = scatterplot
+        self.handles['artist'] = scatterplot
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
-            if self.colorbar:
-                self._draw_colorbar(scatterplot, points, val_dim)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -617,7 +613,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        paths = self.handles['paths']
+        paths = self.handles['artist']
         paths.set_offsets(element.data[:, 0:2])
         ndims = element.data.shape[1]
         dims = element.dimensions(label=True)
@@ -749,15 +745,15 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_clim(ranges[magnitude_dim])
 
         self.handles['axis'].add_collection(quiver)
-        self.handles['quiver'] = quiver
-        self.handles['legend_handle'] = quiver
+        self.handles['artist'] = quiver
         self.handles['input_scale'] = input_scale
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        self.handles['quiver'].set_offsets(element.data[:,0:2])
+        artist = self.handles['artist']
+        artist.set_offsets(element.data[:,0:2])
         input_scale = self.handles['input_scale']
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(element, ranges)
@@ -765,7 +761,7 @@ class VectorFieldPlot(ElementPlot):
         xs, ys, angles, lens, colors, scale = self._get_info(element, input_scale, ranges)
 
         # Set magnitudes, angles and colors if supplied.
-        quiver = self.handles['quiver']
+        quiver = self.handles['artist']
         quiver.U = lens
         quiver.angles = angles
         if self.color_dim is not None:
@@ -886,8 +882,7 @@ class BarPlot(LegendPlot):
         ranges = self.compute_ranges(self.map, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['bars'], xticks, xlabel = self._create_bars(axis, element)
-        self.handles['legend_handle'] = self.handles['bars']
+        self.handles['artist'], xticks, xlabel = self._create_bars(axis, element)
         return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
 
 

@@ -142,8 +142,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, **style)
 
         self.handles['axis'].add_collection(scatterplot)
-        self.handles['scatter'] = scatterplot
-        self.handles['legend_handle'] = scatterplot
+        self.handles['artist'] = scatterplot
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
@@ -194,14 +193,11 @@ class SurfacePlot(Plot3D):
         style_opts = self.lookup_options(element, 'style')[self.cyclic_index]
 
         if self.plot_type == "wireframe":
-            self.handles['surface'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
+            self.handles['artist'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
         elif self.plot_type == "surface":
             style_opts['vmin'] = zmin
             style_opts['vmax'] = zmax
-            self.handles['surface'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
+            self.handles['artist'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
         elif self.plot_type == "contour":
-            self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
-        if not self.drawn and self.colorbar and not self.plot_type == "wireframe":
-            self._draw_colorbar(self.handles['surface'], element)
+            self.handles['artist'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
 
-        self.handles['legend_handle'] = self.handles['surface']

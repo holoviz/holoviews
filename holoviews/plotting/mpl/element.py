@@ -540,7 +540,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
                 label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
                                   zip(dimensions, key)])
-                handle = subplot.handles.get('legend_handle', False)
+                handle = subplot.handles.get('artist', False)
                 if handle:
                     legend_data.append((handle, label))
             title = ', '.join([d.name for d in dimensions])
@@ -550,7 +550,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
                 else:
                     layer = self.map.last.data.get(key, False)
-                    handle = subplot.handles.get('legend_handle', False)
+                    handle = subplot.handles.get('artist', False)
                     if layer and layer.label and handle:
                         legend_data.append((handle, layer.label))
         autohandles, autolabels = axis.get_legend_handles_labels()

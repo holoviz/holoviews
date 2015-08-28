@@ -89,9 +89,7 @@ class RasterPlot(ColorbarPlot):
             clims = ranges.get(val_dim)
         if 'norm' not in opts:
             im.set_clim(clims)
-        self.handles['im'] = im
-        if self.colorbar:
-            self._draw_colorbar(im, element)
+        self.handles['artist'] = im
 
         if isinstance(element, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
@@ -155,7 +153,7 @@ class RasterPlot(ColorbarPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        im = self.handles.get('im', None)
+        im = self.handles.get('artist', None)
         data = np.ma.array(element.data,
                            mask=np.logical_not(np.isfinite(element.data)))
         im.set_data(data)
@@ -203,11 +201,9 @@ class QuadMeshPlot(ColorbarPlot):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
-        self.handles['cmesh'] = axis.pcolormesh(*cmesh_data, vmin=clims[0],
+        self.handles['artist'] = axis.pcolormesh(*cmesh_data, vmin=clims[0],
                                                 vmax=clims[1], zorder=self.zorder,
                                                 **opts)
-        if self.colorbar:
-            self._draw_colorbar(self.handles['cmesh'], element)
         self.handles['locs'] = np.concatenate(element.data[:2])
 
 

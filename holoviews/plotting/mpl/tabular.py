@@ -127,13 +127,13 @@ class TablePlot(ElementPlot):
         table.auto_set_font_size(True)
         axis.add_table(table)
 
-        self.handles['table'] = table
+        self.handles['artist'] = table
 
         return self._finalize_axis(self.keys[-1])
 
 
     def update_handles(self, axis, view, key, ranges=None):
-        table = self.handles['table']
+        table = self.handles['artist']
 
         for coords, cell in table.get_celld().items():
             value = self.cell_values[key][coords]

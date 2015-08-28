@@ -24,17 +24,17 @@ class PathPlot(ElementPlot):
         label = lines.label if self.show_legend else ''
         line_segments = LineCollection(lines.data, label=label,
                                        zorder=self.zorder, **style)
-        self.handles['line_segments'] = line_segments
-        self.handles['legend_handle'] = line_segments
+        self.handles['artist'] = line_segments
         self.handles['axis'].add_collection(line_segments)
 
         return self._finalize_axis(key, ranges=ranges)
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        self.handles['line_segments'].set_paths(element.data)
+        artist = self.handles['artist']
+        artist.set_paths(element.data)
         visible = self.style[self.cyclic_index].get('visible', True)
-        self.handles['line_segments'].set_visible(visible)
+        artist.set_visible(visible)
 
 
 
@@ -63,7 +63,7 @@ class PolygonPlot(ColorbarPlot):
         if self.colorbar:
             self._draw_colorbar(collection, element)
 
-        self.handles['polygons'] = collection
+        self.handles['artist'] = collection
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -87,7 +87,7 @@ class PolygonPlot(ColorbarPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         vdim = element.vdims[0]
-        collection = self.handles['polygons']
+        collection = self.handles['artist']
         value = element.level
 
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
@@ -95,7 +95,7 @@ class PolygonPlot(ColorbarPlot):
             collection.remove()
             collection, polys = self._create_polygons(element, ranges)
             self.handles['polys'] = polys
-            self.handles['polygons'] = collection
+            self.handles['artist'] = collection
             axis.add_collection(collection)
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
