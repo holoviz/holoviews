@@ -178,6 +178,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                                 **self._fontsize('title'))
         # Always called to ensure log and inverted axes are applied
         self._finalize_axes(axis)
+        self._finalize_artist(element)
 
         for hook in self.finalize_hooks:
             try:
@@ -186,6 +187,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
         return super(ElementPlot, self)._finalize_axis(key)
+
+
+    def _finalize_artist(self, element):
+        """
+        Allows extending the _finalize_axis method with Element
+        specific options.
+        """
+        pass
 
 
     def _apply_aspect(self, axis):
