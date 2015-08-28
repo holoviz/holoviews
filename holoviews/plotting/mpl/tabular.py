@@ -60,7 +60,7 @@ class TablePlot(ElementPlot):
 
             # Mapping from the cell coordinates to the dictionary key.
             summarize = frame.rows > self.max_rows
-            half_rows = self.max_rows/2
+            half_rows = self.max_rows//2
             rows = min([self.max_rows, frame.rows])
             for row in range(rows):
                 adjusted_row = row
