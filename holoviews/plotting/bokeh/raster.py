@@ -1,10 +1,11 @@
+from itertools import product
 import numpy as np
 
 from bokeh.models.mappers import LinearColorMapper
 
 from ...element import Image, RGB, Raster
-from .element import ElementPlot
-from .util import mplcmap_to_palette
+from .element import ElementPlot, line_properties, fill_properties
+from .util import mplcmap_to_palette, map_colors, get_cmap
 
 
 class RasterPlot(ElementPlot):
@@ -65,3 +66,28 @@ class RGBPlot(RasterPlot):
     def _glyph_properties(self, plot, element, source, ranges):
         return ElementPlot._glyph_properties(self, plot, element,
                                              source, ranges)
+
+
+class HeatmapPlot(ElementPlot):
+
+    _plot_method = 'rect'
+    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+
+    def _init_axes(self, plots, element, ranges):
+        labels = self._axis_labels(element, plots)
+        xvals, yvals = element.dense_keys()
+        plot_ranges = {'x_range': [str(x) for x in xvals],
+                       'y_range': [str(y) for y in yvals]}
+        return ('auto', 'auto'), labels, plot_ranges
+
+
+    def get_data(self, element, ranges=None):
+        style = self.style[self.cyclic_index]
+        cmap = style.get('palette', style.get('cmap', None))
+        cmap = get_cmap(cmap)
+        x, y, z = element.dimensions(label=True)
+        zvals = np.rot90(element.data, 3).flatten()
+        colors = map_colors(zvals, ranges[z], cmap)
+        xvals, yvals = zip(*product(*element.dense_keys()))
+        return ({x: xvals, y: yvals, z: zvals, 'color': colors},
+                {'x': x, 'y': y, 'fill_color': 'color', 'height': 1, 'width': 1})

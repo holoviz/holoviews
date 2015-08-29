@@ -11,7 +11,7 @@ from .element import OverlayPlot, BokehMPLWrapper
 from .chart import PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot
+from .raster import RasterPlot, RGBPlot, HeatmapPlot
 from .renderer import BokehRenderer
 
 Store.renderers['bokeh'] = BokehRenderer
@@ -28,7 +28,7 @@ Store.register({Overlay: OverlayPlot,
                 Image: RasterPlot,
                 RGB: RGBPlot,
                 Raster: RasterPlot,
-                HeatMap: RasterPlot,
+                HeatMap: HeatmapPlot,
                 Histogram: HistogramPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
@@ -71,4 +71,4 @@ options.Polygons = Options('style', color=Cycle())
 options.Image = Options('style', cmap='hot')
 options.Raster = Options('style', cmap='hot')
 options.QuadMesh = Options('style', cmap='hot')
-options.HeatMap = Options('style', cmap='RdYlBu_r')
+options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
