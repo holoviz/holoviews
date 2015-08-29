@@ -425,6 +425,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             options[k] = v
 
         legend_labels = []
+        if not plot.legend:
+            return
         plot.legend[0].set(**options)
         plot.legend.orientation = self.legend_position
         legends = plot.legend[0].legends
