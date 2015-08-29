@@ -149,8 +149,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
             ranges = self.compute_ranges(self.map, key, ranges)
             ranges = match_spec(points, ranges)
             scatterplot.set_clim(ranges[val_dim])
-            if self.colorbar:
-                self._draw_colorbar(scatterplot, points, val_dim)
 
 
 
