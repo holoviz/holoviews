@@ -161,7 +161,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['y_range'] = [b, t]
         if self.invert_yaxis:
             plot_ranges['y_range'] = plot_ranges['y_range'][::-1]
-        return (xlabel, ylabel, zlabel), plot_ranges
+        x_axis_type = 'log' if self.xlog else 'linear'
+        y_axis_type = 'log' if self.ylog else 'linear'
+        return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
     def _init_plot(self, key, plots, ranges=None):
@@ -174,10 +176,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
 
-        x_axis_type = 'log' if self.xlog else 'linear'
-        y_axis_type = 'log' if self.ylog else 'linear'
-        labels, plot_ranges = self._init_axes(plots, element, ranges)
+        axis_types, labels, plot_ranges = self._init_axes(plots, element, ranges)
         xlabel, ylabel, zlabel = labels
+        x_axis_type, y_axis_type = axis_types
         tools = self._init_tools(element)
 
         return bokeh.plotting.figure(x_axis_type=x_axis_type,
