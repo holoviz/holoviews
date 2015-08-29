@@ -217,6 +217,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_props['axis_label'] = ''
             axis_props['major_label_text_font_size'] = '0pt'
             axis_props['major_tick_line_color'] = None
+            axis_props['minor_tick_line_color'] = None
         else:
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
