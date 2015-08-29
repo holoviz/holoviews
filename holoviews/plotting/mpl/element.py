@@ -454,13 +454,14 @@ class ColorbarPlot(ElementPlot):
             cbar.set_ticks(ticks)
             cbar.set_ticklabels(labels)
 
-        def _finalize_axis(self, *args, **kwargs):
+
+    def _finalize_axis(self, *args, **kwargs):
             ret = super(ColorbarPlot, self)._finalize_axis(*args, **kwargs)
 
 
     def _finalize_artist(self, element):
-        artist = self.handles['artist']
-        if self.colorbar:
+        artist = self.handles.get('artist', None)
+        if artist and self.colorbar:
             self._draw_colorbar(artist, element)
 
 
@@ -475,26 +476,30 @@ class ColorbarPlot(ElementPlot):
         dim = element.get_dimension(dim)
         if dim is None:
             dim = element.vdims[0]
-            label = str(dim)
-        else:
-            label = str(dim)
+        label = str(dim)
 
         padding = self.cbar_padding
         width = self.cbar_width
-        offset = len(ax_colorbars)
-        if not id(axis) in ColorbarPlot._colorbars:
-            self.handles['fig'].canvas.draw()
-
         if spec[:2] not in specs:
+            fig.canvas.draw()
+            offset = len(ax_colorbars)
             bbox = axis.get_position()
             l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
             scaled_w = w*width
-            cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset, b, scaled_w, h])
+            cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
+                                b, scaled_w, h])
             cbar = plt.colorbar(artist, cax=cax)
             self._adjust_cbar(cbar, label, dim)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
             ax_colorbars.append((artist, cax, spec, label))
+
+        for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
+            bbox = axis.get_position()
+            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
+            scaled_w = w*width
+            cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
+                              b, scaled_w, h])
 
         ColorbarPlot._colorbars[id(axis)] = ax_colorbars
 
