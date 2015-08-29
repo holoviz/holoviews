@@ -46,8 +46,9 @@ def map_colors(arr, crange, cmap):
     """
     Maps an array of values to RGB hex strings.
     """
-    arr = (arr - arr.min()) / (arr.max()-arr.min())
-    return [colors.rgb2hex(cmap(c)) for c in arr]
+    nanmin = np.nanmin(arr)
+    arr = (arr - nanmin) / (np.nanmax(arr)-nanmin)
+    return [colors.rgb2hex(cmap(c)) if np.isfinite(c) else '#FFFFFF' for c in arr]
 
 
 def mpl_to_bokeh(properties):
