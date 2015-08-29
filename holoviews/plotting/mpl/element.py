@@ -455,10 +455,6 @@ class ColorbarPlot(ElementPlot):
             cbar.set_ticklabels(labels)
 
 
-    def _finalize_axis(self, *args, **kwargs):
-            ret = super(ColorbarPlot, self)._finalize_axis(*args, **kwargs)
-
-
     def _finalize_artist(self, element):
         artist = self.handles.get('artist', None)
         if artist and self.colorbar:
