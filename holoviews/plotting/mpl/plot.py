@@ -366,7 +366,7 @@ class GridPlot(CompositePlot):
                                          subplot=not create_axes, ranges=frame_ranges,
                                          uniform=self.uniform, keys=self.keys,
                                          show_legend=False, **dict(opts, **kwargs))
-                collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
+                collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.hmap
                 subplots[(r, c)] = subplot
             else:
                 subax.set_visible(False)
