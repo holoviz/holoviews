@@ -1,14 +1,13 @@
 import math
 
 from matplotlib import ticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.pyplot as plt
 import numpy as np
 import param
 
 from ...core import util
-from ...core import Dimension, OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay, Element3D
-from ...element import Table, ItemTable
+from ...core import OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay, Element3D
+from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
 
@@ -567,7 +566,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 else:
                     layer = self.hmap.last.data.get(key, False)
                     handle = subplot.handles.get('artist', False)
-                    if layer and layer.label and handle:
+                    if layer and not isinstance(layer, Raster) and layer.label and handle:
                         legend_data.append((handle, layer.label))
         autohandles, autolabels = axis.get_legend_handles_labels()
         legends = list(zip(*legend_data)) if legend_data else ([], [])
