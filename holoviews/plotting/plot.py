@@ -355,21 +355,21 @@ class GenericElementPlot(DimensionedPlot):
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
         if not isinstance(element, HoloMap):
-            self.map = HoloMap(initial_items=(0, element),
+            self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
         else:
-            self.map = element
-        self.style = self.lookup_options(self.map.last, 'style') if style is None else style
-        dimensions = self.map.kdims if dimensions is None else dimensions
-        keys = keys if keys else list(self.map.data.keys())
-        plot_opts = self.lookup_options(self.map.last, 'plot').options
+            self.hmap = element
+        self.style = self.lookup_options(self.hmap.last, 'style') if style is None else style
+        dimensions = self.hmap.kdims if dimensions is None else dimensions
+        keys = keys if keys else list(self.hmap.data.keys())
+        plot_opts = self.lookup_options(self.hmap.last, 'plot').options
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions, **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)
-            kdims = [d.name for d in self.map.kdims]
+            kdims = [d.name for d in self.hmap.kdims]
             if self.dimensions is None:
                 dimensions = kdims
             else:
@@ -380,11 +380,11 @@ class GenericElementPlot(DimensionedPlot):
                 select = {d: key[dimensions.index(d)]
                           for d in kdims}
         elif isinstance(key, int):
-            return self.map.values()[min([key, len(self.map)-1])]
+            return self.hmap.values()[min([key, len(self.hmap)-1])]
         else:
-            select = dict(zip(self.map.dimensions('key', label=True), key))
+            select = dict(zip(self.hmap.dimensions('key', label=True), key))
         try:
-            selection = self.map.select((HoloMap,), **select)
+            selection = self.hmap.select((HoloMap,), **select)
         except KeyError:
             selection = None
         return selection.last if isinstance(selection, HoloMap) else selection
@@ -420,7 +420,7 @@ class GenericElementPlot(DimensionedPlot):
             if norm_opts.get('framewise', False):
                 extents = view.extents
             else:
-                extent_list = self.map.traverse(lambda x: x.extents, [Element])
+                extent_list = self.hmap.traverse(lambda x: x.extents, [Element])
                 extents = util.max_extents(extent_list, self.projection == '3d')
         else:
             extents = (np.NaN,) * num
@@ -499,8 +499,8 @@ class GenericOverlayPlot(GenericElementPlot):
         super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges, **params)
 
         # Apply data collapse
-        self.map = Compositor.collapse(self.map, None, mode='data')
-        self.map = self._apply_compositor(self.map, ranges, self.keys)
+        self.hmap = Compositor.collapse(self.hmap, None, mode='data')
+        self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.subplots = self._create_subplots(ranges)
 
 
@@ -531,15 +531,15 @@ class GenericOverlayPlot(GenericElementPlot):
         subplots = OrderedDict()
 
         length = self.style_grouping
-        ordering = util.layer_sort(self.map)
-        keys, vmaps = self.map.split_overlays()
+        ordering = util.layer_sort(self.hmap)
+        keys, vmaps = self.hmap.split_overlays()
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         map_lengths = Counter()
         for m in vmaps:
             map_lengths[group_fn(m)[:length]] += 1
 
         zoffset = 0
-        overlay_type = 1 if self.map.type == Overlay else 2
+        overlay_type = 1 if self.hmap.type == Overlay else 2
         group_counter = Counter()
         for (key, vmap) in zip(keys, vmaps):
             vtype = type(vmap.last)
@@ -549,7 +549,7 @@ class GenericOverlayPlot(GenericElementPlot):
                              "found. " % (vtype.__name__, self.renderer.backend))
                 continue
 
-            if self.map.type == Overlay:
+            if self.hmap.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
             else:
                 if not isinstance(key, tuple): key = (key,)

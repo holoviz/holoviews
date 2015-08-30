@@ -307,9 +307,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
         # Initialize plot, source and glyph
@@ -345,7 +345,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not element:
             return
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
         if plot is None:
@@ -375,7 +375,7 @@ class BokehMPLWrapper(ElementPlot):
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
 
         self.mplplot.initialize_plot(ranges)
@@ -385,7 +385,7 @@ class BokehMPLWrapper(ElementPlot):
 
 
     def update_frame(self, key, ranges=None, plot=None):
-        if key in self.map:
+        if key in self.hmap:
             self.mplplot.update_frame(key, ranges)
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
 
@@ -417,7 +417,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             return
 
         options = {}
-        properties = self.lookup_options(self.map.last, 'style')[self.cyclic_index]
+        properties = self.lookup_options(self.hmap.last, 'style')[self.cyclic_index]
         for k, v in properties.items():
             if k in line_properties:
                 k = 'border_' + k
@@ -442,11 +442,11 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
         if not self.overlaid:
-            self._update_plot(key, plot, self.map.last)
+            self._update_plot(key, plot, self.hmap.last)
         self.handles['plot'] = plot
 
         for subplot in self.subplots.values():

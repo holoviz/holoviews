@@ -999,7 +999,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                                       uniform=self.uniform, layout_num=num,
                                       **plotopts)
             if isinstance(view, (Element, HoloMap, Collator, CompositeOverlay)):
-                adjoint_clone[pos] = subplots[pos].map
+                adjoint_clone[pos] = subplots[pos].hmap
             else:
                 adjoint_clone[pos] = subplots[pos].layout
         return subplots, adjoint_clone, projections

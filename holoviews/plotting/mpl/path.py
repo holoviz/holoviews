@@ -16,9 +16,9 @@ class PathPlot(ElementPlot):
         super(PathPlot, self).__init__(*args, **params)
 
     def initialize_plot(self, ranges=None):
-        lines = self.map.last
+        lines = self.hmap.last
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(lines, ranges)
         style = self.style[self.cyclic_index]
         label = lines.label if self.show_legend else ''
@@ -51,10 +51,10 @@ class PolygonPlot(ColorbarPlot):
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
         axis = self.handles['axis']
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
         collection, polys = self._create_polygons(element, ranges)
         axis.add_collection(collection)

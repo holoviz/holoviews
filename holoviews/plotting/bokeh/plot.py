@@ -63,8 +63,6 @@ class GridPlot(BokehPlot, GenericCompositePlot):
     def _create_subplots(self, layout, ranges):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
                             clone=False)
-        norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = any(v.get('axiswise', False) for v in norm_opts.values())
 
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
@@ -117,7 +115,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                                          keys=self.keys, **dict(opts, **kwargs))
                 collapsed_layout[coord] = (subplot.layout
                                            if isinstance(subplot, GenericCompositePlot)
-                                           else subplot.map)
+                                           else subplot.hmap)
                 subplots[coord] = subplot
         return subplots, collapsed_layout
 
@@ -272,7 +270,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             if issubclass(plot_type, GenericCompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
             else:
-                adjoint_clone[pos] = subplots[pos].map
+                adjoint_clone[pos] = subplots[pos].hmap
         return subplots, adjoint_clone
 
 

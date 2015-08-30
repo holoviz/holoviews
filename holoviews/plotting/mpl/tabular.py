@@ -98,7 +98,7 @@ class TablePlot(ElementPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
 
         axis.set_axis_off()

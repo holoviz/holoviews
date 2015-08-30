@@ -105,7 +105,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
-        check = self.map.last
+        check = self.hmap.last
         if isinstance(check, CompositeOverlay):
             check = check.values()[0] # Should check if any are 3D plots
         if isinstance(check, Element3D):
@@ -130,8 +130,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots
-                           if isinstance(sp.map, HoloMap))
+            suppress = any(sp.hmap.type in self._suppressed for sp in [self] + subplots
+                           if isinstance(sp.hmap, HoloMap))
             if element is not None and not suppress:
                 xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
                 self._finalize_limits(axis, element, subplots, ranges)
@@ -398,7 +398,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 handle.set_visible(view is not None)
         if view is None:
             return
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
             ranges = util.match_spec(view, ranges)
         axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
@@ -549,9 +549,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
         title = ''
         legend_data = []
-        if issubclass(self.map.type, NdOverlay):
-            dimensions = self.map.last.kdims
-            for key in self.map.last.data.keys():
+        if issubclass(self.hmap.type, NdOverlay):
+            dimensions = self.hmap.last.kdims
+            for key in self.hmap.last.data.keys():
                 subplot = self.subplots[key]
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
                 label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
@@ -565,7 +565,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
                 else:
-                    layer = self.map.last.data.get(key, False)
+                    layer = self.hmap.last.data.get(key, False)
                     handle = subplot.handles.get('artist', False)
                     if layer and layer.label and handle:
                         legend_data.append((handle, layer.label))
@@ -574,7 +574,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         all_handles = list(legends[0]) + list(autohandles)
         all_labels = list(legends[1]) + list(autolabels)
         data = OrderedDict()
-        show_legend = self.lookup_options(self.map.last, 'plot').options.get('show_legend', None)
+        show_legend = self.lookup_options(self.hmap.last, 'plot').options.get('show_legend', None)
         used_labels = []
         for handle, label in zip(all_handles, all_labels):
             if handle and (handle not in data) and label and label not in used_labels:
@@ -602,7 +602,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         for plot in self.subplots.values():
             plot.initialize_plot(ranges=ranges)
         self._adjust_legend(axis)
@@ -614,7 +614,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         for plot in self.subplots.values():
             plot.update_frame(key, ranges)
 
@@ -646,11 +646,11 @@ class DrawPlot(ElementPlot):
         raise NotImplementedError
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
-        self.draw(self.handles['axis'], self.map.last, ranges)
+        self.draw(self.handles['axis'], self.hmap.last, ranges)
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
     def update_handles(self, axis, element, key, ranges=None):

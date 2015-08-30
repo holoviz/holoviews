@@ -117,8 +117,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
-        points = self.map.last
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        points = self.hmap.last
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
         key = self.keys[-1]
         self.update_handles(axis, points, key, ranges)
@@ -146,7 +146,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
-            ranges = self.compute_ranges(self.map, key, ranges)
+            ranges = self.compute_ranges(self.hmap, key, ranges)
             ranges = match_spec(points, ranges)
             scatterplot.set_clim(ranges[val_dim])
 
@@ -172,10 +172,10 @@ class SurfacePlot(Plot3D):
                   'linewidth', 'facecolors', 'rstride', 'cstride']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(element, ranges)
 
         self.update_handles(self.handles['axis'], element, key, ranges)

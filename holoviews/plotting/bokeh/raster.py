@@ -15,7 +15,7 @@ class RasterPlot(ElementPlot):
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
-        if self.map.type == Raster:
+        if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
 

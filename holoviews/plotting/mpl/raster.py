@@ -36,7 +36,7 @@ class RasterPlot(ColorbarPlot):
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
-        if self.map.type == Raster:
+        if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
 
@@ -52,10 +52,10 @@ class RasterPlot(ColorbarPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(element, ranges)
 
         xticks, yticks = self._compute_ticks(element, ranges)
@@ -183,11 +183,11 @@ class QuadMeshPlot(ColorbarPlot):
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
     def initialize_plot(self, ranges=None):
-        key = self.map.keys()[-1]
-        element = self.map.last
+        key = self.hmap.keys()[-1]
+        element = self.hmap.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(element, ranges)
         self._init_cmesh(axis, element, ranges)
 
@@ -264,7 +264,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.zorder = 0
         self.layout_num = layout_num
         self.overlaid = False
-        self.map = {}
+        self.hmap = {}
         if layout.ndims > 1:
             xkeys, ykeys = zip(*layout.data.keys())
         else:

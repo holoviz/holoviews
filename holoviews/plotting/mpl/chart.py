@@ -18,7 +18,7 @@ class ChartPlot(ElementPlot):
 
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
-        key_dim = self.map.last.get_dimension(0)
+        key_dim = self.hmap.last.get_dimension(0)
         self.cyclic_range = key_dim.range if key_dim.cyclic else None
 
 
@@ -108,11 +108,11 @@ class CurvePlot(ChartPlot):
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         # Create xticks and reorder data if cyclic
@@ -164,11 +164,11 @@ class ErrorPlot(ChartPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
@@ -227,11 +227,11 @@ class SpreadPlot(ChartPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
         self.update_handles(axis, element, key, ranges)
 
@@ -277,15 +277,15 @@ class HistogramPlot(ChartPlot):
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
-        val_dim = self.map.last.get_dimension(1)
+        val_dim = self.hmap.last.get_dimension(1)
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
     def initialize_plot(self, ranges=None):
-        hist = self.map.last
+        hist = self.hmap.last
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         el_ranges = match_spec(hist, ranges)
 
         # Get plot ranges and values
@@ -572,10 +572,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
                   'cmap', 'vmin', 'vmax']
 
     def initialize_plot(self, ranges=None):
-        points = self.map.last
+        points = self.hmap.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
 
         ndims = points.data.shape[1]
@@ -666,7 +666,7 @@ class VectorFieldPlot(ElementPlot):
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
-        self._min_dist = self._get_map_info(self.map)
+        self._min_dist = self._get_map_info(self.hmap)
 
 
     def _get_map_info(self, vmap):
@@ -712,13 +712,13 @@ class VectorFieldPlot(ElementPlot):
 
 
     def initialize_plot(self, ranges=None):
-        vfield = self.map.last
+        vfield = self.hmap.last
         axis = self.handles['axis']
 
         colorized = self.color_dim is not None
         kwargs = self.style[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(vfield, ranges)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale, ranges)
 
@@ -755,7 +755,7 @@ class VectorFieldPlot(ElementPlot):
         artist = self.handles['artist']
         artist.set_offsets(element.data[:,0:2])
         input_scale = self.handles['input_scale']
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         xs, ys, angles, lens, colors, scale = self._get_info(element, input_scale, ranges)
@@ -822,15 +822,15 @@ class BarPlot(LegendPlot):
         Get unique index value for each bar
         """
         gi, ci, si =self.group_index, self.category_index, self.stack_index
-        ndims = self.map.last.ndims
-        dims = self.map.last.kdims
+        ndims = self.hmap.last.ndims
+        dims = self.hmap.last.kdims
         dimensions = []
         values = {}
         for vidx, vtype in zip([gi, ci, si], self._dimensions):
             if vidx < ndims:
                 dim = dims[vidx]
                 dimensions.append(dim)
-                vals = self.map.dimension_values(dim.name)
+                vals = self.hmap.dimension_values(dim.name)
                 params = dict(kdims=[dim])
             else:
                 dimensions.append(None)
@@ -874,12 +874,12 @@ class BarPlot(LegendPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         vdim = element.vdims[0]
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         self.handles['artist'], xticks, xlabel = self._create_bars(axis, element)
