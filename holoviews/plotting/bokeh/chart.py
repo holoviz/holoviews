@@ -39,26 +39,31 @@ class PointPlot(ElementPlot):
 
     _plot_method = 'scatter'
 
+
     def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
-        mapping = dict(x= dims[0], y=dims[1])
+        mapping = dict(x=dims[0], y=dims[1])
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
-            mapping['fill_color'] = dims[self.color_index]
+            mapping['color'] = 'color'
             cmap = get_cmap(cmap)
             colors = element.data[:, self.color_index]
-            data[dims[self.color_index]] = map_colors(colors, ranges, cmap)
+            data['color'] = map_colors(colors, ranges, cmap)
+            if 'hover' in self.tools:
+                data[dims[self.color_index]] = colors
         if self.size_index < len(dims):
-            mapping['size'] = dims[self.size_index]
+            mapping['size'] = 'size'
             val_dim = dims[self.size_index]
             ms = style.get('size', 1)
             sizes = element.data[:, self.size_index]
-            data[dims[self.size_index]] = compute_sizes(sizes, self.size_fn,
-                                                        self.scaling_factor, ms)
+            data['size'] = compute_sizes(sizes, self.size_fn,
+                                         self.scaling_factor, ms)
+            if 'hover' in self.tools:
+                data[dims[self.size_index]] = sizes
         data[dims[0]] = element.data[:, 0]
         data[dims[1]] = element.data[:, 1]
         return data, mapping
