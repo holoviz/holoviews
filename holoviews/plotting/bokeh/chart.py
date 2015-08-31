@@ -50,17 +50,17 @@ class PointPlot(ElementPlot):
         if self.color_index < len(dims) and cmap:
             mapping['fill_color'] = dims[self.color_index]
             cmap = get_cmap(cmap)
-            colors = element.data[:, self.color_index]
+            colors = element.dimension_values(self.color_index)
             data[dims[self.color_index]] = map_colors(colors, ranges, cmap)
         if self.size_index < len(dims):
             mapping['size'] = dims[self.size_index]
             val_dim = dims[self.size_index]
             ms = style.get('size', 1)
-            sizes = element.data[:, self.size_index]
+            sizes = element.dimension_values(self.size_index)
             data[dims[self.size_index]] = compute_sizes(sizes, self.size_fn,
                                                         self.scaling_factor, ms)
-        data[dims[0]] = element.data[:, 0]
-        data[dims[1]] = element.data[:, 1]
+        data[dims[0]] = element.dimension_values(0)
+        data[dims[1]] = element.dimension_values(1)
         return data, mapping
 
 
@@ -71,7 +71,8 @@ class CurvePlot(ElementPlot):
     _plot_method = 'line'
 
     def get_data(self, element, ranges=None):
-        return (dict(x=element.data[:, 0], y=element.data[:, 1]),
+        return (dict(x=element.dimension_values(0),
+                     y=element.dimension_values(1)),
                 dict(x='x', y='y'))
 
 
@@ -83,9 +84,9 @@ class SpreadPlot(PolygonPlot):
         super(SpreadPlot, self).__init__(*args, **kwargs)
 
     def get_data(self, element, ranges=None):
-        lower = element.data[:, 1] - element.data[:, 2]
-        upper = element.data[:, 1] + element.data[:, 3]
-        band_x = np.append(element.data[:, 0], element.data[::-1, 0])
+        lower = element.dimension_values(1) - element.dimension_values(2)
+        upper = element.dimension_values(1) + element.dimension_values(3)
+        band_x = np.append(element.dimension_values(0), element.dimension_values(0)[::-1])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y]), self._mapping
 
@@ -109,7 +110,8 @@ class ErrorPlot(PathPlot):
     style_opts = ['color'] + line_properties
 
     def get_data(self, element, ranges=None):
-        data = element.data
+        data = [element.dimension_values(i)
+                for i in range(element.dimensions())]
         err_xs = []
         err_ys = []
         for x, y, neg, pos in data:
