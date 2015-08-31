@@ -456,7 +456,7 @@ class ColorbarPlot(ElementPlot):
 
     def _finalize_artist(self, element):
         artist = self.handles.get('artist', None)
-        if artist and self.colorbar:
+        if not self.drawn and artist and self.colorbar:
             self._draw_colorbar(artist, element)
 
 
