@@ -130,12 +130,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
         zs = points.data[:, 2] if len(points.data) else []
-        sz = points.data[:, self.size_index] if self.size_index < ndims else None
         cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
-        style = self.lookup_options(points, 'style')[self.cyclic_index]
-        if sz is not None and self.scaling_factor > 1:
-            style['s'] = self._compute_size(sz, style)
+        style = self.style[self.cyclic_index]
+        if self.size_index < ndims and self.scaling_factor > 1:
+            style['s'] = self._compute_size(points, style)
         if cs is not None:
             style['c'] = cs
             style.pop('color', None)
