@@ -4,6 +4,11 @@ try:
 except ImportError:
     pd = None
 
+try:
+    import dask.dataframe as dd
+except:
+    dd = None
+
 import param
 
 from ..core import util
@@ -52,14 +57,16 @@ class Chart(Element2D):
 
 
     def _process_data(self, data, kwargs):
-        self._pandas = False
+        self._dataframe = False
         params = {}
-        if pd is not None and isinstance(data, pd.DataFrame):
-            self._pandas = True
-            if 'kdims' in params or 'vdims' in params:
-                columns = params.get('kdims', []) + params.get('vdims', [])
-                col_labels = [c.name if isinstance(d, Dimension) else c
+        if ((pd is not None and isinstance(data, pd.DataFrame)) or
+            (dd is not None and isinstance(data, dd.DataFrame))):
+            self._dataframe = True
+            if 'kdims' in kwargs or 'vdims' in kwargs:
+                columns = kwargs.get('kdims', self.kdims) + kwargs.get('vdims', self.vdims)
+                col_labels = [c.name if isinstance(c, Dimension) else c
                               for c in columns]
+                data = data[col_labels]
                 if not all(c in data.columns for c in col_labels):
                     raise ValueError("Supplied dimensions don't match columns"
                                      "in the dataframe.")
@@ -84,6 +91,8 @@ class Chart(Element2D):
 
 
     def _validate_data(self, data):
+        if self._dataframe:
+            return data
         if data.ndim == 1:
             data = np.array(list(zip(range(len(data)), data)))
         if not data.shape[1] == len(self.dimensions()):
@@ -201,8 +210,11 @@ class Chart(Element2D):
     def dimension_values(self, dim):
         index = self.get_dimension_index(dim)
         if index < len(self.dimensions()):
-            if self._pandas:
-                return self.data[self.data.columns[index]]
+            if self._dataframe:
+                data = self.data[self.data.columns[index]]
+                if isinstance(data, dd.Series):
+                    data = data.compute()
+                return data
             else:
                 if self.data.ndim == 1:
                     data = np.atleast_2d(self.data).T
@@ -219,12 +231,13 @@ class Chart(Element2D):
         if dim.range != (None, None):
             return dim.range
         elif dim_idx < len(self.dimensions()):
-            if self._pandas:
-                data = self.data[dim.name]
-                data_range = data.min(), data.max()
-            elif len(self.data):
+            data = self.data[dim.name]
+            if len(self.data):
                 data = self.dimension_values(dim_idx)
-                data_range = np.nanmin(data), np.nanmax(data)
+                if self._dataframe:
+                    data_range = data.min(), data.max()
+                else:
+                    data_range = np.nanmin(data), np.nanmax(data)
             else:
                 data_range = (np.NaN, np.NaN)
         if data_range:
@@ -234,7 +247,7 @@ class Chart(Element2D):
 
 
     def dframe(self):
-        if self._pandas:
+        if self._dataframe:
             return self.data.copy()
         elif pd:
             columns = [d.name for d in self.dimensions()]
