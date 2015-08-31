@@ -13,7 +13,7 @@ class Plot3D(ColorbarPlot):
     plots.
     """
 
-    azimuth = param.Integer(default=-60, bounds=(-90, 90), doc="""
+    azimuth = param.Integer(default=-60, bounds=(-180, 180), doc="""
         Azimuth angle in the x,y plane.""")
 
     elevation = param.Integer(default=30, bounds=(0, 180), doc="""
