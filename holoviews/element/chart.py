@@ -231,7 +231,6 @@ class Chart(Element2D):
         if dim.range != (None, None):
             return dim.range
         elif dim_idx < len(self.dimensions()):
-            data = self.data[dim.name]
             if len(self.data):
                 data = self.dimension_values(dim_idx)
                 if self._dataframe:
