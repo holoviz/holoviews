@@ -517,9 +517,11 @@ class Dimensioned(LabelledData):
 
 
     def _valid_dimensions(self, dimensions):
-        "Validates key dimension input"
-        if not dimensions:
-            return dimensions
+        """Validates key dimension input
+        
+        Returns kdims if no dimensions are specified"""
+        if dimensions is None:
+            dimensions = self.kdims
         elif not isinstance(dimensions, list):
             dimensions = [dimensions]
 

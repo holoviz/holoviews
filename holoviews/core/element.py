@@ -499,9 +499,9 @@ class HoloMap(UniformNdMapping):
         """
         Splits the UniformNdMapping along a specified number of dimensions and
         overlays items in the split out Maps.
+
+        Shows all HoloMap data When no dimensions are specified.
         """
-        if dimensions is None:
-            dimensions = self.kdims
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
@@ -516,9 +516,9 @@ class HoloMap(UniformNdMapping):
         """
         GridSpace takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a GridSpace.
+
+        Shows all HoloMap data When no dimensions are specified.
         """
-        if dimensions is None:
-            dimensions = self.kdims
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
@@ -530,9 +530,9 @@ class HoloMap(UniformNdMapping):
         """
         GridSpace takes a list of one or two dimensions, and lays out the containing
         Views along these axes in a GridSpace.
+
+        Shows all HoloMap data When no dimensions are specified.
         """
-        if dimensions is None:
-            dimensions = self.kdims
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
