@@ -1,4 +1,8 @@
 import numpy as np
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 import param
 
@@ -32,8 +36,7 @@ class Chart(Element2D):
     _null_value = np.array([[], []]).T # For when data is None
 
     def __init__(self, data, **kwargs):
-        data, params = self._process_data(data)
-        params.update(kwargs)
+        data, params = self._process_data(data, kwargs)
         super(Chart, self).__init__(data, **params)
         self.data = self._validate_data(self.data)
 
@@ -48,9 +51,22 @@ class Chart(Element2D):
             return super(Chart, self)._convert_element(element)
 
 
-    def _process_data(self, data):
+    def _process_data(self, data, kwargs):
+        self._pandas = False
         params = {}
-        if isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
+        if pd is not None and isinstance(data, pd.DataFrame):
+            self._pandas = True
+            if 'kdims' in params or 'vdims' in params:
+                columns = params.get('kdims', []) + params.get('vdims', [])
+                col_labels = [c.name if isinstance(d, Dimension) else c
+                              for c in columns]
+                if not all(c in data.columns for c in col_labels):
+                    raise ValueError("Supplied dimensions don't match columns"
+                                     "in the dataframe.")
+            else:
+                params['kdims'] = list(data.columns[:len(self.kdims)])
+                params['vdims'] = list(data.columns[len(self.kdims):])
+        elif isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
                                                   and isinstance(data[0], Element2D)):
             params = dict([v for v in data][0].get_param_values(onlychanged=True))
             data = np.concatenate([v.data for v in data])
@@ -63,7 +79,7 @@ class Chart(Element2D):
             data = self._null_value if (data is None) or (len(data) == 0) else data
             if len(data):
                 data = np.array(data)
-
+        params.update(kwargs)
         return data, params
 
 
@@ -135,7 +151,6 @@ class Chart(Element2D):
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
-        new_data = [arr[:, 1:] for arr in data]
         if isinstance(function, np.ufunc):
             collapsed = function.reduce(new_data)
         else:
@@ -186,7 +201,14 @@ class Chart(Element2D):
     def dimension_values(self, dim):
         index = self.get_dimension_index(dim)
         if index < len(self.dimensions()):
-            return self.data[:, index]
+            if self._pandas:
+                return self.data[self.data.columns[index]]
+            else:
+                if self.data.ndim == 1:
+                    data = np.atleast_2d(self.data).T
+                else:
+                    data = self.data
+                return data[:, index]
         else:
             return super(Chart, self).dimension_values(dim)
 
@@ -197,12 +219,11 @@ class Chart(Element2D):
         if dim.range != (None, None):
             return dim.range
         elif dim_idx < len(self.dimensions()):
-            if self.data.ndim == 1:
-                data = np.atleast_2d(self.data).T
-            else:
-                data = self.data
-            if len(data):
-                data = data[:, dim_idx]
+            if self._pandas:
+                data = self.data[dim.name]
+                data_range = data.min(), data.max()
+            elif len(self.data):
+                data = self.dimension_values(dim_idx)
                 data_range = np.nanmin(data), np.nanmax(data)
             else:
                 data_range = (np.NaN, np.NaN)
@@ -213,9 +234,13 @@ class Chart(Element2D):
 
 
     def dframe(self):
-        import pandas as pd
-        columns = [d.name for d in self.dimensions()]
-        return pd.DataFrame(self.data, columns=columns)
+        if self._pandas:
+            return self.data.copy()
+        elif pd:
+            columns = [d.name for d in self.dimensions()]
+            return pd.DataFrame(self.data, columns=columns)
+        else:
+            raise ImportError("Pandas not found.")
 
 
 
