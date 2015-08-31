@@ -1,7 +1,7 @@
 import param
 
 from ..core import Dimension, Element3D
-from .chart import Chart
+from .chart import Chart, Scatter
 from .raster import Image
 
 
@@ -44,7 +44,7 @@ class Surface(Image, Element3D):
 
 
 
-class Scatter3D(Element3D, Chart):
+class Scatter3D(Element3D, Scatter):
     """
     Scatter3D object represents a number of coordinates in
     3D-space. Additionally Scatter3D points may have any number
