@@ -39,26 +39,31 @@ class PointPlot(ElementPlot):
 
     _plot_method = 'scatter'
 
+
     def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
-        mapping = dict(x= dims[0], y=dims[1])
+        mapping = dict(x=dims[0], y=dims[1])
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
-            mapping['fill_color'] = dims[self.color_index]
+            mapping['color'] = 'color'
             cmap = get_cmap(cmap)
             colors = element.dimension_values(self.color_index)
-            data[dims[self.color_index]] = map_colors(colors, ranges, cmap)
+            data['color'] = map_colors(colors, ranges, cmap)
+            if 'hover' in self.tools:
+                data[dims[self.color_index]] = colors
         if self.size_index < len(dims):
-            mapping['size'] = dims[self.size_index]
+            mapping['size'] = 'size'
             val_dim = dims[self.size_index]
             ms = style.get('size', 1)
             sizes = element.dimension_values(self.size_index)
-            data[dims[self.size_index]] = compute_sizes(sizes, self.size_fn,
-                                                        self.scaling_factor, ms)
+            data['size'] = compute_sizes(sizes, self.size_fn,
+                                         self.scaling_factor, ms)
+            if 'hover' in self.tools:
+                data[dims[self.size_index]] = sizes
         data[dims[0]] = element.dimension_values(0)
         data[dims[1]] = element.dimension_values(1)
         return data, mapping
@@ -71,8 +76,7 @@ class CurvePlot(ElementPlot):
     _plot_method = 'line'
 
     def get_data(self, element, ranges=None):
-        return (dict(x=element.dimension_values(0),
-                     y=element.dimension_values(1)),
+        return (dict(x=element.data[:, 0], y=element.data[:, 1]),
                 dict(x='x', y='y'))
 
 
@@ -84,9 +88,9 @@ class SpreadPlot(PolygonPlot):
         super(SpreadPlot, self).__init__(*args, **kwargs)
 
     def get_data(self, element, ranges=None):
-        lower = element.dimension_values(1) - element.dimension_values(2)
-        upper = element.dimension_values(1) + element.dimension_values(3)
-        band_x = np.append(element.dimension_values(0), element.dimension_values(0)[::-1])
+        lower = element.data[:, 1] - element.data[:, 2]
+        upper = element.data[:, 1] + element.data[:, 3]
+        band_x = np.append(element.data[:, 0], element.data[::-1, 0])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y]), self._mapping
 
@@ -110,8 +114,7 @@ class ErrorPlot(PathPlot):
     style_opts = ['color'] + line_properties
 
     def get_data(self, element, ranges=None):
-        data = [element.dimension_values(i)
-                for i in range(element.dimensions())]
+        data = element.data
         err_xs = []
         err_ys = []
         for x, y, neg, pos in data:
