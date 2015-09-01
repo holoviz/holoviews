@@ -477,7 +477,7 @@ class Points(Chart):
 
     group = param.String(default='Points', constant=True)
 
-    vdims = param.List(default=[], bounds=(0, 2))
+    vdims = param.List(default=[])
 
 
     _min_dims = 2                      # Minimum number of columns
