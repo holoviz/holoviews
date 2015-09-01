@@ -6,8 +6,13 @@ except ImportError:
 
 try:
     import dask.dataframe as dd
-except:
+except ImportError:
     dd = None
+
+try:
+    from blaze import bz
+except ImportError:
+    bz = None
 
 import param
 
@@ -60,7 +65,8 @@ class Chart(Element2D):
         self._dataframe = False
         params = {}
         if ((pd is not None and isinstance(data, pd.DataFrame)) or
-            (dd is not None and isinstance(data, dd.DataFrame))):
+            (dd is not None and isinstance(data, dd.DataFrame)),
+            (bz is not None and isinstance(data, bz.Data))):
             self._dataframe = True
             if 'kdims' in kwargs or 'vdims' in kwargs:
                 columns = kwargs.get('kdims', self.kdims) + kwargs.get('vdims', self.vdims)
