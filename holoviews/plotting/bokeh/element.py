@@ -2,7 +2,11 @@ import numpy as np
 import bokeh.plotting
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.models.tickers import Ticker, FixedTicker
-from bokeh import mpl
+
+try:
+    from bokeh import mpl
+except ImportError:
+    mpl = None
 import param
 
 from ...core import Store, HoloMap
