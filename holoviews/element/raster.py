@@ -159,13 +159,13 @@ class Raster(Element2D):
         The set of samples available along a particular dimension.
         """
         dim_idx = self.get_dimension_index(dim)
-        if dim_idx in [0, 1]:
-            shape = self.data.shape[abs(dim_idx)]
-            dim_max = self.data.shape[abs(dim_idx-1)]
-            coords = list(range(0, dim_max))
-            if not unique:
-                coords = coords * shape
-            return coords if dim_idx else sorted(coords)
+        if unique and dim_idx == 0:
+            return np.array(range(self.data.shape[1]))
+        elif unique and dim_idx == 1:
+            return np.array(range(self.data.shape[0]))
+        elif dim_idx in [0, 1]:
+            D1, D2 = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]]
+            return D1.flatten() if dim_idx == 0 else D2.flatten()
         elif dim_idx == 2:
             return self.data.T.flatten()
         else:
