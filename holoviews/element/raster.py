@@ -9,17 +9,16 @@ from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges
-
+from .util import compute_edges, toarray
 
 class Raster(Element2D):
     """
-    Raster is a basic 2D element type for presenting numpy arrays as
-    two dimensional raster images.
+    Raster is a basic 2D element type for presenting either numpy or
+    dask arrays as two dimensional raster images.
 
-     Arrays with a shape of (N,M) are valid inputs for Raster wheras
-     subclasses of Raster (e.g. RGB) may also accept 3D arrays
-     containing channel information.
+    Arrays with a shape of (N,M) are valid inputs for Raster wheras
+    subclasses of Raster (e.g. RGB) may also accept 3D arrays
+    containing channel information.
 
     Raster does not support slicing like the Image or RGB subclasses
     and the extents are in matrix coordinates if not explicitly
@@ -167,7 +166,7 @@ class Raster(Element2D):
             D1, D2 = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]]
             return D1.flatten() if dim_idx == 0 else D2.flatten()
         elif dim_idx == 2:
-            return self.data.T.flatten()
+            return toarray(self.data.T).flatten()
         else:
             return super(Raster, self).dimension_values(dim)
 
