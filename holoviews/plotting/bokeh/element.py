@@ -315,7 +315,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
-        self.handles['plot']   = plot
+        self.handles['plot'] = plot
 
         data, mapping = self.get_data(element, ranges)
         if source is None:
@@ -336,7 +336,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None):
         """
         Updates an existing plot with data corresponding
         to the key.
@@ -348,8 +348,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
-        if plot is None:
-            plot = self.handles['plot']
+        plot = self.handles['plot']
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)
@@ -451,17 +450,17 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges, plot, plots)
-
         self._process_legend()
+        self.drawn = True
 
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
         """
         for subplot in self.subplots.values():
-            subplot.update_frame(key, ranges, plot)
+            subplot.update_frame(key, ranges)
