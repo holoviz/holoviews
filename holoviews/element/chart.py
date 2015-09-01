@@ -496,17 +496,6 @@ class Points(Chart):
         return Scatter.collapse_data(data, function, **kwargs)
 
 
-    def dimension_values(self, dim):
-        if dim in [d.name for d in self.dimensions()]:
-            dim_index = self.get_dimension_index(dim)
-            if dim_index < self.data.shape[1]:
-                return self.data[:, dim_index]
-            else:
-                return [np.NaN] * len(self)
-        else:
-            return super(Points, self).dimension_values(dim)
-
-
 
 class VectorField(Points):
     """
