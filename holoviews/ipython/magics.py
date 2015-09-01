@@ -327,7 +327,10 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def backend(cls):
         "Convenience method as the backend is accessed frequently"
-        return cls.options['backend'].split(':')[0]
+        backend =  cls.options['backend'].split(':')[0]
+        if backend not in Store.registry:
+            raise ImportError("The %r backend isn't registered and may not be available." % backend)
+        return backend
 
 
     @classmethod
