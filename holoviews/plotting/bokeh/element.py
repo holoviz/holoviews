@@ -370,7 +370,10 @@ class BokehMPLWrapper(ElementPlot):
         else:
             etype = type(element)
         plot = Store.registry['matplotlib'][etype]
-        self.mplplot = plot(element, **self.lookup_options(element, 'plot').options)
+        params = dict({k: v.default for k, v in self.params().items()
+                       if k in ['bgcolor']})
+        params = dict(params, **self.lookup_options(element, 'plot').options)
+        self.mplplot = plot(element, **params)
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
