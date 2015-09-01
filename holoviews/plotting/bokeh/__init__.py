@@ -4,7 +4,6 @@ from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars
 from ...interface.seaborn import Bivariate, TimeSeries, Distribution
 from ...core.options import Options, Cycle, OptionTree
 from ..plot import PlotSelector
-from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
 
 from .annotation import TextPlot, LineAnnotationPlot
 from .element import OverlayPlot, BokehMPLWrapper
@@ -33,12 +32,6 @@ Store.register({Overlay: OverlayPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
                 Path: PathPlot,
-                Distribution: PlotSelector(lambda x: 'bokeh',
-                                         [('mpl', DistributionPlot), ('bokeh', BokehMPLWrapper)], True),
-                TimeSeries: PlotSelector(lambda x: 'bokeh',
-                                         [('mpl', TimeSeriesPlot), ('bokeh', BokehMPLWrapper)], True),
-                Bivariate: PlotSelector(lambda x: 'bokeh',
-                                        [('mpl', BivariatePlot), ('bokeh', BokehMPLWrapper)], True),
                 Contours: PathPlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
@@ -47,6 +40,25 @@ Store.register({Overlay: OverlayPlot,
                 Polygons: PolygonPlot,
                 ErrorBars: ErrorPlot,
                 Text: TextPlot}, 'bokeh')
+
+
+try:
+    from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
+    Store.register({Distribution: PlotSelector(lambda x: 'bokeh',
+                                               [('mpl', DistributionPlot),
+                                                ('bokeh', BokehMPLWrapper)],
+                                               True),
+                    TimeSeries: PlotSelector(lambda x: 'bokeh',
+                                             [('mpl', TimeSeriesPlot),
+                                              ('bokeh', BokehMPLWrapper)],
+                                             True),
+                    Bivariate: PlotSelector(lambda x: 'bokeh',
+                                        [('mpl', BivariatePlot),
+                                         ('bokeh', BokehMPLWrapper)], True)},
+                   'bokeh')
+except ImportError:
+    pass
+
 
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']

@@ -327,7 +327,10 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def backend(cls):
         "Convenience method as the backend is accessed frequently"
-        return cls.options['backend'].split(':')[0]
+        backend =  cls.options['backend'].split(':')[0]
+        if backend not in Store.registry:
+            raise ImportError("The %r backend isn't registered and may not be available." % backend)
+        return backend
 
 
     @classmethod
@@ -490,15 +493,15 @@ class OptsCompleter(object):
     @classmethod
     def setup_completer(cls):
         "Get the dictionary of valid completions"
-        for element in Store.options().keys():
-            try:
+        try:
+            for element in Store.options().keys():
                 options = Store.options()['.'.join(element)]
                 plotkws = options['plot'].allowed_keywords
                 stylekws = options['style'].allowed_keywords
                 dotted = '.'.join(element)
                 cls._completions[dotted] = (plotkws, stylekws if stylekws else [])
-            except KeyError:
-                pass
+        except KeyError:
+            pass
         return cls._completions
 
     @classmethod

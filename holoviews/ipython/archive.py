@@ -50,6 +50,11 @@ from ..core.io import FileArchive, Pickler
 from ..core.options import Store
 from ..plotting.renderer import HTML_TAGS
 
+try:
+    # Only matplotlib outputs to graphical file formats at this time
+    renderers = [Store.renderers['matplotlib'].instance(holomap=None, fig='svg')]
+except:
+    renderers = []
 
 class NotebookArchive(FileArchive):
     """
@@ -57,7 +62,7 @@ class NotebookArchive(FileArchive):
     display hooks and automatically adds a notebook HTML snapshot to
     the archive upon export.
     """
-    exporters = param.List(default=[Store.renderers['matplotlib'].instance(holomap=None, fig='svg'), Pickler])
+    exporters = param.List(default=renderers + [Pickler])
 
     namespace = param.String('holoviews.archive', doc="""
         The name of the current in the NotebookArchive instance in the
