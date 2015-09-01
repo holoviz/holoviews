@@ -1,10 +1,10 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
 from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram, Spread, HeatMap
 from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text, HLine, VLine
-from ...interface.seaborn import Bivariate, TimeSeries
+from ...interface.seaborn import Bivariate, TimeSeries, Distribution
 from ...core.options import Options, Cycle, OptionTree
 from ..plot import PlotSelector
-from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot
+from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
 
 from .annotation import TextPlot, LineAnnotationPlot
 from .element import OverlayPlot, BokehMPLWrapper
@@ -33,6 +33,8 @@ Store.register({Overlay: OverlayPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
                 Path: PathPlot,
+                Distribution: PlotSelector(lambda x: 'bokeh',
+                                         [('mpl', DistributionPlot), ('bokeh', BokehMPLWrapper)], True),
                 TimeSeries: PlotSelector(lambda x: 'bokeh',
                                          [('mpl', TimeSeriesPlot), ('bokeh', BokehMPLWrapper)], True),
                 Bivariate: PlotSelector(lambda x: 'bokeh',
