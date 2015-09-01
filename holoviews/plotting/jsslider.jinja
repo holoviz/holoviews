@@ -1,127 +1,7 @@
 <script language="javascript">
-    /* Define the {{ widget_name }} class */
-    function {{ widget_name }}(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached){
-        this.frames = frames;
-        this.fig_id = "fig_" + id;
-        this.img_id = "_anim_img" + id;
-        this.id = id;
-        this.slider_ids = slider_ids;
-        this.keyMap = keyMap
-        this.current_frame = 0;
-        this.current_vals = dim_vals;
-        this.load_json = load_json;
-        this.mode = mode;
-        this.notFound = notFound;
-	this.cached = cached;
-	this.cache = {};
-	this.init_slider(this.current_vals[0]);
-    }
-
-    {% block init_slider %}
-    {{ widget_name }}.prototype.init_slider = function(init_val){
-	if(this.cached) {
-	    this.update_cache();
-	    this.update(0);
-	} else {
-	    this.dynamic_update(0);
-	}
-    }
-    {% endblock %}
-
-    {% block populate_cache %}
-    {{ widget_name }}.prototype.populate_cache = function(idx){
-	if(this.load_json) {
-	    var data_url = "{{ server }}/" + this.fig_id + "/" + idx;
-	    this.cache[idx].load(data_url);
-	} else {
-	    this.cache[idx].html(this.frames[idx]);
-	    if (this.embed) {
-		delete this.frames[idx];
-	    }
-	}
-    }
-    {% endblock %}
-
-
-    {% block dynamic_update %}
-    {{ widget_name }}.prototype.dynamic_update = function(current){
-	function callback(msg){
-	    /* This callback receives data from Python as a string
-	       in order to parse it correctly quotes are sliced off*/
-	    var data = msg.content.data['text/plain'].slice(1, -1);
-	    this.frames[current] = data;
-	    this.update_cache();
-	    this.update(current);
-	}
-        if(!(current in this.cache)) {
-	    var kernel = IPython.notebook.kernel;
-	    callbacks = {iopub: {output: $.proxy(callback, this)}};
-	    var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-	    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-	} else {
-	    this.update(current);
-	}
-    }
-    {% endblock %}
-
-
-    {{ widget_name }}.prototype.update_cache = function(){
-	if(this.load_json) {
-	    var frame_len = Object.keys(this.keyMap).length;
-	} else {
-	    var frame_len = Object.keys(this.frames).length;
-	}
-	for (var i=0; i<frame_len; i++) {
-	    if(!this.load_json) {
-		i = Object.keys(this.frames)[i];
-	    }
-	    if(!(i in this.cache)) {
-		this.cache[i] = $('<div />').appendTo("#" + this.img_id).hide();
-		var cache_id = this.img_id+"_"+i;
-		this.cache[i].attr("id", cache_id);
-		this.populate_cache(i);
-	    }
-	}
-    }
-
-    {% block update %}
-    {{ widget_name }}.prototype.update = function(current){
-	if(current in this.cache) {
-	    $.each(this.cache, function(index, value) {
-		value.hide();
-	    });
-	    this.cache[current].show();
-	}
-    }
-    {% endblock %}
-
-    {{ widget_name }}.prototype.set_frame = function(dim_val, dim_idx){
-        this.current_vals[dim_idx] = dim_val;
-        var key = "(";
-        for (var i=0; i<this.slider_ids.length; i++)
-        {
-            val = this.current_vals[i];
-            if (!(isNaN(val))) {
-                if (val % 1 === 0) { var fixed = 1;}
-                else { var fixed = 10;}
-                val = val.toFixed(fixed)
-            }
-            key += "'" + val + "'";
-
-            if(i != this.slider_ids.length-1) { key += ', ';}
-            else if(this.slider_ids.length == 1) { key += ',';}
-        }
-        key += ")";
-	var current = this.keyMap[key];
-	this.current_frame = current;
-	if(this.cached) {
-	    this.update(current)
-	} else {
-            this.dynamic_update(current)
-	}
-    }
+{{ basejs }}
+{{ extensionjs }}
 </script>
-
 
 <style>
 div.hololayout {
@@ -169,8 +49,9 @@ div.hologroup {
 <div class="hololayout row row-fluid">
     <div class="holoframe span9 col-xs-8 col-md-9">
       <div id="_anim_img{{ id }}">
-        {% block init_frame %}
-        {% endblock %}
+      {% block init_frame %}
+      {{ init_frame }}
+      {% endblock %}
       </div>
     </div>
     <div class="span3 col-xs-4 col-md-3">

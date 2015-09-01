@@ -4,6 +4,7 @@ import param
 
 from ..core import OrderedDict, NdMapping
 from ..core.util import sanitize_identifier, safe_unicode
+from .util import find_file
 
 def isnumeric(val):
     try:
@@ -52,6 +53,12 @@ class NdWidget(param.Parameterized):
 
     CDN = param.Dict(default={'underscore': 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js',
                               'jQueryUI':   'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'})
+
+    basejs = param.String(default='widgets.js')
+
+    extensionjs = param.String(default='', doc="""
+        Optional javascript extension file for a particular backend.""")
+
     widgets = {}
     counter = 0
 
@@ -89,11 +96,16 @@ class NdWidget(param.Parameterized):
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
         mode = repr(self.renderer.mode)
+        path = os.path.dirname(os.path.abspath(__file__))
+        basejs = open(find_file(path, self.basejs), 'r').read() if self.basejs else ''
+        extensionjs = open(find_file(path, self.extensionjs), 'r').read() if self.extensionjs else ''
+
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     server=self.server_url, cached=cached,
                     load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name,
-                    widget_template=template)
+                    widget_template=template, basejs=basejs,
+                    extensionjs=extensionjs)
 
 
     def render_html(self, data):

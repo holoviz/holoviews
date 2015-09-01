@@ -5,7 +5,8 @@ from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 class BokehWidget(NdWidget):
 
-    template = param.String(default='./bokehwidget.jinja')
+    extensionjs = param.String(default='bokehwidgets.js', doc="""
+        Optional javascript extension file for a particular backend.""")
 
     def _get_data(self):
         # Get initial frame to draw immediately
@@ -24,7 +25,6 @@ class BokehWidget(NdWidget):
         """
         self.plot.update(idx)
         return self.renderer.html(self.plot, fig_format)
-
 
 
 class SelectionWidget(BokehWidget, SelectionWidget):

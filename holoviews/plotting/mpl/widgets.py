@@ -47,6 +47,9 @@ class MPLWidget(NdWidget):
     CDN = param.Dict(default=dict(NdWidget.CDN, mpld3='https://mpld3.github.io/js/mpld3.v0.3git.js',
                                   d3='https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'))
 
+    extensionjs = param.String(default='mplwidgets.js', doc="""
+        Optional javascript extension file for a particular backend.""")
+
     template = param.String(default='widget.jinja')
 
     def __init__(self, plot, renderer=None, **params):
