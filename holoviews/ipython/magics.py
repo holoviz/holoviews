@@ -61,7 +61,7 @@ class OptionsMagic(Magics):
         pass
 
     @classmethod
-    def get_options(cls, line, options):
+    def get_options(cls, line, options, linemagic):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
         for keyword in cls.defaults:
@@ -96,10 +96,10 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-        return cls._validate(options)
+        return cls._validate(options, linemagic)
 
     @classmethod
-    def _validate(cls, options):
+    def _validate(cls, options, linemagic):
         "Allows subclasses to check options are valid."
         raise NotImplementedError("OptionsMagic is an abstract base class.")
 
@@ -378,7 +378,7 @@ class OutputMagic(OptionsMagic):
 
 
     @classmethod
-    def _validate(cls, options):
+    def _validate(cls, options, linemagic):
         "Validation of edge cases and incompatible options"
         if options['backend'] in ['d3', 'nbagg']:
             backend = cls._backend_aliases[options['backend']]
@@ -404,7 +404,8 @@ class OutputMagic(OptionsMagic):
 
             if not cls.bokeh_loaded:
                 bokeh.io.load_notebook()
-                cls.bokeh_loaded = True
+                if linemagic:
+                    cls.bokeh_loaded = True
         return options
 
 
@@ -423,7 +424,7 @@ class OutputMagic(OptionsMagic):
             if OutputMagic.last_backend is None:
                 options['fig'] = None
 
-            new_options = self.get_options(line, options)
+            new_options = self.get_options(line, options, cell is None)
             switched_options = self.switch_backend(new_options)
             OutputMagic.options = switched_options
         except Exception as e:
