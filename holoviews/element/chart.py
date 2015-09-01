@@ -519,9 +519,6 @@ class Points(Chart):
 
     _min_dims = 2                      # Minimum number of columns
 
-    def __len__(self):
-        return self.data.shape[0]
-
     def __iter__(self):
         i = 0
         while i < len(self):
