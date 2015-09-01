@@ -514,7 +514,7 @@ class Points(Chart):
 
     group = param.String(default='Points', constant=True)
 
-    vdims = param.List(default=[], bounds=(0, 2))
+    vdims = param.List(default=[])
 
 
     _min_dims = 2                      # Minimum number of columns
@@ -528,17 +528,6 @@ class Points(Chart):
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
         return Scatter.collapse_data(data, function, **kwargs)
-
-
-    def dimension_values(self, dim):
-        if dim in [d.name for d in self.dimensions()]:
-            dim_index = self.get_dimension_index(dim)
-            if dim_index < self.data.shape[1]:
-                return self.data[:, dim_index]
-            else:
-                return [np.NaN] * len(self)
-        else:
-            return super(Points, self).dimension_values(dim)
 
 
 

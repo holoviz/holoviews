@@ -105,6 +105,7 @@
       }
   }
 
+  {% block update %}
   {{ widget_name }}.prototype.update = function(current){
       if(current in this.cache) {
 	  $.each(this.cache, function(index, value) {
@@ -113,7 +114,7 @@
 	  this.cache[current].show();
       }
   }
-
+  {% endblock %}
 
   {{ widget_name }}.prototype.next_frame = function() {
       this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
