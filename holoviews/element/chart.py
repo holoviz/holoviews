@@ -65,7 +65,7 @@ class Chart(Element2D):
         self._dataframe = False
         params = {}
         if ((pd is not None and isinstance(data, pd.DataFrame)) or
-            (dd is not None and isinstance(data, dd.DataFrame)),
+            (dd is not None and isinstance(data, dd.DataFrame)) or
             (bz is not None and isinstance(data, bz.Data))):
             self._dataframe = True
             if 'kdims' in kwargs or 'vdims' in kwargs:
