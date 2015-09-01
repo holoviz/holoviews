@@ -439,6 +439,16 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         plot.legend[0].legends[:] = new_legends
 
 
+    def _init_tools(self, element):
+        """
+        Processes the list of tools to be supplied to the plot.
+        """
+        tools = []
+        for i, subplot in enumerate(self.subplots.values()):
+            tools.extend(subplot._init_tools(element.get(i)))
+        return list(set(tools))
+
+
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
@@ -462,5 +472,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         key tuple (where integers represent frames). Returns this
         state.
         """
+        overlay = self._get_frame(key)
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges)
+        if not self.overlaid:
+            self._update_plot(key, self.handles['plot'], overlay)
