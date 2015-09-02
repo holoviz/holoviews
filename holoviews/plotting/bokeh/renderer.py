@@ -1,6 +1,6 @@
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import ScrubberWidget, SelectionWidget
+from .widgets import BokehScrubberWidget, BokehSelectionWidget
 
 from param.parameterized import bothmethod
 
@@ -17,8 +17,8 @@ class BokehRenderer(Renderer):
     mode_formats = {'fig': {'default': ['html', 'json']},
                     'holomap': {'default': [None]}}
 
-    widgets = {'scrubber': ScrubberWidget,
-               'selection': SelectionWidget}
+    widgets = {'scrubber': BokehScrubberWidget,
+               'selection': BokehSelectionWidget}
 
     def __call__(self, obj, fmt=None):
         """

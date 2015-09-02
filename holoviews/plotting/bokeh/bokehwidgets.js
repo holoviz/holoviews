@@ -1,4 +1,18 @@
-var BokehFns = {
+// Define Bokeh specific subclasses
+function BokehSelectionWidget() {
+    SelectionWidget.apply(this, arguments);
+}
+
+function BokehScrubberWidget() {
+    ScrubberWidget.apply(this, arguments);
+}
+
+// Let them inherit from the baseclasses
+BokehSelectionWidget.prototype = Object.create(SelectionWidget.prototype);
+BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
+
+// Define methods to override on widgets
+var BokehMethods = {
     init_slider : function(init_val){
 	$.each(this.frames, $.proxy(function(index, frame) {
 	    this.frames[index] = JSON.parse(frame);
@@ -35,5 +49,6 @@ var BokehFns = {
     }
 }
 
-extend(SelectionWidget.prototype, BokehFns);
-extend(ScrubberWidget.prototype, BokehFns);
+// Extend Bokeh widgets with backend specific methods
+extend(BokehSelectionWidget.prototype, BokehMethods);
+extend(BokehScrubberWidget.prototype, BokehMethods);

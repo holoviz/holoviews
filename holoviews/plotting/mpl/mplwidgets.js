@@ -1,4 +1,18 @@
-var MPLFns = {
+// Define MPL specific subclasses
+function MPLSelectionWidget() {
+    SelectionWidget.apply(this, arguments);
+}
+
+function MPLScrubberWidget() {
+    ScrubberWidget.apply(this, arguments);
+}
+
+// Let them inherit from the baseclasses
+MPLSelectionWidget.prototype = Object.create(SelectionWidget.prototype);
+MPLScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
+
+// Define methods to override on widgets
+var MPLMethods = {
     init_slider : function(init_val){
 	if(this.mode == 'nbagg') {
 	    this.update_cache();
@@ -59,5 +73,6 @@ var MPLFns = {
     }
 }
 
-extend(SelectionWidget.prototype, MPLFns);
-extend(ScrubberWidget.prototype, MPLFns);
+// Extend MPL widgets with backend specific methods
+extend(MPLSelectionWidget.prototype, MPLMethods);
+extend(MPLScrubberWidget.prototype, MPLMethods);

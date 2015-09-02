@@ -27,8 +27,8 @@ class BokehWidget(NdWidget):
         return self.renderer.html(self.plot, fig_format)
 
 
-class SelectionWidget(BokehWidget, SelectionWidget):
+class BokehSelectionWidget(BokehWidget, SelectionWidget):
     pass
 
-class ScrubberWidget(BokehWidget, ScrubberWidget):
+class BokehScrubberWidget(BokehWidget, ScrubberWidget):
     pass

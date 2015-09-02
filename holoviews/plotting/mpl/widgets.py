@@ -114,8 +114,8 @@ class MPLWidget(NdWidget):
         self.comm = WidgetCommSocket(self.manager)
 
 
-class SelectionWidget(MPLWidget, SelectionWidget):
+class MPLSelectionWidget(MPLWidget, SelectionWidget):
     pass
 
-class ScrubberWidget(MPLWidget, ScrubberWidget):
+class MPLScrubberWidget(MPLWidget, ScrubberWidget):
     pass
