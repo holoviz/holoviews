@@ -5,13 +5,15 @@ try:
 except:
     dask = None
 
-def toarray(v):
+def toarray(v, index_value=False):
     """
     Interface helper function to turn dask Arrays into numpy arrays as
-    necessary.
+    necessary. If index_value is True, a value is returned instead of
+    an array holding a single value.
     """
     if dask and isinstance(v, dask.array.Array):
-        return v.compute()
+        arr =  v.compute()
+        return arr[()] if index_value else arr
     else:
         return v
 
