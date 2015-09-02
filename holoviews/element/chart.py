@@ -219,7 +219,7 @@ class Chart(Element2D):
         if index < len(self.dimensions()):
             if self._dataframe:
                 data = self.data[self.data.columns[index]]
-                if isinstance(data, dd.Series):
+                if dd and isinstance(data, dd.Series):
                     data = data.compute()
                 return data
             else:
