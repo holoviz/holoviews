@@ -2,8 +2,8 @@ import os, uuid, json
 
 import param
 
-from ..core import OrderedDict, NdMapping
-from ..core.util import sanitize_identifier, safe_unicode
+from ...core import OrderedDict, NdMapping
+from ...core.util import sanitize_identifier, safe_unicode
 
 def isnumeric(val):
     try:
@@ -12,7 +12,7 @@ def isnumeric(val):
     except:
         return False
 
-subdirs = [p[0] for p in os.walk(os.path.split(__file__)[0])]
+subdirs = [p[0] for p in os.walk(os.path.join(os.path.split(__file__)[0], '..'))]
 
 class NdWidget(param.Parameterized):
     """
