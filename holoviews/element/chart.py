@@ -166,6 +166,7 @@ class Chart(Element2D):
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
+        new_data = [arr[:, 1:] for arr in data]
         if isinstance(function, np.ufunc):
             collapsed = function.reduce(new_data)
         else:
