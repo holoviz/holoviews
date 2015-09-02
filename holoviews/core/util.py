@@ -1,7 +1,7 @@
-import sys, warnings, operator
+import os, sys, warnings, operator
 import numbers
 import itertools
-import string
+import string, fnmatch
 import unicodedata
 from collections import defaultdict
 
@@ -559,3 +559,14 @@ def get_spec(obj):
    """
    return (obj.__class__.__name__,
            obj.group, obj.label)
+
+
+def find_file(folder, filename):
+    """
+    Find a file given folder and filename.
+    """
+    matches = []
+    for root, dirnames, filenames in os.walk(folder):
+        for filename in fnmatch.filter(filenames, filename):
+            matches.append(os.path.join(root, filename))
+    return matches[-1]

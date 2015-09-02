@@ -50,7 +50,7 @@ class MPLWidget(NdWidget):
     extensionjs = param.String(default='mplwidgets.js', doc="""
         Optional javascript extension file for a particular backend.""")
 
-    template = param.String(default='widget.jinja')
+    template = param.String(default='mplwidgets.jinja')
 
     def __init__(self, plot, renderer=None, **params):
         super(MPLWidget, self).__init__(plot, renderer, **params)
