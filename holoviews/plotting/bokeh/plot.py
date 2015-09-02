@@ -154,7 +154,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             c = i // self.cols
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
-                subplot.update_frame(key, ranges, plots[r][c])
+                subplot.update_frame(key, ranges)
 
 
 
@@ -303,7 +303,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
-                subplot.update_frame(key, ranges, plots[r][c])
+                subplot.update_frame(key, ranges)
 
 
 class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
@@ -341,10 +341,10 @@ class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
         self.drawn = True
         return plot
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None):
         plot = None
         for pos in ['main']:
             subplot = self.subplots.get(pos)
             if subplot is not None:
-                plot = subplot.update_frame(key, ranges, plot)
+                plot = subplot.update_frame(key, ranges)
         return plot

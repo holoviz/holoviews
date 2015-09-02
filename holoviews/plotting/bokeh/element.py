@@ -340,7 +340,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, plot=None):
         """
         Updates an existing plot with data corresponding
         to the key.
@@ -390,7 +390,7 @@ class BokehMPLWrapper(ElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None):
         if key in self.hmap:
             self.mplplot.update_frame(key, ranges)
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
