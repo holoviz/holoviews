@@ -177,7 +177,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                                 **self._fontsize('title'))
         # Always called to ensure log and inverted axes are applied
         self._finalize_axes(axis)
-        self._finalize_artist(element)
+        if not self.overlaid and not self.drawn:
+            self._finalize_artist(key)
 
         for hook in self.finalize_hooks:
             try:
@@ -454,18 +455,26 @@ class ColorbarPlot(ElementPlot):
             cbar.set_ticklabels(labels)
 
 
-    def _finalize_artist(self, element):
+    def _finalize_artist(self, key):
+        element = self.hmap.last
         artist = self.handles.get('artist', None)
-        if not self.drawn and artist and self.colorbar:
+        if artist and self.colorbar:
             self._draw_colorbar(artist, element)
 
 
     def _draw_colorbar(self, artist, element, dim=None):
         fig = self.handles['fig']
         axis = self.handles['axis']
-        ax_colorbars = ColorbarPlot._colorbars.get(id(axis), [])
+        ax_colorbars, position = ColorbarPlot._colorbars.get(id(axis), ([], None))
         specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
         spec = util.get_spec(element)
+
+        if position is None:
+            fig.canvas.draw()
+            bbox = axis.get_position()
+            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
+        else:
+            l, b, w, h = position
 
         # Get colorbar label
         dim = element.get_dimension(dim)
@@ -476,10 +485,7 @@ class ColorbarPlot(ElementPlot):
         padding = self.cbar_padding
         width = self.cbar_width
         if spec[:2] not in specs:
-            fig.canvas.draw()
             offset = len(ax_colorbars)
-            bbox = axis.get_position()
-            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
@@ -490,13 +496,11 @@ class ColorbarPlot(ElementPlot):
             ax_colorbars.append((artist, cax, spec, label))
 
         for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
-            bbox = axis.get_position()
-            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
             scaled_w = w*width
             cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
                               b, scaled_w, h])
 
-        ColorbarPlot._colorbars[id(axis)] = ax_colorbars
+        ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
 
 
 
@@ -539,6 +543,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if overlay.traverse(lambda x: x, (Element3D,)):
             params['projection'] = '3d'
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+
+    def _finalize_artist(self, key):
+        for subplot in self.subplots.values():
+            subplot._finalize_artist(key)
 
     def _adjust_legend(self, axis):
         """
