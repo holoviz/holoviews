@@ -54,7 +54,7 @@ class Raster(Element2D):
         if all(slc_types):
             return self.clone(data, extents=None)
         elif not any(slc_types):
-            return data
+            return toarray(data, index_value=True)
         else:
             return self.clone(np.expand_dims(data, axis=slc_types.index(True)),
                               extents=None)
