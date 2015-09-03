@@ -87,17 +87,12 @@ def load_notebook():
                          if f is not None )
     widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
                           for f in css if f is not None)
-
-    logo_path = os.path.join(path, '../../doc/_static/holoviews_logo.png')
-    logobase64 = base64.b64encode(open(logo_path, "rb").read())
-
     # Evaluate load_notebook.html template with widgetjs code
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
     jinjaEnv = jinja2.Environment(loader=templateLoader)
     template = jinjaEnv.get_template('load_notebook.html')
     display(HTML(template.render({'widgetjs': widgetjs,
-                                  'widgetcss': widgetcss,
-                                  'logob64': logobase64})))
+                                  'widgetcss': widgetcss})))
 
 
 # Populating the namespace for keyword evaluation
