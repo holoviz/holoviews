@@ -1,8 +1,17 @@
+import os
+import base64
 from unittest import SkipTest
 
+import jinja2
+from IPython.display import display, HTML
+
 import holoviews
+from ..core.util import find_file
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
+from .. import plotting
+from ..plotting.renderer import Renderer
+from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
 from .magics import load_magics
 from .display_hooks import display      # pyflakes:ignore (API import)
@@ -59,6 +68,32 @@ class IPTestCase(ComparisonTestCase):
         self.ip.run_line_magic(*args, **kwargs)
 
 
+def load_notebook():
+    """
+    Displays javascript and CSS to initialize HoloViews widgets
+    """
+
+    # Get all the widgets and find the set of required js widget files
+    widgets = [wdgt for cls in Renderer.__subclasses__()
+               for wdgt in cls.widgets.values()]
+    css = list({wdgt.css for wdgt in widgets})
+    basejs = list({wdgt.basejs for wdgt in widgets})
+    extensionjs = list({wdgt.extensionjs for wdgt in widgets})
+
+    # Join all the js widget code into one string
+    path = os.path.dirname(os.path.abspath(plotting.__file__))
+    widgetjs = '\n'.join(open(find_file(path, f), 'r').read()
+                         for f in basejs + extensionjs
+                         if f is not None )
+    widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
+                          for f in css if f is not None)
+    # Evaluate load_notebook.html template with widgetjs code
+    templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
+    jinjaEnv = jinja2.Environment(loader=templateLoader)
+    template = jinjaEnv.get_template('load_notebook.html')
+    display(HTML(template.render({'widgetjs': widgetjs,
+                                  'widgetcss': widgetcss})))
+
 
 # Populating the namespace for keyword evaluation
 from ..core.options import Cycle, Palette, Store # pyflakes:ignore (namespace import)
@@ -76,6 +111,7 @@ def load_ipython_extension(ip):
         load_magics(ip)
         OutputMagic.register_supported_formats(OutputMagic.optional_formats)
         set_display_hooks(ip)
+        load_notebook()
 
 def unload_ipython_extension(ip):
     global _loaded

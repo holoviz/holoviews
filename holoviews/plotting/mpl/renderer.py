@@ -18,7 +18,7 @@ from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import SelectionWidget, ScrubberWidget
+from .widgets import MPLSelectionWidget, MPLScrubberWidget
 
 
 class MPLRenderer(Renderer):
@@ -73,8 +73,8 @@ class MPLRenderer(Renderer):
     counter = 0
 
     # Define appropriate widget classes
-    widgets = {'scrubber': ScrubberWidget,
-               'selection': SelectionWidget}
+    widgets = {'scrubber': MPLScrubberWidget,
+               'selection': MPLSelectionWidget}
 
 
     def __call__(self, obj, fmt='auto'):

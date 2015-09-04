@@ -281,6 +281,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         if self.aspect == 'equal':
             self.aspect = float(width/height)
 
+    def _finalize_artist(self, key):
+        pass
+
     def get_extents(self, view, ranges):
         width, height, _, _, _, _ = self.border_extents
         return (0, 0, width, height)

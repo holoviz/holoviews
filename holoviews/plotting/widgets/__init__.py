@@ -2,8 +2,8 @@ import os, uuid, json
 
 import param
 
-from ..core import OrderedDict, NdMapping
-from ..core.util import sanitize_identifier, safe_unicode
+from ...core import OrderedDict, NdMapping
+from ...core.util import sanitize_identifier, safe_unicode
 
 def isnumeric(val):
     try:
@@ -12,7 +12,7 @@ def isnumeric(val):
     except:
         return False
 
-subdirs = [p[0] for p in os.walk(os.path.split(__file__)[0])]
+subdirs = [p[0] for p in os.walk(os.path.join(os.path.split(__file__)[0], '..'))]
 
 class NdWidget(param.Parameterized):
     """
@@ -52,6 +52,16 @@ class NdWidget(param.Parameterized):
 
     CDN = param.Dict(default={'underscore': 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js',
                               'jQueryUI':   'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'})
+
+    css = param.String(default=None, doc="""
+        Defines the local CSS file to be loaded for this widget.""")
+
+    basejs = param.String(default='widgets.js', doc="""
+        JS file containing javascript baseclasses for the widget.""")
+
+    extensionjs = param.String(default=None, doc="""
+        Optional javascript extension file for a particular backend.""")
+
     widgets = {}
     counter = 0
 
@@ -176,6 +186,9 @@ class SelectionWidget(NdWidget):
 
     base_template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
+
+    css = param.String(default='jsslider.css', doc="""
+        Defines the local CSS file to be loaded for this widget.""")
 
     template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")

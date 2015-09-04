@@ -6,4 +6,3 @@ def compute_sizes(sizes, size_fn, scaling, base_size):
     """
     sizes = size_fn(sizes)
     return (base_size*scaling**sizes)
-
