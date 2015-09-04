@@ -48,7 +48,8 @@ setup_args.update(dict(
                 "holoviews.plotting.mpl",
                 "holoviews.plotting.bokeh",
                 "holoviews.plotting.widgets"],
-    package_data={'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
+    package_data={'holoviews.ipython': ['*.html'],
+                  'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
                   'holoviews.plotting.bokeh': ['*.js'],
                   'holoviews.plotting.widgets': ['*.jinja', '*.js', '*.css']},
     classifiers = [
