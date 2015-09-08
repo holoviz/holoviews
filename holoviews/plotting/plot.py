@@ -178,7 +178,7 @@ class DimensionedPlot(Plot):
         pass
 
 
-    def _frame_title(self, key, group_size=2):
+    def _frame_title(self, key, group_size=2, separator='\n'):
         """
         Returns the formatted dimension group strings
         for a particular frame.
@@ -194,7 +194,7 @@ class DimensionedPlot(Plot):
                             zip(dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
-        return util.safe_unicode('\n '.join(g for g in groups if g))
+        return util.safe_unicode(separator.join(g for g in groups if g))
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -442,7 +442,7 @@ class GenericElementPlot(DimensionedPlot):
         return xlabel, ylabel, zlabel
 
 
-    def _format_title(self, key):
+    def _format_title(self, key, separator='\n'):
         frame = self._get_frame(key)
         if frame is None: return None
         type_name = type(frame).__name__
@@ -455,13 +455,13 @@ class GenericElementPlot(DimensionedPlot):
             title = title_format.format(label=util.safe_unicode(label),
                                         group=util.safe_unicode(group),
                                         type=type_name)
-        dim_title = self._frame_title(key, 2)
+        dim_title = self._frame_title(key, separator=separator)
         if not title or title.isspace():
             return dim_title
         elif not dim_title or dim_title.isspace():
             return title
         else:
-            return '\n'.join([title, dim_title])
+            return separator.join([title, dim_title])
 
 
     def update_frame(self, key, ranges=None):
