@@ -3,6 +3,7 @@ import numpy as np
 import param
 
 from bokeh.io import gridplot
+from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import OrderedDict, CompositeOverlay, Element
@@ -26,6 +27,30 @@ class BokehPlot(Plot):
         Height of the plot in pixels""")
 
     renderer = BokehRenderer
+
+    def get_data(self, element, ranges=None):
+        """
+        Returns the data from an element in the appropriate format for
+        initializing or updating a ColumnDataSource and a dictionary
+        which maps the expected keywords arguments of a glyph to
+        the column in the datasource.
+        """
+        raise NotImplementedError
+
+
+    def _init_datasource(self, data):
+        """
+        Initializes a data source to be passed into the bokeh glyph.
+        """
+        return ColumnDataSource(data=data)
+
+
+    def _update_datasource(self, source, data):
+        """
+        Update datasource with data for a new frame.
+        """
+        for k, v in data.items():
+            source.data[k] = v
 
     @property
     def state(self):

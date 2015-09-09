@@ -1,6 +1,6 @@
 import numpy as np
 import bokeh.plotting
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import HoverTool
 from bokeh.models.tickers import Ticker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
@@ -266,31 +266,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
-
-
-    def get_data(self, element, ranges=None):
-        """
-        Returns the data from an element in the appropriate format for
-        initializing or updating a ColumnDataSource and a dictionary
-        which maps the expected keywords arguments of a glyph to
-        the column in the datasource.
-        """
-        raise NotImplementedError
-
-
-    def _init_datasource(self, data):
-        """
-        Initializes a data source to be passed into the bokeh glyph.
-        """
-        return ColumnDataSource(data=data)
-
-
-    def _update_datasource(self, source, data):
-        """
-        Update datasource with data for a new frame.
-        """
-        for k, v in data.items():
-            source.data[k] = v
 
 
     def _init_glyph(self, plot, mapping, properties):
