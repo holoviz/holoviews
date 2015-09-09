@@ -2,6 +2,7 @@ import numpy as np
 import bokeh.plotting
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.models.tickers import Ticker, FixedTicker
+from bokeh.models.widgets import Panel, Tabs
 
 try:
     from bokeh import mpl
@@ -9,7 +10,7 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap
+from ...core import Store, HoloMap, Overlay
 from ...core import util
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
@@ -420,6 +421,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
+    tabs = param.Boolean(default=False, doc="""
+        Whether to display overlaid plots in separate panes""")
+
     style_opts = legend_dimensions + line_properties + text_properties
 
     def _process_legend(self):
@@ -467,18 +471,31 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        if plot is None:
+        if plot is None and not self.tabs:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
-        if not self.overlaid:
+        if plot and not self.overlaid:
             self._update_plot(key, plot, self.hmap.last)
         self.handles['plot'] = plot
 
-        for subplot in self.subplots.values():
-            subplot.initialize_plot(ranges, plot, plots)
-        self._process_legend()
+        panels = []
+        for key, subplot in self.subplots.items():
+            child = subplot.initialize_plot(ranges, plot, plots)
+            if self.tabs:
+                if self.hmap.type is Overlay:
+                    title = ' '.join(key)
+                else:
+                    title = ', '.join([d.pprint_value_string(k) for d, k in
+                                       zip(self.hmap.last.kdims, key)])
+                panels.append(Panel(child=child, title=title))
+
+        if self.tabs:
+            self.handles['plot'] = Tabs(tabs=panels)
+        else:
+            self._process_legend()
+
         self.drawn = True
 
-        return plot
+        return self.handles['plot']
 
 
     def update_frame(self, key, ranges=None):
@@ -490,5 +507,5 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         overlay = self._get_frame(key)
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges)
-        if not self.overlaid:
+        if not self.overlaid and not self.tabs:
             self._update_plot(key, self.handles['plot'], overlay)
