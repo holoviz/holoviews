@@ -173,8 +173,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['y_range'] = [b, t]
         if self.invert_yaxis:
             plot_ranges['y_range'] = plot_ranges['y_range'][::-1]
-        x_axis_type = 'log' if self.xlog else 'linear'
-        y_axis_type = 'log' if self.ylog else 'linear'
+        x_axis_type = 'log' if self.xlog else 'auto'
+        y_axis_type = 'log' if self.ylog else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
