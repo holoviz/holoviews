@@ -2,7 +2,7 @@ import numpy as np
 
 import param
 
-from bokeh.io import gridplot
+from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Panel, Tabs
 
@@ -324,14 +324,27 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                     dim_vals = zip(self.layout.kdims, self.paths[r, c])
                     tab_titles[r, c] = ', '.join([d.pprint_value_string(k)
                                                   for d, k in dim_vals])
+
+        # Determine the most appropriate composite plot type
+        # If the object cannot be displayed in a single layout
+        # it will be split into Tabs, for 1-row or 1-column
+        # Layouts we use the vplot and hplots.
+        # If there is a table and multiple rows and columns
+        # everything will be forced to a vertical layout
         if self.tabs:
             panels = [Panel(child=child, title=tab_titles[r, c])
                       for r, row in enumerate(plots)
                       for c, child in enumerate(row)
                       if child is not None]
-            self.handles['plot'] = Tabs(tabs=panels)
+            layout_plot = Tabs(tabs=panels)
+        elif self.rows == 1:
+            layout_plot = vplot(hplot(*plots[0]))
+        elif self.cols == 1:
+            layout_plot = vplot(*[p[0] for p in plots])
         else:
-            self.handles['plot'] = gridplot(plots)
+            layout_plot = gridplot(plots)
+
+        self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
         self.drawn = True
 
