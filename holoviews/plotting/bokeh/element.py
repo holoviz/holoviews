@@ -38,6 +38,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     border = param.Number(default=2, doc="""
         Minimum border around plot.""")
 
+    fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
+
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
