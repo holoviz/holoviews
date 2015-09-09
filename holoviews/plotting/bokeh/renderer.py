@@ -5,7 +5,8 @@ from .widgets import BokehScrubberWidget, BokehSelectionWidget
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
-from bokeh.plot_object import PlotObject
+from bokeh.models import DataSource
+from bokeh.plotting import Figure
 from bokeh.protocol import serialize_json
 
 
@@ -34,7 +35,8 @@ class BokehRenderer(Renderer):
             html = '<center>%s</center>' % html
             return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
         elif fmt == 'json':
-            plotobjects = obj.state.select({'type': PlotObject})
+            types = [DataSource, Figure]
+            plotobjects = [o for tp in types for o in obj.state.select({'type': tp})]
             data = {}
             for plotobj in plotobjects:
                 json = plotobj.vm_serialize(changed_only=True)
