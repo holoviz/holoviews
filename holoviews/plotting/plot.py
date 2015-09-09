@@ -588,7 +588,7 @@ class GenericOverlayPlot(GenericElementPlot):
         return util.max_extents(extents, self.projection == '3d')
 
 
-    def _format_title(self, key):
+    def _format_title(self, key, separator='\n'):
         frame = self._get_frame(key)
         if frame is None: return None
 
@@ -608,7 +608,7 @@ class GenericOverlayPlot(GenericElementPlot):
         elif not dim_title or dim_title.isspace():
             return title
         else:
-            return '\n'.join([title, dim_title])
+            return separator.join([title, dim_title])
 
 
 
@@ -643,8 +643,8 @@ class GenericCompositePlot(DimensionedPlot):
         return len(self.keys)
 
 
-    def _format_title(self, key):
-        dim_title = self._frame_title(key, 3)
+    def _format_title(self, key, separator='\n'):
+        dim_title = self._frame_title(key, 3, separator)
         layout = self.layout
         type_name = type(self.layout).__name__
         group = util.safe_unicode(layout.group if layout.group != type_name else '')
@@ -658,7 +658,7 @@ class GenericCompositePlot(DimensionedPlot):
         elif not dim_title:
             return title
         else:
-            return '\n'.join([title, dim_title])
+            return separator.join([title, dim_title])
 
 
 
