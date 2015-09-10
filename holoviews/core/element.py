@@ -235,16 +235,8 @@ class Tabular(NdMapping):
             return str(self.kdims[col])
         else:
             dim = self.get_dimension(col)
-            if col >= ndims:
-                row_values = self.values()[row-1]
-                if self.vdims:
-                    val = row_values[col - ndims]
-                else:
-                    val = row_values
-            else:
-                row_data = list(self.data.keys())[row-1]
-                val = row_data[col]
-            return dim.pprint_value(val)
+            values = self.dimension_values(dim.name)
+            return dim.pprint_value(values[row-1])
 
 
     def cell_type(self, row, col):
