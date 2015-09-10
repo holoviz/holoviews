@@ -156,6 +156,10 @@ class DimensionedPlot(Plot):
         self.uniform = uniform
         self.drawn = False
         self.handles = {}
+        self.group = None
+        self.label = None
+        self.current_frame = None
+        self.current_key = None
         super(DimensionedPlot, self).__init__(**params)
 
 
@@ -367,6 +371,14 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_frame(self, key):
+        if isinstance(key, int):
+            key = self.hmap.keys()[min([key, len(self.hmap)-1])]
+
+        if key == current_key:
+            return self.current_frame
+        else:
+            self.current_key = key
+
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)
             kdims = [d.name for d in self.hmap.kdims]
@@ -379,15 +391,16 @@ class GenericElementPlot(DimensionedPlot):
             else:
                 select = {d: key[dimensions.index(d)]
                           for d in kdims}
-        elif isinstance(key, int):
-            return self.hmap.values()[min([key, len(self.hmap)-1])]
         else:
             select = dict(zip(self.hmap.dimensions('key', label=True), key))
         try:
             selection = self.hmap.select((HoloMap,), **select)
         except KeyError:
             selection = None
-        return selection.last if isinstance(selection, HoloMap) else selection
+        selection = selection.last if isinstance(selection, HoloMap) else selection
+        self.current_frame = selection
+
+        return selection
 
 
     def get_extents(self, view, ranges):
@@ -622,6 +635,11 @@ class GenericCompositePlot(DimensionedPlot):
         layout_frame = self.layout.clone(shared_data=False)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
+        if key == current_key:
+            return self.current_frame
+        else:
+            self.current_key = key
+
         for path, item in self.layout.items():
             if self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
@@ -636,6 +654,8 @@ class GenericCompositePlot(DimensionedPlot):
                     layout_frame[path] = obj
             else:
                 layout_frame[path] = item
+
+        self.current_frame = layout_frame
         return layout_frame
 
 
