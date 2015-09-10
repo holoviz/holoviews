@@ -635,7 +635,7 @@ class GenericCompositePlot(DimensionedPlot):
         layout_frame = self.layout.clone(shared_data=False)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
-        if key == current_key:
+        if key == self.current_key:
             return self.current_frame
         else:
             self.current_key = key
