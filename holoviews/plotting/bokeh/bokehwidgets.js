@@ -22,7 +22,7 @@ var BokehMethods = {
 	var data = this.frames[current];
 
 	$.each(data, function(id, value) {
-    	    var ds = Bokeh.Collections(value.mode).get(id);
+    	    var ds = Bokeh.Collections(value.type).get(id);
     	    if (ds != undefined) {
     		ds.set(value.data);
     	    }

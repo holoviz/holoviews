@@ -1,7 +1,8 @@
 import numpy as np
 import bokeh.plotting
-from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.models import HoverTool
 from bokeh.models.tickers import Ticker, FixedTicker
+from bokeh.models.widgets import Panel, Tabs
 
 try:
     from bokeh import mpl
@@ -9,7 +10,7 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap
+from ...core import Store, HoloMap, Overlay
 from ...core import util
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
@@ -37,6 +38,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     border = param.Number(default=2, doc="""
         Minimum border around plot.""")
+
+    fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
 
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
@@ -165,8 +174,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['y_range'] = [b, t]
         if self.invert_yaxis:
             plot_ranges['y_range'] = plot_ranges['y_range'][::-1]
-        x_axis_type = 'log' if self.xlog else 'linear'
-        y_axis_type = 'log' if self.ylog else 'linear'
+        x_axis_type = 'log' if self.xlog else 'auto'
+        y_axis_type = 'log' if self.ylog else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -200,7 +209,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot_props = dict(plot_height=self.height, plot_width=self.width,
                           title_text_color='black', **title_font)
         if self.show_title:
-            plot_props['title'] = self._format_title(key)
+            plot_props['title'] = self._format_title(key, separator='')
         if self.bgcolor:
             plot_props['background_fill'] = self.bgcolor
         if self.border is not None:
@@ -257,31 +266,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
-
-
-    def get_data(self, element, ranges=None):
-        """
-        Returns the data from an element in the appropriate format for
-        initializing or updating a ColumnDataSource and a dictionary
-        which maps the expected keywords arguments of a glyph to
-        the column in the datasource.
-        """
-        raise NotImplementedError
-
-
-    def _init_datasource(self, data):
-        """
-        Initializes a data source to be passed into the bokeh glyph.
-        """
-        return ColumnDataSource(data=data)
-
-
-    def _update_datasource(self, source, data):
-        """
-        Update datasource with data for a new frame.
-        """
-        for k, v in data.items():
-            source.data[k] = v
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -412,6 +396,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
+    tabs = param.Boolean(default=False, doc="""
+        Whether to display overlaid plots in separate panes""")
+
     style_opts = legend_dimensions + line_properties + text_properties
 
     def _process_legend(self):
@@ -459,18 +446,31 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        if plot is None:
+        if plot is None and not self.tabs:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
-        if not self.overlaid:
+        if plot and not self.overlaid:
             self._update_plot(key, plot, self.hmap.last)
         self.handles['plot'] = plot
 
-        for subplot in self.subplots.values():
-            subplot.initialize_plot(ranges, plot, plots)
-        self._process_legend()
+        panels = []
+        for key, subplot in self.subplots.items():
+            child = subplot.initialize_plot(ranges, plot, plots)
+            if self.tabs:
+                if self.hmap.type is Overlay:
+                    title = ' '.join(key)
+                else:
+                    title = ', '.join([d.pprint_value_string(k) for d, k in
+                                       zip(self.hmap.last.kdims, key)])
+                panels.append(Panel(child=child, title=title))
+
+        if self.tabs:
+            self.handles['plot'] = Tabs(tabs=panels)
+        else:
+            self._process_legend()
+
         self.drawn = True
 
-        return plot
+        return self.handles['plot']
 
 
     def update_frame(self, key, ranges=None):
@@ -482,5 +482,5 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         overlay = self._get_frame(key)
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges)
-        if not self.overlaid:
+        if not self.overlaid and not self.tabs:
             self._update_plot(key, self.handles['plot'], overlay)

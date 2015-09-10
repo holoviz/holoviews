@@ -1,7 +1,9 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
-from ...element import Curve, Points, Scatter, Image, Raster, Path, RGB, Histogram, Spread, HeatMap
-from ...element import Contours, Path, Box, Bounds, Ellipse, Polygons, ErrorBars, Text, HLine, VLine
-from ...interface.seaborn import Bivariate, TimeSeries, Distribution
+from ...element import (Curve, Points, Scatter, Image, Raster, Path,
+                        RGB, Histogram, Spread, HeatMap, Contours,
+                        Path, Box, Bounds, Ellipse, Polygons,
+                        ErrorBars, Text, HLine, VLine, Table)
+from ...interface.seaborn import Bivariate, TimeSeries, Distribution, DFrame
 from ...core.options import Options, Cycle, OptionTree
 from ..plot import PlotSelector
 
@@ -12,6 +14,7 @@ from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
 from .renderer import BokehRenderer
+from .tabular import TablePlot
 
 Store.renderers['bokeh'] = BokehRenderer
 
@@ -39,7 +42,9 @@ Store.register({Overlay: OverlayPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
                 ErrorBars: ErrorPlot,
-                Text: TextPlot}, 'bokeh')
+                Text: TextPlot,
+                Table: TablePlot,
+                DFrame: TablePlot}, 'bokeh')
 
 
 try:

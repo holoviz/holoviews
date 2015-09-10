@@ -2,7 +2,9 @@ import numpy as np
 
 import param
 
-from bokeh.io import gridplot
+from bokeh.io import gridplot, vplot, hplot
+from bokeh.models import ColumnDataSource
+from bokeh.models.widgets import Panel, Tabs
 
 from ...core import OrderedDict, CompositeOverlay, Element
 from ...core import Store, Layout, AdjointLayout, NdLayout, Empty, GridSpace, HoloMap
@@ -25,6 +27,30 @@ class BokehPlot(Plot):
         Height of the plot in pixels""")
 
     renderer = BokehRenderer
+
+    def get_data(self, element, ranges=None):
+        """
+        Returns the data from an element in the appropriate format for
+        initializing or updating a ColumnDataSource and a dictionary
+        which maps the expected keywords arguments of a glyph to
+        the column in the datasource.
+        """
+        raise NotImplementedError
+
+
+    def _init_datasource(self, data):
+        """
+        Initializes a data source to be passed into the bokeh glyph.
+        """
+        return ColumnDataSource(data=data)
+
+
+    def _update_datasource(self, source, data):
+        """
+        Update datasource with data for a new frame.
+        """
+        for k, v in data.items():
+            source.data[k] = v
 
     @property
     def state(self):
@@ -120,10 +146,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         return subplots, collapsed_layout
 
 
-    def initialize_plot(self, ranges=None):
+    def initialize_plot(self, ranges=None, plots=[]):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for r in range(self.cols)]
-        passed_plots = []
+        passed_plots = list(plots)
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
             subplot = self.subplots.get(coord, None)
@@ -160,9 +186,12 @@ class GridPlot(BokehPlot, GenericCompositePlot):
 
 class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
+    tabs = param.Boolean(default=False, doc="""
+        Whether to display overlaid plots in separate panes""")
+
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
-        self.layout, self.subplots = self._init_layout(layout)
+        self.layout, self.subplots, self.paths = self._init_layout(layout)
 
 
     def _init_layout(self, layout):
@@ -176,12 +205,13 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                                     for key in self.keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
-        layout_subplots, layouts = {}, {}
+        layout_subplots, layouts, paths = {}, {}, {}
         for r, c in self.coords:
             # Get view at layout position and wrap in AdjointLayout
-            _, view = layout_items.get((r, c), (None, None))
+            key, view = layout_items.get((r, c), (None, None))
             view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = view
+            paths[r, c] = key
 
             # Compute the layout type from shape
             layout_type = 'Single'
@@ -216,7 +246,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             layout_subplots[(r, c)] = layout_plot
             if layout_key:
                 collapsed_layout[layout_key] = adjoint_layout
-        return collapsed_layout, layout_subplots
+        return collapsed_layout, layout_subplots, paths
 
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, num=0):
@@ -259,6 +289,8 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 self.warning("Bokeh plotting class for %s type not found, object will "
                              "not be rendered." % vtype.__name__)
                 continue
+            if plot_type in [GridPlot, LayoutPlot]:
+                self.tabs = True
             plot_type = Store.registry[self.renderer.backend][vtype]
             num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(element, keys=self.keys,
@@ -278,14 +310,41 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
         passed_plots = []
+        tab_titles = {}
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 plots[r].append(subplot.initialize_plot(ranges=ranges,
                                                         plots=passed_plots))
                 passed_plots.append(plots[r][-1])
+            if self.tabs:
+                if isinstance(self.layout, Layout):
+                    tab_titles[r, c] = ' '.join(self.paths[r,c])
+                else:
+                    dim_vals = zip(self.layout.kdims, self.paths[r, c])
+                    tab_titles[r, c] = ', '.join([d.pprint_value_string(k)
+                                                  for d, k in dim_vals])
 
-        self.handles['plot'] = gridplot(plots)
+        # Determine the most appropriate composite plot type
+        # If the object cannot be displayed in a single layout
+        # it will be split into Tabs, for 1-row or 1-column
+        # Layouts we use the vplot and hplots.
+        # If there is a table and multiple rows and columns
+        # everything will be forced to a vertical layout
+        if self.tabs:
+            panels = [Panel(child=child, title=tab_titles[r, c])
+                      for r, row in enumerate(plots)
+                      for c, child in enumerate(row)
+                      if child is not None]
+            layout_plot = Tabs(tabs=panels)
+        elif self.rows == 1:
+            layout_plot = vplot(hplot(*plots[0]))
+        elif self.cols == 1:
+            layout_plot = vplot(*[p[0] for p in plots])
+        else:
+            layout_plot = gridplot(plots)
+
+        self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
         self.drawn = True
 
