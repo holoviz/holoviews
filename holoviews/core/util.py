@@ -8,6 +8,21 @@ from collections import defaultdict
 import numpy as np
 import param
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    dd = None
+
+try:
+    from blaze import bz
+except ImportError:
+    bz = None
+
 # Python3 compatibility
 basestring = str if sys.version_info.major == 3 else basestring
 
@@ -570,3 +585,12 @@ def find_file(folder, filename):
         for filename in fnmatch.filter(filenames, filename):
             matches.append(os.path.join(root, filename))
     return matches[-1]
+
+
+def is_dataframe(data):
+    """
+    Checks whether the supplied data is DatFrame type.
+    """
+    return((pd is not None and isinstance(data, pd.DataFrame)) or
+          (dd is not None and isinstance(data, dd.DataFrame)) or
+          (bz is not None and isinstance(data, bz.Data)))
