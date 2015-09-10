@@ -19,11 +19,11 @@ except:
 import param
 
 from ..core import ViewableElement, NdMapping, NdOverlay,\
-    NdLayout, GridSpace, Element, HoloMap
+    NdLayout, GridSpace, NdElement, HoloMap
 from ..element import Chart, Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 
 
-class DataFrameView(Element):
+class DataFrameView(NdElement):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -87,42 +87,6 @@ class DataFrameView(Element):
         self.data.columns = self._cached_index_names
 
 
-    def __getitem__(self, key):
-        """
-        Allows slicing and selecting along the DataFrameView dimensions.
-        """
-        if key is ():
-            return self
-        else:
-            if len(key) <= self.ndims:
-                return self.select(**dict(zip(self._cached_index_names, key)))
-            else:
-                raise Exception('Selection contains %d dimensions, DataFrameView '
-                                'only has %d index dimensions.' % (self.ndims, len(key)))
-
-
-    def select(self, selection_specs=None, **select):
-        """
-        Allows slice and select individual values along the DataFrameView
-        dimensions. Supply the dimensions and values or slices as
-        keyword arguments.
-        """
-        df = self.data
-        for dim, k in select.items():
-            if isinstance(k, slice):
-                df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
-            else:
-                df = df[df[dim] == k]
-        return self.clone(df)
-
-
-    def dimension_values(self, dim):
-        if dim in self.data.columns:
-            return np.array(self.data[dim])
-        else:
-            return super(DataFrameView, self).dimension_values(dim)
-
-
     def apply(self, name, *args, **kwargs):
         """
         Applies the Pandas dframe method corresponding to the supplied
@@ -130,13 +94,6 @@ class DataFrameView(Element):
         """
         return self.clone(getattr(self.data, name)(*args, **kwargs),
                           clone_override=True)
-
-
-    def dframe(self):
-        """
-        Returns a copy of the internal dframe.
-        """
-        return self.data.copy()
 
 
     def aggregate(self, dimensions=[], function=None, **reductions):
@@ -165,24 +122,6 @@ class DataFrameView(Element):
                 reduced = reduced.reset_index(level=reduced_indexes)
         kdims = [self.get_dimension(d) for d in reduced.columns]
         return self.clone(reduced, kdims=kdims)
-
-
-    def groupby(self, dimensions, container_type=NdMapping):
-        invalid_dims = list(set(dimensions) - set(self._cached_index_names))
-        if invalid_dims:
-            raise Exception('Following dimensions could not be found %s.'
-                            % invalid_dims)
-
-        index_dims = [self.get_dimension(d) for d in dimensions]
-        mapping = container_type(None, kdims=index_dims)
-        view_dims = set(self._cached_index_names) - set(dimensions)
-        view_dims = [self.get_dimension(d) for d in view_dims]
-        for k, v in self.data.groupby(dimensions):
-            data = v.drop(dimensions, axis=1)
-            mapping[k] = self.clone(data,
-                                    kdims=[self.get_dimension(d)
-                                           for d in data.columns])
-        return mapping
 
 
     def overlay(self, dimensions):
