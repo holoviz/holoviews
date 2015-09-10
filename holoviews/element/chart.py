@@ -1,18 +1,4 @@
 import numpy as np
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
-
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
-try:
-    from blaze import bz
-except ImportError:
-    bz = None
 
 import param
 
@@ -62,28 +48,12 @@ class Chart(Element2D):
 
 
     def _process_data(self, data, kwargs):
-        self._dataframe = False
         params = {}
-        if ((pd is not None and isinstance(data, pd.DataFrame)) or
-            (dd is not None and isinstance(data, dd.DataFrame)) or
-            (bz is not None and isinstance(data, bz.Data))):
-            self._dataframe = True
-            if 'kdims' in kwargs or 'vdims' in kwargs:
-                columns = kwargs.get('kdims', self.kdims) + kwargs.get('vdims', self.vdims)
-                col_labels = [c.name if isinstance(c, Dimension) else c
-                              for c in columns]
-                data = data[col_labels]
-                if not all(c in data.columns for c in col_labels):
-                    raise ValueError("Supplied dimensions don't match columns"
-                                     "in the dataframe.")
-            else:
-                params['kdims'] = list(data.columns[:len(self.kdims)])
-                params['vdims'] = list(data.columns[len(self.kdims):])
-        elif isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
+        if isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
                                                   and isinstance(data[0], Element2D)):
             params = dict([v for v in data][0].get_param_values(onlychanged=True))
             data = np.concatenate([v.data for v in data])
-        elif isinstance(data, Element):
+        elif isinstance(data, Element) or util.is_dataframe(data):
             pass
         elif isinstance(data, tuple):
             data = np.column_stack(data)
@@ -253,6 +223,7 @@ class Chart(Element2D):
 
 
     def dframe(self):
+        import pandas as pd
         if self._dataframe:
             return self.data.copy()
         elif pd:

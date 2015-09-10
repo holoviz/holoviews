@@ -10,7 +10,8 @@ from .layout import Composable, Layout, AdjointLayout, NdLayout
 from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .tree import AttrTree
-from .util import sanitize_identifier
+from .util import sanitize_identifier, is_dataframe
+
 
 class Element(ViewableElement, Composable, Overlayable):
     """
@@ -42,15 +43,40 @@ class Element(ViewableElement, Composable, Overlayable):
     #======================#
 
     def __init__(self, data, **params):
+        self._dataframe = False
         convert = isinstance(data, Element)
         if convert:
             params = dict(data.get_param_values(onlychanged=True),
                           **params)
             element = data
-            data = []
+            data = [] if is_dataframe(element.data) else element.data
+        if is_dataframe(data):
+            self._dataframe = True
+            kdims, vdims = self._process_df_dims(data, params)
+            params['kdims'] = kdims
+            params['vdims'] = vdims
+            element = data
+            data = None
         super(Element, self).__init__(data, **params)
-        if convert:
+        if self._dataframe:
+            self.data = element
+        elif convert:
             self.data = self._convert_element(element)
+
+
+    def _process_df_dims(self, data, kwargs):
+        if 'kdims' in kwargs or 'vdims' in kwargs:
+            columns = kwargs.get('kdims', self.kdims) + kwargs.get('vdims', self.vdims)
+            col_labels = [c.name if isinstance(c, Dimension) else c
+                          for c in columns]
+            if not all(c in data.columns for c in col_labels):
+                raise ValueError("Supplied dimensions don't match columns"
+                                 "in the dataframe.")
+            kdims, vdims = kwargs['kdims'], kwargs['vdims']
+        else:
+            kdims = list(data.columns[:len(self.kdims)])
+            vdims = list(data.columns[len(self.kdims):])
+        return kdims, vdims
 
 
     def _convert_element(self, element):
@@ -143,10 +169,16 @@ class Element(ViewableElement, Composable, Overlayable):
         as long as it implements a dimension_values method.
         """
         from ..element import Table
-        keys = zip(*[self.dimension_values(dim.name)
-                 for dim in self.kdims])
-        values = zip(*[self.dimension_values(dim.name)
-                       for dim in self.vdims])
+        if self._dataframe:
+            data = self.dframe()
+        else:
+            keys = zip(*[self.dimension_values(dim.name)
+                         for dim in self.kdims])
+            values = zip(*[self.dimension_values(dim.name)
+                           for dim in self.vdims])
+            if not keys: keys = [()]*len(values)
+            if not values: [()]*len(keys)
+            data = zip(keys, values)
         kwargs = {'label': self.label
                   for k, v in self.get_param_values(onlychanged=True)
                   if k in ['group', 'label']}
@@ -155,16 +187,16 @@ class Element(ViewableElement, Composable, Overlayable):
                       label=self.label)
         if not self.params()['group'].default == self.group:
             params['group'] = self.group
-        if not keys: keys = [()]*len(values)
-        if not values: [()]*len(keys)
-        return Table(zip(keys, values), **dict(params, **kwargs))
+        return Table(data, **dict(params, **kwargs))
 
 
     def dframe(self):
-        import pandas
+        import pandas as pd
+        if self._dataframe:
+            return self.data
         column_names = self.dimensions(label=True)
         dim_vals = np.vstack([self.dimension_values(dim) for dim in column_names]).T
-        return pandas.DataFrame(dim_vals, columns=column_names)
+        return pd.DataFrame(dim_vals, columns=column_names)
 
 
 
