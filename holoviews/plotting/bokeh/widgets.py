@@ -5,6 +5,9 @@ from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 class BokehWidget(NdWidget):
 
+    css = param.String(default='bokehwidgets.css', doc="""
+        Defines the local CSS file to be loaded for this widget.""")
+
     extensionjs = param.String(default='bokehwidgets.js', doc="""
         Optional javascript extension file for a particular backend.""")
 
