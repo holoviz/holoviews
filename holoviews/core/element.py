@@ -302,6 +302,26 @@ class NdElement(Element, Tabular):
         else: return element
 
 
+    def groupby(self, dimensions, container_type=NdMapping):
+        if self._dataframe:
+            invalid_dims = list(set(dimensions) - set(self._cached_index_names))
+            if invalid_dims:
+                raise Exception('Following dimensions could not be found %s.'
+                                % invalid_dims)
+
+            index_dims = [self.get_dimension(d) for d in dimensions]
+            mapping = container_type(None, kdims=index_dims)
+            view_dims = set(self._cached_index_names) - set(dimensions)
+            view_dims = [self.get_dimension(d) for d in view_dims]
+            for k, v in self.data.groupby(dimensions):
+                data = v.drop(dimensions, axis=1)
+                mapping[k] = self.clone(data, kdims=[self.get_dimension(d)
+                                                     for d in data.columns])
+                return mapping
+        else:
+            return super(NdElement, self).groupby(dimensions, container_type)
+
+
     def reindex(self, kdims=None, vdims=None, force=False):
         """
         Create a new object with a re-ordered set of dimensions.
@@ -318,6 +338,11 @@ class NdElement(Element, Tabular):
                      if d not in vdims]
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
+
+        # DataFrame based tables don't need to be reindexed
+        if self._dataframe:
+            return self.clone(kdims=key_dims, vdims=val_dims)
+
         kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
                   for i, k in enumerate(kdims)]
         vidxs = [(i, v in self._cached_index_names, self.get_dimension_index(v))
@@ -398,6 +423,9 @@ class NdElement(Element, Tabular):
         In addition to usual NdMapping indexing, NdElements can be indexed
         by column name (or a slice over column names)
         """
+        if self._dataframe:
+            if not isinstance(args, tuple): args = (args,)
+            return self.select(**dict(zip(self.dimensions(label=True), args)))
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
@@ -415,6 +443,26 @@ class NdElement(Element, Tabular):
             return subtable
 
         return self._filter_data(subtable, args[-1])
+
+
+    def select(self, selection_specs=None, **select):
+        """
+        Allows slice and select individual values along the DataFrameView
+        dimensions. Supply the dimensions and values or slices as
+        keyword arguments.
+        """
+        if self._dataframe:
+            df = self.data
+            for dim, k in select.items():
+                if isinstance(k, tuple):
+                    k = slice(*k)
+                if isinstance(k, slice):
+                    df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
+                else:
+                    df = df[df[dim] == k]
+            return self.clone(df)
+        else:
+            return super(NdElement, self).select(selection_specs, **select)
 
 
     def sample(self, samples=[]):
@@ -478,14 +526,17 @@ class NdElement(Element, Tabular):
 
 
     def dimension_values(self, dim):
-        if isinstance(dim, Dimension):
-            raise Exception('Dimension to be specified by name')
+        dim = self.get_dimension(dim)
         value_dims = self.dimensions('value', label=True)
-        if dim in value_dims:
-            index = value_dims.index(dim)
+        if self._dataframe:
+            if dim.name in self.data.columns:
+                return np.array(self.data[dim.name])
+            return None
+        elif dim.name in value_dims:
+            index = value_dims.index(dim.name)
             return [v[index] for v in self.values()]
         else:
-            return NdMapping.dimension_values(self, dim)
+            return NdMapping.dimension_values(self, dim.name)
 
 
     def dframe(self, value_label='data'):
@@ -493,6 +544,8 @@ class NdElement(Element, Tabular):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
+        if self._dataframe:
+            return self.data
         labels = [d.name for d in self.dimensions()]
         return pandas.DataFrame(
             [dict(zip(labels, np.concatenate([np.array(k),v])))
