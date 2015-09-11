@@ -49,16 +49,18 @@ class PointPlot(ElementPlot):
 
         cmap = style.get('palette', style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
-            mapping['color'] = 'color'
+            map_key = 'color_' + str(id(element.data))
+            mapping['color'] = map_key
             cmap = get_cmap(cmap)
             colors = element.dimension_values(self.color_index)
-            data['color'] = map_colors(colors, ranges, cmap)
+            data[map_key] = map_colors(colors, ranges, cmap)
         if self.size_index < len(dims):
-            mapping['size'] = 'size'
+            map_key = 'size_' + str(id(element.data))
+            mapping['size'] = map_key
             ms = style.get('size', 1)
             sizes = element.dimension_values(self.size_index)
-            data['size'] = compute_sizes(sizes, self.size_fn,
-                                         self.scaling_factor, ms)
+            data[map_key] = compute_sizes(sizes, self.size_fn,
+                                          self.scaling_factor, ms)
         data[dims[0]] = element.dimension_values(0)
         data[dims[1]] = element.dimension_values(1)
         if 'hover' in self.tools:
@@ -74,8 +76,11 @@ class CurvePlot(ElementPlot):
     _plot_method = 'line'
 
     def get_data(self, element, ranges=None):
-        return (dict(x=element.data[:, 0], y=element.data[:, 1]),
-                dict(x='x', y='y'))
+        x = element.get_dimension(0).name
+        y = element.get_dimension(1).name
+        return ({'x': element.dimension_values(0),
+                 'y': element.dimension_values(1)},
+                dict(x=x, y=y))
 
 
 class SpreadPlot(PolygonPlot):
