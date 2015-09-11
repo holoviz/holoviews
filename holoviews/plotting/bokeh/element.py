@@ -297,6 +297,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get element key and ranges for frame
         element = self.hmap.last
         key = self.keys[-1]
+        self.current_frame = element
+        self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
@@ -313,6 +315,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties = self._glyph_properties(plot, element, source, ranges)
         self._init_glyph(plot, mapping, properties)
         glyph = plot.renderers[-1].glyph
+        self.handles['glyph_renderer'] = plot.renderers[-1]
         self.handles['glyph']  = glyph
 
         # Update plot, source and glyph
