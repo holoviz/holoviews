@@ -66,13 +66,13 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def _process_df_dims(self, data, kwargs):
         if 'kdims' in kwargs or 'vdims' in kwargs:
-            columns = kwargs.get('kdims', self.kdims) + kwargs.get('vdims', self.vdims)
+            kdims = kwargs.get('kdims', [])
+            vdims = kwargs.get('vdims', [])
             col_labels = [c.name if isinstance(c, Dimension) else c
-                          for c in columns]
+                          for c in kdims+vdims]
             if not all(c in data.columns for c in col_labels):
                 raise ValueError("Supplied dimensions don't match columns"
                                  "in the dataframe.")
-            kdims, vdims = kwargs['kdims'], kwargs['vdims']
         else:
             kdims = list(data.columns[:len(self.kdims)])
             vdims = list(data.columns[len(self.kdims):])
@@ -304,20 +304,22 @@ class NdElement(Element, Tabular):
 
     def groupby(self, dimensions, container_type=NdMapping):
         if self._dataframe:
-            invalid_dims = list(set(dimensions) - set(self._cached_index_names))
+            dim_labels = self.dimensions(label=True)
+            invalid_dims = list(set(dimensions) - set(dim_labels))
             if invalid_dims:
                 raise Exception('Following dimensions could not be found %s.'
                                 % invalid_dims)
 
             index_dims = [self.get_dimension(d) for d in dimensions]
             mapping = container_type(None, kdims=index_dims)
-            view_dims = set(self._cached_index_names) - set(dimensions)
-            view_dims = [self.get_dimension(d) for d in view_dims]
+            kdims = set(self._cached_index_names) - set(dimensions)
+            vdims = set(self._cached_value_names) - set(dimensions)
+            kdims = [self.get_dimension(d) for d in kdims]
+            vdims = [self.get_dimension(d) for d in vdims]
             for k, v in self.data.groupby(dimensions):
                 data = v.drop(dimensions, axis=1)
-                mapping[k] = self.clone(data, kdims=[self.get_dimension(d)
-                                                     for d in data.columns])
-                return mapping
+                mapping[k] = self.clone(data, kdims=kdims, vdims=vdims)
+            return mapping
         else:
             return super(NdElement, self).groupby(dimensions, container_type)
 
