@@ -1,20 +1,22 @@
+from collections import defaultdict
+from itertools import groupby
 import numpy as np
 
 import param
 
 from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource
-from bokeh.models.widgets import Panel, Tabs
+from bokeh.models.widgets import Panel, Tabs, DataTable
 
 from ...core import OrderedDict, CompositeOverlay, Element
 from ...core import Store, Layout, AdjointLayout, NdLayout, Empty, GridSpace, HoloMap
 from ...core.options import Compositor
 from ...core import traversal
-from ..plot import Plot, GenericCompositePlot, GenericLayoutPlot
+from ..plot import Plot, DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from .renderer import BokehRenderer
 
 
-class BokehPlot(Plot):
+class BokehPlot(DimensionedPlot):
     """
     Plotting baseclass for the Bokeh backends, implementing the basic
     plotting interface for Bokeh based plots.
@@ -186,6 +188,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
 
 class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
+    shared_source = param.Boolean(default=True, doc="""
+        Whether to share data sources across plots in the Layout
+        allowing for linked selection tools to be used.""")
+
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
@@ -347,8 +353,36 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
         self.drawn = True
+        if self.shared_source:
+            self._share_source()
 
         return self.handles['plot']
+
+
+    def _share_source(self):
+        """
+        Traverses all plots to find any with shared data,
+        then sources are grouped, combined and replaced
+        on the original plots and glyphs.
+        """
+        source_getter = lambda x: (id(x.current_frame.data), x,
+                                   x.handles.get('glyph_renderer'),
+                                   x.handles['source'])
+        element_filter = lambda x: (hasattr(x, 'hmap') and
+                                    x.current_frame and 'source' in x.handles)
+        plots = self.traverse(source_getter, specs=[element_filter])
+        source_data = defaultdict(dict)
+        for pid, group in groupby(sorted(plots), lambda x: x[0]):
+            for (pid, _, _, source) in group:
+                source_data[pid].update(source.data)
+        sources = {pid: ColumnDataSource(data=data) for pid, data in source_data.items()}
+        for pid, group in groupby(sorted(plots), lambda x: x[0]):
+            for (pid, plot, glyph, source) in group:
+                if isinstance(glyph, DataTable):
+                    glyph.source = sources[pid]
+                else:
+                    glyph.data_source = sources[pid]
+                plot.handles['source'] = sources[pid]
 
 
     def update_frame(self, key, ranges=None):
