@@ -188,8 +188,8 @@ class Chart(Element2D):
         index = self.get_dimension_index(dim)
         if index < len(self.dimensions()):
             if self._dataframe:
-                data = self.data[self.data.columns[index]]
-                if dd and isinstance(data, dd.Series):
+                data = self.data[self.get_dimension(index).name]
+                if util.dd and isinstance(data, util.dd.Series):
                     data = data.compute()
                 return data
             else:
