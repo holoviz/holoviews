@@ -1,5 +1,5 @@
 import numpy as np
-
+from bokeh.models import Circle
 import param
 
 from ...core import Dimension
@@ -8,7 +8,7 @@ from ...element import Chart
 from ..util import compute_sizes
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import map_colors, get_cmap
+from .util import map_colors, get_cmap, mpl_to_bokeh
 
 
 class PointPlot(ElementPlot):
@@ -34,7 +34,8 @@ class PointPlot(ElementPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color',
+                   'unselected_color'] +
                   line_properties + fill_properties)
 
     _plot_method = 'scatter'
@@ -67,6 +68,26 @@ class PointPlot(ElementPlot):
             for d in dims[2:]:
                 data[d] = element.dimension_values(d)
         return data, mapping
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties = mpl_to_bokeh(properties)
+        unselect_color = properties.pop('unselected_color', None)
+        if (any(t in self.tools for t in ['box_select', 'lasso_select'])
+            and unselect_color is not None):
+            source = properties.pop('source')
+            color = properties.pop('color', None)
+            color = mapping.pop('color', color)
+            properties.pop('legend', None)
+            unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
+            selected = Circle(**dict(properties, fill_color=color, **mapping))
+            plot.add_glyph(source, selected, selection_glyph=selected,
+                           nonselection_glyph=unselected)
+        else:
+            getattr(plot, self._plot_method)(**dict(properties, **mapping))
 
 
 
