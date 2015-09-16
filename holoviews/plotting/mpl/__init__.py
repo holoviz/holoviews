@@ -8,7 +8,6 @@ except:
 
 
 import os
-from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator
@@ -52,12 +51,6 @@ def set_style(key):
 
 styles = {'default': './default.mplstyle'}
 set_style('default')
-
-
-# Upgrade Dimension formatters to matplotlib
-wrapped_formatters = {k: fn if isinstance(fn, ticker.Formatter) else ticker.FuncFormatter(fn)
-                      for k, fn in Dimension.type_formatters.items()}
-Dimension.type_formatters.update(wrapped_formatters)
 
 # Define matplotlib based style cycles and Palettes
 Cycle.default_cycles.update({'default_colors': plt.rcParams['axes.color_cycle']})

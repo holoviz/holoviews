@@ -10,6 +10,7 @@ from ...core import OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay,
 from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
+from .util import wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -142,19 +143,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     pass
                 elif xdim.formatter:
                     xformat = xdim.formatter
-                elif xdim.type_formatters.get(xdim.type):
+                elif xdim.type in xdim.type_formatters:
                     xformat = xdim.type_formatters[xdim.type]
                 if xformat:
-                    axis.xaxis.set_major_formatter(xformat)
+                    axis.xaxis.set_major_formatter(wrap_formatter(xformat))
 
                 if ydim is None:
                     pass
                 elif ydim.formatter:
                     yformat = ydim.formatter
-                elif ydim.type_formatters.get(ydim.type):
+                elif ydim.type in ydim.type_formatters:
                     yformat = ydim.type_formatters[ydim.type]
                 if yformat:
-                    axis.yaxis.set_major_formatter(yformat)
+                    axis.yaxis.set_major_formatter(wrap_formatter(yformat))
 
             if self.zorder == 0 and not subplots:
                 legend = axis.get_legend()

@@ -3,6 +3,7 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+import re
 from operator import itemgetter
 
 try:
@@ -131,12 +132,15 @@ class Dimension(param.Parameterized):
         own_type = type(value) if self.type is None else self.type
         formatter = self.formatter if self.formatter else self.type_formatters.get(own_type)
         if formatter:
-            try:
-                value = formatter(value)
-            except:
-                self.warning("Formatting could not be applied for Dimension "
-                             "%s" % self.name)
+            if callable(formatter):
+                return formatter(value)
+            elif isinstance(formatter, basestring):
+                if re.findall(r"\{(\w+)\}", formatter):
+                    return formatter.format(value)
+                else:
+                    return formatter % value
         return value
+
 
     def __repr__(self):
         return self.pprint()
@@ -151,6 +155,7 @@ class Dimension(param.Parameterized):
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
         return self.format_string.format(name=self.name, val=value, unit=unit)
+
 
     def __hash__(self):
         """
