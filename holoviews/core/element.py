@@ -455,8 +455,8 @@ class NdElement(Element, Tabular):
 
     def dimension_values(self, dim):
         dim = self.get_dimension(dim).name
-        if dim in value_dims:
-            index = value_dims.index(dim)
+        if dim in self._cached_value_names:
+            index = self._cached_value_names.index(dim)
             return [v[index] for v in self.data.values()]
         else:
             return NdMapping.dimension_values(self, dim)
