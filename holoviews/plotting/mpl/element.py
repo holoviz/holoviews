@@ -515,7 +515,11 @@ class LegendPlot(ElementPlot):
 
     legend_position = param.ObjectSelector(objects=['inner', 'right',
                                                     'bottom', 'top',
-                                                    'left', 'best'],
+                                                    'left', 'best',
+                                                    'top_right',
+                                                    'top_left',
+                                                    'bottom_left',
+                                                    'bottom_right'],
                                            default='inner', doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
@@ -529,7 +533,11 @@ class LegendPlot(ElementPlot):
                                    ncol=3, loc=3, mode="expand", borderaxespad=0.),
                     'bottom': dict(ncol=3, mode="expand", loc=2,
                                    bbox_to_anchor=(0., -0.25, 1., .102),
-                                   borderaxespad=0.1)}
+                                   borderaxespad=0.1),
+                    'top_right': dict(loc=1),
+                    'top_left': dict(loc=2),
+                    'bottom_left': dict(loc=3),
+                    'bottom_right': dict(loc=4)}
 
 
 
