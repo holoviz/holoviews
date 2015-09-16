@@ -410,9 +410,7 @@ class HeatMap(Raster):
 
 
     def dimension_values(self, dim, unique=True):
-        if isinstance(dim, int):
-            dim = self.get_dimension(dim)
-
+        dim = self.get_dimension(dim).name
         if dim in self._cached_index_names:
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]

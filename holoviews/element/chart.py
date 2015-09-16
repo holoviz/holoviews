@@ -304,6 +304,18 @@ class ErrorBars(Chart):
             return data
 
 
+    def range(self, dim, data_range=True):
+        drange = super(ErrorBars, self).range(dim, data_range)
+        didx = self.get_dimension_index(dim)
+        if didx == 1 and data_range:
+            lower = np.nanmin(self.data[:, 1] - self.data[:, 2])
+            upper = np.nanmax(self.data[:, 1] + self.data[:, 3])
+            return util.max_range([(lower, upper), drange])
+        else:
+            return drange
+
+
+
 class Spread(ErrorBars):
     """
     Spread is a Chart Element type respresenting a spread of
@@ -316,16 +328,6 @@ class Spread(ErrorBars):
     """
 
     group = param.String(default='Spread', constant=True)
-
-    def range(self, dim, data_range=True):
-        drange = super(ErrorBars, self).range(dim, data_range)
-        didx = self.get_dimension_index(dim)
-        if didx == 1 and data_range:
-            lower = np.nanmin(self.data[:, 1] - self.data[:, 2])
-            upper = np.nanmax(self.data[:, 1] + self.data[:, 3])
-            return util.max_range([(lower, upper), drange])
-        else:
-            return drange
 
 
 
@@ -444,8 +446,7 @@ class Histogram(Element2D):
 
 
     def dimension_values(self, dim):
-        if isinstance(dim, int):
-            dim = self.get_dimension(dim).name
+        dim = self.get_dimension(dim).name
         if dim in self._cached_value_names:
             return self.values
         elif dim in self._cached_index_names:

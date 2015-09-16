@@ -126,8 +126,7 @@ class AdjointLayout(Dimensioned):
 
 
     def dimension_values(self, dimension):
-        if isinstance(dimension, int):
-            dimension = self.get_dimension(dimension).name
+        dimension = self.get_dimension(dimension).name
         if dimension in self._cached_index_names:
             return self.layout_order[:len(self.data)]
         else:
@@ -435,6 +434,7 @@ class Layout(AttrTree, Dimensioned):
 
     def dimension_values(self, dimension):
         "Returns the values along the specified dimension."
+        dimension = self.get_dimension(dimension).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
         if dimension in chain.from_iterable(all_dims):
             values = [el.dimension_values(dimension) for el in self

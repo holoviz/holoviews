@@ -31,12 +31,12 @@ class BokehRenderer(Renderer):
 
         plot, fmt =  self._validate(obj, fmt)
         if fmt == 'html':
-            html = self.figure_data(obj)
+            html = self.figure_data(plot)
             html = '<center>%s</center>' % html
             return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
         elif fmt == 'json':
             types = [DataSource, Figure]
-            plotobjects = [o for tp in types for o in obj.state.select({'type': tp})]
+            plotobjects = [o for tp in types for o in plot.state.select({'type': tp})]
             data = {}
             for plotobj in plotobjects:
                 json = plotobj.vm_serialize(changed_only=True)

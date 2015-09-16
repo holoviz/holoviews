@@ -626,7 +626,7 @@ class GenericOverlayPlot(GenericElementPlot):
         extents = []
         for key, subplot in self.subplots.items():
             layer = overlay.data.get(key, False)
-            if layer and subplot.apply_ranges and not isinstance(layer, Annotation):
+            if layer and subplot.apply_ranges:
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
                 else:

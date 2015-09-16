@@ -10,6 +10,7 @@ from ...core import OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay,
 from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
+from .util import wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -142,19 +143,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     pass
                 elif xdim.formatter:
                     xformat = xdim.formatter
-                elif xdim.type_formatters.get(xdim.type):
+                elif xdim.type in xdim.type_formatters:
                     xformat = xdim.type_formatters[xdim.type]
                 if xformat:
-                    axis.xaxis.set_major_formatter(xformat)
+                    axis.xaxis.set_major_formatter(wrap_formatter(xformat))
 
                 if ydim is None:
                     pass
                 elif ydim.formatter:
                     yformat = ydim.formatter
-                elif ydim.type_formatters.get(ydim.type):
+                elif ydim.type in ydim.type_formatters:
                     yformat = ydim.type_formatters[ydim.type]
                 if yformat:
-                    axis.yaxis.set_major_formatter(yformat)
+                    axis.yaxis.set_major_formatter(wrap_formatter(yformat))
 
             if self.zorder == 0 and not subplots:
                 legend = axis.get_legend()
@@ -514,7 +515,11 @@ class LegendPlot(ElementPlot):
 
     legend_position = param.ObjectSelector(objects=['inner', 'right',
                                                     'bottom', 'top',
-                                                    'left', 'best'],
+                                                    'left', 'best',
+                                                    'top_right',
+                                                    'top_left',
+                                                    'bottom_left',
+                                                    'bottom_right'],
                                            default='inner', doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
@@ -528,7 +533,11 @@ class LegendPlot(ElementPlot):
                                    ncol=3, loc=3, mode="expand", borderaxespad=0.),
                     'bottom': dict(ncol=3, mode="expand", loc=2,
                                    bbox_to_anchor=(0., -0.25, 1., .102),
-                                   borderaxespad=0.1)}
+                                   borderaxespad=0.1),
+                    'top_right': dict(loc=1),
+                    'top_left': dict(loc=2),
+                    'bottom_left': dict(loc=3),
+                    'bottom_right': dict(loc=4)}
 
 
 
