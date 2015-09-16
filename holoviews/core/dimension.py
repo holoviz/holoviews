@@ -13,7 +13,7 @@ except:
 
 import param
 
-from ..core.util import sanitize_identifier, max_range, find_range
+from ..core.util import basestring, sanitize_identifier, max_range, find_range
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
