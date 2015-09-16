@@ -10,6 +10,7 @@ from ...core import OrderedDict, CompositeOverlay, Element
 from ...core import Store, Layout, AdjointLayout, NdLayout, Empty, GridSpace, HoloMap
 from ...core.options import Compositor
 from ...core import traversal
+from ...core.util import basestring
 from ..plot import Plot, GenericCompositePlot, GenericLayoutPlot
 from .renderer import BokehRenderer
 
@@ -59,6 +60,16 @@ class BokehPlot(Plot):
         used by the renderer to generate output.
         """
         return self.handles['plot']
+
+
+    def _fontsize(self, key, label='fontsize', common=True):
+        """
+        Converts integer fontsizes to a string specifying
+        fontsize in pt.
+        """
+        size = super(BokehPlot, self)._fontsize(key, label, common)
+        return {k: v if isinstance(v, basestring) else '%spt' % v
+                for k, v in size.items()}
 
 
 
