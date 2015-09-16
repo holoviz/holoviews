@@ -327,13 +327,10 @@ class MultiDimensionalMapping(Dimensioned):
 
     def dimension_values(self, dimension):
         "Returns the values along the specified dimension."
-        all_dims = [d.name for d in self.dimensions()]
-        if isinstance(dimension, int):
-            dimension = all_dims[dimension]
-
+        dimension = self.get_dimension(dimension).name
         if dimension in self._cached_index_names:
             return [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
-        elif dimension in all_dims:
+        if dimension in self._cached_value_names:
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             return np.concatenate(values)

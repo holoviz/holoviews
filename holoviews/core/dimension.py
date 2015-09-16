@@ -588,6 +588,7 @@ class Dimensioned(LabelledData):
         """
         Returns the index of the requested dimension.
         """
+        if isinstance(dim, Dimension): dim = dim.name
         if isinstance(dim, int):
             if dim < len(self.dimensions()):
                 return dim
