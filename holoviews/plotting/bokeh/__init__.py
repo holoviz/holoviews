@@ -2,12 +2,12 @@ from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
-                        ErrorBars, Text, HLine, VLine, Table)
+                        ErrorBars, Text, HLine, VLine, Table, Spline)
 from ...interface.seaborn import Bivariate, TimeSeries, Distribution, DFrame
 from ...core.options import Options, Cycle, OptionTree
 from ..plot import PlotSelector
 
-from .annotation import TextPlot, LineAnnotationPlot
+from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .element import OverlayPlot, BokehMPLWrapper
 from .chart import PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot
 from .path import PathPlot, PolygonPlot
@@ -43,6 +43,7 @@ Store.register({Overlay: OverlayPlot,
                 Polygons: PolygonPlot,
                 ErrorBars: ErrorPlot,
                 Text: TextPlot,
+                Spline: SplinePlot,
                 Table: TablePlot,
                 DFrame: TablePlot}, 'bokeh')
 
