@@ -18,7 +18,6 @@ from .core.options import Options, Store, StoreOptions  # pyflakes:ignore (API i
 from .core.layout import *                              # pyflakes:ignore (API import)
 from .core.element import *                             # pyflakes:ignore (API import)
 from .core.overlay import *                             # pyflakes:ignore (API import)
-from .core.spaces import *                              # pyflakes:ignore (API import)
 from .core.tree import *                                # pyflakes:ignore (API import)
 
 from .interface import *                                             # pyflakes:ignore (API import)

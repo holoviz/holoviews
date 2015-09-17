@@ -208,5 +208,28 @@ class Overlay(Layout, CompositeOverlay):
         raise NotImplementedError
 
 
+
+class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
+    """
+    An NdOverlay allows a group of NdOverlay to be overlaid together. NdOverlay can
+    be indexed out of an overlay and an overlay is an iterable that iterates
+    over the contained layers.
+    """
+
+    kdims = param.List(default=[Dimension('Element')], constant=True, doc="""
+        List of dimensions the NdOverlay can be indexed by.""")
+
+    _deep_indexable = True
+
+    def __init__(self, overlays=None, **params):
+        super(NdOverlay, self).__init__(overlays, **params)
+
+
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        from ..operation import histogram
+        return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
+                         individually=individually, **kwargs)
+
+
 __all__ = list(set([_k for _k, _v in locals().items()
                     if isinstance(_v, type) and issubclass(_v, Dimensioned)])) + ['Overlayable']

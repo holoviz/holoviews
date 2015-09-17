@@ -24,10 +24,10 @@ import param
 from param.parameterized import bothmethod
 
 from .dimension import LabelledData
+from .element import Collator
 from .layout import Layout
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .options import Store
-from .spaces import Collator
 from .util import unique_iterator, sanitize_identifier
 
 
