@@ -330,7 +330,7 @@ class MultiDimensionalMapping(Dimensioned):
         dimension = self.get_dimension(dimension).name
         if dimension in self._cached_index_names:
             return [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
-        if dimension in self._cached_value_names:
+        if dimension in self.dimensions(label=True):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             return np.concatenate(values)
