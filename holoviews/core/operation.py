@@ -6,9 +6,10 @@ from functools import reduce
 import param
 
 from .dimension import ViewableElement
-from .element import Element, HoloMap, GridSpace, Collator
+from .element import Element
 from .layout import Layout
-from .overlay import NdOverlay, Overlay
+from .spaces import HoloMap, GridSpace, Collator, NdOverlay
+from .overlay import Overlay
 from .traversal import unique_dimkeys
 
 

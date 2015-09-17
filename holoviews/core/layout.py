@@ -222,75 +222,6 @@ class AdjointLayout(Dimensioned):
 
 
 
-class NdLayout(UniformNdMapping):
-    """
-    NdLayout is a UniformNdMapping providing an n-dimensional
-    data structure to display the contained Elements and containers
-    in a layout. Using the cols method the NdLayout can be rearranged
-    with the desired number of columns.
-    """
-
-    data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
-
-    def __init__(self, initial_items=None, **params):
-        self._max_cols = 4
-        self._style = None
-        super(NdLayout, self).__init__(initial_items=initial_items, **params)
-
-
-    @property
-    def uniform(self):
-        return traversal.uniform(self)
-
-
-    @property
-    def shape(self):
-        num = len(self.keys())
-        if num <= self._max_cols:
-            return (1, num)
-        nrows = num // self._max_cols
-        last_row_cols = num % self._max_cols
-        return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
-
-
-    def grid_items(self):
-        """
-        Compute a dict of {(row,column): (key, value)} elements from the
-        current set of items and specified number of columns.
-        """
-        if list(self.keys()) == []:  return {}
-        cols = self._max_cols
-        return {(idx // cols, idx % cols): (key, item)
-                for idx, (key, item) in enumerate(self.data.items())}
-
-
-    def cols(self, n):
-        self._max_cols = n
-        return self
-
-
-    def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
-
-
-    @property
-    def last(self):
-        """
-        Returns another NdLayout constituted of the last views of the
-        individual elements (if they are maps).
-        """
-        last_items = []
-        for (k, v) in self.items():
-            if isinstance(v, NdMapping):
-                item = (k, v.clone((v.last_key, v.last)))
-            elif isinstance(v, AdjointLayout):
-                item = (k, v.last)
-            else:
-                item = (k, v)
-            last_items.append(item)
-        return self.clone(last_items)
-
-
 # To be removed after 1.3.0
 class Warning(param.Parameterized): pass
 collate_deprecation = Warning(name='Deprecation Warning')
@@ -324,7 +255,7 @@ class Layout(AttrTree, Dimensioned):
 
         collate_deprecation.warning("Layout.collate will be deprecated after version 1.3.0."
                                     "\nUse HoloMap.collate instead (see HoloViews homepage for example usage)")
-        from .element import Collator
+        from .spaces import Collator
         layouts = {k:(v if isinstance(v, Layout) else Layout.from_values([v]))
                       for k,v in data.items()}
         return Collator(layouts, kdims=kdims)()

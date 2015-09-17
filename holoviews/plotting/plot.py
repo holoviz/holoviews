@@ -12,9 +12,10 @@ import param
 
 from ..core import OrderedDict
 from ..core import util, traversal
-from ..core.element import HoloMap, Element
+from ..core.element import Element
 from ..core.overlay import Overlay, CompositeOverlay
-from ..core.layout import Empty, NdLayout, Layout
+from ..core.layout import Empty, Layout
+from ..core.spaces import HoloMap, NdLayout
 from ..core.options import Store, Compositor
 from ..element import Table, Annotation
 
