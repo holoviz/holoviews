@@ -282,7 +282,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _glyph_properties(self, plot, element, source, ranges):
-        properties = self.lookup_options(element, 'style')[self.cyclic_index]
+        properties = self.style[self.cyclic_index]
         properties['legend'] = element.label
         properties['source'] = source
         return properties
