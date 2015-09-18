@@ -197,6 +197,9 @@ class GridPlot(BokehPlot, GenericCompositePlot):
 
 class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes should be shared across plots""")
+
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
@@ -325,8 +328,9 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
+                shared_plots = passed_plots if self.shared_axes else None
                 plots[r].append(subplot.initialize_plot(ranges=ranges,
-                                                        plots=passed_plots))
+                                                        plots=shared_plots))
                 passed_plots.append(plots[r][-1])
             if self.tabs:
                 if isinstance(self.layout, Layout):
