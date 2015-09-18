@@ -640,7 +640,7 @@ class RGB(Image):
             xoffset, yoffset = w*f/2, h*f/2
             bounds=(-xoffset, -yoffset, xoffset, yoffset)
         rgb = cls(data, bounds=bounds)
-        if bare: rgb = rgb(plot=dict('plot', xaxis=None, yaxis=None))
+        if bare: rgb = rgb(plot=dict(xaxis=None, yaxis=None))
         return rgb
 
 
