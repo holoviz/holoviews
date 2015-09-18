@@ -64,7 +64,10 @@ def mpl_to_bokeh(properties):
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
         elif k == 'color' or k.endswith('_color'):
-            new_properties[k] = colors.ColorConverter.colors.get(v, v)
+            v = colors.ColorConverter.colors.get(v, v)
+            if isinstance(v, tuple):
+                v = colors.rgb2hex(v)
+            new_properties[k] = v
         else:
             new_properties[k] = v
     new_properties.pop('cmap', None)
