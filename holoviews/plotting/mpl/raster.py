@@ -30,6 +30,9 @@ class RasterPlot(ColorbarPlot):
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
@@ -61,11 +64,10 @@ class RasterPlot(ColorbarPlot):
         xticks, yticks = self._compute_ticks(element, ranges)
 
         opts = self.style[self.cyclic_index]
-        data = element.data
-        clims = opts.pop('clims', None)
         if element.depth != 1:
             opts.pop('cmap', None)
 
+        data = element.data
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
@@ -83,12 +85,9 @@ class RasterPlot(ColorbarPlot):
             cmap.set_bad('w', 1.)
             opts['cmap'] = cmap
 
-        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
-        if clims is None:
-            val_dim = [d.name for d in element.vdims][0]
-            clims = ranges.get(val_dim)
-        if 'norm' not in opts:
-            im.set_clim(clims)
+        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder,
+                         clim=clim, norm=norm, **opts)
         self.handles['artist'] = im
 
         if isinstance(element, HeatMap):
@@ -171,13 +170,20 @@ class RasterPlot(ColorbarPlot):
 
         val_dim = [d.name for d in element.vdims][0]
         opts = self.style[self.cyclic_index]
-        im.set_clim(opts.get('clims', ranges.get(val_dim)))
+
+        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+        im.set_clim(clim)
+        if norm:
+            im.norm = norm
         im.set_extent((l, r, b, t))
         xticks, yticks = self._compute_ticks(element, ranges)
         return {'xticks': xticks, 'yticks': yticks}
 
 
 class QuadMeshPlot(ColorbarPlot):
+
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
 
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
@@ -201,24 +207,27 @@ class QuadMeshPlot(ColorbarPlot):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
-        self.handles['artist'] = axis.pcolormesh(*cmesh_data, vmin=clims[0],
-                                                vmax=clims[1], zorder=self.zorder,
-                                                **opts)
+        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+        self.handles['artist'] = axis.pcolormesh(*cmesh_data, zorder=self.zorder,
+                                                 vmin=clim[0], vmax=clim[1], norm=norm,
+                                                 **opts)
         self.handles['locs'] = np.concatenate(element.data[:2])
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        cmesh = self.handles['cmesh']
+        cmesh = self.handles['artist']
         opts = self.style[self.cyclic_index]
         locs = np.concatenate(element.data[:2])
         if (locs != self.handles['locs']).any():
             self._init_cmesh(axis, element, ranges)
         else:
-            data = np.ma.array(element.data[2],
-                           mask=np.logical_not(np.isfinite(element.data[2])))
+            mask_array = np.logical_not(np.isfinite(element.data[2]))
+            data = np.ma.array(element.data[2], mask=mask_array)
             cmesh.set_array(data.ravel())
-            clims = opts.get('clims', ranges.get(element.get_dimension(2).name))
-            cmesh.set_clim(clims)
+            clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+            cmesh.set_clim(clim)
+            if norm:
+                cmesh.norm = norm
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):

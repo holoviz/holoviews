@@ -41,3 +41,23 @@ class LineAnnotationPlot(ElementPlot):
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
+
+
+class SplinePlot(ElementPlot):
+    """
+    Draw the supplied Spline annotation (see Spline docstring).
+    Does not support matplotlib Path codes.
+    """
+
+    style_opts = line_properties
+    _plot_method = 'bezier'
+
+    def get_data(self, element, ranges=None):
+        plot = self.handles['plot']
+        verts = np.array(element.data[0])
+        xs, ys = verts[:, 0], verts[:, 1]
+        return (dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
+                     cx0=[xs[1]], cy0=[ys[1]], cx1=[xs[2]], cy1=[ys[2]]),
+                dict(x0='x0', y0='y0', x1='x1', y1='y1',
+                     cx0='cx0', cx1='cx1', cy0='cy0', cy1='cy1'))

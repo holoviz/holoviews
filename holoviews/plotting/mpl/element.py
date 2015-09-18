@@ -1,6 +1,7 @@
 import math
 
 from matplotlib import ticker
+from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 import param
@@ -502,6 +503,28 @@ class ColorbarPlot(ElementPlot):
                               b, scaled_w, h])
 
         ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
+
+
+
+    def _norm_kwargs(self, element, ranges, opts):
+        """
+        Returns valid color normalization kwargs
+        to be passed to matplotlib plot function.
+        """
+        norm = None
+        clim = opts.pop('clims', None)
+        if clim is None:
+            val_dim = [d.name for d in element.vdims][0]
+            clim = ranges.get(val_dim)
+            if self.symmetric:
+                clim = -np.abs(clim).max(), np.abs(clim).max()
+        if self.logz:
+            if self.symmetric:
+                norm = colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
+                                         linthresh=clim[1]/np.e)
+            else:
+                norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
+        return clim, norm, opts
 
 
 

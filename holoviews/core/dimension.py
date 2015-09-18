@@ -530,10 +530,13 @@ class Dimensioned(LabelledData):
         elif not isinstance(dimensions, list):
             dimensions = [dimensions]
 
+        valid_dimensions = []
         for dim in dimensions:
+            if isinstance(dim, Dimension): dim = dim.name
             if dim not in self._cached_index_names:
                 raise Exception("Supplied dimensions %s not found." % dim)
-        return dimensions
+            valid_dimensions.append(dim)
+        return valid_dimensions
 
 
     @property
