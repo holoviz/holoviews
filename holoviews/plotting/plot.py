@@ -443,9 +443,13 @@ class GenericElementPlot(DimensionedPlot):
 
     def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         # Axis labels
-        dims = view.dimensions('all')
         if isinstance(view, CompositeOverlay):
-            dims = dims[view.ndims:]
+            bottom = view.values()[0]
+            dims = bottom.dimensions()
+            if isinstance(bottom, CompositeOverlay):
+                dims = dims[bottom.ndims:]
+        else:
+            dims = view.dimensions()
         if dims and xlabel is None:
             xlabel = util.safe_unicode(str(dims[0]))
         if len(dims) >= 2 and ylabel is None:
