@@ -3,11 +3,13 @@ Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 
+import os
 import base64
 from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
+from ..core.util import find_file
 from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 
@@ -191,6 +193,27 @@ class Renderer(Exporter):
             raise Exception("No corresponding plot type found for %r" % type(obj))
         return plotclass
 
+
+    @classmethod
+    def embed_assets(cls):
+        """
+        Returns JS and CSS and for embedding of widgets.
+        """
+        # Get all the widgets and find the set of required js widget files
+        widgets = [wdgt for cls in Renderer.__subclasses__()
+                   for wdgt in cls.widgets.values()]
+        css = list({wdgt.css for wdgt in widgets})
+        basejs = list({wdgt.basejs for wdgt in widgets})
+        extensionjs = list({wdgt.extensionjs for wdgt in widgets})
+
+        # Join all the js widget code into one string
+        path = os.path.dirname(os.path.abspath(__file__))
+        widgetjs = '\n'.join(open(find_file(path, f), 'r').read()
+                             for f in basejs + extensionjs
+                             if f is not None )
+        widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
+                              for f in css if f is not None)
+        return widgetjs, widgetcss
 
 
     @classmethod

@@ -6,10 +6,8 @@ import jinja2
 from IPython.display import display, HTML
 
 import holoviews
-from ..core.util import find_file
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
-from .. import plotting
 from ..plotting.renderer import Renderer
 from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
@@ -72,22 +70,8 @@ def load_notebook():
     """
     Displays javascript and CSS to initialize HoloViews widgets
     """
-
-    # Get all the widgets and find the set of required js widget files
-    widgets = [wdgt for cls in Renderer.__subclasses__()
-               for wdgt in cls.widgets.values()]
-    css = list({wdgt.css for wdgt in widgets})
-    basejs = list({wdgt.basejs for wdgt in widgets})
-    extensionjs = list({wdgt.extensionjs for wdgt in widgets})
-
-    # Join all the js widget code into one string
-    path = os.path.dirname(os.path.abspath(plotting.__file__))
-    widgetjs = '\n'.join(open(find_file(path, f), 'r').read()
-                         for f in basejs + extensionjs
-                         if f is not None )
-    widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
-                          for f in css if f is not None)
     # Evaluate load_notebook.html template with widgetjs code
+    widgetjs, widgetcss = Renderer.embed_assets()
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
     jinjaEnv = jinja2.Environment(loader=templateLoader)
     template = jinjaEnv.get_template('load_notebook.html')
