@@ -520,7 +520,6 @@ class ColorbarPlot(ElementPlot):
                 clim = -np.abs(clim).max(), np.abs(clim).max()
         if self.logz:
             if self.symmetric:
-                print clim[1]/4
                 norm = colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
                                          linthresh=clim[1]/np.e)
             else:
