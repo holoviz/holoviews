@@ -1,6 +1,6 @@
 import numpy as np
 import bokeh.plotting
-from bokeh.models import HoverTool
+from bokeh.models import Range, HoverTool
 from bokeh.models.tickers import Ticker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
@@ -173,7 +173,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if all(y is not None for y in (b, t)):
                     plot_ranges['y_range'] = [b, t]
         if self.invert_yaxis:
-            plot_ranges['y_range'] = plot_ranges['y_range'][::-1]
+            yrange = plot_ranges['y_range']
+            if isinstance(yrange, Range):
+                plot_ranges['y_range'] = yrange.__class__(start=yrange.end,
+                                                          end=yrange.start)
+            else:
+                plot_ranges['y_range'] = yrange[::-1]
         x_axis_type = 'log' if self.xlog else 'auto'
         y_axis_type = 'log' if self.ylog else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
