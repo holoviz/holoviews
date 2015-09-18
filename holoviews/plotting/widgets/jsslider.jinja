@@ -10,7 +10,7 @@
     <form class="holoform well">
       {% for widget_data in widgets %}
       {% if widget_data['type'] == 'slider' %}
-      <div class="form-group control-group holoformgroup">
+      <div class="form-group control-group holoformgroup" style='{{ widget_data['visibility'] }}'>
 	<label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim_label'] }}:</strong></label>
 	<div class="hololayout">
 	  <div class="hologroup col-xs-4 span4">
@@ -112,7 +112,7 @@
         });
       </script>
       {% elif widget_data['type']=='dropdown' %}
-      <div class="form-group control-group">
+      <div class="form-group control-group" style='{{ widget_data['visibility'] }}'>
 	<label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim'] }}:</strong></label>
         <select class="holoselect form-control" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" >
         </select>
