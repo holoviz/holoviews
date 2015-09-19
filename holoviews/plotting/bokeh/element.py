@@ -1,7 +1,7 @@
 import numpy as np
 import bokeh.plotting
 from bokeh.models import Range, HoverTool
-from bokeh.models.tickers import Ticker, FixedTicker
+from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
 try:
@@ -245,7 +245,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(ticker, Ticker):
                 axis_props['ticker'] = ticker
             elif isinstance(ticker, int):
-                axis_props['ticker'] = Ticker(desired_num_ticks=ticker)
+                axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
             elif isinstance(ticker, list):
                 if all(isinstance(t, tuple) for t in ticker):
                     pass
