@@ -231,8 +231,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         on the specified axis.
         """
         axis_props = {}
-        if ((axis == 'x' and self.xaxis in ['left-bare' or None]) or
-            (axis == 'y' and self.yaxis in ['bottom-bare' or None])):
+        if ((axis == 'x' and self.xaxis in ['left-bare', None]) or
+            (axis == 'y' and self.yaxis in ['bottom-bare', None])):
             axis_props['axis_label'] = ''
             axis_props['major_label_text_font_size'] = '0pt'
             axis_props['major_tick_line_color'] = None
