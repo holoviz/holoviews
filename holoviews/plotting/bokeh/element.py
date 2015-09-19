@@ -88,7 +88,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether and where to display the xaxis, bare options allow
         suppressing all axis labels including ticks and xlabel.""")
 
-    xlog = param.Boolean(default=False, doc="""
+    logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
 
     xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
@@ -107,8 +107,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether and where to display the yaxis, bare options allow
         suppressing all axis labels including ticks and ylabel.""")
 
-    ylog = param.Boolean(default=False, doc="""
-        Whether the x-axis of the plot will be a log axis.""")
+    logy = param.Boolean(default=False, doc="""
+        Whether the y-axis of the plot will be a log axis.""")
 
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -179,8 +179,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                           end=yrange.start)
             else:
                 plot_ranges['y_range'] = yrange[::-1]
-        x_axis_type = 'log' if self.xlog else 'auto'
-        y_axis_type = 'log' if self.ylog else 'auto'
+        x_axis_type = 'log' if self.logx else 'auto'
+        y_axis_type = 'log' if self.logy else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
