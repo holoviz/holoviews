@@ -100,8 +100,13 @@ class HistogramPlot(ElementPlot):
 
     def get_data(self, element, ranges=None):
         mapping = dict(top='top', bottom=0, left='left', right='right')
-        return (dict(top=element.values, left=element.edges[:-1],
-                     right=element.edges[1:]), mapping)
+        data = dict(top=element.values, left=element.edges[:-1],
+                    right=element.edges[1:])
+
+        if 'hover' in self.default_tools + self.tools:
+            data.update({d: element.dimension_values(d)
+                         for d in element.dimensions(label=True)})
+        return (data, mapping)
 
 
 
