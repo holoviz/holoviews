@@ -4,8 +4,8 @@ import param
 
 from ...core import Dimension
 from ...core.util import max_range
-from ...element import Chart
-from ..util import compute_sizes
+from ...element import Chart, Raster, Points, Polygons
+from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import map_colors, get_cmap
@@ -102,6 +102,42 @@ class HistogramPlot(ElementPlot):
         mapping = dict(top='top', bottom=0, left='left', right='right')
         data = dict(top=element.values, left=element.edges[:-1],
                     right=element.edges[1:])
+
+        if 'hover' in self.default_tools + self.tools:
+            data.update({d: element.dimension_values(d)
+                         for d in element.dimensions(label=True)})
+        return (data, mapping)
+
+
+class AdjointHistogramPlot(HistogramPlot):
+
+    style_opts = HistogramPlot.style_opts + ['cmap']
+
+    width = param.Integer(default=125)
+
+    xticks = param.Integer(default=2)
+
+    def get_data(self, element, ranges=None):
+        if self.invert_axes:
+            mapping = dict(top='left', bottom='right', left=0, right='top')
+        else:
+            mapping = dict(top='top', bottom=0, left='left', right='right')
+        data = dict(top=element.values, left=element.edges[:-1],
+                    right=element.edges[1:])
+
+        vals = element.dimension_values(0)
+        main = self.adjoined.main
+        range_item, main_range = get_sideplot_ranges(self, element, main, ranges)
+        if isinstance(range_item, (Raster, Points, Polygons)):
+            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
+        else:
+            style = {}
+
+        if 'cmap' in style or 'palette' in style:
+            cmap = get_cmap(style.get('cmap', style.get('palette', None)))
+            colors = map_colors(vals, main_range, cmap)
+            data['color'] = colors
+            mapping['fill_color'] = 'color'
 
         if 'hover' in self.default_tools + self.tools:
             data.update({d: element.dimension_values(d)

@@ -10,7 +10,8 @@ from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .element import OverlayPlot, BokehMPLWrapper
-from .chart import PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot
+from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
+                    AdjointHistogramPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
@@ -48,6 +49,9 @@ Store.register({Overlay: OverlayPlot,
                 Table: TablePlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot}, 'bokeh')
+
+
+AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
 
 
 try:
