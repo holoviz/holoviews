@@ -123,8 +123,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # ElementPlot
     _plot_method = None
 
-    def __init__(self, element, plot=None, invert_axes=False, **params):
+    def __init__(self, element, plot=None, invert_axes=False,
+                 show_labels=['x', 'y'], **params):
         self.invert_axes = invert_axes
+        self.show_labels = show_labels
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
 
@@ -205,12 +207,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xlabel, ylabel, zlabel = labels
         x_axis_type, y_axis_type = axis_types
         tools = self._init_tools(element)
+        properties = dict(plot_ranges)
+        properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
+        properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
         return bokeh.plotting.figure(x_axis_type=x_axis_type,
-                                     x_axis_label=xlabel,
                                      y_axis_type=y_axis_type,
-                                     y_axis_label=ylabel,
-                                     tools=tools, **plot_ranges)
+                                     tools=tools, **properties)
 
 
     def _plot_properties(self, key, plot, element):
