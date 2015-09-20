@@ -8,7 +8,7 @@ except ImportError:
     cm, colors = None, None
 
 from bokeh.enums import Palette
-from bokeh.plotting import figure
+from bokeh.plotting import figure, Plot
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -86,9 +86,11 @@ def layout_padding(plots):
     widths, heights = defaultdict(int), defaultdict(int)
     for r, row in enumerate(plots):
         for c, p in enumerate(row):
-            if p:
-                widths[c] = max(widths[c], p.plot_width)
-                heights[r] = max(heights[r], p.plot_height)
+            if p is not None:
+                width = p.plot_width if isinstance(p, Plot) else p.width
+                height = p.plot_height if isinstance(p, Plot) else p.height
+                widths[c] = max(widths[c], width)
+                heights[r] = max(heights[r], height)
 
     expanded_plots = []
     for r, row in enumerate(plots):
