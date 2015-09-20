@@ -501,8 +501,14 @@ class histogram(ElementOperation):
 
         hist[np.isnan(hist)] = 0
 
+        params = {}
+        if self.p.weight_dimension:
+            params['vdims'] = [view.get_dimension(self.p.weight_dimension)]
+        if view.group != view.__class__.__name__:
+            params['group'] = view.group
+
         hist_view = Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
-                              label=view.label)
+                              label=view.label, **params)
 
         return (view << hist_view) if self.p.adjoin else hist_view
 
