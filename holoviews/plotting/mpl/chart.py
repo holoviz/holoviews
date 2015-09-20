@@ -484,7 +484,7 @@ class SideHistogramPlot(HistogramPlot):
         cmap_range = main_range[1] - main_range[0]
         lower_bound = main_range[0]
         colors = np.array(element.dimension_values(dim))
-        colors = (colors - colors.min()) / (colors.max() - colors.min())
+        colors = (colors - lower_bound) / (cmap_range)
         for c, bar in zip(colors, bars):
             bar_bin = bar.get_y() if vertical else bar.get_x()
             width = bar.get_height() if vertical else bar.get_width()
