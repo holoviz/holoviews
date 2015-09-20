@@ -10,7 +10,7 @@ import param
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
 from ...core.util import match_spec
 from ...element import Points, Raster, Polygons
-from ..util import compute_sizes
+from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 
 
@@ -449,24 +449,13 @@ class SideHistogramPlot(HistogramPlot):
         main = self.adjoined.main
         y0, y1 = element.range(1)
         offset = self.offset * y1
-
-        hist_dim = element.get_dimension(0).name
-        range_item = main
-        if isinstance(main, HoloMap):
-            if issubclass(main.type, CompositeOverlay):
-                range_item = [hm for hm in main.split_overlays()[1]
-                              if hist_dim in hm.dimensions('all', label=True)][0]
+        range_item, main_range = get_sideplot_ranges(self, element, main, ranges)
+        if isinstance(range_item, (Raster, Points, Polygons)):
+            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
+            cmap = cm.get_cmap(style.get('cmap'))
+            main_range = style.get('clims', main_range)
         else:
-            range_item = HoloMap({0: main}, kdims=['Frame'])
-        ranges = match_spec(range_item.last, ranges)
-        if hist_dim in ranges:
-            main_range = ranges[hist_dim]
-        else:
-            framewise = self.lookup_options(range_item.last, 'norm').options.get('framewise')
-            if framewise and range_item.get(key, False):
-                main_range = range_item.get(key, False).range(hist_dim)
-            else:
-                main_range = range_item.range(hist_dim)
+            cmap = None
 
         if offset and ('offset_line' not in self.handles):
             self.handles['offset_line'] = self.offset_linefn(offset,
@@ -474,21 +463,6 @@ class SideHistogramPlot(HistogramPlot):
                                                              color='k')
         elif offset:
             self._update_separator(offset)
-
-
-        # If .main is an NdOverlay or a HoloMap of Overlays get the correct style
-        if isinstance(range_item, HoloMap):
-            range_item = range_item.last
-        if isinstance(range_item, CompositeOverlay):
-            range_item = [ov for ov in range_item
-                          if hist_dim in ov.dimensions('value', label=True)][0]
-
-        if isinstance(range_item, (Raster, Points, Polygons)):
-            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
-            cmap = cm.get_cmap(style.get('cmap'))
-            main_range = style.get('clims', main_range)
-        else:
-            cmap = None
 
         if cmap is not None:
             self._colorize_bars(cmap, bars, main_range)
