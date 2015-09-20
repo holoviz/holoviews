@@ -291,15 +291,16 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             if pos != 'main':
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
-                    side_opts = dict(height=main_plot.height, default_tools=[],
-                                         yaxis='right', invert_axes=True, width=125)
+                    side_opts = dict(height=main_plot.height, yaxis='right',
+                                     invert_axes=True, width=120,
+                                     xticks=2)
                 else:
-                    side_opts = dict(width=main_plot.width, default_tools=[],
-                                     xaxis='top', height=125)
+                    side_opts = dict(width=main_plot.width, xaxis='top',
+                                     height=120, yticks=2)
 
             # Override the plotopts as required
             # Customize plotopts depending on position.
-            plotopts = dict(plotopts, **side_opts)
+            plotopts = dict(side_opts, **plotopts)
             plotopts.update(subplot_opts)
 
             if plot_type is None:
@@ -333,6 +334,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         passed_plots = []
         tab_titles = {}
         insert_rows, insert_cols = [], []
+        adjoined = False
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
@@ -343,6 +345,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 # number of adjoined plots
                 offset = sum(r >= ir for ir in insert_rows)
                 if len(subplots) > 2:
+                    adjoined = True
                     # Add pad column in this position
                     insert_cols.append(c)
                     if r not in insert_rows:
@@ -357,6 +360,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                     # Add top marginal
                     plots[r+offset-1] += [subplots.pop(-1), None]
                 elif len(subplots) > 1:
+                    adjoined = True
                     # Add pad column in this position
                     insert_cols.append(c)
                     # Pad previous rows
@@ -398,7 +402,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       for c, child in enumerate(row)
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
-        elif len(plots) == 1:
+        elif len(plots) == 1 and not adjoined:
             layout_plot = vplot(hplot(*plots[0]))
         elif len(plots[0]) == 1:
             layout_plot = vplot(*[p[0] for p in plots])

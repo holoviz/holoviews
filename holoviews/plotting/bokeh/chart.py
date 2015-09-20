@@ -115,8 +115,6 @@ class AdjointHistogramPlot(HistogramPlot):
 
     width = param.Integer(default=125)
 
-    xticks = param.Integer(default=2)
-
     def get_data(self, element, ranges=None):
         if self.invert_axes:
             mapping = dict(top='left', bottom='right', left=0, right='top')
