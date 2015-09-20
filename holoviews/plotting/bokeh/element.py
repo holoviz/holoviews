@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import numpy as np
 import bokeh.plotting
 from bokeh.models import Range, HoverTool
@@ -12,6 +14,7 @@ import param
 
 from ...core import Store, HoloMap, Overlay
 from ...core import util
+from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
 from .util import mpl_to_bokeh
@@ -414,6 +417,38 @@ class BokehMPLWrapper(ElementPlot):
             self.mplplot.update_frame(key, ranges)
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
 
+
+
+class BokehMPLRawWrapper(BokehMPLWrapper):
+    """
+    Wraps an existing HoloViews matplotlib plot, renders it as
+    an image and displays it as a HoloViews object.
+    """
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None):
+        element = self.hmap.last
+        key = self.keys[-1]
+        self.mplplot.initialize_plot(ranges)
+        plot = self._render_plot(element)
+        self.handles['plot'] = plot
+        return plot
+
+    def _render_plot(self, element):
+        from .raster import RGBPlot
+        bytestream = BytesIO()
+        renderer = self.mplplot.renderer.instance(dpi=120)
+        renderer.save(self.mplplot, bytestream, fmt='png')
+        rgb = RGB.load_image(bytestream, bare=True)
+        plot_opts = self.lookup_options(element, 'plot').options
+        rgbplot = RGBPlot(rgb, **plot_opts)
+        return rgbplot.initialize_plot()
+
+
+    def update_frame(self, key, ranges=None):
+        element = self.get_frame(key)
+        if key in self.hmap:
+            self.mplplot.update_frame(key, ranges)
+            self.handles['plot'] = self._render_plot(element)
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
