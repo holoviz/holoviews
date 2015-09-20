@@ -4,8 +4,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Path, Box, Bounds, Ellipse, Polygons,
                         ErrorBars, Text, HLine, VLine, Spline,
                         Table, ItemTable)
-from ...interface.seaborn import Bivariate, TimeSeries, Distribution, DFrame
 from ...core.options import Options, Cycle, OptionTree
+from ...interface import DFrame
 from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
@@ -56,6 +56,7 @@ AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
+    from ...interface.seaborn import Bivariate, TimeSeries, Distribution
     Store.register({Distribution: PlotSelector(lambda x: 'bokeh',
                                                [('mpl', DistributionPlot),
                                                 ('bokeh', BokehMPLWrapper)],
