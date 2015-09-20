@@ -449,7 +449,7 @@ class SideHistogramPlot(HistogramPlot):
         main = self.adjoined.main
         y0, y1 = element.range(1)
         offset = self.offset * y1
-        range_item, main_range = get_sideplot_ranges(self, element, main, ranges)
+        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
         if isinstance(range_item, (Raster, Points, Polygons)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
@@ -465,7 +465,7 @@ class SideHistogramPlot(HistogramPlot):
             self._update_separator(offset)
 
         if cmap is not None:
-            self._colorize_bars(cmap, bars, main_range)
+            self._colorize_bars(cmap, bars, element, main_range, dim)
         return bars
 
 
@@ -475,7 +475,7 @@ class SideHistogramPlot(HistogramPlot):
         return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
 
-    def _colorize_bars(self, cmap, bars, main_range):
+    def _colorize_bars(self, cmap, bars, element, main_range, dim):
         """
         Use the given cmap to color the bars, applying the correct
         color ranges as necessary.
@@ -483,14 +483,12 @@ class SideHistogramPlot(HistogramPlot):
         vertical = (self.orientation == 'vertical')
         cmap_range = main_range[1] - main_range[0]
         lower_bound = main_range[0]
-        for bar in bars:
+        colors = np.array(element.dimension_values(dim))
+        colors = (colors - colors.min()) / (colors.max() - colors.min())
+        for c, bar in zip(colors, bars):
             bar_bin = bar.get_y() if vertical else bar.get_x()
             width = bar.get_height() if vertical else bar.get_width()
-            try:
-                color_val = (bar_bin+width/2.-lower_bound)/cmap_range
-            except:
-                color_val = 0
-            bar.set_facecolor(cmap(color_val))
+            bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
 

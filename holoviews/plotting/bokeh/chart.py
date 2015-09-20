@@ -123,9 +123,10 @@ class AdjointHistogramPlot(HistogramPlot):
         data = dict(top=element.values, left=element.edges[:-1],
                     right=element.edges[1:])
 
-        vals = element.dimension_values(0)
+        dim = element.get_dimension(0).name
         main = self.adjoined.main
-        range_item, main_range = get_sideplot_ranges(self, element, main, ranges)
+        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
+        vals = element.dimension_values(dim)
         if isinstance(range_item, (Raster, Points, Polygons)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
         else:
