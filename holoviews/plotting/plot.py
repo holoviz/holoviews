@@ -586,7 +586,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
-            if issubclass(plottype, GenericOverlayPlot):
+            if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
 
         return subplots
