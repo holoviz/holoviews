@@ -458,6 +458,9 @@ class histogram(ElementOperation):
     normed = param.Boolean(default=True, doc="""
       Whether the histogram frequencies are normalized.""")
 
+    mean_weighted = param.Boolean(default=True, doc="""
+      Whether the weighted frequencies are averaged.""")
+
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
 
@@ -483,13 +486,19 @@ class histogram(ElementOperation):
         # Avoids range issues including zero bin range and empty bins
         if hist_range == (0, 0):
             hist_range = (0, 1)
+        data = data[np.invert(np.isnan(data))]
+        normed = False if self.p.mean_weighted else self.p.normed
         try:
-            data = data[np.invert(np.isnan(data))]
-            hist, edges = np.histogram(data[np.isfinite(data)], normed=self.p.normed,
+            hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
                                        range=hist_range, weights=weights, bins=self.p.num_bins)
+            if self.p.weight_dimension and self.p.mean_weighted:
+                hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
+                                            range=hist_range, bins=self.p.num_bins)
+                hist /= hist_mean
         except:
             edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
             hist = np.zeros(self.p.num_bins)
+
         hist[np.isnan(hist)] = 0
 
         hist_view = Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
