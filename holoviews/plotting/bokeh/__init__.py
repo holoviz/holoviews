@@ -3,13 +3,14 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
                         ErrorBars, Text, HLine, VLine, Spline,
-                        Table, ItemTable)
+                        Table, ItemTable, Surface, Scatter3D)
 from ...core.options import Options, Cycle, OptionTree
 from ...interface import DFrame
 from ..plot import PlotSelector
+from ..mpl import SurfacePlot, Scatter3DPlot
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .element import OverlayPlot, BokehMPLWrapper
+from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     AdjointHistogramPlot)
 from .path import PathPlot, PolygonPlot
@@ -48,7 +49,14 @@ Store.register({Overlay: OverlayPlot,
                 Spline: SplinePlot,
                 Table: TablePlot,
                 ItemTable: TablePlot,
-                DFrame: TablePlot}, 'bokeh')
+                DFrame: TablePlot,
+                Surface: PlotSelector(lambda x: 'bokeh',
+                                      [('mpl', SurfacePlot),
+                                       ('bokeh', BokehMPLRawWrapper)], True),
+                Scatter3D: PlotSelector(lambda x: 'bokeh',
+                                        [('mpl', Scatter3DPlot),
+                                         ('bokeh', BokehMPLRawWrapper)], True)},
+               'bokeh')
 
 
 AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
