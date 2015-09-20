@@ -123,7 +123,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # ElementPlot
     _plot_method = None
 
-    def __init__(self, element, plot=None, **params):
+    def __init__(self, element, plot=None, invert_axes=False, **params):
+        self.invert_axes = invert_axes
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
 
@@ -141,6 +142,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _axes_props(self, plots, element, ranges):
         xlabel, ylabel, zlabel = self._axis_labels(element, plots)
+        if self.invert_axes:
+            xlabel, ylabel = ylabel, xlabel
+
         plot_ranges = {}
         # Try finding shared ranges in other plots in the same Layout
         if plots and self.shared_axes:
@@ -159,9 +163,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
             else:
-                l, _, r, _ = self.get_extents(element, ranges)
-                if all(x is not None for x in (l, r)):
-                    plot_ranges['x_range'] = [l, r]
+                l, b, r, t = self.get_extents(element, ranges)
+                low, high = (b, t) if self.invert_axes else (l, r)
+                if all(x is not None for x in (low, high)):
+                    plot_ranges['x_range'] = [low, high]
 
         if self.invert_xaxis:
             plot_ranges['x_ranges'] = plot_ranges['x_ranges'][::-1]
@@ -170,9 +175,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'y_range' in ranges:
                 plot_ranges['y_range'] = ranges['y_range']
             else:
-                _, b, _, t = self.get_extents(element, ranges)
-                if all(y is not None for y in (b, t)):
-                    plot_ranges['y_range'] = [b, t]
+                l, b, r, t = self.get_extents(element, ranges)
+                low, high = (l, r) if self.invert_axes else (b, t)
+                if all(y is not None for y in (low, high)):
+                    plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
             yrange = plot_ranges['y_range']
             if isinstance(yrange, Range):
