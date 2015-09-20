@@ -292,11 +292,11 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
                     side_opts = dict(height=main_plot.height, yaxis='right',
-                                     invert_axes=True, width=120,
+                                     invert_axes=True, width=120, show_labels=['y'],
                                      xticks=2)
                 else:
                     side_opts = dict(width=main_plot.width, xaxis='top',
-                                     height=120, yticks=2)
+                                     height=120, show_labels=['x'], yticks=2)
 
             # Override the plotopts as required
             # Customize plotopts depending on position.
