@@ -73,7 +73,7 @@ class HeatmapPlot(ElementPlot):
     _plot_method = 'rect'
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
-    def _init_axes(self, plots, element, ranges):
+    def _axes_props(self, plots, element, ranges):
         labels = self._axis_labels(element, plots)
         xvals, yvals = element.dense_keys()
         plot_ranges = {'x_range': [str(x) for x in xvals],
