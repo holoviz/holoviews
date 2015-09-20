@@ -33,9 +33,22 @@ class Element(ViewableElement, Composable, Overlayable):
         operation may also be supplied.
         """
         from ..operation import histogram
-        return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
-                         individually=individually, dimension=dimension, **kwargs)
-
+        if not isinstance(dimension, list): dimension = [dimension]
+        hists = []
+        for idx, d in enumerate(dimension[::-1]):
+            hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
+                             adjoin=False, individually=individually,
+                             dimension=d, **kwargs)
+            hists.append(hist)
+        if adjoin:
+            layout = self
+            for didx in range(len(dimension)):
+                layout = layout << hists[didx]
+        elif len(dimension) > 1:
+            layout = Layout(hists)
+        else:
+            layout = hists[0]
+        return layout
 
     #======================#
     # Subclassable methods #
@@ -754,8 +767,13 @@ class HoloMap(UniformNdMapping):
         return self._type(None)
 
 
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = self.clone(shared_data=False)
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True,
+             dimension=None, **kwargs):
+
+        if not isinstance(dimension, list):
+            dimension = [dimension]
+
+        histmaps = [self.clone(shared_data=False) for d in dimension]
 
         if individually:
             map_range = None
@@ -768,16 +786,22 @@ class HoloMap(UniformNdMapping):
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
             kwargs['index'] = 0
         for k, v in self.data.items():
-            histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
-                                individually=individually, num_bins=num_bins,
-                                style_prefix=style_prefix, **kwargs)
+            for didx, d in enumerate(dimension[::-1]):
+                histmaps[didx][k] = v.hist(adjoin=False, bin_range=bin_range, dimension=d,
+                                           individually=individually, num_bins=num_bins,
+                                           style_prefix=style_prefix, **kwargs)
 
-        if adjoin and issubclass(self.type, (NdOverlay, Overlay)):
-            layout = (self << histmap)
-            layout.main_layer = kwargs['index']
-            return layout
-
-        return (self << histmap) if adjoin else histmap
+        if adjoin:
+            layout = self
+            for didx in range(len(dimension)):
+                layout = layout << histmaps[didx]
+            if issubclass(self.type, (NdOverlay, Overlay)):
+                layout.main_layer = kwargs['index']
+        elif len(dimension) > 1:
+            layout = Layout(histmaps)
+        else:
+            layout = histmaps[0]
+        return layout
 
 
 class GridSpace(UniformNdMapping):

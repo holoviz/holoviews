@@ -48,13 +48,23 @@ class CompositeOverlay(ViewableElement, Composable):
         if not any([valid_ind, valid_label]):
             raise TypeError("Please supply a suitable index or label for the histogram data")
 
-        hist = self.get(index).hist(adjoin=False, **kwargs)
+        hist_element = self.get(index).hist(adjoin=False, **kwargs)
+        if not isinstance(dimension, list): dimension = [dimension]
+        hists = []
+        for idx, d in enumerate(dimension[::-1]):
+            hist = histogram(hist_element, num_bins=num_bins, bin_range=bin_range,
+                             individually=individually, dimension=d, **kwargs)
+            hists.append(hist)
         if adjoin:
-            layout = self << hist
+            layout = self
+            for didx in range(len(dimension)):
+                layout = layout << hists[didx]
             layout.main_layer = index
-            return layout
+        elif len(dimension) > 1:
+            layout = Layout(hists)
         else:
-            return hist
+            layout = hists[0]
+        return layout
 
 
     def dimension_values(self, dimension):
@@ -223,12 +233,6 @@ class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
 
     def __init__(self, overlays=None, **params):
         super(NdOverlay, self).__init__(overlays, **params)
-
-
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        from ..operation import histogram
-        return histogram(self, num_bins=num_bins, bin_range=bin_range, adjoin=adjoin,
-                         individually=individually, **kwargs)
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
