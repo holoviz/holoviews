@@ -489,6 +489,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         panels = []
         for key, subplot in self.subplots.items():
+            if self.tabs: subplot.overlaid = False
             child = subplot.initialize_plot(ranges, plot, plots)
             if self.tabs:
                 if self.hmap.type is Overlay:
