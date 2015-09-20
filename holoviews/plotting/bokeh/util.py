@@ -48,8 +48,7 @@ def map_colors(arr, crange, cmap):
     """
     Maps an array of values to RGB hex strings.
     """
-    nanmin = np.nanmin(arr)
-    arr = (arr - nanmin) / (np.nanmax(arr)-nanmin)
+    arr = (arr - crange[0]) / (crange[1]-crange[0])
     return [colors.rgb2hex(cmap(c)) if np.isfinite(c) else '#FFFFFF' for c in arr]
 
 
