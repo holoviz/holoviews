@@ -395,7 +395,8 @@ class BokehMPLWrapper(ElementPlot):
         params = dict({k: v.default for k, v in self.params().items()
                        if k in ['bgcolor']})
         params = dict(params, **self.lookup_options(element, 'plot').options)
-        self.mplplot = plot(element, **params)
+        style = self.lookup_options(element, 'style')
+        self.mplplot = plot(element, style=style, **params)
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
