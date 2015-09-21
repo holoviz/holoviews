@@ -455,14 +455,17 @@ class histogram(ElementOperation):
     dimension = param.String(default=None, doc="""
       Along which dimension of the ViewableElement to compute the histogram.""")
 
-    normed = param.Boolean(default=True, doc="""
-      Whether the histogram frequencies are normalized.""")
+    individually = param.Boolean(default=True, doc="""
+      Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
 
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    individually = param.Boolean(default=True, doc="""
-      Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
+    normed = param.Boolean(default=True, doc="""
+      Whether the histogram frequencies are normalized.""")
+
+    nonzero = param.Boolean(default=False, doc="""
+      Whether to use only nonzero values when computing the histogram""")
 
     num_bins = param.Integer(default=20, doc="""
       Number of bins in the histogram .""")
@@ -479,7 +482,15 @@ class histogram(ElementOperation):
         else:
             selected_dim = [d.name for d in view.vdims + view.kdims][0]
         data = np.array(view.dimension_values(selected_dim))
-        weights = np.array(view.dimension_values(self.p.weight_dimension)) if self.p.weight_dimension else None
+        if self.p.nonzero:
+            mask = data > 0
+            data = data[mask]
+        if self.p.weight_dimension:
+            weights = np.array(view.dimension_values(self.p.weight_dimension))
+            if self.p.nonzero:
+                weights = weights[mask]
+        else:
+            weights = None
         hist_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
 
