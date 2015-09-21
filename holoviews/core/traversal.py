@@ -20,7 +20,7 @@ def uniform(obj):
     dimensions. If there are is no common subset of dimensions, None
     is returned.
     """
-    from .element import HoloMap
+    from .spaces import HoloMap
     dim_groups = obj.traverse(lambda x: tuple(x.kdims),
                               (HoloMap,))
     if dim_groups:
@@ -40,7 +40,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
     keys.
     """
     from .ndmapping import NdMapping
-    from .element import HoloMap
+    from .spaces import HoloMap
     key_dims = obj.traverse(lambda x: (tuple(x.kdims),
                                        list(x.data.keys())), (HoloMap,))
     if not key_dims:
