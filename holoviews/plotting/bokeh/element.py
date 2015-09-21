@@ -429,19 +429,22 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
         element = self.hmap.last
         key = self.keys[-1]
         self.mplplot.initialize_plot(ranges)
-        plot = self._render_plot(element)
+        plot = self._render_plot(element, plot)
         self.handles['plot'] = plot
         return plot
 
-    def _render_plot(self, element):
+    def _render_plot(self, element, plot=None):
         from .raster import RGBPlot
         bytestream = BytesIO()
         renderer = self.mplplot.renderer.instance(dpi=120)
         renderer.save(self.mplplot, bytestream, fmt='png')
-        rgb = RGB.load_image(bytestream, bare=True)
+        group = ('RGB' if element.group == type(element).__name__ else
+                 element.group)
+        rgb = RGB.load_image(bytestream, bare=True, group=group,
+                             label=element.label)
         plot_opts = self.lookup_options(element, 'plot').options
         rgbplot = RGBPlot(rgb, **plot_opts)
-        return rgbplot.initialize_plot()
+        return rgbplot.initialize_plot(plot=plot)
 
 
     def update_frame(self, key, ranges=None):
