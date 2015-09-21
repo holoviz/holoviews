@@ -4,8 +4,8 @@ import param
 
 from ...core import Dimension
 from ...core.util import max_range
-from ...element import Chart
-from ..util import compute_sizes
+from ...element import Chart, Raster, Points, Polygons
+from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import map_colors, get_cmap, mpl_to_bokeh
@@ -54,10 +54,10 @@ class PointPlot(ElementPlot):
             mapping['color'] = map_key
             cmap = get_cmap(cmap)
             colors = element.dimension_values(self.color_index)
-            data[map_key] = map_colors(colors, ranges, cmap)
+            crange = ranges.get(dims[self.color_index], None)
+            data['color'] = map_colors(colors, crange, cmap)
         if self.size_index < len(dims):
-            map_key = 'size_' + str(id(element.data))
-            mapping['size'] = map_key
+            mapping['size'] = 'size'
             ms = style.get('size', 1)
             sizes = element.dimension_values(self.size_index)
             data[map_key] = compute_sizes(sizes, self.size_fn,
@@ -126,8 +126,48 @@ class HistogramPlot(ElementPlot):
 
     def get_data(self, element, ranges=None):
         mapping = dict(top='top', bottom=0, left='left', right='right')
-        return (dict(top=element.values, left=element.edges[:-1],
-                     right=element.edges[1:]), mapping)
+        data = dict(top=element.values, left=element.edges[:-1],
+                    right=element.edges[1:])
+
+        if 'hover' in self.default_tools + self.tools:
+            data.update({d: element.dimension_values(d)
+                         for d in element.dimensions(label=True)})
+        return (data, mapping)
+
+
+class AdjointHistogramPlot(HistogramPlot):
+
+    style_opts = HistogramPlot.style_opts + ['cmap']
+
+    width = param.Integer(default=125)
+
+    def get_data(self, element, ranges=None):
+        if self.invert_axes:
+            mapping = dict(top='left', bottom='right', left=0, right='top')
+        else:
+            mapping = dict(top='top', bottom=0, left='left', right='right')
+        data = dict(top=element.values, left=element.edges[:-1],
+                    right=element.edges[1:])
+
+        dim = element.get_dimension(0).name
+        main = self.adjoined.main
+        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
+        vals = element.dimension_values(dim)
+        if isinstance(range_item, (Raster, Points, Polygons)):
+            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
+        else:
+            style = {}
+
+        if 'cmap' in style or 'palette' in style:
+            cmap = get_cmap(style.get('cmap', style.get('palette', None)))
+            colors = map_colors(vals, main_range, cmap)
+            data['color'] = colors
+            mapping['fill_color'] = 'color'
+
+        if 'hover' in self.default_tools + self.tools:
+            data.update({d: element.dimension_values(d)
+                         for d in element.dimensions(label=True)})
+        return (data, mapping)
 
 
 

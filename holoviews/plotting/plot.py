@@ -160,6 +160,8 @@ class DimensionedPlot(Plot):
         self.label = None
         self.current_frame = None
         self.current_key = None
+        params = {k: v for k, v in params.items()
+                  if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
 
 
@@ -401,7 +403,8 @@ class GenericElementPlot(DimensionedPlot):
         dimensions = self.hmap.kdims if dimensions is None else dimensions
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
-        super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions, **dict(params, **plot_opts))
+        super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                                 **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
@@ -477,9 +480,13 @@ class GenericElementPlot(DimensionedPlot):
 
     def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         # Axis labels
-        dims = view.dimensions('all')
         if isinstance(view, CompositeOverlay):
-            dims = dims[view.ndims:]
+            bottom = view.values()[0]
+            dims = bottom.dimensions()
+            if isinstance(bottom, CompositeOverlay):
+                dims = dims[bottom.ndims:]
+        else:
+            dims = view.dimensions()
         if dims and xlabel is None:
             xlabel = util.safe_unicode(str(dims[0]))
         if len(dims) >= 2 and ylabel is None:
@@ -616,7 +623,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
-            if issubclass(plottype, GenericOverlayPlot):
+            if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
 
         return subplots

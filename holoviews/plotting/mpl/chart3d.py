@@ -187,7 +187,7 @@ class SurfacePlot(Plot3D):
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
 
-        style_opts = self.lookup_options(element, 'style')[self.cyclic_index]
+        style_opts = self.style[self.cyclic_index]
 
         if self.plot_type == "wireframe":
             self.handles['artist'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)

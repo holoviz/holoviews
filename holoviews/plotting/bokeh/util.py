@@ -1,3 +1,4 @@
+from collections import defaultdict
 import numpy as np
 
 try:
@@ -7,6 +8,7 @@ except ImportError:
     cm, colors = None, None
 
 from bokeh.enums import Palette
+from bokeh.plotting import figure, Plot
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -46,8 +48,11 @@ def map_colors(arr, crange, cmap):
     """
     Maps an array of values to RGB hex strings.
     """
-    nanmin = np.nanmin(arr)
-    arr = (arr - nanmin) / (np.nanmax(arr)-nanmin)
+    if crange:
+        cmin, cmax = crange
+    else:
+        cmin, cmax = np.nanmin(arr), np.nanmax(arr)
+    arr = (arr - cmin) / (cmax-cmin)
     return [colors.rgb2hex(cmap(c)) if np.isfinite(c) else '#FFFFFF' for c in arr]
 
 
@@ -64,8 +69,44 @@ def mpl_to_bokeh(properties):
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
         elif k == 'color' or k.endswith('_color'):
-            new_properties[k] = colors.ColorConverter.colors.get(v, v)
+            v = colors.ColorConverter.colors.get(v, v)
+            if isinstance(v, tuple):
+                v = colors.rgb2hex(v)
+            new_properties[k] = v
         else:
             new_properties[k] = v
     new_properties.pop('cmap', None)
     return new_properties
+
+
+def layout_padding(plots):
+    """
+    Temporary workaround to allow empty plots in a
+    row of a bokeh GridPlot type. Should be removed
+    when https://github.com/bokeh/bokeh/issues/2891
+    is resolved.
+    """
+    widths, heights = defaultdict(int), defaultdict(int)
+    for r, row in enumerate(plots):
+        for c, p in enumerate(row):
+            if p is not None:
+                width = p.plot_width if isinstance(p, Plot) else p.width
+                height = p.plot_height if isinstance(p, Plot) else p.height
+                widths[c] = max(widths[c], width)
+                heights[r] = max(heights[r], height)
+
+    expanded_plots = []
+    for r, row in enumerate(plots):
+        expanded_plots.append([])
+        for c, p in enumerate(row):
+            if p is None:
+                p = figure(plot_width=widths[c], 
+                           plot_height=heights[r])
+                p.text(x=0, y=0, text=[' '])
+                p.xaxis.visible = False
+                p.yaxis.visible = False
+                p.outline_line_color = None
+                p.xgrid.grid_line_color = None
+                p.ygrid.grid_line_color = None
+            expanded_plots[r].append(p)
+    return expanded_plots

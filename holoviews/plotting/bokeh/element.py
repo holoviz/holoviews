@@ -1,7 +1,9 @@
+from io import BytesIO
+
 import numpy as np
 import bokeh.plotting
-from bokeh.models import HoverTool
-from bokeh.models.tickers import Ticker, FixedTicker
+from bokeh.models import Range, HoverTool
+from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
 try:
@@ -12,6 +14,7 @@ import param
 
 from ...core import Store, HoloMap, Overlay
 from ...core import util
+from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
 from .util import mpl_to_bokeh
@@ -81,14 +84,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
-    xaxis = param.ObjectSelector(default='left',
-                                 objects=['left', 'right', 'bare',
-                                          'left-bare', 'right-bare',
+    xaxis = param.ObjectSelector(default='bottom',
+                                 objects=['top', 'bottom',
+                                          'bare', 'top-bare',
+                                          'bottom-bare',
                                           None], doc="""
         Whether and where to display the xaxis, bare options allow
         suppressing all axis labels including ticks and xlabel.""")
 
-    xlog = param.Boolean(default=False, doc="""
+    logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
 
     xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
@@ -99,16 +103,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tick locations or bokeh Ticker object. If set to None default
         bokeh ticking behavior is applied.""")
 
-    yaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom',
-                                          'bare', 'top-bare',
-                                          'bottom-bare', None],
+    yaxis = param.ObjectSelector(default='left',
+                                 objects=['left', 'right', 'bare',
+                                          'left-bare', 'right-bare',
+                                          None],
                                  doc="""
         Whether and where to display the yaxis, bare options allow
         suppressing all axis labels including ticks and ylabel.""")
 
-    ylog = param.Boolean(default=False, doc="""
-        Whether the x-axis of the plot will be a log axis.""")
+    logy = param.Boolean(default=False, doc="""
+        Whether the y-axis of the plot will be a log axis.""")
 
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -122,7 +126,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # ElementPlot
     _plot_method = None
 
-    def __init__(self, element, plot=None, **params):
+    def __init__(self, element, plot=None, invert_axes=False,
+                 show_labels=['x', 'y'], **params):
+        self.invert_axes = invert_axes
+        self.show_labels = show_labels
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
 
@@ -138,8 +145,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return tools
 
 
-    def _init_axes(self, plots, element, ranges):
+    def _axes_props(self, plots, element, ranges):
         xlabel, ylabel, zlabel = self._axis_labels(element, plots)
+        if self.invert_axes:
+            xlabel, ylabel = ylabel, xlabel
+
         plot_ranges = {}
         # Try finding shared ranges in other plots in the same Layout
         if plots and self.shared_axes:
@@ -158,9 +168,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
             else:
-                l, _, r, _ = self.get_extents(element, ranges)
-                if all(x is not None for x in (l, r)):
-                    plot_ranges['x_range'] = [l, r]
+                l, b, r, t = self.get_extents(element, ranges)
+                low, high = (b, t) if self.invert_axes else (l, r)
+                if all(x is not None for x in (low, high)):
+                    plot_ranges['x_range'] = [low, high]
 
         if self.invert_xaxis:
             plot_ranges['x_ranges'] = plot_ranges['x_ranges'][::-1]
@@ -169,13 +180,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'y_range' in ranges:
                 plot_ranges['y_range'] = ranges['y_range']
             else:
-                _, b, _, t = self.get_extents(element, ranges)
-                if all(y is not None for y in (b, t)):
-                    plot_ranges['y_range'] = [b, t]
+                l, b, r, t = self.get_extents(element, ranges)
+                low, high = (l, r) if self.invert_axes else (b, t)
+                if all(y is not None for y in (low, high)):
+                    plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
-            plot_ranges['y_range'] = plot_ranges['y_range'][::-1]
-        x_axis_type = 'log' if self.xlog else 'auto'
-        y_axis_type = 'log' if self.ylog else 'auto'
+            yrange = plot_ranges['y_range']
+            if isinstance(yrange, Range):
+                plot_ranges['y_range'] = yrange.__class__(start=yrange.end,
+                                                          end=yrange.start)
+            else:
+                plot_ranges['y_range'] = yrange[::-1]
+        x_axis_type = 'log' if self.logx else 'auto'
+        y_axis_type = 'log' if self.logy else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -189,16 +206,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
 
-        axis_types, labels, plot_ranges = self._init_axes(plots, element, ranges)
+        axis_types, labels, plot_ranges = self._axes_props(plots, element, ranges)
         xlabel, ylabel, zlabel = labels
         x_axis_type, y_axis_type = axis_types
         tools = self._init_tools(element)
+        properties = dict(plot_ranges)
+        properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
+        properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
         return bokeh.plotting.figure(x_axis_type=x_axis_type,
-                                     x_axis_label=xlabel,
                                      y_axis_type=y_axis_type,
-                                     y_axis_label=ylabel,
-                                     tools=tools, **plot_ranges)
+                                     tools=tools, **properties)
 
 
     def _plot_properties(self, key, plot, element):
@@ -220,14 +238,30 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot_props
 
 
+    def _init_axes(self, plot):
+        if self.xaxis is None:
+            plot.xaxis.visible = False
+        elif self.xaxis == 'top':
+            plot.above = plot.below
+            plot.below = []
+            plot.xaxis[:] = plot.above
+
+        if self.yaxis is None:
+            plot.yaxis.visible = False
+        elif self.yaxis == 'right':
+            plot.right = plot.left
+            plot.left = []
+            plot.yaxis[:] = plot.right
+
+
     def _axis_properties(self, axis, key, plot, element):
         """
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
         axis_props = {}
-        if ((axis == 'x' and self.xaxis in ['left-bare' or None]) or
-            (axis == 'y' and self.yaxis in ['bottom-bare' or None])):
+        if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
+            (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
             axis_props['axis_label'] = ''
             axis_props['major_label_text_font_size'] = '0pt'
             axis_props['major_tick_line_color'] = None
@@ -240,7 +274,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(ticker, Ticker):
                 axis_props['ticker'] = ticker
             elif isinstance(ticker, int):
-                axis_props['ticker'] = Ticker(desired_num_ticks=ticker)
+                axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
             elif isinstance(ticker, list):
                 if all(isinstance(t, tuple) for t in ticker):
                     pass
@@ -254,8 +288,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates plot parameters on every frame
         """
         plot.set(**self._plot_properties(key, plot, element))
-        plot.xaxis[0].set(**self._axis_properties('x', key, plot, element))
-        plot.yaxis[0].set(**self._axis_properties('y', key, plot, element))
+        props = {axis: self._axis_properties(axis, key, plot, element)
+                 for axis in ['x', 'y']}
+        plot.xaxis[0].set(**props['x'])
+        plot.yaxis[0].set(**props['y'])
 
 
     def _process_legend(self):
@@ -277,7 +313,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _glyph_properties(self, plot, element, source, ranges):
-        properties = self.lookup_options(element, 'style')[self.cyclic_index]
+        properties = self.style[self.cyclic_index]
         properties['legend'] = element.label
         properties['source'] = source
         return properties
@@ -305,6 +341,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
+            self._init_axes(plot)
         self.handles['plot'] = plot
 
         data, mapping = self.get_data(element, ranges)
@@ -364,7 +401,8 @@ class BokehMPLWrapper(ElementPlot):
         params = dict({k: v.default for k, v in self.params().items()
                        if k in ['bgcolor']})
         params = dict(params, **self.lookup_options(element, 'plot').options)
-        self.mplplot = plot(element, **params)
+        style = self.lookup_options(element, 'style')
+        self.mplplot = plot(element, style=style, **params)
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
@@ -382,6 +420,41 @@ class BokehMPLWrapper(ElementPlot):
             self.mplplot.update_frame(key, ranges)
             self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
 
+
+
+class BokehMPLRawWrapper(BokehMPLWrapper):
+    """
+    Wraps an existing HoloViews matplotlib plot, renders it as
+    an image and displays it as a HoloViews object.
+    """
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None):
+        element = self.hmap.last
+        key = self.keys[-1]
+        self.mplplot.initialize_plot(ranges)
+        plot = self._render_plot(element, plot)
+        self.handles['plot'] = plot
+        return plot
+
+    def _render_plot(self, element, plot=None):
+        from .raster import RGBPlot
+        bytestream = BytesIO()
+        renderer = self.mplplot.renderer.instance(dpi=120)
+        renderer.save(self.mplplot, bytestream, fmt='png')
+        group = ('RGB' if element.group == type(element).__name__ else
+                 element.group)
+        rgb = RGB.load_image(bytestream, bare=True, group=group,
+                             label=element.label)
+        plot_opts = self.lookup_options(element, 'plot').options
+        rgbplot = RGBPlot(rgb, **plot_opts)
+        return rgbplot.initialize_plot(plot=plot)
+
+
+    def update_frame(self, key, ranges=None):
+        element = self.get_frame(key)
+        if key in self.hmap:
+            self.mplplot.update_frame(key, ranges)
+            self.handles['plot'] = self._render_plot(element)
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
@@ -451,6 +524,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
+            self._init_axes(plot)
         if plot and not self.overlaid:
             self._update_plot(key, plot, self.hmap.last)
         self.handles['plot'] = plot
