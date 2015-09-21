@@ -149,7 +149,7 @@ class MPLRenderer(Renderer):
             encoded = self_or_cls.encode(rendered)
             filename ='%s.%s' % (basename, info['file-ext'])
             with open(filename, 'wb') as f:
-                f.write()
+                f.write(encoded)
 
 
     @bothmethod
