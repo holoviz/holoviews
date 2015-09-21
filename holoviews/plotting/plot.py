@@ -370,7 +370,7 @@ class GenericElementPlot(DimensionedPlot):
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                                 **dict(plot_opts, **params))
+                                                 **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
