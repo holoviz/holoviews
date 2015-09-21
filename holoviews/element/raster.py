@@ -608,7 +608,7 @@ class RGB(Image):
 
 
     @classmethod
-    def load_image(cls, filename, height=1, array=False, bounds=None, bare=False):
+    def load_image(cls, filename, height=1, array=False, bounds=None, bare=False, **kwargs):
         """
         Returns an raster element or raw numpy array from a PNG image
         file, using matplotlib.
@@ -624,7 +624,8 @@ class RGB(Image):
         elements.
 
         Setting bare=True will apply options disabling axis labels
-        displaying just the bare image.
+        displaying just the bare image. Any additional keyword
+        arguments will be passed to the Image object.
         """
         try:
             from matplotlib import pyplot as plt
@@ -639,7 +640,7 @@ class RGB(Image):
             f = float(height) / h
             xoffset, yoffset = w*f/2, h*f/2
             bounds=(-xoffset, -yoffset, xoffset, yoffset)
-        rgb = cls(data, bounds=bounds)
+        rgb = cls(data, bounds=bounds, **kwargs)
         if bare: rgb = rgb(plot=dict(xaxis=None, yaxis=None))
         return rgb
 
