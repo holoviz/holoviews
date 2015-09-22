@@ -227,7 +227,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot_props = dict(plot_height=self.height, plot_width=self.width,
                           title_text_color='black', **title_font)
         if self.show_title:
-            plot_props['title'] = self._format_title(key, separator='')
+            plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
             plot_props['background_fill'] = self.bgcolor
         if self.border is not None:
