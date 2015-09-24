@@ -99,6 +99,7 @@ Store.register({Curve: CurvePlot,
 
                 # Chart 3D
                 Surface: SurfacePlot,
+                Trisurface: TrisurfacePlot,
                 Scatter3D: Scatter3DPlot,
 
                 # Tabular plots
