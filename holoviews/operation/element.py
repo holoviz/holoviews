@@ -294,8 +294,8 @@ class gradient(ElementOperation):
     """
     Compute the gradient plot of the supplied Image.
 
-    If the Image value dimension is cyclic, negative differences will
-    be wrapped into the cyclic range.
+    If the Image value dimension is cyclic, the smallest step is taken
+    considered the cyclic range
     """
 
     output_type = Image
@@ -313,19 +313,28 @@ class gradient(ElementOperation):
 
         data = matrix.data
         r, c = data.shape
+
+        if  matrix_dim.cyclic and (None in matrix_dim.range):
+            raise Exception("Cyclic range must be specified to compute "
+                            "the gradient of cyclic quantities")
+        cyclic_range = None if not matrix_dim.cyclic else np.diff(matrix_dim.range)
+        if cyclic_range is not None:
+            # shift values such that wrapping works ok
+            data = data - matrix_dim.range[0]
+
         dx = np.diff(data, 1, axis=1)[0:r-1, 0:c-1]
         dy = np.diff(data, 1, axis=0)[0:r-1, 0:c-1]
 
-        cyclic_range = 1.0 if not matrix_dim.cyclic else matrix_dim.range
         if cyclic_range is not None: # Wrap into the specified range
             # Convert negative differences to an equivalent positive value
             dx = dx % cyclic_range
             dy = dy % cyclic_range
             #
-            # Make it increase as gradient reaches the halfway point,
-            # and decrease from there
-            dx = 0.5 * cyclic_range - np.abs(dx - 0.5 * cyclic_range)
-            dy = 0.5 * cyclic_range - np.abs(dy - 0.5 * cyclic_range)
+            # Prefer small jumps
+            dx_negatives = dx - cyclic_range
+            dy_negatives = dy - cyclic_range
+            dx = np.where(np.abs(dx_negatives)<dx, dx_negatives, dx)
+            dy = np.where(np.abs(dy_negatives)<dy, dy_negatives, dy)
 
         return Image(np.sqrt(dx * dx + dy * dy), matrix.bounds, group=self.p.group)
 
