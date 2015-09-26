@@ -16,6 +16,7 @@ from ...core import Store, HoloMap, Overlay
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .callbacks import Callbacks
 from .plot import BokehPlot
 from .util import mpl_to_bokeh
 
@@ -35,6 +36,10 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
+
+    callbacks = param.ClassSelector(class_=Callbacks, doc="""
+        Callbacks object defining any javascript callbacks applied
+        to the plot.""")
 
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
@@ -292,6 +297,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  for axis in ['x', 'y']}
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
+        if self.callbacks:
+            self.callbacks(self)
 
 
     def _process_legend(self):

@@ -1,0 +1,294 @@
+from collections import defaultdict
+
+import numpy as np
+from bokeh.models import CustomJS, PlotObject
+from bokeh.protocol import serialize_json
+
+import param
+
+from .plot import BokehPlot
+
+
+class Callback(param.ParameterizedFunction):
+    """
+    Callback functions provide an easy way to interactively modify
+    the plot based on changes to the bokeh axis ranges, data sources,
+    tools or widgets.
+
+    The data sent to the Python callback from javascript is defined
+    by the plot attributes and callback_obj attributes and optionally
+    custom javascript code.
+
+    The user should define any plot_attributes and cb_attributes
+    he wants access to, which will be supplied in the form of a
+    dictionary to the call method. The call method can then apply
+    any processing depending on the callback data and return the
+    modified bokeh plot objects.
+    """
+
+    callback_obj = param.ClassSelector(class_=(PlotObject,), doc="""
+        Bokeh PlotObject the callback is applied to.""")
+
+    code = param.String(default="", doc="""
+        Custom javascript code executed on the callback. The code
+        has access to the plot, source and cb_obj and may modify
+        the data javascript object sent back to Python.""")
+
+    current_data = param.Dict(default={})
+
+    plot_attributes = param.Dict(default={}, doc="""
+        Plot attributes returned to the Python callback.""")
+
+    plot = param.ClassSelector(class_=(BokehPlot,), doc="""
+        The HoloViews plot object the callback applies to.""")
+
+    streams = param.List(default=[], doc="""
+        List of streams attached to this callback.""")
+
+    JS_callback = """
+        function callback(msg){
+          if (msg.msg_type == "execute_result") {
+            var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
+            $.each(data, function(id, value) {
+              var ds = Bokeh.Collections(value.type).get(id);
+                if (ds != undefined) {
+                  ds.set(value.data);
+                }
+            });
+          }
+        }
+        callbacks = {iopub: {output: callback}};
+        var data = {};
+    """
+
+    IPython_callback = """
+        var argstring = JSON.stringify(data);
+        var kernel = IPython.notebook.kernel;
+        var cmd = "Callbacks.callbacks[{callback_id}].update(" + argstring + ")";
+        var pyimport = "from holoviews.plotting.bokeh import Callbacks;";
+        kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
+    """
+
+    def __call__(self, data):
+        """
+        The call method can modify any bokeh plot object
+        depending on the supplied data dictionary. It
+        should return the modified plot objects as a list.
+        """
+        return []
+
+
+    def update(self, data, chained=False):
+        """
+        The update method is called by the javascript callback
+        with the supplied data and will return the json serialized
+        string representation of the changes to the Bokeh plot.
+        When chained=True it will return a list of the plot objects
+        to be updated, allowing chaining of callback operations.
+        """
+        if self.current_data == data:
+            return []
+        self.current_data = data
+
+        objects = self(data)
+        for stream in self.streams:
+            objects += stream.update(data, True)
+
+        if chained:
+            return objects
+        else:
+            return self.serialize(objects)
+
+
+    def serialize(self, objects):
+        """
+        Serializes any Bokeh plot objects passed to it as a list.
+        """
+        data = {}
+        for obj in objects:
+            json = obj.vm_serialize(changed_only=True)
+            data[obj.ref['id']] = {'type': obj.ref['type'], 'data': json}
+        return serialize_json(data)
+
+
+
+class DownsampleImage(Callback):
+    """
+    Downsamples any Image plot to the specified
+    max_width and max_height by slicing the
+    Image to the specified x_range and y_range
+    and then finding step values matching the
+    constraints.
+    """
+
+    max_width = param.Integer(default=250, doc="""
+        Maximum plot width in pixels after slicing and downsampling.""")
+
+    max_height = param.Integer(default=250, doc="""
+        Maximum plot height in pixels after slicing and downsampling.""")
+
+    plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
+                                          'y_range': ['start', 'end']})
+
+    def __call__(self, data):
+        xstart, xend = data['x_range']
+        ystart, yend = data['y_range']
+
+        ranges = self.plot.current_ranges
+        element = self.plot.current_frame
+
+        # Slice Element to match selected ranges
+        xdim, ydim = element.dimensions('key', True)
+        sliced = element.select(**{xdim: (xstart, xend),
+                                   ydim: (ystart, yend)})
+
+        # Get dimensions of sliced element
+        shape = sliced.data.shape
+        max_shape = (self.max_height, self.max_width)
+
+        #Find minimum downsampling to fit requirement
+        steps = []
+        for s, max_s in zip(shape, max_shape):
+            step = 1
+            while s/step > max_s: step += 1
+            steps.append(step)
+        resampled = sliced.clone(sliced.data[::steps[0], ::steps[1]])
+
+        # Update data source
+        new_data = self.plot.get_data(resampled, ranges)[0]
+        source = self.plot.handles['source']
+        source.data.update(new_data)
+        return [source]
+
+
+
+class DownsampleColumns(Callback):
+    """
+    Downsamples any column based Element by randomizing
+    the rows and updating the ColumnDataSource with
+    up to max_samples.
+    """
+
+    max_samples = param.Integer(default=800)
+
+    plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
+                                          'y_range': ['start', 'end']})
+
+    def __call__(self, data):
+        xstart, xend = data['x_range']
+        ystart, yend = data['y_range']
+
+        element = self.plot.current_frame
+        ranges  = self.plot.current_ranges
+
+        # Randomize element samples
+        np.random.seed(42)
+        inds = np.random.choice(len(element), len(element), False)
+        data = element.data[inds, :]
+        randomized = element.clone(data)
+
+        # Slice element to current ranges
+        xdim, ydim = element.dimensions(label=True)[0:2]
+        sliced = randomized.select(**{xdim: (xstart, xend),
+                                      ydim: (ystart, yend)})
+        sliced = sliced.clone(sliced.data[:self.max_samples, :])
+
+        # Update data source
+        new_data = self.plot.get_data(sliced, ranges)[0]
+        source = self.plot.handles['source']
+        source.data.update(new_data)
+        return [source]
+
+
+class Callbacks(param.Parameterized):
+    """
+    Callbacks allows defining a number of callbacks to be applied
+    to a plot. Callbacks should
+    """
+
+    ranges = param.ClassSelector(class_=(CustomJS, Callback, list), doc="""
+        Callback applied to plot x_range and y_range, data will
+        supply 'x_range' and 'y_range' lists of the form [low, high].""")
+
+    x_range = param.ClassSelector(class_=(CustomJS, Callback, list), doc="""
+        Callback applied to plot x_range, data will supply
+        'x_range' as a list of the form [low, high].""")
+
+    y_range = param.ClassSelector(class_=(CustomJS, Callback, list), doc="""
+        Callback applied to plot x_range, data will supply
+        'y_range' as a list of the form [low, high].""")
+
+    callbacks = {}
+
+    plot_callbacks = defaultdict(list)
+
+    def initialize_callback(self, cb_obj, plot, callback):
+        """
+        Initialize the callback with the appropriate data
+        and javascript, execute once and return bokeh CustomJS
+        object to be installed on the appropriate plot object.
+        """
+        pycallback = callback.instance(callback_obj=cb_obj, plot=plot)
+
+        # Register the callback to allow calling it from JS
+        cb_id = id(pycallback)
+        self.callbacks[cb_id] = pycallback
+        self.plot_callbacks[id(cb_obj)].append(pycallback)
+
+        # Generate callback JS code to get all the requested data
+        self_callback = Callback.IPython_callback.format(callback_id=cb_id)
+        code = ''
+        for k, v in pycallback.plot_attributes.items():
+            format_kwargs = dict(key=repr(k), attrs=repr(v))
+            code += "data[{key}] = {attrs}.map(function(attr) {{"\
+                    "  return plot.get({key}).get(attr)}})\n".format(**format_kwargs)
+        code = Callback.JS_callback + code + pycallback.code + self_callback
+
+        # Generate CustomJS object
+        customjs = CustomJS(args=dict(source=plot.handles['source'],
+                                      plot=plot.state), code=code)
+
+        # Get initial callback data and call to initialize
+        data = {}
+        for k, attrs in pycallback.plot_attributes.items():
+            data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
+                       for attr in attrs]
+        pycallback(data)
+
+        return customjs, pycallback
+
+
+    def _chain_callbacks(self, plot, cb_obj, callbacks):
+        """
+        Initializes new callbacks and chains them to
+        existing callbacks, allowing multiple callbacks
+        on the same plot object.
+        """
+        other_callbacks = self.plot_callbacks[id(cb_obj)]
+        chain_callback = other_callbacks[-1] if other_callbacks else None
+        if not isinstance(callbacks, list): callbacks = [callbacks]
+        for callback in callbacks:
+            if isinstance(callback, Callback):
+                jscb, pycb = self.initialize_callback(cb_obj, plot, callback)
+                if chain_callback:
+                    chain_callback.streams.append(pycb)
+                    chain_callback = pycb
+                else:
+                    cb_obj.callback = jscb
+                    chain_callback = pycb
+            else:
+                cb_obj.callback = callback
+
+
+    def __call__(self, plot):
+        """
+        Initialize callbacks, chaining them as necessary
+        and setting them on the appropriate plot object.
+        """
+        # Initialize range callbacks
+        xrange_cb = self.ranges if self.ranges else self.x_range
+        yrange_cb = self.ranges if self.ranges else self.y_range
+        if xrange_cb:
+            self._chain_callbacks(plot, plot.state.x_range, xrange_cb)
+        if yrange_cb:
+            self._chain_callbacks(plot, plot.state.y_range, yrange_cb)

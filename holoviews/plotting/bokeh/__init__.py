@@ -1,15 +1,16 @@
 from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
-from ...element import (Curve, Points, Scatter, Image, Raster, Path,
+from ...element import (Curve, Points, Scatter, Image, Raster,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
                         ErrorBars, Text, HLine, VLine, Spline,
                         Table, ItemTable, Surface, Scatter3D)
-from ...core.options import Options, Cycle, OptionTree
+from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
 from ..mpl import SurfacePlot, Scatter3DPlot
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
+from .callbacks import Callbacks
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     AdjointHistogramPlot)
