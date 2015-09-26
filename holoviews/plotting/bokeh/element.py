@@ -130,6 +130,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  show_labels=['x', 'y'], **params):
         self.invert_axes = invert_axes
         self.show_labels = show_labels
+        self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
 
@@ -334,6 +335,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         key = self.keys[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
+        self.current_ranges = ranges
 
         # Initialize plot, source and glyph
         if plot is None:
@@ -371,6 +373,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
+        self.current_ranges = ranges
 
         plot = self.handles['plot']
         source = self.handles['source']
