@@ -43,5 +43,5 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = range_item.last
     if isinstance(range_item, CompositeOverlay):
         range_item = [ov for ov in range_item
-                      if dim in ov.dimensions('value', label=True)][0]
+                      if dim in ov.dimensions('all', label=True)][0]
     return range_item, main_range, dim

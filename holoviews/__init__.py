@@ -19,7 +19,7 @@ from .core.layout import *                              # pyflakes:ignore (API i
 from .core.element import *                             # pyflakes:ignore (API import)
 from .core.overlay import *                             # pyflakes:ignore (API import)
 from .core.tree import *                                # pyflakes:ignore (API import)
-
+from .core.spaces import *                              # pyflakes:ignore (API import)
 from .interface import *                                             # pyflakes:ignore (API import)
 from .operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
 from .element import *                                               # pyflakes:ignore (API import)

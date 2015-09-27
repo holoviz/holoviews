@@ -145,8 +145,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return tools
 
 
-    def _axes_props(self, plots, element, ranges):
-        xlabel, ylabel, zlabel = self._axis_labels(element, plots)
+    def _axes_props(self, plots, subplots, element, ranges):
+        xlabel, ylabel, zlabel = self._axis_labels(element, subplots)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
 
@@ -202,11 +202,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         figure and axis attributes including axes types, labels,
         titles and plot height and width.
         """
-
         element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
 
-        axis_types, labels, plot_ranges = self._axes_props(plots, element, ranges)
+        axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
         xlabel, ylabel, zlabel = labels
         x_axis_type, y_axis_type = axis_types
         tools = self._init_tools(element)
@@ -227,7 +226,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot_props = dict(plot_height=self.height, plot_width=self.width,
                           title_text_color='black', **title_font)
         if self.show_title:
-            plot_props['title'] = self._format_title(key, separator='')
+            plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
             plot_props['background_fill'] = self.bgcolor
         if self.border is not None:
