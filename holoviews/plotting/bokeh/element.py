@@ -297,8 +297,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  for axis in ['x', 'y']}
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
-        if self.callbacks:
-            self.callbacks(self)
 
 
     def _process_legend(self):
@@ -343,6 +341,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
         self.current_ranges = ranges
+        self.current_frame = element
+        self.current_key = key
 
         # Initialize plot, source and glyph
         if plot is None:
@@ -363,13 +363,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Update plot, source and glyph
         if not self.overlaid:
             self._update_plot(key, plot, element)
+        if self.callbacks:
+            self.callbacks(self)
         self._process_legend()
         self.drawn = True
 
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None):
         """
         Updates an existing plot with data corresponding
         to the key.
