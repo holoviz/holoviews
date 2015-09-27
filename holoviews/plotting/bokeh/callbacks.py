@@ -29,6 +29,9 @@ class Callback(param.ParameterizedFunction):
     callback_obj = param.ClassSelector(class_=(PlotObject,), doc="""
         Bokeh PlotObject the callback is applied to.""")
 
+    cb_attributes = param.List(default=[], doc="""
+        Callback attributes returned to the Python callback.""")
+
     code = param.String(default="", doc="""
         Custom javascript code executed on the callback. The code
         has access to the plot, source and cb_obj and may modify
@@ -237,11 +240,23 @@ class Callbacks(param.Parameterized):
 
         # Generate callback JS code to get all the requested data
         self_callback = Callback.IPython_callback.format(callback_id=cb_id)
-        code = ''
+        data, code = {}, ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
-            code += "data[{key}] = {attrs}.map(function(attr) {{"\
-                    "  return plot.get({key}).get(attr)}})\n".format(**format_kwargs)
+            if v is None:
+                code += "data[{key}] = plot.get({key});\n".format(**format_kwargs)
+                data[k] = plot.state.vm_props().get(k)
+            else:
+                code += "data[{key}] = {attrs}.map(function(attr) {{" \
+                        "  return plot.get({key}).get(attr)" \
+                        "}})\n".format(**format_kwargs)
+                data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
+                           for attr in v]
+        if pycallback.cb_attributes:
+            code += "data['cb_obj'] = {attrs}.map(function(attr) {{"\
+                    "  return cb_obj.get(attr)}});\n".format(attrs=repr(pycallback.cb_attributes))
+            data['cb_obj'] = [pycallback.callback_obj.vm_props().get(attr)
+                              for attr in pycallback.cb_attributes]
         code = Callback.JS_callback + code + pycallback.code + self_callback
 
         # Generate CustomJS object
@@ -249,10 +264,6 @@ class Callbacks(param.Parameterized):
                                       plot=plot.state), code=code)
 
         # Get initial callback data and call to initialize
-        data = {}
-        for k, attrs in pycallback.plot_attributes.items():
-            data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
-                       for attr in attrs]
         pycallback(data)
 
         return customjs, pycallback
