@@ -53,15 +53,21 @@ class RGBPlot(RasterPlot):
     def get_data(self, element, ranges=None):
         data, mapping = super(RGBPlot, self).get_data(element, ranges)
         img = data['image'][0]
+
         if img.ndim == 3:
             if img.shape[2] == 3: # alpha channel not included
-                img = np.dstack([img, np.ones(img.shape[:2])])
-            img = (img*255).astype(np.uint8)
+                alpha = np.ones(img.shape[:2])
+                if img.dtype.name == 'uint8':
+                    alpha = (alpha*255).astype('uint8')
+                img = np.dstack([img, alpha])
+            if img.dtype.name != 'uint8':
+                img = (img*255).astype(np.uint8)
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
             data['image'] = [img]
         return data, mapping
+
 
     def _glyph_properties(self, plot, element, source, ranges):
         return ElementPlot._glyph_properties(self, plot, element,
