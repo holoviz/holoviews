@@ -71,8 +71,7 @@ class ItemTable(Element):
 
 
     def dimension_values(self, dimension):
-        if isinstance(dimension, int):
-            dimension = self._cached_index_names[dimension]
+        dimension = self.get_dimension(dimension).name
         if dimension in self.dimensions('value', label=True):
             return [self.data.get(dimension, np.NaN)]
         else:
@@ -216,6 +215,8 @@ class TableConversion(object):
         if vdims is None:
             vdims = self._table._cached_value_names
         elif vdims and not isinstance(vdims, list): vdims = [vdims]
+        kdims = [kdim.name if isinstance(kdim, Dimension) else kdim for kdim in kdims]
+        vdims = [vdim.name if isinstance(vdim, Dimension) else vdim for vdim in vdims]
         if (any(kd in self._table._cached_value_names for kd in kdims) or
             any(vd in self._table._cached_index_names for vd in vdims)):
             new_kdims = [kd for kd in self._table._cached_index_names

@@ -231,13 +231,13 @@ class LegendPlugin(MplD3Plugin):
                 if isinstance(view, NdOverlay):
                     labels.append(str(keys[idx]))
                 else:
-                    labels.append(subplot.map.last.label)
+                    labels.append(subplot.hmap.last.label)
             elif isinstance(subplot, CurvePlot):
                 line_segments.append(subplot.handles['line_segment'])
                 if isinstance(view, NdOverlay):
                     labels.append(str(keys[idx]))
                 else:
-                    labels.append(subplot.map.last.label)
+                    labels.append(subplot.hmap.last.label)
 
         tooltip = plugins.InteractiveLegendPlugin(line_segments, labels,
                                                   alpha_sel=self.alpha_sel,

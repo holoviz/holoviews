@@ -1,11 +1,13 @@
-import uuid, json
+import uuid, json, warnings
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 try:
-    from matplotlib.backends.backend_nbagg import CommSocket
-except:
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from matplotlib.backends.backend_nbagg import CommSocket
+except ImportError:
     CommSocket = object
 
 class WidgetCommSocket(CommSocket):
@@ -24,7 +26,13 @@ class WidgetCommSocket(CommSocket):
         self.html = "<div id=%r></div>" % self.uuid
 
     def start(self):
-        from IPython.kernel.comm import Comm
+        try:
+            # Jupyter/IPython 4.0
+            from ipykernel.comm import Comm
+        except:
+            # IPython <=3.0
+            from IPython.kernel.comm import Comm
+
         try:
             self.comm = Comm('matplotlib', data={'id': self.uuid})
         except AttributeError:
@@ -39,7 +47,10 @@ class MPLWidget(NdWidget):
     CDN = param.Dict(default=dict(NdWidget.CDN, mpld3='https://mpld3.github.io/js/mpld3.v0.3git.js',
                                   d3='https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'))
 
-    template = param.String(default='widget.jinja')
+    extensionjs = param.String(default='mplwidgets.js', doc="""
+        Optional javascript extension file for a particular backend.""")
+
+    template = param.String(default='mplwidgets.jinja')
 
     def __init__(self, plot, renderer=None, **params):
         super(MPLWidget, self).__init__(plot, renderer, **params)
@@ -80,13 +91,9 @@ class MPLWidget(NdWidget):
             self.manager.display_js()
             frames = {0: self.comm.html}
         elif self.embed:
-            frames = self.frames
+            frames = super(MPLWidget, self).get_frames()
         else:
             frames = {0: self._plot_figure(0)}
-            if self.renderer.mode == 'mpld3':
-                self.frames[0] = frames
-            else:
-                self.frames.update(frames)
         return self.encode_frames(frames)
 
 
@@ -107,8 +114,8 @@ class MPLWidget(NdWidget):
         self.comm = WidgetCommSocket(self.manager)
 
 
-class SelectionWidget(MPLWidget, SelectionWidget):
+class MPLSelectionWidget(MPLWidget, SelectionWidget):
     pass
 
-class ScrubberWidget(MPLWidget, ScrubberWidget):
+class MPLScrubberWidget(MPLWidget, ScrubberWidget):
     pass

@@ -3,6 +3,7 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+import re
 from operator import itemgetter
 
 try:
@@ -12,7 +13,7 @@ except:
 
 import param
 
-from ..core.util import sanitize_identifier, max_range, find_range
+from ..core.util import basestring, sanitize_identifier, max_range, find_range
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -76,7 +77,7 @@ class Dimension(param.Parameterized):
         may be an inbuilt constructor (such as int, str, float) or a
         custom class object.""")
 
-    unit = param.String(default=None, doc="""
+    unit = param.String(default=None, allow_None=True, doc="""
         Optional unit string associated with the Dimension. For
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
@@ -131,12 +132,15 @@ class Dimension(param.Parameterized):
         own_type = type(value) if self.type is None else self.type
         formatter = self.formatter if self.formatter else self.type_formatters.get(own_type)
         if formatter:
-            try:
-                value = formatter(value)
-            except:
-                self.warning("Formatting could not be applied for Dimension "
-                             "%s" % self.name)
+            if callable(formatter):
+                return formatter(value)
+            elif isinstance(formatter, basestring):
+                if re.findall(r"\{(\w+)\}", formatter):
+                    return formatter.format(value)
+                else:
+                    return formatter % value
         return value
+
 
     def __repr__(self):
         return self.pprint()
@@ -151,6 +155,7 @@ class Dimension(param.Parameterized):
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
         return self.format_string.format(name=self.name, val=value, unit=unit)
+
 
     def __hash__(self):
         """
@@ -517,16 +522,21 @@ class Dimensioned(LabelledData):
 
 
     def _valid_dimensions(self, dimensions):
-        "Validates key dimension input"
-        if not dimensions:
-            return dimensions
+        """Validates key dimension input
+        
+        Returns kdims if no dimensions are specified"""
+        if dimensions is None:
+            dimensions = self.kdims
         elif not isinstance(dimensions, list):
             dimensions = [dimensions]
 
+        valid_dimensions = []
         for dim in dimensions:
+            if isinstance(dim, Dimension): dim = dim.name
             if dim not in self._cached_index_names:
                 raise Exception("Supplied dimensions %s not found." % dim)
-        return dimensions
+            valid_dimensions.append(dim)
+        return valid_dimensions
 
 
     @property
@@ -569,6 +579,8 @@ class Dimensioned(LabelledData):
     def get_dimension(self, dimension, default=None):
         "Access a Dimension object by name or index."
         all_dims = self.dimensions()
+        if isinstance(dimension, Dimension):
+            dimension = dimension.name
         if isinstance(dimension, int) and dimension < len(all_dims):
             return all_dims[dimension]
         else:
@@ -579,6 +591,7 @@ class Dimensioned(LabelledData):
         """
         Returns the index of the requested dimension.
         """
+        if isinstance(dim, Dimension): dim = dim.name
         if isinstance(dim, int):
             if dim < len(self.dimensions()):
                 return dim

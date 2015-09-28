@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from ...core.util import match_spec
-from .element import ElementPlot
+from .element import ElementPlot, ColorbarPlot
 
 
 class PathPlot(ElementPlot):
@@ -16,29 +16,29 @@ class PathPlot(ElementPlot):
         super(PathPlot, self).__init__(*args, **params)
 
     def initialize_plot(self, ranges=None):
-        lines = self.map.last
+        lines = self.hmap.last
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(lines, ranges)
         style = self.style[self.cyclic_index]
         label = lines.label if self.show_legend else ''
         line_segments = LineCollection(lines.data, label=label,
                                        zorder=self.zorder, **style)
-        self.handles['line_segments'] = line_segments
-        self.handles['legend_handle'] = line_segments
+        self.handles['artist'] = line_segments
         self.handles['axis'].add_collection(line_segments)
 
         return self._finalize_axis(key, ranges=ranges)
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        self.handles['line_segments'].set_paths(element.data)
+        artist = self.handles['artist']
+        artist.set_paths(element.data)
         visible = self.style[self.cyclic_index].get('visible', True)
-        self.handles['line_segments'].set_visible(visible)
+        artist.set_visible(visible)
 
 
 
-class PolygonPlot(ElementPlot):
+class PolygonPlot(ColorbarPlot):
     """
     PolygonPlot draws the polygon paths in the supplied Polygons
     object. If the Polygon has an associated value the color of
@@ -47,17 +47,14 @@ class PolygonPlot(ElementPlot):
     for non-finite values.
     """
 
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to draw a colorbar.""")
-
     style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
         axis = self.handles['axis']
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
         collection, polys = self._create_polygons(element, ranges)
         axis.add_collection(collection)
@@ -66,7 +63,7 @@ class PolygonPlot(ElementPlot):
         if self.colorbar:
             self._draw_colorbar(collection, element)
 
-        self.handles['polygons'] = collection
+        self.handles['artist'] = collection
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -90,7 +87,7 @@ class PolygonPlot(ElementPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         vdim = element.vdims[0]
-        collection = self.handles['polygons']
+        collection = self.handles['artist']
         value = element.level
 
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
@@ -98,7 +95,7 @@ class PolygonPlot(ElementPlot):
             collection.remove()
             collection, polys = self._create_polygons(element, ranges)
             self.handles['polys'] = polys
-            self.handles['polygons'] = collection
+            self.handles['artist'] = collection
             axis.add_collection(collection)
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))

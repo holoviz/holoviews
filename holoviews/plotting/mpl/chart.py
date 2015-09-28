@@ -10,14 +10,15 @@ import param
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
 from ...core.util import match_spec
 from ...element import Points, Raster, Polygons
-from .element import ElementPlot, LegendPlot
+from ..util import compute_sizes, get_sideplot_ranges
+from .element import ElementPlot, ColorbarPlot, LegendPlot
 
 
 class ChartPlot(ElementPlot):
 
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
-        key_dim = self.map.last.get_dimension(0)
+        key_dim = self.hmap.last.get_dimension(0)
         self.cyclic_range = key_dim.range if key_dim.cyclic else None
 
 
@@ -107,11 +108,11 @@ class CurvePlot(ChartPlot):
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         # Create xticks and reorder data if cyclic
@@ -129,17 +130,17 @@ class CurvePlot(ChartPlot):
         line_segment = axis.plot(data[:, 0], data[:, 1], label=legend,
                                  zorder=self.zorder, **style)[0]
 
-        self.handles['line_segment'] = line_segment
-        self.handles['legend_handle'] = line_segment
+        self.handles['artist'] = line_segment
         return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
     def update_handles(self, axis, element, key, ranges=None):
         data = element.data
+        artist = self.handles['artist']
         if self.cyclic_range is not None:
             data = self._cyclic_curves(element)
-        self.handles['line_segment'].set_xdata(data[:, 0])
-        self.handles['line_segment'].set_ydata(data[:, 1])
+        artist.set_xdata(data[:, 0])
+        artist.set_ydata(data[:, 1])
 
 
 
@@ -151,9 +152,6 @@ class ErrorPlot(ChartPlot):
     plot option.
     """
 
-    horizontal = param.Boolean(default=False, doc="""
-       Whether to draw horizontal or vertical error bars.""")
-
     style_opts = ['ecolor', 'elinewidth', 'capsize', 'capthick',
                   'barsabove', 'lolims', 'uplims', 'xlolims',
                   'errorevery', 'xuplims', 'alpha', 'linestyle',
@@ -163,17 +161,16 @@ class ErrorPlot(ChartPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
                             zorder=self.zorder)
-        kwarg = 'xerr' if self.horizontal else 'yerr'
-        error_kwargs[kwarg] = element.data[:, 2:4].T
+        error_kwargs['yerr'] = element.data[:, 2:4].T
         _, (bottoms, tops), verts = axis.errorbar(element.data[:, 0],
                                                   element.data[:, 1],
                                                   **error_kwargs)
@@ -226,11 +223,11 @@ class SpreadPlot(ChartPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
         self.update_handles(axis, element, key, ranges)
 
@@ -276,15 +273,15 @@ class HistogramPlot(ChartPlot):
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
-        val_dim = self.map.last.get_dimension(1)
+        val_dim = self.hmap.last.get_dimension(1)
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
     def initialize_plot(self, ranges=None):
-        hist = self.map.last
+        hist = self.hmap.last
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         el_ranges = match_spec(hist, ranges)
 
         # Get plot ranges and values
@@ -301,8 +298,7 @@ class HistogramPlot(ChartPlot):
         style = self.style[self.cyclic_index]
         legend = hist.label if self.show_legend else ''
         bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, label=legend, **style)
-        self.handles['bars'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
-        self.handles['legend_handle'] = bars
+        self.handles['artist'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
@@ -370,7 +366,7 @@ class HistogramPlot(ChartPlot):
         Update all the artists in the histogram. Subclassable to
         allow updating of further artists.
         """
-        plot_vals = zip(self.handles['bars'], edges, hvals, widths)
+        plot_vals = zip(self.handles['artist'], edges, hvals, widths)
         for bar, edge, height, width in plot_vals:
             if self.orientation == 'vertical':
                 bar.set_y(edge)
@@ -440,7 +436,7 @@ class SideHistogramPlot(HistogramPlot):
 
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
         super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
-        self._update_plot(n, element, self.handles['bars'], lims, ranges)
+        self._update_plot(n, element, self.handles['artist'], lims, ranges)
 
 
     def _update_plot(self, key, element, bars, lims, ranges):
@@ -453,24 +449,13 @@ class SideHistogramPlot(HistogramPlot):
         main = self.adjoined.main
         y0, y1 = element.range(1)
         offset = self.offset * y1
-
-        hist_dim = element.get_dimension(0).name
-        range_item = main
-        if isinstance(main, HoloMap):
-            if issubclass(main.type, CompositeOverlay):
-                range_item = [hm for hm in main.split_overlays()[1]
-                              if hist_dim in hm.dimensions('all', label=True)][0]
+        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
+        if isinstance(range_item, (Raster, Points, Polygons)):
+            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
+            cmap = cm.get_cmap(style.get('cmap'))
+            main_range = style.get('clims', main_range)
         else:
-            range_item = HoloMap({0: main}, kdims=['Frame'])
-        ranges = match_spec(range_item.last, ranges)
-        if hist_dim in ranges:
-            main_range = ranges[hist_dim]
-        else:
-            framewise = self.lookup_options(range_item.last, 'norm').options.get('framewise')
-            if framewise and range_item.get(key, False):
-                main_range = range_item.get(key, False).range(hist_dim)
-            else:
-                main_range = range_item.range(hist_dim)
+            cmap = None
 
         if offset and ('offset_line' not in self.handles):
             self.handles['offset_line'] = self.offset_linefn(offset,
@@ -479,23 +464,8 @@ class SideHistogramPlot(HistogramPlot):
         elif offset:
             self._update_separator(offset)
 
-
-        # If .main is an NdOverlay or a HoloMap of Overlays get the correct style
-        if isinstance(range_item, HoloMap):
-            range_item = range_item.last
-        if isinstance(range_item, CompositeOverlay):
-            range_item = [ov for ov in range_item
-                          if hist_dim in ov.dimensions('value', label=True)][0]
-
-        if isinstance(range_item, (Raster, Points, Polygons)):
-            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
-            cmap = cm.get_cmap(style.get('cmap'))
-            main_range = style.get('clims', main_range)
-        else:
-            cmap = None
-
         if cmap is not None:
-            self._colorize_bars(cmap, bars, main_range)
+            self._colorize_bars(cmap, bars, element, main_range, dim)
         return bars
 
 
@@ -505,7 +475,7 @@ class SideHistogramPlot(HistogramPlot):
         return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
 
 
-    def _colorize_bars(self, cmap, bars, main_range):
+    def _colorize_bars(self, cmap, bars, element, main_range, dim):
         """
         Use the given cmap to color the bars, applying the correct
         color ranges as necessary.
@@ -513,14 +483,12 @@ class SideHistogramPlot(HistogramPlot):
         vertical = (self.orientation == 'vertical')
         cmap_range = main_range[1] - main_range[0]
         lower_bound = main_range[0]
-        for bar in bars:
+        colors = np.array(element.dimension_values(dim))
+        colors = (colors - lower_bound) / (cmap_range)
+        for c, bar in zip(colors, bars):
             bar_bin = bar.get_y() if vertical else bar.get_x()
             width = bar.get_height() if vertical else bar.get_width()
-            try:
-                color_val = (bar_bin+width/2.-lower_bound)/cmap_range
-            except:
-                color_val = 0
-            bar.set_facecolor(cmap(color_val))
+            bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
 
@@ -540,14 +508,11 @@ class SideHistogramPlot(HistogramPlot):
                 offset_line.set_ydata(offset)
 
 
-class PointPlot(ChartPlot):
+class PointPlot(ChartPlot, ColorbarPlot):
     """
     Note that the 'cmap', 'vmin' and 'vmax' style arguments control
     how point magnitudes are rendered to different colors.
     """
-
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to add a colorbar to the plot.""")
 
     color_index = param.Integer(default=3, doc="""
       Index of the dimension from which the color will the drawn""")
@@ -566,26 +531,30 @@ class PointPlot(ChartPlot):
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
 
+    size_fn = param.Callable(default=np.abs, doc="""
+      Function applied to size values before applying scaling,
+      to remove values lower than zero.""")
+
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
 
     def initialize_plot(self, ranges=None):
-        points = self.map.last
+        points = self.hmap.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
 
         ndims = points.data.shape[1]
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
-        sz = points.data[:, self.size_index] if self.size_index < ndims else None
         cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
         style = self.style[self.cyclic_index]
-        if sz is not None and self.scaling_factor > 1:
-            style['s'] = self._compute_size(sz, style)
+        if self.size_index < ndims and self.scaling_factor > 1:
+            style['s'] = self._compute_size(points, style)
+
         color = style.pop('color', None)
         if cs is not None:
             style['c'] = cs
@@ -595,42 +564,35 @@ class PointPlot(ChartPlot):
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
                                    edgecolors=edgecolor, **style)
-        self.handles['paths'] = scatterplot
-        self.handles['legend_handle'] = scatterplot
+        self.handles['artist'] = scatterplot
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
             scatterplot.set_clim(clims)
-            if self.colorbar:
-                self._draw_colorbar(scatterplot, points, val_dim)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
-    def _compute_size(self, sizes, opts):
+    def _compute_size(self, element, opts):
+        sizes = element.data[:, self.size_index]
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        sizes = np.ma.array(sizes, mask=sizes<=0)
-        return (ms*self.scaling_factor**sizes)
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        paths = self.handles['paths']
+        paths = self.handles['artist']
         paths.set_offsets(element.data[:, 0:2])
         ndims = element.data.shape[1]
-        if ndims > 2:
-            sz = element.data[:, self.size_index] if self.size_index < ndims else None
-            cs = element.data[:, self.color_index] if self.color_index < ndims else None
-            opts = self.style[0]
-
-            if sz is not None and self.scaling_factor > 1:
-                paths.set_sizes(self._compute_size(sz, opts))
-            if cs is not None:
-                val_dim = element.dimensions(label=True)[self.color_index]
-                ranges = self.compute_ranges(self.map, key, ranges)
-                ranges = match_spec(element, ranges)
-                paths.set_clim(ranges[val_dim])
-                paths.set_array(cs)
+        dims = element.dimensions(label=True)
+        if self.size_index < ndims:
+            opts = self.style[self.cyclic_index]
+            paths.set_sizes(self._compute_size(element, opts))
+        if self.color_index < ndims:
+            cs = element.data[:, self.color_index]
+            val_dim = dims[self.color_index]
+            paths.set_clim(ranges[val_dim])
+            paths.set_array(cs)
 
 
 
@@ -672,7 +634,7 @@ class VectorFieldPlot(ElementPlot):
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
-        self._min_dist = self._get_map_info(self.map)
+        self._min_dist = self._get_map_info(self.hmap)
 
 
     def _get_map_info(self, vmap):
@@ -718,13 +680,13 @@ class VectorFieldPlot(ElementPlot):
 
 
     def initialize_plot(self, ranges=None):
-        vfield = self.map.last
+        vfield = self.hmap.last
         axis = self.handles['axis']
 
         colorized = self.color_dim is not None
         kwargs = self.style[self.cyclic_index]
         input_scale = kwargs.pop('scale', 1.0)
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(vfield, ranges)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale, ranges)
 
@@ -751,23 +713,23 @@ class VectorFieldPlot(ElementPlot):
             quiver.set_clim(ranges[magnitude_dim])
 
         self.handles['axis'].add_collection(quiver)
-        self.handles['quiver'] = quiver
-        self.handles['legend_handle'] = quiver
+        self.handles['artist'] = quiver
         self.handles['input_scale'] = input_scale
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        self.handles['quiver'].set_offsets(element.data[:,0:2])
+        artist = self.handles['artist']
+        artist.set_offsets(element.data[:,0:2])
         input_scale = self.handles['input_scale']
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
         xs, ys, angles, lens, colors, scale = self._get_info(element, input_scale, ranges)
 
         # Set magnitudes, angles and colors if supplied.
-        quiver = self.handles['quiver']
+        quiver = self.handles['artist']
         quiver.U = lens
         quiver.angles = angles
         if self.color_dim is not None:
@@ -828,15 +790,15 @@ class BarPlot(LegendPlot):
         Get unique index value for each bar
         """
         gi, ci, si =self.group_index, self.category_index, self.stack_index
-        ndims = self.map.last.ndims
-        dims = self.map.last.kdims
+        ndims = self.hmap.last.ndims
+        dims = self.hmap.last.kdims
         dimensions = []
         values = {}
         for vidx, vtype in zip([gi, ci, si], self._dimensions):
             if vidx < ndims:
                 dim = dims[vidx]
                 dimensions.append(dim)
-                vals = self.map.dimension_values(dim.name)
+                vals = self.hmap.dimension_values(dim.name)
                 params = dict(kdims=[dim])
             else:
                 dimensions.append(None)
@@ -880,16 +842,15 @@ class BarPlot(LegendPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         vdim = element.vdims[0]
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['bars'], xticks, xlabel = self._create_bars(axis, element)
-        self.handles['legend_handle'] = self.handles['bars']
+        self.handles['artist'], xticks, xlabel = self._create_bars(axis, element)
         return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
 
 

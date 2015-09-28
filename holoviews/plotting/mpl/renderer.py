@@ -18,7 +18,7 @@ from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import SelectionWidget, ScrubberWidget
+from .widgets import MPLSelectionWidget, MPLScrubberWidget
 
 
 class MPLRenderer(Renderer):
@@ -73,8 +73,8 @@ class MPLRenderer(Renderer):
     counter = 0
 
     # Define appropriate widget classes
-    widgets = {'scrubber': ScrubberWidget,
-               'selection': SelectionWidget}
+    widgets = {'scrubber': MPLScrubberWidget,
+               'selection': MPLSelectionWidget}
 
 
     def __call__(self, obj, fmt='auto'):
@@ -142,9 +142,14 @@ class MPLRenderer(Renderer):
             rendered = self_or_cls(obj, fmt)
         if rendered is None: return
         (data, info) = rendered
-        filename ='%s.%s' % (basename, info['file-ext'])
-        with open(filename, 'wb') as f:
-            f.write(self_or_cls.encode(rendered))
+        if isinstance(basename, BytesIO):
+            basename.write(data)
+            basename.seek(0)
+        else:
+            encoded = self_or_cls.encode(rendered)
+            filename ='%s.%s' % (basename, info['file-ext'])
+            with open(filename, 'wb') as f:
+                f.write(encoded)
 
 
     @bothmethod

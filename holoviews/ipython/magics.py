@@ -61,7 +61,7 @@ class OptionsMagic(Magics):
         pass
 
     @classmethod
-    def get_options(cls, line, options):
+    def get_options(cls, line, options, linemagic):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
         for keyword in cls.defaults:
@@ -96,10 +96,10 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-        return cls._validate(options)
+        return cls._validate(options, linemagic)
 
     @classmethod
-    def _validate(cls, options):
+    def _validate(cls, options, linemagic):
         "Allows subclasses to check options are valid."
         raise NotImplementedError("OptionsMagic is an abstract base class.")
 
@@ -254,6 +254,8 @@ class OutputMagic(OptionsMagic):
     # Used to disable info output in testing
     _disable_info_output = False
 
+    bokeh_loaded = False
+
     #==========================#
     # Backend state management #
     #==========================#
@@ -282,17 +284,21 @@ class OutputMagic(OptionsMagic):
         for i, key in enumerate(['fig', 'holomap']):
             value = options[key] if unchanged else None
             allowed = [el for el in cls.backend_formats[backend][i] if el is not None]
-            if (value is not None) and (value not in allowed):
-                raise Exception("Option %r not in allowed list: %s" % (value, ', '.join(allowed)))
-            if value is not None:
-                cls.backend_settings[backend][key] = value
-            else:
+            if value is None:
                 settings = cls.backend_settings[backend]
                 if key not in settings:
                     # First element of the list is the default format
-                    options[key] = cls.backend_formats[backend][i][0]
+                    value = cls.backend_formats[backend][i][0]
                 elif key in settings:
-                    options[key] = settings[key]
+                    value = settings[key]
+            if (value not in allowed) and (cls.backend_settings[backend][key] in allowed):
+                value = cls.backend_settings[backend][key]
+            if value not in allowed:
+                raise Exception("Option %r not in allowed list: %s" % (value, ', '.join(allowed)))
+            options[key] = value
+            cls.backend_settings[backend][key] = value
+
+
         return options
 
 
@@ -321,7 +327,10 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def backend(cls):
         "Convenience method as the backend is accessed frequently"
-        return cls.options['backend'].split(':')[0]
+        backend =  cls.options['backend'].split(':')[0]
+        if backend not in Store.registry:
+            raise ImportError("The %r backend isn't registered and may not be available." % backend)
+        return backend
 
 
     @classmethod
@@ -369,7 +378,7 @@ class OutputMagic(OptionsMagic):
 
 
     @classmethod
-    def _validate(cls, options):
+    def _validate(cls, options, linemagic):
         "Validation of edge cases and incompatible options"
         if options['backend'] in ['d3', 'nbagg']:
             backend = cls._backend_aliases[options['backend']]
@@ -383,6 +392,20 @@ class OutputMagic(OptionsMagic):
             outputwarning.warning("The widget mode must be set to 'live' for matplotlib:nbagg."
                                   "\nSwitching widget mode to 'live'.")
             options['widgets'] = 'live'
+        if options['backend']=='bokeh':
+            try:
+                import bokeh
+                import bokeh.io
+                if not cls.bokeh_loaded:
+                    outputwarning.warning("Some elements and plot options are "
+                                          "not supported by Bokeh library and backend.")
+            except:
+                raise ImportError("Could not import one of bokeh, pandas or scipy.")
+
+            if not cls.bokeh_loaded:
+                bokeh.io.load_notebook()
+                if linemagic:
+                    cls.bokeh_loaded = True
         return options
 
 
@@ -401,7 +424,7 @@ class OutputMagic(OptionsMagic):
             if OutputMagic.last_backend is None:
                 options['fig'] = None
 
-            new_options = self.get_options(line, options)
+            new_options = self.get_options(line, options, cell is None)
             switched_options = self.switch_backend(new_options)
             OutputMagic.options = switched_options
         except Exception as e:
@@ -412,7 +435,8 @@ class OutputMagic(OptionsMagic):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             OutputMagic.options = restore_copy
-            Store.current_backend = restore_copy['backend']
+            backend = restore_copy['backend']
+            Store.current_backend = backend if (':' not in backend) else backend.split(':')[0]
 
 
 @magics_class
@@ -470,15 +494,15 @@ class OptsCompleter(object):
     @classmethod
     def setup_completer(cls):
         "Get the dictionary of valid completions"
-        for element in Store.options().keys():
-            try:
+        try:
+            for element in Store.options().keys():
                 options = Store.options()['.'.join(element)]
                 plotkws = options['plot'].allowed_keywords
                 stylekws = options['style'].allowed_keywords
                 dotted = '.'.join(element)
                 cls._completions[dotted] = (plotkws, stylekws if stylekws else [])
-            except KeyError:
-                pass
+        except KeyError:
+            pass
         return cls._completions
 
     @classmethod
@@ -672,12 +696,11 @@ class TimerMagic(Magics):
 
     @staticmethod
     def elapsed_time():
-        elapsed = time.time() -  TimerMagic.start_time
-        minutes = elapsed // 60
+        seconds = time.time() -  TimerMagic.start_time
+        minutes = seconds // 60
         hours = minutes // 60
-        seconds = elapsed % 60
-        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes, seconds)
-
+        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes % 60, seconds % 60)
+                                    
     @classmethod
     def option_completer(cls, k,v):
         return ['start']

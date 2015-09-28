@@ -1,16 +1,17 @@
 import math
 
 from matplotlib import ticker
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib import colors
 import matplotlib.pyplot as plt
 import numpy as np
 import param
 
 from ...core import util
-from ...core import Dimension, OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay, Element3D
-from ...element import Table, ItemTable
+from ...core import OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay, Element3D
+from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
+from .util import wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -102,63 +103,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     style_opts = []
 
     _suppressed = [Table, Collator, ItemTable]
-    _colorbars = {}
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
-        check = self.map.last
+        check = self.hmap.last
         if isinstance(check, CompositeOverlay):
             check = check.values()[0] # Should check if any are 3D plots
         if isinstance(check, Element3D):
             self.projection = '3d'
-
-    def _adjust_cbar(self, cbar, label):
-        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
-            cbar.solids.set_edgecolor("face")
-        cbar.set_label(label)
-
-
-    def _draw_colorbar(self, artist, element, dim=None):
-        axis = self.handles['axis']
-        ax_colorbars = ElementPlot._colorbars.get(id(axis), [])
-        specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
-        spec = util.get_spec(element)
-
-        # Get colorbar label
-        if dim is None:
-            label = str(element.vdims[0])
-        else:
-            if not isinstance(dim, Dimension):
-                dim = element.get_dimension(dim)
-            label = str(dim)
-
-        colorbars = []
-        created = False
-        if spec[:2] not in specs:
-            cbar = plt.colorbar(artist,fraction=0.046, pad=0.04, ax=axis)
-            cax = cbar.ax
-            self._adjust_cbar(cbar, label)
-            self.handles['cax'] = cax
-            colorbars.append((artist, cax, spec, label))
-            ax_colorbars.extend(colorbars)
-            specs.append(spec[:2])
-            created = True
-        divider = None
-        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
-            ctuple = (artist, cax, spec, label)
-            if ctuple not in colorbars:
-                colorbars.append(ctuple)
-            if spec[:2] in specs and not (created and len(ax_colorbars) > 1):
-                continue
-            if divider is None:
-                divider = make_axes_locatable(axis)
-            self.handles['fig'].delaxes(cax)
-            cax = divider.new_horizontal(pad='{0}%'.format(2+i*30), size='5%')
-            self.handles['fig'].add_axes(cax)
-            cbar = plt.colorbar(artist, cax=cax)
-            self._adjust_cbar(cbar, label)
-
-        ElementPlot._colorbars[id(axis)] = colorbars
 
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
@@ -175,36 +127,36 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.bgcolor:
             axis.set_axis_bgcolor(self.bgcolor)
 
-        view = self._get_frame(key)
+        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
-            suppress = any(sp.map.type in self._suppressed for sp in [self] + subplots
-                           if isinstance(sp.map, HoloMap))
-            if view is not None and not suppress:
-                xlabel, ylabel, zlabel = self._axis_labels(view, subplots, xlabel, ylabel, zlabel)
-                self._finalize_limits(axis, view, subplots, ranges)
+            suppress = any(sp.hmap.type in self._suppressed for sp in [self] + subplots
+                           if isinstance(sp.hmap, HoloMap))
+            if element is not None and not suppress:
+                xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
+                self._finalize_limits(axis, element, subplots, ranges)
 
                 # Tick formatting
-                xdim, ydim = view.get_dimension(0), view.get_dimension(1)
+                xdim, ydim = element.get_dimension(0), element.get_dimension(1)
                 xformat, yformat = None, None
                 if xdim is None:
                     pass
                 elif xdim.formatter:
                     xformat = xdim.formatter
-                elif xdim.type_formatters.get(xdim.type):
+                elif xdim.type in xdim.type_formatters:
                     xformat = xdim.type_formatters[xdim.type]
                 if xformat:
-                    axis.xaxis.set_major_formatter(xformat)
+                    axis.xaxis.set_major_formatter(wrap_formatter(xformat))
 
                 if ydim is None:
                     pass
                 elif ydim.formatter:
                     yformat = ydim.formatter
-                elif ydim.type_formatters.get(ydim.type):
+                elif ydim.type in ydim.type_formatters:
                     yformat = ydim.type_formatters[ydim.type]
                 if yformat:
-                    axis.yaxis.set_major_formatter(yformat)
+                    axis.yaxis.set_major_formatter(wrap_formatter(yformat))
 
             if self.zorder == 0 and not subplots:
                 legend = axis.get_legend()
@@ -220,21 +172,31 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._apply_aspect(axis)
             self._subplot_label(axis)
             if self.apply_ticks:
-                self._finalize_ticks(axis, view, xticks, yticks, zticks)
+                self._finalize_ticks(axis, element, xticks, yticks, zticks)
 
             if self.show_title and title is not None:
                 self.handles['title'] = axis.set_title(title,
                                                 **self._fontsize('title'))
         # Always called to ensure log and inverted axes are applied
         self._finalize_axes(axis)
+        if not self.overlaid and not self.drawn:
+            self._finalize_artist(key)
 
         for hook in self.finalize_hooks:
             try:
-                hook(self, view)
+                hook(self, element)
             except Exception as e:
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
         return super(ElementPlot, self)._finalize_axis(key)
+
+
+    def _finalize_artist(self, element):
+        """
+        Allows extending the _finalize_axis method with Element
+        specific options.
+        """
+        pass
 
 
     def _apply_aspect(self, axis):
@@ -438,7 +400,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 handle.set_visible(view is not None)
         if view is None:
             return
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
             ranges = util.match_spec(view, ranges)
         axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
@@ -453,6 +415,119 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         raise NotImplementedError
 
 
+
+class ColorbarPlot(ElementPlot):
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to draw a colorbar.""")
+
+    cbar_width = param.Number(default=0.05, doc="""
+        Width of the colorbar as a fraction of the main plot""")
+
+    cbar_padding = param.Number(default=0.01, doc="""
+        Padding between colorbar and other plots.""")
+
+    cbar_ticks = param.Parameter(default=None, doc="""
+        Ticks along colorbar-axis specified as an integer, explicit
+        list of tick locations, list of tuples containing the
+        locations and labels or a matplotlib tick locator object. If
+        set to None default matplotlib ticking behavior is
+        applied.""")
+
+    _colorbars = {}
+
+    def _adjust_cbar(self, cbar, label, dim):
+        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
+            cbar.solids.set_edgecolor("face")
+        cbar.set_label(label)
+        if isinstance(self.cbar_ticks, ticker.Locator):
+            cbar.set_major_locator(self.cbar_ticks)
+        elif self.cbar_ticks == 0:
+            cbar.set_ticks([])
+        elif isinstance(self.cbar_ticks, int):
+            locator = ticker.MaxNLocator(self.cbar_ticks)
+            cbar.set_major_locator(locator)
+        elif isinstance(self.cbar_ticks, list):
+            if all(isinstance(t, tuple) for t in self.cbar_ticks):
+                ticks, labels = zip(*self.cbar_ticks)
+            else:
+                ticks, labels = zip(*[(t, dim.pprint_value(t))
+                                        for t in self.cbar_ticks])
+            cbar.set_ticks(ticks)
+            cbar.set_ticklabels(labels)
+
+
+    def _finalize_artist(self, key):
+        element = self.hmap.last
+        artist = self.handles.get('artist', None)
+        if artist and self.colorbar:
+            self._draw_colorbar(artist, element)
+
+
+    def _draw_colorbar(self, artist, element, dim=None):
+        fig = self.handles['fig']
+        axis = self.handles['axis']
+        ax_colorbars, position = ColorbarPlot._colorbars.get(id(axis), ([], None))
+        specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
+        spec = util.get_spec(element)
+
+        if position is None:
+            fig.canvas.draw()
+            bbox = axis.get_position()
+            l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
+        else:
+            l, b, w, h = position
+
+        # Get colorbar label
+        dim = element.get_dimension(dim)
+        if dim is None:
+            dim = element.vdims[0]
+        label = str(dim)
+
+        padding = self.cbar_padding
+        width = self.cbar_width
+        if spec[:2] not in specs:
+            offset = len(ax_colorbars)
+            scaled_w = w*width
+            cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
+                                b, scaled_w, h])
+            cbar = plt.colorbar(artist, cax=cax)
+            self._adjust_cbar(cbar, label, dim)
+            self.handles['cax'] = cax
+            self.handles['cbar'] = cbar
+            ax_colorbars.append((artist, cax, spec, label))
+
+        for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
+            scaled_w = w*width
+            cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
+                              b, scaled_w, h])
+
+        ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
+
+
+
+    def _norm_kwargs(self, element, ranges, opts):
+        """
+        Returns valid color normalization kwargs
+        to be passed to matplotlib plot function.
+        """
+        norm = None
+        clim = opts.pop('clims', None)
+        if clim is None:
+            val_dim = [d.name for d in element.vdims][0]
+            clim = ranges.get(val_dim)
+            if self.symmetric:
+                clim = -np.abs(clim).max(), np.abs(clim).max()
+        if self.logz:
+            if self.symmetric:
+                norm = colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
+                                         linthresh=clim[1]/np.e)
+            else:
+                norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
+        return clim, norm, opts
+
+
+
 class LegendPlot(ElementPlot):
 
     show_legend = param.Boolean(default=True, doc="""
@@ -463,7 +538,11 @@ class LegendPlot(ElementPlot):
 
     legend_position = param.ObjectSelector(objects=['inner', 'right',
                                                     'bottom', 'top',
-                                                    'left', 'best'],
+                                                    'left', 'best',
+                                                    'top_right',
+                                                    'top_left',
+                                                    'bottom_left',
+                                                    'bottom_right'],
                                            default='inner', doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
@@ -477,7 +556,11 @@ class LegendPlot(ElementPlot):
                                    ncol=3, loc=3, mode="expand", borderaxespad=0.),
                     'bottom': dict(ncol=3, mode="expand", loc=2,
                                    bbox_to_anchor=(0., -0.25, 1., .102),
-                                   borderaxespad=0.1)}
+                                   borderaxespad=0.1),
+                    'top_right': dict(loc=1),
+                    'top_left': dict(loc=2),
+                    'bottom_left': dict(loc=3),
+                    'bottom_right': dict(loc=4)}
 
 
 
@@ -493,6 +576,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             params['projection'] = '3d'
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
 
+    def _finalize_artist(self, key):
+        for subplot in self.subplots.values():
+            subplot._finalize_artist(key)
+
     def _adjust_legend(self, axis):
         """
         Accumulate the legend handles and labels for all subplots
@@ -501,14 +588,14 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
         title = ''
         legend_data = []
-        if issubclass(self.map.type, NdOverlay):
-            dimensions = self.map.last.kdims
-            for key in self.map.last.data.keys():
+        if issubclass(self.hmap.type, NdOverlay):
+            dimensions = self.hmap.last.kdims
+            for key in self.hmap.last.data.keys():
                 subplot = self.subplots[key]
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
                 label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
                                   zip(dimensions, key)])
-                handle = subplot.handles.get('legend_handle', False)
+                handle = subplot.handles.get('artist', False)
                 if handle:
                     legend_data.append((handle, label))
             title = ', '.join([d.name for d in dimensions])
@@ -517,16 +604,16 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
                 else:
-                    layer = self.map.last.data.get(key, False)
-                    handle = subplot.handles.get('legend_handle', False)
-                    if layer and layer.label and handle:
+                    layer = self.hmap.last.data.get(key, False)
+                    handle = subplot.handles.get('artist', False)
+                    if layer and not isinstance(layer, Raster) and layer.label and handle:
                         legend_data.append((handle, layer.label))
         autohandles, autolabels = axis.get_legend_handles_labels()
         legends = list(zip(*legend_data)) if legend_data else ([], [])
         all_handles = list(legends[0]) + list(autohandles)
         all_labels = list(legends[1]) + list(autolabels)
         data = OrderedDict()
-        show_legend = self.lookup_options(self.map.last, 'plot').options.get('show_legend', None)
+        show_legend = self.lookup_options(self.hmap.last, 'plot').options.get('show_legend', None)
         used_labels = []
         for handle, label in zip(all_handles, all_labels):
             if handle and (handle not in data) and label and label not in used_labels:
@@ -554,7 +641,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         axis = self.handles['axis']
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         for plot in self.subplots.values():
             plot.initialize_plot(ranges=ranges)
         self._adjust_legend(axis)
@@ -566,7 +653,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         for plot in self.subplots.values():
             plot.update_frame(key, ranges)
 
@@ -598,11 +685,11 @@ class DrawPlot(ElementPlot):
         raise NotImplementedError
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
-        self.draw(self.handles['axis'], self.map.last, ranges)
+        self.draw(self.handles['axis'], self.hmap.last, ranges)
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
     def update_handles(self, axis, element, key, ranges=None):

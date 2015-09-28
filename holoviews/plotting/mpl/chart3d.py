@@ -3,17 +3,17 @@ import param
 
 from ...core import Dimension
 from ...core.util import match_spec
-from .element import ElementPlot
+from .element import ColorbarPlot
 from .chart import PointPlot
 
 
-class Plot3D(ElementPlot):
+class Plot3D(ColorbarPlot):
     """
     Plot3D provides a common baseclass for mplot3d based
     plots.
     """
 
-    azimuth = param.Integer(default=-60, bounds=(-90, 90), doc="""
+    azimuth = param.Integer(default=-60, bounds=(-180, 180), doc="""
         Azimuth angle in the x,y plane.""")
 
     elevation = param.Integer(default=30, bounds=(0, 180), doc="""
@@ -91,14 +91,14 @@ class Plot3D(ElementPlot):
         ax = self.handles['axis']
         # Get colorbar label
         if dim is None:
-            label = str(element.vdims[0])
-        else:
-            if not isinstance(dim, Dimension):
-                dim = element.get_dimension(dim)
-            label = str(dim)
+            dim = element.vdims[0]
+
+        elif not isinstance(dim, Dimension):
+            dim = element.get_dimension(dim)
+        label = str(dim)
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
         self.handles['cax'] = cbar.ax
-        self._adjust_cbar(cbar, label)
+        self._adjust_cbar(cbar, label, dim)
 
 
 
@@ -117,8 +117,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
-        points = self.map.last
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        points = self.hmap.last
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
         key = self.keys[-1]
         self.update_handles(axis, points, key, ranges)
@@ -130,28 +130,24 @@ class Scatter3DPlot(Plot3D, PointPlot):
         xs = points.data[:, 0] if len(points.data) else []
         ys = points.data[:, 1] if len(points.data) else []
         zs = points.data[:, 2] if len(points.data) else []
-        sz = points.data[:, self.size_index] if self.size_index < ndims else None
         cs = points.data[:, self.color_index] if self.color_index < ndims else None
 
-        style = self.lookup_options(points, 'style')[self.cyclic_index]
-        if sz is not None and self.scaling_factor > 1:
-            style['s'] = self._compute_size(sz, style)
+        style = self.style[self.cyclic_index]
+        if self.size_index < ndims and self.scaling_factor > 1:
+            style['s'] = self._compute_size(points, style)
         if cs is not None:
             style['c'] = cs
             style.pop('color', None)
         scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, **style)
 
         self.handles['axis'].add_collection(scatterplot)
-        self.handles['scatter'] = scatterplot
-        self.handles['legend_handle'] = scatterplot
+        self.handles['artist'] = scatterplot
 
         if cs is not None:
             val_dim = points.dimensions(label=True)[self.color_index]
-            ranges = self.compute_ranges(self.map, key, ranges)
+            ranges = self.compute_ranges(self.hmap, key, ranges)
             ranges = match_spec(points, ranges)
             scatterplot.set_clim(ranges[val_dim])
-            if self.colorbar:
-                self._draw_colorbar(scatterplot, points, val_dim)
 
 
 
@@ -175,10 +171,10 @@ class SurfacePlot(Plot3D):
                   'linewidth', 'facecolors', 'rstride', 'cstride']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(element, ranges)
 
         self.update_handles(self.handles['axis'], element, key, ranges)
@@ -191,17 +187,46 @@ class SurfacePlot(Plot3D):
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
 
-        style_opts = self.lookup_options(element, 'style')[self.cyclic_index]
+        style_opts = self.style[self.cyclic_index]
 
         if self.plot_type == "wireframe":
-            self.handles['surface'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
+            self.handles['artist'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
         elif self.plot_type == "surface":
             style_opts['vmin'] = zmin
             style_opts['vmax'] = zmax
-            self.handles['surface'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
+            self.handles['artist'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
         elif self.plot_type == "contour":
-            self.handles['surface'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
-        if not self.drawn and self.colorbar and not self.plot_type == "wireframe":
-            self._draw_colorbar(self.handles['surface'], element)
+            self.handles['artist'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
 
-        self.handles['legend_handle'] = self.handles['surface']
+
+
+class TrisurfacePlot(Plot3D):
+    """
+    Plots a trisurface given a Trisurface element, containing
+    X, Y and Z coordinates.
+    """
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to add a colorbar to the plot.""")
+
+    style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor']
+
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
+        ranges = match_spec(element, ranges)
+
+        self.update_handles(self.handles['axis'], element, key, ranges)
+        return self._finalize_axis(key, ranges=ranges)
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        style_opts = self.style[self.cyclic_index]
+        dims = element.dimensions(label=True)
+        vrange = ranges[dims[2]]
+        x, y, z = [element.dimension_values(d) for d in dims]
+        artist = axis.plot_trisurf(x, y, z, vmax=vrange[1],
+                                   vmin=vrange[0], **style_opts)
+        self.handles['artist'] = artist

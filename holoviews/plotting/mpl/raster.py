@@ -10,11 +10,11 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range
 from ...element.raster import HeatMap, Image, Raster, RGB
-from .element import ElementPlot, OverlayPlot
+from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 
 
-class RasterPlot(ElementPlot):
+class RasterPlot(ColorbarPlot):
 
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
@@ -30,13 +30,16 @@ class RasterPlot(ElementPlot):
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
-        if self.map.type == Raster:
+        if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
 
@@ -52,20 +55,19 @@ class RasterPlot(ElementPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(element, ranges)
 
         xticks, yticks = self._compute_ticks(element, ranges)
 
         opts = self.style[self.cyclic_index]
-        data = element.data
-        clims = opts.pop('clims', None)
         if element.depth != 1:
             opts.pop('cmap', None)
 
+        data = element.data
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
@@ -83,15 +85,10 @@ class RasterPlot(ElementPlot):
             cmap.set_bad('w', 1.)
             opts['cmap'] = cmap
 
-        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder, **opts)
-        if clims is None:
-            val_dim = [d.name for d in element.vdims][0]
-            clims = ranges.get(val_dim)
-        if 'norm' not in opts:
-            im.set_clim(clims)
-        self.handles['im'] = im
-        if self.colorbar:
-            self._draw_colorbar(im, element)
+        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder,
+                         clim=clim, norm=norm, **opts)
+        self.handles['artist'] = im
 
         if isinstance(element, HeatMap):
             self.handles['axis'].set_aspect(float(r - l)/(t-b))
@@ -155,7 +152,7 @@ class RasterPlot(ElementPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        im = self.handles.get('im', None)
+        im = self.handles.get('artist', None)
         data = np.ma.array(element.data,
                            mask=np.logical_not(np.isfinite(element.data)))
         im.set_data(data)
@@ -173,26 +170,30 @@ class RasterPlot(ElementPlot):
 
         val_dim = [d.name for d in element.vdims][0]
         opts = self.style[self.cyclic_index]
-        im.set_clim(opts.get('clims', ranges.get(val_dim)))
+
+        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+        im.set_clim(clim)
+        if norm:
+            im.norm = norm
         im.set_extent((l, r, b, t))
         xticks, yticks = self._compute_ticks(element, ranges)
         return {'xticks': xticks, 'yticks': yticks}
 
 
-class QuadMeshPlot(ElementPlot):
+class QuadMeshPlot(ColorbarPlot):
 
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to add a colorbar to the plot.""")
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
 
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
     def initialize_plot(self, ranges=None):
-        key = self.map.keys()[-1]
-        element = self.map.last
+        key = self.hmap.keys()[-1]
+        element = self.hmap.last
         axis = self.handles['axis']
 
-        ranges = self.compute_ranges(self.map, self.keys[-1], ranges)
+        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(element, ranges)
         self._init_cmesh(axis, element, ranges)
 
@@ -206,26 +207,27 @@ class QuadMeshPlot(ElementPlot):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
-        self.handles['cmesh'] = axis.pcolormesh(*cmesh_data, vmin=clims[0],
-                                                vmax=clims[1], zorder=self.zorder,
-                                                **opts)
-        if self.colorbar:
-            self._draw_colorbar(self.handles['cmesh'], element)
+        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+        self.handles['artist'] = axis.pcolormesh(*cmesh_data, zorder=self.zorder,
+                                                 vmin=clim[0], vmax=clim[1], norm=norm,
+                                                 **opts)
         self.handles['locs'] = np.concatenate(element.data[:2])
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        cmesh = self.handles['cmesh']
+        cmesh = self.handles['artist']
         opts = self.style[self.cyclic_index]
         locs = np.concatenate(element.data[:2])
         if (locs != self.handles['locs']).any():
             self._init_cmesh(axis, element, ranges)
         else:
-            data = np.ma.array(element.data[2],
-                           mask=np.logical_not(np.isfinite(element.data[2])))
+            mask_array = np.logical_not(np.isfinite(element.data[2]))
+            data = np.ma.array(element.data[2], mask=mask_array)
             cmesh.set_array(data.ravel())
-            clims = opts.get('clims', ranges.get(element.get_dimension(2).name))
-            cmesh.set_clim(clims)
+            clim, norm, opts = self._norm_kwargs(element, ranges, opts)
+            cmesh.set_clim(clim)
+            if norm:
+                cmesh.norm = norm
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
@@ -271,7 +273,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.zorder = 0
         self.layout_num = layout_num
         self.overlaid = False
-        self.map = {}
+        self.hmap = {}
         if layout.ndims > 1:
             xkeys, ykeys = zip(*layout.data.keys())
         else:
@@ -287,6 +289,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         width, height, _, _, _, _ = self.border_extents
         if self.aspect == 'equal':
             self.aspect = float(width/height)
+
+    def _finalize_artist(self, key):
+        pass
 
     def get_extents(self, view, ranges):
         width, height, _, _, _, _ = self.border_extents
@@ -371,7 +376,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                             yticks=(self._yticks, self._process_ticklabels(self._ykeys, ydim)))
 
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
         return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel

@@ -8,7 +8,6 @@ except:
 
 
 import os
-from matplotlib import ticker
 from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator
@@ -52,12 +51,6 @@ def set_style(key):
 
 styles = {'default': './default.mplstyle'}
 set_style('default')
-
-
-# Upgrade Dimension formatters to matplotlib
-wrapped_formatters = {k: fn if isinstance(fn, ticker.Formatter) else ticker.FuncFormatter(fn)
-                      for k, fn in Dimension.type_formatters.items()}
-Dimension.type_formatters.update(wrapped_formatters)
 
 # Define matplotlib based style cycles and Palettes
 Cycle.default_cycles.update({'default_colors': plt.rcParams['axes.color_cycle']})
@@ -106,6 +99,7 @@ Store.register({Curve: CurvePlot,
 
                 # Chart 3D
                 Surface: SurfacePlot,
+                Trisurface: TrisurfacePlot,
                 Scatter3D: Scatter3DPlot,
 
                 # Tabular plots
@@ -153,7 +147,7 @@ options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', l
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o')
-options.Scatter3D = Options('style', color=Cycle(), marker='o')
+options.Scatter3D = Options('style', facecolors=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 # Rasters

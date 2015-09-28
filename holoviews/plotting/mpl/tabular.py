@@ -60,7 +60,7 @@ class TablePlot(ElementPlot):
 
             # Mapping from the cell coordinates to the dictionary key.
             summarize = frame.rows > self.max_rows
-            half_rows = self.max_rows/2
+            half_rows = self.max_rows//2
             rows = min([self.max_rows, frame.rows])
             for row in range(rows):
                 adjusted_row = row
@@ -98,7 +98,7 @@ class TablePlot(ElementPlot):
 
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
 
         axis.set_axis_off()
@@ -127,13 +127,13 @@ class TablePlot(ElementPlot):
         table.auto_set_font_size(True)
         axis.add_table(table)
 
-        self.handles['table'] = table
+        self.handles['artist'] = table
 
         return self._finalize_axis(self.keys[-1])
 
 
     def update_handles(self, axis, view, key, ranges=None):
-        table = self.handles['table']
+        table = self.handles['artist']
 
         for coords, cell in table.get_celld().items():
             value = self.cell_values[key][coords]

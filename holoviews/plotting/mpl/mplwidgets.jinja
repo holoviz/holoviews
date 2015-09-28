@@ -1,0 +1,27 @@
+{% extends widget_template %}
+
+{% block create_widget %}
+{% if mode == "'mpld3'" %}
+var paths = {};
+paths.underscore = "{{ CDN['underscore'] }}";
+if (!(typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
+    paths.d3 = "{{ CDN['d3'] }}";
+}
+var require_conf = {paths: paths};
+require.config(require_conf);
+if ((typeof(window.mpld3) !== "undefined" && window.mpld3._mpld3IsLoaded)){
+    require(["underscore"], function(d3){
+	create_widget();
+    });
+} else {
+    require(["d3", "underscore"], function(d3){
+	window.d3 = d3;
+	$.getScript("{{ CDN['mpld3'] }}.js", function(){
+            create_widget();
+	});
+    });
+}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}

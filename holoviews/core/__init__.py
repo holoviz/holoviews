@@ -5,6 +5,7 @@ from .layout import *          # pyflakes:ignore (API import)
 from .operation import *       # pyflakes:ignore (API import)
 from .overlay import *         # pyflakes:ignore (API import)
 from .sheetcoords import *     # pyflakes:ignore (API import)
+from .spaces import *          # pyflakes:ignore (API import)
 from .tree import *            # pyflakes:ignore (API import)
 from .io import FileArchive
 
@@ -48,15 +49,11 @@ def undisplayable_info(obj, html=False):
             ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
 
 
-def formatter(fmt):
-    def inner(x, pos=None): return (fmt % x)
-    return inner
-
 # Define default type formatters
-Dimension.type_formatters[int] = formatter("%d")
-Dimension.type_formatters[float] = formatter("%.3g")
-Dimension.type_formatters[np.float32] = formatter("%.3g")
-Dimension.type_formatters[np.float64] = formatter("%.3g")
+Dimension.type_formatters[int] = "%d"
+Dimension.type_formatters[float] = "%.5g"
+Dimension.type_formatters[np.float32] = "%.5g"
+Dimension.type_formatters[np.float64] = "%.5g"
 
 
 def public(obj):

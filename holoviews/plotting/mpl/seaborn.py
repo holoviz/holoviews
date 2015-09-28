@@ -60,7 +60,7 @@ class RegressionPlot(FullRedrawPlot):
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
     def initialize_plot(self, ranges=None):
-        self._update_plot(self.handles['axis'], self.map.last)
+        self._update_plot(self.handles['axis'], self.hmap.last)
         return self._finalize_axis(self.keys[-1])
 
 
@@ -91,7 +91,7 @@ class BivariatePlot(FullRedrawPlot):
                   'shade', 'vertical', 'cmap']
 
     def initialize_plot(self, ranges=None):
-        kdeview = self.map.last
+        kdeview = self.hmap.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
         if self.joint and self.subplot:
@@ -133,7 +133,7 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'estimator', 'kwargs']
 
     def initialize_plot(self, ranges=None):
-        element = self.map.last
+        element = self.hmap.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
         self._update_plot(axis, element)
@@ -144,7 +144,7 @@ class TimeSeriesPlot(FullRedrawPlot):
         sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
                    zorder=self.zorder, **self.style)
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         xlabel = xlabel if xlabel else str(view.kdims[0])
         ylabel = ylabel if ylabel else str(view.vdims[0])
         return xlabel, ylabel, zlabel
@@ -167,7 +167,7 @@ class DistributionPlot(FullRedrawPlot):
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
     def initialize_plot(self, ranges=None):
-        distview = self.map.last
+        distview = self.hmap.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
         self._update_plot(axis, distview)
@@ -212,9 +212,11 @@ class SNSFramePlot(DFrameViewPlot):
                                             'markers', 'palette', 'dodge',
                                             'join', 'size', 'legend',
                                             'sharex', 'sharey', 'hue', 'estimator'],
-                             'boxplot':   [],
+                             'boxplot':   ['order', 'hue_order', 'orient', 'color',
+                                           'palette', 'saturation', 'width', 'fliersize',
+                                           'linewidth', 'whis', 'notch'],
                              'violinplot':['groupby', 'positions',
-                                           'inner', 'join_rm', 'bw', 'cut'],
+                                           'inner', 'join_rm', 'bw', 'cut', 'split'],
                              'lmplot':    ['hue', 'col', 'row', 'palette',
                                            'sharex', 'dropna', 'legend'],
                              'corrplot':  ['annot', 'sig_stars', 'sig_tail',
@@ -247,7 +249,7 @@ class SNSFramePlot(DFrameViewPlot):
 
 
     def initialize_plot(self, ranges=None):
-        dfview = self.map.last
+        dfview = self.hmap.last
         axis = self.handles['axis']
         self._validate(dfview)
 
@@ -273,7 +275,7 @@ class SNSFramePlot(DFrameViewPlot):
                             % self.plot_type)
 
     def update_frame(self, key, ranges=None):
-        view = self.map.get(key, None)
+        view = self.hmap.get(key, None)
         axis = self.handles['axis']
         if axis:
             axis.set_visible(view is not None)

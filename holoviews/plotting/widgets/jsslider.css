@@ -1,0 +1,40 @@
+div.hololayout {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
+form.holoform {
+    background-color: #fafafa;
+    border-radius: 5px;
+    overflow: hidden;
+    padding: 0.8em;
+}
+
+div.holoslider {
+    min-height: 0 !important;
+    height: 0.8em;
+}
+
+div.holoformgroup {
+    padding-right: 0.5em;
+    padding-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+div.hologroup {
+    padding-left: 0;
+    padding-right: 0.6em;
+}
+
+.holoselect {
+    width: 92%;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.holotext {
+    width: 100%;
+    padding-left:  0.5em;
+    padding-right: 0;
+}

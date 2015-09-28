@@ -82,17 +82,6 @@ class MPLPlot(DimensionedPlot):
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
-    fontsize = param.Parameter(default=None, allow_None=True,  doc="""
-       Specifies various fontsizes of the displayed text. By default,
-       the fontsize is determined by matplotlib (via rcparams) but if
-       set to an integer, this is the fontsize of all text except for
-       tick labels (and subfigure labels in Layouts).
-
-       Finer control is available by supplying a dictionary where any
-       unmentioned keys reverts to the default sizes, e.g:
-
-          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
-
     def __init__(self, fig=None, axis=None, **params):
         self._create_fig = True
         super(MPLPlot, self).__init__(**params)
@@ -106,20 +95,6 @@ class MPLPlot(DimensionedPlot):
         fig, axis = self._init_axis(fig, axis)
         self.handles['fig'] = fig
         self.handles['axis'] = axis
-
-
-    def _fontsize(self, key, label='fontsize', common=True):
-        """
-        To be used as kwargs e.g: **self._fontsize('title')
-        """
-        if not self.fontsize:
-            return {}
-        if isinstance(self.fontsize, dict):
-            if key not in self.fontsize:
-                return {}
-            else:
-                return {label:self.fontsize[key]}
-        return {label:self.fontsize} if common else {}
 
 
     def _init_axis(self, fig, axis):
@@ -391,7 +366,7 @@ class GridPlot(CompositePlot):
                                          subplot=not create_axes, ranges=frame_ranges,
                                          uniform=self.uniform, keys=self.keys,
                                          show_legend=False, **dict(opts, **kwargs))
-                collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.map
+                collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.hmap
                 subplots[(r, c)] = subplot
             else:
                 subax.set_visible(False)
@@ -1024,7 +999,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                                       uniform=self.uniform, layout_num=num,
                                       **plotopts)
             if isinstance(view, (Element, HoloMap, Collator, CompositeOverlay)):
-                adjoint_clone[pos] = subplots[pos].map
+                adjoint_clone[pos] = subplots[pos].hmap
             else:
                 adjoint_clone[pos] = subplots[pos].layout
         return subplots, adjoint_clone, projections

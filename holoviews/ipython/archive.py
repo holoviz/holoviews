@@ -6,38 +6,55 @@ and export it to disk via the display hooks.
 import time, os, traceback
 import io
 
-from IPython.nbformat import reader
+from IPython import version_info
 from IPython.display import Javascript, display
 
-from IPython.nbconvert.preprocessors import Preprocessor
-from IPython.nbconvert import HTMLExporter
+# Import appropriate nbconvert machinery
+if version_info[0] >= 4:
+    # Jupyter/IPython >=4.0
+    from nbformat import reader
+    from nbconvert.preprocessors import Preprocessor
+    from nbconvert import HTMLExporter
+
+    from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
+    from nbconvert import NotebookExporter
+else:
+    # IPython <= 3.0
+    from IPython.nbformat import reader
+    from IPython.nbconvert.preprocessors import Preprocessor
+    from IPython.nbconvert import HTMLExporter
+
+    if version_info[0] == 3:
+        # IPython 3
+        from IPython.nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
+        from IPython.nbconvert import NotebookExporter
+    else:
+        # IPython 2
+        from IPython.nbformat import current
+        NotebookExporter, ClearOutputPreprocessor = None, None
+
+        def v3_strip_output(nb):
+            """strip the outputs from a notebook object"""
+            nb["nbformat"] = 3
+            nb["nbformat_minor"] = 0
+            nb.metadata.pop('signature', None)
+            for cell in nb.worksheets[0].cells:
+                if 'outputs' in cell:
+                    cell['outputs'] = []
+                if 'prompt_number' in cell:
+                    cell['prompt_number'] = None
+            return nb
 
 import param
 from ..core.io import FileArchive, Pickler
 from ..core.options import Store
 from ..plotting.renderer import HTML_TAGS
 
-
-try:  # IPython 3
-    from IPython.nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
-    from IPython.nbconvert import NotebookExporter
+try:
+    # Only matplotlib outputs to graphical file formats at this time
+    renderers = [Store.renderers['matplotlib'].instance(holomap=None, fig='svg')]
 except:
-    # IPython 2
-    from IPython.nbformat import current
-    NotebookExporter, ClearOutputPreprocessor = None, None
-
-    def v3_strip_output(nb):
-        """strip the outputs from a notebook object"""
-        nb["nbformat"] = 3
-        nb["nbformat_minor"] = 0
-        nb.metadata.pop('signature', None)
-        for cell in nb.worksheets[0].cells:
-            if 'outputs' in cell:
-                cell['outputs'] = []
-            if 'prompt_number' in cell:
-                cell['prompt_number'] = None
-        return nb
-
+    renderers = []
 
 class NotebookArchive(FileArchive):
     """
@@ -45,7 +62,7 @@ class NotebookArchive(FileArchive):
     display hooks and automatically adds a notebook HTML snapshot to
     the archive upon export.
     """
-    exporters = param.List(default=[Store.renderers['matplotlib'].instance(holomap=None, fig='svg'), Pickler])
+    exporters = param.List(default=renderers + [Pickler])
 
     namespace = param.String('holoviews.archive', doc="""
         The name of the current in the NotebookArchive instance in the

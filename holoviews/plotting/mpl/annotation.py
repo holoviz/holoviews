@@ -16,9 +16,9 @@ class AnnotationPlot(ElementPlot):
         self.handles['annotations'] = []
 
     def initialize_plot(self, ranges=None):
-        annotation = self.map.last
+        annotation = self.hmap.last
         key = self.keys[-1]
-        ranges = self.compute_ranges(self.map, key, ranges)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(annotation, ranges)
         axis = self.handles['axis']
         opts = self.style[self.cyclic_index]
@@ -74,11 +74,11 @@ class TextPlot(AnnotationPlot):
     def draw_annotation(self, axis, data, opts):
         (x,y, text, fontsize,
          horizontalalignment, verticalalignment, rotation) = data
+        opts['fontsize'] = fontsize
         return [axis.text(x,y, text,
                           horizontalalignment = horizontalalignment,
                           verticalalignment = verticalalignment,
-                          rotation=rotation,
-                          fontsize=opts.pop('fontsize', fontsize), **opts)]
+                          rotation=rotation, **opts)]
 
 
 

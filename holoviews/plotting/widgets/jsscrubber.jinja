@@ -1,0 +1,43 @@
+<div class="animation" align="center">
+    <div id="_anim_img{{ id }}">
+    	 {% block init_frame %}
+	 {{ init_frame }}
+	 {% endblock %}
+    </div>
+    <br>
+    <input id="_anim_slider{{ id }}" type="range" style="width:350px" name="points" min="0" max="1" step="1" value="0" oninput="anim{{ id }}.set_frame(parseInt(this.value));"></input>
+    <br>
+    <button onclick="anim{{ id }}.slower()" style="text-align: center">&#8211;</button>
+    <button onclick="anim{{ id }}.first_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;&#9664;</button>
+    <button onclick="anim{{ id }}.previous_frame()" style="text-align: center; min-width: 40px">&#9616;&#9664;</button>
+    <button onclick="anim{{ id }}.reverse_animation()" style="text-align: center; min-width: 40px">&#9664;</button>
+    <button onclick="anim{{ id }}.pause_animation()" style="text-align: center; min-width: 40px">&#9616;&nbsp;&#9612;</button>
+    <button onclick="anim{{ id }}.play_animation()" style="text-align: center; min-width: 40px">&#9654;</button>
+    <button onclick="anim{{ id }}.next_frame()" style="text-align: center; min-width: 40px">&#9654;&#9612;</button>
+    <button onclick="anim{{ id }}.last_frame()" style="text-align: center; min-width: 40px">&#9654;&#9654;&#9612;</button>
+    <button onclick="anim{{ id }}.faster()" style="text-align: center">+</button>
+  <form action="#n" name="_anim_loop_select{{ id }}" class="anim_control">
+    <input type="radio" name="state" value="once" {once_checked}> Once </input>
+    <input type="radio" name="state" value="loop" {loop_checked}> Loop </input>
+    <input type="radio" name="state" value="reflect" {reflect_checked}> Reflect </input>
+  </form>
+</div>
+
+
+<script language="javascript">
+  /* Instantiate the {{ widget_name }} class. */
+  /* The IDs given should match those used in the template above. */
+  (function() {
+      var frame_data = {{ frames | safe }};
+
+      function create_widget() {
+          setTimeout(function() {
+              anim{{ id }} = new {{ widget_name }}(frame_data, {{ Nframes }}, "{{ id }}", {{ delay }}, {{ load_json }}, {{ mode }}, {{ cached }});
+          }, 0);
+      }
+
+      {% block create_widget %}
+      create_widget();
+      {% endblock %}
+  })()
+</script>

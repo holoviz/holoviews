@@ -938,8 +938,7 @@ class Store(object):
                                                                        'axiswise'])})
 
             name = view_class.__name__
-            if name not in cls._options[backend]:
-                cls._options[backend][name] = opt_groups
+            cls._options[backend][name] = opt_groups
 
 
 

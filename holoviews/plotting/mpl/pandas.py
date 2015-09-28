@@ -63,12 +63,12 @@ class DFrameViewPlot(ElementPlot):
 
     def __init__(self, view, **params):
         super(DFrameViewPlot, self).__init__(view, **params)
-        if self.map.last.plot_type and 'plot_type' not in params:
-            self.plot_type = self.map.last.plot_type
+        if self.hmap.last.plot_type and 'plot_type' not in params:
+            self.plot_type = self.hmap.last.plot_type
 
 
     def initialize_plot(self, ranges=None):
-        dfview = self.map.last
+        dfview = self.hmap.last
         self._validate(dfview)
 
         self._update_plot(dfview)
@@ -93,7 +93,7 @@ class DFrameViewPlot(ElementPlot):
         return style
 
 
-    def _axis_labels(self, view, subplots, xlabel, ylabel, zlabel):
+    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         if view.x and not xlabel:
             xlabel = str(view.get_dimension(view.x))
         if view.x2 and not ylabel:
