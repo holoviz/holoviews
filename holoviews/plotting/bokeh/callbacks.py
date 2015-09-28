@@ -184,16 +184,22 @@ class DownsampleColumns(Callback):
         element = self.plot.current_frame
         ranges  = self.plot.current_ranges
 
-        # Randomize element samples
-        np.random.seed(42)
-        inds = np.random.choice(len(element), len(element), False)
-        data = element.data[inds, :]
-        randomized = element.clone(data)
-
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
-        sliced = randomized.select(**{xdim: (xstart, xend),
-                                      ydim: (ystart, yend)})
+        sliced = element.select(**{xdim: (xstart, xend),
+                                   ydim: (ystart, yend)})
+
+        # Avoid randomizing if possible (expensive)
+        if len(sliced) > self.max_samples:
+            # Randomize element samples and slice to region
+            # Randomization consistent to avoid "flicker".
+            np.random.seed(42)
+            inds = np.random.choice(len(element), len(element), False)
+            data = element.data[inds, :]
+            randomized = element.clone(data)
+            sliced = randomized.select(**{xdim: (xstart, xend),
+                                          ydim: (ystart, yend)})
+
         sliced = sliced.clone(sliced.data[:self.max_samples, :])
 
         # Update data source
