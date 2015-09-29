@@ -70,14 +70,17 @@
 			if ({{ dynamic }}) {
 				var min = vals[0];
 				var max = vals[vals.length-1];
+				var step = {{ widget_data['step'] }};
 			} else {
 				var min = 0;
 				var max = vals.length - 1;
+				var step = 1;
 			}
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
                 animate: "fast",
                 min: min,
                 max: max,
+				step: step,
                 value: min,
                 slide: _.throttle(function(event, ui) {
 					if ({{ dynamic }}) {

@@ -1,4 +1,4 @@
-import os, uuid, json
+import os, uuid, json, math
 
 import param
 
@@ -207,6 +207,7 @@ class SelectionWidget(NdWidget):
         dimensions = []
         init_dim_vals = []
         for idx, dim in enumerate(self.mock_obj.kdims):
+            step = 1
             if self.dynamic:
                 if dim.values:
                     dim_vals = dim.values
@@ -214,6 +215,9 @@ class SelectionWidget(NdWidget):
                 else:
                     dim_vals = list(dim.range)
                     widget_type = 'slider'
+                    dim_range = dim_vals[1] - dim_vals[0]
+                    if not isinstance(dim_range, int):
+                        step = 10**(round(math.log10(dim_range))-3)
             else:
                 dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
                 if isnumeric(dim_vals[0]):
@@ -227,7 +231,7 @@ class SelectionWidget(NdWidget):
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=sanitize_identifier(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility)
+                               visibility=visibility, step=step)
             widgets.append(widget_data)
             dimensions.append(dim_str)
         return widgets, dimensions, init_dim_vals
