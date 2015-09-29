@@ -1,10 +1,10 @@
 // Define Bokeh specific subclasses
 function BokehSelectionWidget() {
-    SelectionWidget.apply(this, arguments);
+	SelectionWidget.apply(this, arguments);
 }
 
 function BokehScrubberWidget() {
-    ScrubberWidget.apply(this, arguments);
+	ScrubberWidget.apply(this, arguments);
 }
 
 // Let them inherit from the baseclasses
@@ -13,27 +13,27 @@ BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 
 // Define methods to override on widgets
 var BokehMethods = {
-    init_slider : function(init_val){
+	init_slider : function(init_val){
 		$.each(this.frames, $.proxy(function(index, frame) {
 			this.frames[index] = JSON.parse(frame);
 		}, this));
-    },
-    update : function(current){
+	},
+	update : function(current){
 		var data = this.frames[current];
 		$.each(data, function(id, value) {
-    	    var ds = Bokeh.Collections(value.type).get(id);
-    	    if (ds != undefined) {
-    			ds.set(value.data);
-    	    }
+			var ds = Bokeh.Collections(value.type).get(id);
+			if (ds != undefined) {
+				ds.set(value.data);
+			}
 		});
-    },
-    dynamic_update : function(current){
+	},
+	dynamic_update : function(current){
 		if(this.dynamic) {
 			current = JSON.stringify(current);
 		}
 		function callback(initialized, msg){
 			/* This callback receives data from Python as a string
-			   in order to parse it correctly quotes are sliced off*/
+			 in order to parse it correctly quotes are sliced off*/
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
 				return
@@ -52,7 +52,7 @@ var BokehMethods = {
 		} else {
 			this.update(current);
 		}
-    }
+	}
 }
 
 // Extend Bokeh widgets with backend specific methods

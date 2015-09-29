@@ -3,71 +3,71 @@ function HoloViewsWidget(){
 
 HoloViewsWidget.prototype.init_slider = function(init_val){
     if(this.cached) {
-	this.update_cache();
-	this.update(0);
+        this.update_cache();
+        this.update(0);
     } else {
-	this.dynamic_update(0);
+        this.dynamic_update(0);
     }
 }
 
 HoloViewsWidget.prototype.populate_cache = function(idx){
     if(this.load_json) {
-	var data_url = this.server + this.fig_id + "/" + idx;
-	this.cache[idx].load(data_url);
+        var data_url = this.server + this.fig_id + "/" + idx;
+        this.cache[idx].load(data_url);
     } else {
-	this.cache[idx].html(this.frames[idx]);
-	if (this.embed) {
-	    delete this.frames[idx];
-	}
+        this.cache[idx].html(this.frames[idx]);
+        if (this.embed) {
+            delete this.frames[idx];
+        }
     }
 }
 
 HoloViewsWidget.prototype.dynamic_update = function(current){
     function callback(msg){
-		/* This callback receives data from Python as a string
-		   in order to parse it correctly quotes are sliced off*/
-		var data = msg.content.data['text/plain'].slice(1, -1);
-		this.frames[current] = data;
-		this.update_cache();
-		this.update(current);
+        /* This callback receives data from Python as a string
+         in order to parse it correctly quotes are sliced off*/
+        var data = msg.content.data['text/plain'].slice(1, -1);
+        this.frames[current] = data;
+        this.update_cache();
+        this.update(current);
     }
     if(!(current in this.cache)) {
-		var kernel = IPython.notebook.kernel;
-		callbacks = {iopub: {output: $.proxy(callback, this)}};
-		var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-		kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+        var kernel = IPython.notebook.kernel;
+        callbacks = {iopub: {output: $.proxy(callback, this)}};
+        var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+        kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
     } else {
-		this.update(current);
+        this.update(current);
     }
 }
 
 HoloViewsWidget.prototype.update_cache = function(){
     if(this.load_json) {
-	var frame_len = Object.keys(this.keyMap).length;
+        var frame_len = Object.keys(this.keyMap).length;
     } else {
-	var frame_len = Object.keys(this.frames).length;
+        var frame_len = Object.keys(this.frames).length;
     }
     for (var i=0; i<frame_len; i++) {
-		if(!this.load_json || this.dynamic)  {
-			frame = Object.keys(this.frames)[i];
-		} else {
-			frame = i;
-		}
-		if(!(frame in this.cache)) {
-			this.cache[frame] = $('<div />').appendTo("#" + this.img_id).hide();
-			var cache_id = this.img_id+"_"+frame;
-			this.cache[frame].attr("id", cache_id);
-			this.populate_cache(frame);
-		}
+        if(!this.load_json || this.dynamic)  {
+            frame = Object.keys(this.frames)[i];
+        } else {
+            frame = i;
+        }
+        if(!(frame in this.cache)) {
+            this.cache[frame] = $('<div />').appendTo("#" + this.img_id).hide();
+            var cache_id = this.img_id+"_"+frame;
+            this.cache[frame].attr("id", cache_id);
+            this.populate_cache(frame);
+        }
     }
 }
 
 HoloViewsWidget.prototype.update = function(current){
     if(current in this.cache) {
-	$.each(this.cache, function(index, value) {
-	    value.hide();
-	});
-	this.cache[current].show();
+        $.each(this.cache, function(index, value) {
+            value.hide();
+        });
+        this.cache[current].show();
     }
 }
 
@@ -86,7 +86,7 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
     this.mode = mode;
     this.notFound = notFound;
     this.cached = cached;
-	this.dynamic = dynamic;
+    this.dynamic = dynamic;
     this.cache = {};
     this.init_slider(this.current_vals[0]);
 }
@@ -95,10 +95,10 @@ SelectionWidget.prototype = new HoloViewsWidget;
 
 SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
     this.current_vals[dim_idx] = dim_val;
-	if(this.dynamic) {
-		this.dynamic_update(this.current_vals)
-		return;
-	}
+    if(this.dynamic) {
+        this.dynamic_update(this.current_vals)
+        return;
+    }
     var key = "(";
     for (var i=0; i<this.slider_ids.length; i++)
     {
@@ -116,7 +116,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
     var current = this.keyMap[key];
     this.current_frame = current;
     if(this.cached) {
-	this.update(current)
+        this.update(current)
     } else {
         this.dynamic_update(current)
     }
@@ -150,7 +150,7 @@ ScrubberWidget.prototype.set_frame = function(frame){
     this.current_frame = frame;
     document.getElementById(this.slider_id).value = this.current_frame;
     if(this.cached) {
-	this.update(frame)
+        this.update(frame)
     } else {
         this.dynamic_update(frame)
     }
@@ -169,10 +169,10 @@ ScrubberWidget.prototype.get_loop_state = function(){
 
 ScrubberWidget.prototype.update = function(current){
     if(current in this.cache) {
-	$.each(this.cache, function(index, value) {
-	    value.hide();
-	});
-	this.cache[current].show();
+        $.each(this.cache, function(index, value) {
+            value.hide();
+        });
+        this.cache[current].show();
     }
 }
 
@@ -263,10 +263,10 @@ ScrubberWidget.prototype.reverse_animation = function() {
 }
 
 function extend(destination, source) {
-  for (var k in source) {
-    if (source.hasOwnProperty(k)) {
-      destination[k] = source[k];
+    for (var k in source) {
+        if (source.hasOwnProperty(k)) {
+            destination[k] = source[k];
+        }
     }
-  }
-  return destination;
+    return destination;
 }
