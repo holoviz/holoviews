@@ -129,7 +129,7 @@ def render_plot(plot, widget_mode, message=None):
 
     renderer = OutputMagic.renderer(dpi=kwargs['dpi'], fps=kwargs['fps'])
     with renderer.state():
-        if len(plot) == 1:
+        if len(plot) == 1 and not plot.dynamic:
             plot.update(0)
             return display_frame(plot, renderer, **kwargs)
         elif widget_mode is not None:

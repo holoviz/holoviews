@@ -146,7 +146,7 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, **params):
+                 style=None, subplots=None, dynamic=False, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -155,6 +155,7 @@ class DimensionedPlot(Plot):
         self.subplot = subplot
         self.keys = keys
         self.uniform = uniform
+        self.dynamic = dynamic
         self.drawn = False
         self.handles = {}
         self.group = None
@@ -170,10 +171,11 @@ class DimensionedPlot(Plot):
         """
         Get the state of the Plot for a given frame number.
         """
-        if frame > len(self):
+        if isinstance(frame, int) and frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
-        self.update_frame(self.keys[frame])
+        if not isinstance(frame, tuple): frame = self.keys[frame]
+        self.update_frame(frame)
         return self.state
 
 
@@ -361,6 +363,7 @@ class GenericElementPlot(DimensionedPlot):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
+        dynamic = isinstance(element, DynamicMap)
         if not isinstance(element, (HoloMap, DynamicMap)):
             self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
@@ -371,6 +374,7 @@ class GenericElementPlot(DimensionedPlot):
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                                 dynamic=dynamic,
                                                  **dict(params, **plot_opts))
 
 
@@ -708,7 +712,9 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
         dimensions, keys = traversal.unique_dimkeys(layout)
+        dynamic = bool(layout.traverse(lambda x: x, [DynamicMap]))
+        uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                             uniform=traversal.uniform(layout),
-                                             **dict(plotopts, **params))
+                                                uniform=uniform, dynamic=dynamic,
+                                                **dict(plotopts, **params))
