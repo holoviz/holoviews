@@ -352,7 +352,7 @@ class DynamicMap(HoloMap):
       supported.
       """)
 
-    interval = param.ObjectSelector(default='open',
+    interval = param.ObjectSelector(default='closed',
                                     objects=['open', 'closed', 'both'], doc="""
        Whether the dynamic map operates on a closed interval (requests
        to the supplied function are guaranteed to be within a known,
@@ -378,10 +378,19 @@ class DynamicMap(HoloMap):
         self.counter = 0 if self.interval == 'open' else None
 
         if self.interval == 'closed':
+            key = []
             for kdim in self.kdims:
-                if None in kdim.range:
+                if kdim.values:
+                    key.append(kdim.values[0])
+                elif kdim.range:
+                    key.append(kdim.range[0])
+                else:
                     raise Exception("In closed interval mode all key "
-                                    "dimensions ranges need specified ranges")
+                                    "dimensions need specified ranges"
+                                    "or values.")
+            if not len(self):
+                self[tuple(key)]
+
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
         """
@@ -413,7 +422,7 @@ class DynamicMap(HoloMap):
                 raise KeyError(str(e) + " Note: Cannot index outside "
                                "available cache in open interval mode.")
         val = self.gen(key)
-        self.data[key if isinstance(key, tuple) else (key,) ] = val
+        self.data[key if isinstance(key, tuple) else (key,)] = val
         return val
 
 
