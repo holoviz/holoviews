@@ -138,11 +138,11 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def _reduce_map(self, dimensions, function, reduce_map):
-        dimensions = self._valid_dimensions(dimensions)
         if dimensions and reduce_map:
             raise Exception("Pass reduced dimensions either as an argument"
                             "or as part of the kwargs not both.")
-        elif dimensions:
+        dimensions = self._valid_dimensions(dimensions)
+        if dimensions:
             reduce_map = {d: function for d in dimensions}
         elif not reduce_map:
             reduce_map = {d: function for d in self._cached_index_names}
