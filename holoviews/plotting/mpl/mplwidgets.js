@@ -40,26 +40,33 @@ var MPLMethods = {
 	    }
 	} else {
 	    if(this.mode == 'mpld3') {
-		mpld3.draw_figure(cache_id, this.frames[idx]);
+			mpld3.draw_figure(cache_id, this.frames[idx]);
 	    } else {
-		this.cache[idx].html(this.frames[idx]);
+			this.cache[idx].html(this.frames[idx]);
 	    }
 	}
     },
     dynamic_update : function(current){
+	if (this.dynamic) {
+		current = JSON.stringify(current);
+	}
 	function callback(msg){
 	    /* This callback receives data from Python as a string
 	       in order to parse it correctly quotes are sliced off*/
-	    if (!(this.mode == 'nbagg')) {
-		if(!(current in this.cache)) {
-		    var data = msg.content.data['text/plain'].slice(1, -1);
-		    if(this.mode == 'mpld3'){
-			data = JSON.parse(data)[0];
-		    }
-		    this.frames[current] = data;
-		    this.update_cache();
+		if (msg.msg_type != "execute_result") {
+			console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
+			return
 		}
-		this.update(current);
+	    if (!(this.mode == 'nbagg')) {
+			if(!(current in this.cache)) {
+				var data = msg.content.data['text/plain'].slice(1, -1);
+				if(this.mode == 'mpld3'){
+					data = JSON.parse(data)[0];
+				}
+				this.frames[current] = data;
+				this.update_cache();
+			}
+			this.update(current);
 	    }
 	}
 	if((this.mode == 'nbagg') || !(current in this.cache)) {

@@ -71,16 +71,19 @@ class MPLWidget(NdWidget):
             return self.renderer.html(self.plot, figure_format, css=css)
 
 
-    def update(self, n):
+    def update(self, key):
+        if self.dynamic:
+            key = tuple(key)
+
         if self.renderer.mode == 'nbagg':
             if not self.manager._shown:
                 self.comm.start()
                 self.manager.add_web_socket(self.comm)
                 self.manager._shown = True
-            fig = self.plot[n]
+            fig = self.plot[key]
             fig.canvas.draw_idle()
             return ''
-        frame = self._plot_figure(n)
+        frame = self._plot_figure(key)
         if self.renderer.mode == 'mpld3':
             frame = self.encode_frames({0: frame})
         return frame

@@ -71,6 +71,7 @@ class NdWidget(param.Parameterized):
         self.plot = plot
         self.dimensions = plot.dimensions
         self.keys = plot.keys
+        self.dynamic = plot.dynamic
         if renderer is None:
             self.renderer = plot.renderer.instance(dpi=self.display_options.get('dpi', 72))
         else:
@@ -141,8 +142,9 @@ class NdWidget(param.Parameterized):
             return self.renderer.html(self.plot, figure_format, css=css)
 
 
-    def update(self, n):
-        return self._plot_figure(n)
+    def update(self, key):
+        if self.dynamic: key = tuple(key)
+        return self._plot_figure(key)
 
 
 
@@ -205,18 +207,28 @@ class SelectionWidget(NdWidget):
         dimensions = []
         init_dim_vals = []
         for idx, dim in enumerate(self.mock_obj.kdims):
-            dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
-            dim_vals = [v for v in dim_vals if v is not None]
-            if isnumeric(dim_vals[0]):
-                dim_vals = [round(v, 10) for v in dim_vals]
-                widget_type = 'slider'
+            if self.dynamic:
+                if dim.values:
+                    dim_vals = dim.values
+                    widget_type = 'dropdown'
+                else:
+                    dim_vals = list(dim.range)
+                    widget_type = 'slider'
             else:
-                widget_type = 'dropdown'
+                dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
+                if isnumeric(dim_vals[0]):
+                    dim_vals = [round(v, 10) for v in dim_vals]
+                    widget_type = 'slider'
+                else:
+                    widget_type = 'dropdown'
+                dim_vals = repr([v for v in dim_vals if v is not None])
             init_dim_vals.append(dim_vals[0])
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
-            widgets.append(dict(dim=sanitize_identifier(dim_str), dim_label=dim_str, dim_idx=idx, vals=repr(dim_vals),
-                                type=widget_type, visibility=visibility))
+            widget_data = dict(dim=sanitize_identifier(dim_str), dim_label=dim_str,
+                               dim_idx=idx, vals=dim_vals, type=widget_type,
+                               visibility=visibility)
+            widgets.append(widget_data)
             dimensions.append(dim_str)
         return widgets, dimensions, init_dim_vals
 
@@ -227,19 +239,20 @@ class SelectionWidget(NdWidget):
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
                    if isnumeric(v) else v for v in k]
-            key_data[str(tuple(key))] = i
+            key = str(tuple(key))
+            key_data[key] = i
         return json.dumps(key_data)
 
 
     def _get_data(self):
         data = super(SelectionWidget, self)._get_data()
         widgets, dimensions, init_dim_vals = self.get_widgets()
-        key_data = self.get_key_data()
+        key_data = {} if self.dynamic else self.get_key_data()
         notfound_msg = "<h2 style='vertical-align: middle>No frame at selected dimension value.<h2>"
         throttle = self.throttle[self.embed]
         return dict(data, Nframes=len(self.mock_obj),
                     Nwidget=self.mock_obj.ndims,
                     dimensions=dimensions, key_data=key_data,
                     widgets=widgets, init_dim_vals=init_dim_vals,
-                    throttle=throttle, notFound=notfound_msg)
-
+                    throttle=throttle, notFound=notfound_msg,
+                    dynamic=str(self.dynamic).lower())

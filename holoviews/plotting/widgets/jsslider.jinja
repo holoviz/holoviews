@@ -66,14 +66,25 @@
         require.config(jquery_require);
         require(["jQueryUI", "underscore"], function(jUI, _){
             if (noConflict) $.noConflict(true);
-            var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
+            var vals = {{ widget_data['vals'] }};
+			if ({{ dynamic }}) {
+				var min = vals[0];
+				var max = vals[vals.length-1];
+			} else {
+				var min = 0;
+				var max = vals.length - 1;
+			}
             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
                 animate: "fast",
-                min: 0,
-                max: valMap{{ id }}_{{ widget_data['dim'] }}.length - 1,
-                value: 0,
+                min: min,
+                max: max,
+                value: min,
                 slide: _.throttle(function(event, ui) {
-                    var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[ui.value];
+					if ({{ dynamic }}) {
+						var dim_val = ui.value
+					} else {
+						var dim_val = vals[ui.value];
+					}
                     $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
 		    }, {{ throttle }})
@@ -108,7 +119,7 @@
                     }
                 }
             });
-            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(valMap{{ id }}_{{ widget_data['dim'] }}[0]);
+            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(vals[0]);
         });
       </script>
       {% elif widget_data['type']=='dropdown' %}
@@ -118,16 +129,16 @@
         </select>
       </div>
       <script>
-        var valMap{{ id }}_{{ widget_data['dim'] }} = {{ widget_data['vals'] }};
+        var vals = {{ widget_data['vals'] }};
         var options = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
-        for (var i=0; i<valMap{{ id }}_{{ widget_data['dim'] }}.length; i++){
+        for (var i=0; i<vals.length; i++){
             options.append($("<option>", {
                 value: i,
-                text:  valMap{{ id }}_{{ widget_data['dim'] }}[i]
+                text: vals[i]
             }));
         };
         $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').on('change', function(event, ui) {
-            var dim_val = valMap{{ id }}_{{ widget_data['dim'] }}[this.value];
+            var dim_val = vals[this.value];
             if(anim{{ id }}) {
                 anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
             }
@@ -156,7 +167,7 @@
     	function create_widget() {
             setTimeout(function() {
 	            anim{{ id }} = new {{ widget_name }}(frame_data, "{{ id }}", widget_ids,
-                        keyMap, dim_vals, notFound, {{ load_json }}, {{ mode }}, {{ cached }});
+                        keyMap, dim_vals, notFound, {{ load_json }}, {{ mode }}, {{ cached }}, "", {{ dynamic }});
 	    }, 0);
 	}	
 
