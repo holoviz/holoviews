@@ -62,6 +62,15 @@ class BokehPlot(Plot):
         return self.handles['plot']
 
 
+    @property
+    def current_handles(self):
+        """
+        Should return a list of plot objects that have changed and
+        should be updated.
+        """
+        return []
+
+
     def _fontsize(self, key, label='fontsize', common=True):
         """
         Converts integer fontsizes to a string specifying

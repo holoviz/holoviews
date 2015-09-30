@@ -35,8 +35,8 @@ class BokehRenderer(Renderer):
             html = '<center>%s</center>' % html
             return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
         elif fmt == 'json':
-            types = [DataSource, Figure]
-            plotobjects = [o for tp in types for o in plot.state.select({'type': tp})]
+            plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
+                           for h in handles]
             data = {}
             for plotobj in plotobjects:
                 json = plotobj.vm_serialize(changed_only=True)

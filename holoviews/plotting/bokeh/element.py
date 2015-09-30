@@ -405,6 +405,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_plot(key, plot, element)
 
 
+    @property
+    def current_handles(self):
+        """
+        Returns a list of the plot objects to update.
+        """
+        plot = self.state
+        handles = [plot, self.handles['source']]
+        framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
+        if framewise or self.dynamic:
+            handles += [plot.x_range, plot.y_range]
+        return handles
+
+
 
 class BokehMPLWrapper(ElementPlot):
     """
