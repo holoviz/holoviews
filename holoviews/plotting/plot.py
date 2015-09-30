@@ -281,7 +281,7 @@ class DimensionedPlot(Plot):
         for group, (axiswise, framewise) in norm_opts.items():
             if group in ranges:
                 continue # Skip if ranges are already computed
-            elif not framewise: # Traverse to get all elements
+            elif not framewise and not self.dynamic: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 elements = self._get_frame(key).traverse(return_fn, [group])
@@ -747,6 +747,7 @@ class GenericLayoutPlot(GenericCompositePlot):
                                    range(self.cols)))
         dimensions, keys = traversal.unique_dimkeys(layout)
         dynamic = bool(layout.traverse(lambda x: x, [DynamicMap]))
+        dynamic = dynamic and not bool(layout.traverse(lambda x: x, [HoloMap]))
         uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,

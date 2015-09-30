@@ -305,12 +305,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_ranges(self, element, ranges):
         framewise = self.lookup_options(element, 'norm').options.get('framewise')
-        if framewise or self.dynamic:
+        dims = element.dimensions()
+        dim_ranges = dims[0].range + dims[1].range
+        if framewise or self.dynamic or not None in dim_ranges:
             return
         plot = self.handles['plot']
-        dims = element.dimensions(label=True)
-        xlow, xhigh = ranges.get(dims[0], element.range(0))
-        ylow, yhigh = ranges.get(dims[1], element.range(1))
+        xlow, xhigh = ranges.get(dims[0].name, element.range(0))
+        ylow, yhigh = ranges.get(dims[1].name, element.range(1))
         plot.x_range.start = xlow
         plot.x_range.end   = xhigh
         plot.y_range.start = ylow
