@@ -7,15 +7,14 @@ import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # pyflakes:ignore (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
-
 import param
-from ...core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Element, CompositeOverlay, Element3D, Empty, Collator
-from ...core.options import Store, Compositor
-from ...core import traversal
-from ...core.util import int_to_roman,\
-    int_to_alpha, basestring
 
+from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
+                     GridSpace, Element, CompositeOverlay, Element3D,
+                     Empty, Collator, DynamicMap)
+from ...core.options import Store, Compositor
+from ...core.util import int_to_roman, int_to_alpha, basestring
+from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import MPLRenderer
 
