@@ -171,6 +171,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
+                if low == high:
+                    low -= 0.5
+                    high += 0.5
                 if all(x is not None for x in (low, high)):
                     plot_ranges['x_range'] = [low, high]
 
@@ -183,6 +186,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
+                if low == high:
+                    low -= 0.5
+                    high += 0.5
                 if all(y is not None for y in (low, high)):
                     plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
@@ -297,6 +303,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.yaxis[0].set(**props['y'])
 
 
+    def _update_ranges(self, element, ranges):
+        framewise = self.lookup_options(element, 'norm').options.get('framewise')
+        if framewise or self.dynamic:
+            return
+        plot = self.handles['plot']
+        dims = element.dimensions(label=True)
+        xlow, xhigh = ranges.get(dims[0], element.range(0))
+        ylow, yhigh = ranges.get(dims[1], element.range(1))
+        plot.x_range.start = xlow
+        plot.x_range.end   = xhigh
+        plot.y_range.start = ylow
+        plot.y_range.end   = yhigh
+
+
     def _process_legend(self):
         """
         Disables legends if show_legend is disabled.
@@ -380,6 +400,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)
+        self._update_ranges(element, ranges)
         if not self.overlaid:
             self._update_plot(key, plot, element)
 
