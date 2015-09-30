@@ -256,6 +256,8 @@ class GridPlot(CompositePlot):
                  keys=None, dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
+        dynamic = bool(layout.traverse(lambda x: x, [DynamicMap]))
+        dynamic = dynamic and not bool(layout.traverse(lambda x: x, [HoloMap]))
         self.layout = layout
         self.cols, self.rows = layout.shape
         self.layout_num = layout_num
@@ -266,6 +268,7 @@ class GridPlot(CompositePlot):
             params['uniform'] = traversal.uniform(layout)
 
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                       dynamic=dynamic,
                                        **dict(extra_opts, **params))
         # Compute ranges layoutwise
         grid_kwargs = {}
