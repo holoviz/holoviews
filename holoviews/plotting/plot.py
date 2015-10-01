@@ -172,10 +172,11 @@ class DimensionedPlot(Plot):
         """
         Get the state of the Plot for a given frame number.
         """
-        if isinstance(frame, int) and frame > len(self):
+        if not self.dynamic == 'open' and isinstance(frame, int) and frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
-        if not isinstance(frame, tuple): frame = self.keys[frame]
+        if not self.dynamic == 'open' and not isinstance(frame, tuple):
+            frame = self.keys[frame]
         self.update_frame(frame)
         return self.state
 
@@ -414,6 +415,8 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_frame(self, key):
+        if self.dynamic == 'open' and key > self.hmap.counter:
+            return next(self.hmap)
         if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
