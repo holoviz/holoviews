@@ -22,6 +22,12 @@ HoloViewsWidget.prototype.populate_cache = function(idx){
     }
 }
 
+HoloViewsWidget.prototype.process_error = function(msg){
+
+}
+
+
+
 HoloViewsWidget.prototype.dynamic_update = function(current){
     function callback(msg){
         /* This callback receives data from Python as a string
@@ -158,6 +164,18 @@ ScrubberWidget.prototype.set_frame = function(frame){
 }
 
 
+ScrubberWidget.prototype.process_error = function(msg){
+	if (msg.content.ename === 'StopIteration') {
+		this.pause_animation();
+		var keys = Object.keys(this.frames)
+		this.length = keys.length;
+		document.getElementById(this.slider_id).max = this.length-1;
+		document.getElementById(this.slider_id).value = this.length-1;
+		this.current_frame = this.length-1;
+	}
+}
+
+
 ScrubberWidget.prototype.get_loop_state = function(){
     var button_group = document[this.loop_select_id].state;
     for (var i = 0; i < button_group.length; i++) {
@@ -173,7 +191,7 @@ ScrubberWidget.prototype.get_loop_state = function(){
 ScrubberWidget.prototype.next_frame = function() {
 	if (this.dynamic && this.current_frame + 1 >= this.length) {
 		this.length += 1;
-        document.getElementById(this.slider_id).max = this.length -1 ;
+        document.getElementById(this.slider_id).max = this.length-1;
 	}
     this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
 }

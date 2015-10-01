@@ -53,6 +53,9 @@ var MPLMethods = {
 		function callback(msg){
 			/* This callback receives data from Python as a string
 			 in order to parse it correctly quotes are sliced off*/
+			if (msg.content.ename != undefined) {
+				this.process_error(msg);
+			}
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
 				return
