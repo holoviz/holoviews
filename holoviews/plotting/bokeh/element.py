@@ -392,6 +392,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         element = self._get_frame(key)
         if not element:
+            source = self.handles['source']
+            source.data = {k: [] for k in source.data}
             return
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
@@ -413,9 +415,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         plot = self.state
         handles = [plot, self.handles['source']]
-        framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
-        if framewise or self.dynamic:
-            handles += [plot.x_range, plot.y_range]
+        if self.current_frame:
+            framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
+            if framewise or self.dynamic:
+                handles += [plot.x_range, plot.y_range]
         return handles
 
 

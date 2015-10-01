@@ -19,15 +19,24 @@ var BokehMethods = {
 		}, this));
 	},
 	update : function(current){
-		var data = this.frames[current];
-		$.each(data, function(id, value) {
-			var ds = Bokeh.Collections(value.type).get(id);
-			if (ds != undefined) {
-				ds.set(value.data);
-			}
-		});
+		if (current === undefined) {
+			var data = undefined;
+		} else {
+			var data = this.frames[current];
+		}
+		if (data != undefined) {
+			$.each(data, function(id, value) {
+				var ds = Bokeh.Collections(value.type).get(id);
+				if (ds != undefined) {
+					ds.set(value.data);
+				}
+			});
+		}
 	},
 	dynamic_update : function(current){
+		if (current === undefined) {
+			return
+		}
 		if(this.dynamic) {
 			current = JSON.stringify(current);
 		}
