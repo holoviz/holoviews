@@ -79,6 +79,7 @@ def display_video(plot, renderer, holomap_format, dpi, fps, css, **kwargs):
 def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
     "Display widgets applicable to the specified element"
     isuniform = plot.uniform
+    dynamic = plot.dynamic
     islinear = bijective(plot.keys)
     if not isuniform and holomap_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
@@ -89,6 +90,9 @@ def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
         holomap_format = 'scrubber' if islinear or not isuniform else 'widgets'
 
     widget = 'scrubber' if holomap_format == 'scrubber' else 'selection'
+    if dynamic == 'open': widget = 'scrubber'
+    if dynamic == 'closed': widget = 'selection'
+
     widget_cls = plot.renderer.widgets[widget]
 
     return widget_cls(plot, renderer=renderer, embed=(widget_mode == 'embed'),
