@@ -685,6 +685,7 @@ class GenericCompositePlot(DimensionedPlot):
         Element.
         """
         layout_frame = self.layout.clone(shared_data=False)
+        if not isinstance(key, tuple): key = (key,)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
         if key == self.current_key:
@@ -693,7 +694,12 @@ class GenericCompositePlot(DimensionedPlot):
             self.current_key = key
 
         for path, item in self.layout.items():
-            if self.uniform:
+            if self.dynamic == 'open':
+                counts = item.traverse(lambda x: x.counter, (DynamicMap,))
+                if key[0] > counts[0]:
+                    item.traverse(lambda x: next(x), (DynamicMap,))
+                dim_keys = item.traverse(nthkey_fn, (HoloMap,))[0]
+            elif self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
             else:
