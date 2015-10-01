@@ -124,7 +124,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 
 
 /* Define the ScrubberWidget class */
-function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached){
+function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, dynamic){
     this.img_id = "_anim_img" + id;
     this.slider_id = "_anim_slider" + id;
     this.loop_select_id = "_anim_loop_select" + id;
@@ -133,6 +133,7 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
     this.interval = interval;
     this.current_frame = 0;
     this.direction = 0;
+    this.dynamic = dynamic;
     this.timer = null;
     this.load_json = load_json;
     this.mode = mode;
@@ -156,6 +157,7 @@ ScrubberWidget.prototype.set_frame = function(frame){
     }
 }
 
+
 ScrubberWidget.prototype.get_loop_state = function(){
     var button_group = document[this.loop_select_id].state;
     for (var i = 0; i < button_group.length; i++) {
@@ -167,16 +169,12 @@ ScrubberWidget.prototype.get_loop_state = function(){
     return undefined;
 }
 
-ScrubberWidget.prototype.update = function(current){
-    if(current in this.cache) {
-        $.each(this.cache, function(index, value) {
-            value.hide();
-        });
-        this.cache[current].show();
-    }
-}
 
 ScrubberWidget.prototype.next_frame = function() {
+	if (this.dynamic && this.current_frame + 1 >= this.length) {
+		this.length += 1;
+        document.getElementById(this.slider_id).max = this.length -1 ;
+	}
     this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
 }
 
@@ -205,9 +203,8 @@ ScrubberWidget.prototype.faster = function() {
 }
 
 ScrubberWidget.prototype.anim_step_forward = function() {
-    this.current_frame += 1;
-    if(this.current_frame < this.length){
-        this.set_frame(this.current_frame);
+    if(this.current_frame < this.length || this.dynamic){
+        this.next_frame();
     }else{
         var loop_state = this.get_loop_state();
         if(loop_state == "loop"){

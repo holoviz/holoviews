@@ -71,7 +71,9 @@ class NdWidget(param.Parameterized):
         self.plot = plot
         self.dimensions = plot.dimensions
         self.keys = plot.keys
+
         self.dynamic = plot.dynamic
+        if self.dynamic: self.embed = False
         if renderer is None:
             self.renderer = plot.renderer.instance(dpi=self.display_options.get('dpi', 72))
         else:
@@ -100,11 +102,12 @@ class NdWidget(param.Parameterized):
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
         mode = repr(self.renderer.mode)
+        dynamic = repr(self.dynamic) if self.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     server=self.server_url, cached=cached,
                     load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name,
-                    widget_template=template)
+                    widget_template=template, dynamic=dynamic)
 
 
     def render_html(self, data):
@@ -143,7 +146,6 @@ class NdWidget(param.Parameterized):
 
 
     def update(self, key):
-        if self.dynamic: key = tuple(key)
         return self._plot_figure(key)
 
 
@@ -258,5 +260,9 @@ class SelectionWidget(NdWidget):
                     Nwidget=self.mock_obj.ndims,
                     dimensions=dimensions, key_data=key_data,
                     widgets=widgets, init_dim_vals=init_dim_vals,
-                    throttle=throttle, notFound=notfound_msg,
-                    dynamic=str(self.dynamic).lower())
+                    throttle=throttle, notFound=notfound_msg)
+
+
+    def update(self, key):
+        if self.dynamic: key = tuple(key)
+        return self._plot_figure(key)
