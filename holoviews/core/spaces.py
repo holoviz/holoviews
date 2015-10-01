@@ -390,6 +390,8 @@ class DynamicMap(HoloMap):
                                     "or values.")
             if not len(self):
                 self[tuple(key)]
+        else:
+            next(self)
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
@@ -447,9 +449,6 @@ class DynamicMap(HoloMap):
         self.data[key] = val
         self.counter += 1
         return val
-
-    def __iter__(self):
-        return self if self.interval=='open' else iter(list(self.values()))
 
 
 
