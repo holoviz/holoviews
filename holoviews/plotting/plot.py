@@ -718,6 +718,7 @@ class GenericCompositePlot(DimensionedPlot):
                 else:
                     dim_keys = zip([d.name for d in self.dimensions
                                     if d in item.dimensions('key')], key)
+                self.current_key = tuple(k[1] for k in dim_keys)
             elif self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
