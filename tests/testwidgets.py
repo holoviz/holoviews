@@ -51,11 +51,11 @@ class TestWidgets(IPTestCase):
 
     def test_scrubber_widget_1(self):
         html = normalize(ScrubberWidget(self.plot1, display_options={'figure_format': 'png'})())
-        self.assertEqual(digest_data(html), 'db71b98841b2f505b4854950bc751fc1025e863d27792436d7d3084f8e9ac5b6')
+        self.assertEqual(digest_data(html), '61d1b1a41e3a06899110c36e23c5db85d3dba064ca26470f932f2c1d6c3497b4')
 
     def test_scrubber_widget_2(self):
         html = normalize(ScrubberWidget(self.plot2, display_options={'figure_format': 'png'})())
-        self.assertEqual(digest_data(html), '78bf66f657c82497d170e90ceeaca6712d1b9fb497a8ae3bee3fdb4e6c97e102')
+        self.assertEqual(digest_data(html), 'ce0d3917cf72e4ffc87f9b91afd5dfaa302263d818fd784f72ee4c0d8b1a3a40')
 
     def test_selection_widget_1(self):
         html = normalize(SelectionWidget(self.plot1, display_options={'figure_format': 'png'})())
