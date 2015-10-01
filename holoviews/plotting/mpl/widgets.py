@@ -72,7 +72,7 @@ class MPLWidget(NdWidget):
 
 
     def update(self, key):
-        if self.dynamic:
+        if self.dynamic == 'closed':
             key = tuple(key)
 
         if self.renderer.mode == 'nbagg':
