@@ -417,9 +417,23 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_frame(self, key):
-        if self.dynamic == 'open' and key > self.hmap.counter:
-            return next(self.hmap)
-        if isinstance(key, int):
+        if self.dynamic == 'open':
+            if isinstance(key, tuple):
+                frame = self.hmap[key]
+            elif key < self.hmap.counter:
+                key = self.hmap.keys()[key]
+                frame = self.hmap[key]
+            elif key >= self.hmap.counter:
+                frame = next(self.hmap)
+                key = self.hmap.keys()[-1]
+            if not isinstance(key, tuple): key = (key,)
+            if not key in self.keys:
+                self.keys.append(key)
+            self.current_frame = frame
+            self.current_key = key
+            return frame
+
+        if not self.dynamic and isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
         if key == self.current_key:
@@ -685,6 +699,7 @@ class GenericCompositePlot(DimensionedPlot):
         Element.
         """
         layout_frame = self.layout.clone(shared_data=False)
+        keyisint = isinstance(key, int)
         if not isinstance(key, tuple): key = (key,)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
@@ -695,10 +710,14 @@ class GenericCompositePlot(DimensionedPlot):
 
         for path, item in self.layout.items():
             if self.dynamic == 'open':
-                counts = item.traverse(lambda x: x.counter, (DynamicMap,))
-                if key[0] > counts[0]:
-                    item.traverse(lambda x: next(x), (DynamicMap,))
-                dim_keys = item.traverse(nthkey_fn, (HoloMap,))[0]
+                if keyisint:
+                    counts = item.traverse(lambda x: x.counter, (DynamicMap,))
+                    if key[0] >= counts[0]:
+                        item.traverse(lambda x: next(x), (DynamicMap,))
+                    dim_keys = item.traverse(nthkey_fn, (DynamicMap,))[0]
+                else:
+                    dim_keys = zip([d.name for d in self.dimensions
+                                    if d in item.dimensions('key')], key)
             elif self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
