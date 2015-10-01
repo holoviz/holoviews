@@ -391,7 +391,8 @@ class DynamicMap(HoloMap):
             if not len(self):
                 self[tuple(key)]
         else:
-            next(self)
+            if not len(self):
+                next(self)
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
