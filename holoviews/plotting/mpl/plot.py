@@ -15,6 +15,7 @@ from ...core.options import Store, Compositor
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
+from ..util import get_dynamic_interval
 from .renderer import MPLRenderer
 
 
