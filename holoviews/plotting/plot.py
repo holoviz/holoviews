@@ -18,6 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
+from .util import get_dynamic_interval
 
 
 class Plot(param.Parameterized):
@@ -397,7 +398,7 @@ class GenericElementPlot(DimensionedPlot):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
-        dynamic = isinstance(element, DynamicMap)
+        dynamic = element.interval if isinstance(element, DynamicMap) else None
         if not isinstance(element, (HoloMap, DynamicMap)):
             self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
@@ -739,15 +740,13 @@ class GenericLayoutPlot(GenericCompositePlot):
             raise ValueError("GenericLayoutPlot only accepts Layout objects.")
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
-
         self.layout = layout
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
+        dynamic = get_dynamic_interval(layout)
         dimensions, keys = traversal.unique_dimkeys(layout)
-        dynamic = bool(layout.traverse(lambda x: x, [DynamicMap]))
-        dynamic = dynamic and not bool(layout.traverse(lambda x: x, [HoloMap]))
         uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,

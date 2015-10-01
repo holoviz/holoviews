@@ -4,12 +4,13 @@ from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Panel, Tabs
 
-from ...core import (OrderedDict, CompositeOverlay, DynamicMap, Store, Layout,
+from ...core import (OrderedDict, CompositeOverlay, Store, Layout,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
 from ...core.options import Compositor
 from ...core.util import basestring
 from ..plot import Plot, GenericCompositePlot, GenericLayoutPlot
+from ..util import get_dynamic_interval
 from .renderer import BokehRenderer
 from .util import layout_padding
 
@@ -91,8 +92,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                  layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        dynamic = bool(layout.traverse(lambda x: x, [DynamicMap]))
-        dynamic = dynamic and not bool(layout.traverse(lambda x: x, [HoloMap]))
+        dynamic = get_dynamic_interval(layout)
         self.layout = layout
         self.rows, self.cols = layout.shape
         self.layout_num = layout_num

@@ -8,10 +8,9 @@ from mpl_toolkits.mplot3d import Axes3D  # pyflakes:ignore (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 import param
-
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Element3D,
-                     Empty, Collator, DynamicMap)
+                     Empty, Collator)
 from ...core.options import Store, Compositor
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
@@ -255,8 +254,7 @@ class GridPlot(CompositePlot):
                  keys=None, dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        dynamic = bool(layout.traverse(lambda x: x, [DynamicMap]))
-        dynamic = dynamic and not bool(layout.traverse(lambda x: x, [HoloMap]))
+        dynamic = get_dynamic_interval(layout)
         self.layout = layout
         self.cols, self.rows = layout.shape
         self.layout_num = layout_num
