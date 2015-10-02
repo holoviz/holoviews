@@ -1,5 +1,4 @@
 import operator
-import inspect
 from itertools import groupby
 from numbers import Number
 import numpy as np
