@@ -549,6 +549,14 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         plot.legend[0].legends[:] = new_legends
 
 
+    @property
+    def current_handles(self):
+        """
+        Overlays don't have their own plotting handles.
+        """
+        return []
+
+
     def _init_tools(self, element):
         """
         Processes the list of tools to be supplied to the plot.
