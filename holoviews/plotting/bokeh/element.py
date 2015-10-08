@@ -405,8 +405,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)
-        self._update_ranges(element, ranges)
         if not self.overlaid:
+            self._update_ranges(element, ranges)
             self._update_plot(key, plot, element)
 
 
@@ -415,8 +415,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a list of the plot objects to update.
         """
+        handles = []
+        if 'source' in self.handles:
+            handles = [self.handles['source']]
+        if self.overlaid:
+            return handles
         plot = self.state
-        handles = [plot, self.handles['source']]
+        handles.append(plot)
         if self.current_frame:
             framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
             if framewise or self.dynamic:
@@ -549,14 +554,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         plot.legend[0].legends[:] = new_legends
 
 
-    @property
-    def current_handles(self):
-        """
-        Overlays don't have their own plotting handles.
-        """
-        return []
-
-
     def _init_tools(self, element):
         """
         Processes the list of tools to be supplied to the plot.
@@ -609,4 +606,5 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges)
         if not self.overlaid and not self.tabs:
+            self._update_ranges(overlay, ranges)
             self._update_plot(key, self.handles['plot'], overlay)
