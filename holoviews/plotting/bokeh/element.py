@@ -172,8 +172,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
                 if low == high:
-                    low -= 0.5
-                    high += 0.5
+                    offset = low*0.1 if low else 0.5
+                    low -= offset
+                    high += offset
                 if all(x is not None for x in (low, high)):
                     plot_ranges['x_range'] = [low, high]
 
@@ -187,8 +188,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
                 if low == high:
-                    low -= 0.5
-                    high += 0.5
+                    offset = low*0.1 if low else 0.5
+                    low -= offset
+                    high += offset
                 if all(y is not None for y in (low, high)):
                     plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
@@ -305,19 +307,26 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_ranges(self, element, ranges):
         framewise = self.lookup_options(element, 'norm').options.get('framewise')
+        l, b, r, t = self.get_extents(element, ranges)
         dims = element.dimensions()
         dim_ranges = dims[0].range + dims[1].range
         if not framewise and not self.dynamic:
             return
         plot = self.handles['plot']
-        xlow, xhigh = ranges.get(dims[0].name, element.range(0))
-        ylow, yhigh = ranges.get(dims[1].name, element.range(1))
         if self.invert_axes:
-            xlow, xhigh, ylow, yhigh = ylow, yhigh, xlow, xhigh
-        plot.x_range.start = xlow
-        plot.x_range.end   = xhigh
-        plot.y_range.start = ylow
-        plot.y_range.end   = yhigh
+            l, b, r, t = b, l, t, r
+        if l == r:
+            offset = abs(l*0.1 if l else 0.5)
+            l -= offset
+            r += offset
+        if b == t:
+            offset = abs(b*0.1 if b else 0.5)
+            b -= offset
+            t += offset
+        plot.x_range.start = l
+        plot.x_range.end   = r
+        plot.y_range.start = b
+        plot.y_range.end   = t
 
 
     def _process_legend(self):
