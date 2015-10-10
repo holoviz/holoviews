@@ -1,6 +1,7 @@
 from io import BytesIO
 
 import numpy as np
+import bokeh
 import bokeh.plotting
 from bokeh.models import Range, HoverTool
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
@@ -219,6 +220,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
+        major, minor = [int(v) for v  in bokeh.__version__.split('.')][0:2]
+        if major > 0 or minor > '10':
+            properties['webgl'] = True
         return bokeh.plotting.figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type,
                                      tools=tools, **properties)

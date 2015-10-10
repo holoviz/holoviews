@@ -3,7 +3,7 @@ import os, uuid, json
 import param
 
 from ...core import OrderedDict, NdMapping
-from ...core.util import sanitize_identifier, safe_unicode
+from ...core.util import sanitize_identifier, safe_unicode, basestring
 
 def isnumeric(val):
     try:
@@ -207,12 +207,13 @@ class SelectionWidget(NdWidget):
         for idx, dim in enumerate(self.mock_obj.kdims):
             dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
             dim_vals = [v for v in dim_vals if v is not None]
-            if isnumeric(dim_vals[0]):
+            val = dim_vals[0]
+            if not isinstance(val, basestring) and isnumeric(val):
                 dim_vals = [round(v, 10) for v in dim_vals]
                 widget_type = 'slider'
             else:
                 widget_type = 'dropdown'
-            init_dim_vals.append(dim_vals[0])
+            init_dim_vals.append(val)
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
             widgets.append(dict(dim=sanitize_identifier(dim_str), dim_label=dim_str, dim_idx=idx, vals=repr(dim_vals),
@@ -226,7 +227,8 @@ class SelectionWidget(NdWidget):
         key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
-                   if isnumeric(v) else v for v in k]
+                   if not isinstance(v, basestring) and isnumeric(v) else v
+                   for v in k]
             key_data[str(tuple(key))] = i
         return json.dumps(key_data)
 

@@ -696,12 +696,11 @@ class TimerMagic(Magics):
 
     @staticmethod
     def elapsed_time():
-        elapsed = time.time() -  TimerMagic.start_time
-        minutes = elapsed // 60
+        seconds = time.time() -  TimerMagic.start_time
+        minutes = seconds // 60
         hours = minutes // 60
-        seconds = elapsed % 60
-        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes, seconds)
-
+        return "Timer elapsed: %02d:%02d:%02d" % (hours, minutes % 60, seconds % 60)
+                                    
     @classmethod
     def option_completer(cls, k,v):
         return ['start']
