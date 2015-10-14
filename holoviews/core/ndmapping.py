@@ -4,6 +4,8 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
+from collections import Sequence
+from itertools import cycle
 from operator import itemgetter
 import numpy as np
 
@@ -288,11 +290,10 @@ class MultiDimensionalMapping(Dimensioned):
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
-        Create a new object with an additional key dimensions along
-        which items are indexed. Requires the dimension name, the
-        desired position in the key dimensions and a key value that
-        will be used across the dimension. This is particularly useful
-        for merging several mappings together.
+        Create a new object with an additional key dimensions.
+        Requires the dimension name or object, the desired position
+        in the key dimensions and a key value scalar or sequence of
+        the same length as the existing keys.
         """
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
@@ -303,10 +304,16 @@ class MultiDimensionalMapping(Dimensioned):
         dimensions = self.kdims[:]
         dimensions.insert(dim_pos, dimension)
 
+        if isinstance(dim_val, list) and not len(dim_val) == len(self):
+            raise ValueError("Added dimension values must be same length"
+                             "as existing keys.")
+        else:
+            dim_val = cycle([dim_val])
+
         items = OrderedDict()
-        for key, val in self.data.items():
+        for dval, (key, val) in zip(dim_val, self.data.items()):
             new_key = list(key)
-            new_key.insert(dim_pos, dim_val)
+            new_key.insert(dim_pos, dval)
             items[tuple(new_key)] = val
 
         return self.clone(items, kdims=dimensions, **kwargs)
@@ -774,7 +781,7 @@ class UniformNdMapping(NdMapping):
 
     @property
     def empty_element(self):
-        return self._type(None)
+        return self.type(None)
 
 
     def _item_check(self, dim_vals, data):

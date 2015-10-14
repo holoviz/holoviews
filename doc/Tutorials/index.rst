@@ -26,9 +26,9 @@ in this order:
   ready for selecting, sampling, slicing, viewing, combining, and
   animating.
 
-* `Transforming Data: <Transforming_Data>`_
-  How to transform data within HoloViews containers, e.g. by
-  collapsing across dimensions. (Coming soon!)
+* `Sampling Data: <Sampling_Data>`_
+  How to select data in multiple dimensions and begin transforming
+  it into different types.
 
 
 Supplementary Tutorials

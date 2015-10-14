@@ -140,9 +140,9 @@ class HoloMap(UniformNdMapping):
                 if (self_key in self) and (other_key in other):
                     items.append((new_key, self[self_key] * other[other_key]))
                 elif self_key in self:
-                    items.append((new_key, self[self_key] * other.empty_element))
+                    items.append((new_key, Overlay([self[self_key]])))
                 else:
-                    items.append((new_key, self.empty_element * other[other_key]))
+                    items.append((new_key, Overlay([other[other_key]])))
             return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -275,10 +275,6 @@ class HoloMap(UniformNdMapping):
         # Identical to standard relabel method except for default depth of 1
         return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
 
-
-    @property
-    def empty_element(self):
-        return self._type(None)
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):

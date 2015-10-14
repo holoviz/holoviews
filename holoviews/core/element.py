@@ -57,7 +57,6 @@ class Element(ViewableElement, Composable, Overlayable):
     #======================#
 
     def __init__(self, data, **params):
-        self._dataframe = False
         convert = isinstance(data, Element)
         if convert:
             params = dict(data.get_param_values(onlychanged=True),
@@ -167,11 +166,12 @@ class Element(ViewableElement, Composable, Overlayable):
         if dimensions and reduce_map:
             raise Exception("Pass reduced dimensions either as an argument"
                             "or as part of the kwargs not both.")
-        dimensions = self._valid_dimensions(dimensions)
         if dimensions:
             reduce_map = {d: function for d in dimensions}
         elif not reduce_map:
             reduce_map = {d: function for d in self._cached_index_names}
+        reduce_map = {(d if isinstance(d, Dimension) else d): fn
+                      for d, fn in reduce_map.items()}
         sanitized = {sanitize_identifier(kd): kd
                      for kd in self._cached_index_names}
         return {sanitized.get(d, d): fn for d, fn in reduce_map.items()}

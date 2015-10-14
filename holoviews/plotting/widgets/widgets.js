@@ -96,7 +96,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
     for (var i=0; i<this.slider_ids.length; i++)
     {
         val = this.current_vals[i];
-        if (!(isNaN(val))) {
+        if (!(_.isString(val))) {
             if (val % 1 === 0) { var fixed = 1;}
             else { var fixed = 10;}
             val = val.toFixed(fixed)
