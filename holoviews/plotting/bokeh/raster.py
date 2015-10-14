@@ -12,6 +12,7 @@ class RasterPlot(ElementPlot):
 
     style_opts = ['cmap']
     _plot_method = 'image'
+    _update_handles = ['source', 'glyph', 'color_mapper']
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -41,8 +42,21 @@ class RasterPlot(ElementPlot):
         low, high = ranges.get(val_dim)
         if 'cmap' in properties:
             palette = mplcmap_to_palette(properties.pop('cmap', None))
-        properties['color_mapper'] = LinearColorMapper(palette, low=low, high=high)
+        cmap = LinearColorMapper(palette, low=low, high=high)
+        properties['color_mapper'] = cmap
+        if 'color_mapper' not in self.handles:
+            self.handles['color_mapper'] = cmap
         return properties
+
+
+    def _update_glyph(self, glyph, properties, mapping):
+        allowed_properties = glyph.properties()
+        cmap = properties.pop('color_mapper')
+        glyph.color_mapper.low = cmap.low
+        glyph.color_mapper.high = cmap.high
+        merged = dict(properties, **mapping)
+        glyph.set(**{k: v for k, v in merged.items()
+                     if k in allowed_properties})
 
 
 class RGBPlot(RasterPlot):

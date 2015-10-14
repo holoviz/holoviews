@@ -127,6 +127,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # ElementPlot
     _plot_method = None
 
+    # The plot objects to be updated on each frame
+    # Any entries should be existing keys in the handles
+    # instance attribute.
+    _update_handles = ['source', 'glyph']
+
     def __init__(self, element, plot=None, invert_axes=False,
                  show_labels=['x', 'y'], **params):
         self.invert_axes = invert_axes
@@ -388,6 +393,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['glyph']  = glyph
 
         # Update plot, source and glyph
+        self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, element)
         self._process_legend()
@@ -414,6 +420,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)
+        if 'glyph' in self.handles:
+            properties = self._glyph_properties(plot, element, source, ranges)
+            self._update_glyph(self.handles['glyph'], properties, mapping)
         if not self.overlaid:
             self._update_ranges(element, ranges)
             self._update_plot(key, plot, element)
@@ -425,10 +434,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a list of the plot objects to update.
         """
         handles = []
-        if 'source' in self.handles:
-            handles = [self.handles['source']]
+        for handle in self._update_handles:
+            if handle in self.handles:
+                handles.append(self.handles[handle])
+
         if self.overlaid:
             return handles
+
         plot = self.state
         handles.append(plot)
         if self.current_frame:
@@ -530,6 +542,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Whether to display overlaid plots in separate panes""")
 
     style_opts = legend_dimensions + line_properties + text_properties
+
+    _update_handles = ['source']
 
     def _process_legend(self):
         plot = self.handles['plot']
