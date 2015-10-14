@@ -59,7 +59,7 @@ class Chart(Element2D):
         elif isinstance(data, tuple):
             data = np.column_stack(data)
         elif not isinstance(data, np.ndarray):
-            data = self._null_value if (data is None) or (len(data) == 0) else list(data)
+            data = self._null_value if (data is None) else list(data)
             if len(data):
                 data = np.array(data)
 
