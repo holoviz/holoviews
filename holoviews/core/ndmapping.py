@@ -781,7 +781,7 @@ class UniformNdMapping(NdMapping):
 
     @property
     def empty_element(self):
-        return self._type(None)
+        return self.type(None)
 
 
     def _item_check(self, dim_vals, data):
