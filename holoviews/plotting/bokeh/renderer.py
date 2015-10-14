@@ -1,4 +1,4 @@
-from ...core import Store, HoloMap
+from ...core import Store, HoloMap, OrderedDict
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
 
@@ -37,7 +37,7 @@ class BokehRenderer(Renderer):
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
-            data = {}
+            data = OrderedDict()
             for plotobj in plotobjects:
                 json = plotobj.vm_serialize(changed_only=True)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
