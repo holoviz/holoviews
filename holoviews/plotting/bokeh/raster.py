@@ -12,7 +12,7 @@ class RasterPlot(ElementPlot):
 
     style_opts = ['cmap']
     _plot_method = 'image'
-    _update_handles = ['source', 'glyph', 'color_mapper']
+    _update_handles = ['color_mapper', 'source', 'glyph']
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
