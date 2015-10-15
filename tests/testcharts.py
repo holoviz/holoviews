@@ -38,5 +38,5 @@ class ChartTest(ComparisonTestCase):
         self.assertEqual(mean, itable)
 
     def test_chart_sample(self):
-        samples = self.chart.sample([0, 5, 10]).values()
-        self.assertEqual(samples, [(0,), (0.5,), (1,)])
+        samples = self.chart.sample([0, 5, 10]).dimension_values('y')
+        self.assertEqual(samples, np.array([0, 0.5, 1]))
