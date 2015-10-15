@@ -432,34 +432,39 @@ class Comparison(ComparisonInterface):
     #========#
 
     @classmethod
-    def compare_curve(cls, el1, el2, msg=None):
+    def compare_chart(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Curve data')
+        if isinstance(el1.data, np.ndarray):
+            cls.compare_arrays(el1.data, el2.data, msg)
+        elif isinstance(el1.data, NdElement):
+            cls.compare_ndmappings(el1.data, el2.data, msg)
+        else:
+            cls.compare_dframe(el1, el2, msg)
+
+
+    @classmethod
+    def compare_curve(cls, el1, el2, msg=None):
+        cls.compare_chart(el1, el2, msg='Curve data')
 
     @classmethod
     def compare_errorbars(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'ErrorBars data')
+        cls.compare_chart(el1, el2, msg='ErrorBars data')
 
     @classmethod
     def compare_spread(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Spread data')
+        cls.compare_chart(el1, el2, msg='Spread data')
 
     @classmethod
     def compare_scatter(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Scatter data')
+        cls.compare_chart(el1, el2, msg='Scatter data')
 
     @classmethod
     def compare_scatter3d(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Scatter3D data')
+        cls.compare_chart(el1, el2, msg='Scatter3D data')
 
     @classmethod
     def compare_trisurface(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Trisurface data')
+        cls.compare_chart(el1, el2, msg='Trisurface data')
 
     @classmethod
     def compare_histogram(cls, el1, el2, msg=None):
@@ -470,24 +475,16 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_points(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        if len(el1) != len(el2):
-            raise cls.failureException("Points objects have different numbers of points.")
+        cls.compare_chart(el1, el2, msg='Points data')
 
-        cls.compare_arrays(el1.data, el2.data, 'Points data')
 
     @classmethod
     def compare_vectorfield(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        if len(el1) != len(el2):
-            raise cls.failureException("VectorField objects have different numbers of vectors.")
-
-        cls.compare_arrays(el1.data, el2.data, 'VectorField data')
+        cls.compare_chart(el1, el2, msg='VectorField data')
 
     @classmethod
     def compare_bars(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_ndmappings(el1, el2, msg)
+        cls.compare_chart(el1, el2, msg='Bars data')
 
     #=========#
     # Rasters #
@@ -553,15 +550,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_tables(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        if el1.rows != el2.rows:
-            raise cls.failureException("Tables have different numbers of rows.")
-
-        if el1.cols != el2.cols:
-            raise cls.failureException("Tables have different numbers of columns.")
-
-        cls.compare_ndmappings(el1, el2, msg)
-
+        cls.compare_chart(el1, el2, msg='Table data')
 
     #========#
     # Pandas #
@@ -582,23 +571,19 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_distribution(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Distribution data')
+        cls.compare_chart(el1, el2, msg='Distribution data')
 
     @classmethod
     def compare_timeseries(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'TimeSeries data')
+        cls.compare_chart(el1, el2, msg='TimeSeries data')
 
     @classmethod
     def compare_bivariate(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Bivariate data')
+        cls.compare_chart(el1, el2, msg='Bivariate data')
 
     @classmethod
     def compare_regression(cls, el1, el2, msg=None):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, 'Regression data')
+        cls.compare_chart(el1, el2, msg='Regression data')
 
     #=======#
     # Grids #
