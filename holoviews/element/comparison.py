@@ -20,7 +20,7 @@ considered different.
 import numpy as np
 from unittest.util import safe_repr
 from unittest import TestCase
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from . import *    # pyflakes:ignore (All Elements need to support comparison)
 from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
@@ -210,9 +210,12 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
-            assert_array_almost_equal(arr1, arr2)
-        except AssertionError as e:
-            raise cls.failureException(msg + str(e)[11:])
+            assert_array_equal(arr1, arr2)
+        except:
+            try:
+                assert_array_almost_equal(arr1, arr2)
+            except AssertionError as e:
+                raise cls.failureException(msg + str(e)[11:])
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
