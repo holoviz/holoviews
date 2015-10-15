@@ -56,56 +56,6 @@ class Element(ViewableElement, Composable, Overlayable):
     # Subclassable methods #
     #======================#
 
-    def __init__(self, data, **params):
-        convert = isinstance(data, Element)
-        if convert:
-            params = dict(data.get_param_values(onlychanged=True),
-                          **params)
-            element = data
-            data = [] if is_dataframe(element.data) else element.data
-        if is_dataframe(data):
-            self._dataframe = True
-            kdims, vdims = self._process_df_dims(data, params)
-            params['kdims'] = kdims
-            params['vdims'] = vdims
-            element = data
-            data = None
-        super(Element, self).__init__(data, **params)
-        if self._dataframe:
-            self.data = element
-        elif convert:
-            self.data = self._convert_element(element)
-
-
-    def _process_df_dims(self, data, kwargs):
-        if 'kdims' in kwargs or 'vdims' in kwargs:
-            kdims = kwargs.get('kdims', [])
-            vdims = kwargs.get('vdims', [])
-            col_labels = [c.name if isinstance(c, Dimension) else c
-                          for c in kdims+vdims]
-            if not all(c in data.columns for c in col_labels):
-                raise ValueError("Supplied dimensions don't match columns"
-                                 "in the dataframe.")
-        else:
-            kdims = list(data.columns[:len(self.kdims)])
-            vdims = list(data.columns[len(self.kdims):])
-        return kdims, vdims
-
-
-    def _convert_element(self, element):
-        type_str = self.__class__.__name__
-        type_name = type_str.lower()
-        table = element.table()
-        conversion = getattr(table.to, type_name)
-        if conversion is None:
-            return element
-        try:
-            converted = conversion(self._cached_index_names,
-                                   self._cached_value_names)
-        except:
-            raise
-        return converted.data
-
 
     def __getitem__(self, key):
         if key is ():
@@ -177,44 +127,8 @@ class Element(ViewableElement, Composable, Overlayable):
         return {sanitized.get(d, d): fn for d, fn in reduce_map.items()}
 
 
-    def table(self, **kwargs):
-        """
-        This method transforms any ViewableElement type into a Table
-        as long as it implements a dimension_values method.
-        """
-        from ..element import Table
-        if self._dataframe:
-            data = self.dframe()
-        else:
-            keys = zip(*[self.dimension_values(dim.name)
-                         for dim in self.kdims])
-            values = zip(*[self.dimension_values(dim.name)
-                           for dim in self.vdims])
-            if not keys: keys = [()]*len(values)
-            if not values: [()]*len(keys)
-            data = zip(keys, values)
-        kwargs = {'label': self.label
-                  for k, v in self.get_param_values(onlychanged=True)
-                  if k in ['group', 'label']}
-        params = dict(kdims=self.kdims,
-                      vdims=self.vdims,
-                      label=self.label)
-        if not self.params()['group'].default == self.group:
-            params['group'] = self.group
-        return Table(data, **dict(params, **kwargs))
 
-
-    def dframe(self):
-        import pandas as pd
-        if self._dataframe:
-            return self.data
-        column_names = self.dimensions(label=True)
-        dim_vals = np.vstack([self.dimension_values(dim) for dim in column_names]).T
-        return pd.DataFrame(dim_vals, columns=column_names)
-
-
-
-class Tabular(NdMapping):
+class Tabular(Element):
     """
     Baseclass to give an NdMapping objects an API to generate a
     table representation.
@@ -270,7 +184,7 @@ class Element2D(Element):
               defining the (left, bottom, right and top) edges.""")
 
 
-class NdElement(Element, Tabular):
+class NdElement(NdMapping, Tabular):
     """
     An NdElement is an Element that stores the contained data as
     an NdMapping. In addition to the usual multi-dimensional keys
@@ -301,41 +215,9 @@ class NdElement(Element, Tabular):
     _deep_indexable = False
 
     def __init__(self, data=None, **params):
-        if isinstance(data, Element):
-            data = data.table()
-        elif isinstance(data, list) and all(np.isscalar(el) for el in data):
+        if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = OrderedDict(list(((k,), v) for k, v in enumerate(data)))
         super(NdElement, self).__init__(data, **params)
-
-
-    def _convert_element(self, element):
-        if isinstance(element, NdElement):
-            return element.data
-        if isinstance(element, Element):
-            return element.table().data
-        else: return element
-
-
-    def groupby(self, dimensions, container_type=NdMapping):
-        if self._dataframe:
-            dim_labels = self.dimensions(label=True)
-            invalid_dims = list(set(dimensions) - set(dim_labels))
-            if invalid_dims:
-                raise Exception('Following dimensions could not be found %s.'
-                                % invalid_dims)
-
-            index_dims = [self.get_dimension(d) for d in dimensions]
-            mapping = container_type(None, kdims=index_dims)
-            kdims = set(self._cached_index_names) - set(dimensions)
-            vdims = set(self._cached_value_names) - set(dimensions)
-            kdims = [self.get_dimension(d) for d in kdims]
-            vdims = [self.get_dimension(d) for d in vdims]
-            for k, v in self.data.groupby(dimensions):
-                data = v.drop(dimensions, axis=1)
-                mapping[k] = self.clone(data, kdims=kdims, vdims=vdims)
-            return mapping
-        else:
-            return super(NdElement, self).groupby(dimensions, container_type)
 
 
     def reindex(self, kdims=None, vdims=None, force=False):
@@ -354,10 +236,6 @@ class NdElement(Element, Tabular):
                      if d not in vdims]
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
-
-        # DataFrame based tables don't need to be reindexed
-        if self._dataframe:
-            return self.clone(kdims=key_dims, vdims=val_dims)
 
         kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
                   for i, k in enumerate(kdims)]
@@ -419,19 +297,7 @@ class NdElement(Element, Tabular):
         vdims = [self.vdims[i] for i in indices]
         items = [(k, tuple(v[i] for i in indices))
                  for (k,v) in subtable.items()]
-        if len(items) == 1:
-            data = items[0][1]
-            if len(vdims) == 1:
-                return data[0]
-            else:
-                from ..element.tabular import ItemTable
-                kwargs = {'label': self.label
-                          for k, v in self.get_param_values(onlychanged=True)
-                          if k in ['group', 'label']}
-                data = list(zip(vdims, data))
-                return ItemTable(data, **kwargs)
-        else:
-            return subtable.clone(items, vdims=vdims)
+        return subtable.clone(items, vdims=vdims)
 
 
     def __getitem__(self, args):
@@ -439,46 +305,20 @@ class NdElement(Element, Tabular):
         In addition to usual NdMapping indexing, NdElements can be indexed
         by column name (or a slice over column names)
         """
-        if self._dataframe:
-            if not isinstance(args, tuple): args = (args,)
-            return self.select(**dict(zip(self.dimensions(label=True), args)))
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
-        if len(self.vdims) > 1 and not isinstance(subtable, NdElement):
-            subtable = self.__class__([((), subtable)], label=self.label,
-                                      kdims=[], vdims=self.vdims)
+        if not isinstance(subtable, NdElement):
+            subtable = self.__class__([(args, subtable)], label=self.label,
+                                      kdims=self.kdims, vdims=self.vdims)
 
         # If subtable is not a slice return as reduced type
         if not isinstance(args, tuple): args = (args,)
         shallow = len(args) <= self.ndims
-        slcs = any(isinstance(a, (slice, set)) for a in args[:self.ndims])
-        if shallow and not (slcs or len(args) == 0):
-            args = list(args) + [self.dimensions('value', True)]
-        elif shallow:
+        if shallow:
             return subtable
 
         return self._filter_data(subtable, args[-1])
-
-
-    def select(self, selection_specs=None, **select):
-        """
-        Allows slice and select individual values along the DataFrameView
-        dimensions. Supply the dimensions and values or slices as
-        keyword arguments.
-        """
-        if self._dataframe:
-            df = self.data
-            for dim, k in select.items():
-                if isinstance(k, tuple):
-                    k = slice(*k)
-                if isinstance(k, slice):
-                    df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
-                else:
-                    df = df[df[dim] == k]
-            return self.clone(df)
-        else:
-            return super(NdElement, self).select(selection_specs, **select)
 
 
     def sample(self, samples=[]):
@@ -487,7 +327,7 @@ class NdElement(Element, Tabular):
         """
         sample_data = OrderedDict()
         for sample in samples:
-            sample_data[sample] = self[sample]
+            sample_data[sample] = self[sample].values()[0]
         return self.__class__(sample_data, **dict(self.get_param_values(onlychanged=True)))
 
 
@@ -544,11 +384,7 @@ class NdElement(Element, Tabular):
     def dimension_values(self, dim):
         dim = self.get_dimension(dim)
         value_dims = self.dimensions('value', label=True)
-        if self._dataframe:
-            if dim.name in self.data.columns:
-                return np.array(self.data[dim.name])
-            return None
-        elif dim.name in value_dims:
+        if dim.name in value_dims:
             index = value_dims.index(dim.name)
             return [v[index] for v in self.values()]
         else:
@@ -671,7 +507,7 @@ class Collator(NdElement):
 
 
     def _add_item(self, key, value, sort=True):
-        Tabular._add_item(self, key, value, sort)
+        NdMapping._add_item(self, key, value, sort)
 
 
     @property

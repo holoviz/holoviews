@@ -18,12 +18,12 @@ except:
 
 import param
 
-from ..core import ViewableElement, NdMapping, NdOverlay,\
+from ..core import ViewableElement, NdMapping, Columns, NdOverlay,\
     NdLayout, GridSpace, NdElement, HoloMap
 from ..element import Chart, Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
 
 
-class DataFrameView(NdElement):
+class DataFrameView(Columns):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -94,35 +94,6 @@ class DataFrameView(NdElement):
         """
         return self.clone(getattr(self.data, name)(*args, **kwargs),
                           clone_override=True)
-
-
-    def aggregate(self, dimensions=[], function=None, **reductions):
-        """
-        The aggregate function accepts either a list of Dimensions
-        and a function to apply to find the aggregate across
-        those Dimensions or a list of dimension/function pairs
-        to apply one by one.
-        """
-        if not dimensions and not reductions:
-            raise Exception("Supply either a list of Dimensions or"
-                            "reductions as keyword arguments")
-        reduced = self.data
-        dfnumeric = reduced.applymap(np.isreal).all(axis=0)
-        unreducable = list(dfnumeric[dfnumeric == False].index)
-        if dimensions:
-            if not function:
-                raise Exception("Supply a function to reduce the Dimensions with")
-            reduced = reduced.groupby(dimensions+unreducable, as_index=True).aggregate(function)
-            reduced_indexes = [reduced.index.names.index(d) for d in unreducable if d not in dimensions]
-            reduced = reduced.reset_index(level=reduced_indexes)
-        if reductions:
-            for dim, fn in reductions.items():
-                reduced = reduced.groupby(dim, as_index=True).aggregate(fn)
-                reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
-                reduced = reduced.reset_index(level=reduced_indexes)
-        kdims = [self.get_dimension(d) for d in reduced.columns]
-        return self.clone(reduced, kdims=kdims)
-
 
     def overlay(self, dimensions):
         return self.groupby(dimensions, NdOverlay)

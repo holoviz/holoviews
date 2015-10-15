@@ -2,7 +2,8 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Dimension, Element, NdElement, HoloMap
+from ..core import (OrderedDict, Dimension, Element, Columns,
+                    Tabular, NdElement, HoloMap)
 
 
 class ItemTable(Element):
@@ -141,7 +142,7 @@ class ItemTable(Element):
 
 
 
-class Table(NdElement):
+class Table(Columns, Tabular):
     """
     Table is an NdElement type, which gets displayed in a tabular
     format and is convertible to most other Element types.
