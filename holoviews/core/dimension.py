@@ -11,6 +11,7 @@ try:
 except:
     from collections import OrderedDict
 
+import numpy as np
 import param
 
 from ..core.util import basestring, sanitize_identifier, max_range, find_range
@@ -683,7 +684,9 @@ class Dimensioned(LabelledData):
         else:
             selection = self
 
-        if type(selection) is not type(self):
+        if np.isscalar(selection):
+            return selection
+        elif type(selection) is not type(self):
             # Apply the selection on the selected object of a different type
             val_dim = ['value'] if selection.vdims else []
             key_dims = selection.dimensions('key', label=True) + val_dim
