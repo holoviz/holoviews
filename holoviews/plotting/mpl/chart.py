@@ -53,8 +53,8 @@ class ChartPlot(ElementPlot):
         """
         Mutate the lines object to generate a rotated cyclic curves.
         """
-        x_values = list(curveview.data[:, 0])
-        y_values = list(curveview.data[:, 1])
+        x_values = list(curveview.dimension_values(0))
+        y_values = list(curveview.dimension_values(1))
         if self.center_cyclic:
             rotate_n = self.peak_argmax+len(x_values)/2
             y_values = self._rotate(y_values, n=rotate_n)
@@ -127,7 +127,8 @@ class CurvePlot(ChartPlot):
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
         legend = element.label if self.show_legend else ''
-        line_segment = axis.plot(data[:, 0], data[:, 1], label=legend,
+        line_segment = axis.plot(element.dimension_values(0),
+                                 element.dimension_values(1), label=legend,
                                  zorder=self.zorder, **style)[0]
 
         self.handles['artist'] = line_segment
@@ -135,12 +136,11 @@ class CurvePlot(ChartPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        data = element.data
         artist = self.handles['artist']
         if self.cyclic_range is not None:
             data = self._cyclic_curves(element)
-        artist.set_xdata(data[:, 0])
-        artist.set_ydata(data[:, 1])
+        artist.set_xdata(element.dimension_values(0))
+        artist.set_ydata(element.dimension_values(1))
 
 
 
@@ -171,8 +171,8 @@ class ErrorPlot(ChartPlot):
         error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
                             zorder=self.zorder)
         error_kwargs['yerr'] = element.data[:, 2:4].T
-        _, (bottoms, tops), verts = axis.errorbar(element.data[:, 0],
-                                                  element.data[:, 1],
+        _, (bottoms, tops), verts = axis.errorbar(element.dimension_values(0),
+                                                  element.dimension_values(1),
                                                   **error_kwargs)
         self.handles['bottoms'] = bottoms
         self.handles['tops'] = tops
@@ -237,9 +237,10 @@ class SpreadPlot(ChartPlot):
     def update_handles(self, axis, element, key, ranges=None):
         if 'paths' in self.handles:
             self.handles['paths'].remove()
-        paths = axis.fill_between(element.data[:, 0],
-                                  element.data[:, 1]-element.data[:, 2],
-                                  element.data[:, 1]+element.data[:, 3],
+        yvals = element.data[:, 1]
+        paths = axis.fill_between(element.dimension_values(0),
+                                  yvals-element.dimension_values(2),
+                                  yvals+element.dimension_values(3),
                                   zorder=self.zorder,
                                   label=element.label if self.show_legend else None,
                                   **self.style[self.cyclic_index])
@@ -547,9 +548,9 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ranges = match_spec(points, ranges)
 
         ndims = points.data.shape[1]
-        xs = points.data[:, 0] if len(points.data) else []
-        ys = points.data[:, 1] if len(points.data) else []
-        cs = points.data[:, self.color_index] if self.color_index < ndims else None
+        xs = points.dimension_values(0) if len(points.data) else []
+        ys = points.dimension_values(1) if len(points.data) else []
+        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
@@ -575,7 +576,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
 
     def _compute_size(self, element, opts):
-        sizes = element.data[:, self.size_index]
+        sizes = element.dimension_values(self.size_index)
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
         return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
 
@@ -648,10 +649,10 @@ class VectorFieldPlot(ElementPlot):
 
 
     def _get_info(self, vfield, input_scale, ranges):
-        xs = vfield.data[:, 0] if len(vfield.data) else []
-        ys = vfield.data[:, 1] if len(vfield.data) else []
-        radians = vfield.data[:, 2] if len(vfield.data) else []
-        magnitudes = vfield.data[:, 3] if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
+        xs = vfield.dimension_values(0) if len(vfield.data) else []
+        ys = vfield.dimension_values(1) if len(vfield.data) else []
+        radians = vfield.dimension_values(2) if len(vfield.data) else []
+        magnitudes = vfield.dimension_values(3) if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
         colors = magnitudes if self.color_dim == 'magnitude' else radians
 
         if vfield.data.shape[1] >= 4:
@@ -690,7 +691,7 @@ class VectorFieldPlot(ElementPlot):
         ranges = match_spec(vfield, ranges)
         xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale, ranges)
 
-        args = (xs, ys, lens,  [0.0] * len(vfield.data))
+        args = (xs, ys, lens,  [0.0] * len(vfield))
         args = args + (colors,) if colorized else args
 
         if not self.arrow_heads:
@@ -922,11 +923,12 @@ class BarPlot(LegendPlot):
                             label_key[idx] = stk
                             style_key[idx] = stk_name
                         val_key[si] = stk_name
-                    val = element.get(tuple(val_key), (np.NaN,))
+                    vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
+                    val = float(vals[0]) if vals else np.NaN
                     label = ', '.join(label_key)
                     style = dict(style_opts, label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
-                    bar = axis.bar([xpos], val, width=width, bottom=prev,
+                    bar = axis.bar([xpos], [val], width=width, bottom=prev,
                                    **style)
 
                     # Update variables

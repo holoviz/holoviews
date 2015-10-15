@@ -60,8 +60,8 @@ class PointPlot(ElementPlot):
             mapping['size'] = 'size'
             ms = style.get('size', 1)
             sizes = element.dimension_values(self.size_index)
-            data[map_key] = compute_sizes(sizes, self.size_fn,
-                                          self.scaling_factor, ms)
+            data['size'] = compute_sizes(sizes, self.size_fn,
+                                         self.scaling_factor, ms)
         data[dims[0]] = element.dimension_values(0)
         data[dims[1]] = element.dimension_values(1)
         if 'hover' in self.tools:
