@@ -220,6 +220,11 @@ class NdElement(NdMapping, Tabular):
         super(NdElement, self).__init__(data, **params)
 
 
+    @property
+    def shape(self):
+        return (len(self), len(self.dimensions()))
+
+
     def reindex(self, kdims=None, vdims=None, force=False):
         """
         Create a new object with a re-ordered set of dimensions.
