@@ -149,6 +149,7 @@ class Columns(Element):
         if self.interface is None:
             return self.data.dimension_values(dim)
         else:
+            dim = self.get_dimension(dim).name
             return self.interface.values(dim)
 
 
