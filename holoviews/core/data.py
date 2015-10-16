@@ -7,6 +7,11 @@ from collections import defaultdict
 from itertools import groupby
 
 import numpy as np
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 import param
 
 from .dimension import OrderedDict, Dimension
@@ -18,11 +23,11 @@ from . import util
 class Columns(Element):
 
     def __init__(self, data, **kwargs):
-        if 'kdims' not in kwargs:
-            kwargs['kdims'] = self.kdims
-        if 'vdims' not in kwargs:
-            kwargs['vdims'] = self.vdims
         data, params = ColumnarData._process_data(data, **kwargs)
+        if 'kdims' not in params:
+            params['kdims'] = self.kdims
+        if 'vdims' not in params:
+            params['vdims'] = self.vdims
         super(Columns, self).__init__(data, **params)
         self.data = self._validate_data(self.data)
 
@@ -186,13 +191,26 @@ class ColumnarData(param.Parameterized):
     @classmethod
     def _process_data(cls, data, **kwargs):
         params = {}
-        if isinstance(data, NdElement):
+        if isinstance(data, Element):
             params['kdims'] = data.kdims
             params['vdims'] = data.vdims
             params['label'] = data.label
-        elif isinstance(data, Element):
-            params = dict(data.get_param_values(onlychanged=True))
+            if data.group != data.params()['group'].default:
+                params['group'] = data.group
+
+        if isinstance(data, NdElement):
+            pass
+        elif isinstance(data, Columns):
             data = data.data
+        elif isinstance(data, Element):
+            dimensions = data.dimensions(label=True)
+            columns = OrderedDict([(dim, data.dimension_values(dim))
+                                for dim in dimensions])
+            if pd:
+                data = pd.DataFrame(columns)
+            else:
+                data = OrderedDict([(row[:data.ndims], row[data.ndims:])
+                                    for row in zip(*columns.values())])
         elif util.is_dataframe(data):
             kdims, vdims = cls._process_df_dims(data, params)
             params['kdims'] = kdims
