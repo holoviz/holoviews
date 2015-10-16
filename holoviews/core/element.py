@@ -127,6 +127,18 @@ class Element(ViewableElement, Composable, Overlayable):
         return {sanitized.get(d, d): fn for d, fn in reduce_map.items()}
 
 
+    def table(self):
+        from ..element import Table
+        return Table(self)
+
+
+    def dframe(self):
+        import pandas as pd
+        column_names = self.dimensions(label=True)
+        dim_vals = OrderedDict([(d, self.dimension_values(dim)) for dim in column_names])
+        return pd.DataFrame(dim_vals)
+
+
 
 class Tabular(Element):
     """

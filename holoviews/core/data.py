@@ -518,10 +518,3 @@ class ColumnarArray(ColumnarData):
                       kdims=[])
         params.pop('extents', None)
         return ItemTable(reduced_data, **params)
-
-
-    def dframe(self):
-        import pandas as pd
-        column_names = self.dimensions(label=True)
-        dim_vals = np.vstack([self.dimension_values(dim) for dim in column_names]).T
-        return pd.DataFrame(dim_vals, columns=column_names)
