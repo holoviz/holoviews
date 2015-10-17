@@ -174,7 +174,8 @@ class Dimension(param.Parameterized):
 
     def __eq__(self, other):
         "Dimensions are sorted alphanumerically by name"
-        return self.name == other.name if isinstance(other, Dimension) else self.name == other
+        dim_matches = [self.name, sanitize_identifier(self.name)]
+        return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
 
 
     def __lt__(self, other):
