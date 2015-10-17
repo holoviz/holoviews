@@ -135,7 +135,7 @@ class Element(ViewableElement, Composable, Overlayable):
     def dframe(self):
         import pandas as pd
         column_names = self.dimensions(label=True)
-        dim_vals = OrderedDict([(d, self.dimension_values(dim)) for dim in column_names])
+        dim_vals = OrderedDict([(dim, self.dimension_values(dim)) for dim in column_names])
         return pd.DataFrame(dim_vals)
 
 
