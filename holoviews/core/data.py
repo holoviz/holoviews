@@ -51,6 +51,29 @@ class Columns(Element):
             return self.interface.closest(coords)
 
 
+    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
+        """
+        Create a new object with an additional key dimensions.
+        Requires the dimension name or object, the desired position
+        in the key dimensions and a key value scalar or sequence of
+        the same length as the existing keys.
+        """
+        if isinstance(dimension, str):
+            dimension = Dimension(dimension)
+
+        if dimension.name in self._cached_index_names:
+            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+
+        dimensions = self.kdims[:]
+        dimensions.insert(dim_pos, dimension)
+
+        if self.interface is None:
+            data = self.data.add_dimension(dimension, dim_pos, dim_val, **kwargs)
+        else:
+            data = self.interface.add_dimension(self.data, dimension, dim_pos, dim_val)
+        return self.clone(data, kdims=dimensions)
+
+
     def select(self, selection_specs=None, **selection):
         if selection_specs and not self.matches(selection_specs):
             return self
@@ -432,8 +455,8 @@ class ColumnarDataFrame(ColumnarData):
 
 
     @classmethod
-    def add_dimension(cls, data, dimension, values):
-        data[dimension] = values
+    def add_dimension(cls, data, dimension, dim_pos, values):
+        data[dimension.name] = values
         return data
 
 
@@ -450,15 +473,13 @@ class ColumnarArray(ColumnarData):
         return data
 
 
+    @classmethod
+    def add_dimension(cls, data, dimension, dim_pos, values):
+        return np.insert(data, dim_pos, values, axis=1)
+
+
     def array(self):
         return self.element.data
-
-    @classmethod
-    def add_dimension(cls, data, dimension, values):
-        if np.isscalar(values):
-            values = [values]*len(data)
-        return np.column_stack([data, values])
-
 
     def dframe(self):
         return Element.dframe(self.element)
