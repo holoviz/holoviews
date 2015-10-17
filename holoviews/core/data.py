@@ -281,13 +281,13 @@ class ColumnarData(param.Parameterized):
             if array.dtype.kind in ['S', 'U', 'O'] or array.ndim > 2:
                 # If data is in NdElement dictionary format or pandas
                 # is not available convert to OrderedDict
-                if ((isinstance(data[0], tuple) and len(data[0]) == 2 and
-                    all(isinstance(data[0][i], tuple) for i in range(2)))
+                if ((not np.isscalar(data[0]) and len(data[0]) == 2 and
+                    any(not np.isscalar(data[0][i]) for i in range(2)))
                     or not pd):
                     data = OrderedDict(data)
                 else:
-                    dimensions = (params.get('kdims', defaults['kdims']) +
-                                  params.get('vdims', defaults['vdims']))
+                    dimensions = (kwargs.get('kdims', defaults['kdims']) +
+                                  kwargs.get('vdims', defaults['vdims']))
                     columns = [d.name if isinstance(d, Dimension) else d
                                for d in dimensions]
                     data = pd.DataFrame(data, columns=columns)
@@ -451,7 +451,7 @@ class ColumnarDataFrame(ColumnarData):
             if isinstance(k, slice):
                 df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
             else:
-                if dim in self.kdims: selected_kdims.append(dim)
+                if dim in self.element.kdims: selected_kdims.append(dim)
                 df = df[df[dim] == k]
         if len(set(selected_kdims)) == self.element.ndims:
             if len(df) and len(self.element.vdims) == 1:
@@ -463,7 +463,20 @@ class ColumnarDataFrame(ColumnarData):
         data = self.element.data[dim]
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
-        return data
+        return np.array(data)
+
+
+    def sample(self, samples=[]):
+        """
+        Sample the Element data with a list of samples.
+        """
+        data = self.element.data
+        mask = np.zeros(len(self), dtype=bool)
+        for sample in samples:
+            if np.isscalar(sample): sample = [sample]
+            for i, v in enumerate(sample):
+                mask = np.logical_or(mask, data.iloc[:, i]==v)
+        return data[mask]
 
 
     @classmethod
