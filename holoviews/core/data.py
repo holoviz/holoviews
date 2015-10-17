@@ -6,6 +6,11 @@ data backends.
 from collections import defaultdict
 from itertools import groupby
 
+try:
+    import itertools.izip as zip
+except ImportError:
+    pass
+
 import numpy as np
 try:
     import pandas as pd
@@ -23,11 +28,8 @@ from . import util
 class Columns(Element):
 
     def __init__(self, data, **kwargs):
-        data, params = ColumnarData._process_data(data, **kwargs)
-        if 'kdims' not in params:
-            params['kdims'] = self.kdims
-        if 'vdims' not in params:
-            params['vdims'] = self.vdims
+        defaults = {'kdims': self.kdims, 'vdims': self.vdims}
+        data, params = ColumnarData._process_data(data, defaults, **kwargs)
         super(Columns, self).__init__(data, **params)
         self.data = self._validate_data(self.data)
 
@@ -39,11 +41,24 @@ class Columns(Element):
             return self.interface.validate_data(data)
 
 
+    def closest(self, coords):
+        if self.ndims > 1:
+            NotImplementedError("Closest method currently only "
+                                "implemented for 1D Elements")
+        elif self.interface is None:
+            return self.data.closest(coords)
+        else:
+            return self.interface.closest(coords)
+
+
     def select(self, selection_specs=None, **selection):
+        if selection_specs and not self.matches(selection_specs):
+            return self
+
         if self.interface is None:
             data = self.data.select(**selection)
         else:
-            data = self.interface.select(selection) 
+            data = self.interface.select(**selection)
         if np.isscalar(data):
             return data
         else:
@@ -87,12 +102,22 @@ class Columns(Element):
         """
         if slices is (): return self
         if not isinstance(slices, tuple): slices = (slices,)
-        selection = dict(zip(self.dimensions(label=True), slices))
-        if self.interface is None:
-            data = self.data.select(**selection)
+        value_select = None
+        if len(slices) == 1 and slices[0] in self.dimensions():
+            return self.dimension_values(slices[0])
+        elif len(slices) == self.ndims+1 and slices[self.ndims] in self.dimensions():
+            selection = dict(zip(self.dimensions('key', label=True), slices))
+            value_select = slices[self.ndims]
         else:
-            data = self.interface.select(**selection) 
-        return self.clone(data)
+            selection = dict(zip(self.dimensions(label=True), slices))
+        data = self.select(**selection)
+        if value_select:
+            values = data.dimension_values(value_select)
+            if len(values) > 1:
+                return values
+            else:
+                return values[0]
+        return data
 
 
     def sample(self, samples=[]):
@@ -179,10 +204,6 @@ class ColumnarData(param.Parameterized):
     def array(self):
         NotImplementedError
 
-    @property
-    def ndims(self):
-        self.element.ndims
-
 
     @property
     def shape(self):
@@ -190,7 +211,7 @@ class ColumnarData(param.Parameterized):
 
 
     @classmethod
-    def _process_data(cls, data, **kwargs):
+    def _process_data(cls, data, defaults, **kwargs):
         params = {}
         if isinstance(data, Element):
             params['kdims'] = data.kdims
@@ -206,7 +227,7 @@ class ColumnarData(param.Parameterized):
         elif isinstance(data, Element):
             dimensions = data.dimensions(label=True)
             columns = OrderedDict([(dim, data.dimension_values(dim))
-                                for dim in dimensions])
+                                   for dim in dimensions])
             if pd:
                 data = pd.DataFrame(columns)
             else:
@@ -220,11 +241,28 @@ class ColumnarData(param.Parameterized):
             data = np.column_stack(data)
         elif not isinstance(data, (np.ndarray, dict)):
             data = np.array() if data is None else list(data)
-            if all(np.isscalar(d) for coord in data for d in coord):
-                data = np.array(data)
-            elif len(data):
-                data = OrderedDict(data)
+            array = np.array(data)
+            # Check if data is of non-numeric type
+            if array.dtype.kind in ['S', 'U', 'O'] or array.ndim > 2:
+                # If data is in NdElement dictionary format or pandas
+                # is not available convert to OrderedDict
+                if ((isinstance(data[0], tuple) and len(data[0]) == 2 and
+                    all(isinstance(data[0][i], tuple) for i in range(2)))
+                    or not pd):
+                    data = OrderedDict(data)
+                else:
+                    dimensions = (params.get('kdims', defaults['kdims']) +
+                                  params.get('vdims', defaults['vdims']))
+                    columns = [d.name if isinstance(d, Dimension) else d
+                               for d in dimensions]
+                    data = pd.DataFrame(data, columns=columns)
+            else:
+                data = array
         params.update(kwargs)
+        if 'kdims' not in params:
+            params['kdims'] = defaults['kdims']
+        if 'vdims' not in params:
+            params['vdims'] = defaults['vdims']
         if isinstance(data, dict):
             data = NdElement(data, kdims=params['kdims'],
                              vdims=params['vdims'])
@@ -307,7 +345,6 @@ class ColumnarData(param.Parameterized):
 
 class ColumnarDataFrame(ColumnarData):
 
-
     def groupby(self, dimensions, container_type=HoloMap, **kwargs):
         invalid_dims = list(set(dimensions) - set(self._cached_index_names))
         if invalid_dims:
@@ -372,13 +409,18 @@ class ColumnarDataFrame(ColumnarData):
         keyword arguments.
         """
         df = self.element.data
+        selected_kdims = []
         for dim, k in select.items():
             if isinstance(k, tuple):
                 k = slice(*k)
             if isinstance(k, slice):
                 df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
             else:
+                if dim in self.kdims: selected_kdims.append(dim)
                 df = df[df[dim] == k]
+        if len(set(selected_kdims)) == self.element.ndims:
+            if len(df) and len(self.element.vdims) == 1:
+                df = df[self.element.vdims[0].name].iloc[0]
         return df
 
 
@@ -418,15 +460,19 @@ class ColumnarArray(ColumnarData):
         return np.column_stack([data, values])
 
 
+    def dframe(self):
+        return Element.dframe(self.element)
+
+
     def closest(self, coords):
         """
         Given single or multiple x-values, returns the list
         of closest actual samples.
         """
         if not isinstance(coords, list): coords = [coords]
-        xs = self.data[:, 0]
+        xs = self.element.data[:, 0]
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs]
+        return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
 
 
     @classmethod
@@ -478,6 +524,8 @@ class ColumnarArray(ColumnarData):
 
     def select(self, **selection):
         data = self.element.data
+        selected_kdims = []
+        value = selection.pop('value', None)
         for d, slc in selection.items():
             idx = self.element.get_dimension_index(d)
             if isinstance(slc, slice):
@@ -490,22 +538,26 @@ class ColumnarArray(ColumnarData):
                 filt = np.in1d(data[:, idx], list(slc))
                 data = data[filt, :]
             else:
+                if d in self.element.kdims: selected_kdims.append(d)
                 if self.element.ndims == 1:
                     data_index = np.argmin(np.abs(data[:, idx] - slc))
-                    data = data[data_index, :]
                 else:
-                    data = data[data[:, idx] == slc, :]
+                    data_index = data[:, idx] == slc
+                data = np.atleast_2d(data[data_index, :])
+        if len(data) and len(set(selected_kdims)) == self.element.ndims:
+            if len(data) == 1 and len(self.element.vdims) == 1:
+                data = data[0, self.element.ndims]
         return data
 
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
-        new_data = [arr[:, self.ndim:] for arr in data]
+        new_data = [arr[:, self.element.ndims:] for arr in data]
         if isinstance(function, np.ufunc):
             collapsed = function.reduce(new_data)
         else:
             collapsed = function(np.dstack(new_data), axis=-1, **kwargs)
-        return np.hstack([data[0][:, self.ndims:, np.newaxis], collapsed])
+        return np.hstack([data[0][:, self.element.ndims:, np.newaxis], collapsed])
 
 
     def sample(self, samples=[]):
@@ -530,7 +582,7 @@ class ColumnarArray(ColumnarData):
 
         dim, reduce_fn = list(reduce_map.items())[0]
         if dim in self._cached_index_names:
-            reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.ndims:], axis=0)))
+            reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.element.ndims:], axis=0)))
         else:
             raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
         params = dict(self.get_param_values(onlychanged=True), vdims=self.vdims,

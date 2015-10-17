@@ -326,8 +326,11 @@ class NdElement(NdMapping, Tabular):
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
         if not isinstance(subtable, NdElement):
-            subtable = self.__class__([(args, subtable)], label=self.label,
-                                      kdims=self.kdims, vdims=self.vdims)
+            if len(self.vdims) > 1:
+                subtable = self.__class__([(args, subtable)], label=self.label,
+                                          kdims=self.kdims, vdims=self.vdims)
+            else:
+                subtable = subtable[0]
 
         # If subtable is not a slice return as reduced type
         if not isinstance(args, tuple): args = (args,)
