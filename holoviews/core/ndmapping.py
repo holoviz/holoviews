@@ -304,11 +304,12 @@ class MultiDimensionalMapping(Dimensioned):
         dimensions = self.kdims[:]
         dimensions.insert(dim_pos, dimension)
 
-        if isinstance(dim_val, list) and not len(dim_val) == len(self):
-            raise ValueError("Added dimension values must be same length"
-                             "as existing keys.")
-        else:
+        if np.isscalar(dim_val):
             dim_val = cycle([dim_val])
+        else:
+            if not len(dim_val) == len(self):
+                raise ValueError("Added dimension values must be same length"
+                                 "as existing keys.")
 
         items = OrderedDict()
         for dval, (key, val) in zip(dim_val, self.data.items()):
