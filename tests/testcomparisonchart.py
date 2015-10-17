@@ -22,7 +22,7 @@ class CurveComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.curve1, self.curve2)
         except AssertionError as e:
-            if not str(e).startswith("Curve data not almost equal to 6 decimals"):
+            if not str(e).startswith("Curve data not of matching length."):
                 raise self.failureException("Curve data mismatch error not raised.")
 
 
@@ -55,7 +55,7 @@ class BarsComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.bars1, self.bars2)
         except AssertionError as e:
-            if not str(e) == '(16,) != (17,)':
+            if not 'values are different' in str(e):
                 raise Exception('Bars mismatched data error not raised.')
 
     def test_bars_unequal_keydims(self):
@@ -135,7 +135,7 @@ class ScatterComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.scatter1, self.scatter2)
         except  AssertionError as e:
-            if not str(e).startswith("Scatter data not almost equal to 6 decimals"):
+            if not str(e).startswith("Scatter data not of matching length."):
                 raise self.failureException("Scatter data mismatch error not raised.")
 
     def test_scatter_unequal_data_values(self):
@@ -170,7 +170,7 @@ class PointsComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.points1, self.points2)
         except  AssertionError as e:
-            if not str(e).startswith("Points objects have different numbers of points."):
+            if not str(e).startswith("Points data not of matching length."):
                 raise self.failureException("Points count mismatch error not raised.")
 
     def test_points_unequal_data_values(self):

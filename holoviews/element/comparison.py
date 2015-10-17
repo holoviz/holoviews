@@ -438,6 +438,8 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_columns(cls, el1, el2, msg=None):
         cls.compare_dimensioned(el1, el2)
+        if len(el1) != len(el2):
+            raise AssertionError("%s not of matching length." % msg)
         if isinstance(el1.data, np.ndarray):
             cls.compare_arrays(el1.data, el2.data, msg)
         elif isinstance(el1.data, NdElement):
