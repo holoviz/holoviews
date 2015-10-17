@@ -41,6 +41,18 @@ class Columns(Element):
             return self.interface.validate_data(data)
 
 
+    def __setstate__(self, state):
+        """
+        Restores OrderedDict based Columns objects, converting
+        them to the up-to-date NdElement format.
+        """
+        self.__dict__ = state
+        if isinstance(self.data, OrderedDict):
+            self.data = OrderedDict(self.data, kdims=self.kdims,
+                                    vdims=self.vdims, group=self.group,
+                                    label=self.label)
+
+
     def closest(self, coords):
         if self.ndims > 1:
             NotImplementedError("Closest method currently only "
