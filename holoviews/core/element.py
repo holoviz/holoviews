@@ -347,7 +347,8 @@ class NdElement(NdMapping, Tabular):
         """
         sample_data = OrderedDict()
         for sample in samples:
-            sample_data[sample] = self[sample].values()[0]
+            value = self[sample]
+            sample_data[sample] = value if np.isscalar(value) else value.values()[0]
         return self.__class__(sample_data, **dict(self.get_param_values(onlychanged=True)))
 
 
