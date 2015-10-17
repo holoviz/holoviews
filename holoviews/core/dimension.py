@@ -687,13 +687,13 @@ class Dimensioned(LabelledData):
 
         if np.isscalar(selection):
             return selection
-        elif type(selection) is not type(self):
+        elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
             val_dim = ['value'] if selection.vdims else []
             key_dims = selection.dimensions('key', label=True) + val_dim
             if any(kw in key_dims for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
-        elif selection._deep_indexable:
+        elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
