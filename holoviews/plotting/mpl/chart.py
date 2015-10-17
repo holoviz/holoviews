@@ -924,7 +924,7 @@ class BarPlot(LegendPlot):
                             style_key[idx] = stk_name
                         val_key[si] = stk_name
                     vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
-                    val = float(vals[0]) if vals else np.NaN
+                    val = float(vals[0]) if len(vals) else np.NaN
                     label = ', '.join(label_key)
                     style = dict(style_opts, label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
