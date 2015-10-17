@@ -84,7 +84,7 @@ class ErrorBars(Chart):
     def _validate_data(self, data):
         if self.shape[1] == 3:
             data = self.interface.add_dimension(data, self.vdims[1].name,
-                                                self.dimension_values(2))
+                                                3, self.dimension_values(2))
         return super(ErrorBars, self)._validate_data(data)
 
 
