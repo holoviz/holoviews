@@ -570,12 +570,17 @@ class NdMapping(MultiDimensionalMapping):
             for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims)):
                 values = self._cached_index_values.get(dim.name, None)
                 items = [(k, v) for k, v in items
-                         if condition(values.index(k[cidx]) if values else k[cidx])]
-            items = [(k, self._dataslice(v, data_slice)) for k, v in items]
-            if len(items) == 0:
+                         if condition(values.index(k[cidx])
+                                      if values else k[cidx])]
+            sliced_items = []
+            for k, v in items:
+                val_slice = self._dataslice(v, data_slice)
+                if val_slice:
+                    sliced_items.append((k, v))
+            if len(sliced_items) == 0:
                 raise KeyError('No items within specified slice.')
             with item_check(False):
-                return self.clone(items)
+                return self.clone(sliced_items)
 
 
     def _expand_slice(self, indices):
