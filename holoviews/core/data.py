@@ -280,11 +280,13 @@ class ColumnarData(param.Parameterized):
             kdims, vdims = cls._process_df_dims(data, paramobjs, **params)
             params['kdims'] = kdims
             params['vdims'] = vdims
-        elif isinstance(data, tuple):
-            data = np.column_stack(data)
         elif not isinstance(data, (np.ndarray, dict)):
-            data = np.array() if data is None else list(data)
-            array = np.array(data)
+            if isinstance(data, tuple):
+                data = np.column_stack(data)
+                array = data
+            else:
+                data = np.array() if data is None else list(data)
+                array = np.array(data)
             # Check if data is of non-numeric type
             if array.dtype.kind in ['S', 'U', 'O'] or array.ndim > 2:
                 # If data is in NdElement dictionary format or pandas
