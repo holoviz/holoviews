@@ -207,7 +207,7 @@ class HoloMap(UniformNdMapping):
             if isinstance(function, MapOperation):
                 collapsed[key] = function(group, **kwargs)
             else:
-                data = group.type.collapse_data([el.data for el in group], function, **kwargs)
+                data = group.type.collapse_data([el.data for el in group], function, group.last.kdims, **kwargs)
                 collapsed[key] = group.last.clone(data)
         return collapsed if self.ndims > 1 else collapsed.last
 

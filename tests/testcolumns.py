@@ -4,9 +4,8 @@ Tests for the Columns Element types.
 
 import pandas as pd
 
-
 import numpy as np
-from holoviews import OrderedDict, Columns, Curve, ItemTable, NdElement
+from holoviews import OrderedDict, Columns, Curve, ItemTable, NdElement, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -22,16 +21,21 @@ class ColumnsNdElementTest(ComparisonTestCase):
         self.values1 = [(15, 0.8), (18, 0.6), (10, 0.8)]
         self.key_dims1 = ['Gender', 'Age']
         self.val_dims1 = ['Weight', 'Height']
+        self.columns = Columns(dict(zip(self.xs, self.ys)),
+                               kdims=['x'], vdims=['y'])
 
-    def test_columns_dict_construct(self):
+    def test_columns_odict_construct(self):
         columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(columns.data, NdElement))
 
-    def test_columns_tuple_list_construct(self):
+    def test_columns_dict_construct(self):
+        self.assertTrue(isinstance(self.columns.data, NdElement))
+
+    def test_columns_ndelement_construct(self):
         columns = Columns(NdElement(zip(self.xs, self.ys)))
         self.assertTrue(isinstance(columns.data, NdElement))
 
-    def test_table_init(self):
+    def test_columns_items_construct(self):
         columns = Columns(zip(self.keys1, self.values1),
                           kdims = self.key_dims1,
                           vdims = self.val_dims1)
@@ -83,6 +87,24 @@ class ColumnsNdElementTest(ComparisonTestCase):
                       vdims = self.val_dims1)
         self.assertEquals(table['F', 12, 'Height'], 0.8)
 
+    def test_columns_getitem_column(self):
+        self.compare_arrays(self.columns['y'], self.ys)
+
+    def test_columns_add_dimensions_value(self):
+        table = self.columns.add_dimension('z', 1, 0)
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+
+    def test_columns_add_dimensions_values(self):
+        table = self.columns.add_dimension('z', 1, range(1,12))
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_columns_collapse(self):
+        collapsed = HoloMap({i: Columns(dict(zip(self.xs, self.ys*i)), kdims=['x'], vdims=['y'])
+                             for i in range(10)}, kdims=['z']).collapse('z', np.mean)
+        self.compare_columns(collapsed, Columns(dict(zip(self.xs, self.ys*4.5)),
+                                                kdims=['x'], vdims=['y']))
 
 
 class ColumnsNdArrayTest(ComparisonTestCase):
@@ -120,14 +142,31 @@ class ColumnsNdArrayTest(ComparisonTestCase):
         closest = self.columns.closest([0.51, 1, 9.9])
         self.assertEqual(closest, [1., 1., 10.])
 
-    def test_columns_reduce(self):
-        mean = self.columns.reduce(x=np.mean)
-        itable = ItemTable(OrderedDict([('y', np.mean(self.ys))]))
-        self.assertEqual(mean, itable)
+    def test_columns_getitem_column(self):
+        self.compare_arrays(self.columns['y'], self.ys)
 
     def test_columns_sample(self):
         samples = self.columns.sample([0, 5, 10]).dimension_values('y')
         self.assertEqual(samples, np.array([0, 0.5, 1]))
+
+    def test_columns_add_dimensions_value(self):
+        table = Columns((self.xs, self.ys),
+                        kdims=['x'], vdims=['y'])
+        table = table.add_dimension('z', 1, 0)
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+
+    def test_columns_add_dimensions_values(self):
+        table = Columns((self.xs, self.ys),
+                        kdims=['x'], vdims=['y'])
+        table = table.add_dimension('z', 1, range(1,12))
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_columns_collapse(self):
+        collapsed = HoloMap({i: Columns((self.xs, self.ys*i), kdims=['x'], vdims=['y'])
+                             for i in range(10)}, kdims=['z']).collapse('z', np.mean)
+        self.compare_columns(collapsed, Columns((self.xs, self.ys*4.5), kdims=['x'], vdims=['y']))
 
 
 
@@ -136,7 +175,26 @@ class ColumnsDFrameTest(ComparisonTestCase):
     def setUp(self):
         self.xs = range(11)
         self.ys = np.linspace(0, 1, 11)
+        self.columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys}),
+                               kdims=['x'], vdims=['y'])
 
     def test_columns_df_construct(self):
-        columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys}))
-        self.assertTrue(isinstance(columns.data, pd.DataFrame))
+        self.assertTrue(isinstance(self.columns.data, pd.DataFrame))
+
+    def test_columns_add_dimensions_value(self):
+        table = self.columns.add_dimension('z', 1, 0)
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+
+    def test_columns_add_dimensions_values(self):
+        table = self.columns.add_dimension('z', 1, range(1,12))
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_columns_getitem_column(self):
+        self.compare_arrays(self.columns['y'], self.ys)
+
+    def test_columns_collapse(self):
+        collapsed = HoloMap({i: Columns(pd.DataFrame({'x': self.xs, 'y': self.ys*i}), kdims=['x'], vdims=['y'])
+                             for i in range(10)}, kdims=['z']).collapse('z', np.mean)
+        self.compare_columns(collapsed, Columns(pd.DataFrame({'x': self.xs, 'y': self.ys*4.5}), kdims=['x'], vdims=['y']))

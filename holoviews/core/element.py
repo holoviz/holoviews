@@ -66,7 +66,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     @classmethod
-    def collapse_data(cls, data, function=None, **kwargs):
+    def collapse_data(cls, data, function=None, kdims=None, **kwargs):
         """
         Class method to collapse a list of data matching the
         data format of the Element type. By implementing this
@@ -74,8 +74,9 @@ class Element(ViewableElement, Composable, Overlayable):
         same type. The kwargs are passed to the collapse
         function. The collapse function must support the numpy
         style axis selection. Valid function include:
-        np.mean, np.sum, np.product, np.std,
-        scipy.stats.kurtosis etc.
+        np.mean, np.sum, np.product, np.std, scipy.stats.kurtosis etc.
+        Some data backends also require the key dimensions
+        to aggregate over.
         """
         raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
 
@@ -394,12 +395,21 @@ class NdElement(NdMapping, Tabular):
 
 
     @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        groups = zip(*[(np.array(values) for values in odict.values()) for odict in data])
-        return OrderedDict((key, np.squeeze(function(np.dstack(group), axis=-1, **kwargs), 0)
-                                  if group[0].shape[0] > 1 else
-                                  function(np.concatenate(group), **kwargs))
-                             for key, group in zip(data[0].keys(), groups))
+    def collapse_data(cls, data, function, kdims=None, **kwargs):
+        index = 0
+        joined_data = data[0].clone(shared_data=False, kdims=['Index']+data[0].kdims)
+        for d in data:
+            d = d.add_dimension('Index', 0, range(index, index+len(d)))
+            index += len(d)
+            joined_data.update(d)
+
+        collapsed = joined_data.clone(shared_data=False, kdims=kdims)
+        for k, group in joined_data.groupby([d.name for d in kdims]).items():
+            if isinstance(function, np.ufunc):
+                collapsed[k] = tuple(function.reduce(group[vdim.name]) for vdim in group.vdims)
+            else:
+                collapsed[k] = tuple(function(group[vdim.name], **kwargs) for vdim in group.vdims)
+        return collapsed
 
 
     def dimension_values(self, dim):

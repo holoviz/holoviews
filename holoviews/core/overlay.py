@@ -155,7 +155,7 @@ class Overlay(Layout, CompositeOverlay):
                             "and cannot be collapsed.")
         else:
             return elements[0].clone(types[0].collapse_data([el.data for el in elements],
-                                                            function))
+                                                            function, self.kdims))
 
     @property
     def group(self):

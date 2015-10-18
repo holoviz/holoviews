@@ -40,12 +40,6 @@ class Scatter(Chart):
 
     group = param.String(default='Scatter', constant=True)
 
-    @classmethod
-    def collapse_data(cls, data, function=None, **kwargs):
-        if function:
-            raise Exception("Scatter elements are inhomogenous and "
-                            "cannot be collapsed with a function.")
-        return np.concatenate(data)
 
 
 class Curve(Chart):
@@ -289,10 +283,6 @@ class Points(Chart):
         while i < len(self):
             yield tuple(self.data[i, ...])
             i += 1
-
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        return Scatter.collapse_data(data, function, **kwargs)
 
 
 

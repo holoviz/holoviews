@@ -65,7 +65,7 @@ class Path(Element2D):
 
 
     @classmethod
-    def collapse_data(cls, data_list, function=None, **kwargs):
+    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
         if function is None:
             return [path for paths in data_list for path in paths]
         else:

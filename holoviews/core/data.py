@@ -188,6 +188,15 @@ class Columns(Element):
         else:
             return self.interface.groupby(dimensions, container_type, **kwargs)
 
+    @classmethod
+    def collapse_data(cls, data, function=None, kdims=None, **kwargs):
+        if isinstance(data[0], NdElement):
+            return data[0].collapse_data(data, function, kdims, **kwargs)
+        elif isinstance(data[0], np.ndarray):
+            return ColumnarArray.collapse_data(data, function, kdims, **kwargs)
+        elif util.is_dataframe(data[0]):
+            return ColumnarDataFrame.collapse_data(data, function, kdims, **kwargs)
+
 
     def __len__(self):
         if self.interface is None:
@@ -427,6 +436,7 @@ class ColumnarDataFrame(ColumnarData):
     def array(self):
         return self.element.data.iloc
 
+
     def reindex(self, kdims=None, vdims=None):
         # DataFrame based tables don't need to be reindexed
         return self.element.data
@@ -435,6 +445,11 @@ class ColumnarDataFrame(ColumnarData):
     @classmethod
     def _datarange(cls, data): 
         return data.min(), data.max()
+
+
+    @classmethod
+    def collapse_data(cls, data, function, kdims, **kwargs):
+        return pd.concat(data).groupby([d.name for d in kdims]).agg(function).reset_index()
 
 
     def select(self, selection_specs=None, **select):
@@ -481,7 +496,7 @@ class ColumnarDataFrame(ColumnarData):
 
     @classmethod
     def add_dimension(cls, data, dimension, dim_pos, values):
-        data[dimension.name] = values
+        data.insert(dim_pos, dimension.name, values)
         return data
 
 
@@ -597,13 +612,29 @@ class ColumnarArray(ColumnarData):
 
 
     @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        new_data = [arr[:, self.element.ndims:] for arr in data]
-        if isinstance(function, np.ufunc):
-            collapsed = function.reduce(new_data)
-        else:
-            collapsed = function(np.dstack(new_data), axis=-1, **kwargs)
-        return np.hstack([data[0][:, self.element.ndims:, np.newaxis], collapsed])
+    def collapse_data(cls, data, function, kdims=None, **kwargs):
+        """
+        Applies a groupby operation along the supplied key dimensions
+        then aggregates across the groups with the supplied function.
+        """
+        ndims = data[0].shape[1]
+        nkdims = len(kdims)
+        vdims = ['Value Dimension %s' % i for i in range(ndims-len(kdims))]
+        joined_data = Columns(np.concatenate(data), kdims=kdims, vdims=vdims)
+
+        rows = []
+        for k, group in joined_data.groupby(kdims).items():
+            row = np.zeros(ndims)
+            row[:ndims] = np.array(k)
+            for i, vdim in enumerate(group.vdims):
+                group_data = group.dimension_values(vdim)
+                if isinstance(function, np.ufunc):
+                    collapsed = function.reduce(group_data)
+                else:
+                    collapsed = function(group_data, **kwargs)
+                row[nkdims+i] = collapsed
+            rows.append(row)
+        return np.array(rows)
 
 
     def sample(self, samples=[]):

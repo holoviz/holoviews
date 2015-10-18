@@ -65,7 +65,7 @@ class Raster(Element2D):
 
 
     @classmethod
-    def collapse_data(cls, data_list, function, **kwargs):
+    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
         if isinstance(function, np.ufunc):
             return function.reduce(data_list)
         else:
@@ -285,7 +285,7 @@ class QuadMesh(Raster):
 
 
     @classmethod
-    def collapse_data(cls, data_list, function, **kwargs):
+    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
         """
         Allows collapsing the data of a number of QuadMesh
         Elements with a function.
