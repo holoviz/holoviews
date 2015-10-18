@@ -28,8 +28,7 @@ from . import util
 class Columns(Element):
 
     def __init__(self, data, **kwargs):
-        defaults = {'kdims': self.kdims, 'vdims': self.vdims}
-        data, params = ColumnarData._process_data(data, defaults, **kwargs)
+        data, params = ColumnarData._process_data(data, self.params(), **kwargs)
         super(Columns, self).__init__(data, **params)
         self.data = self._validate_data(self.data)
 
@@ -246,7 +245,7 @@ class ColumnarData(param.Parameterized):
 
 
     @classmethod
-    def _process_data(cls, data, defaults, **kwargs):
+    def _process_data(cls, data, paramobjs, **kwargs):
         params = {}
         if isinstance(data, Element):
             params['kdims'] = data.kdims
@@ -269,7 +268,7 @@ class ColumnarData(param.Parameterized):
                 data = OrderedDict([(row[:data.ndims], row[data.ndims:])
                                     for row in zip(*columns.values())])
         elif util.is_dataframe(data):
-            kdims, vdims = cls._process_df_dims(data, params)
+            kdims, vdims = cls._process_df_dims(data, paramobjs, **params)
             params['kdims'] = kdims
             params['vdims'] = vdims
         elif isinstance(data, tuple):
@@ -286,8 +285,8 @@ class ColumnarData(param.Parameterized):
                     or not pd):
                     data = OrderedDict(data)
                 else:
-                    dimensions = (kwargs.get('kdims', defaults['kdims']) +
-                                  kwargs.get('vdims', defaults['vdims']))
+                    dimensions = (kwargs.get('kdims', ) +
+                                  kwargs.get('vdims', paramobjs['vdims'].default))
                     columns = [d.name if isinstance(d, Dimension) else d
                                for d in dimensions]
                     data = pd.DataFrame(data, columns=columns)
@@ -295,9 +294,9 @@ class ColumnarData(param.Parameterized):
                 data = array
         params.update(kwargs)
         if 'kdims' not in params:
-            params['kdims'] = defaults['kdims']
+            params['kdims'] = paramobjs['kdims'].default
         if 'vdims' not in params:
-            params['vdims'] = defaults['vdims']
+            params['vdims'] = paramobjs['vdims'].default
         if isinstance(data, dict):
             data = NdElement(data, kdims=params['kdims'],
                              vdims=params['vdims'])
@@ -305,7 +304,7 @@ class ColumnarData(param.Parameterized):
 
 
     @classmethod
-    def _process_df_dims(cls, data, kwargs):
+    def _process_df_dims(cls, data, paramobjs, **kwargs):
         if 'kdims' in kwargs or 'vdims' in kwargs:
             kdims = kwargs.get('kdims', [])
             vdims = kwargs.get('vdims', [])
@@ -315,8 +314,9 @@ class ColumnarData(param.Parameterized):
                 raise ValueError("Supplied dimensions don't match columns"
                                  "in the dataframe.")
         else:
-            kdims = list(data.columns[:2])
-            vdims = list(data.columns[2:])
+            ndim = len(paramobjs['kdims'].default)
+            kdims = list(data.columns[:ndim])
+            vdims = list(data.columns[ndim:])
         return kdims, vdims
 
 
