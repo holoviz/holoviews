@@ -423,18 +423,17 @@ class NdElement(NdMapping, Tabular):
             return NdMapping.dimension_values(self, dim.name)
 
 
-    def dframe(self, value_label='data'):
+    def dframe(self, as_table=False):
         try:
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        if self._dataframe:
-            return self.data
-        labels = [d.name for d in self.dimensions()]
-        return pandas.DataFrame(
-            [dict(zip(labels, np.concatenate([np.array(k),v])))
-             for (k, v) in self.data.items()])
-
+        columns = [d.name for d in self.dimensions()]
+        df = pandas.DataFrame((k+v for (k, v) in self.data.items()), columns=columns)
+        if as_table:
+            from ..element import Table
+            return Table(df, **self.get_param_values(onlychanged=True))
+        return df
 
 
 class Element3D(Element2D):

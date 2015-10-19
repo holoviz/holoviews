@@ -224,11 +224,11 @@ class Columns(Element):
             return self.interface.values(dim)
 
 
-    def dframe(self):
+    def dframe(self, as_table=False):
         if self.interface is None:
-            return self.data.dframe()
+            return self.data.dframe(as_table)
         else:
-            return self.interface.dframe()
+            return self.interface.dframe(as_table)
 
 
     def array(self):
@@ -505,7 +505,11 @@ class ColumnarDataFrame(ColumnarData):
         return data
 
 
-    def dframe(self):
+    def dframe(self, as_table=False):
+        if as_table:
+            from ..element import Table
+            params = self.element.get_param_values(onlychanged=True)
+            return Table(self.element.data, **params)
         return self.element.data
 
 
@@ -526,8 +530,8 @@ class ColumnarArray(ColumnarData):
     def array(self):
         return self.element.data
 
-    def dframe(self):
-        return Element.dframe(self.element)
+    def dframe(self, as_table=False):
+        return Element.dframe(self.element, as_table)
 
 
     def closest(self, coords):
