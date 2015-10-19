@@ -117,13 +117,16 @@ class Columns(Element):
             return self.data.reindex(kdims, vdims)
 
         if vdims is None:
-            vdims = self._cached_value_names
-        elif kdims is None:
-            dimensions = (self._cached_index_names +
-                          self._cached_value_names)
-            kdims = [d for d in dimensions if d not in vdims]
-        key_dims = [self.get_dimension(k) for k in kdims]
-        val_dims = [self.get_dimension(v) for v in vdims]
+            vdims = self.vdims
+        else:
+            val_dims = [self.get_dimension(v) for v in vdims]
+
+        if kdims is None:
+            key_dims = [d for d in self.dimensions()
+                        if d not in vdims]
+        else:
+            key_dims = [self.get_dimension(k) for k in kdims]
+
         data = self.interface.reindex(self.data, key_dims, val_dims)
         return self.clone(data, key_dims, val_dims)
 
@@ -175,7 +178,7 @@ class Columns(Element):
         if len(reduce_map) > 1:
             raise ValueError("Chart Elements may only be reduced to a point.")
         dim, reduce_fn = list(reduce_map.items())[0]
-        if dim in self._cached_index_names:
+        if dim in self.kdims:
             reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.ndims:], axis=0)))
         else:
             raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
@@ -563,9 +566,8 @@ class ColumnarArray(ColumnarData):
 
         # Get dimension objects, labels, indexes and data
         dimensions = [self.element.get_dimension(d) for d in dimensions]
-        dim_labels = [d.name for d in dimensions]
         dim_idxs = [self.element.get_dimension_index(d) for d in dimensions]
-        dim_data = {d: self.element.dimension_values(d) for d in dim_labels}
+        dim_data = {d: self.element.dimension_values(d) for d in dimensions}
 
         # Find unique entries along supplied dimensions
         indices = data[:, dim_idxs]
@@ -578,7 +580,7 @@ class ColumnarArray(ColumnarData):
         grouped_data = []
         for group in unique_indices:
             mask = np.zeros(len(data), dtype=bool)
-            for d, v in zip(dim_labels, group):
+            for d, v in zip(dimensions, group):
                 mask = np.logical_or(mask, dim_data[d] == v)
             group_element = self.element.clone(data[mask, :], **kwargs)
             grouped_data.append((tuple(group), group_element))
@@ -660,7 +662,7 @@ class ColumnarArray(ColumnarData):
         reduce_map = self._reduce_map(dimensions, function, reduce_map)
 
         dim, reduce_fn = list(reduce_map.items())[0]
-        if dim in self._cached_index_names:
+        if dim in self.kdims:
             reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.element.ndims:], axis=0)))
         else:
             raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))

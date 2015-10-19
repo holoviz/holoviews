@@ -228,9 +228,9 @@ class Histogram(Element2D):
 
     def dimension_values(self, dim):
         dim = self.get_dimension(dim).name
-        if dim in self._cached_value_names:
+        if dim in self.vdims:
             return self.values
-        elif dim in self._cached_index_names:
+        elif dim in self.kdims:
             return np.convolve(self.edges, np.ones((2,))/2, mode='valid')
         else:
             return super(Histogram, self).dimension_values(dim)

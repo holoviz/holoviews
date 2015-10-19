@@ -220,7 +220,7 @@ class TableConversion(object):
         vdims = [vdim.name if isinstance(vdim, Dimension) else vdim for vdim in vdims]
         if (any(kd in self._table._cached_value_names for kd in kdims) or
             any(vd in self._table._cached_index_names for vd in vdims)):
-            new_kdims = [kd for kd in self._table._cached_index_names
+            new_kdims = [kd for kd in self._table.kdims
                          if kd not in kdims and kd not in vdims] + kdims
             selected = self._table.reindex(new_kdims, vdims)
         else:
@@ -230,7 +230,7 @@ class TableConversion(object):
         if invalid:
             raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
                             (invalid, new_type.__name__))
-        group_dims = [dim for dim in selected._cached_index_names if not dim in kdims+vdims]
+        group_dims = [dim for dim in selected.kdims if not dim in kdims+vdims]
 
         params = dict({'kdims': [selected.get_dimension(kd) for kd in kdims],
                        'vdims': [selected.get_dimension(vd) for vd in vdims]},

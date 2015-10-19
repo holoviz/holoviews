@@ -325,9 +325,8 @@ class MultiDimensionalMapping(Dimensioned):
         Returns a new mapping with the named dimension(s) removed.
         """
         dimensions = [dimensions] if np.isscalar(dimensions) else dimensions
-        dim_labels = [d for d in self._cached_index_names if d not in dimensions]
-        dim_inds = [self.get_dimension_index(d) for d in dim_labels]
-        dims = [self.get_dimension(d) for d in dim_labels]
+        dims = [d for d in self.kdims if d not in dimensions]
+        dim_inds = [self.get_dimension_index(d) for d in dims]
         key_getter = itemgetter(*dim_inds)
         return self.clone([(key_getter(k), v) for k, v in self.data.items()],
                           kdims=dims)
@@ -336,7 +335,7 @@ class MultiDimensionalMapping(Dimensioned):
     def dimension_values(self, dimension):
         "Returns the values along the specified dimension."
         dimension = self.get_dimension(dimension).name
-        if dimension in self._cached_index_names:
+        if dimension in self.kdims:
             return [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
         if dimension in self.dimensions(label=True):
             values = [el.dimension_values(dimension) for el in self
@@ -452,8 +451,7 @@ class MultiDimensionalMapping(Dimensioned):
         unchanged after the update.
         """
         if isinstance(other, NdMapping):
-            dims = [d for d in other._cached_index_names
-                    if d not in self._cached_index_names]
+            dims = [d for d in other.kdims if d not in self.kdims]
             if len(dims) == other.ndims:
                 raise KeyError("Cannot update with NdMapping that has"
                                " a different set of key dimensions.")

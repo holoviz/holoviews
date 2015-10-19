@@ -131,10 +131,10 @@ class HoloMap(UniformNdMapping):
                 # Generate keys for both subset and superset and sort them by the dimension index.
                 self_key = tuple(k for p, k in sorted(
                     [(self.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in self._cached_index_names]))
+                     if dim in self.kdims]))
                 other_key = tuple(k for p, k in sorted(
                     [(other.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in other._cached_index_names]))
+                     if dim in other.kdims]))
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):

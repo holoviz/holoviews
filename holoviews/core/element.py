@@ -136,7 +136,7 @@ class Element(ViewableElement, Composable, Overlayable):
     def dframe(self):
         import pandas as pd
         column_names = self.dimensions(label=True)
-        dim_vals = OrderedDict([(dim, self.dimension_values(dim)) for dim in column_names])
+        dim_vals = OrderedDict([(dim, self[dim]) for dim in column_names])
         return pd.DataFrame(dim_vals)
 
 
@@ -176,7 +176,7 @@ class Tabular(Element):
             return str(self.kdims[col])
         else:
             dim = self.get_dimension(col)
-            values = self.dimension_values(dim.name)
+            values = self[dim.name]
             return dim.pprint_value(values[row-1])
 
 
@@ -250,14 +250,13 @@ class NdElement(NdMapping, Tabular):
             else:
                 vdims = self._cached_value_names
         elif kdims is None:
-            kdims = [d for d in (self._cached_index_names + self._cached_value_names)
-                     if d not in vdims]
+            kdims = [d for d in self.dimensions if d not in vdims]
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
 
-        kidxs = [(i, k in self._cached_index_names, self.get_dimension_index(k))
+        kidxs = [(i, k in self.kdims, self.get_dimension_index(k))
                   for i, k in enumerate(kdims)]
-        vidxs = [(i, v in self._cached_index_names, self.get_dimension_index(v))
+        vidxs = [(i, v in self.kdims, self.get_dimension_index(v))
                   for i, v in enumerate(vdims)]
         getter = operator.itemgetter(0)
         items = []
@@ -323,6 +322,8 @@ class NdElement(NdMapping, Tabular):
         In addition to usual NdMapping indexing, NdElements can be indexed
         by column name (or a slice over column names)
         """
+        if args in self.dimensions():
+            return self.dimension_values(args)
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
@@ -350,7 +351,7 @@ class NdElement(NdMapping, Tabular):
         for sample in samples:
             value = self[sample]
             sample_data[sample] = value if np.isscalar(value) else value.values()[0]
-        return self.__class__(sample_data, **dict(self.get_param_values(onlychanged=True)))
+        return self.clone(sample_data)
 
 
     def reduce(self, dimensions=None, function=None, **reduce_map):
@@ -361,11 +362,11 @@ class NdElement(NdMapping, Tabular):
         """
         reduce_map = self._reduce_map(dimensions, function, reduce_map)
 
-        dim_labels = self._cached_index_names
         reduced_table = self
         for reduce_fn, group in groupby(reduce_map.items(), lambda x: x[1]):
             dims = [dim for dim, _ in group]
-            split_dims = [self.get_dimension(d) for d in dim_labels if d not in dims]
+            split_dims = [self.get_dimension(d) for d in self.kdims
+                          if d not in dims]
             if len(split_dims) and reduced_table.ndims > 1:
                 split_map = reduced_table.groupby([d.name for d in split_dims], container_type=HoloMap,
                                                   group_type=self.__class__)
@@ -377,7 +378,7 @@ class NdElement(NdMapping, Tabular):
                         reduced.append(reduce_fn(valtable.data.values()))
                     reduced_table[k] = reduced
             else:
-                reduced = tuple(reduce_fn(self.dimension_values(vdim.name))
+                reduced = tuple(reduce_fn(self[vdim.name])
                                 for vdim in self.vdims)
                 reduced_dims = [d for d in self.kdims if d.name not in reduce_map]
                 params = dict(group=self.group) if self.group != type(self).__name__ else {}
@@ -548,7 +549,7 @@ class Collator(NdElement):
         """
         dimensions = []
         for dim in self.kdims:
-            if len(set(self.dimension_values(dim.name))) == 1:
+            if len(set(self[dim.name])) == 1:
                 dimensions.append(dim)
         return dimensions
 
