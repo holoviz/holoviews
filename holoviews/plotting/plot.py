@@ -185,6 +185,40 @@ class DimensionedPlot(Plot):
         pass
 
 
+    def matches(self, spec):
+        """
+        Matches a specification against the current Plot.
+        """
+        if callable(spec) and not isinstance(spec, type): return spec(self)
+        elif isinstance(spec, type): return isinstance(self, spec)
+        else:
+            raise ValueError("Matching specs have to be either a type or a callable.")
+
+
+    def traverse(self, fn=None, specs=None, full_breadth=True):
+        """
+        Traverses any nested DimensionedPlot returning a list
+        of all plots that match the specs. The specs should
+        be supplied as a list of either Plot types or callables,
+        which should return a boolean given the plot class.
+        """
+        accumulator = []
+        matches = specs is None
+        if not matches:
+            for spec in specs:
+                matches = self.matches(spec)
+                if matches: break
+        if matches:
+            accumulator.append(fn(self) if fn else self)
+
+        # Assumes composite objects are iterables
+        if hasattr(self, 'subplots') and self.subplots:
+            for el in self.subplots.values():
+                accumulator += el.traverse(fn, specs, full_breadth)
+                if not full_breadth: break
+        return accumulator
+
+
     def _frame_title(self, key, group_size=2, separator='\n'):
         """
         Returns the formatted dimension group strings
