@@ -33,6 +33,6 @@ class PolygonPlot(PathPlot):
             cmap = get_cmap(cmap)
             colors = map_colors(np.array([element.level]), ranges[element.vdims[0].name], cmap)
             mapping['color'] = 'color'
-            data['color'] = colors
+            data['color'] = list(colors)*len(element.data)
 
         return data, mapping
