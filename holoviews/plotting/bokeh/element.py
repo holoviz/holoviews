@@ -407,8 +407,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
-        if not element: 
-            element = self._get_frame(key)
+        if not element:
+            if self.dynamic:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
+        else:
             self.current_key = key
             self.current_frame = element
 
@@ -417,6 +422,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source.data = {k: [] for k in source.data}
             return
 
+        self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
@@ -629,9 +635,15 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         key tuple (where integers represent frames). Returns this
         state.
         """
-        overlay = self._get_frame(key)
+        if element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_frame = element
+            self.current_key = key
+            ranges = self.compute_ranges(self.hmap, key, ranges)
+
         for k, subplot in self.subplots.items():
-            subplot.update_frame(key, ranges, element=overlay.get(k, None))
+            subplot.update_frame(key, ranges, element=element.get(k, None))
         if not self.overlaid and not self.tabs:
-            self._update_ranges(overlay, ranges)
-            self._update_plot(key, self.handles['plot'], overlay)
+            self._update_ranges(element, ranges)
+            self._update_plot(key, self.handles['plot'], element)

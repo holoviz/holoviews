@@ -384,10 +384,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        if element is None: element = self._get_frame(key)
+        if not element:
+            if self.dynamic:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
         else:
             self.current_key = key
             self.current_frame = element
+
         if element is not None:
             self.set_param(**self.lookup_options(element, 'plot').options)
         axis = self.handles['axis']
@@ -656,10 +662,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
-        overlay = self._get_frame(key) if self.dynamic else {}
+        if element is None and self.dynamic:
+            element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         for k, plot in self.subplots.items():
-            plot.update_frame(key, ranges, overlay.get(k, None))
+            plot.update_frame(key, ranges, element.get(k, None))
 
         self._finalize_axis(key, ranges=ranges)
 
