@@ -433,9 +433,10 @@ class contours(ElementOperation):
 
         contours = NdOverlay(None, kdims=['Levels'])
         for level, cset in zip(self.p.levels, contour_set.collections):
-            paths = cset.get_paths()
-            lines = [path.vertices for path in paths]
-            contours[level] = contour_type(lines, level=level, group=self.p.group,
+            paths = []
+            for path in cset.get_paths():
+                paths.extend(np.split(path.vertices, np.where(path.codes==1)[0][1:]))
+            contours[level] = contour_type(paths, level=level, group=self.p.group,
                                            label=element.label, kdims=element.kdims,
                                            vdims=element.vdims)
 
