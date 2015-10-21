@@ -176,7 +176,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
-                if low == high:
+                if low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -192,7 +192,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
-                if low == high:
+                if low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -408,7 +408,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         if not element:
-            if self.dynamic:
+            if self.dynamic and self.overlaid:
                 self.current_key = key
                 element = self.current_frame
             else:

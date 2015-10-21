@@ -385,7 +385,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         using the last available frame.
         """
         if not element:
-            if self.dynamic:
+            if self.dynamic and self.overlaid:
                 self.current_key = key
                 element = self.current_frame
             else:
