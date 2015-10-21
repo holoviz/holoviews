@@ -662,8 +662,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
-        if element is None and self.dynamic:
+        if element is None:
             element = self._get_frame(key)
+        else:
+            self.current_frame = element
+            self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
         for k, plot in self.subplots.items():
             plot.update_frame(key, ranges, element.get(k, None))
