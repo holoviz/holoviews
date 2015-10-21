@@ -402,12 +402,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
-        element = self._get_frame(key)
+        if not element: 
+            element = self._get_frame(key)
+            self.current_key = key
+            self.current_frame = element
+
         if not element:
             source = self.handles['source']
             source.data = {k: [] for k in source.data}
@@ -516,7 +520,7 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
         return rgbplot.initialize_plot(plot=plot)
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         element = self.get_frame(key)
         if key in self.hmap:
             self.mplplot.update_frame(key, ranges)
@@ -619,15 +623,15 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return self.handles['plot']
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
         """
         overlay = self._get_frame(key)
-        for subplot in self.subplots.values():
-            subplot.update_frame(key, ranges)
+        for k, subplot in self.subplots.items():
+            subplot.update_frame(key, ranges, element=overlay.get(k, None))
         if not self.overlaid and not self.tabs:
             self._update_ranges(overlay, ranges)
             self._update_plot(key, self.handles['plot'], overlay)
