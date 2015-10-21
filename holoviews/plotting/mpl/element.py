@@ -652,7 +652,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
