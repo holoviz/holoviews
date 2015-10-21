@@ -375,7 +375,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if tick_fontsize:  axis.tick_params(**tick_fontsize)
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
@@ -384,12 +384,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        view = self._get_frame(key)
-        if view is not None:
-            self.set_param(**self.lookup_options(view, 'plot').options)
+        if element is None: element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+        if element is not None:
+            self.set_param(**self.lookup_options(element, 'plot').options)
         axis = self.handles['axis']
 
-        axes_visible = view is not None or self.overlaid
+        axes_visible = element is not None or self.overlaid
         axis.xaxis.set_visible(axes_visible and self.xaxis)
         axis.yaxis.set_visible(axes_visible and self.yaxis)
         axis.patch.set_alpha(np.min([int(axes_visible), 1]))
@@ -397,13 +400,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         for hname, handle in self.handles.items():
             hideable = hasattr(handle, 'set_visible')
             if hname not in ['axis', 'fig'] and hideable:
-                handle.set_visible(view is not None)
-        if view is None:
+                handle.set_visible(element is not None)
+        if element is None:
             return
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
-            ranges = util.match_spec(view, ranges)
-        axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
+            ranges = util.match_spec(element, ranges)
+        axis_kwargs = self.update_handles(axis, element, key if element is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
@@ -653,9 +656,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
+        overlay = self._get_frame(key) if self.dynamic else {}
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        for plot in self.subplots.values():
-            plot.update_frame(key, ranges)
+        for k, plot in self.subplots.items():
+            plot.update_frame(key, ranges, overlay.get(k, None))
 
         self._finalize_axis(key, ranges=ranges)
 
