@@ -82,6 +82,8 @@ class MPLPlot(DimensionedPlot):
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
+    _close_figures = True
+
     def __init__(self, fig=None, axis=None, **params):
         self._create_fig = True
         super(MPLPlot, self).__init__(**params)
@@ -162,7 +164,7 @@ class MPLPlot(DimensionedPlot):
             return self.handles['axis']
         else:
             fig = self.handles['fig']
-            plt.close(fig)
+            if self._close_figures: plt.close(fig)
             return fig
 
 
@@ -180,7 +182,7 @@ class MPLPlot(DimensionedPlot):
                                        frames=self.keys,
                                        interval = 1000.0/fps)
         # Close the figure handle
-        plt.close(figure)
+        if self._close_figures: plt.close(figure)
         return anim
 
     def update(self, key):
@@ -399,7 +401,7 @@ class GridPlot(CompositePlot):
         self._readjust_axes(axis)
         self.drawn = True
         if self.subplot: return self.handles['axis']
-        plt.close(self.handles['fig'])
+        if self._close_figures: plt.close(self.handles['fig'])
         return self.handles['fig']
 
 
