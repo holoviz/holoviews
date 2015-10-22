@@ -173,6 +173,10 @@ class ColumnsNdArrayTest(ComparisonTestCase):
 class ColumnsDFrameTest(ComparisonTestCase):
 
     def setUp(self):
+        self.column_data = [('M',10, 15, 0.8), ('M',16, 18, 0.6),
+                            ('F',12, 10, 0.8)]
+        self.kdims = ['Gender', 'Age']
+        self.vdims = ['Weight', 'Height']
         self.xs = range(11)
         self.ys = np.linspace(0, 1, 11)
         self.columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys}),
@@ -180,6 +184,61 @@ class ColumnsDFrameTest(ComparisonTestCase):
 
     def test_columns_df_construct(self):
         self.assertTrue(isinstance(self.columns.data, pd.DataFrame))
+
+    def test_columns_tuple_list_construct(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        self.assertTrue(isinstance(self.columns.data, pd.DataFrame))
+
+    def test_columns_index_row_gender(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        row = columns['F',:]
+        self.assertEquals(type(row), Columns)
+        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
+                             Columns(self.column_data[2:],
+                                     kdims=self.kdims,
+                                     vdims=self.vdims))
+
+    def test_columns_index_rows_gender(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        row = columns['M',:]
+        self.assertEquals(type(row), Columns)
+        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
+                             Columns(self.column_data[:2],
+                                     kdims=self.kdims,
+                                     vdims=self.vdims))
+
+    def test_columns_index_row_age(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        row = columns[:, 12]
+        self.assertEquals(type(row), Columns)
+        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
+                             Columns(self.column_data[2:],
+                                     kdims=self.kdims,
+                                     vdims=self.vdims))
+
+    def test_columns_index_single_row(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        row = columns['F', 12]
+        self.assertEquals(type(row), Columns)
+        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
+                             Columns(self.column_data[2:],
+                                     kdims=self.kdims,
+                                     vdims=self.vdims))
+
+    def test_columns_index_value1(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        self.assertEquals(columns['F', 12, 'Weight'], 10)
+
+    def test_columns_index_value2(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        self.assertEquals(columns['F', 12, 'Height'], 0.8)
 
     def test_columns_add_dimensions_value(self):
         table = self.columns.add_dimension('z', 1, 0)

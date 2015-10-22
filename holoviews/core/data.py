@@ -465,14 +465,24 @@ class ColumnarDataFrame(ColumnarData):
         """
         df = self.element.data
         selected_kdims = []
+        slcs = []
         for dim, k in select.items():
             if isinstance(k, tuple):
                 k = slice(*k)
             if isinstance(k, slice):
-                df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
+                if k.start is not None:
+                    slcs.append(k.start < df[dim])
+                if k.stop is not None:
+                    slc.append(df[dim] < k.stop)
+            elif isinstance(k, (set, list)):
+                iter_slcs = []
+                for ik in k:
+                    iter_slcs.append(df[dim] == ik)
+                slcs.append(np.logical_or.reduce(iter_slcs))
             else:
                 if dim in self.element.kdims: selected_kdims.append(dim)
-                df = df[df[dim] == k]
+                slcs.append(df[dim] == k)
+        df = df[np.logical_and.reduce(slcs)]
         if len(set(selected_kdims)) == self.element.ndims:
             if len(df) and len(self.element.vdims) == 1:
                 df = df[self.element.vdims[0].name].iloc[0]
