@@ -241,14 +241,14 @@ class ColumnsDFrameTest(ComparisonTestCase):
         self.assertEquals(columns['F', 12, 'Height'], 0.8)
 
     def test_columns_add_dimensions_value(self):
-        table = self.columns.add_dimension('z', 1, 0)
-        self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        columns = self.columns.add_dimension('z', 1, 0)
+        self.assertEqual(columns.kdims[1], 'z')
+        self.compare_arrays(columns.dimension_values('z'), np.zeros(len(columns)))
 
     def test_columns_add_dimensions_values(self):
-        table = self.columns.add_dimension('z', 1, range(1,12))
-        self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+        columns = self.columns.add_dimension('z', 1, range(1,12))
+        self.assertEqual(columns.kdims[1], 'z')
+        self.compare_arrays(columns.dimension_values('z'), np.array(list(range(1,12))))
 
     def test_columns_getitem_column(self):
         self.compare_arrays(self.columns['y'], self.ys)
