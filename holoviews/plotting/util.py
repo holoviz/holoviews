@@ -34,7 +34,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):
-            main_range = range_item.get(key, False).range(dim)
+            main_range = range_item[key].range(dim)
         else:
             main_range = range_item.range(dim)
 
