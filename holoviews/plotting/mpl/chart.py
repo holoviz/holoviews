@@ -122,7 +122,8 @@ class CurvePlot(ChartPlot):
             if self.center_cyclic:
                 self.peak_argmax = np.argmax(element.data[:, 1])
             data = self._cyclic_curves(element)
-            xticks = self._cyclic_reduce_ticks(self.xvalues)
+            self.xticks is not None:
+                xticks = self._cyclic_reduce_ticks(self.xvalues)
 
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
