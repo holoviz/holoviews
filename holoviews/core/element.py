@@ -268,7 +268,7 @@ class NdElement(NdMapping, Tabular):
         for k, v in self.data.items():
             _, key = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
                                   for i, iskey, idx in kidxs), key=getter))
-            _, val = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
+            _, val = zip(*sorted(((i, v[idx] if iskey else v[idx-self.ndims])
                                   for i, iskey, idx in vidxs), key=getter))
             items.append((key, val))
         reindexed = self.clone(items, kdims=key_dims, vdims=val_dims)
