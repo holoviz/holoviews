@@ -107,11 +107,13 @@ class ColumnsNdElementTest(ComparisonTestCase):
                                                 kdims=['x'], vdims=['y']))
 
 
+
 class ColumnsNdArrayTest(ComparisonTestCase):
 
     def setUp(self):
         self.xs = range(11)
         self.ys = np.linspace(0, 1, 11)
+        self.zs = np.sin(self.xs)
         self.columns = Columns((self.xs, self.ys), kdims=['x'], vdims=['y'])
 
     def test_columns_values_construct(self):
@@ -168,6 +170,18 @@ class ColumnsNdArrayTest(ComparisonTestCase):
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
         self.compare_columns(collapsed, Columns((self.xs, self.ys*4.5), kdims=['x'], vdims=['y']))
 
+    def test_columns_1d_reduce(self):
+        columns = Columns((self.xs, self.ys), kdims=['x'], vdims=['y'])
+        self.assertEqual(columns.reduce('x', np.mean), np.float64(0.5))
+
+    def test_columns_2d_reduce(self):
+        columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891004)
+
+    def test_columns_2d_partial_reduce(self):
+        columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.reduce(['y'], np.mean),
+                         Columns((self.xs, self.zs), kdims=['x'], vdims=['z']))
 
 
 class ColumnsDFrameTest(ComparisonTestCase):

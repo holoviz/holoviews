@@ -117,15 +117,20 @@ class Element(ViewableElement, Composable, Overlayable):
         if dimensions and reduce_map:
             raise Exception("Pass reduced dimensions either as an argument"
                             "or as part of the kwargs not both.")
+        sanitized_dict = {sanitize_identifier(kd): kd
+                          for kd in self._cached_index_names}
+        if reduce_map:
+            reduce_map = reduce_map.items()
         if dimensions:
-            reduce_map = {d: function for d in dimensions}
+            reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
-            reduce_map = {d: function for d in self._cached_index_names}
-        reduce_map = {(d if isinstance(d, Dimension) else d): fn
-                      for d, fn in reduce_map.items()}
-        sanitized = {sanitize_identifier(kd): kd
-                     for kd in self._cached_index_names}
-        return {sanitized.get(d, d): fn for d, fn in reduce_map.items()}
+            reduce_map = [(d, function) for d in self._cached_index_names]
+        reduced = [(d.name if isinstance(d, Dimension) else d, fn)
+                   for d, fn in reduce_map]
+        sanitized = [(sanitized_dict.get(d, d), fn) for d, fn in reduced]
+        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(sanitized, lambda x: x[1])]
+        dims = [d for grp in grouped for d in grp[1]]
+        return dims, grouped
 
 
     def table(self):

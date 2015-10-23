@@ -170,19 +170,35 @@ class Columns(Element):
 
     def reduce(self, dimensions=[], function=None, **reduce_map):
         """
-        Allows collapsing of Chart objects using the supplied map of
+        Allows collapsing of Columns objects using the supplied map of
         dimensions and reduce functions.
         """
-        reduce_map = self._reduce_map(dimensions, function, reduce_map)
+        if self.interface is None:
+            return self.data.reduce(dimensions, function, **reduce_map)
 
-        if len(reduce_map) > 1:
-            raise ValueError("Chart Elements may only be reduced to a point.")
-        dim, reduce_fn = list(reduce_map.items())[0]
-        if dim in self.kdims:
-            reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.ndims:], axis=0)))
+        reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
+        reduced = self
+        for reduce_fn, group in reduce_map:
+            reduced = self.interface.reduce(reduced, group, function)
+
+        if np.isscalar(reduced):
+            return reduced
         else:
-            raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
-        return self.clone(reduced_data)
+            kdims = [kdim for kdim in self.kdims if kdim not in reduce_dims]
+            return self.clone(reduced, kdims=kdims)
+
+
+
+    def aggregate(self, dimensions, function):
+        """
+        Groups over the supplied dimensions and aggregates.
+        """
+        if self.interface is None:
+            aggregated = self.data.aggregate(dimensions, function)
+        else:
+            aggregated = self.interface.aggregate(dimensions, function)
+        kdims = [self.get_dimension(d) for d in dimensions]
+        return self.clone(aggregated, kdims=kdims)
 
 
     def groupby(self, dimensions, container_type=HoloMap, **kwargs):
@@ -668,19 +684,23 @@ class ColumnarArray(ColumnarData):
         return data[mask]
 
 
-    def reduce(self, dimensions=[], function=None, **reduce_map):
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function):
         """
-        Allows collapsing of Chart objects using the supplied map of
-        dimensions and reduce functions.
+        This implementation allows reducing dimensions by aggregating
+        over all the remaining key dimensions using the collapse_data
+        method.
         """
-        reduce_map = self._reduce_map(dimensions, function, reduce_map)
-
-        dim, reduce_fn = list(reduce_map.items())[0]
-        if dim in self.kdims:
-            reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.element.ndims:], axis=0)))
+        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
+        if len(kdims):
+            reindexed = columns.reindex(kdims)
+            reduced = reindexed.collapse_data([reindexed.data], function, kdims)
         else:
-            raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
-        params = dict(self.get_param_values(onlychanged=True), vdims=self.vdims,
-                      kdims=[])
-        params.pop('extents', None)
-        return ItemTable(reduced_data, **params)
+            reduced = function(columns.data, axis=0)[columns.ndims:]
+        if reduced.ndim == 1:
+            if len(reduced) == 1:
+                return reduced[0]
+            else:
+                return np.atleast_2d(reduced)
+        return reduced
+
