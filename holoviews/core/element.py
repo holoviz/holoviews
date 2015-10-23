@@ -409,8 +409,9 @@ class NdElement(NdMapping, Tabular):
             index += len(d)
             joined_data.update(d)
 
+        grouped = joined_data.groupby([d.name for d in kdims], container_type=HoloMap)
         collapsed = joined_data.clone(shared_data=False, kdims=kdims)
-        for k, group in joined_data.groupby([d.name for d in kdims]).items():
+        for k, group in grouped.items():
             if isinstance(function, np.ufunc):
                 collapsed[k] = tuple(function.reduce(group[vdim.name]) for vdim in group.vdims)
             else:
