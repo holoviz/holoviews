@@ -423,9 +423,17 @@ class NdElement(NdMapping, Tabular):
         value_dims = self.dimensions('value', label=True)
         if dim.name in value_dims:
             index = value_dims.index(dim.name)
-            return [v[index] for v in self.values()]
+            return [v[index] for v in self.data.values()]
         else:
             return NdMapping.dimension_values(self, dim.name)
+
+
+    def values(self):
+        " Returns the values of all the elements."
+        values = self.data.values()
+        if len(self.vdims) == 1:
+            return  [v[0] for v in values]
+        return list(values)
 
 
     def dframe(self, as_table=False):
