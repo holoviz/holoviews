@@ -114,8 +114,10 @@ class MultiDimensionalMapping(Dimensioned):
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif not self._check_items and self._instantiated:
-            if isinstance(initial_items, (dict, MultiDimensionalMapping)):
+            if isinstance(initial_items, dict):
                 initial_items = initial_items.items()
+            elif isinstance(initial_items, MultiDimensionalMapping):
+                initial_items = initial_items.data.items()
             self.data = OrderedDict((k if isinstance(k, tuple) else (k,), v)
                                     for k, v in initial_items)
             self._resort()
