@@ -566,7 +566,9 @@ class Comparison(ComparisonInterface):
         cls.compare_dimensioned(el1, el2)
         from pandas.util.testing import assert_frame_equal
         try:
-            assert_frame_equal(el1.data, el2.data)
+            df1 = el1.data.reset_index(drop=True)
+            df2 = el2.data.reset_index(drop=True)
+            assert_frame_equal(df1, df2)
         except AssertionError as e:
             raise cls.failureException(msg+': '+str(e))
 
