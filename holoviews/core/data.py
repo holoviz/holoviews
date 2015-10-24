@@ -117,7 +117,7 @@ class Columns(Element):
             return self.data.reindex(kdims, vdims)
 
         if vdims is None:
-            vdims = self.vdims
+            val_dims = self.vdims
         else:
             val_dims = [self.get_dimension(v) for v in vdims]
 
@@ -127,8 +127,8 @@ class Columns(Element):
         else:
             key_dims = [self.get_dimension(k) for k in kdims]
 
-        data = self.interface.reindex(self.data, key_dims, val_dims)
-        return self.clone(data, key_dims, val_dims)
+        data = self.interface.reindex(key_dims, val_dims)
+        return self.clone(data, kdims=key_dims, vdims=val_dims)
 
 
     def __getitem__(self, slices):
@@ -330,6 +330,9 @@ class ColumnarData(param.Parameterized):
         if isinstance(data, dict):
             data = NdElement(data, kdims=params['kdims'],
                              vdims=params['vdims'])
+        elif util.is_dataframe(data):
+            data = data.sort_values(by=[d.name if isinstance(d, Dimension) else d
+                                        for dims in ['kdims', 'vdims'] for d in params[dims]])
         return data, params
 
 
@@ -495,7 +498,7 @@ class ColumnarDataFrame(ColumnarData):
             else:
                 if dim in self.element.kdims: selected_kdims.append(dim)
                 slcs.append(df[dim] == k)
-        df = df[np.logical_and.reduce(slcs)]
+        df = df.iloc[np.logical_and.reduce(slcs)]
         if len(set(selected_kdims)) == self.element.ndims:
             if len(df) and len(self.element.vdims) == 1:
                 df = df[self.element.vdims[0].name].iloc[0]
@@ -595,6 +598,9 @@ class ColumnarArray(ColumnarData):
         dimensions = [self.element.get_dimension(d) for d in dimensions]
         dim_idxs = [self.element.get_dimension_index(d) for d in dimensions]
         dim_data = {d: self.element.dimension_values(d) for d in dimensions}
+        ndims = len(dimensions)
+        kwargs['kdims'] = [kdim for kdim in self.element.kdims
+                           if kdim not in dimensions]
 
         # Find unique entries along supplied dimensions
         indices = data[:, dim_idxs]
@@ -609,7 +615,7 @@ class ColumnarArray(ColumnarData):
             mask = np.zeros(len(data), dtype=bool)
             for d, v in zip(dimensions, group):
                 mask = np.logical_or(mask, dim_data[d] == v)
-            group_element = self.element.clone(data[mask, :], **kwargs)
+            group_element = self.element.clone(data[mask, ndims:], **kwargs)
             grouped_data.append((tuple(group), group_element))
         return container_type(grouped_data, kdims=dimensions)
 
@@ -662,7 +668,7 @@ class ColumnarArray(ColumnarData):
                 if isinstance(function, np.ufunc):
                     collapsed = function.reduce(group_data)
                 else:
-                    collapsed = function(group_data, **kwargs)
+                    collapsed = function(group_data, axis=0, **kwargs)
                 row[nkdims+i] = collapsed
             rows.append(row)
         return np.array(rows)
