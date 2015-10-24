@@ -357,37 +357,30 @@ class NdElement(NdMapping, Tabular):
         return self.clone(sample_data)
 
 
-    def reduce(self, dimensions=None, function=None, **reduce_map):
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function):
         """
-        Allows collapsing the Table down by dimension by passing
-        the dimension name and reduce_fn as kwargs. Reduces
-        dimensionality of Table until only an ItemTable is left.
+        This implementation allows reducing dimensions by aggregating
+        over all the remaining key dimensions using the collapse_data
+        method.
         """
-        reduce_map = self._reduce_map(dimensions, function, reduce_map)
-
-        reduced_table = self
-        for reduce_fn, group in groupby(reduce_map.items(), lambda x: x[1]):
-            dims = [dim for dim, _ in group]
-            split_dims = [self.get_dimension(d) for d in self.kdims
-                          if d not in dims]
-            if len(split_dims) and reduced_table.ndims > 1:
-                split_map = reduced_table.groupby([d.name for d in split_dims], container_type=HoloMap,
-                                                  group_type=self.__class__)
-                reduced_table = self.clone(shared_data=False, kdims=split_dims)
-                for k, table in split_map.items():
-                    reduced = []
-                    for vdim in self.vdims:
-                        valtable = table.select(value=vdim.name) if len(self.vdims) > 1 else table
-                        reduced.append(reduce_fn(valtable.data.values()))
-                    reduced_table[k] = reduced
+        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
+        if len(kdims):
+            reindexed = columns.reindex(kdims)
+            reduced = reindexed.collapse_data([reindexed], function, kdims)
+        else:
+            reduced = []
+            for vdim in columns.vdims:
+                data = columns[vdim.name]
+                if isinstance(function, np.ufunc):
+                    reduced.append(function.reduce(data))
+                else:
+                    reduced.append(function(data))
+            if len(reduced) == 1:
+                reduced = reduced[0]
             else:
-                reduced = tuple(reduce_fn(self[vdim.name])
-                                for vdim in self.vdims)
-                reduced_dims = [d for d in self.kdims if d.name not in reduce_map]
-                params = dict(group=self.group) if self.group != type(self).__name__ else {}
-                reduced_table = self.__class__([((), reduced)], label=self.label, kdims=reduced_dims,
-                                               vdims=self.vdims, **params)
-        return reduced_table
+                reduced = OrderedDict([((), tuple(reduced))])
+        return reduced
 
 
     def _item_check(self, dim_vals, data):

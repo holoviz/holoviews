@@ -17,10 +17,11 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def setUp(self):
         self.xs = range(11)
         self.ys = np.linspace(0, 1, 11)
+        self.zs = np.sin(self.xs)
         self.keys1 =   [('M',10), ('M',16), ('F',12)]
         self.values1 = [(15, 0.8), (18, 0.6), (10, 0.8)]
-        self.key_dims1 = ['Gender', 'Age']
-        self.val_dims1 = ['Weight', 'Height']
+        self.kdims = ['Gender', 'Age']
+        self.vdims = ['Weight', 'Height']
         self.columns = Columns(dict(zip(self.xs, self.ys)),
                                kdims=['x'], vdims=['y'])
 
@@ -37,54 +38,47 @@ class ColumnsNdElementTest(ComparisonTestCase):
 
     def test_columns_items_construct(self):
         columns = Columns(zip(self.keys1, self.values1),
-                          kdims = self.key_dims1,
-                          vdims = self.val_dims1)
+                          kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(columns.data, NdElement))
 
     def test_columns_index_row_gender(self):
-        table =Columns(zip(self.keys1, self.values1),
-                      kdims = self.key_dims1,
-                      vdims = self.val_dims1)
+        table = Columns(zip(self.keys1, self.values1),
+                        kdims=self.kdims, vdims=self.vdims)
         row = table['F',:]
         self.assertEquals(type(row), Columns)
         self.assertEquals(row.data.data, OrderedDict([(('F', 12), (10, 0.8))]))
 
     def test_columns_index_rows_gender(self):
-        table =Columns(zip(self.keys1, self.values1),
-                      kdims = self.key_dims1,
-                      vdims = self.val_dims1)
+        table = Columns(zip(self.keys1, self.values1),
+                        kdims=self.kdims, vdims=self.vdims)
         row = table['M',:]
         self.assertEquals(type(row), Columns)
         self.assertEquals(row.data.data,
                           OrderedDict([(('M', 10), (15, 0.8)), (('M', 16), (18, 0.6))]))
 
     def test_columns_index_row_age(self):
-        table =Columns(zip(self.keys1, self.values1),
-                      kdims = self.key_dims1,
-                      vdims = self.val_dims1)
+        table = Columns(zip(self.keys1, self.values1),
+                        kdims=self.kdims, vdims=self.vdims)
         row = table[:, 12]
         self.assertEquals(type(row), Columns)
         self.assertEquals(row.data.data, OrderedDict([(('F', 12), (10, 0.8))]))
 
     def test_columns_index_item_table(self):
-        table =Columns(zip(self.keys1, self.values1),
-                      kdims = self.key_dims1,
-                      vdims = self.val_dims1)
+        table = Columns(zip(self.keys1, self.values1),
+                        kdims=self.kdims, vdims=self.vdims)
         itemtable = table['F', 12]
         self.assertEquals(type(itemtable), Columns)
         self.assertEquals(itemtable.data.data, OrderedDict([(('F', 12), (10, 0.8))]))
 
 
     def test_columns_index_value1(self):
-        table =Columns(zip(self.keys1, self.values1),
-                      kdims = self.key_dims1,
-                      vdims = self.val_dims1)
+        table = Columns(zip(self.keys1, self.values1),
+                          kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(table['F', 12, 'Weight'], 10)
 
     def test_columns_index_value2(self):
-        table =Columns(zip(self.keys1, self.values1),
-                      kdims = self.key_dims1,
-                      vdims = self.val_dims1)
+        table = Columns(zip(self.keys1, self.values1),
+                          kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(table['F', 12, 'Height'], 0.8)
 
     def test_columns_getitem_column(self):
@@ -105,6 +99,34 @@ class ColumnsNdElementTest(ComparisonTestCase):
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
         self.compare_columns(collapsed, Columns(dict(zip(self.xs, self.ys*4.5)),
                                                 kdims=['x'], vdims=['y']))
+
+    def test_columns_1d_reduce(self):
+        self.assertEqual(self.columns.reduce('x', np.mean), np.float64(0.5))
+
+    def test_columns_2d_reduce(self):
+        columns = Columns(zip(zip(self.xs, self.ys), self.zs),
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891004)
+
+    def test_columns_2d_partial_reduce(self):
+        columns = Columns(zip(zip(self.xs, self.ys), self.zs),
+                          kdims=['x', 'y'], vdims=['z'])
+        reduced = Columns(zip(zip(self.xs), self.zs),
+                          kdims=['x'], vdims=['z'])
+        self.assertEqual(columns.reduce(['y'], np.mean), reduced)
+
+    def test_columns_heterogeneous_reduce(self):
+        columns = Columns(zip(self.keys1, self.values1), kdims=self.kdims,
+                          vdims=self.vdims)
+        reduced = Columns(zip([k[1:] for k in self.keys1], self.values1),
+                          kdims=self.kdims[1:], vdims=self.vdims)
+        self.assertEqual(columns.reduce(['Gender'], np.mean), reduced)
+
+    def test_columns_heterogeneous_reduce2d(self):
+        columns = Columns(zip(self.keys1, self.values1), kdims=self.kdims,
+                          vdims=self.vdims)
+        reduced = Columns([((), (14.333333333333334, 0.73333333333333339))], kdims=[], vdims=self.vdims)
+        self.assertEqual(columns.reduce(function=np.mean), reduced)
 
 
 
@@ -193,6 +215,7 @@ class ColumnsDFrameTest(ComparisonTestCase):
         self.vdims = ['Weight', 'Height']
         self.xs = range(11)
         self.ys = np.linspace(0, 1, 11)
+        self.zs = np.sin(self.xs)
         self.columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys}),
                                kdims=['x'], vdims=['y'])
 
@@ -209,40 +232,36 @@ class ColumnsDFrameTest(ComparisonTestCase):
                           vdims=self.vdims)
         row = columns['F',:]
         self.assertEquals(type(row), Columns)
-        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
-                             Columns(self.column_data[2:],
-                                     kdims=self.kdims,
-                                     vdims=self.vdims))
+        self.compare_columns(row, Columns(self.column_data[2:],
+                                          kdims=self.kdims,
+                                          vdims=self.vdims))
 
     def test_columns_index_rows_gender(self):
         columns = Columns(self.column_data, kdims=self.kdims,
                           vdims=self.vdims)
         row = columns['M',:]
         self.assertEquals(type(row), Columns)
-        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
-                             Columns(self.column_data[:2],
-                                     kdims=self.kdims,
-                                     vdims=self.vdims))
+        self.compare_columns(row, Columns(self.column_data[:2],
+                                          kdims=self.kdims,
+                                          vdims=self.vdims))
 
     def test_columns_index_row_age(self):
         columns = Columns(self.column_data, kdims=self.kdims,
                           vdims=self.vdims)
         row = columns[:, 12]
         self.assertEquals(type(row), Columns)
-        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
-                             Columns(self.column_data[2:],
-                                     kdims=self.kdims,
-                                     vdims=self.vdims))
+        self.compare_columns(row, Columns(self.column_data[2:],
+                                          kdims=self.kdims,
+                                          vdims=self.vdims))
 
     def test_columns_index_single_row(self):
         columns = Columns(self.column_data, kdims=self.kdims,
                           vdims=self.vdims)
         row = columns['F', 12]
         self.assertEquals(type(row), Columns)
-        self.compare_columns(row.clone(row.data.reset_index(drop=True)),
-                             Columns(self.column_data[2:],
-                                     kdims=self.kdims,
-                                     vdims=self.vdims))
+        self.compare_columns(row, Columns(self.column_data[2:],
+                                          kdims=self.kdims,
+                                          vdims=self.vdims))
 
     def test_columns_index_value1(self):
         columns = Columns(self.column_data, kdims=self.kdims,
@@ -271,3 +290,36 @@ class ColumnsDFrameTest(ComparisonTestCase):
         collapsed = HoloMap({i: Columns(pd.DataFrame({'x': self.xs, 'y': self.ys*i}), kdims=['x'], vdims=['y'])
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
         self.compare_columns(collapsed, Columns(pd.DataFrame({'x': self.xs, 'y': self.ys*4.5}), kdims=['x'], vdims=['y']))
+
+    def test_columns_1d_reduce(self):
+        self.assertEqual(self.columns.reduce('x', np.mean), np.float64(0.5))
+
+    def test_columns_2d_reduce(self):
+        columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891004)
+
+    def test_columns_2d_partial_reduce(self):
+        columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.reduce(['y'], np.mean),
+                         Columns(pd.DataFrame({'x': self.xs, 'z': self.zs}),
+                                 kdims=['x'], vdims=['z']))
+
+    def test_columns_heterogeneous_reduce(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        reduced_data = pd.DataFrame([d[1:] for d in self.column_data],
+                                    columns=columns.dimensions(label=True)[1:])
+        reduced = Columns(reduced_data, kdims=self.kdims[1:],
+                          vdims=self.vdims)
+        self.assertEqual(columns.reduce(['Gender'], np.mean), reduced)
+
+    def test_columns_heterogeneous_reduce2d(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        reduced_data = pd.DataFrame([d[1:] for d in self.column_data],
+                                    columns=columns.dimensions(label=True)[1:])
+        reduced = Columns(pd.DataFrame([(14.333333333333334, 0.73333333333333339)], columns=self.vdims),
+                          kdims=[], vdims=self.vdims)
+        self.assertEqual(columns.reduce(function=np.mean), reduced)

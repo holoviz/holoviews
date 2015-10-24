@@ -173,13 +173,13 @@ class Columns(Element):
         Allows collapsing of Columns objects using the supplied map of
         dimensions and reduce functions.
         """
-        if self.interface is None:
-            return self.data.reduce(dimensions, function, **reduce_map)
-
         reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
         reduced = self
         for reduce_fn, group in reduce_map:
-            reduced = self.interface.reduce(reduced, group, function)
+            if self.interface is None:
+                reduced = self.data.reduce(reduced, group, function)
+            else:
+                reduced = self.interface.reduce(reduced, group, function)
 
         if np.isscalar(reduced):
             return reduced
@@ -426,32 +426,29 @@ class ColumnarDataFrame(ColumnarData):
         return mapping
 
 
-    def reduce(self, dimensions=[], function=None, **reductions):
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function=None):
         """
         The aggregate function accepts either a list of Dimensions
         and a function to apply to find the aggregate across
         those Dimensions or a list of dimension/function pairs
         to apply one by one.
         """
-        if not dimensions and not reductions:
-            raise Exception("Supply either a list of Dimensions or"
-                            "reductions as keyword arguments")
-        reduced = self.element.data
-        dfnumeric = reduced.applymap(np.isreal).all(axis=0)
-        unreducable = list(dfnumeric[dfnumeric == False].index)
-        if dimensions:
-            if not function:
-                raise Exception("Supply a function to reduce the Dimensions with.")
-            reductions.update({d: function for d in dimensions})
-        if reductions:
-            reduce_ops = defaultdict(list)
-            for d, fn in reductions.items(): reduce_ops[fn].append(fn)
-            for fn, dims  in reduce_ops.items():
-                reduced = reduced.groupby(dims, as_index=True).aggregate(fn)
-                reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
-                reduced = reduced.reset_index(level=reduced_indexes)
-        kdims = [self.element.get_dimension(d) for d in reduced.columns]
-        return self.element.clone(reduced, kdims=kdims)
+        reduced = columns.data
+        kdims = [kdim.name for kdim in columns.kdims if kdim not in reduce_dims]
+        vdims = columns.dimensions('value', True)
+        if kdims:
+            reduced = reduced.reindex(columns=kdims+vdims).groupby(kdims).aggregate(function).reset_index()
+        else:
+            if isinstance(function, np.ufunc):
+                reduced = function.reduce(columns.data, axis=0)
+            else:
+                reduced = function(columns.data, axis=0)[vdims]
+            if len(reduced) == 1:
+                reduced = reduced[0]
+            else:
+                reduced = pd.DataFrame([reduced], columns=vdims)
+        return reduced
 
 
     def array(self):
@@ -696,7 +693,11 @@ class ColumnarArray(ColumnarData):
             reindexed = columns.reindex(kdims)
             reduced = reindexed.collapse_data([reindexed.data], function, kdims)
         else:
-            reduced = function(columns.data, axis=0)[columns.ndims:]
+            if isinstance(function, np.ufunc):
+                reduced = function.reduce(columns.data, axis=0)
+            else:
+                reduced = function(columns.data, axis=0)
+            reduced = reduced[columns.ndims:]
         if reduced.ndim == 1:
             if len(reduced) == 1:
                 return reduced[0]
