@@ -91,7 +91,7 @@ class HoloMap(UniformNdMapping):
         Helper for __mul__ that returns the list of keys together with
         the dimension labels.
         """
-        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
+        return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
                 for k in self.keys()]
 
 
@@ -360,7 +360,7 @@ class GridSpace(UniformNdMapping):
         ndims = self.ndims
         if all(not isinstance(el, slice) for el in key):
             dim_inds = []
-            for dim in self._cached_index_names:
+            for dim in self.kdims:
                 dim_type = self.get_dimension_type(dim)
                 if isinstance(dim_type, type) and issubclass(dim_type, Number):
                     dim_inds.append(self.get_dimension_index(dim))

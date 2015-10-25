@@ -60,7 +60,7 @@ class ItemTable(Element):
         """
         if heading is ():
             return self
-        if heading not in self._cached_value_names:
+        if heading not in self.vdims:
             raise IndexError("%r not in available headings." % heading)
         return self.data.get(heading, np.NaN)
 
@@ -105,8 +105,8 @@ class ItemTable(Element):
             return str(self.dimensions('value')[row])
         else:
             dim = self.get_dimension(row)
-            heading = self._cached_value_names[row]
-            return dim.pprint_value(self.data.get(heading, np.NaN))
+            heading = self.vdims[row]
+            return dim.pprint_value(self.data.get(heading.name, np.NaN))
 
 
     def hist(self, *args, **kwargs):
@@ -137,8 +137,8 @@ class ItemTable(Element):
                      vdims=self.vdims)
 
     def values(self):
-        return tuple(self.data.get(k, np.NaN)
-                     for k in self._cached_value_names)
+        return tuple(self.data.get(d.name, np.NaN)
+                     for d in self.vdims)
 
 
 
@@ -211,10 +211,10 @@ class TableConversion(object):
 
     def _conversion(self, kdims=None, vdims=None, new_type=None, **kwargs):
         if kdims is None:
-            kdims = self._table._cached_index_names
+            kdims = self._table.kdims
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
-            vdims = self._table._cached_value_names
+            vdims = self._table.vdims
         elif vdims and not isinstance(vdims, list): vdims = [vdims]
         kdims = [kdim.name if isinstance(kdim, Dimension) else kdim for kdim in kdims]
         vdims = [vdim.name if isinstance(vdim, Dimension) else vdim for vdim in vdims]

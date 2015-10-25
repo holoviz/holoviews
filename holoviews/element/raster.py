@@ -414,8 +414,8 @@ class HeatMap(Raster):
         if dim in self.kdims:
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
-        elif dim in self._cached_value_names:
-            idx = self._cached_value_names.index(dim)
+        elif dim in self.vdims:
+            idx = self.vdims.index(dim)
             return [v[idx] if isinstance(v, tuple) else v
                     for v in self._data.values()]
         else:

@@ -651,13 +651,10 @@ class Dimensioned(LabelledData):
         """
 
         # Apply all indexes applying on this object
-        val_dim = ['value'] if self.vdims else []
-        kdims = self.dimensions('key', label=True)
-        sanitized = {sanitize_identifier(kd): kd
-                     for kd in kdims}
-        local_dims = (kdims + list(sanitized.keys()) + val_dim)
+        vdims = self.vdims+['value'] if self.vdims else []
+        kdims = self.kdims
         local_kwargs = {k: v for k, v in kwargs.items()
-                        if k in local_dims}
+                        if k in kdims+vdims}
 
         # Check selection_spec applies
         if selection_specs is not None:
@@ -666,6 +663,7 @@ class Dimensioned(LabelledData):
         else:
             matches = True
 
+        # Apply selection to self
         if local_kwargs and matches:
             select = [slice(None) for i in range(self.ndims)]
             for dim, val in local_kwargs.items():
@@ -673,7 +671,6 @@ class Dimensioned(LabelledData):
                     select += [val]
                 else:
                     if isinstance(val, tuple): val = slice(*val)
-                    dim = sanitized.get(dim, dim)
                     select[self.get_dimension_index(dim)] = val
             if self._deep_indexable:
                 selection = self.get(tuple(select),
