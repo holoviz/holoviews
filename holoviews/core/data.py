@@ -72,7 +72,7 @@ class Columns(Element):
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
 
-        if dimension.name in self._cached_index_names:
+        if dimension.name in self.kdims:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
         dimensions = self.kdims[:]
@@ -383,19 +383,20 @@ class ColumnarData(param.Parameterized):
         This method transforms any ViewableElement type into a Table
         as long as it implements a dimension_values method.
         """
-        keys = zip(*[self.values(dim.name)
-                     for dim in self.kdims])
-        values = zip(*[self.values(dim.name)
-                       for dim in self.vdims])
-        if not keys: keys = [()]*len(values)
-        if not values: [()]*len(keys)
+        if self.kdims:
+            keys = zip(*[self.values(dim.name)
+                         for dim in self.kdims])
+        else:
+            keys = [()]*len(values)
+
+        if self.vdims:
+            values = zip(*[self.values(dim.name)
+                           for dim in self.vdims])
+        else:
+            values = [()]*len(keys)
+
         data = zip(keys, values)
-        kwargs = {'label': self.label
-                  for k, v in self.get_param_values(onlychanged=True)
-                  if k in ['group', 'label']}
-        params = dict(kdims=self.kdims,
-                      vdims=self.vdims,
-                      label=self.label)
+        params = dict(kdims=self.kdims, vdims=self.vdims, label=self.label)
         if not self.params()['group'].default == self.group:
             params['group'] = self.group
         el_type = type(self.element) 
@@ -414,7 +415,7 @@ class ColumnarData(param.Parameterized):
 class ColumnarDataFrame(ColumnarData):
 
     def groupby(self, dimensions, container_type=HoloMap, **kwargs):
-        invalid_dims = list(set(dimensions) - set(self._cached_index_names))
+        invalid_dims = list(set(dimensions) - set(self.element.dimensions('key', True)))
         if invalid_dims:
             raise Exception('Following dimensions could not be found:\n%s.'
                             % invalid_dims)

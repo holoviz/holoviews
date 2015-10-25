@@ -518,8 +518,6 @@ class Dimensioned(LabelledData):
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
-        self._cached_index_names = [d.name for d in self.kdims]
-        self._cached_value_names = [d.name for d in self.vdims]
         self._settings = None
 
 
@@ -535,7 +533,7 @@ class Dimensioned(LabelledData):
         valid_dimensions = []
         for dim in dimensions:
             if isinstance(dim, Dimension): dim = dim.name
-            if dim not in self._cached_index_names:
+            if dim not in self.kdims:
                 raise Exception("Supplied dimensions %s not found." % dim)
             valid_dimensions.append(dim)
         return valid_dimensions
@@ -601,7 +599,7 @@ class Dimensioned(LabelledData):
                 return IndexError('Dimension index out of bounds')
         try:
             sanitized = {sanitize_identifier(kd): kd
-                         for kd in self._cached_index_names}
+                         for kd in self.dimensions('key', True)}
             return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
@@ -654,10 +652,10 @@ class Dimensioned(LabelledData):
 
         # Apply all indexes applying on this object
         val_dim = ['value'] if self.vdims else []
+        kdims = self.dimensions('key', label=True)
         sanitized = {sanitize_identifier(kd): kd
-                     for kd in self._cached_index_names}
-        local_dims = (self._cached_index_names
-                      + list(sanitized.keys()) + val_dim)
+                     for kd in kdims}
+        local_dims = (kdims + list(sanitized.keys()) + val_dim)
         local_kwargs = {k: v for k, v in kwargs.items()
                         if k in local_dims}
 

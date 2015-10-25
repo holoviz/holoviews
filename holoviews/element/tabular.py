@@ -218,8 +218,8 @@ class TableConversion(object):
         elif vdims and not isinstance(vdims, list): vdims = [vdims]
         kdims = [kdim.name if isinstance(kdim, Dimension) else kdim for kdim in kdims]
         vdims = [vdim.name if isinstance(vdim, Dimension) else vdim for vdim in vdims]
-        if (any(kd in self._table._cached_value_names for kd in kdims) or
-            any(vd in self._table._cached_index_names for vd in vdims)):
+        if (any(kd in self._table.vdims for kd in kdims) or
+            any(vd in self._table.kdims for vd in vdims)):
             new_kdims = [kd for kd in self._table.kdims
                          if kd not in kdims and kd not in vdims] + kdims
             selected = self._table.reindex(new_kdims, vdims)

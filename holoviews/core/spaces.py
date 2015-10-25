@@ -31,8 +31,7 @@ class HoloMap(UniformNdMapping):
             with item_check(False):
                 return NdOverlay(self, **kwargs)
         else:
-            dims = [d for d in self._cached_index_names
-                    if d not in dimensions]
+            dims = [d for d in self.kdims if d not in dimensions]
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
 
 
@@ -108,8 +107,8 @@ class HoloMap(UniformNdMapping):
         with completely different dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
-            self_set = set(self._cached_index_names)
-            other_set = set(other._cached_index_names)
+            self_set = {d.name for d in self.kdims}
+            other_set = {d.name for d in other.kdims}
 
             # Determine which is the subset, to generate list of keys and
             # dimension labels for the new view
@@ -195,9 +194,9 @@ class HoloMap(UniformNdMapping):
         """
         from .operation import MapOperation
         if not dimensions:
-            dimensions = self._cached_index_names
+            dimensions = self.kdims
         if self.ndims > 1 and len(dimensions) != self.ndims:
-            groups = self.groupby([dim for dim in self._cached_index_names
+            groups = self.groupby([dim for dim in self.kdims
                                    if dim not in dimensions])
         else:
             [self.get_dimension(dim) for dim in dimensions]

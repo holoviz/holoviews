@@ -84,7 +84,7 @@ class DataFrameView(Columns):
                 dims[list(data.columns).index(name)] = dim
 
         ViewableElement.__init__(self, data, kdims=dims, **params)
-        self.data.columns = self._cached_index_names
+        self.data.columns = self.dimensions('key', True)
 
 
     def apply(self, name, *args, **kwargs):

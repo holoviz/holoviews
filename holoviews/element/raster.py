@@ -397,7 +397,7 @@ class HeatMap(Raster):
         """
         Slice the underlying NdMapping.
         """
-        return self.clone(self._data.select(**dict(zip(self._data._cached_index_names, coords))))
+        return self.clone(self._data.select(**dict(zip(self._data.kdims, coords))))
 
 
     def dense_keys(self):
@@ -411,7 +411,7 @@ class HeatMap(Raster):
 
     def dimension_values(self, dim, unique=True):
         dim = self.get_dimension(dim).name
-        if dim in self._cached_index_names:
+        if dim in self.kdims:
             idx = self.get_dimension_index(dim)
             return [k[idx] for k in self._data.keys()]
         elif dim in self._cached_value_names:

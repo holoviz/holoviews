@@ -161,19 +161,19 @@ class MultiDimensionalMapping(Dimensioned):
 
         # Check and validate for categorical dimensions
         if self._cached_categorical:
-            valid_vals = zip(self._cached_index_names, dim_vals)
+            valid_vals = zip(self.kdims, dim_vals)
         else:
             valid_vals = []
 
         for dim, val in valid_vals:
-            vals = self._cached_index_values[dim]
-            if vals == 'initial': self._cached_index_values[dim] = []
+            vals = self._cached_index_values[dim.name]
+            if vals == 'initial': self._cached_index_values[dim.name] = []
             if not self._instantiated and self.get_dimension(dim).values == 'initial':
                 if val not in vals:
-                    self._cached_index_values[dim].append(val)
+                    self._cached_index_values[dim.name].append(val)
             elif vals and val not in vals:
-                raise KeyError('%s Dimension value %s not in'
-                               ' specified Dimension values.' % (dim, repr(val)))
+                raise KeyError('%s dimension value %s not in'
+                               ' specified dimension values.' % (dim, repr(val)))
 
         # Updates nested data structures rather than simply overriding them.
         if ((dim_vals in self.data)
@@ -300,7 +300,7 @@ class MultiDimensionalMapping(Dimensioned):
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
 
-        if dimension.name in self._cached_index_names:
+        if dimension in self.kdims:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
         dimensions = self.kdims[:]
@@ -357,8 +357,9 @@ class MultiDimensionalMapping(Dimensioned):
         created object as the new labels must be sufficient to address
         each value uniquely.
         """
+        old_kdims = [d.name for d in self.kdims]
         if not len(kdims):
-            kdims = [d for d in self._cached_index_names
+            kdims = [d for d in old_kdims
                      if not len(set(self.dimension_values(d))) == 1]
         indices = [self.get_dimension_index(el) for el in kdims]
 
@@ -440,7 +441,7 @@ class MultiDimensionalMapping(Dimensioned):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self._cached_index_names + [self.group]
+        labels = self.dimensions('key', True) + [self.group]
         return pandas.DataFrame(
             [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
@@ -811,7 +812,7 @@ class UniformNdMapping(NdMapping):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            key_dims = reversed(list(zip(key, self._cached_index_names)))
+            key_dims = reversed(list(zip(key, self.dimensions('key', label))))
             for val, dim in key_dims:
                 dimn = 1
                 while dim in view_frame:

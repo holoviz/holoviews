@@ -118,13 +118,13 @@ class Element(ViewableElement, Composable, Overlayable):
             raise Exception("Pass reduced dimensions either as an argument"
                             "or as part of the kwargs not both.")
         sanitized_dict = {sanitize_identifier(kd): kd
-                          for kd in self._cached_index_names}
+                          for kd in self.dimensions('key', True)}
         if reduce_map:
             reduce_map = reduce_map.items()
         if dimensions:
             reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
-            reduce_map = [(d, function) for d in self._cached_index_names]
+            reduce_map = [(d, function) for d in self.kdims]
         reduced = [(d.name if isinstance(d, Dimension) else d, fn)
                    for d, fn in reduce_map]
         sanitized = [(sanitized_dict.get(d, d), fn) for d, fn in reduced]
@@ -253,7 +253,7 @@ class NdElement(NdMapping, Tabular):
             if kdims is None:
                 return super(NdElement, self).reindex(force=force)
             else:
-                vdims = self._cached_value_names
+                vdims = self.vdims
         elif kdims is None:
             kdims = [d for d in self.dimensions if d not in vdims]
         key_dims = [self.get_dimension(k) for k in kdims]
@@ -522,11 +522,10 @@ class Collator(NdElement):
                 raise ValueError("Collator values must be Dimensioned objects "
                                  "before collation.")
 
-            dim_keys = zip(self._cached_index_names, key)
+            dim_keys = zip(self.kdims, key)
             varying_keys = [(d, k) for d, k in dim_keys if not self.drop_constant or
                             (d not in constant_dims and d not in self.drop)]
-            constant_keys = [(d if isinstance(d, Dimension) else Dimension(d), k)
-                             for d, k in dim_keys if d in constant_dims
+            constant_keys = [(d, k) for d, k in dim_keys if d in constant_dims
                              and d not in self.drop and self.drop_constant]
             if varying_keys or constant_keys:
                 data = self._add_dimensions(data, varying_keys,
