@@ -335,9 +335,6 @@ class ColumnarData(param.Parameterized):
         if isinstance(data, dict):
             data = NdElement(data, kdims=params['kdims'],
                              vdims=params['vdims'])
-        elif util.is_dataframe(data):
-            data = data.sort_values(by=[d.name if isinstance(d, Dimension) else d
-                                        for dims in ['kdims', 'vdims'] for d in params[dims]])
         return data, params
 
 
@@ -425,13 +422,14 @@ class ColumnarDataFrame(ColumnarData):
             raise Exception('Following dimensions could not be found:\n%s.'
                             % invalid_dims)
 
-        index_dims = [self.get_dimension(d) for d in dimensions]
+        index_dims = [self.element.get_dimension(d) for d in dimensions]
+        element_dims = [kdim for kdim in self.element.kdims
+                        if kdim not in index_dims]
         mapping = container_type(None, kdims=index_dims)
-        for k, v in self.data.groupby(dimensions):
+        for k, v in self.element.data.groupby(dimensions):
             data = v.drop(dimensions, axis=1)
-            mapping[k] = self.clone(data,
-                                    kdims=[self.get_dimension(d)
-                                           for d in data.columns], **kwargs)
+            mapping[k] = self.element.clone(data, kdims=element_dims,
+                                            **kwargs)
         return mapping
 
 
@@ -443,11 +441,11 @@ class ColumnarDataFrame(ColumnarData):
         those Dimensions or a list of dimension/function pairs
         to apply one by one.
         """
-        reduced = columns.data
         kdims = [kdim.name for kdim in columns.kdims if kdim not in reduce_dims]
         vdims = columns.dimensions('value', True)
         if kdims:
-            reduced = reduced.reindex(columns=kdims+vdims).groupby(kdims).aggregate(function).reset_index()
+            reduced = columns.data.reindex(columns=kdims+vdims).\
+                      groupby(kdims).aggregate(function).reset_index()
         else:
             if isinstance(function, np.ufunc):
                 reduced = function.reduce(columns.data, axis=0)
@@ -639,6 +637,7 @@ class ColumnarArray(ColumnarData):
 
     def select(self, **selection):
         data = self.element.data
+        slices = []
         selected_kdims = []
         value = selection.pop('value', None)
         for d, slc in selection.items():
@@ -648,17 +647,21 @@ class ColumnarArray(ColumnarData):
                 stop = float("inf") if slc.stop is None else slc.stop
                 clip_start = start <= data[:, idx]
                 clip_stop = data[:, idx] < stop
-                data = data[np.logical_and(clip_start, clip_stop), :]
+                slices.append(np.logical_and(clip_start, clip_stop))
             elif isinstance(slc, (set, list)):
-                filt = np.in1d(data[:, idx], list(slc))
-                data = data[filt, :]
+                slices.append(np.in1d(data[:, idx], list(slc)))
             else:
                 if d in self.element.kdims: selected_kdims.append(d)
                 if self.element.ndims == 1:
                     data_index = np.argmin(np.abs(data[:, idx] - slc))
+                    data = data[data_index, :]
+                    break
                 else:
                     data_index = data[:, idx] == slc
-                data = np.atleast_2d(data[data_index, :])
+                slices.append(data_index)
+        if slices:
+            data = data[np.logical_and.reduce(slices), :]
+        data = np.atleast_2d(data)
         if len(data) and len(set(selected_kdims)) == self.element.ndims:
             if len(data) == 1 and len(self.element.vdims) == 1:
                 data = data[0, self.element.ndims]
