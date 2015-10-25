@@ -739,6 +739,6 @@ class ColumnarArray(ColumnarData):
         if not isinstance(dimensions, Iterable): dimensions = [dimensions]
         rows = []
         for k, group in self.groupby(dimensions).data.items():
-            reduced = group.reduce(function)
+            reduced = group.reduce(function=function)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.array(rows)

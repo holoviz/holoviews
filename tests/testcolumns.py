@@ -128,6 +128,20 @@ class ColumnsNdElementTest(ComparisonTestCase):
         reduced = Columns([((), (14.333333333333334, 0.73333333333333339))], kdims=[], vdims=self.vdims)
         self.assertEqual(columns.reduce(function=np.mean), reduced)
 
+    def test_column_heterogeneous_aggregate(self):
+        columns = Columns(zip(self.keys1, self.values1), kdims=self.kdims,
+                          vdims=self.vdims)
+        aggregated = Columns(OrderedDict([('F', (10., 0.8)), ('M', (16.5, 0.7))]),
+                             kdims=self.kdims[:1], vdims=self.vdims)
+        self.compare_columns(columns.aggregate(['Gender'], np.mean), aggregated)
+
+    def test_columns_2d_aggregate_partial(self):
+        columns = Columns(zip(zip(self.xs, self.ys), self.zs),
+                          kdims=['x', 'y'], vdims=['z'])
+        reduced = Columns(zip(zip(self.xs), self.zs),
+                          kdims=['x'], vdims=['z'])
+        self.assertEqual(columns.aggregate(['x'], np.mean), reduced)
+
 
 
 class ColumnsNdArrayTest(ComparisonTestCase):
@@ -203,6 +217,11 @@ class ColumnsNdArrayTest(ComparisonTestCase):
     def test_columns_2d_partial_reduce(self):
         columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(columns.reduce(['y'], np.mean),
+                         Columns((self.xs, self.zs), kdims=['x'], vdims=['z']))
+
+    def test_columns_2d_aggregate_partial(self):
+        columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.aggregate(['x'], np.mean),
                          Columns((self.xs, self.zs), kdims=['x'], vdims=['z']))
 
 
@@ -309,7 +328,7 @@ class ColumnsDFrameTest(ComparisonTestCase):
     def test_columns_heterogeneous_reduce(self):
         columns = Columns(self.column_data, kdims=self.kdims,
                           vdims=self.vdims)
-        reduced_data = pd.DataFrame([d[1:] for d in self.column_data],
+        reduced_data = pd.DataFrame([(10, 15, 0.8), (12, 10, 0.8), (16, 18, 0.6)],
                                     columns=columns.dimensions(label=True)[1:])
         reduced = Columns(reduced_data, kdims=self.kdims[1:],
                           vdims=self.vdims)
@@ -323,3 +342,18 @@ class ColumnsDFrameTest(ComparisonTestCase):
         reduced = Columns(pd.DataFrame([(14.333333333333334, 0.73333333333333339)], columns=self.vdims),
                           kdims=[], vdims=self.vdims)
         self.assertEqual(columns.reduce(function=np.mean), reduced)
+
+    def test_column_heterogeneous_aggregate(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        aggregated = Columns(pd.DataFrame([('F', 10., 0.8), ('M', 16.5, 0.7)],
+                                          columns=['Gender']+self.vdims),
+                             kdims=self.kdims[:1], vdims=self.vdims)
+        self.compare_columns(columns.aggregate(['Gender'], np.mean), aggregated)
+
+    def test_columns_2d_partial_reduce(self):
+        columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.aggregate(['x'], np.mean),
+                         Columns(pd.DataFrame({'x': self.xs, 'z': self.zs}),
+                                 kdims=['x'], vdims=['z']))
