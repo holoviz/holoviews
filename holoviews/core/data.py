@@ -485,24 +485,24 @@ class ColumnarDataFrame(ColumnarData):
         """
         df = self.element.data
         selected_kdims = []
-        slcs = []
+        mask = True
         for dim, k in select.items():
             if isinstance(k, tuple):
                 k = slice(*k)
             if isinstance(k, slice):
                 if k.start is not None:
-                    slcs.append(k.start < df[dim])
+                    mask &= k.start <= df[dim]
                 if k.stop is not None:
-                    slc.append(df[dim] < k.stop)
+                    mask &= df[dim] < k.stop
             elif isinstance(k, (set, list)):
                 iter_slcs = []
                 for ik in k:
                     iter_slcs.append(df[dim] == ik)
-                slcs.append(np.logical_or.reduce(iter_slcs))
+                mask &= np.logical_or.reduce(iter_slcs)
             else:
                 if dim in self.element.kdims: selected_kdims.append(dim)
-                slcs.append(df[dim] == k)
-        df = df.iloc[np.logical_and.reduce(slcs)]
+                mask &= df[dim] == k
+        df = df.ix[mask]
         if len(set(selected_kdims)) == self.element.ndims:
             if len(df) and len(self.element.vdims) == 1:
                 df = df[self.element.vdims[0].name].iloc[0]
@@ -637,19 +637,18 @@ class ColumnarArray(ColumnarData):
 
     def select(self, **selection):
         data = self.element.data
-        slices = []
+        mask = True
         selected_kdims = []
         value = selection.pop('value', None)
         for d, slc in selection.items():
             idx = self.element.get_dimension_index(d)
             if isinstance(slc, slice):
-                start = -float("inf") if slc.start is None else slc.start
-                stop = float("inf") if slc.stop is None else slc.stop
-                clip_start = start <= data[:, idx]
-                clip_stop = data[:, idx] < stop
-                slices.append(np.logical_and(clip_start, clip_stop))
+                if slc.start is not None:
+                    mask &= slc.start <= data[:, idx]
+                if slc.stop is not None:
+                    mask &= data[:, idx] < slc.stop
             elif isinstance(slc, (set, list)):
-                slices.append(np.in1d(data[:, idx], list(slc)))
+                mask &= np.in1d(data[:, idx], list(slc))
             else:
                 if d in self.element.kdims: selected_kdims.append(d)
                 if self.element.ndims == 1:
@@ -657,10 +656,9 @@ class ColumnarArray(ColumnarData):
                     data = data[data_index, :]
                     break
                 else:
-                    data_index = data[:, idx] == slc
-                slices.append(data_index)
-        if slices:
-            data = data[np.logical_and.reduce(slices), :]
+                    mask &= data[:, idx] == slc
+        if mask is not True:
+            data = data[mask, :]
         data = np.atleast_2d(data)
         if len(data) and len(set(selected_kdims)) == self.element.ndims:
             if len(data) == 1 and len(self.element.vdims) == 1:
@@ -699,11 +697,11 @@ class ColumnarArray(ColumnarData):
         Sample the Element data with a list of samples.
         """
         data = self.element.data
-        mask = np.zeros(len(self), dtype=bool)
+        mask = False
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask = np.logical_or(mask, data[:, i]==v)
+                mask |= data[:, i]==v
         return data[mask]
 
 
