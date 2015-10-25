@@ -275,6 +275,7 @@ class MultiDimensionalMapping(Dimensioned):
             self.warning('Cannot split Map with only one dimension.')
             return self
 
+        dimensions = [self.get_dimension(d).name for d in dimensions]
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
         dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
@@ -366,7 +367,7 @@ class MultiDimensionalMapping(Dimensioned):
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set(self._cached_index_names).difference(kdims)
+        reduced_dims = set([d.name for d in self.kdims]).difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
 
@@ -577,7 +578,7 @@ class NdMapping(MultiDimensionalMapping):
             for k, v in items:
                 val_slice = self._dataslice(v, data_slice)
                 if val_slice:
-                    sliced_items.append((k, v))
+                    sliced_items.append((k, val_slice))
             if len(sliced_items) == 0:
                 raise KeyError('No items within specified slice.')
             with item_check(False):
