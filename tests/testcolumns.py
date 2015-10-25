@@ -25,6 +25,10 @@ class ColumnsNdElementTest(ComparisonTestCase):
         self.columns = Columns(dict(zip(self.xs, self.ys)),
                                kdims=['x'], vdims=['y'])
 
+    def test_columns_shape(self):
+        self.assertEqual(self.columns.shape, (11, 2))
+
+
     def test_columns_odict_construct(self):
         columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(columns.data, NdElement))
@@ -152,6 +156,9 @@ class ColumnsNdArrayTest(ComparisonTestCase):
         self.zs = np.sin(self.xs)
         self.columns = Columns((self.xs, self.ys), kdims=['x'], vdims=['y'])
 
+    def test_columns_shape(self):
+        self.assertEqual(self.columns.shape, (11, 2))
+
     def test_columns_values_construct(self):
         columns = Columns(self.ys)
         self.assertTrue(isinstance(columns.data, np.ndarray))
@@ -237,6 +244,9 @@ class ColumnsDFrameTest(ComparisonTestCase):
         self.zs = np.sin(self.xs)
         self.columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys}),
                                kdims=['x'], vdims=['y'])
+
+    def test_columns_shape(self):
+        self.assertEqual(self.columns.shape, (11, 2))
 
     def test_columns_df_construct(self):
         self.assertTrue(isinstance(self.columns.data, pd.DataFrame))
