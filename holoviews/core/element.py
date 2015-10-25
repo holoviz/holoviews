@@ -410,6 +410,18 @@ class NdElement(NdMapping, Tabular):
         return collapsed
 
 
+    def aggregate(self, dimensions, function):
+        """
+        Allows aggregating.
+        """
+        rows = []
+        grouped = self.groupby(dimensions)
+        for k, group in grouped.data.items():
+            reduced = group.reduce(group, group.kdims, function).values()[0]
+            rows.append((k, reduced))
+        return self.clone(rows, kdims=grouped.kdims)
+
+
     def dimension_values(self, dim):
         dim = self.get_dimension(dim)
         value_dims = self.dimensions('value', label=True)

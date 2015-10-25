@@ -518,6 +518,17 @@ class ColumnarDataFrame(ColumnarData):
         return np.array(data)
 
 
+    def aggregate(self, dimensions, function):
+        """
+        Allows aggregating.
+        """
+        data = self.element.data
+        columns = [d.name for d in self.element.kdims if d in dimensions]
+        vdims = self.element.dimensions('value', True)
+        return data.reindex(columns=columns+vdims).groupby(columns).\
+            aggregate(function).reset_index()
+
+
     def sample(self, samples=[]):
         """
         Sample the Element data with a list of samples.
@@ -717,3 +728,14 @@ class ColumnarArray(ColumnarData):
                 return np.atleast_2d(reduced)
         return reduced
 
+
+    def aggregate(self, dimensions, function):
+        """
+        Allows aggregating.
+        """
+        if not isinstance(dimensions, Iterable): dimensions = [dimensions]
+        rows = []
+        for k, group in self.groupby(dimensions).data.items():
+            reduced = group.reduce(function)
+            rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
+        return np.array(rows)
