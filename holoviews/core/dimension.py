@@ -715,7 +715,7 @@ class Dimensioned(LabelledData):
         """
         val = self._cached_constants.get(dimension, None)
         if val:
-            return val
+            return np.array([val])
         else:
             raise Exception("Dimension %s not found in %s." %
                             (dimension, self.__class__.__name__))

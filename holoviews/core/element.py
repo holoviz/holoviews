@@ -427,7 +427,7 @@ class NdElement(NdMapping, Tabular):
         value_dims = self.dimensions('value', label=True)
         if dim.name in value_dims:
             index = value_dims.index(dim.name)
-            return [v[index] for v in self.data.values()]
+            return np.array([v[index] for v in self.data.values()])
         else:
             return NdMapping.dimension_values(self, dim.name)
 
