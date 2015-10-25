@@ -594,3 +594,8 @@ def is_dataframe(data):
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)) or
           (bz is not None and isinstance(data, bz.Data)))
+
+
+def get_param_values(data, new_type):
+    return {k: v for k, v in self.get_param_values(onlychanged=True)
+            if k in new_type.params()}

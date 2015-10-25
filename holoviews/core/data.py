@@ -247,13 +247,18 @@ class Columns(Element):
             return self.interface.dframe(as_table)
 
 
-    def array(self):
+    def array(self, as_table=False):
         if self.interface is None:
-            dims = self._cached_index_names + self._cached_value_names
-            return np.column_stack([self.dimension_values(d) for d in dims])
-        else:
-            return self.interface.array()
-
+            return super(Columns, self).array(as_table)
+        array = self.interface.array()
+        if as_table:
+            from ..element import Table
+            if array.dtype.kind in ['S', 'O', 'U']:
+                raise ValueError("%s data contains non-numeric type, "
+                                 "could not convert to array based "
+                                 "Element" % type(self).__name__)
+            return Table(array, **util.get_param_values(self, Table))
+        return array
 
 
 
@@ -456,7 +461,7 @@ class ColumnarDataFrame(ColumnarData):
 
 
     def array(self):
-        return self.element.data.iloc
+        return self.element.data.values
 
 
     def reindex(self, kdims=None, vdims=None):

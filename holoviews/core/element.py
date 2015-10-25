@@ -11,7 +11,7 @@ from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import sanitize_identifier, is_dataframe
+from .util import sanitize_identifier, is_dataframe, dimension_sort, get_param_values
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -428,6 +428,27 @@ class NdElement(NdMapping, Tabular):
         return list(values)
 
 
+    def array(self, as_table=False):
+        dims = self.kdims + self.vdims
+        columns, types = [], []
+        for dim in dims:
+            column = self.dimension_values(d)
+            data.append(column)
+            types.append(column.dtype.kind)
+        if len(set(types)) > 1:
+            columns = [c.astype('object') for c in columns]
+        array = np.column_stack(columns)
+        if as_table:
+            from ..element import Table
+            if array.dtype.kind in ['S', 'O', 'U']:
+                raise ValueError("%s data contains non-numeric type, "
+                                 "could not convert to array based "
+                                 "Element" % type(self).__name__)
+            return Table(array, **get_param_values(self, Table))
+        else:
+            return array
+
+
     def dframe(self, as_table=False):
         try:
             import pandas
@@ -437,8 +458,9 @@ class NdElement(NdMapping, Tabular):
         df = pandas.DataFrame((k+v for (k, v) in self.data.items()), columns=columns)
         if as_table:
             from ..element import Table
-            return Table(df, **self.get_param_values(onlychanged=True))
+            return Table(df, **get_param_values(self, Table))
         return df
+
 
 
 class Element3D(Element2D):
