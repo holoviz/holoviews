@@ -3,7 +3,7 @@ The data module provides utility classes to interface with various
 data backends.
 """
 
-from collections import defaultdict
+from collections import defaultdict, Iterable
 from itertools import groupby
 
 try:
@@ -21,6 +21,7 @@ import param
 
 from .dimension import OrderedDict, Dimension
 from .element import Element, NdElement
+from .ndmapping import item_check
 from .spaces import HoloMap
 from . import util
 
@@ -432,10 +433,10 @@ class ColumnarDataFrame(ColumnarData):
                         if kdim not in index_dims]
         map_data = []
         for k, v in self.element.data.groupby(dimensions):
-            data = v.drop(dimensions, axis=1)
-            map_data.append((k, self.element.clone(data, kdims=element_dims,
+            map_data.append((k, self.element.clone(v, kdims=element_dims,
                                                    **kwargs)))
-        return container_type(map_data, kdims=index_dims)
+        with item_check(False):
+            return container_type(map_data, kdims=index_dims)
 
 
     @classmethod
