@@ -53,13 +53,18 @@ class Columns(Element):
 
 
     def closest(self, coords):
+        """
+        Given single or multiple x-values, returns the list
+        of closest actual samples.
+        """
         if self.ndims > 1:
             NotImplementedError("Closest method currently only "
                                 "implemented for 1D Elements")
-        elif self.interface is None:
-            return self.data.closest(coords)
-        else:
-            return self.interface.closest(coords)
+
+        if not isinstance(coords, list): coords = [coords]
+        xs = self.dimension_values(0)
+        idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
+        return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
@@ -425,12 +430,12 @@ class ColumnarDataFrame(ColumnarData):
         index_dims = [self.element.get_dimension(d) for d in dimensions]
         element_dims = [kdim for kdim in self.element.kdims
                         if kdim not in index_dims]
-        mapping = container_type(None, kdims=index_dims)
+        map_data = []
         for k, v in self.element.data.groupby(dimensions):
             data = v.drop(dimensions, axis=1)
-            mapping[k] = self.element.clone(data, kdims=element_dims,
-                                            **kwargs)
-        return mapping
+            map_data.append((k, self.element.clone(data, kdims=element_dims,
+                                                   **kwargs)))
+        return container_type(map_data, kdims=index_dims)
 
 
     @classmethod
@@ -573,18 +578,6 @@ class ColumnarArray(ColumnarData):
 
     def dframe(self, as_table=False):
         return Element.dframe(self.element, as_table)
-
-
-    def closest(self, coords):
-        """
-        Given single or multiple x-values, returns the list
-        of closest actual samples.
-        """
-        if not isinstance(coords, list): coords = [coords]
-        xs = self.element.data[:, 0]
-        idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
-
 
     @classmethod
     def _datarange(cls, data): 
