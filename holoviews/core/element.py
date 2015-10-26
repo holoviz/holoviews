@@ -145,6 +145,27 @@ class Element(ViewableElement, Composable, Overlayable):
         return pd.DataFrame(dim_vals)
 
 
+    def array(self, as_table=False):
+        dims = self.kdims + self.vdims
+        columns, types = [], []
+        for dim in dims:
+            column = self.dimension_values(dim)
+            columns.append(column)
+            types.append(column.dtype.kind)
+        if len(set(types)) > 1:
+            columns = [c.astype('object') for c in columns]
+        array = np.column_stack(columns)
+        if as_table:
+            from ..element import Table
+            if array.dtype.kind in ['S', 'O', 'U']:
+                raise ValueError("%s data contains non-numeric type, "
+                                 "could not convert to array based "
+                                 "Element" % type(self).__name__)
+            return Table(array, **get_param_values(self, Table))
+        else:
+            return array
+
+
 
 class Tabular(Element):
     """
@@ -443,28 +464,6 @@ class NdElement(NdMapping, Tabular):
             return  [v[0] for v in values]
         return list(values)
 
-
-    def array(self, as_table=False):
-        dims = self.kdims + self.vdims
-        columns, types = [], []
-        for dim in dims:
-            column = self.dimension_values(d)
-            data.append(column)
-            types.append(column.dtype.kind)
-        if len(set(types)) > 1:
-            columns = [c.astype('object') for c in columns]
-        array = np.column_stack(columns)
-        if as_table:
-            from ..element import Table
-            if array.dtype.kind in ['S', 'O', 'U']:
-                raise ValueError("%s data contains non-numeric type, "
-                                 "could not convert to array based "
-                                 "Element" % type(self).__name__)
-            return Table(array, **get_param_values(self, Table))
-        else:
-            return array
-
-
     def dframe(self, as_table=False):
         try:
             import pandas
@@ -476,7 +475,6 @@ class NdElement(NdMapping, Tabular):
             from ..element import Table
             return Table(df, **get_param_values(self, Table))
         return df
-
 
 
 class Element3D(Element2D):
