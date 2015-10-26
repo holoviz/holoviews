@@ -48,6 +48,7 @@ class Raster(Element2D):
 
 
     def __getitem__(self, slices):
+        if slices in self.dimensions(): return self.dimension_values(slices)
         if not isinstance(slices, tuple): slices = (slices, slice(None))
         slc_types = [isinstance(sl, slice) for sl in slices]
         data = self.data.__getitem__(slices[::-1])
@@ -253,6 +254,7 @@ class QuadMesh(Raster):
 
 
     def __getitem__(self, slices):
+        if slices in self.dimensions(): return self.dimension_values(key)
         if not self._grid:
             raise IndexError("Indexing of non-grid based QuadMesh"
                              "currently not supported")
@@ -397,6 +399,7 @@ class HeatMap(Raster):
         """
         Slice the underlying NdMapping.
         """
+        if coords in self.dimensions(): return self.dimension_values(coords)
         return self.clone(self._data.select(**dict(zip(self._data.kdims, coords))))
 
 
@@ -499,6 +502,7 @@ class Image(SheetCoordinateSystem, Raster):
         """
         Slice the underlying numpy array in sheet coordinates.
         """
+        if coords in self.dimensions(): return self.dimension_values(coords)
         if coords is () or coords == slice(None, None):
             return self
 
@@ -689,6 +693,7 @@ class RGB(Image):
         """
         Slice the underlying numpy array in sheet coordinates.
         """
+        if coords in self.dimensions(): return self.dimension_values(coords)
         if not isinstance(coords, slice) and len(coords) > self.ndims:
             value = coords[self.ndims:]
             if len(value) > 1:

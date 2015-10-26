@@ -156,6 +156,7 @@ class Histogram(Element2D):
         """
         Implements slicing or indexing of the Histogram
         """
+        if key in self.dimensions(): return self.dimension_values(key)
         if key is (): return self # May no longer be necessary
         if isinstance(key, tuple) and len(key) > self.ndims:
             raise Exception("Slice must match number of key dimensions.")
