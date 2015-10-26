@@ -67,6 +67,24 @@ class Columns(Element):
         return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
 
 
+
+    def range(self, dim, data_range=True):
+        if self.interface is None:
+            return self.data.range(dim, data_range)
+        dim = self.get_dimension(dim)
+        if dim.range != (None, None):
+            return dim.range
+        elif dim in self.dimensions():
+            if len(self):
+                drange = self.interface.range(dim)
+            else:
+                drange = (np.NaN, np.NaN)
+        if data_range:
+            return util.max_range([drange, dim.soft_range])
+        else:
+            return dim.soft_range
+
+
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
         Create a new object with an additional key dimensions.
@@ -272,6 +290,9 @@ class ColumnarData(param.Parameterized):
     def __init__(self, element, **params):
         self.element = element
 
+    def range(self, dimension):
+        column = self.element.dimension_values(dimension)
+        return (np.nanmin(column), np.nanmax(column))
 
     def array(self):
         NotImplementedError
@@ -360,31 +381,6 @@ class ColumnarData(param.Parameterized):
         return kdims, vdims
 
 
-    @classmethod
-    def _datarange(cls, data):
-        """
-        Should return minimum and maximum of data
-        returned by values method.
-        """
-        raise NotImplementedError
-
-
-    def range(self, dim, data_range=True):
-        dim_idx = self.get_dimension_index(dim)
-        if dim.range != (None, None):
-            return dim.range
-        elif dim_idx < len(self.dimensions()):
-            if len(self):
-                data = self.values(dim_idx)
-                data_range = self._datarange(data)
-            else:
-                data_range = (np.NaN, np.NaN)
-        if data_range:
-            return util.max_range([data_range, dim.soft_range])
-        else:
-            return dim.soft_range
-
-
     def as_ndelement(self, **kwargs):
         """
         This method transforms any ViewableElement type into a Table
@@ -420,6 +416,10 @@ class ColumnarData(param.Parameterized):
 
 
 class ColumnarDataFrame(ColumnarData):
+
+    def range(self, dimension):
+        column = self.element.data[self.element.get_dimension(dimension).name]
+        return (column.min(), column.max())
 
     def groupby(self, dimensions, container_type=HoloMap, **kwargs):
         invalid_dims = list(set(dimensions) - set(self.element.dimensions('key', True)))
