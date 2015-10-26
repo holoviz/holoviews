@@ -51,6 +51,10 @@ class ColumnsNdElementTest(ComparisonTestCase):
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(columns.data, NdElement))
 
+    def test_columns_sample(self):
+        samples = self.columns.sample([0, 5, 10]).dimension_values('y')
+        self.assertEqual(samples, np.array([0, 0.5, 1]))
+
     def test_columns_index_row_gender(self):
         table = Columns(zip(self.keys1, self.values1),
                         kdims=self.kdims, vdims=self.vdims)
@@ -272,6 +276,10 @@ class ColumnsDFrameTest(ComparisonTestCase):
     def test_columns_closest(self):
         closest = self.columns.closest([0.51, 1, 9.9])
         self.assertEqual(closest, [1., 1., 10.])
+
+    def test_columns_sample(self):
+        samples = self.columns.sample([0, 5, 10]).dimension_values('y')
+        self.assertEqual(samples, np.array([0, 0.5, 1]))
 
     def test_columns_df_construct(self):
         self.assertTrue(isinstance(self.columns.data, pd.DataFrame))

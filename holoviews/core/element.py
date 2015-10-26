@@ -357,6 +357,8 @@ class NdElement(NdMapping, Tabular):
             if len(self.vdims) > 1:
                 subtable = self.__class__([(args, subtable)], label=self.label,
                                           kdims=self.kdims, vdims=self.vdims)
+            else:
+                return subtable[0]
 
         # If subtable is not a slice return as reduced type
         if not isinstance(args, tuple): args = (args,)
@@ -374,7 +376,7 @@ class NdElement(NdMapping, Tabular):
         sample_data = OrderedDict()
         for sample in samples:
             value = self[sample]
-            sample_data[sample] = value if np.isscalar(value) else value.values()[0]
+            sample_data[sample] = (value,) if len(self.vdims) == 1 else value.values()[0]
         return self.clone(sample_data)
 
 
