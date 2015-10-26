@@ -135,10 +135,7 @@ class Raster(Element2D):
         """
         reduce_map = self._reduce_map(dimensions, function, reduce_map)
         if len(reduce_map) == self.ndims:
-            reduced_view = self
-            for dim, reduce_fn in reduce_map.items():
-                reduced_view = reduced_view.reduce(**{dim: reduce_fn})
-            return reduced_view
+            return function(self.data)
         else:
             dimension, reduce_fn = list(reduce_map.items())[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
