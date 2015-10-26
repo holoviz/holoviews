@@ -28,10 +28,16 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_shape(self):
         self.assertEqual(self.columns.shape, (11, 2))
 
+    def test_columns_range(self):
+        self.assertEqual(self.columns.range('y'), (0., 1.))
 
     def test_columns_odict_construct(self):
         columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
         self.assertTrue(isinstance(columns.data, NdElement))
+
+    def test_columns_closest(self):
+        closest = self.columns.closest([0.51, 1, 9.9])
+        self.assertEqual(closest, [1., 1., 10.])
 
     def test_columns_dict_construct(self):
         self.assertTrue(isinstance(self.columns.data, NdElement))
@@ -146,6 +152,8 @@ class ColumnsNdElementTest(ComparisonTestCase):
                           kdims=['x'], vdims=['z'])
         self.assertEqual(columns.aggregate(['x'], np.mean), reduced)
 
+    def test_columns_array(self):
+        self.assertEqual(self.columns.array(), np.column_stack([self.xs, self.ys]))
 
 
 class ColumnsNdArrayTest(ComparisonTestCase):
@@ -158,6 +166,13 @@ class ColumnsNdArrayTest(ComparisonTestCase):
 
     def test_columns_shape(self):
         self.assertEqual(self.columns.shape, (11, 2))
+
+    def test_columns_range(self):
+        self.assertEqual(self.columns.range('y'), (0., 1.))
+
+    def test_columns_closest(self):
+        closest = self.columns.closest([0.51, 1, 9.9])
+        self.assertEqual(closest, [1., 1., 10.])
 
     def test_columns_values_construct(self):
         columns = Columns(self.ys)
@@ -231,6 +246,9 @@ class ColumnsNdArrayTest(ComparisonTestCase):
         self.assertEqual(columns.aggregate(['x'], np.mean),
                          Columns((self.xs, self.zs), kdims=['x'], vdims=['z']))
 
+    def test_columns_array(self):
+        self.assertEqual(self.columns.array(), np.column_stack([self.xs, self.ys]))
+
 
 class ColumnsDFrameTest(ComparisonTestCase):
 
@@ -245,8 +263,15 @@ class ColumnsDFrameTest(ComparisonTestCase):
         self.columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys}),
                                kdims=['x'], vdims=['y'])
 
+    def test_columns_range(self):
+        self.assertEqual(self.columns.range('y'), (0., 1.))
+
     def test_columns_shape(self):
         self.assertEqual(self.columns.shape, (11, 2))
+
+    def test_columns_closest(self):
+        closest = self.columns.closest([0.51, 1, 9.9])
+        self.assertEqual(closest, [1., 1., 10.])
 
     def test_columns_df_construct(self):
         self.assertTrue(isinstance(self.columns.data, pd.DataFrame))
@@ -255,6 +280,12 @@ class ColumnsDFrameTest(ComparisonTestCase):
         columns = Columns(self.column_data, kdims=self.kdims,
                           vdims=self.vdims)
         self.assertTrue(isinstance(self.columns.data, pd.DataFrame))
+
+    def test_columns_slice(self):
+        data = [('x', range(5, 9)), ('y', np.linspace(0.5, 0.8, 4))]
+        columns_slice = Columns(pd.DataFrame.from_items(data),
+                                kdims=['x'], vdims=['y'])
+        self.assertEqual(self.columns[5:9], columns_slice)
 
     def test_columns_index_row_gender(self):
         columns = Columns(self.column_data, kdims=self.kdims,
@@ -353,7 +384,19 @@ class ColumnsDFrameTest(ComparisonTestCase):
                           kdims=[], vdims=self.vdims)
         self.assertEqual(columns.reduce(function=np.mean), reduced)
 
-    def test_column_heterogeneous_aggregate(self):
+
+    def test_columns_groupby(self):
+        columns = Columns(self.column_data, kdims=self.kdims,
+                          vdims=self.vdims)
+        cols = self.kdims + self.vdims
+        group1 = pd.DataFrame(self.column_data[:2], columns=cols)
+        group2 = pd.DataFrame(self.column_data[2:], columns=cols)
+        grouped = HoloMap({'M': Columns(group1, kdims=['Age'], vdims=self.vdims),
+                           'F': Columns(group2, kdims=['Age'], vdims=self.vdims)},
+                          kdims=['Gender'])
+        self.assertEqual(columns.groupby(['Gender']), grouped)
+
+    def test_columns_heterogeneous_aggregate(self):
         columns = Columns(self.column_data, kdims=self.kdims,
                           vdims=self.vdims)
         aggregated = Columns(pd.DataFrame([('F', 10., 0.8), ('M', 16.5, 0.7)],
@@ -367,3 +410,6 @@ class ColumnsDFrameTest(ComparisonTestCase):
         self.assertEqual(columns.aggregate(['x'], np.mean),
                          Columns(pd.DataFrame({'x': self.xs, 'z': self.zs}),
                                  kdims=['x'], vdims=['z']))
+
+    def test_columns_array(self):
+        self.assertEqual(self.columns.array(), np.column_stack([self.xs, self.ys]))
