@@ -209,70 +209,62 @@ class TableConversion(object):
     def __init__(self, table):
         self._table = table
 
-    def _conversion(self, kdims=None, vdims=None, new_type=None, **kwargs):
+    def _conversion(self, kdims=None, vdims=None, mdims=None, new_type=None, **kwargs):
         if kdims is None:
             kdims = self._table.kdims
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
             vdims = self._table.vdims
+        if mdims is None:
+            mdims = [d for d in self._table.kdims if not in kdims]
         elif vdims and not isinstance(vdims, list): vdims = [vdims]
-        kdims = [kdim.name if isinstance(kdim, Dimension) else kdim for kdim in kdims]
-        vdims = [vdim.name if isinstance(vdim, Dimension) else vdim for vdim in vdims]
-        if (any(kd in self._table.vdims for kd in kdims) or
-            any(vd in self._table.kdims for vd in vdims)):
-            new_kdims = [kd for kd in self._table.kdims
-                         if kd not in kdims and kd not in vdims] + kdims
-            selected = self._table.reindex(new_kdims, vdims)
-        else:
-            selected = self._table.select(**{'value': vdims})
-        all_dims = selected.dimensions(label=True)
-        invalid = [dim for dim in kdims+vdims if dim not in all_dims]
-        if invalid:
-            raise Exception("Dimensions %r could not be found during conversion to %s new_type" %
-                            (invalid, new_type.__name__))
-        group_dims = [dim for dim in selected.kdims if not dim in kdims+vdims]
-
+        selected = self._table.reindex(mdims+kdims, vdims)
         params = dict({'kdims': [selected.get_dimension(kd) for kd in kdims],
                        'vdims': [selected.get_dimension(vd) for vd in vdims]},
                        **kwargs)
         if len(kdims) == selected.ndims:
             return new_type(selected, **params)
-        return selected.groupby(group_dims, container_type=HoloMap, group_type=new_type, **params)
+        return selected.groupby(mdims, container_type=HoloMap, group_type=new_type, **params)
 
-    def bars(self, kdims=None, vdims=None, **kwargs):
+    def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Bars
-        return self._conversion(kdims, vdims, Bars, **kwargs)
+        return self._conversion(kdims, vdims, mdims, Bars, **kwargs)
 
-    def curve(self, kdims=None, vdims=None, **kwargs):
+    def curve(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Curve
-        return self._conversion(kdims, vdims, Curve, **kwargs)
+        return self._conversion(kdims, vdims, mdims, Curve, **kwargs)
 
-    def heatmap(self, kdims=None, vdims=None, **kwargs):
+    def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import HeatMap
-        return self._conversion(kdims, vdims, HeatMap, **kwargs)
+        return self._conversion(kdims, vdims, mdims, HeatMap, **kwargs)
 
-    def points(self, kdims=None, vdims=None, **kwargs):
+    def points(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Points
-        return self._conversion(kdims, vdims, Points, **kwargs)
+        return self._conversion(kdims, vdims, mdims, Points, **kwargs)
 
-    def scatter(self, kdims=None, vdims=None, **kwargs):
+    def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Scatter
-        return self._conversion(kdims, vdims, Scatter, **kwargs)
+        return self._conversion(kdims, vdims, mdims, Scatter, **kwargs)
 
-    def scatter3d(self, kdims=None, vdims=None, **kwargs):
+    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Scatter3D
-        return self._conversion(kdims, vdims, Scatter3D, **kwargs)
+        return self._conversion(kdims, vdims, mdims, Scatter3D, **kwargs)
 
-    def raster(self, kdims=None, vdims=None, **kwargs):
+    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart3d import Trisurface
+        return self._conversion(kdims, vdims, mdims, Trisurface, **kwargs)
+
+    def raster(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import Raster
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
-    def surface(self, kdims=None, vdims=None, **kwargs):
+    def surface(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Surface
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
-    def vectorfield(self, kdims=None, vdims=None, **kwargs):
+    def vectorfield(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import VectorField
         return self._conversion(kdims, vdims, VectorField, **kwargs)
+
