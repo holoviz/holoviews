@@ -2,7 +2,7 @@
 Supplies MultiDimensionalMapping and NdMapping which are multi-dimensional
 map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
-"""
+s"""
 
 from collections import Sequence
 from itertools import cycle
@@ -164,8 +164,8 @@ class MultiDimensionalMapping(Dimensioned):
             valid_vals = []
 
         for dim, val in valid_vals:
+            if self._cached_index_values[dim] == 'initial': self._cached_index_values[dim] = []
             vals = self._cached_index_values[dim]
-            if vals == 'initial': self._cached_index_values[dim] = []
             if not self._instantiated and self.get_dimension(dim).values == 'initial':
                 if val not in vals:
                     self._cached_index_values[dim].append(val)
