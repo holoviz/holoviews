@@ -8,6 +8,8 @@ except:
 
 
 import os
+from distutils.version import LooseVersion
+
 from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator
@@ -26,6 +28,8 @@ from . import seaborn # pyflakes:ignore (API import)
 
 from .renderer import MPLRenderer
 
+
+mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
 
 def set_style(key):
@@ -49,11 +53,29 @@ def set_style(key):
 
         plt.rcParams.update(new_style)
 
-styles = {'default': './default.mplstyle'}
-set_style('default')
+
+styles = {'default': './default.mplstyle',
+          'default>1.5': './default1.5.mplstyle'}
+
+if mpl_ge_150:
+    set_style('default>1.5')
+else:
+    set_style('default')
 
 # Define matplotlib based style cycles and Palettes
-Cycle.default_cycles.update({'default_colors': plt.rcParams['axes.color_cycle']})
+def get_color_cycle():
+    if mpl_ge_150:
+        cyl = mpl.rcParams['axes.prop_cycle']
+        # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
+        # but no garuantee that there's a `color` key.
+        # so users could have a custom rcParmas w/ no color...
+        try:
+            return [x['color'] for x in cyl]
+        except KeyError:
+            pass  # just return axes.color style below
+    return mpl.rcParams['axes.color_cycle']
+
+Cycle.default_cycles.update({'default_colors': get_color_cycle()})
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
