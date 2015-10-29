@@ -161,6 +161,7 @@ class DimensionedPlot(Plot):
         self.label = None
         self.current_frame = None
         self.current_key = None
+        self.ranges = {}
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -265,7 +266,7 @@ class DimensionedPlot(Plot):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = {} if ranges is None else dict(ranges)
+        ranges = self.ranges if ranges is None else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -274,18 +275,22 @@ class DimensionedPlot(Plot):
         # Traverse displayed object if normalization applies
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
-        elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
-            if group in ranges:
-                continue # Skip if ranges are already computed
+            elements = []
+            # Skip if ranges are cached or already computed by a
+            # higher-level container object.
+            if group in ranges and (not framewise or ranges is not self.ranges):
+                continue
             elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
-                elements = self._get_frame(key).traverse(return_fn, [group])
+                frame = self._get_frame(key)
+                elements = [] if frame is None else frame.traverse(return_fn, [group])
             if not axiswise or ((not framewise or len(elements) == 1)
                                 and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
+        self.ranges.update(ranges)
         return ranges
 
 
