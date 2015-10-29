@@ -275,15 +275,16 @@ class DimensionedPlot(Plot):
         # Traverse displayed object if normalization applies
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
-        elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
-            if group in ranges and not framewise:
+            elements = []
+            if group in ranges and (not framewise and ranges is not self.ranges):
                 continue # Skip if ranges are already computed
             elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
-                elements = self._get_frame(key).traverse(return_fn, [group])
+                frame = self._get_frame(key)
+                elements = [] if frame is None else frame.traverse(return_fn, [group])
             if not axiswise or ((not framewise or len(elements) == 1)
                                 and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
