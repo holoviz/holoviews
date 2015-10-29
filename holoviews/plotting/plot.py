@@ -278,8 +278,10 @@ class DimensionedPlot(Plot):
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
             elements = []
-            if group in ranges and (not framewise and ranges is not self.ranges):
-                continue # Skip if ranges are already computed
+            # Skip if ranges are cached or already computed by a
+            # higher-level container object.
+            if group in ranges and (not framewise or ranges is not self.ranges):
+                continue
             elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
