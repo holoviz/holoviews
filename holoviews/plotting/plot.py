@@ -161,6 +161,7 @@ class DimensionedPlot(Plot):
         self.label = None
         self.current_frame = None
         self.current_key = None
+        self.ranges = {}
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -265,7 +266,7 @@ class DimensionedPlot(Plot):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = {} if ranges is None else dict(ranges)
+        ranges = self.ranges if ranges is None else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -277,7 +278,7 @@ class DimensionedPlot(Plot):
         elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
-            if group in ranges:
+            if group in ranges and not framewise:
                 continue # Skip if ranges are already computed
             elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
@@ -286,6 +287,7 @@ class DimensionedPlot(Plot):
             if not axiswise or ((not framewise or len(elements) == 1)
                                 and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
+        self.ranges.update(ranges)
         return ranges
 
 
