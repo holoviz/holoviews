@@ -434,18 +434,23 @@ class Comparison(ComparisonInterface):
     #========#
     # Charts #
     #========#
-
+    
     @classmethod
     def compare_columns(cls, el1, el2, msg='Columns'):
         cls.compare_dimensioned(el1, el2)
         if len(el1) != len(el2):
             raise AssertionError("%s not of matching length." % msg)
-        if isinstance(el1.data, np.ndarray):
-            cls.compare_arrays(el1.data, el2.data, msg)
-        elif isinstance(el1.data, NdElement):
-            cls.compare_ndmappings(el1.data, el2.data, msg)
-        else:
-            cls.compare_dframe(el1, el2, msg)
+        dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
+        for dim, d1, d2 in dimension_data:
+            if d1.dtype != d2.dtype:
+                cls.failureException("%s %s columns have different type." % (msg, dim)
+                                     + " First has type %s, and second has type %s."
+                                     % (d1, d2))
+            if d1.dtype.kind in 'SUOV':
+                if np.all(d1 != d2):
+                    cls.failureException("Columns along dimension %s not equal." % dim)
+            else:
+                cls.compare_arrays(d1, d2, msg)
 
 
     @classmethod
