@@ -38,7 +38,7 @@ class Columns(Element):
         if self.interface is None:
             return data
         else:
-            return self.interface.validate_data(data)
+            return self.interface.validate_data(self, data)
 
 
     def __setstate__(self, state):
@@ -72,7 +72,7 @@ class Columns(Element):
         if self.interface is None:
             sorted_columns = self.data.sort(by)
         else:
-            sorted_columns = self.interface.sort(by)
+            sorted_columns = self.interface.sort(self, by)
         return self.clone(sorted_columns)
 
 
@@ -84,7 +84,7 @@ class Columns(Element):
             return dim.range
         elif dim in self.dimensions():
             if len(self):
-                drange = self.interface.range(dim)
+                drange = self.interface.range(self, dim)
             else:
                 drange = (np.NaN, np.NaN)
         if data_range:
@@ -112,7 +112,7 @@ class Columns(Element):
         if self.interface is None:
             data = self.data.add_dimension(dimension, dim_pos, dim_val, **kwargs)
         else:
-            data = self.interface.add_dimension(self.data, dimension, dim_pos, dim_val)
+            data = self.interface.add_dimension(self, dimension, dim_pos, dim_val)
         return self.clone(data, kdims=dimensions)
 
 
@@ -123,7 +123,7 @@ class Columns(Element):
         if self.interface is None:
             data = self.data.select(**selection)
         else:
-            data = self.interface.select(**selection)
+            data = self.interface.select(self, **selection)
         if np.isscalar(data):
             return data
         else:
@@ -133,9 +133,9 @@ class Columns(Element):
     @property
     def interface(self):
         if util.is_dataframe(self.data):
-            return ColumnarDataFrame(self)
+            return ColumnarDataFrame
         elif isinstance(self.data, np.ndarray):
-            return ColumnarArray(self)
+            return ColumnarArray
 
 
     def reindex(self, kdims=None, vdims=None):
@@ -158,7 +158,7 @@ class Columns(Element):
         else:
             key_dims = [self.get_dimension(k) for k in kdims]
 
-        data = self.interface.reindex(key_dims, val_dims)
+        data = self.interface.reindex(self, key_dims, val_dims)
         return self.clone(data, kdims=key_dims, vdims=val_dims)
 
 
@@ -196,7 +196,7 @@ class Columns(Element):
         if self.interface is None:
             return self.clone(self.data.sample(samples))
         else:
-            return self.clone(self.interface.sample(samples))
+            return self.clone(self.interface.sample(self, samples))
 
 
     def reduce(self, dimensions=[], function=None, **reduce_map):
@@ -227,7 +227,7 @@ class Columns(Element):
         if self.interface is None:
             aggregated = self.data.aggregate(dimensions, function)
         else:
-            aggregated = self.interface.aggregate(dimensions, function)
+            aggregated = self.interface.aggregate(self, dimensions, function)
         kdims = [self.get_dimension(d) for d in dimensions]
         return self.clone(aggregated, kdims=kdims)
 
@@ -236,7 +236,7 @@ class Columns(Element):
         if self.interface is None:
             return self.data.groupby(dimensions, container_type, **kwargs)
         else:
-            return self.interface.groupby(dimensions, container_type, **kwargs)
+            return self.interface.groupby(self, dimensions, container_type, **kwargs)
 
     @classmethod
     def collapse_data(cls, data, function=None, kdims=None, **kwargs):
@@ -252,7 +252,7 @@ class Columns(Element):
         if self.interface is None:
             return len(self.data)
         else:
-            return len(self.interface)
+            return self.interface.length(self)
 
 
     @property
@@ -260,7 +260,7 @@ class Columns(Element):
         if self.interface is None:
             return (len(self), len(self.dimensions()))
         else:
-            return self.interface.shape
+            return self.interface.shape(self)
 
 
     def dimension_values(self, dim):
@@ -268,20 +268,20 @@ class Columns(Element):
             return self.data.dimension_values(dim)
         else:
             dim = self.get_dimension(dim).name
-            return self.interface.values(dim)
+            return self.interface.values(self, dim)
 
 
     def dframe(self, as_table=False):
         if self.interface is None:
             return self.data.dframe(as_table)
         else:
-            return self.interface.dframe(as_table)
+            return self.interface.dframe(self, as_table)
 
 
     def array(self, as_table=False):
         if self.interface is None:
             return super(Columns, self).array(as_table)
-        array = self.interface.array()
+        array = self.interface.array(self)
         if as_table:
             from ..element import Table
             if array.dtype.kind in ['S', 'O', 'U']:
@@ -295,20 +295,15 @@ class Columns(Element):
 
 class ColumnarData(param.Parameterized):
 
-    def __init__(self, element, **params):
-        self.element = element
-
-    def range(self, dimension):
-        column = self.element.dimension_values(dimension)
+    @staticmethod
+    def range(columns, dimension):
+        column = columns.dimension_values(dimension)
         return (np.nanmin(column), np.nanmax(column))
 
-    def array(self):
-        NotImplementedError
 
-
-    @property
-    def shape(self):
-        return self.element.data.shape
+    @staticmethod
+    def shape(columns):
+        return columns.data.shape
 
 
     @classmethod
@@ -372,8 +367,8 @@ class ColumnarData(param.Parameterized):
         return data, params
 
 
-    @classmethod
-    def _process_df_dims(cls, data, paramobjs, **kwargs):
+    @staticmethod
+    def _process_df_dims(data, paramobjs, **kwargs):
         if 'kdims' in kwargs or 'vdims' in kwargs:
             kdims = kwargs.get('kdims', [])
             vdims = kwargs.get('vdims', [])
@@ -389,65 +384,71 @@ class ColumnarData(param.Parameterized):
         return kdims, vdims
 
 
-    def as_ndelement(self, **kwargs):
+    @classmethod
+    def as_ndelement(cls, columns, **kwargs):
         """
         This method transforms any ViewableElement type into a Table
         as long as it implements a dimension_values method.
         """
         if self.kdims:
-            keys = zip(*[self.values(dim.name)
+            keys = zip(*[cls.values(columns, dim.name)
                          for dim in self.kdims])
         else:
             keys = [()]*len(values)
 
         if self.vdims:
-            values = zip(*[self.values(dim.name)
+            values = zip(*[cls.values(columns, dim.name)
                            for dim in self.vdims])
         else:
             values = [()]*len(keys)
 
         data = zip(keys, values)
-        params = dict(kdims=self.kdims, vdims=self.vdims, label=self.label)
-        if not self.params()['group'].default == self.group:
-            params['group'] = self.group
-        el_type = type(self.element) 
+        params = dict(kdims=columns.kdims, vdims=columns.vdims, label=columns.label)
+        if not columns.params()['group'].default == columns.group:
+            params['group'] = columns.group
+        el_type = type(columns.element) 
         return el_type(data, **dict(params, **kwargs))
 
 
-    def __len__(self):
-        return len(self.element.data)
+    @staticmethod
+    def length(columns):
+        return len(columns.data)
 
 
-    @classmethod
-    def validate_data(cls, data):
+    @staticmethod
+    def validate_data(columns, data):
         return data
 
 
 class ColumnarDataFrame(ColumnarData):
 
-    def range(self, dimension):
-        column = self.element.data[self.element.get_dimension(dimension).name]
+
+    @staticmethod
+    def range(columns, dimension):
+        column = columns.data[columns.get_dimension(dimension).name]
         return (column.min(), column.max())
 
-    def groupby(self, dimensions, container_type=HoloMap, **kwargs):
-        invalid_dims = list(set(dimensions) - set(self.element.dimensions('key', True)))
+    
+    @staticmethod
+    def groupby(columns, dimensions, container_type=HoloMap, **kwargs):
+        invalid_dims = list(set(dimensions) - set(columns.dimensions('key', True)))
         if invalid_dims:
             raise Exception('Following dimensions could not be found:\n%s.'
                             % invalid_dims)
 
-        index_dims = [self.element.get_dimension(d) for d in dimensions]
-        element_dims = [kdim for kdim in self.element.kdims
+        index_dims = [columns.get_dimension(d) for d in dimensions]
+        element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
         map_data = []
-        for k, v in self.element.data.groupby(dimensions):
-            map_data.append((k, self.element.clone(v, kdims=element_dims,
+        for k, v in columns.data.groupby(dimensions):
+            map_data.append((k, columns.clone(v, kdims=element_dims,
                                                    **kwargs)))
         with item_check(False):
             return container_type(map_data, kdims=index_dims)
 
 
-    @classmethod
-    def reduce(cls, columns, reduce_dims, function=None):
+    @staticmethod
+    def reduce(columns, reduce_dims, function=None):
         """
         The aggregate function accepts either a list of Dimensions
         and a function to apply to find the aggregate across
@@ -471,39 +472,38 @@ class ColumnarDataFrame(ColumnarData):
         return reduced
 
 
-    def array(self):
-        return self.element.data.values
+    @staticmethod
+    def array(columns):
+        return columns.data.values
 
 
-    def reindex(self, kdims=None, vdims=None):
+    @staticmethod
+    def reindex(columns, kdims=None, vdims=None):
         # DataFrame based tables don't need to be reindexed
-        return self.element.data
+        return columns.data
 
 
-    @classmethod
-    def _datarange(cls, data): 
-        return data.min(), data.max()
-
-
-    @classmethod
-    def collapse_data(cls, data, function, kdims, **kwargs):
+    @staticmethod
+    def collapse_data(data, function, kdims, **kwargs):
         return pd.concat(data).groupby([d.name for d in kdims]).agg(function).reset_index()
 
 
-    def sort(self, by=[]):
+    @staticmethod
+    def sort(columns, by=[]):
         if not isinstance(by, list): by = [by]
-        if not by: by = range(self.element.ndims)
-        columns = [self.element.get_dimension(d).name for d in by]
-        return self.element.data.sort_values(columns)
+        if not by: by = range(columns.ndims)
+        cols = [columns.get_dimension(d).name for d in by]
+        return columns.data.sort_values(cols)
 
 
-    def select(self, selection_specs=None, **select):
+    @staticmethod
+    def select(columns, selection_specs=None, **select):
         """
         Allows slice and select individual values along the DataFrameView
         dimensions. Supply the dimensions and values or slices as
         keyword arguments.
         """
-        df = self.element.data
+        df = columns.data
         selected_kdims = []
         mask = True
         for dim, k in select.items():
@@ -520,39 +520,42 @@ class ColumnarDataFrame(ColumnarData):
                     iter_slcs.append(df[dim] == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
             else:
-                if dim in self.element.kdims: selected_kdims.append(dim)
+                if dim in columns.kdims: selected_kdims.append(dim)
                 mask &= df[dim] == k
         df = df.ix[mask]
-        if len(set(selected_kdims)) == self.element.ndims:
-            if len(df) and len(self.element.vdims) == 1:
-                df = df[self.element.vdims[0].name].iloc[0]
+        if len(set(selected_kdims)) == columns.ndims:
+            if len(df) and len(columns.vdims) == 1:
+                df = df[columns.vdims[0].name].iloc[0]
         return df
 
 
-    def values(self, dim):
-        data = self.element.data[dim]
+    @staticmethod
+    def values(columns, dim):
+        data = columns.data[dim]
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
         return np.array(data)
 
 
-    def aggregate(self, dimensions, function):
+    @staticmethod
+    def aggregate(columns, dimensions, function):
         """
         Allows aggregating.
         """
-        data = self.element.data
-        columns = [d.name for d in self.element.kdims if d in dimensions]
-        vdims = self.element.dimensions('value', True)
-        return data.reindex(columns=columns+vdims).groupby(columns).\
+        data = columns.data
+        cols = [d.name for d in columns.kdims if d in dimensions]
+        vdims = columns.dimensions('value', True)
+        return data.reindex(columns=cols+vdims).groupby(cols).\
             aggregate(function).reset_index()
 
 
-    def sample(self, samples=[]):
+    @classmethod
+    def sample(cls, columns, samples=[]):
         """
         Sample the Element data with a list of samples.
         """
-        data = self.element.data
-        mask = np.zeros(len(self), dtype=bool)
+        data = columns.data
+        mask = np.zeros(cls.length(columns), dtype=bool)
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
@@ -560,74 +563,81 @@ class ColumnarDataFrame(ColumnarData):
         return data[mask]
 
 
-    @classmethod
-    def add_dimension(cls, data, dimension, dim_pos, values):
+    @staticmethod
+    def add_dimension(columns, dimension, dim_pos, values):
+        data = columns.data.copy()
         data.insert(dim_pos, dimension.name, values)
         return data
 
 
-    def dframe(self, as_table=False):
+    @staticmethod
+    def dframe(columns, as_table=False):
         if as_table:
             from ..element import Table
-            params = self.element.get_param_values(onlychanged=True)
-            return Table(self.element.data, **params)
-        return self.element.data
+            return Table(columns)
+        return columns.data
+
 
 
 class ColumnarArray(ColumnarData):
 
-    @classmethod
-    def validate_data(cls, data):
+    @staticmethod
+    def validate_data(columns, data):
         if data.ndim == 1:
             data = np.column_stack([np.arange(len(data)), data])
         return data
 
 
-    @classmethod
-    def add_dimension(cls, data, dimension, dim_pos, values):
+    @staticmethod
+    def add_dimension(columns, dimension, dim_pos, values):
+        data = columns.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
 
 
-    def array(self):
-        return self.element.data
-
-    def dframe(self, as_table=False):
-        return Element.dframe(self.element, as_table)
-
-    @classmethod
-    def _datarange(cls, data): 
-        return np.nanmin(data), np.nanmax(data)
+    @staticmethod
+    def array(columns):
+        return columns.data
 
 
-    def sort(self, by=[]):
-        data = self.element.data
-        idxs = [self.element.get_dimension_index(dim) for dim in by]
+    @staticmethod
+    def dframe(columns, as_table=False):
+        return Element.dframe(columns, as_table)
+
+
+    @staticmethod
+    def sort(columns, by=[]):
+        data = columns.data
+        idxs = [columns.get_dimension_index(dim) for dim in by]
         return data[np.lexsort(np.flipud(data[:, idxs].T))]
 
-    def values(self, dim):
-        data = self.element.data
-        dim_idx = self.element.get_dimension_index(dim)
+    
+    @staticmethod
+    def values(columns, dim):
+        data = columns.data
+        dim_idx = columns.get_dimension_index(dim)
         if data.ndim == 1:
             data = np.atleast_2d(data).T
         return data[:, dim_idx]
 
 
-    def reindex(self, kdims=None, vdims=None):
+    @staticmethod
+    def reindex(columns, kdims=None, vdims=None):
         # DataFrame based tables don't need to be reindexed
         dims = kdims + vdims
-        data = [self.element.dimension_values(d) for d in dims]
+        data = [columns.dimension_values(d) for d in dims]
         return np.column_stack(data)
 
 
-    def groupby(self, dimensions, container_type=HoloMap, **kwargs):
-        data = self.element.data
+    @staticmethod
+    def groupby(columns, dimensions, container_type=HoloMap, **kwargs):
+        data = columns.data
 
         # Get dimension objects, labels, indexes and data
-        dimensions = [self.element.get_dimension(d) for d in dimensions]
-        dim_idxs = [self.element.get_dimension_index(d) for d in dimensions]
-        dim_data = {d: self.element.dimension_values(d) for d in dimensions}
+        dimensions = [columns.get_dimension(d) for d in dimensions]
+        dim_idxs = [columns.get_dimension_index(d) for d in dimensions]
+        dim_data = {d: columns.dimension_values(d) for d in dimensions}
         ndims = len(dimensions)
-        kwargs['kdims'] = [kdim for kdim in self.element.kdims
+        kwargs['kdims'] = [kdim for kdim in columns.kdims
                            if kdim not in dimensions]
 
         # Find unique entries along supplied dimensions
@@ -643,18 +653,19 @@ class ColumnarArray(ColumnarData):
             mask = np.zeros(len(data), dtype=bool)
             for d, v in zip(dimensions, group):
                 mask = np.logical_or(mask, dim_data[d] == v)
-            group_element = self.element.clone(data[mask, ndims:], **kwargs)
+            group_element = columns.clone(data[mask, ndims:], **kwargs)
             grouped_data.append((tuple(group), group_element))
         return container_type(grouped_data, kdims=dimensions)
 
 
-    def select(self, **selection):
-        data = self.element.data
+    @staticmethod
+    def select(columns, **selection):
+        data = columns.data
         mask = True
         selected_kdims = []
         value = selection.pop('value', None)
         for d, slc in selection.items():
-            idx = self.element.get_dimension_index(d)
+            idx = columns.get_dimension_index(d)
             if isinstance(slc, slice):
                 if slc.start is not None:
                     mask &= slc.start <= data[:, idx]
@@ -663,8 +674,8 @@ class ColumnarArray(ColumnarData):
             elif isinstance(slc, (set, list)):
                 mask &= np.in1d(data[:, idx], list(slc))
             else:
-                if d in self.element.kdims: selected_kdims.append(d)
-                if self.element.ndims == 1:
+                if d in columns.kdims: selected_kdims.append(d)
+                if columns.ndims == 1:
                     data_index = np.argmin(np.abs(data[:, idx] - slc))
                     data = data[data_index, :]
                     break
@@ -673,14 +684,14 @@ class ColumnarArray(ColumnarData):
         if mask is not True:
             data = data[mask, :]
         data = np.atleast_2d(data)
-        if len(data) and len(set(selected_kdims)) == self.element.ndims:
-            if len(data) == 1 and len(self.element.vdims) == 1:
-                data = data[0, self.element.ndims]
+        if len(data) and len(set(selected_kdims)) == columns.ndims:
+            if len(data) == 1 and len(columns.vdims) == 1:
+                data = data[0, columns.ndims]
         return data
 
 
-    @classmethod
-    def collapse_data(cls, data, function, kdims=None, **kwargs):
+    @staticmethod
+    def collapse_data(data, function, kdims=None, **kwargs):
         """
         Applies a groupby operation along the supplied key dimensions
         then aggregates across the groups with the supplied function.
@@ -705,11 +716,12 @@ class ColumnarArray(ColumnarData):
         return np.array(rows)
 
 
-    def sample(self, samples=[]):
+    @staticmethod
+    def sample(columns, samples=[]):
         """
         Sample the Element data with a list of samples.
         """
-        data = self.element.data
+        data = columns.data
         mask = False
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
@@ -718,8 +730,8 @@ class ColumnarArray(ColumnarData):
         return data[mask]
 
 
-    @classmethod
-    def reduce(cls, columns, reduce_dims, function):
+    @staticmethod
+    def reduce(columns, reduce_dims, function):
         """
         This implementation allows reducing dimensions by aggregating
         over all the remaining key dimensions using the collapse_data
@@ -743,13 +755,14 @@ class ColumnarArray(ColumnarData):
         return reduced
 
 
-    def aggregate(self, dimensions, function):
+    @classmethod
+    def aggregate(cls, columns, dimensions, function):
         """
         Allows aggregating.
         """
         if not isinstance(dimensions, Iterable): dimensions = [dimensions]
         rows = []
-        for k, group in self.groupby(dimensions).data.items():
+        for k, group in cls.groupby(columns, dimensions).data.items():
             reduced = group.reduce(function=function)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.array(rows)
