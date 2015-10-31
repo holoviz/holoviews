@@ -252,6 +252,7 @@ class NdElement(NdMapping, Tabular):
         will then be promoted to Dimension objects.""")
 
     _deep_indexable = False
+    _sorted = False
 
     def __init__(self, data=None, **params):
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
@@ -367,6 +368,14 @@ class NdElement(NdMapping, Tabular):
             return subtable
 
         return self._filter_data(subtable, args[-1])
+
+
+    def sort(self, by=[]):
+        if not isinstance(by, list): by = [by]
+        if not by: by = range(self.ndims)
+        indexes = [self.get_dimension_index(d) for d in by]
+        return self.clone(dimension_sort(self.data, self.kdims, self.vdims,
+                                         False, indexes, self._cached_index_values))
 
 
     def sample(self, samples=[]):

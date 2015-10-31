@@ -68,6 +68,13 @@ class Columns(Element):
         return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
 
 
+    def sort(self, by=[]):
+        if self.interface is None:
+            sorted_columns = self.data.sort(by)
+        else:
+            sorted_columns = self.interface.sort(by)
+        return self.clone(sorted_columns)
+
 
     def range(self, dim, data_range=True):
         if self.interface is None:
@@ -483,6 +490,13 @@ class ColumnarDataFrame(ColumnarData):
         return pd.concat(data).groupby([d.name for d in kdims]).agg(function).reset_index()
 
 
+    def sort(self, by=[]):
+        if not isinstance(by, list): by = [by]
+        if not by: by = range(self.element.ndims)
+        columns = [self.element.get_dimension(d).name for d in by]
+        return self.element.data.sort_values(columns)
+
+
     def select(self, selection_specs=None, **select):
         """
         Allows slice and select individual values along the DataFrameView
@@ -584,6 +598,11 @@ class ColumnarArray(ColumnarData):
     def _datarange(cls, data): 
         return np.nanmin(data), np.nanmax(data)
 
+
+    def sort(self, by=[]):
+        data = self.element.data
+        idxs = [self.element.get_dimension_index(dim) for dim in by]
+        return data[np.lexsort(np.flipud(data[:, idxs].T))]
 
     def values(self, dim):
         data = self.element.data

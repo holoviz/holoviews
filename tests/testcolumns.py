@@ -25,6 +25,22 @@ class ColumnsNdElementTest(ComparisonTestCase):
         self.columns = Columns(dict(zip(self.xs, self.ys)),
                                kdims=['x'], vdims=['y'])
 
+    def test_columns_sort_vdim(self):
+        columns = Columns(OrderedDict(zip(self.xs, -self.ys)),
+                          kdims=['x'], vdims=['y'])
+        columns_sorted = Columns(OrderedDict(zip(self.xs[::-1], -self.ys[::-1])),
+                                 kdims=['x'], vdims=['y'])
+        self.assertEqual(columns.sort('y'), columns_sorted)
+
+    def test_columns_sort_heterogeneous_string(self):
+        columns = Columns(zip(self.keys1, self.values1),
+                        kdims=self.kdims, vdims=self.vdims)
+        keys =   [('F',12), ('M',10), ('M',16)]
+        values = [(10, 0.8), (15, 0.8), (18, 0.6)]
+        columns_sorted = Columns(zip(keys, values),
+                                 kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(columns.sort(), columns_sorted)
+
     def test_columns_shape(self):
         self.assertEqual(self.columns.shape, (11, 2))
 
@@ -120,7 +136,7 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_2d_reduce(self):
         columns = Columns(zip(zip(self.xs, self.ys), self.zs),
                           kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891004)
+        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891001)
 
     def test_columns_2d_partial_reduce(self):
         columns = Columns(zip(zip(self.xs, self.ys), self.zs),
@@ -132,7 +148,8 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_heterogeneous_reduce(self):
         columns = Columns(zip(self.keys1, self.values1), kdims=self.kdims,
                           vdims=self.vdims)
-        reduced = Columns(zip([k[1:] for k in self.keys1], self.values1),
+        reduced = Columns(zip([k[1:] for k in [self.keys1[i] for i in [0, 2, 1]]],
+                              [self.values1[i] for i in [0, 2, 1]]),
                           kdims=self.kdims[1:], vdims=self.vdims)
         self.assertEqual(columns.reduce(['Gender'], np.mean), reduced)
 
@@ -145,7 +162,7 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_column_heterogeneous_aggregate(self):
         columns = Columns(zip(self.keys1, self.values1), kdims=self.kdims,
                           vdims=self.vdims)
-        aggregated = Columns(OrderedDict([('F', (10., 0.8)), ('M', (16.5, 0.7))]),
+        aggregated = Columns(OrderedDict([('M', (16.5, 0.7)), ('F', (10., 0.8))]),
                              kdims=self.kdims[:1], vdims=self.vdims)
         self.compare_columns(columns.aggregate(['Gender'], np.mean), aggregated)
 
@@ -194,6 +211,12 @@ class ColumnsNdArrayTest(ComparisonTestCase):
         columns = Columns(zip(self.xs, self.ys))
         self.assertTrue(isinstance(columns.data, np.ndarray))
 
+    def test_columns_sort_vdim(self):
+        columns = Columns((self.xs, -self.ys), kdims=['x'], vdims=['y'])
+        columns_sorted = Columns((self.xs[::-1], -self.ys[::-1]),
+                                 kdims=['x'], vdims=['y'])
+        self.assertEqual(columns.sort('y'), columns_sorted)
+
     def test_columns_index(self):
         self.assertEqual(self.columns[5], self.ys[5])
 
@@ -238,7 +261,7 @@ class ColumnsNdArrayTest(ComparisonTestCase):
 
     def test_columns_2d_reduce(self):
         columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891004)
+        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891001)
 
     def test_columns_2d_partial_reduce(self):
         columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
@@ -341,6 +364,19 @@ class ColumnsDFrameTest(ComparisonTestCase):
                           vdims=self.vdims)
         self.assertEquals(columns['F', 12, 'Height'], 0.8)
 
+    def test_columns_sort_vdim(self):
+        columns = Columns(pd.DataFrame({'x': self.xs, 'y': -self.ys}),
+                          kdims=['x'], vdims=['y'])
+        columns_sorted = Columns(pd.DataFrame({'x': self.xs[::-1], 'y': -self.ys[::-1]}),
+                                 kdims=['x'], vdims=['y'])
+        self.assertEqual(columns.sort('y'), columns_sorted)
+
+    def test_columns_sort_heterogeneous_string(self):
+        columns = Columns(self.column_data, kdims=self.kdims, vdims=self.vdims)
+        columns_sorted = Columns([self.column_data[i] for i in [2, 0, 1]],
+                                 kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(columns.sort(), columns_sorted)
+
     def test_columns_add_dimensions_value(self):
         columns = self.columns.add_dimension('z', 1, 0)
         self.assertEqual(columns.kdims[1], 'z')
@@ -365,7 +401,7 @@ class ColumnsDFrameTest(ComparisonTestCase):
     def test_columns_2d_reduce(self):
         columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),
                           kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891004)
+        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891001)
 
     def test_columns_2d_partial_reduce(self):
         columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),

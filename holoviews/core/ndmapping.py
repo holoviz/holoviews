@@ -249,8 +249,9 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _resort(self):
         if self._sorted:
-            resorted = dimension_sort(self.data, self.kdims,
+            resorted = dimension_sort(self.data, self.kdims, self.vdims,
                                       self._cached_categorical,
+                                      range(self.ndims),
                                       self._cached_index_values)
             self.data = OrderedDict(resorted)
 

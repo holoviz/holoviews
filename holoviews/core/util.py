@@ -405,16 +405,26 @@ def python2sort(x,key=None):
     return itertools.chain.from_iterable(sorted(group, key=key) for group in groups)
 
 
-def dimension_sort(odict, dimensions, categorical, cached_values):
+def dimension_sort(odict, kdims, vdims, categorical, key_index, cached_values):
     """
     Sorts data by key using usual Python tuple sorting semantics
     or sorts in categorical order for any categorical Dimensions.
     """
     sortkws = {}
-    if categorical:
-       sortkws['key'] = lambda x: tuple(cached_values[d.name].index(x[0][i])
-                                        if d.values else x[0][i]
-                                        for i, d in enumerate(dimensions))
+    ndims = len(kdims)
+    dimensions = kdims+vdims
+    indexes = [(dimensions[i], int(i not in range(ndims)),
+                    i if i in range(ndims) else i-ndims)
+                for i in key_index]
+
+    if len(set(key_index)) != len(key_index):
+        raise ValueError("Cannot sort on duplicated dimensions")
+    elif categorical:
+       sortkws['key'] = lambda x: tuple(cached_values[dim.name].index(x[t][d])
+                                        if dim.values else x[t][d]
+                                        for i, (dim, t, d) in enumerate(indexes))
+    elif key_index != list(range(len(kdims+vdims))):
+        sortkws['key'] = lambda x: tuple(x[t][d] for _, t, d in indexes)
     if sys.version_info.major == 3:
         return python2sort(odict.items(), **sortkws)
     else:
