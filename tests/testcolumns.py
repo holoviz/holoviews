@@ -148,8 +148,7 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_heterogeneous_reduce(self):
         columns = Columns(zip(self.keys1, self.values1), kdims=self.kdims,
                           vdims=self.vdims)
-        reduced = Columns(zip([k[1:] for k in [self.keys1[i] for i in [0, 2, 1]]],
-                              [self.values1[i] for i in [0, 2, 1]]),
+        reduced = Columns(zip([k[1:] for k in self.keys1], self.values1),
                           kdims=self.kdims[1:], vdims=self.vdims)
         self.assertEqual(columns.reduce(['Gender'], np.mean), reduced)
 
