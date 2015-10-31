@@ -216,7 +216,7 @@ class TableConversion(object):
         if vdims is None:
             vdims = self._table.vdims
         if mdims is None:
-            mdims = [d for d in self._table.kdims if not in kdims]
+            mdims = [d for d in self._table.kdims if d not in kdims]
         elif vdims and not isinstance(vdims, list): vdims = [vdims]
         selected = self._table.reindex(mdims+kdims, vdims)
         params = dict({'kdims': [selected.get_dimension(kd) for kd in kdims],
