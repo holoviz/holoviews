@@ -354,7 +354,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
-        properties['legend'] = element.label
+
+        if self.overlay_dims:
+            legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                self.overlay_dims.items()])
+        else:
+            legend = element.label
+        properties['legend'] = legend
         properties['source'] = source
         return properties
 
@@ -550,7 +556,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
     def _process_legend(self):
         plot = self.handles['plot']
-        if not self.show_legend or len(plot.legend) >= 1:
+        if not self.show_legend or len(plot.legend) == 0:
             for l in plot.legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
