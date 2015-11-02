@@ -245,7 +245,7 @@ class LabelledData(param.Parameterized):
                              self.label)
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
@@ -253,10 +253,18 @@ class LabelledData(param.Parameterized):
         If shared_data is set to True and no data explicitly supplied,
         the clone will share data with the original.
         """
-        settings = dict(self.get_param_values(), **overrides)
+        params = dict(self.get_param_values())
+        if new_type is None:
+            clone_type = self.__class__
+        else:
+            clone_type = new_type
+            new_params = new_type.params()
+            params = {k: v for k, v in params.items()
+                      if k in new_params}
+        settings = dict(params, **overrides)
         if data is None and shared_data:
             data = self.data
-        return self.__class__(data, *args, **settings)
+        return clone_type(data, *args, **settings)
 
 
     def relabel(self, label=None, group=None, depth=0):
