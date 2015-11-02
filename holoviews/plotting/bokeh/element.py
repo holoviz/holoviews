@@ -354,7 +354,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
-        properties['legend'] = element.label
+
+        if self.overlay_dims:
+            legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                self.overlay_dims.items()])
+        else:
+            legend = element.label
+        properties['legend'] = legend
         properties['source'] = source
         return properties
 

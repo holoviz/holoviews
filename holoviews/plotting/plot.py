@@ -396,10 +396,12 @@ class GenericElementPlot(DimensionedPlot):
         Whether to apply extent overrides on the Elements""")
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
-                 overlaid=0, cyclic_index=0, zorder=0, style=None, **params):
+                 overlaid=0, cyclic_index=0, zorder=0, style=None, overlay_dims={},
+                 **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
+        self.overlay_dims = overlay_dims
         if not isinstance(element, HoloMap):
             self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
@@ -619,14 +621,17 @@ class GenericOverlayPlot(GenericElementPlot):
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
+
+            opts = {}
+            if overlay_type == 2:
+                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
-            plotopts = dict(keys=self.keys, style=style, cyclic_index=cyclic_index,
+            plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
                             uniform=self.uniform, show_legend=self.show_legend,
                             **{k: v for k, v in self.handles.items() if k in self._passed_handles})
-
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
             if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
