@@ -21,7 +21,7 @@ import param
 
 from .dimension import OrderedDict, Dimension
 from .element import Element, NdElement
-from .ndmapping import item_check
+from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
 
@@ -204,8 +204,17 @@ class Columns(Element):
         return self.clone(aggregated, kdims=kdims)
 
 
-    def groupby(self, dimensions, container_type=HoloMap, **kwargs):
-        return self.interface.groupby(self, dimensions, container_type, **kwargs)
+    def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
+        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if not len(dimensions): dimensions = self.dimensions('key', True)
+        dimensions = [self.get_dimension(d).name for d in dimensions]
+        invalid_dims = list(set(dimensions) - set(self.dimensions('key', True)))
+        if invalid_dims:
+            raise Exception('Following dimensions could not be found:\n%s.'
+                            % invalid_dims)
+        if group_type is None:
+            group_type = type(self)
+        return self.interface.groupby(self, dimensions, container_type, group_type, **kwargs)
 
 
     @classmethod
@@ -409,8 +418,10 @@ class ColumnarNdElement(ColumnarData):
         return columns.data.reindex(kdims, vdims)
 
     @staticmethod
-    def groupby(columns, dimensions, container_type=HoloMap, **kwargs):
-        return columns.data.groupby(dimensions, container_type, **kwargs)
+    def groupby(columns, dimensions, container_type, group_type, **kwargs):
+        if 'kdims' not in kwargs:
+            kwargs['kdims'] = [d for d in columns.kdims if d not in dimensions]
+        return columns.data.groupby(dimensions, container_type, group_type, **kwargs)
 
     @staticmethod
     def select(columns, **selection):
@@ -444,20 +455,16 @@ class ColumnarDataFrame(ColumnarData):
 
     
     @staticmethod
-    def groupby(columns, dimensions, container_type=HoloMap, **kwargs):
-        invalid_dims = list(set(dimensions) - set(columns.dimensions('key', True)))
-        if invalid_dims:
-            raise Exception('Following dimensions could not be found:\n%s.'
-                            % invalid_dims)
-
+    def groupby(columns, dimensions, container_type, group_type, **kwargs):
         index_dims = [columns.get_dimension(d) for d in dimensions]
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
         map_data = []
-        for k, v in columns.data.groupby(dimensions):
-            map_data.append((k, columns.clone(v, kdims=element_dims,
-                                                   **kwargs)))
-        with item_check(False):
+        with item_check(False), sorted_context(False):
+            for k, v in columns.data.groupby(dimensions):
+                map_data.append((k, columns.clone(v, new_type=group_type,
+                                                  **dict({'kdims':element_dims},
+                                                         **kwargs))))
             return container_type(map_data, kdims=index_dims)
 
 
@@ -643,7 +650,7 @@ class ColumnarArray(ColumnarData):
 
 
     @staticmethod
-    def groupby(columns, dimensions, container_type=HoloMap, **kwargs):
+    def groupby(columns, dimensions, container_type, group_type, **kwargs):
         data = columns.data
 
         # Get dimension objects, labels, indexes and data
@@ -655,21 +662,26 @@ class ColumnarArray(ColumnarData):
                            if kdim not in dimensions]
 
         # Find unique entries along supplied dimensions
+        # by creating a view that treats the selected
+        # groupby keys as a single object.
         indices = data[:, dim_idxs]
         view = indices.view(np.dtype((np.void, indices.dtype.itemsize * indices.shape[1])))
         _, idx = np.unique(view, return_index=True)
+        idx.sort()
         unique_indices = indices[idx]
 
         # Iterate over the unique entries building masks
         # to apply the group selection
         grouped_data = []
         for group in unique_indices:
-            mask = np.zeros(len(data), dtype=bool)
+            mask = False
             for d, v in zip(dimensions, group):
-                mask = np.logical_or(mask, dim_data[d] == v)
-            group_element = columns.clone(data[mask, ndims:], **kwargs)
+                mask |= dim_data[d] == v
+            group_element = columns.clone(data[mask, ndims:],
+                                          new_type=group_type, **kwargs)
             grouped_data.append((tuple(group), group_element))
-        return container_type(grouped_data, kdims=dimensions)
+        with item_check(False), sorted_context(False):
+            return container_type(grouped_data, kdims=dimensions)
 
 
     @staticmethod
@@ -776,7 +788,7 @@ class ColumnarArray(ColumnarData):
         """
         if not isinstance(dimensions, Iterable): dimensions = [dimensions]
         rows = []
-        for k, group in cls.groupby(columns, dimensions).data.items():
+        for k, group in cls.groupby(columns, dimensions, NdMapping, type(columns)).data.items():
             reduced = group.reduce(function=function)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.array(rows)
