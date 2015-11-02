@@ -145,8 +145,11 @@ class Element(ViewableElement, Composable, Overlayable):
         return pd.DataFrame(dim_vals)
 
 
-    def array(self, as_table=False):
-        dims = self.kdims + self.vdims
+    def array(self, as_table=False, dimensions=[]):
+        if dimensions:
+            dims = [self.get_dimension(d) for d in dimensions]
+        else:
+            dims = [d for d in self.kdims + self.vdims if d != 'Index']
         columns, types = [], []
         for dim in dims:
             column = self.dimension_values(dim)
@@ -256,7 +259,12 @@ class NdElement(NdMapping, Tabular):
 
     def __init__(self, data=None, **params):
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
-            data = OrderedDict(list(((k,), v) for k, v in enumerate(data)))
+            data = (((k,), (v,)) for k, v in enumerate(data))
+        kdims = params.get('kdims', self.kdims)
+        if not isinstance(data, NdElement) and 'Index' not in kdims:
+            params['kdims'] = ['Index'] + list(kdims)
+            data_items = data.items() if isinstance(data, dict) else data
+            data = [((i,)+((k,) if np.isscalar(k) else k), v) for i, (k, v) in enumerate(data_items)]
         super(NdElement, self).__init__(data, **params)
 
 
@@ -278,6 +286,7 @@ class NdElement(NdMapping, Tabular):
                 vdims = self.vdims
         elif kdims is None:
             kdims = [d for d in self.dimensions if d not in vdims]
+        if 'Index' not in kdims: kdims = ['Index'] + kdims
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
 
@@ -383,9 +392,10 @@ class NdElement(NdMapping, Tabular):
         Allows sampling of the Table with a list of samples.
         """
         sample_data = OrderedDict()
-        for sample in samples:
-            value = self[sample]
-            sample_data[sample] = (value,) if len(self.vdims) == 1 else value.values()[0]
+        for i, sample in enumerate(samples):
+            sample = (sample,) if np.isscalar(sample) else sample
+            value = self[(slice(None),)+sample]
+            sample_data[(i,)+sample] = value.data.values()[0]
         return self.clone(sample_data)
 
 
@@ -425,21 +435,25 @@ class NdElement(NdMapping, Tabular):
 
     @classmethod
     def collapse_data(cls, data, function, kdims=None, **kwargs):
-        index = 0
-        joined_data = data[0].clone(shared_data=False, kdims=['Index']+data[0].kdims)
-        for d in data:
-            d = d.add_dimension('Index', 0, range(index, index+len(d)))
-            index += len(d)
-            joined_data.update(d)
+        offset = 0
+        joined_data = data[0]
+        if len(data) > 1:
+            concatenated = []
+            for d in data:
+                reindexed = [((i+offset,)+k[1:], v) for i, (k, v) in enumerate(d.data.items())]
+                concatenated += reindexed
+                offset += len(reindexed)
+            joined_data = joined_data.clone(concatenated, kdims=joined_data.kdims)
 
-        grouped = joined_data.groupby([d.name for d in kdims], container_type=HoloMap)
-        collapsed = joined_data.clone(shared_data=False, kdims=kdims)
-        for k, group in grouped.items():
+        collapsed = []
+        grouped = joined_data.groupby([d.name for d in kdims], container_type=NdMapping)
+        for i, (k, group) in enumerate(grouped.data.items()):
             if isinstance(function, np.ufunc):
-                collapsed[k] = tuple(function.reduce(group[vdim.name]) for vdim in group.vdims)
+                reduced = tuple(function.reduce(group[vdim.name]) for vdim in group.vdims)
             else:
-                collapsed[k] = tuple(function(group[vdim.name], **kwargs) for vdim in group.vdims)
-        return collapsed
+                reduced = tuple(function(group[vdim.name], **kwargs) for vdim in group.vdims)
+            collapsed.append(((i,)+k, reduced))
+        return joined_data.clone(collapsed, kdims=['Index']+kdims)
 
 
     def aggregate(self, dimensions, function):

@@ -74,31 +74,33 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_index_row_gender(self):
         table = Columns(zip(self.keys1, self.values1),
                         kdims=self.kdims, vdims=self.vdims)
+        indexed = Columns(OrderedDict([(('F', 12), (10, 0.8))]),
+                          kdims=self.kdims, vdims=self.vdims)
         row = table['F',:]
-        self.assertEquals(type(row), Columns)
-        self.assertEquals(row.data.data, OrderedDict([(('F', 12), (10, 0.8))]))
+        self.assertEquals(row, indexed)
 
     def test_columns_index_rows_gender(self):
         table = Columns(zip(self.keys1, self.values1),
                         kdims=self.kdims, vdims=self.vdims)
         row = table['M',:]
-        self.assertEquals(type(row), Columns)
-        self.assertEquals(row.data.data,
-                          OrderedDict([(('M', 10), (15, 0.8)), (('M', 16), (18, 0.6))]))
+        indexed = Columns(OrderedDict([(('M', 10), (15, 0.8)),
+                                       (('M', 16), (18, 0.6))]),
+                             kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(row, indexed)
 
     def test_columns_index_row_age(self):
         table = Columns(zip(self.keys1, self.values1),
                         kdims=self.kdims, vdims=self.vdims)
-        row = table[:, 12]
-        self.assertEquals(type(row), Columns)
-        self.assertEquals(row.data.data, OrderedDict([(('F', 12), (10, 0.8))]))
+        indexed = Columns(OrderedDict([(('F', 12), (10, 0.8))]),
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(table[:, 12], indexed)
 
     def test_columns_index_item_table(self):
         table = Columns(zip(self.keys1, self.values1),
                         kdims=self.kdims, vdims=self.vdims)
-        itemtable = table['F', 12]
-        self.assertEquals(type(itemtable), Columns)
-        self.assertEquals(itemtable.data.data, OrderedDict([(('F', 12), (10, 0.8))]))
+        indexed = Columns(OrderedDict([(('F', 12), (10, 0.8))]),
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(table['F', 12], indexed)
 
 
     def test_columns_index_value1(self):
@@ -127,7 +129,7 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_collapse(self):
         collapsed = HoloMap({i: Columns(dict(zip(self.xs, self.ys*i)), kdims=['x'], vdims=['y'])
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
-        self.compare_columns(collapsed, Columns(dict(zip(self.xs, self.ys*4.5)),
+        self.compare_columns(collapsed, Columns(zip(zip(self.xs), self.ys*4.5),
                                                 kdims=['x'], vdims=['y']))
 
     def test_columns_1d_reduce(self):

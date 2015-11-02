@@ -317,7 +317,7 @@ class ColumnarData(param.Parameterized):
                 if ((not np.isscalar(data[0]) and len(data[0]) == 2 and
                     any(not np.isscalar(data[0][i]) for i in range(2)))
                     or not pd):
-                    data = OrderedDict(data)
+                    pass
                 else:
                     dimensions = (kwargs.get('kdims', ) +
                                   kwargs.get('vdims', paramobjs['vdims'].default))
@@ -331,7 +331,7 @@ class ColumnarData(param.Parameterized):
             params['kdims'] = paramobjs['kdims'].default
         if 'vdims' not in params:
             params['vdims'] = paramobjs['vdims'].default
-        if isinstance(data, dict):
+        if isinstance(data, (dict, list)):
             data = NdElement(data, kdims=params['kdims'],
                              vdims=params['vdims'])
         return data, params
@@ -398,15 +398,20 @@ class ColumnarNdElement(ColumnarData):
         return data
 
     @staticmethod
+    def shape(columns):
+        return (len(columns), len(columns.dimensions()))
+
+    @staticmethod
     def add_dimension(columns, dimension, dim_pos, values):
-        return columns.data.add_dimension(dimension, dim_pos, values)
+        return columns.data.add_dimension(dimension, dim_pos+1, values)
 
     @staticmethod
     def array(columns):
-        return columns.data.array()
+        return columns.data.array(dimensions=columns.dimensions())
 
     @staticmethod
     def sort(columns, by=[]):
+        if not len(by): by = columns.dimensions('key', True)
         return columns.data.sort(by)
 
     @staticmethod
@@ -421,7 +426,8 @@ class ColumnarNdElement(ColumnarData):
     def groupby(columns, dimensions, container_type, group_type, **kwargs):
         if 'kdims' not in kwargs:
             kwargs['kdims'] = [d for d in columns.kdims if d not in dimensions]
-        return columns.data.groupby(dimensions, container_type, group_type, **kwargs)
+        with item_check(False), sorted_context(False):
+            return columns.data.groupby(dimensions, container_type, group_type, **kwargs)
 
     @staticmethod
     def select(columns, **selection):
