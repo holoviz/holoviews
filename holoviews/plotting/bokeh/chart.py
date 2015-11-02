@@ -99,8 +99,8 @@ class CurvePlot(ElementPlot):
     def get_data(self, element, ranges=None):
         x = element.get_dimension(0).name
         y = element.get_dimension(1).name
-        return ({'x': element.dimension_values(0),
-                 'y': element.dimension_values(1)},
+        return ({x: element.dimension_values(0),
+                 y: element.dimension_values(1)},
                 dict(x=x, y=y))
 
 
