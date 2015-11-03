@@ -471,12 +471,12 @@ class ColumnarDataFrame(ColumnarData):
         index_dims = [columns.get_dimension(d) for d in dimensions]
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
-        map_data = []
+
+        element_kwargs = dict(kdims=element_dims, new_type=group_type)
+        element_kwargs.update(kwargs)
+        map_data = [(k, columns.clone(v, **element_kwargs)) for k, v in
+                    columns.data.groupby(dimensions)]
         with item_check(False), sorted_context(False):
-            for k, v in columns.data.groupby(dimensions):
-                map_data.append((k, columns.clone(v, new_type=group_type,
-                                                  **dict({'kdims':element_dims},
-                                                         **kwargs))))
             return container_type(map_data, kdims=index_dims)
 
 
@@ -662,13 +662,12 @@ class ColumnarArray(ColumnarData):
 
 
     @staticmethod
-    def groupby(columns, dimensions, container_type, group_type, **kwargs):
+    def groupby(columns, dimensions, container_type=HoloMap, group_type=NdMapping, raw=False, **kwargs):
         data = columns.data
 
         # Get dimension objects, labels, indexes and data
         dimensions = [columns.get_dimension(d) for d in dimensions]
         dim_idxs = [columns.get_dimension_index(d) for d in dimensions]
-        dim_data = {d: columns.dimension_values(d) for d in dimensions}
         ndims = len(dimensions)
         kwargs['kdims'] = [kdim for kdim in columns.kdims
                            if kdim not in dimensions]
@@ -686,14 +685,18 @@ class ColumnarArray(ColumnarData):
         # to apply the group selection
         grouped_data = []
         for group in unique_indices:
-            mask = False
-            for d, v in zip(dimensions, group):
-                mask |= dim_data[d] == v
-            group_element = columns.clone(data[mask, ndims:],
-                                          new_type=group_type, **kwargs)
-            grouped_data.append((tuple(group), group_element))
-        with item_check(False), sorted_context(False):
-            return container_type(grouped_data, kdims=dimensions)
+            mask = np.logical_or.reduce([data[:, i] == group[i]
+                                         for i in range(ndims)])
+            group_data = data[mask, ndims:]
+            if not raw:
+                group_data = columns.clone(group_data, new_type=group_type, **kwargs)
+            grouped_data.append((tuple(group), group_data))
+
+        if raw:
+            return grouped_data
+        else:
+            with item_check(False), sorted_context(False):
+                return container_type(grouped_data, kdims=dimensions)
 
 
     @staticmethod
@@ -728,28 +731,27 @@ class ColumnarArray(ColumnarData):
         return data
 
 
-    @staticmethod
-    def collapse_data(data, function, kdims=None, **kwargs):
+    @classmethod
+    def collapse_data(cls, data, function, kdims=None, **kwargs):
         """
         Applies a groupby operation along the supplied key dimensions
         then aggregates across the groups with the supplied function.
         """
         ndims = data[0].shape[1]
         nkdims = len(kdims)
+        data = data[0] if len(data) == 0 else np.concatenate(data)
         vdims = ['Value Dimension %s' % i for i in range(ndims-len(kdims))]
-        joined_data = Columns(np.concatenate(data), kdims=kdims, vdims=vdims)
+        joined_data = Columns(data, kdims=kdims, vdims=vdims)
 
         rows = []
-        for k, group in joined_data.groupby(kdims).items():
+        for k, group in cls.groupby(joined_data, kdims, raw=True):
             row = np.zeros(ndims)
             row[:ndims] = np.array(k)
-            for i, vdim in enumerate(group.vdims):
-                group_data = group.dimension_values(vdim)
-                if isinstance(function, np.ufunc):
-                    collapsed = function.reduce(group_data)
-                else:
-                    collapsed = function(group_data, axis=0, **kwargs)
-                row[nkdims+i] = collapsed
+            if isinstance(function, np.ufunc):
+                collapsed = function.reduce(group)
+            else:
+                collapsed = function(group, axis=0, **kwargs)
+            row[nkdims+i] = collapsed
             rows.append(row)
         return np.array(rows)
 
@@ -800,7 +802,11 @@ class ColumnarArray(ColumnarData):
         """
         if not isinstance(dimensions, Iterable): dimensions = [dimensions]
         rows = []
-        for k, group in cls.groupby(columns, dimensions, NdMapping, type(columns)).data.items():
-            reduced = group.reduce(function=function)
+        reindexed = columns.reindex(dimensions)
+        for k, group in cls.groupby(reindexed, dimensions, raw=True):
+            if isinstance(function, np.ufunc):
+                reduced = function.reduce(group, axis=0)
+            else:
+                reduced = function(group, axis=0)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.array(rows)
