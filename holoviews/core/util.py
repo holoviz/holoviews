@@ -269,7 +269,10 @@ def find_range(values, soft_range=[]):
    try:
       values = np.array(values)
       values = np.squeeze(values) if len(values.shape) > 1 else values
-      values = np.concatenate([values, soft_range])
+      if len(soft_range):
+          values = np.concatenate([values, soft_range])
+      if values.dtype.kind == 'M':
+          return values.min(), values.max()
       return np.nanmin(values), np.nanmax(values)
    except:
       try:
@@ -280,16 +283,18 @@ def find_range(values, soft_range=[]):
 
 
 def max_range(ranges):
-   """
-   Computes the maximal lower and upper bounds from a list bounds.
-   """
-   try:
-      with warnings.catch_warnings():
-         warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-         arr = np.array(ranges, dtype=np.float)
-         return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
-   except:
-      return (np.NaN, np.NaN)
+    """
+    Computes the maximal lower and upper bounds from a list bounds.
+    """
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+            arr = np.array(ranges)
+            if arr.dtype.kind == 'M':
+                return arr[:, 0].min(), arr[:, 1].max()
+            return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
+    except:
+        return (np.NaN, np.NaN)
 
 
 def max_extents(extents, zrange=False):

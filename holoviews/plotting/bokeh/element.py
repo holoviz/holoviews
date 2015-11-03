@@ -18,7 +18,7 @@ from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
-from .util import mpl_to_bokeh
+from .util import mpl_to_bokeh, convert_datetime
 
 
 # Define shared style properties for bokeh plots
@@ -170,13 +170,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if plot.yaxis[0].axis_label == xlabel:
                     plot_ranges['x_range'] = plot.y_range
 
+        if element.get_dimension_type(0) is np.datetime64:
+            x_axis_type = 'datetime'
+        else:
+            x_axis_type = 'log' if self.logx else 'auto'
+        if element.get_dimension_type(1) is np.datetime64:
+            y_axis_type = 'datetime'
+        else:
+            y_axis_type = 'log' if self.logy else 'auto'
+
         if not 'x_range' in plot_ranges:
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
-                if low == high:
+                if x_axis_type == 'datetime':
+                    low = convert_datetime(low)
+                    high = convert_datetime(high)
+                elif low == high:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -192,7 +204,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
-                if low == high:
+                if y_axis_type == 'datetime':
+                    low = convert_datetime(low)
+                    high = convert_datetime(high)
+                elif low == high:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -205,8 +220,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                           end=yrange.start)
             else:
                 plot_ranges['y_range'] = yrange[::-1]
-        x_axis_type = 'log' if self.logx else 'auto'
-        y_axis_type = 'log' if self.logy else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 

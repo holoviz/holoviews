@@ -76,7 +76,10 @@ class Columns(Element):
             else:
                 drange = (np.NaN, np.NaN)
         if data_range:
-            return util.max_range([drange, dim.soft_range])
+            if dim.soft_range != (None, None):
+                return util.max_range([drange, dim.soft_range])
+            else:
+                return drange
         else:
             return dim.soft_range
 
@@ -263,7 +266,10 @@ class ColumnarData(param.Parameterized):
     @staticmethod
     def range(columns, dimension):
         column = columns.dimension_values(dimension)
-        return (np.nanmin(column), np.nanmax(column))
+        if columns.get_dimension_type(dimension) is np.datetime64:
+            return column.min(), column.max()
+        else:
+            return (np.nanmin(column), np.nanmax(column))
 
 
     @staticmethod
