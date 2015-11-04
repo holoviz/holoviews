@@ -322,10 +322,9 @@ class ColumnarData(param.Parameterized):
                     array = np.array(data)
                 except:
                     array = None
-
             # If ndim > 2 data is assumed to be a mapping
-            if array.ndim > 2 or (isinstance(data[0], tuple) and
-                                  any(isinstance(d, tuple) for d in data[0])):
+            if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])
+                or (array and array.ndim > 2)):
                 pass
             elif array is None or array.dtype.kind in ['S', 'U', 'O']:
                 # Check if data is of non-numeric type
@@ -342,8 +341,11 @@ class ColumnarData(param.Parameterized):
                     else:
                         data = pd.DataFrame(data, columns=columns)
                 else:
+                    if isinstance(data, tuple):
+                        data = zip(*data)
                     ndims = len(kdims)
-                    data = [(row[:ndims], row[ndims:]) for row in zip(data)]
+                    data = [(tuple(row[:ndims]), tuple(row[ndims:]))
+                            for row in data]
             else:
                 data = array
         params.update(kwargs)
