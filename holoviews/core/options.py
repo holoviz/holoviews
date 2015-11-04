@@ -757,7 +757,7 @@ class Store(object):
     corresponding options and to the appropriate classes of the chosen
     backend (e.g for rendering).
 
-    In addition, Storesupports pickle operations that automatically
+    In addition, Store supports pickle operations that automatically
     pickle and unpickle the corresponding options for a HoloViews
     object.
     """
