@@ -528,15 +528,19 @@ class Image(SheetCoordinateSystem, Raster):
         elif dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
             if dim_idx:
-                data_range = (b, t)
+                drange = (b, t)
             else:
-                data_range = (l, r)
+                drange = (l, r)
         elif dim_idx < len(self.vdims) + 2:
             dim_idx -= 2
             data = np.atleast_3d(self.data)[:, :, dim_idx]
-            data_range = (np.nanmin(data), np.nanmax(data))
+            drange = (np.nanmin(data), np.nanmax(data))
         if data_range:
-            return util.max_range([data_range, dim.soft_range])
+            soft_range = [r for r in dim.soft_range if r is not None]
+            if soft_range:
+                return util.max_range([drange, soft_range])
+            else:
+                return drange
         else:
             return dim.soft_range
 

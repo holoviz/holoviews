@@ -76,8 +76,9 @@ class Columns(Element):
             else:
                 drange = (np.NaN, np.NaN)
         if data_range:
-            if dim.soft_range != (None, None):
-                return util.max_range([drange, dim.soft_range])
+            soft_range = [r for r in dim.soft_range if r is not None]
+            if soft_range:
+                return util.max_range([drange, soft_range])
             else:
                 return drange
         else:

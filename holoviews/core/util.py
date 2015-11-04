@@ -261,25 +261,25 @@ def find_minmax(lims, olims):
 
 
 def find_range(values, soft_range=[]):
-   """
-   Safely finds either the numerical min and max of
-   a set of values, falling back to the first and
-   the last value in the sorted list of values.
-   """
-   try:
-      values = np.array(values)
-      values = np.squeeze(values) if len(values.shape) > 1 else values
-      if len(soft_range):
-          values = np.concatenate([values, soft_range])
-      if values.dtype.kind == 'M':
-          return values.min(), values.max()
-      return np.nanmin(values), np.nanmax(values)
-   except:
-      try:
-         values = sorted(values)
-         return (values[0], values[-1])
-      except:
-         return (None, None)
+    """
+    Safely finds either the numerical min and max of
+    a set of values, falling back to the first and
+    the last value in the sorted list of values.
+    """
+    try:
+        values = np.array(values)
+        values = np.squeeze(values) if len(values.shape) > 1 else values
+        if len(soft_range):
+            values = np.concatenate([values, soft_range])
+        if values.dtype.kind == 'M':
+            return values.min(), values.max()
+        return np.nanmin(values), np.nanmax(values)
+    except:
+        try:
+            values = sorted(values)
+            return (values[0], values[-1])
+        except:
+            return (None, None)
 
 
 def max_range(ranges):
