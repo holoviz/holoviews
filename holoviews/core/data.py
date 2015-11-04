@@ -279,7 +279,11 @@ class ColumnarData(param.Parameterized):
         if columns.get_dimension_type(dimension) is np.datetime64:
             return column.min(), column.max()
         else:
-            return (np.nanmin(column), np.nanmax(column))
+            try:
+                return (np.nanmin(column), np.nanmax(column))
+            except TypeError:
+                column.sort()
+                return column[0], column[-1]
 
 
     @staticmethod
