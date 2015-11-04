@@ -361,32 +361,6 @@ class ColumnarData(param.Parameterized):
         return kdims, vdims
 
 
-    @classmethod
-    def as_ndelement(cls, columns, **kwargs):
-        """
-        This method transforms any ViewableElement type into a Table
-        as long as it implements a dimension_values method.
-        """
-        if self.kdims:
-            keys = zip(*[cls.values(columns, dim.name)
-                         for dim in self.kdims])
-        else:
-            keys = [()]*len(values)
-
-        if self.vdims:
-            values = zip(*[cls.values(columns, dim.name)
-                           for dim in self.vdims])
-        else:
-            values = [()]*len(keys)
-
-        data = zip(keys, values)
-        params = dict(kdims=columns.kdims, vdims=columns.vdims, label=columns.label)
-        if not columns.params()['group'].default == columns.group:
-            params['group'] = columns.group
-        el_type = type(columns.element) 
-        return el_type(data, **dict(params, **kwargs))
-
-
     @staticmethod
     def length(columns):
         return len(columns.data)

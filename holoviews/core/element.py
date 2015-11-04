@@ -145,6 +145,34 @@ class Element(ViewableElement, Composable, Overlayable):
         return pd.DataFrame(dim_vals)
 
 
+    def mapping(self, as_table=False, **kwargs):
+        """
+        This method transforms any ViewableElement type into a Table
+        as long as it implements a dimension_values method.
+        """
+        if self.kdims:
+            keys = zip(*[self.dimension_values(dim.name)
+                         for dim in self.kdims])
+        else:
+            keys = [()]*len(values)
+
+        if self.vdims:
+            values = zip(*[self.dimension_values(dim.name)
+                           for dim in self.vdims])
+        else:
+            values = [()]*len(keys)
+
+        data = zip(keys, values)
+        params = dict(kdims=self.kdims, vdims=self.vdims, label=self.label)
+        if not self.params()['group'].default == columns.group:
+            params['group'] = columns.group
+        mapping = NdElement(data, **dict(params, **kwargs))
+        if as_table:
+            from ..element import Table
+            return Table(mapping)
+        return mapping
+
+
     def array(self, as_table=False, dimensions=[]):
         if dimensions:
             dims = [self.get_dimension(d) for d in dimensions]
