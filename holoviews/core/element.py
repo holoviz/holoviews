@@ -289,7 +289,8 @@ class NdElement(NdMapping, Tabular):
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
         kdims = params.get('kdims', self.kdims)
-        if not isinstance(data, NdElement) and 'Index' not in kdims:
+        if (data is not None and not isinstance(data, NdMapping)
+            and 'Index' not in kdims):
             params['kdims'] = ['Index'] + list(kdims)
             data_items = data.items() if isinstance(data, dict) else data
             data = [((i,)+((k,) if np.isscalar(k) else k), v) for i, (k, v) in enumerate(data_items)]
