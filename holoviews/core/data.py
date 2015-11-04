@@ -28,6 +28,11 @@ from . import util
 
 class Columns(Element):
 
+    data_type = param.ObjectSelector(default='mapping', allow_None=True,
+                                     objects=['pandas', 'mapping'],
+                                     doc="""
+        Defines the data type used for storing non-numeric data.""")
+
     def __init__(self, data, **kwargs):
         data, params = ColumnarData._process_data(data, self.params(), **kwargs)
         super(Columns, self).__init__(data, **params)
@@ -299,38 +304,46 @@ class ColumnarData(param.Parameterized):
             data = data.data
         elif isinstance(data, Element):
             dimensions = data.dimensions(label=True)
-            columns = OrderedDict([(dim, data.dimension_values(dim))
-                                   for dim in dimensions])
-            if pd:
-                data = pd.DataFrame(columns)
-            else:
-                data = OrderedDict([(row[:data.ndims], row[data.ndims:])
-                                    for row in zip(*columns.values())])
-        elif util.is_dataframe(data):
+            data = tuple(data.dimension_values(d) for d in data.dimensions(dim))
+
+        if util.is_dataframe(data):
             kdims, vdims = cls._process_df_dims(data, paramobjs, **params)
             params['kdims'] = kdims
             params['vdims'] = vdims
-        elif not isinstance(data, (np.ndarray, dict)):
+        elif not isinstance(data, (NdElement, np.ndarray, dict)):
             if isinstance(data, tuple):
-                data = np.column_stack(data)
-                array = data
+                try:
+                    array = np.column_stack(data)
+                except:
+                    array = None
             else:
-                data = np.array() if data is None else list(data)
-                array = np.array(data)
-            # Check if data is of non-numeric type
-            if array.dtype.kind in ['S', 'U', 'O'] or array.ndim > 2:
-                # If data is in NdElement dictionary format or pandas
-                # is not available convert to OrderedDict
-                if ((not np.isscalar(data[0]) and len(data[0]) == 2 and
-                    any(not np.isscalar(data[0][i]) for i in range(2)))
-                    or not pd):
-                    pass
-                else:
-                    dimensions = (kwargs.get('kdims', ) +
-                                  kwargs.get('vdims', paramobjs['vdims'].default))
+                data = [] if data is None else list(data)
+                try:
+                    array = np.array(data)
+                except:
+                    array = None
+
+            # If ndim > 2 data is assumed to be a mapping
+            if array.ndim > 2 or (isinstance(data[0], tuple) and
+                                  any(isinstance(d, tuple) for d in data[0])):
+                pass
+            elif array is None or array.dtype.kind in ['S', 'U', 'O']:
+                # Check if data is of non-numeric type
+                # Then use defined data type
+                data_type = kwargs.get('data_type', paramobjs['data_type'].default)
+                kdims = kwargs.get('kdims', paramobjs['kdims'].default)
+                vdims = kwargs.get('vdims', paramobjs['vdims'].default)
+                if data_type == 'pandas':
                     columns = [d.name if isinstance(d, Dimension) else d
-                               for d in dimensions]
-                    data = pd.DataFrame(data, columns=columns)
+                               for d in kdims+vdims]
+                    if isinstance(data, tuple):
+                        data = pd.DataFrame.from_items([(c, d) for c, d in
+                                                        zip(columns, data)])
+                    else:
+                        data = pd.DataFrame(data, columns=columns)
+                else:
+                    ndims = len(kdims)
+                    data = [(row[:ndims], row[ndims:]) for row in zip(data)]
             else:
                 data = array
         params.update(kwargs)
