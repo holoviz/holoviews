@@ -36,7 +36,11 @@ class Columns(Element):
     def __init__(self, data, **kwargs):
         data, params = ColumnarData._process_data(data, self.params(), **kwargs)
         super(Columns, self).__init__(data, **params)
-        self.data = self.interface.validate_data(self, self.data)
+        self.data = self._validate_data(self.data)
+
+
+    def _validate_data(self, data):
+        return self.interface.validate_data(self, data)
 
 
     def __setstate__(self, state):
@@ -304,7 +308,7 @@ class ColumnarData(param.Parameterized):
             data = data.data
         elif isinstance(data, Element):
             dimensions = data.dimensions(label=True)
-            data = tuple(data.dimension_values(d) for d in data.dimensions(dim))
+            data = tuple(data.dimension_values(d) for d in data.dimensions())
 
         if util.is_dataframe(data):
             kdims, vdims = cls._process_df_dims(data, paramobjs, **params)
@@ -324,7 +328,7 @@ class ColumnarData(param.Parameterized):
                     array = None
             # If ndim > 2 data is assumed to be a mapping
             if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])
-                or (array and array.ndim > 2)):
+                or (array is not None and array.ndim > 2)):
                 pass
             elif array is None or array.dtype.kind in ['S', 'U', 'O']:
                 # Check if data is of non-numeric type
