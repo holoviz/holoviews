@@ -53,6 +53,7 @@ class Columns(Element):
             self.data = OrderedDict(self.data, kdims=self.kdims,
                                     vdims=self.vdims, group=self.group,
                                     label=self.label)
+            self.interface = ColumnarNdElement
 
 
     def closest(self, coords):
