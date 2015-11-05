@@ -174,8 +174,8 @@ class DFrame(DataFrameView):
         """
 
         # Deprecation warning
-        self.warning("The DFrame conversion interface is deprecated"
-                     "and has been superseded by a real integration"
+        self.warning("The DFrame conversion interface is deprecated "
+                     "and has been superseded by a real integration "
                      "with pandas.")
 
         if not isinstance(kdims, list): kdims = [kdims]
