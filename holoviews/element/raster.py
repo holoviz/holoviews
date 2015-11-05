@@ -5,7 +5,8 @@ import colorsys
 import param
 
 from ..core import util
-from ..core import OrderedDict, Dimension, NdMapping, Element2D, Overlay, Element
+from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
+                    Overlay, Element, Columns)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
@@ -358,33 +359,29 @@ class HeatMap(Raster):
     def _process_data(self, data, params):
         dimensions = {group: params.get(group, getattr(self, group))
                       for group in self._dim_groups[:2]}
-        if isinstance(data, NdMapping):
+        if isinstance(data, Columns):
             if 'kdims' not in params:
                 dimensions['kdims'] = data.kdims
             if 'vdims' not in params:
                 dimensions['vdims'] = data.vdims
         elif isinstance(data, (dict, OrderedDict, type(None))):
-            data = NdMapping(data, **dimensions)
+            data = Columns(data, **dimensions)
         elif isinstance(data, Element):
             data = data.table()
             if not data.ndims == 2:
                 raise TypeError('HeatMap conversion requires 2 key dimensions')
         else:
-            raise TypeError('HeatMap only accepts dict or NdMapping types.')
+            raise TypeError('HeatMap only accepts Columns or dict types.')
 
-        keys = list(data.keys())
-        dim1_keys = NdMapping([(k[0], None) for k in keys],
-                              kdims=[self.kdims[0]]).keys()
-        dim2_keys = NdMapping([(k[1], None) for k in keys],
-                              kdims=[self.kdims[1]]).keys()
-        grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
-                     for i2, d2 in enumerate(dim2_keys)]
+        if len(dimensions['vdims']) > 1:
+            raise ValueError("HeatMap data may only have one value dimension")
 
-        array = np.zeros((len(dim2_keys), len(dim1_keys)))
-        for (i1, d1), (i2, d2) in grid_keys:
-            val = data.get((d1, d2), np.NaN)
-            array[len(dim2_keys)-i2-1, i1] = val[0] if isinstance(val, tuple) else val
-
+        d1keys = data.dimension_values(0, True)
+        d2keys = data.dimension_values(1, True)
+        coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
+        dense_data = data.clone(coords)
+        data = data.concat([data, dense_data]).aggregate(data.kdims, np.nanmean).sort(data.kdims)
+        array = np.flipud(data.dimension_values(2).reshape(len(d1keys), len(d2keys)))
         return data, array, dimensions
 
 
@@ -403,23 +400,24 @@ class HeatMap(Raster):
 
 
     def dense_keys(self):
-        keys = list(self._data.keys())
-        dim1_keys = NdMapping([(k[0], None) for k in keys],
-                              kdims=[self.kdims[0]]).keys()
-        dim2_keys = NdMapping([(k[1], None) for k in keys],
-                              kdims=[self.kdims[1]]).keys()
-        return dim1_keys, dim2_keys
+        d1keys = np.unique(self._data.dimension_values(0))
+        d2keys = np.unique(self._data.dimension_values(1))
+        return zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys])
 
 
-    def dimension_values(self, dim, unique=True):
+    def dimension_values(self, dim, unique=False):
         dim = self.get_dimension(dim).name
         if dim in self.kdims:
-            idx = self.get_dimension_index(dim)
-            return [k[idx] for k in self._data.keys()]
+            if unique:
+                return np.unique(self._data.dimension_values(dim))
+            else:
+                idx = self.get_dimension_index(dim)
+                return self.dense_keys()[idx]
         elif dim in self.vdims:
-            idx = self.vdims.index(dim)
-            return [v[idx] if isinstance(v, tuple) else v
-                    for v in self._data.values()]
+            if unique:
+                return self._data.dimension_values(dim)
+            else:
+                return np.flipud(self.data).flatten()
         else:
             return super(HeatMap, self).dimension_values(dim)
 
