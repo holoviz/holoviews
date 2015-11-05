@@ -148,14 +148,6 @@ class Table(Columns, Tabular):
     format and is convertible to most other Element types.
     """
 
-    kdims = param.List(default=[Dimension(name="Row")], doc="""
-         One or more key dimensions. By default, the special 'Row'
-         dimension ensures that the table is always indexed by the row
-         number.
-
-         If no key dimensions are set, only one entry can be stored
-         using the empty key ().""")
-
     group = param.String(default='Table', constant=True, doc="""
          The group is used to describe the Table.""")
 
@@ -175,13 +167,6 @@ class Table(Columns, Tabular):
             value = value.data.values()
         super(Table, self)._add_item(key, value, sort)
 
-    @property
-    def indexed(self):
-        """
-        Whether this is an indexed table: a table that has a single
-        key dimension called 'Row' corresponds to the row number.
-        """
-        return self.ndims == 1 and self.kdims[0].name == 'Row'
 
     @property
     def to(self):
