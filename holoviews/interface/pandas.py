@@ -88,6 +88,22 @@ class DataFrameView(Columns):
         self.data.columns = self.dimensions('key', True)
 
 
+    def groupby(self, dimensions, container_type=NdMapping):
+        invalid_dims = [d for d in dimensions if d not in self.dimensions()]
+        if invalid_dims:
+            raise Exception('Following dimensions could not be found %s.'
+                            % invalid_dims)
+
+        index_dims = [self.get_dimension(d) for d in dimensions]
+        view_dims = [d for d in self.kdims if d not in dimensions]
+        mapping_data = []
+        for k, v in self.data.groupby([self.get_dimension(d).name for d in dimensions]):
+            data = v.drop(dimensions, axis=1)
+            mapping_data.append((k, self.clone(data, kdims=[self.get_dimension(d)
+                                                            for d in data.columns])))
+        return container_type(mapping_data, kdims=index_dims)
+
+
     def apply(self, name, *args, **kwargs):
         """
         Applies the Pandas dframe method corresponding to the supplied
