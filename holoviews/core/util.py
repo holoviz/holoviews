@@ -611,6 +611,10 @@ def is_dataframe(data):
           (bz is not None and isinstance(data, bz.Data)))
 
 
-def get_param_values(data, new_type):
-    return {k: v for k, v in self.get_param_values(onlychanged=True)
-            if k in new_type.params()}
+def get_param_values(data):
+    params = dict(kdims=data.kdims, vdims=data.vdims,
+                  label=data.label)
+    if data.group != data.params()['group'].default:
+        params['group'] = data.group
+    return params
+

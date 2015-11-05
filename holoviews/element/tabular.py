@@ -197,11 +197,15 @@ class TableConversion(object):
             vdims = self._table.vdims
         if mdims is None:
             mdims = [d for d in self._table.kdims if d not in kdims]
-        elif vdims and not isinstance(vdims, list): vdims = [vdims]
+        if vdims and not isinstance(vdims, list): vdims = [vdims]
+
         selected = self._table.reindex(mdims+kdims, vdims)
-        params = dict({'kdims': [selected.get_dimension(kd) for kd in kdims],
-                       'vdims': [selected.get_dimension(vd) for vd in vdims]},
-                       **kwargs)
+        params = {'kdims': [selected.get_dimension(kd) for kd in kdims],
+                  'vdims': [selected.get_dimension(vd) for vd in vdims],
+                  'label': selected.label}
+        if selected.group != selected.params()['group'].default:
+            params['group'] = selected.group
+        params.update(kwargs)
         if len(kdims) == selected.ndims:
             return new_type(selected, **params)
         return selected.groupby(mdims, container_type=HoloMap, group_type=new_type, **params)

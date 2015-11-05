@@ -283,7 +283,7 @@ class Columns(Element):
                 raise ValueError("%s data contains non-numeric type, "
                                  "could not convert to array based "
                                  "Element" % type(self).__name__)
-            return Table(array, **util.get_param_values(self, Table))
+            return Table(array, **util.get_param_values(self))
         return array
 
 
@@ -694,7 +694,7 @@ class ColumnarArray(ColumnarData):
 
 
     @staticmethod
-    def groupby(columns, dimensions, container_type=HoloMap, group_type=NdMapping, raw=False, **kwargs):
+    def groupby(columns, dimensions, container_type=HoloMap, group_type=None, raw=False, **kwargs):
         data = columns.data
 
         # Get dimension objects, labels, indexes and data
@@ -713,6 +713,9 @@ class ColumnarArray(ColumnarData):
         idx.sort()
         unique_indices = indices[idx]
 
+        params = util.get_param_values(columns)
+        params.update(kwargs)
+
         # Iterate over the unique entries building masks
         # to apply the group selection
         grouped_data = []
@@ -721,7 +724,10 @@ class ColumnarArray(ColumnarData):
                                          for i in range(ndims)])
             group_data = data[mask, ndims:]
             if not raw:
-                group_data = columns.clone(group_data, new_type=group_type, **kwargs)
+                if group_type is None:
+                    group_data = columns.clone(group_data, **params)
+                else:
+                    group_data = group_type(group_data, **params)
             grouped_data.append((tuple(group), group_data))
 
         if raw:
