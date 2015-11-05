@@ -786,12 +786,12 @@ class ColumnarArray(ColumnarData):
         rows = []
         for k, group in cls.groupby(joined_data, kdims, raw=True):
             row = np.zeros(ndims)
-            row[:ndims] = np.array(k)
+            row[:nkdims] = np.array(k)
             if isinstance(function, np.ufunc):
                 collapsed = function.reduce(group)
             else:
                 collapsed = function(group, axis=0, **kwargs)
-            row[nkdims+i] = collapsed
+            row[nkdims:] = collapsed
             rows.append(row)
         return np.array(rows)
 
