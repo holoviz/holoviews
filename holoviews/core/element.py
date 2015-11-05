@@ -138,11 +138,18 @@ class Element(ViewableElement, Composable, Overlayable):
         return Table(self)
 
 
-    def dframe(self):
+    def dframe(self, as_table=False):
         import pandas as pd
         column_names = self.dimensions(label=True)
         dim_vals = OrderedDict([(dim, self[dim]) for dim in column_names])
-        return pd.DataFrame(dim_vals)
+        data = pd.DataFrame(dim_vals)
+        if as_table:
+            from ..element import Table
+            params = dict(kdims=self.kdims, vdims=self.vdims, label=self.label)
+            if not self.params()['group'].default == self.group:
+                params['group'] = self.group
+            return Table(data, **params)
+        return data
 
 
     def mapping(self, as_table=False, **kwargs):
