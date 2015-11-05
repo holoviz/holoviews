@@ -50,10 +50,9 @@ class Columns(Element):
         """
         self.__dict__ = state
         if isinstance(self.data, OrderedDict):
-            self.data = OrderedDict(self.data, kdims=self.kdims,
-                                    vdims=self.vdims, group=self.group,
-                                    label=self.label)
-            self.interface = ColumnarNdElement
+            self.data = NdElement(self.data, kdims=self.kdims,
+                                  vdims=self.vdims, group=self.group,
+                                  label=self.label)
 
 
     def closest(self, coords):
