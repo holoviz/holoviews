@@ -189,7 +189,7 @@ class TableConversion(object):
     def __init__(self, table):
         self._table = table
 
-    def _conversion(self, kdims=None, vdims=None, mdims=None, new_type=None, **kwargs):
+    def _conversion(self, kdims=None, vdims=None, mdims=None, new_type=None, sort=False, **kwargs):
         if kdims is None:
             kdims = self._table.kdims
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
@@ -207,8 +207,13 @@ class TableConversion(object):
             params['group'] = selected.group
         params.update(kwargs)
         if len(kdims) == selected.ndims:
-            return new_type(selected, **params)
-        return selected.groupby(mdims, container_type=HoloMap, group_type=new_type, **params)
+            element = new_type(selected, **params)
+            return element.sort() if sort else element
+        group = selected.groupby(mdims, container_type=HoloMap, group_type=new_type, **params)
+        if sort:
+            return group.map(lambda x: x.sort(), [new_type])
+        else:
+            group
 
     def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Bars
@@ -216,7 +221,7 @@ class TableConversion(object):
 
     def curve(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Curve
-        return self._conversion(kdims, vdims, mdims, Curve, **kwargs)
+        return self._conversion(kdims, vdims, mdims, Curve, sort=True, **kwargs)
 
     def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import HeatMap
