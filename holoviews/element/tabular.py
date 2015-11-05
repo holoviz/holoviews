@@ -250,7 +250,7 @@ class TableConversion(object):
         from .chart3d import Scatter3D
         return self._conversion(kdims, vdims, mdims, Scatter3D, **kwargs)
 
-    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
+    def trisurface(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Trisurface
         return self._conversion(kdims, vdims, mdims, Trisurface, **kwargs)
 
