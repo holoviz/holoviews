@@ -126,11 +126,9 @@ class Scatter3DPlot(Plot3D, PointPlot):
         return self._finalize_axis(key, ranges=ranges)
 
     def update_handles(self, axis, points, key, ranges=None):
-        ndims = points.data.shape[1]
-        xs = points.data[:, 0] if len(points.data) else []
-        ys = points.data[:, 1] if len(points.data) else []
-        zs = points.data[:, 2] if len(points.data) else []
-        cs = points.data[:, self.color_index] if self.color_index < ndims else None
+        ndims = points.shape[1]
+        xs, ys, zs = (points.dimension_values(i) for i in range(3))
+        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
@@ -225,7 +223,7 @@ class TrisurfacePlot(Plot3D):
     def update_handles(self, axis, element, key, ranges=None):
         style_opts = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
-        vrange = ranges[dims[2]]
+        vrange = ranges[dims.pop(2)]
         x, y, z = [element.dimension_values(d) for d in dims]
         artist = axis.plot_trisurf(x, y, z, vmax=vrange[1],
                                    vmin=vrange[0], **style_opts)

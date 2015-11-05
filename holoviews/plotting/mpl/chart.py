@@ -548,7 +548,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
 
-        ndims = points.data.shape[1]
+        ndims = points.shape[1]
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
         cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
