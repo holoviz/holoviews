@@ -401,7 +401,7 @@ class NdElement(NdMapping, Tabular):
 
         if isinstance(subtable, NdElement) and all(np.isscalar(idx) for idx in ndmap_index[1:]):
             if len(subtable) == 1:
-                subtable = subtable.data.values()[0]
+                subtable = list(subtable.data.values())[0]
         if not isinstance(subtable, NdElement):
             if len(self.vdims) > 1:
                 subtable = self.__class__([(args[1:], subtable)], label=self.label,
