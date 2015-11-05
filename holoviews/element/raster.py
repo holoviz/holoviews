@@ -1,3 +1,4 @@
+from operator import itemgetter
 from itertools import product
 import numpy as np
 import colorsys
@@ -94,9 +95,8 @@ class Raster(Element2D):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
-            table_data = OrderedDict()
-            for c in samples:
-                table_data[c] = self._zdata[self._coord2matrix(c)]
+            table_data = [c+(self._zdata[self._coord2matrix(c)],)
+                          for c in samples]
             params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
@@ -135,13 +135,15 @@ class Raster(Element2D):
         """
         reduce_map = self._reduce_map(dimensions, function, reduce_map)
         if len(reduce_map) == self.ndims:
-            return function(self.data)
+            if isinstance(function, np.ufunc):
+                return function.reduce(self.data, axis=None)
+            else:
+                return function(self.data)
         else:
             dimension, reduce_fn = list(reduce_map.items())[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
-            if oidx: x_vals = np.sort(x_vals)
             reduced = reduce_fn(self._zdata, axis=oidx)
             data = zip(x_vals, reduced if not oidx else reduced[::-1])
             params = dict(dict(self.get_param_values(onlychanged=True)),
@@ -483,16 +485,41 @@ class Image(SheetCoordinateSystem, Raster):
             return super(Image, self)._convert_element(data)
 
 
-    def closest(self, coords):
+    def closest(self, coords=[], **kwargs):
         """
-        Given a single coordinate tuple (or list of coordinates)
-        return the coordinate (or coordinatess) needed to address the
-        corresponding Image exactly.
+        Given a single coordinate or multiple coordinates as
+        a tuple or list of tuples or keyword arguments matching
+        the dimension closest will find the closest actual x/y
+        coordinates.
         """
-        if isinstance(coords, tuple):
-            return self.closest_cell_center(*coords)
+        if kwargs and coords:
+            raise ValueError("Specify coordinate using as either a list "
+                             "keyword arguments not both")
+        if kwargs:
+            coords = []
+            getter = []
+            for k, v in kwargs.items():
+                idx = self.get_dimension_index(k)
+                if np.isscalar(v):
+                    coords.append((0, v) if idx else (v, 0))
+                else:
+                    if isinstance(coords, tuple):
+                        coords = [(0, c) if idx else (c, 0) for c in v]
+                    if len(coords) not in [0, len(v)]:
+                        raise ValueError("Length of samples must match")
+                    elif len(coords):
+                        coords = [(t[abs(idx-1)], c) if idx else (c, t[abs(idx-1)])
+                                  for c, t in zip(v, coords)]
+                getter.append(idx)
         else:
-            return [self.closest_cell_center(*el) for el in coords]
+            getter = [0, 1]
+        getter = itemgetter(*sorted(getter))
+        if len(coords) == 1:
+            coords = coords[0]
+        if isinstance(coords, tuple):
+            return getter(self.closest_cell_center(*coords))
+        else:
+            return [getter(self.closest_cell_center(*el)) for el in coords]
 
 
     def __getitem__(self, coords):
