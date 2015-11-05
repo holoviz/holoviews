@@ -244,8 +244,12 @@ class Columns(Element):
     def concat(cls, columns_objs):
         columns = columns_objs[0]
         if len({col.interface for col in columns_objs}) > 1:
-            raise TypeError("Ensure that all Columns share the same "
-                            "data type.")
+            if isinstance(columns.data, NdElement):
+                columns_objs = [co.mapping(as_table=True) for co in columns_objs]
+            elif isinstance(columns.data, np.ndarray):
+                columns_objs = [co.array(as_table=True) for co in columns_objs]
+            elif util.is_dataframe(data[0]):
+                columns_objs = [co.dframe(as_table=True) for co in columns_objs]
         return columns.clone(columns.interface.concat(columns_objs))
 
 
