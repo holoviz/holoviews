@@ -241,6 +241,15 @@ class Columns(Element):
             return ColumnarDataFrame.collapse_data(data, function, kdims, **kwargs)
 
 
+    @classmethod
+    def concat(cls, columns_objs):
+        columns = columns_objs[0]
+        if len({col.interface for col in columns_objs}) > 1:
+            raise TypeError("Ensure that all Columns share the same "
+                            "data type.")
+        return columns.clone(columns.interface.concat(columns_objs))
+
+
     def __len__(self):
         return self.interface.length(self)
 
@@ -411,6 +420,11 @@ class ColumnarNdElement(ColumnarData):
         return columns.data.add_dimension(dimension, dim_pos+1, values)
 
     @staticmethod
+    def concat(columns_objs):
+        return [(k[1:], v) for col in columns_objs
+                for k, v in col.data.data.items()]
+
+    @staticmethod
     def array(columns):
         return columns.data.array(dimensions=columns.dimensions())
 
@@ -463,6 +477,11 @@ class ColumnarDataFrame(ColumnarData):
     def range(columns, dimension):
         column = columns.data[columns.get_dimension(dimension).name]
         return (column.min(), column.max())
+
+
+    @staticmethod
+    def concat(columns_objs):
+        return pd.concat([col.data for col in columns_objs])
 
     
     @staticmethod
@@ -629,6 +648,11 @@ class ColumnarArray(ColumnarData):
     @staticmethod
     def array(columns):
         return columns.data
+
+
+    @staticmethod
+    def concat(columns_objs):
+        return np.concatenate([col.data for col in columns_objs])
 
 
     @staticmethod
