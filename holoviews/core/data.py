@@ -730,6 +730,8 @@ class ColumnarArray(ColumnarData):
         value = selection.pop('value', None)
         for d, slc in selection.items():
             idx = columns.get_dimension_index(d)
+            if isinstance(slc, tuple):
+                slc = slice(*slc)
             if isinstance(slc, slice):
                 if slc.start is not None:
                     mask &= slc.start <= data[:, idx]
