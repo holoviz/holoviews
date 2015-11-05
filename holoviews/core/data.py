@@ -471,7 +471,7 @@ class ColumnarNdElement(ColumnarData):
 
     @staticmethod
     def reduce(columns, reduce_dims, function):
-        return columns.data.reduce(columns, reduce_dims, function)
+        return columns.data.reduce(columns.data, reduce_dims, function)
 
     @classmethod
     def aggregate(cls, columns, dimensions, function):

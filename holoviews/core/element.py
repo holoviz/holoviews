@@ -7,7 +7,7 @@ import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .layout import Composable, Layout, AdjointLayout, NdLayout
-from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check
+from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check, sorted_context
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
@@ -452,7 +452,7 @@ class NdElement(NdMapping, Tabular):
         method.
         """
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
-        if len(kdims):
+        if len(kdims) > 1:
             reindexed = columns.reindex(kdims)
             reduced = reindexed.collapse_data([reindexed], function, kdims)
         else:
@@ -491,14 +491,23 @@ class NdElement(NdMapping, Tabular):
             joined_data = joined_data.clone(concatenated, kdims=joined_data.kdims)
 
         collapsed = []
-        grouped = joined_data.groupby([d.name for d in kdims], container_type=NdMapping)
-        for i, (k, group) in enumerate(grouped.data.items()):
+        vdims = joined_data.dimensions('value', True)
+        if len(joined_data.kdims) > len(kdims):
+            group_dims = (kdims[1:] if len(kdims) == 2 else kdims)
+            with sorted_context(False):
+                grouped = joined_data.groupby([d.name for d in group_dims],
+                                              container_type=NdMapping).data.items()
+        else:
+            grouped = [(k[1:], {d: [v] for d, v in zip(vdims, v)})
+                        for k, v in joined_data.data.items()]
+
+        for i, (k, group) in enumerate(grouped):
             if isinstance(function, np.ufunc):
-                reduced = tuple(function.reduce(group[vdim.name]) for vdim in group.vdims)
+                reduced = tuple(function.reduce(group[vdim]) for vdim in vdims)
             else:
-                reduced = tuple(function(group[vdim.name], **kwargs) for vdim in group.vdims)
+                reduced = tuple(function(group[vdim], **kwargs) for vdim in vdims)
             collapsed.append(((i,)+k, reduced))
-        return joined_data.clone(collapsed, kdims=['Index']+kdims)
+        return joined_data.clone(collapsed, kdims=kdims)
 
 
     def aggregate(self, dimensions, function):
