@@ -399,6 +399,9 @@ class NdElement(NdMapping, Tabular):
         ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
         subtable = NdMapping.__getitem__(self, ndmap_index)
 
+        if isinstance(subtable, NdElement) and all(np.isscalar(idx) for idx in ndmap_index[1:]):
+            if len(subtable) == 1:
+                subtable = subtable.data.values()[0]
         if not isinstance(subtable, NdElement):
             if len(self.vdims) > 1:
                 subtable = self.__class__([(args, subtable)], label=self.label,
@@ -427,11 +430,17 @@ class NdElement(NdMapping, Tabular):
         """
         Allows sampling of the Table with a list of samples.
         """
-        sample_data = OrderedDict()
+        sample_data = []
+        offset = 0
         for i, sample in enumerate(samples):
             sample = (sample,) if np.isscalar(sample) else sample
             value = self[(slice(None),)+sample]
-            sample_data[(i,)+sample] = value.data.values()[0]
+            if isinstance(value, NdElement):
+                for idx, (k, v) in enumerate(value.data.items()):
+                    sample_data.append(((i+offset+idx,)+k, v))
+                offset += idx
+            else:
+                sample_data.append(((i+offset,)+sample, (value,)))
         return self.clone(sample_data)
 
 

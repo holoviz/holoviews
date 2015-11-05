@@ -258,9 +258,13 @@ class Columns(Element):
         return self.interface.shape(self)
 
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, unique=False):
         dim = self.get_dimension(dim).name
-        return self.interface.values(self, dim)
+        dim_vals = self.interface.values(self, dim)
+        if unique:
+            return np.unique(dim_vals)
+        else:
+            return dim_vals
 
 
     def dframe(self, as_table=False):
@@ -327,8 +331,10 @@ class ColumnarData(param.Parameterized):
             kdims, vdims = cls._process_df_dims(data, paramobjs, **params)
             params['kdims'] = kdims
             params['vdims'] = vdims
-        elif not isinstance(data, (NdElement, np.ndarray, dict)):
-            if isinstance(data, tuple):
+        elif not isinstance(data, (NdElement, dict)):
+            if isinstance(data, np.ndarray):
+                array = data
+            elif isinstance(data, tuple):
                 try:
                     array = np.column_stack(data)
                 except:
@@ -697,7 +703,7 @@ class ColumnarArray(ColumnarData):
         # Find unique entries along supplied dimensions
         # by creating a view that treats the selected
         # groupby keys as a single object.
-        indices = data[:, dim_idxs]
+        indices = data[:, dim_idxs].copy()
         view = indices.view(np.dtype((np.void, indices.dtype.itemsize * indices.shape[1])))
         _, idx = np.unique(view, return_index=True)
         idx.sort()
@@ -707,7 +713,7 @@ class ColumnarArray(ColumnarData):
         # to apply the group selection
         grouped_data = []
         for group in unique_indices:
-            mask = np.logical_or.reduce([data[:, i] == group[i]
+            mask = np.logical_and.reduce([data[:, i] == group[i]
                                          for i in range(ndims)])
             group_data = data[mask, ndims:]
             if not raw:
