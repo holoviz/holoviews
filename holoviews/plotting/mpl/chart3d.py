@@ -223,7 +223,7 @@ class TrisurfacePlot(Plot3D):
     def update_handles(self, axis, element, key, ranges=None):
         style_opts = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
-        vrange = ranges[dims.pop(2)]
+        vrange = ranges[dims[2]]
         x, y, z = [element.dimension_values(d) for d in dims]
         artist = axis.plot_trisurf(x, y, z, vmax=vrange[1],
                                    vmin=vrange[0], **style_opts)
