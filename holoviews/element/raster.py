@@ -382,7 +382,7 @@ class HeatMap(Raster):
         dense_data = data.clone(coords)
         data = data.concat([data, dense_data]).aggregate(data.kdims, np.nanmean).sort(data.kdims)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
-        return data, np.fliplr(array), dimensions
+        return data, np.flipud(array.T), dimensions
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
@@ -417,7 +417,7 @@ class HeatMap(Raster):
             if unique:
                 return self._data.dimension_values(dim)
             else:
-                return np.fliplr(self.data).flatten()
+                return np.flipud(self.data.T).flatten()
         else:
             return super(HeatMap, self).dimension_values(dim)
 
