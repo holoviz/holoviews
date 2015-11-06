@@ -1,4 +1,5 @@
-from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
+from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
+                     GridSpace, NdElement, Columns)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
@@ -50,6 +51,8 @@ Store.register({Overlay: OverlayPlot,
                 Table: TablePlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot,
+                NdElement: TablePlot,
+                Columns: TablePlot,
                 Surface: PlotSelector(lambda x: 'bokeh',
                                       [('mpl', SurfacePlot),
                                        ('bokeh', BokehMPLRawWrapper)], True),
