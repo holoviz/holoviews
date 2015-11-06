@@ -581,7 +581,7 @@ class Image(SheetCoordinateSystem, Raster):
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
-            dim2, dim1 = self.data.shape
+            dim2, dim1 = self.data.shape[:2]
             d1_half_unit = (r - l)/dim1/2.
             d2_half_unit = (t - b)/dim2/2.
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
