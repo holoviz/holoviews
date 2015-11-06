@@ -167,6 +167,10 @@ class Columns(Element):
         Scatter object.
         """
         if slices is (): return self
+        if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
+            if not len(slices) == len(self):
+                raise IndexError("Boolean index must match length of sliced object")
+            return self.clone(self.data[slices])
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
         if len(slices) == 1 and slices[0] in self.dimensions():

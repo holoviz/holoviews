@@ -402,6 +402,8 @@ class NdElement(NdMapping, Tabular):
         """
         if args in self.dimensions():
             return self.dimension_values(args)
+        if isinstance(args, np.ndarray) and args.dtype.kind == 'b':
+            return NdMapping.__getitem__(self, args)
         if not isinstance(args, tuple): args = (args,)
         ndmap_index = args[:self.ndims]
         val_index = args[self.ndims:]
