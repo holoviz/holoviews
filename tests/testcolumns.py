@@ -143,7 +143,8 @@ class ColumnsNdElementTest(ComparisonTestCase):
     def test_columns_2d_reduce(self):
         columns = Columns(zip(zip(self.xs, self.ys), self.zs),
                           kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891001)
+        self.assertEqual(np.array(columns.reduce(['x', 'y'], np.mean)),
+                         np.array(0.12828985192891))
 
     def test_columns_2d_partial_reduce(self):
         columns = Columns(zip(zip(self.xs, self.ys), self.zs),
@@ -267,7 +268,8 @@ class ColumnsNdArrayTest(ComparisonTestCase):
 
     def test_columns_2d_reduce(self):
         columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891001)
+        self.assertEqual(np.array(columns.reduce(['x', 'y'], np.mean)),
+                         np.array(0.12828985192891))
 
     def test_columns_2d_partial_reduce(self):
         columns = Columns((self.xs, self.ys, self.zs), kdims=['x', 'y'], vdims=['z'])
@@ -412,7 +414,8 @@ class ColumnsDFrameTest(ComparisonTestCase):
     def test_columns_2d_reduce(self):
         columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),
                           kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(columns.reduce(['x', 'y'], np.mean), 0.12828985192891001)
+        self.assertEqual(np.array(columns.reduce(['x', 'y'], np.mean)),
+                         np.array(0.12828985192891))
 
     def test_columns_2d_partial_reduce(self):
         columns = Columns(pd.DataFrame({'x': self.xs, 'y': self.ys, 'z': self.zs}),
