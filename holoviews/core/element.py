@@ -507,10 +507,10 @@ class NdElement(NdMapping, Tabular):
 
         collapsed = []
         vdims = joined_data.dimensions('value', True)
+        group_dims = kdims[1:] if 'Index' in kdims else kdims
         with sorted_context(False):
-            grouped = joined_data.groupby([d.name for d in kdims[1:]],
+            grouped = joined_data.groupby([d.name for d in group_dims],
                                           container_type=NdMapping).data.items()
-
         for i, (k, group) in enumerate(grouped):
             if isinstance(function, np.ufunc):
                 reduced = tuple(function.reduce(group[vdim]) for vdim in vdims)
