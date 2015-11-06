@@ -508,9 +508,10 @@ class ColumnarDataFrame(ColumnarData):
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
 
-        element_kwargs = dict(kdims=element_dims, new_type=group_type)
+        element_kwargs = dict(util.get_param_values(columns),
+                              kdims=element_dims)
         element_kwargs.update(kwargs)
-        map_data = [(k, columns.clone(v, **element_kwargs)) for k, v in
+        map_data = [(k, group_type(v, **element_kwargs)) for k, v in
                     columns.data.groupby(dimensions)]
         with item_check(False), sorted_context(False):
             return container_type(map_data, kdims=index_dims)
