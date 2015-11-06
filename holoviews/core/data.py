@@ -3,6 +3,7 @@ The data module provides utility classes to interface with various
 data backends.
 """
 
+from distutils.version import LooseVersion
 from collections import defaultdict, Iterable
 from itertools import groupby
 
@@ -550,10 +551,15 @@ class ColumnarDataFrame(ColumnarData):
 
     @staticmethod
     def sort(columns, by=[]):
+        import pandas as pd
         if not isinstance(by, list): by = [by]
         if not by: by = range(columns.ndims)
         cols = [columns.get_dimension(d).name for d in by]
-        return columns.data.sort_values(cols)
+
+        if (not isinstance(columns.data, pd.DataFrame) or
+            LooseVersion(pd.__version__) < '0.17.0'):
+            return columns.data.sort(columns=cols)
+        return columns.data.sort_values(by=cols)
 
 
     @staticmethod
