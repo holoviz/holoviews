@@ -277,7 +277,8 @@ class HoloMap(UniformNdMapping):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = self.clone(shared_data=False)
+        histmaps = [self.clone(shared_data=False)
+                    for d in kwargs.get('dimension', range(1))]
 
         if individually:
             map_range = None
@@ -290,16 +291,27 @@ class HoloMap(UniformNdMapping):
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
             kwargs['index'] = 0
         for k, v in self.data.items():
-            histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
-                                individually=individually, num_bins=num_bins,
-                                style_prefix=style_prefix, **kwargs)
+            hists = v.hist(adjoin=False, bin_range=bin_range,
+                           individually=individually, num_bins=num_bins,
+                           style_prefix=style_prefix, **kwargs)
+            if isinstance(hists, Layout):
+                for i, hist in enumerate(hists):
+                    histmaps[i][k] = hist
+            else:
+                histmap[k] = hists
 
-        if adjoin and issubclass(self.type, (NdOverlay, Overlay)):
-            layout = (self << histmap)
-            layout.main_layer = kwargs['index']
+        if adjoin:
+            layout = self
+            for hist in histmaps:
+                layout = (layout << hist)
+            if issubclass(self.type, (NdOverlay, Overlay)):
+                layout.main_layer = kwargs['index']
             return layout
-
-        return (self << histmap) if adjoin else histmap
+        else:
+            if len(histmaps) > 1:
+                return Layout.from_values(histmaps)
+            else:
+                return histmaps[0]
 
 
 
