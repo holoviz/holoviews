@@ -145,10 +145,7 @@ class Element(ViewableElement, Composable, Overlayable):
         data = pd.DataFrame(dim_vals)
         if as_table:
             from ..element import Table
-            params = dict(kdims=self.kdims, vdims=self.vdims, label=self.label)
-            if not self.params()['group'].default == self.group:
-                params['group'] = self.group
-            return Table(data, **params)
+            return Table(data, **get_param_values(self))
         return data
 
 
@@ -199,7 +196,7 @@ class Element(ViewableElement, Composable, Overlayable):
                 raise ValueError("%s data contains non-numeric type, "
                                  "could not convert to array based "
                                  "Element" % type(self).__name__)
-            return Table(array, **get_param_values(self, Table))
+            return Table(array, **get_param_values(self))
         else:
             return array
 
@@ -564,7 +561,7 @@ class NdElement(NdMapping, Tabular):
         df = pandas.DataFrame((k+v for (k, v) in self.data.items()), columns=columns)
         if as_table:
             from ..element import Table
-            return Table(df, **get_param_values(self, Table))
+            return Table(df, **get_param_values(self))
         return df
 
 
