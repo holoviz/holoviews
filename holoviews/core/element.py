@@ -319,7 +319,7 @@ class NdElement(NdMapping, Tabular):
             if kdims is None:
                 return super(NdElement, self).reindex(force=force)
             else:
-                vdims = self.vdims
+                vdims = [d for d in self.vdims if d not in kdims]
         elif kdims is None:
             kdims = [d for d in self.dimensions if d not in vdims]
         if 'Index' not in kdims: kdims = ['Index'] + kdims
@@ -333,10 +333,16 @@ class NdElement(NdMapping, Tabular):
         getter = operator.itemgetter(0)
         items = []
         for k, v in self.data.items():
-            _, key = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
-                                  for i, iskey, idx in kidxs), key=getter))
-            _, val = zip(*sorted(((i, v[idx] if iskey else v[idx-self.ndims])
-                                  for i, iskey, idx in vidxs), key=getter))
+            if key_dims:
+                _, key = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
+                                      for i, iskey, idx in kidxs), key=getter))
+            else:
+                key = ()
+            if val_dims:
+                _, val = zip(*sorted(((i, k[idx] if iskey else v[idx-self.ndims])
+                                      for i, iskey, idx in vidxs), key=getter))
+            else:
+                val = ()
             items.append((key, val))
         reindexed = self.clone(items, kdims=key_dims, vdims=val_dims)
         if not force and len(reindexed) != len(items):
@@ -396,8 +402,18 @@ class NdElement(NdMapping, Tabular):
         """
         if args in self.dimensions():
             return self.dimension_values(args)
-        ndmap_index = args[:self.ndims] if isinstance(args, tuple) else args
-        subtable = NdMapping.__getitem__(self, ndmap_index)
+        if not isinstance(args, tuple): args = (args,)
+        ndmap_index = args[:self.ndims]
+        val_index = args[self.ndims:]
+        if val_index:
+            if len(val_index) == 1 and val_index[0] in self.vdims:
+                val_index = val_index[0]
+            else:
+                reindexed = self.reindex(self.kdims+list(self.vdims))
+                subtable = reindexed[args]
+
+        if not val_index or not isinstance(val_index, tuple):
+            subtable = NdMapping.__getitem__(self, ndmap_index)
 
         if isinstance(subtable, NdElement) and all(np.isscalar(idx) for idx in ndmap_index[1:]):
             if len(subtable) == 1:
@@ -407,15 +423,14 @@ class NdElement(NdMapping, Tabular):
                 subtable = self.__class__([(args[1:], subtable)], label=self.label,
                                           kdims=self.kdims[1:], vdims=self.vdims)
             else:
+                if np.isscalar(subtable):
+                    return subtable
                 return subtable[0]
 
-        # If subtable is not a slice return as reduced type
-        if not isinstance(args, tuple): args = (args,)
-        shallow = len(args) <= self.ndims
-        if shallow:
+        if val_index and not isinstance(val_index, tuple):
+            return self._filter_data(subtable, args[-1])
+        else:
             return subtable
-
-        return self._filter_data(subtable, args[-1])
 
 
     def sort(self, by=[]):
@@ -453,8 +468,8 @@ class NdElement(NdMapping, Tabular):
         """
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
         if len(kdims) > 1:
-            reindexed = columns.reindex(kdims)
-            reduced = reindexed.collapse_data([reindexed], function, kdims)
+            reduced = columns.collapse_data([columns], function, kdims)
+            reindexed = reduced.reindex(kdims)
         else:
             reduced = []
             for vdim in columns.vdims:
@@ -492,14 +507,9 @@ class NdElement(NdMapping, Tabular):
 
         collapsed = []
         vdims = joined_data.dimensions('value', True)
-        if len(joined_data.kdims) > len(kdims):
-            group_dims = (kdims[1:] if len(kdims) == 2 else kdims)
-            with sorted_context(False):
-                grouped = joined_data.groupby([d.name for d in group_dims],
-                                              container_type=NdMapping).data.items()
-        else:
-            grouped = [(k[1:], {d: [v] for d, v in zip(vdims, v)})
-                        for k, v in joined_data.data.items()]
+        with sorted_context(False):
+            grouped = joined_data.groupby([d.name for d in kdims[1:]],
+                                          container_type=NdMapping).data.items()
 
         for i, (k, group) in enumerate(grouped):
             if isinstance(function, np.ufunc):

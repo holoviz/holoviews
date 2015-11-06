@@ -287,7 +287,8 @@ class MultiDimensionalMapping(Dimensioned):
                                   for key in self.data.keys())
         with item_check(False):
             selects = group_select(list(selects))
-            groups = [(k, group_type(v.reindex(inames), **kwargs))
+            groups = [(k, group_type((v.reindex(inames) if isinstance(v, NdMapping)
+                                      else [((), (v,))]), **kwargs))
                       for k, v in iterative_select(self, dimensions, selects)]
             return container_type(groups, kdims=dims)
 
@@ -575,7 +576,7 @@ class NdMapping(MultiDimensionalMapping):
             sliced_items = []
             for k, v in items:
                 val_slice = self._dataslice(v, data_slice)
-                if val_slice:
+                if val_slice or isinstance(val_slice, tuple):
                     sliced_items.append((k, val_slice))
             if len(sliced_items) == 0:
                 raise KeyError('No items within specified slice.')
