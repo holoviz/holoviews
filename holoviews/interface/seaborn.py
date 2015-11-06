@@ -67,10 +67,6 @@ class TimeSeries(Element2D):
         raise NotImplementedError('Reduction of TimeSeries not '
                                   'implemented.')
 
-    @property
-    def ylabel(self):
-        return str(self.vdims[0])
-
 
 
 class Bivariate(Chart):
@@ -102,13 +98,6 @@ class Distribution(Chart):
     group = param.String(default='Distribution', constant=True)
 
     vdims = param.List(default=[Dimension('Frequency')])
-
-    def _validate_data(self, data):
-        data = np.expand_dims(data, 1) if data.ndim == 1 else data
-        if not data.shape[1] == 1:
-            raise ValueError("Distribution only support single dimensional arrays.")
-        return data
-
 
     def range(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
@@ -201,20 +190,6 @@ class DFrame(PandasDFrame):
         return TimeSeries(curve_map.overlay(kdims[1]),
                           kdims=[self.get_dimension(dim) for dim in kdims],
                           **kwargs)
-
-    @property
-    def ylabel(self):
-        return self.x2 if self.x2 else self.y
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        elif self.x2 or self.y:
-            ydata = self.data[self.x2 if self.x2 else self.y]
-            return min(ydata), max(ydata)
-        else:
-            return None
 
 
 __all__ = ['DFrame', 'Bivariate', 'Distribution',
