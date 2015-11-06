@@ -18,7 +18,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     def get_data(self, element, ranges=None):
         dims = element.dimensions()
-        return ({d.name: element[d] for d in dims},
+        return ({d.name: element.dimension_values(d) for d in dims},
                 {d.name: d.name for d in dims})
 
 
