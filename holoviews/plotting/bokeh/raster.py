@@ -51,9 +51,10 @@ class RasterPlot(ElementPlot):
 
     def _update_glyph(self, glyph, properties, mapping):
         allowed_properties = glyph.properties()
-        cmap = properties.pop('color_mapper')
-        glyph.color_mapper.low = cmap.low
-        glyph.color_mapper.high = cmap.high
+        cmap = properties.pop('color_mapper', None)
+        if cmap:
+            glyph.color_mapper.low = cmap.low
+            glyph.color_mapper.high = cmap.high
         merged = dict(properties, **mapping)
         glyph.set(**{k: v for k, v in merged.items()
                      if k in allowed_properties})
