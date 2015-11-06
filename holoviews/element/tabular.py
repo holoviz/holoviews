@@ -62,7 +62,7 @@ class ItemTable(Element):
             return self
         if heading not in self.vdims:
             raise IndexError("%r not in available headings." % heading)
-        return self.data.get(heading, np.NaN)
+        return np.array(self.data.get(heading, np.NaN))
 
 
     @classmethod
@@ -74,7 +74,7 @@ class ItemTable(Element):
     def dimension_values(self, dimension):
         dimension = self.get_dimension(dimension).name
         if dimension in self.dimensions('value', label=True):
-            return [self.data.get(dimension, np.NaN)]
+            return np.array([self.data.get(dimension, np.NaN)])
         else:
             return super(ItemTable, self).dimension_values(dimension)
 
