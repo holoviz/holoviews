@@ -219,9 +219,27 @@ class TableConversion(object):
         from .chart import Bars
         return self._conversion(kdims, vdims, mdims, Bars, **kwargs)
 
+    def bivariate(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from ..interface.seaborn import Bivariate
+        return self._convert(kdims, vdims, mdims, Bivariate, **kwargs)
+
     def curve(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Curve
         return self._conversion(kdims, vdims, mdims, Curve, sort=True, **kwargs)
+
+    def distribution(self, dim, mdims=[], **kwargs):
+        from ..interface.seaborn import Distribution
+        if mdims:
+            reindexed = self._table.reindex(mdims+[dim])
+            return reindexed.groupby(mdims, HoloMap, Distribution, **kwargs)
+        else:
+            table = self._table
+            params = dict(kdims=[table.get_dimension(dim)],
+                          label=table.label)
+            if table.group != table.params()['group'].default:
+                params['group'] = table.group
+            return Distribution((table.dimension_values(dim),),
+                                **dict(params, **kwargs))
 
     def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import HeatMap
@@ -247,6 +265,9 @@ class TableConversion(object):
         from .raster import Raster
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
+
+    def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        return self._convert(kdims, vdims, mdims, Regression, **kwargs)
 
     def surface(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Surface
