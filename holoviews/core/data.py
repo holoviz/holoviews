@@ -28,6 +28,29 @@ from . import util
 
 
 class Columns(Element):
+    """
+    Columns provides a general baseclass for column based
+    Element types. Through the use of utility class interfaces
+    data may be supplied and stored in a range of formats.
+
+    Data is assumed to be in a columnar data format with N
+    observations and at least D columns, where D is the number
+    of dimensions. Data supplied in one of the native formats
+    will be retained. Alternatively the columns maybe supplied
+    as a tuple or the rows as a list of tuples. If the data is
+    purely numeric the data will automatically be converted to
+    a numpy array, otherwise it will fall back to the specified
+    data_type.
+
+    Currently either an NdElement or a pandas DataFrame are
+    supported as storage formats for heterogeneous data. An
+    NdElement is a HoloViews wrapper around dictionary objects,
+    which maps between the key dimensions and the value dimensions.
+
+    The Columns class also provides various methods to transform
+    the data in various ways and allows indexing and selecting
+    along all dimensions.
+    """
 
     data_type = param.ObjectSelector(default='mapping', allow_None=True,
                                      objects=['pandas', 'mapping'],
@@ -58,8 +81,9 @@ class Columns(Element):
 
     def closest(self, coords):
         """
-        Given single or multiple x-values, returns the list
-        of closest actual samples.
+        Given single or multiple samples along the first
+        key dimension will return the closest actual sample
+        coordinates.
         """
         if self.ndims > 1:
             NotImplementedError("Closest method currently only "
@@ -72,12 +96,21 @@ class Columns(Element):
 
 
     def sort(self, by=[]):
+        """
+        Sorts the data by the values along the supplied
+        dimensions.
+        """
         if not by: by = self.kdims
         sorted_columns = self.interface.sort(self, by)
         return self.clone(sorted_columns)
 
 
     def range(self, dim, data_range=True):
+        """
+        Computes the range of values along a supplied
+        dimension, taking into account the range and
+        soft_range defined on the Dimension object.
+        """
         dim = self.get_dimension(dim)
         if dim.range != (None, None):
             return dim.range
@@ -117,6 +150,16 @@ class Columns(Element):
 
 
     def select(self, selection_specs=None, **selection):
+        """
+        Allows selecting data by the slices, sets and scalar
+        values along a particular dimension. The indices
+        should be supplied as keywords mapping between
+        the selected dimension and value. Additionally
+        selection_specs (taking the form of a list of
+        type.group.label strings, types or functions) may
+        be supplied, which will ensure the selection is
+        only applied if the specs match the selected object.
+        """
         if selection_specs and not self.matches(selection_specs):
             return self
 
@@ -129,6 +172,10 @@ class Columns(Element):
 
     @property
     def interface(self):
+        """
+        Property that return the interface class to apply
+        operations on the data.
+        """
         if util.is_dataframe(self.data):
             return ColumnarDataFrame
         elif isinstance(self.data, np.ndarray):
@@ -162,9 +209,19 @@ class Columns(Element):
 
     def __getitem__(self, slices):
         """
-        Implements slicing or indexing of the data by the data x-value.
-        If a single element is indexed reduces the Element2D to a single
-        Scatter object.
+        Allows slicing and selecting values in the Columns object.
+        Supports multiple indexing modes:
+
+           (1) Slicing and indexing along the values of each
+               dimension in the columns object using either
+               scalars, slices or sets of values.
+           (2) Supplying the name of a dimension as the first
+               argument will return the values along that
+               dimension as a numpy array.
+           (3) Slicing of all key dimensions and selecting
+               a single value dimension by name.
+           (4) A boolean array index matching the length of
+               the Columns object.
         """
         if slices is (): return self
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
@@ -193,15 +250,18 @@ class Columns(Element):
     def sample(self, samples=[]):
         """
         Allows sampling of Columns as an iterator of coordinates
-        matching the key dimensions.
+        matching the key dimensions, returning a new object
+        containing just the selected samples.
         """
         return self.clone(self.interface.sample(self, samples))
 
 
     def reduce(self, dimensions=[], function=None, **reduce_map):
         """
-        Allows collapsing of Columns objects using the supplied map of
-        dimensions and reduce functions.
+        Allows reducing the values along one or more key dimension
+        with the supplied function. The dimensions may be supplied
+        as a list and a function to apply or a mapping between the
+        dimensions and functions to apply along each dimension.
         """
         reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
         reduced = self
@@ -217,7 +277,8 @@ class Columns(Element):
 
     def aggregate(self, dimensions=[], function=None):
         """
-        Groups over the supplied dimensions and aggregates.
+        Aggregates over the supplied key dimensions with the
+        defined function.
         """
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not dimensions: dimensions = self.kdims
@@ -241,6 +302,11 @@ class Columns(Element):
 
     @classmethod
     def collapse_data(cls, data, function=None, kdims=None, **kwargs):
+        """
+        Class method utility function to concatenate the supplied data
+        and apply a groupby operation along the supplied key dimensions
+        then aggregates across the groups with the supplied function.
+        """
         if isinstance(data[0], NdElement):
             return data[0].collapse_data(data, function, kdims, **kwargs)
         elif isinstance(data[0], np.ndarray):
@@ -251,6 +317,11 @@ class Columns(Element):
 
     @classmethod
     def concat(cls, columns_objs):
+        """
+        Concatenates a list of Columns objects. If data types
+        don't match all types will be converted to that of
+        the first object before concatenation.
+        """
         columns = columns_objs[0]
         if len({col.interface for col in columns_objs}) > 1:
             if isinstance(columns.data, NdElement):
@@ -263,15 +334,24 @@ class Columns(Element):
 
 
     def __len__(self):
+        """
+        Returns the number of rows in the Columns object.
+        """
         return self.interface.length(self)
 
 
     @property
     def shape(self):
+        """Returns the shape of the data."""
         return self.interface.shape(self)
 
 
     def dimension_values(self, dim, unique=False):
+        """
+        Returns the values along a particular
+        dimension. If unique values are requested
+        will return only unique values.
+        """
         dim = self.get_dimension(dim).name
         dim_vals = self.interface.values(self, dim)
         if unique:
@@ -281,10 +361,22 @@ class Columns(Element):
 
 
     def dframe(self, as_table=False):
+        """
+        Returns the data in the form of a DataFrame,
+        if as_table is requested the data will be
+        wrapped in a Table object.
+        """
         return self.interface.dframe(self, as_table)
 
 
     def array(self, as_table=False):
+        """
+        Returns the data in the form of an array,
+        if as_table is requested the data will be
+        wrapped in a Table object (note if the data
+        has heterogeneous types this will raise an
+        error.
+        """
         array = self.interface.array(self)
         if as_table:
             from ..element import Table
@@ -573,11 +665,6 @@ class ColumnarDataFrame(ColumnarData):
 
     @staticmethod
     def select(columns, selection_specs=None, **select):
-        """
-        Allows slice and select individual values along the DataFrameView
-        dimensions. Supply the dimensions and values or slices as
-        keyword arguments.
-        """
         df = columns.data
         selected_kdims = []
         mask = True
@@ -614,9 +701,6 @@ class ColumnarDataFrame(ColumnarData):
 
     @staticmethod
     def aggregate(columns, dimensions, function):
-        """
-        Allows aggregating.
-        """
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', True)
@@ -626,9 +710,6 @@ class ColumnarDataFrame(ColumnarData):
 
     @classmethod
     def sample(cls, columns, samples=[]):
-        """
-        Sample the Element data with a list of samples.
-        """
         data = columns.data
         mask = np.zeros(cls.length(columns), dtype=bool)
         for sample in samples:
@@ -788,10 +869,6 @@ class ColumnarArray(ColumnarData):
 
     @classmethod
     def collapse_data(cls, data, function, kdims=None, **kwargs):
-        """
-        Applies a groupby operation along the supplied key dimensions
-        then aggregates across the groups with the supplied function.
-        """
         ndims = data[0].shape[1]
         nkdims = len(kdims)
         data = data[0] if len(data) == 0 else np.concatenate(data)
@@ -813,9 +890,6 @@ class ColumnarArray(ColumnarData):
 
     @staticmethod
     def sample(columns, samples=[]):
-        """
-        Sample the Element data with a list of samples.
-        """
         data = columns.data
         mask = False
         for sample in samples:
@@ -827,11 +901,6 @@ class ColumnarArray(ColumnarData):
 
     @staticmethod
     def reduce(columns, reduce_dims, function):
-        """
-        This implementation allows reducing dimensions by aggregating
-        over all the remaining key dimensions using the collapse_data
-        method.
-        """
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
         if len(kdims):
             reindexed = columns.reindex(kdims)
@@ -852,9 +921,6 @@ class ColumnarArray(ColumnarData):
 
     @classmethod
     def aggregate(cls, columns, dimensions, function):
-        """
-        Allows aggregating.
-        """
         if not isinstance(dimensions, Iterable): dimensions = [dimensions]
         rows = []
         reindexed = columns.reindex(dimensions)
