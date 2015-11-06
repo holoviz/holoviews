@@ -167,10 +167,7 @@ class Element(ViewableElement, Composable, Overlayable):
             values = [()]*len(keys)
 
         data = zip(keys, values)
-        params = dict(kdims=self.kdims, vdims=self.vdims, label=self.label)
-        if not self.params()['group'].default == self.group:
-            params['group'] = self.group
-        mapping = NdElement(data, **dict(params, **kwargs))
+        mapping = NdElement(data, **dict(get_param_values(self), **kwargs))
         if as_table:
             from ..element import Table
             return Table(mapping)
