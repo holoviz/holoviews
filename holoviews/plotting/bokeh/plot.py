@@ -103,8 +103,12 @@ class BokehPlot(DimensionedPlot):
                 new_source = ColumnDataSource(source_data)
                 for _, plot in group:
                     renderer = plot.handles['glyph_renderer']
-                    renderer.update(data_source=new_source)
+                    if 'data_source' in renderer.properties():
+                        renderer.update(data_source=new_source)
+                    else:
+                        renderer.update(source=new_source)
                     plot.handles['source'] = new_source
+
 
 
 class GridPlot(BokehPlot, GenericCompositePlot):
