@@ -400,11 +400,7 @@ class ColumnarData(param.Parameterized):
     def _process_data(cls, data, paramobjs, **kwargs):
         params = {}
         if isinstance(data, Element):
-            params['kdims'] = data.kdims
-            params['vdims'] = data.vdims
-            params['label'] = data.label
-            if data.group != data.params()['group'].default:
-                params['group'] = data.group
+            params = util.get_param_values(data)
 
         if isinstance(data, NdElement):
             params['kdims'] = [d for d in params['kdims'] if d != 'Index']
