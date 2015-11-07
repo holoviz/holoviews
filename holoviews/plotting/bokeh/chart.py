@@ -50,18 +50,19 @@ class PointPlot(ElementPlot):
 
         cmap = style.get('palette', style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
-            map_key = 'color_' + str(id(element.data))
+            map_key = 'color_' + dims[self.color_index]
             mapping['color'] = map_key
             cmap = get_cmap(cmap)
             colors = element.dimension_values(self.color_index)
             crange = ranges.get(dims[self.color_index], None)
-            data['color'] = map_colors(colors, crange, cmap)
+            data[map_key] = map_colors(colors, crange, cmap)
         if self.size_index < len(dims):
-            mapping['size'] = 'size'
+            map_key = 'size_' + dims[self.size_index]
+            mapping['size'] = map_key
             ms = style.get('size', 1)
             sizes = element.dimension_values(self.size_index)
-            data['size'] = compute_sizes(sizes, self.size_fn,
-                                         self.scaling_factor, ms)
+            data[map_key] = compute_sizes(sizes, self.size_fn,
+                                          self.scaling_factor, ms)
         data[dims[0]] = element.dimension_values(0)
         data[dims[1]] = element.dimension_values(1)
         if 'hover' in self.tools:

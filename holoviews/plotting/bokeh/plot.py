@@ -83,12 +83,38 @@ class BokehPlot(DimensionedPlot):
                 for k, v in size.items()}
 
 
+    def sync_sources(self):
+        """
+        Syncs data sources between Elements, which draw data
+        from the same object.
+        """
+        get_sources = lambda x: (id(x.current_frame.data), x)
+        filter_fn = lambda x: 'source' in x.handles
+        data_sources = self.traverse(get_sources, [filter_fn])
+        grouped_sources = groupby(sorted(data_sources), lambda x: x[0])
+        for gid, group in grouped_sources:
+            group = list(group)
+            if len(group) > 1:
+                source_data = {}
+                for _, plot in group:
+                    source_data.update(plot.handles['source'].data)
+                new_source = ColumnDataSource(source_data)
+                for _, plot in group:
+                    renderer = plot.handles['glyph_renderer']
+                    renderer.update(data_source=new_source)
+                    plot.handles['source'] = new_source
+
 
 class GridPlot(BokehPlot, GenericCompositePlot):
     """
     Plot a group of elements in a grid layout based on a GridSpace element
     object.
     """
+
+    shared_datasource = param.Boolean(default=True, doc="""
+        Whether Elements drawing the data from the same object should
+        share their Bokeh data source allowing for linked brushing
+        and other linked behaviors.""")
 
     def __init__(self, layout, ranges=None, keys=None, dimensions=None,
                  layout_num=1, **params):
@@ -184,6 +210,8 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                 passed_plots.append(None)
         self.handles['plot'] = gridplot(plots[::-1])
         self.handles['plots'] = plots
+        if self.shared_datasource:
+            self.sync_sources()
         self.drawn = True
 
         return self.handles['plot']
@@ -210,6 +238,11 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
     shared_axes = param.Boolean(default=True, doc="""
         Whether axes should be shared across plots""")
+
+    shared_datasource = param.Boolean(default=True, doc="""
+        Whether Elements drawing the data from the same object should
+        share their Bokeh data source allowing for linked brushing
+        and other linked behaviors.""")
 
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
@@ -424,6 +457,9 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
+        if self.shared_datasource:
+            self.sync_sources()
+
         self.drawn = True
 
         return self.handles['plot']
