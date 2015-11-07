@@ -173,10 +173,13 @@ class Dimension(param.Parameterized):
 
 
     def __eq__(self, other):
-        "Dimensions are sorted alphanumerically by name"
+        "Implements equals operator including sanitized comparison."
         dim_matches = [self.name, sanitize_identifier(self.name)]
         return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
 
+    def __ne__(self, other):
+        "Implements not equal operator including sanitized comparison."
+        return not self.__eq__(other)
 
     def __lt__(self, other):
         "Dimensions are sorted alphanumerically by name"
