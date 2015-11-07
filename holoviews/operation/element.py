@@ -9,7 +9,7 @@ import param
 from param import _is_number
 
 from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
-                    HoloMap, Columns)
+                    HoloMap, Columns, Element)
 from ..core.util import find_minmax, sanitize_identifier
 from ..element.chart import Histogram, Curve, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
