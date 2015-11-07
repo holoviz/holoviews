@@ -369,24 +369,6 @@ class Columns(Element):
         return self.interface.dframe(self, as_table)
 
 
-    def array(self, as_table=False):
-        """
-        Returns the data in the form of an array,
-        if as_table is requested the data will be
-        wrapped in a Table object (note if the data
-        has heterogeneous types this will raise an
-        error.
-        """
-        array = self.interface.array(self)
-        if as_table:
-            from ..element import Table
-            if array.dtype.kind in ['S', 'O', 'U']:
-                raise ValueError("%s data contains non-numeric type, "
-                                 "could not convert to array based "
-                                 "Element" % type(self).__name__)
-            return Table(array, **util.get_param_values(self))
-        return array
-
 
 
 class ColumnarData(param.Parameterized):
@@ -535,10 +517,6 @@ class ColumnarNdElement(ColumnarData):
                 for k, v in col.data.data.items()]
 
     @staticmethod
-    def array(columns):
-        return columns.data.array(dimensions=columns.dimensions())
-
-    @staticmethod
     def sort(columns, by=[]):
         if not len(by): by = columns.dimensions('key', True)
         return columns.data.sort(by)
@@ -632,11 +610,6 @@ class ColumnarDataFrame(ColumnarData):
             else:
                 reduced = pd.DataFrame([reduced], columns=vdims)
         return reduced
-
-
-    @staticmethod
-    def array(columns):
-        return columns.data.values
 
 
     @staticmethod
@@ -748,11 +721,6 @@ class ColumnarArray(ColumnarData):
     def add_dimension(columns, dimension, dim_pos, values):
         data = columns.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
-
-
-    @staticmethod
-    def array(columns):
-        return columns.data
 
 
     @staticmethod
