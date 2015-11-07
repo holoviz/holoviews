@@ -407,7 +407,7 @@ class ColumnarData(param.Parameterized):
                 params['group'] = data.group
 
         if isinstance(data, NdElement):
-            pass
+            params['kdims'] = [d for d in params['kdims'] if d != 'Index']
         elif isinstance(data, Columns):
             data = data.data
         elif isinstance(data, Element):
