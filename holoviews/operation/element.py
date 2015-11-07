@@ -6,10 +6,12 @@ examples.
 import numpy as np
 
 import param
+from param import _is_number
 
-from ..core import ElementOperation, NdOverlay, Overlay
+from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
+                    HoloMap, Columns)
 from ..core.util import find_minmax, sanitize_identifier
-from ..element.chart import Histogram, Curve
+from ..element.chart import Histogram, Curve, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
 
@@ -573,3 +575,78 @@ class collapse_curve(ElementOperation):
 
         return Curve(np.array(data), group=self.p.group,
                      label=self.get_overlay_label(overlay))
+
+
+
+class gridmatrix(param.ParameterizedFunction):
+    """
+    The gridmatrix operation takes an Element or HoloMap
+    of Elements as input and creates a GridMatrix object,
+    which plots each dimension in the Element against
+    each other dimension. This provides a very useful
+    overview of high-dimensional data and is inspired
+    by pandas and seaborn scatter_matrix implementations.
+    """
+
+    chart_type = param.Parameter(default=Scatter, doc="""
+        The Element type used to display bivariate distributions
+        of the data.""")
+
+    diagonal_type = param.Parameter(default=Histogram, doc="""
+       The Element type along the diagonal, may be a Histogram or any
+       other plot type which can visualize a univariate distribution.""")
+
+    overlay_dims = param.List(default=[], doc="""
+       If a HoloMap is supplied this will allow overlaying one or
+       more of it's key dimensions.""")
+
+    def __call__(self, data, **params):
+        p = param.ParamOverrides(self, params)
+
+        if isinstance(data, HoloMap):
+            ranges = {d.name: data.range(d) for d in data.dimensions()}
+            data = data.clone({k: GridMatrix(self._process(p, v, ranges))
+                               for k, v in data.items()}).collate()
+            if p.overlay_dims:
+                data = data.map(lambda x: x.overlay(p.overlay_dims), (HoloMap,))
+            return data
+        elif isinstance(data, Element):
+            data = self._process(p, data)
+            return GridMatrix(data)
+
+
+    def _process(self, p, element, ranges={}):
+        # Creates a unified Columns.data attribute
+        # to draw the data from
+        if isinstance(element.data, np.ndarray):
+            if Columns.data_type == 'mapping':
+                el_data = element.mapping()
+            else:
+                el_data = element.dframe()
+        else:
+            el_data = element.data
+
+        # Get dimensions to plot against each other
+        dims = [d for d in element.dimensions()
+                if _is_number(element.range(d)[0])]
+        permuted_dims = [(d1, d2) for d1 in dims
+                         for d2 in dims[::-1]]
+
+        data = {}
+        for d1, d2 in permuted_dims:
+            key = (d1.name, d2.name)
+            if d1 == d2:
+                if p.diagonal_type is Histogram:
+                    bin_range = ranges.get(d1.name, element.range(d1))
+                    el = element.hist(dimension=d1.name,
+                                      bin_range=bin_range,
+                                      adjoin=False)
+                else:
+                    values = element.dimension_values(d1)
+                    el = p.diagonal_type(values, kdims=[d1])
+            else:
+                el = p.chart_type(el_data, kdims=[d1],
+                                  vdims=[d2])
+            data[(d1.name, d2.name)] = el
+        return data
+

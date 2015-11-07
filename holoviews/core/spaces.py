@@ -3,6 +3,7 @@ import numpy as np
 
 import param
 
+from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
@@ -325,9 +326,6 @@ class GridSpace(UniformNdMapping):
     2D parameter spaces.
     """
 
-    # NOTE: If further composite types supporting Overlaying and Layout these
-    #       classes may be moved to core/composite.py
-
     kdims = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
                        bounds=(1,2))
 
@@ -451,3 +449,24 @@ class GridSpace(UniformNdMapping):
         if self.ndims == 1:
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
+
+
+
+class GridMatrix(GridSpace):
+    """
+    GridMatrix is container type for heterogeneous Element types
+    laid out in a grid. Unlike a GridSpace the axes of the Grid
+    must not represent an actual coordinate space, but may be used
+    to plot various dimensions against each other. The GridMatrix
+    is usually constructed using the gridmatrix operation, which
+    will generate a GridMatrix plotting each dimension in an
+    Element against each other.
+    """
+
+
+    def _item_check(self, dim_vals, data):
+        if not traversal.uniform(NdMapping([(0, self), (1, data)])):
+            raise ValueError("HoloMaps dimensions must be consistent in %s." %
+                             type(self).__name__)
+        NdMapping._item_check(self, dim_vals, data)
+

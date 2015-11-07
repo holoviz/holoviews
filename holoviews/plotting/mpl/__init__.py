@@ -12,7 +12,7 @@ from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
 
-from ...core import Layout, NdOverlay, Collator
+from ...core import Layout, NdOverlay, Collator, GridMatrix
 from ...core.options import Cycle, Palette, Options
 from ...element import * # pyflakes:ignore (API import)
 from ..plot import PlotSelector
@@ -111,6 +111,7 @@ Store.register({Curve: CurvePlot,
 
                 # General plots
                 GridSpace: GridPlot,
+                GridMatrix: GridPlot,
                 NdLayout: LayoutPlot,
                 Layout: LayoutPlot,
                 AdjointLayout: AdjointLayoutPlot,
@@ -183,6 +184,9 @@ options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 options.RGB = Options('style', interpolation='nearest')
 # Composites
 options.Layout = Options('plot', sublabel_format='{Alpha}')
+options.GridMatrix = Options('plot', fig_size=160, shared_xaxis=True,
+                             shared_yaxis=True, xaxis=None, yaxis=None)
+
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
