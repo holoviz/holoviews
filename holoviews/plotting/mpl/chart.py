@@ -584,14 +584,14 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         paths = self.handles['artist']
-        paths.set_offsets(element.data[:, 0:2])
-        ndims = element.data.shape[1]
+        paths.set_offsets(element.array(dimensions=[0, 1]))
+        ndims = element.shape[1]
         dims = element.dimensions(label=True)
         if self.size_index < ndims:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
         if self.color_index < ndims:
-            cs = element.data[:, self.color_index]
+            cs = element.dimension_values(self.color_index)
             val_dim = dims[self.color_index]
             paths.set_clim(ranges[val_dim])
             paths.set_array(cs)
