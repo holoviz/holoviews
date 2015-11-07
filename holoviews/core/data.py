@@ -408,14 +408,14 @@ class ColumnarData(param.Parameterized):
 
         if isinstance(data, NdElement):
             params['kdims'] = [d for d in params['kdims'] if d != 'Index']
-        elif isinstance(data, Columns):
-            data = data.data
         elif isinstance(data, Element):
             dimensions = data.dimensions(label=True)
             data = tuple(data.dimension_values(d) for d in data.dimensions())
 
-        if util.is_dataframe(data):
-            kdims, vdims = cls._process_df_dims(data, paramobjs, **params)
+        if isinstance(data, Columns):
+            data = data.data
+        elif util.is_dataframe(data):
+            kdims, vdims = cls._process_df_dims(data, paramobjs, **kwargs)
             params['kdims'] = kdims
             params['vdims'] = vdims
         elif not isinstance(data, (NdElement, dict)):
@@ -471,18 +471,22 @@ class ColumnarData(param.Parameterized):
 
     @staticmethod
     def _process_df_dims(data, paramobjs, **kwargs):
-        if 'kdims' in kwargs or 'vdims' in kwargs:
-            kdims = kwargs.get('kdims', [])
-            vdims = kwargs.get('vdims', [])
-            col_labels = [c.name if isinstance(c, Dimension) else c
-                          for c in kdims+vdims]
-            if not all(c in data.columns for c in col_labels):
-                raise ValueError("Supplied dimensions don't match columns"
-                                 "in the dataframe.")
-        else:
-            ndim = len(paramobjs['kdims'].default)
+        columns = data.columns
+        kdims = kwargs.get('kdims', [])
+        vdims = kwargs.get('vdims', [])
+        ndim = paramobjs['kdims'].bounds[1] if paramobjs['kdims'].bounds else None
+        if 'kdims' in kwargs and 'vdims' not in kwargs:
+            vdims = [c for c in data.columns if c not in kdims]
+        elif 'kdims' not in kwargs and 'vdims' in kwargs:
+            kdims = [c for c in data.columns if c not in kdims][:ndim]
+        elif 'kdims' not in kwargs and 'vdims' not in kwargs:
             kdims = list(data.columns[:ndim])
             vdims = list(data.columns[ndim:])
+        col_labels = [c.name if isinstance(c, Dimension) else c
+                      for c in kdims+vdims]
+        if not all(c in data.columns for c in col_labels):
+                raise ValueError("Supplied dimensions don't match columns"
+                                 "in the dataframe.")
         return kdims, vdims
 
 
@@ -581,8 +585,10 @@ class ColumnarDataFrame(ColumnarData):
         element_kwargs = dict(util.get_param_values(columns),
                               kdims=element_dims)
         element_kwargs.update(kwargs)
-        map_data = [(k, group_type(v, **element_kwargs)) for k, v in
-                    columns.data.groupby(dimensions)]
+        names = [d.name for d in columns.dimensions()
+                 if d not in dimensions]
+        map_data = [(k, group_type(v, **element_kwargs))
+                    for k, v in columns.data.groupby(dimensions)]
         with item_check(False), sorted_context(False):
             return container_type(map_data, kdims=index_dims)
 
