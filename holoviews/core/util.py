@@ -298,32 +298,39 @@ def max_range(ranges):
 
 
 def max_extents(extents, zrange=False):
-   """
-   Computes the maximal extent in 2D and 3D space from
-   list of 4-tuples or 6-tuples. If zrange is enabled
-   all extents are converted to 6-tuples to comput
-   x-, y- and z-limits.
-   """
-
-   if zrange:
-      num = 6
-      inds = [(0, 2), (1, 3)]
-      extents = [e if len(e) == 6 else (e[0], e[1], None,
-                                        e[2], e[3], None)
-                 for e in extents]
-   else:
-      num = 4
-      inds = [(0, 2), (1, 3)]
-   arr = np.array(extents, dtype=np.float, ndmin=2)
-   extents = [np.NaN] * num
-   if 0 in arr.shape:
-      return extents
-   with warnings.catch_warnings():
-      warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-      for lower, upper in inds:
-         extents[lower] = np.nanmin(arr[:, lower])
-         extents[upper] = np.nanmax(arr[:, upper])
-   return tuple(extents)
+    """
+    Computes the maximal extent in 2D and 3D space from
+    list of 4-tuples or 6-tuples. If zrange is enabled
+    all extents are converted to 6-tuples to comput
+    x-, y- and z-limits.
+    """
+    if zrange:
+        num = 6
+        inds = [(0, 2), (1, 3)]
+        extents = [e if len(e) == 6 else (e[0], e[1], None,
+                                          e[2], e[3], None)
+                   for e in extents]
+    else:
+        num = 4
+        inds = [(0, 2), (1, 3)]
+    arr = list(zip(*extents)) if extents else []
+    extents = [np.NaN] * num
+    if len(arr) == 0:
+        return extents
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+        for lidx, uidx in inds:
+            lower = [v for v in arr[lidx] if v is not None]
+            upper = [v for v in arr[uidx] if v is not None]
+            if lower and isinstance(lower[0], np.datetime64):
+                extents[lidx] = np.min(lower)
+            elif lower:
+                extents[lidx] = np.nanmin(lower)
+            if upper and isinstance(upper[0], np.datetime64):
+                extents[uidx] = np.max(upper)
+            elif upper:
+                extents[uidx] = np.nanmax(upper)
+    return tuple(extents)
 
 
 def int_to_alpha(n, upper=True):

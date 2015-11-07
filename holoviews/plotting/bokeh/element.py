@@ -188,7 +188,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if x_axis_type == 'datetime':
                     low = convert_datetime(low)
                     high = convert_datetime(high)
-                elif low == high:
+                elif low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -207,7 +207,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if y_axis_type == 'datetime':
                     low = convert_datetime(low)
                     high = convert_datetime(high)
-                elif low == high:
+                elif low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
