@@ -154,17 +154,18 @@ class Element(ViewableElement, Composable, Overlayable):
         This method transforms any ViewableElement type into a Table
         as long as it implements a dimension_values method.
         """
+        length = len(self)
         if self.kdims:
             keys = zip(*[self.dimension_values(dim.name)
                          for dim in self.kdims])
         else:
-            keys = [()]*len(values)
+            keys = [()]*length
 
         if self.vdims:
             values = zip(*[self.dimension_values(dim.name)
                            for dim in self.vdims])
         else:
-            values = [()]*len(keys)
+            values = [()]*length
 
         data = zip(keys, values)
         mapping = NdElement(data, **dict(get_param_values(self), **kwargs))
