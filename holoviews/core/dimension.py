@@ -686,7 +686,7 @@ class Dimensioned(LabelledData):
         else:
             selection = self
 
-        if np.isscalar(selection):
+        if not isinstance(selection, Dimensioned):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
