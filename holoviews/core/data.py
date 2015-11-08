@@ -358,13 +358,13 @@ class DataColumns(param.Parameterized):
             datatype = eltype.datatype
         prioritized = [cls.interfaces[p] for p in datatype]
 
-        # Prioritize interfaces which have matching types
-        data_type = type(data)
-        head = [intfc for intfc in prioritized if data_type in intfc.types]
+        head = [intfc for intfc in prioritized if type(data) in intfc.types]
+        if head:
+            # Prioritize interfaces which have matching types
+            prioritized = head + [el for el in prioritized if el != head[0]]
 
-        # Iterate over interfaces until one that can interpret
-        # the input is found
-        for interface in head + prioritized:
+        # Iterate over interfaces until one can interpret the input
+        for interface in prioritized:
             try:
                 (data, kdims, vdims) = interface.reshape(eltype, data, kdims, vdims)
                 break
