@@ -29,34 +29,25 @@ from . import util
 
 class Columns(Element):
     """
-    Columns provides a general baseclass for column based
-    Element types. Through the use of utility class interfaces
-    data may be supplied and stored in a range of formats.
+    Columns provides a general baseclass for column based Element types
+    that supports a range of data formats.
 
-    Data is assumed to be in a columnar data format with N
-    observations and at least D columns, where D is the number
-    of dimensions. Data supplied in one of the native formats
-    will be retained. Alternatively the columns maybe supplied
-    as a tuple or the rows as a list of tuples. If the data is
-    purely numeric the data will automatically be converted to
-    a numpy array, otherwise it will fall back to the specified
-    data_type.
+    Currently numpy arrays are supported for data with a uniform
+    type. For storage of columns with heterogenous types, either a
+    dictionary format or a pandas DataFrame may be used for storage.
 
-    Currently either an NdElement or a pandas DataFrame are
-    supported as storage formats for heterogeneous data. An
-    NdElement is a HoloViews wrapper around dictionary objects,
-    which maps between the key dimensions and the value dimensions.
-
-    The Columns class also provides various methods to transform
-    the data in various ways and allows indexing and selecting
-    along all dimensions.
+    The Columns class supports various methods offering a consistent way
+    of working with the stored data regardless of the storage format
+    used. These operations include indexing, selection and various ways
+    of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'dictionary', 'dataframe' ], doc="""
-        Defines the datatypes to be used for storage, the object will
-        attempt to use each data interface in turn falling back to the
-        each consecutive type in the list if the data type is not
-        understood.""")
+    datatype = param.List(['array', 'dictionary', 'dataframe' ],
+        doc=""" A priority list of the data types to be used for storage
+        on the .data attribute. If the input supplied to the element
+        constructor cannot be put into the requested format, the next
+        format listed will be used until a suitable format is found (or
+        the data fails to be understood).""")
 
     def __init__(self, data, **kwargs):
         data, params, interface = DataColumns.initialize(type(self), data, kwargs)
@@ -68,16 +59,15 @@ class Columns(Element):
     def _validate_data(self, data):
         """
         Method that is often overridden in the implementation of
-        specific Elements for validating and transforming the input
-        data format.
-        """
+        specific Elements for validating and transforming the input data
+        format."""
         return self.interface.validate_data(self, data)
 
 
     def __setstate__(self, state):
         """
-        Restores OrderedDict based Columns objects, converting
-        them to the up-to-date NdElement format.
+        Restores OrderedDict based Columns objects, converting them to
+        the up-to-date NdElement format.
         """
         self.__dict__ = state
         if isinstance(self.data, OrderedDict):
@@ -88,9 +78,8 @@ class Columns(Element):
 
     def closest(self, coords):
         """
-        Given single or multiple samples along the first
-        key dimension will return the closest actual sample
-        coordinates.
+        Given single or multiple samples along the first key dimension
+        will return the closest actual sample coordinates.
         """
         if self.ndims > 1:
             NotImplementedError("Closest method currently only "
@@ -104,8 +93,7 @@ class Columns(Element):
 
     def sort(self, by=[]):
         """
-        Sorts the data by the values along the supplied
-        dimensions.
+        Sorts the data by the values along the supplied dimensions.
         """
         if not by: by = self.kdims
         sorted_columns = self.interface.sort(self, by)
@@ -114,9 +102,9 @@ class Columns(Element):
 
     def range(self, dim, data_range=True):
         """
-        Computes the range of values along a supplied
-        dimension, taking into account the range and
-        soft_range defined on the Dimension object.
+        Computes the range of values along a supplied dimension, taking
+        into account the range and soft_range defined on the Dimension
+        object.
         """
         dim = self.get_dimension(dim)
         if dim.range != (None, None):
@@ -138,10 +126,10 @@ class Columns(Element):
 
     def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
         """
-        Create a new object with an additional key dimensions.
-        Requires the dimension name or object, the desired position
-        in the key dimensions and a key value scalar or sequence of
-        the same length as the existing keys.
+        Create a new object with an additional key dimensions.  Requires
+        the dimension name or object, the desired position in the key
+        dimensions and a key value scalar or sequence of the same length
+        as the existing keys.
         """
         if isinstance(dimension, str):
             dimension = Dimension(dimension)
@@ -158,14 +146,13 @@ class Columns(Element):
 
     def select(self, selection_specs=None, **selection):
         """
-        Allows selecting data by the slices, sets and scalar
-        values along a particular dimension. The indices
-        should be supplied as keywords mapping between
-        the selected dimension and value. Additionally
-        selection_specs (taking the form of a list of
-        type.group.label strings, types or functions) may
-        be supplied, which will ensure the selection is
-        only applied if the specs match the selected object.
+        Allows selecting data by the slices, sets and scalar values
+        along a particular dimension. The indices should be supplied as
+        keywords mapping between the selected dimension and
+        value. Additionally selection_specs (taking the form of a list
+        of type.group.label strings, types or functions) may be
+        supplied, which will ensure the selection is only applied if the
+        specs match the selected object.
         """
         if selection_specs and not self.matches(selection_specs):
             return self
@@ -179,9 +166,8 @@ class Columns(Element):
 
     def reindex(self, kdims=None, vdims=None):
         """
-        Create a new object with a re-ordered set of dimensions.
-        Allows converting key dimensions to value dimensions
-        and vice versa.
+        Create a new object with a re-ordered set of dimensions.  Allows
+        converting key dimensions to value dimensions and vice versa.
         """
         if kdims is None:
             key_dims = [d for d in self.kdims if d not in vdims]
@@ -202,16 +188,16 @@ class Columns(Element):
         Allows slicing and selecting values in the Columns object.
         Supports multiple indexing modes:
 
-           (1) Slicing and indexing along the values of each
-               dimension in the columns object using either
-               scalars, slices or sets of values.
-           (2) Supplying the name of a dimension as the first
-               argument will return the values along that
-               dimension as a numpy array.
-           (3) Slicing of all key dimensions and selecting
-               a single value dimension by name.
-           (4) A boolean array index matching the length of
-               the Columns object.
+           (1) Slicing and indexing along the values of each dimension
+               in the columns object using either scalars, slices or
+               sets of values.
+           (2) Supplying the name of a dimension as the first argument
+               will return the values along that dimension as a numpy
+               array.
+           (3) Slicing of all key dimensions and selecting a single
+               value dimension by name.
+           (4) A boolean array index matching the length of the Columns
+               object.
         """
         if slices is (): return self
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
@@ -240,18 +226,18 @@ class Columns(Element):
     def sample(self, samples=[]):
         """
         Allows sampling of Columns as an iterator of coordinates
-        matching the key dimensions, returning a new object
-        containing just the selected samples.
+        matching the key dimensions, returning a new object containing
+        just the selected samples.
         """
         return self.clone(self.interface.sample(self, samples))
 
 
     def reduce(self, dimensions=[], function=None, **reduce_map):
         """
-        Allows reducing the values along one or more key dimension
-        with the supplied function. The dimensions may be supplied
-        as a list and a function to apply or a mapping between the
-        dimensions and functions to apply along each dimension.
+        Allows reducing the values along one or more key dimension with
+        the supplied function. The dimensions may be supplied as a list
+        and a function to apply or a mapping between the dimensions and
+        functions to apply along each dimension.
         """
         reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
         reduced = self
@@ -267,8 +253,8 @@ class Columns(Element):
 
     def aggregate(self, dimensions=[], function=None):
         """
-        Aggregates over the supplied key dimensions with the
-        defined function.
+        Aggregates over the supplied key dimensions with the defined
+        function.
         """
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not dimensions: dimensions = self.kdims
@@ -308,9 +294,9 @@ class Columns(Element):
     @classmethod
     def concat(cls, columns_objs):
         """
-        Concatenates a list of Columns objects. If data types
-        don't match all types will be converted to that of
-        the first object before concatenation.
+        Concatenates a list of Columns objects. If data types don't
+        match all types will be converted to that of the first object
+        before concatenation.
         """
         columns = columns_objs[0]
         if len({col.interface for col in columns_objs}) > 1:
@@ -338,9 +324,8 @@ class Columns(Element):
 
     def dimension_values(self, dim, unique=False):
         """
-        Returns the values along a particular
-        dimension. If unique values are requested
-        will return only unique values.
+        Returns the values along a particular dimension. If unique
+        values are requested will return only unique values.
         """
         dim = self.get_dimension(dim).name
         dim_vals = self.interface.values(self, dim)
@@ -352,9 +337,8 @@ class Columns(Element):
 
     def dframe(self, as_table=False):
         """
-        Returns the data in the form of a DataFrame,
-        if as_table is requested the data will be
-        wrapped in a Table object.
+        Returns the data in the form of a DataFrame, if as_table is
+        requested the data will be wrapped in a Table object.
         """
         return self.interface.dframe(self, as_table)
 
