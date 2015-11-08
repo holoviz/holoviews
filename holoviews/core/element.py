@@ -133,49 +133,48 @@ class Element(ViewableElement, Composable, Overlayable):
         return dims, grouped
 
 
-    def table(self):
+    def table(self, datatype=None):
+        """
+        Converts the data Element to a Table, optionally may
+        specify a supported data type. The default data types
+        are 'numpy' (for homogeneous data), 'dataframe', and
+        'dictionary'.
+        """
+        if datatype and not isinstance(datatype, list):
+            datatype = [datatype]
         from ..element import Table
-        return Table(self)
+        return Table(self, **(dict(datatype=datatype) if datatype else {}))
 
 
-    def dframe(self, as_table=False):
+    def dframe(self, dimensions=None):
         import pandas as pd
-        column_names = self.dimensions(label=True)
+        column_names = dimensions if dimensions else self.dimensions(label=True)
         dim_vals = OrderedDict([(dim, self[dim]) for dim in column_names])
-        data = pd.DataFrame(dim_vals)
-        if as_table:
-            from ..element import Table
-            return Table(data, **get_param_values(self))
-        return data
+        return pd.DataFrame(dim_vals)
 
 
-    def mapping(self, as_table=False, **kwargs):
-        """
-        This method transforms any ViewableElement type into a Table
-        as long as it implements a dimension_values method.
-        """
+    def mapping(self, kdims=None, vdims=None, **kwargs):
         length = len(self)
-        if self.kdims:
+        if not kdims: kdims = self.kdims
+        if kdims:
             keys = zip(*[self.dimension_values(dim.name)
                          for dim in self.kdims])
         else:
             keys = [()]*length
 
-        if self.vdims:
+        if not vdims: vdims = self.vdims
+        if vdims:
             values = zip(*[self.dimension_values(dim.name)
-                           for dim in self.vdims])
+                           for dim in vdims])
         else:
             values = [()]*length
 
         data = zip(keys, values)
-        mapping = NdElement(data, **dict(get_param_values(self), **kwargs))
-        if as_table:
-            from ..element import Table
-            return Table(mapping)
-        return mapping
+        overrides = dict(kdims=kdims, vdims=vdims, **kwargs)
+        return NdElement(data, **dict(get_param_values(self), overrides))
 
 
-    def array(self, as_table=False, dimensions=[]):
+    def array(self, dimensions=[]):
         if dimensions:
             dims = [self.get_dimension(d) for d in dimensions]
         else:
@@ -187,16 +186,7 @@ class Element(ViewableElement, Composable, Overlayable):
             types.append(column.dtype.kind)
         if len(set(types)) > 1:
             columns = [c.astype('object') for c in columns]
-        array = np.column_stack(columns)
-        if as_table:
-            from ..element import Table
-            if array.dtype.kind in ['S', 'O', 'U']:
-                raise ValueError("%s data contains non-numeric type, "
-                                 "could not convert to array based "
-                                 "Element" % type(self).__name__)
-            return Table(array, **get_param_values(self))
-        else:
-            return array
+        return np.column_stack(columns)
 
 
 
@@ -550,17 +540,6 @@ class NdElement(NdMapping, Tabular):
             return  [v[0] for v in values]
         return list(values)
 
-    def dframe(self, as_table=False):
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        columns = [d.name for d in self.dimensions()]
-        df = pandas.DataFrame((k+v for (k, v) in self.data.items()), columns=columns)
-        if as_table:
-            from ..element import Table
-            return Table(df, **get_param_values(self))
-        return df
 
 
 class Element3D(Element2D):

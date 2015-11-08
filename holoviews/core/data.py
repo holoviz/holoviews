@@ -281,11 +281,11 @@ class Columns(Element):
         columns = columns_objs[0]
         if len({col.interface for col in columns_objs}) > 1:
             if isinstance(columns.data, NdElement):
-                columns_objs = [co.mapping(as_table=True) for co in columns_objs]
+                columns_objs = [co.table('dictionary') for co in columns_objs]
             elif isinstance(columns.data, np.ndarray):
-                columns_objs = [co.array(as_table=True) for co in columns_objs]
+                columns_objs = [co.table('array') for co in columns_objs]
             elif util.is_dataframe(data[0]):
-                columns_objs = [co.dframe(as_table=True) for co in columns_objs]
+                columns_objs = [co.table('dataframe') for co in columns_objs]
         return columns.clone(columns.interface.concat(columns_objs))
 
 
@@ -383,11 +383,13 @@ class DataColumns(param.Parameterized):
                 column.sort()
                 return column[0], column[-1]
 
+    @classmethod
+    def array(cls, columns, dimensions):
+        return Element.dframe(columns, dimensions)
 
     @classmethod
-    def dframe(cls, columns, as_table=False):
-        return Element.dframe(columns, as_table)
-
+    def dframe(cls, columns, dimensions):
+        return Element.dframe(columns, dimensions)
 
     @classmethod
     def shape(cls, columns):
@@ -672,11 +674,11 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def dframe(cls, columns, as_table=False):
-        if as_table:
-            from ..element import Table
-            return Table(columns)
-        return columns.data
+    def dframe(cls, columns, dimensions):
+        if dimensions:
+            return columns.reindex(columns=dimensions)
+        else:
+            return columns.data
 
 
 
@@ -711,6 +713,11 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
+    def array(cls, columns, dimensions):
+        if dimensions:
+            return Element.dframe(columns, dimensions)
+        else:
+            return columns.data
 
 
     @classmethod
@@ -722,11 +729,6 @@ class ArrayColumns(DataColumns):
     @classmethod
     def concat(cls, columns_objs):
         return np.concatenate([col.data for col in columns_objs])
-
-
-    @classmethod
-    def dframe(cls, columns, as_table=False):
-        return Element.dframe(columns, as_table)
 
 
     @classmethod
