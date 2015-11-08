@@ -15,8 +15,8 @@ class ColumnsNdElementTest(ComparisonTestCase):
     """
 
     def setUp(self):
-        self.data_type = Columns.data_type
-        Columns.data_type = 'mapping'
+        self.datatype = Columns.datatype
+        Columns.datatype = ['dictionary', 'array']
         self.xs = range(11)
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
@@ -28,7 +28,7 @@ class ColumnsNdElementTest(ComparisonTestCase):
                                kdims=['x'], vdims=['y'])
 
     def tearDown(self):
-        Columns.data_type = self.data_type
+        Columns.datatype = self.datatype
 
     def test_columns_sort_vdim(self):
         columns = Columns(OrderedDict(zip(self.xs, -self.ys)),
@@ -288,8 +288,8 @@ class ColumnsNdArrayTest(ComparisonTestCase):
 class ColumnsDFrameTest(ComparisonTestCase):
 
     def setUp(self):
-        self.data_type = Columns.data_type
-        Columns.data_type = 'pandas'
+        self.datatype = Columns.datatype
+        Columns.datatype = ['dataframe']
         self.column_data = [('M',10, 15, 0.8), ('M',16, 18, 0.6),
                             ('F',12, 10, 0.8)]
         self.kdims = ['Gender', 'Age']
@@ -301,7 +301,7 @@ class ColumnsDFrameTest(ComparisonTestCase):
                                kdims=['x'], vdims=['y'])
 
     def tearDown(self):
-        Columns.data_type = self.data_type
+        Columns.datatype = self.datatype
 
     def test_columns_range(self):
         self.assertEqual(self.columns.range('y'), (0., 1.))

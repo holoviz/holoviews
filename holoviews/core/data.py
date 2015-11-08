@@ -52,14 +52,16 @@ class Columns(Element):
     along all dimensions.
     """
 
-    data_type = param.ObjectSelector(default='mapping', allow_None=True,
-                                     objects=['pandas', 'mapping'],
-                                     doc="""
-        Defines the data type used for storing non-numeric data.""")
+    datatype = param.List(['array', 'dictionary', 'dataframe' ], doc="""
+        Defines the datatypes to be used for storage, the object will
+        attempt to use each data interface in turn falling back to the
+        each consecutive type in the list if the data type is not
+        understood.""")
 
     def __init__(self, data, **kwargs):
-        data, params = DataColumns._process_data(data, self.params(), **kwargs)
+        data, params, interface = DataColumns.initialize(type(self), data, kwargs)
         super(Columns, self).__init__(data, **params)
+        self.interface = interface
         self.data = self._validate_data(self.data)
 
 
@@ -173,20 +175,6 @@ class Columns(Element):
             return data
         else:
             return self.clone(data)
-
-
-    @property
-    def interface(self):
-        """
-        Property that return the interface class to apply
-        operations on the data.
-        """
-        if util.is_dataframe(self.data):
-            return DFColumns
-        elif isinstance(self.data, np.ndarray):
-            return ArrayColumns
-        elif isinstance(self.data, NdElement):
-            return NdColumns
 
 
     def reindex(self, kdims=None, vdims=None):
@@ -378,6 +366,60 @@ class Columns(Element):
 
 class DataColumns(param.Parameterized):
 
+    interfaces = {}
+
+    @classmethod
+    def initialize(cls, eltype, data, kwargs):
+        # Process params and dimensions
+        params = {}
+        kdims, vdims = None, None
+        if isinstance(data, Element):
+            params.update(util.get_param_values(data))
+        params.update(kwargs)
+        kdims, vdims = params.get('kdims'), params.get('vdims')
+
+        # Process Element data
+        if isinstance(data, NdElement):
+            pass
+        elif isinstance(data, Columns):
+            data = data.data
+        elif isinstance(data, Element):
+            dimensions = data.dimensions(label=True)
+            data = tuple(data.dimension_values(d) for d in data.dimensions())
+
+        # Set interface priority order
+        priorities = kwargs.get('datatype', eltype.datatype)
+        prioritized = [cls.interfaces[p] for p in priorities]
+
+        # Prioritize interfaces which have matching types
+        data_type = type(data)
+        head = [intfc for intfc in prioritized
+                if data_type in intfc.types]
+
+        # Iterate over interfaces until one that can interpret
+        # the input is found
+        selected_interface = None
+        for interface in head + prioritized:
+            try:
+                data, new_kdims, new_vdims = interface.reshape(eltype, data, kdims, vdims)
+            except:
+                pass
+            else:
+                selected_interface = interface
+                break
+
+        if selected_interface is None:
+            raise ValueError("None of the available data backends could "
+                             "process the data, ensure it is in a supported "
+                             "format")
+
+        # Combine input params with inferred
+        # parameters and dimensions
+        params['kdims'] = new_kdims
+        params['vdims'] = new_vdims
+        return data, params, selected_interface
+
+
     @classmethod
     def range(cls, columns, dimension):
         column = columns.dimension_values(dimension)
@@ -402,96 +444,6 @@ class DataColumns(param.Parameterized):
 
 
     @classmethod
-    def _process_data(cls, data, paramobjs, **kwargs):
-        params = {}
-        if isinstance(data, Element):
-            params = util.get_param_values(data)
-
-        if isinstance(data, NdElement):
-            params['kdims'] = [d for d in params['kdims'] if d != 'Index']
-        elif isinstance(data, Element):
-            dimensions = data.dimensions(label=True)
-            data = tuple(data.dimension_values(d) for d in data.dimensions())
-
-        if isinstance(data, Columns):
-            data = data.data
-        elif util.is_dataframe(data):
-            kdims, vdims = cls._process_df_dims(data, paramobjs, **kwargs)
-            params['kdims'] = kdims
-            params['vdims'] = vdims
-        elif not isinstance(data, (NdElement, dict)):
-            if isinstance(data, np.ndarray):
-                array = data
-            elif isinstance(data, tuple):
-                try:
-                    array = np.column_stack(data)
-                except:
-                    array = None
-            else:
-                data = [] if data is None else list(data)
-                try:
-                    array = np.array(data)
-                except:
-                    array = None
-            # If ndim > 2 data is assumed to be a mapping
-            if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])
-                or (array is not None and array.ndim > 2)):
-                pass
-            elif array is None or array.dtype.kind in ['S', 'U', 'O']:
-                # Check if data is of non-numeric type
-                # Then use defined data type
-                data_type = kwargs.get('data_type', paramobjs['data_type'].default)
-                kdims = kwargs.get('kdims', paramobjs['kdims'].default)
-                vdims = kwargs.get('vdims', paramobjs['vdims'].default)
-                if data_type == 'pandas':
-                    columns = [d.name if isinstance(d, Dimension) else d
-                               for d in kdims+vdims]
-                    if isinstance(data, tuple):
-                        data = pd.DataFrame.from_items([(c, d) for c, d in
-                                                        zip(columns, data)])
-                    else:
-                        data = pd.DataFrame(data, columns=columns)
-                else:
-                    if isinstance(data, tuple):
-                        data = zip(*data)
-                    ndims = len(kdims)
-                    data = [(tuple(row[:ndims]), tuple(row[ndims:]))
-                            for row in data]
-            else:
-                data = array
-        params.update(kwargs)
-        if 'kdims' not in params:
-            params['kdims'] = paramobjs['kdims'].default
-        if 'vdims' not in params:
-            params['vdims'] = paramobjs['vdims'].default
-        if isinstance(data, (dict, list)):
-            data = NdElement(data, kdims=params['kdims'],
-                             vdims=params['vdims'])
-        return data, params
-
-
-    @classmethod
-    def _process_df_dims(cls, data, paramobjs, **kwargs):
-        columns = data.columns
-        kdims = kwargs.get('kdims', [])
-        vdims = kwargs.get('vdims', [])
-        ndim = paramobjs['kdims'].bounds[1] if paramobjs['kdims'].bounds else None
-        if 'kdims' in kwargs and 'vdims' not in kwargs:
-            vdims = [c for c in data.columns if c not in kdims]
-        elif 'kdims' not in kwargs and 'vdims' in kwargs:
-            kdims = [c for c in data.columns if c not in kdims][:ndim]
-        elif 'kdims' not in kwargs and 'vdims' not in kwargs:
-            kdims = list(data.columns[:ndim])
-            vdims = list(data.columns[ndim:])
-        col_labels = [c.name if isinstance(c, Dimension) else c
-                      for c in kdims+vdims]
-        if not all(c in data.columns for c in col_labels):
-                raise ValueError("Supplied dimensions don't match columns"
-                                 "in the dataframe.")
-        return kdims, vdims
-
-
-    @classmethod
     def length(cls, columns):
         return len(columns.data)
 
@@ -503,6 +455,34 @@ class DataColumns(param.Parameterized):
 
 
 class NdColumns(DataColumns):
+
+    types = (NdElement,)
+
+    @classmethod
+    def reshape(cls, eltype, data, kdims, vdims):
+        if isinstance(data, NdElement):
+            kdims = [d for d in kdims if d != 'Index']
+        else:
+            element_params = eltype.params()
+            kdims = kdims if kdims else element_params['kdims'].default
+            vdims = vdims if vdims else element_params['vdims'].default
+
+        if not isinstance(data, (NdElement, dict)):
+            # If ndim > 2 data is assumed to be a mapping
+            if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])):
+                pass
+            else:
+                if isinstance(data, tuple):
+                    data = zip(*data)
+                ndims = len(kdims)
+                data = [(tuple(row[:ndims]), tuple(row[ndims:]))
+                        for row in data]
+        if isinstance(data, (dict, list)):
+            data = NdElement(data, kdims=kdims, vdims=vdims)
+        elif not isinstance(data, NdElement):
+            raise ValueError("NdColumns interface couldn't convert data.""")
+        return data, kdims, vdims
+
 
     @classmethod
     def validate_data(cls, columns, data):
@@ -564,6 +544,46 @@ class NdColumns(DataColumns):
 
 
 class DFColumns(DataColumns):
+
+    types = (pd.DataFrame if pd else None,)
+
+    @classmethod
+    def reshape(cls, eltype, data, kdims, vdims):
+        element_params = eltype.params()
+        kdim_param = element_params['kdims']
+        vdim_param = element_params['vdims']
+        if util.is_dataframe(data):
+            columns = data.columns
+            ndim = kdim_param.bounds[1] if kdim_param.bounds else None
+            if kdims and not vdims:
+                vdims = [c for c in data.columns if c not in kdims]
+            elif vdims and not kdims:
+                kdims = [c for c in data.columns if c not in kdims][:ndim]
+            elif not kdims and not vdims:
+                kdims = list(data.columns[:ndim])
+                vdims = list(data.columns[ndim:])
+        else:
+            # Check if data is of non-numeric type
+            # Then use defined data type
+            kdims = kdims if kdims else kdim_param.default
+            vdims = vdims if vdims else vdim_param.default
+            columns = [d.name if isinstance(d, Dimension) else d
+                       for d in kdims+vdims]
+            if isinstance(data, dict) and all(d in data for d in columns):
+                data = pd.DataFrame(data, columns=columns)
+            if isinstance(data, tuple):
+                data = pd.DataFrame.from_items([(c, d) for c, d in
+                                                zip(columns, data)])
+            else:
+                data = pd.DataFrame(data, columns=columns)
+        return data, kdims, vdims
+
+
+    @classmethod
+    def _validate(cls, columns):
+        if not all(c in data.columns for c in columns.dimensions(label=True)):
+            raise ValueError("Supplied dimensions don't match columns "
+                             "in the dataframe.")
 
 
     @classmethod
@@ -716,6 +736,32 @@ class DFColumns(DataColumns):
 
 
 class ArrayColumns(DataColumns):
+
+    types = (np.ndarray,)
+
+    @classmethod
+    def reshape(cls, eltype, data, kdims, vdims):
+        if isinstance(data, tuple):
+            try:
+                data = np.column_stack(data)
+            except:
+                data = None
+        elif not isinstance(data, np.ndarray):
+            data = np.array([], ndmin=2).T if data is None else list(data)
+            try:
+                data = np.array(data)
+            except:
+                data = None
+
+        if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
+            raise ValueError("ArrayColumns interface could not handle input type.")
+
+        if kdims is None:
+            kdims = eltype.kdims
+        if vdims is None:
+            vdims = eltype.vdims
+        return data, kdims, vdims
+
 
     @classmethod
     def validate_data(cls, columns, data):
@@ -906,3 +952,11 @@ class ArrayColumns(DataColumns):
                 reduced = function(group, axis=0)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.array(rows)
+
+
+# Register available interfaces
+DataColumns.interfaces.update([('array', ArrayColumns),
+                               ('dictionary', NdColumns)])
+if pd:
+    DataColumns.interfaces['dataframe'] = DFColumns
+
