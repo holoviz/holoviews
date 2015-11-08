@@ -184,17 +184,14 @@ class Columns(Element):
         and vice versa.
         """
         if kdims is None:
-            key_dims = [d for d in self.kdims
-                        if d not in vdims]
+            key_dims = [d for d in self.kdims if d not in vdims]
         else:
             key_dims = [self.get_dimension(k) for k in kdims]
 
         if vdims is None:
-            val_dims = [d for d in self.vdims
-                        if d not in kdims]
+            val_dims = [d for d in self.vdims if d not in kdims]
         else:
             val_dims = [self.get_dimension(v) for v in vdims]
-
 
         data = self.interface.reindex(self, key_dims, val_dims)
         return self.clone(data, kdims=key_dims, vdims=val_dims)
