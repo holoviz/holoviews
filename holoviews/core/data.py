@@ -50,8 +50,12 @@ class Columns(Element):
         the data fails to be understood).""")
 
     def __init__(self, data, **kwargs):
-        data, params, self.interface = DataColumns.initialize(type(self), data, kwargs)
-        super(Columns, self).__init__(data, **params)
+        initialized = DataColumns.initialize(type(self), data,
+                                             kwargs.get('kdims'),
+                                             kwargs.get('vdims'),
+                                             datatype=kwargs.get('datatype'))
+        (data, kdims, vdims, self.interface) = initialized
+        super(Columns, self).__init__(data, **dict(kwargs, kdims=kdims, vdims=vdims))
         self.data = self._validate_data(self.data)
 
 
@@ -349,14 +353,12 @@ class DataColumns(param.Parameterized):
     interfaces = {}
 
     @classmethod
-    def initialize(cls, eltype, data, kwargs):
+    def initialize(cls, eltype, data, kdims, vdims, datatype=None):
         # Process params and dimensions
-        params = {}
-        kdims, vdims = None, None
         if isinstance(data, Element):
-            params.update(util.get_param_values(data))
-        params.update(kwargs)
-        kdims, vdims = params.get('kdims'), params.get('vdims')
+            pvals = util.get_param_values(data)
+            kdims = pvals.get('kdims', kdims)
+            vdims = pvals.get('vdims', vdims)
 
         # Process Element data
         if isinstance(data, NdElement):
@@ -368,36 +370,27 @@ class DataColumns(param.Parameterized):
             data = tuple(data.dimension_values(d) for d in data.dimensions())
 
         # Set interface priority order
-        priorities = kwargs.get('datatype', eltype.datatype)
-        prioritized = [cls.interfaces[p] for p in priorities]
+        if datatype is None:
+            datatype = eltype.datatype
+        prioritized = [cls.interfaces[p] for p in datatype]
 
         # Prioritize interfaces which have matching types
         data_type = type(data)
-        head = [intfc for intfc in prioritized
-                if data_type in intfc.types]
+        head = [intfc for intfc in prioritized if data_type in intfc.types]
 
         # Iterate over interfaces until one that can interpret
         # the input is found
-        selected_interface = None
         for interface in head + prioritized:
             try:
-                data, new_kdims, new_vdims = interface.reshape(eltype, data, kdims, vdims)
+                (data, kdims, vdims) = interface.reshape(eltype, data, kdims, vdims)
+                break
             except:
                 pass
-            else:
-                selected_interface = interface
-                break
+        else:
+            raise ValueError("None of the available storage backends "
+                             "were able to support the supplied data format.")
 
-        if selected_interface is None:
-            raise ValueError("None of the available data backends could "
-                             "process the data, ensure it is in a supported "
-                             "format")
-
-        # Combine input params with inferred
-        # parameters and dimensions
-        params['kdims'] = new_kdims
-        params['vdims'] = new_vdims
-        return data, params, selected_interface
+        return data, kdims, vdims, interface
 
 
     @classmethod
