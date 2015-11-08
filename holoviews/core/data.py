@@ -168,7 +168,7 @@ class Columns(Element):
             return data
         else:
             return self.clone(data)
-        
+
 
     @property
     def interface(self):
@@ -342,7 +342,7 @@ class Columns(Element):
 
     @property
     def shape(self):
-        """Returns the shape of the data."""
+        "Returns the shape of the data."
         return self.interface.shape(self)
 
 
@@ -571,7 +571,7 @@ class ColumnarDataFrame(ColumnarData):
     def concat(columns_objs):
         return pd.concat([col.data for col in columns_objs])
 
-    
+
     @staticmethod
     def groupby(columns, dimensions, container_type, group_type, **kwargs):
         index_dims = [columns.get_dimension(d) for d in dimensions]
@@ -741,7 +741,7 @@ class ColumnarArray(ColumnarData):
         idxs = [columns.get_dimension_index(dim) for dim in by]
         return data[np.lexsort(np.flipud(data[:, idxs].T))]
 
-    
+
     @staticmethod
     def values(columns, dim):
         data = columns.data
