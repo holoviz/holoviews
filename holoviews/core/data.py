@@ -569,8 +569,6 @@ class DFColumns(DataColumns):
             vdims = vdims if vdims else vdim_param.default
             columns = [d.name if isinstance(d, Dimension) else d
                        for d in kdims+vdims]
-            if isinstance(data, dict) and all(d in data for d in columns):
-                data = pd.DataFrame(data, columns=columns)
             if isinstance(data, tuple):
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
