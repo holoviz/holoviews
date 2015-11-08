@@ -58,7 +58,6 @@ class Columns(Element):
         super(Columns, self).__init__(data, **dict(kwargs, kdims=kdims, vdims=vdims))
         self.data = self._validate_data(self.data)
 
-
     def _validate_data(self, data):
         """
         Method that is often overridden in the implementation of
@@ -277,21 +276,6 @@ class Columns(Element):
         if group_type is None:
             group_type = type(self)
         return self.interface.groupby(self, dimensions, container_type, group_type, **kwargs)
-
-
-    @classmethod
-    def collapse_data(cls, data, function=None, kdims=None, **kwargs):
-        """
-        Class method utility function to concatenate the supplied data
-        and apply a groupby operation along the supplied key dimensions
-        then aggregates across the groups with the supplied function.
-        """
-        if isinstance(data[0], NdElement):
-            return data[0].collapse_data(data, function, kdims, **kwargs)
-        elif isinstance(data[0], np.ndarray):
-            return ArrayColumns.collapse_data(data, function, kdims, **kwargs)
-        elif util.is_dataframe(data[0]):
-            return DFColumns.collapse_data(data, function, kdims, **kwargs)
 
 
     @classmethod
@@ -896,7 +880,7 @@ class ArrayColumns(DataColumns):
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
         if len(kdims):
             reindexed = columns.reindex(kdims)
-            reduced = reindexed.collapse_data([reindexed.data], function, kdims)
+            reduced = cls.collapse_data([reindexed.data], function, kdims)
         else:
             if isinstance(function, np.ufunc):
                 reduced = function.reduce(columns.data, axis=0)
