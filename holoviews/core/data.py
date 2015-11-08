@@ -56,14 +56,7 @@ class Columns(Element):
                                              datatype=kwargs.get('datatype'))
         (data, kdims, vdims, self.interface) = initialized
         super(Columns, self).__init__(data, **dict(kwargs, kdims=kdims, vdims=vdims))
-        self.data = self._validate_data(self.data)
-
-    def _validate_data(self, data):
-        """
-        Method that is often overridden in the implementation of
-        specific Elements for validating and transforming the input data
-        format."""
-        return self.interface.validate_data(self, data)
+        self.interface.validate(self)
 
 
     def __setstate__(self, state):
@@ -322,12 +315,13 @@ class Columns(Element):
             return dim_vals
 
 
-    def dframe(self, as_table=False):
+    def dframe(self, dimensions=None):
         """
-        Returns the data in the form of a DataFrame, if as_table is
-        requested the data will be wrapped in a Table object.
+        Returns the data in the form of a DataFrame.
         """
-        return self.interface.dframe(self, as_table)
+        if dimensions:
+            dimensions = [self.get_dimension(d).name for d in dimensions]
+        return self.interface.dframe(self, dimensions)
 
 
 
@@ -399,15 +393,15 @@ class DataColumns(param.Parameterized):
     def shape(cls, columns):
         return columns.data.shape
 
-
     @classmethod
     def length(cls, columns):
         return len(columns.data)
 
-
     @classmethod
-    def validate_data(cls, columns, data):
-        return data
+    def validate(cls, columns):
+        pass
+
+
 
 
 
@@ -440,10 +434,6 @@ class NdColumns(DataColumns):
             raise ValueError("NdColumns interface couldn't convert data.""")
         return data, kdims, vdims
 
-
-    @classmethod
-    def validate_data(cls, columns, data):
-        return data
 
     @classmethod
     def shape(cls, columns):
@@ -535,8 +525,8 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def _validate(cls, columns):
-        if not all(c in data.columns for c in columns.dimensions(label=True)):
+    def validate(cls, columns):
+        if not all(c in columns.data.columns for c in columns.dimensions(label=True)):
             raise ValueError("Supplied dimensions don't match columns "
                              "in the dataframe.")
 
@@ -710,6 +700,8 @@ class ArrayColumns(DataColumns):
 
         if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
             raise ValueError("ArrayColumns interface could not handle input type.")
+        elif data.ndim == 1:
+            data = np.column_stack([np.arange(len(data)), data])
 
         if kdims is None:
             kdims = eltype.kdims
@@ -719,10 +711,6 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def validate_data(cls, columns, data):
-        if data.ndim == 1:
-            data = np.column_stack([np.arange(len(data)), data])
-        return data
 
 
     @classmethod

@@ -99,6 +99,10 @@ class Distribution(Chart):
 
     vdims = param.List(default=[Dimension('Frequency')])
 
+    def __init__(self, data, **params):
+        super(Distribution, self).__init__(data, **params)
+        self.data = self.interface.reindex(self, [0], [])
+
     def range(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 1:
@@ -110,13 +114,10 @@ class Distribution(Chart):
         else:
             return super(Distribution, self).dimension_values(dimension)
 
-    def _validate_data(self, data):
-        return data
-
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 0:
-            return self.data
+            return self.interface.values(self, 0)
         elif dim_idx == 1:
             return []
         else:

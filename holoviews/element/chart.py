@@ -75,12 +75,11 @@ class ErrorBars(Chart):
                        bounds=(2,2), constant=True)
 
 
-    def _validate_data(self, data):
+    def __init__(self, data, **params):
+        super(ErrorBars, self).__init__(data, **params)
         if self.shape[1] == 3:
             data = self.interface.add_dimension(self, self.vdims[1].name,
                                                 3, self.dimension_values(2))
-        return super(ErrorBars, self)._validate_data(data)
-
 
     def range(self, dim, data_range=True):
         drange = super(ErrorBars, self).range(dim, data_range)
