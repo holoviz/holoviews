@@ -58,7 +58,7 @@ class Columns(Element):
         Defines the data type used for storing non-numeric data.""")
 
     def __init__(self, data, **kwargs):
-        data, params = ColumnarData._process_data(data, self.params(), **kwargs)
+        data, params = DataColumns._process_data(data, self.params(), **kwargs)
         super(Columns, self).__init__(data, **params)
         self.data = self._validate_data(self.data)
 
@@ -182,11 +182,11 @@ class Columns(Element):
         operations on the data.
         """
         if util.is_dataframe(self.data):
-            return ColumnarDataFrame
+            return DFColumns
         elif isinstance(self.data, np.ndarray):
-            return ColumnarArray
+            return ArrayColumns
         elif isinstance(self.data, NdElement):
-            return ColumnarNdElement
+            return NdColumns
 
 
     def reindex(self, kdims=None, vdims=None):
@@ -315,9 +315,9 @@ class Columns(Element):
         if isinstance(data[0], NdElement):
             return data[0].collapse_data(data, function, kdims, **kwargs)
         elif isinstance(data[0], np.ndarray):
-            return ColumnarArray.collapse_data(data, function, kdims, **kwargs)
+            return ArrayColumns.collapse_data(data, function, kdims, **kwargs)
         elif util.is_dataframe(data[0]):
-            return ColumnarDataFrame.collapse_data(data, function, kdims, **kwargs)
+            return DFColumns.collapse_data(data, function, kdims, **kwargs)
 
 
     @classmethod
@@ -376,7 +376,7 @@ class Columns(Element):
 
 
 
-class ColumnarData(param.Parameterized):
+class DataColumns(param.Parameterized):
 
     @classmethod
     def range(cls, columns, dimension):
@@ -502,7 +502,7 @@ class ColumnarData(param.Parameterized):
 
 
 
-class ColumnarNdElement(ColumnarData):
+class NdColumns(DataColumns):
 
     @classmethod
     def validate_data(cls, columns, data):
@@ -563,7 +563,7 @@ class ColumnarNdElement(ColumnarData):
 
 
 
-class ColumnarDataFrame(ColumnarData):
+class DFColumns(DataColumns):
 
 
     @classmethod
@@ -715,7 +715,7 @@ class ColumnarDataFrame(ColumnarData):
 
 
 
-class ColumnarArray(ColumnarData):
+class ArrayColumns(DataColumns):
 
     @classmethod
     def validate_data(cls, columns, data):
