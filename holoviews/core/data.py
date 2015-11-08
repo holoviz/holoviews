@@ -50,9 +50,8 @@ class Columns(Element):
         the data fails to be understood).""")
 
     def __init__(self, data, **kwargs):
-        data, params, interface = DataColumns.initialize(type(self), data, kwargs)
+        data, params, self.interface = DataColumns.initialize(type(self), data, kwargs)
         super(Columns, self).__init__(data, **params)
-        self.interface = interface
         self.data = self._validate_data(self.data)
 
 
