@@ -64,6 +64,11 @@ class Columns(Element):
 
 
     def _validate_data(self, data):
+        """
+        Method that is often overridden in the implementation of
+        specific Elements for validating and transforming the input
+        data format.
+        """
         return self.interface.validate_data(self, data)
 
 
