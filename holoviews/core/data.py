@@ -3,6 +3,7 @@ The data module provides utility classes to interface with various
 data backends.
 """
 
+import sys
 from distutils.version import LooseVersion
 from collections import defaultdict, Iterable
 from itertools import groupby
@@ -429,6 +430,8 @@ class NdColumns(DataColumns):
                          for d in dimensions)
 
         if not isinstance(data, (NdElement, dict)):
+            if sys.version_info.major >= 3:
+                data = list(data)
             # If ndim > 2 data is assumed to be a mapping
             if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])):
                 pass

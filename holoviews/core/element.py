@@ -516,7 +516,7 @@ class NdElement(NdMapping, Tabular):
         for k, group in grouped.data.items():
             reduced = group.reduce(group, group.kdims, function)
             if not np.isscalar(reduced):
-                reduced = reduced.values()[0]
+                reduced = list(reduced.values())[0]
             else:
                 reduced = (reduced,)
             rows.append((k, reduced))
