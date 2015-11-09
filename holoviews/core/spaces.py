@@ -304,7 +304,7 @@ class HoloMap(UniformNdMapping):
                 for i, hist in enumerate(hists):
                     histmaps[i][k] = hist
             else:
-                histmap[k] = hists
+                histmaps[0][k] = hists
 
         if adjoin:
             layout = self
