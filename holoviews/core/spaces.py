@@ -3,13 +3,12 @@ import numpy as np
 
 import param
 
-from . import traversal
+from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, Overlay, CompositeOverlay, NdOverlay
 from .tree import AttrTree
-
 
 class HoloMap(UniformNdMapping):
     """
@@ -271,8 +270,13 @@ class HoloMap(UniformNdMapping):
         via the kwargs, where the keyword has to match a particular
         dimension in the Elements.
         """
+        from ..element import Table
         reduced_items = [(k, v.reduce(dimensions, function, **reduce_map))
                          for k, v in self.items()]
+        if not isinstance(reduced_items[0][1], Table):
+            params = dict(util.get_param_values(self.last),
+                          kdims=self.kdims, vdims=self.last.vdims)
+            return Table(reduced_items, **params)
         return self.clone(reduced_items).table()
 
 
