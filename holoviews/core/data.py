@@ -51,6 +51,10 @@ class Columns(Element):
         the data fails to be understood).""")
 
     def __init__(self, data, **kwargs):
+        if isinstance(data, Element):
+            pvals = util.get_param_values(data)
+            kwargs.update([(l, pvals[l]) for l in ['group', 'label']
+                           if l in pvals and l not in kwargs]]
         initialized = DataColumns.initialize(type(self), data,
                                              kwargs.get('kdims'),
                                              kwargs.get('vdims'),
