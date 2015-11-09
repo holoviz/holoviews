@@ -18,12 +18,14 @@ except:
 
 import param
 
-from ..core import ViewableElement, NdMapping, NdOverlay,\
-    NdLayout, GridSpace, Element, HoloMap
-from ..element import Chart, Table, Curve, Scatter, Bars, Points, VectorField, HeatMap, Scatter3D, Surface
+from ..core import ViewableElement, NdMapping, Columns, NdOverlay,\
+    NdLayout, GridSpace, NdElement, HoloMap
+from ..core.data import DFColumns
+from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
+                       VectorField, HeatMap, Scatter3D, Surface)
 
 
-class DataFrameView(Element):
+class DataFrameView(Columns):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
@@ -84,43 +86,24 @@ class DataFrameView(Element):
                 dims[list(data.columns).index(name)] = dim
 
         ViewableElement.__init__(self, data, kdims=dims, **params)
-        self.data.columns = self._cached_index_names
+        self.interface = DFColumns
+        self.data.columns = self.dimensions('key', True)
 
 
-    def __getitem__(self, key):
-        """
-        Allows slicing and selecting along the DataFrameView dimensions.
-        """
-        if key is ():
-            return self
-        else:
-            if len(key) <= self.ndims:
-                return self.select(**dict(zip(self._cached_index_names, key)))
-            else:
-                raise Exception('Selection contains %d dimensions, DataFrameView '
-                                'only has %d index dimensions.' % (self.ndims, len(key)))
+    def groupby(self, dimensions, container_type=NdMapping):
+        invalid_dims = [d for d in dimensions if d not in self.dimensions()]
+        if invalid_dims:
+            raise Exception('Following dimensions could not be found %s.'
+                            % invalid_dims)
 
-
-    def select(self, selection_specs=None, **select):
-        """
-        Allows slice and select individual values along the DataFrameView
-        dimensions. Supply the dimensions and values or slices as
-        keyword arguments.
-        """
-        df = self.data
-        for dim, k in select.items():
-            if isinstance(k, slice):
-                df = df[(k.start < df[dim]) & (df[dim] < k.stop)]
-            else:
-                df = df[df[dim] == k]
-        return self.clone(df)
-
-
-    def dimension_values(self, dim):
-        if dim in self.data.columns:
-            return np.array(self.data[dim])
-        else:
-            return super(DataFrameView, self).dimension_values(dim)
+        index_dims = [self.get_dimension(d) for d in dimensions]
+        view_dims = [d for d in self.kdims if d not in dimensions]
+        mapping_data = []
+        for k, v in self.data.groupby([self.get_dimension(d).name for d in dimensions]):
+            data = v.drop(dimensions, axis=1)
+            mapping_data.append((k, self.clone(data, kdims=[self.get_dimension(d)
+                                                            for d in data.columns])))
+        return container_type(mapping_data, kdims=index_dims)
 
 
     def apply(self, name, *args, **kwargs):
@@ -130,60 +113,6 @@ class DataFrameView(Element):
         """
         return self.clone(getattr(self.data, name)(*args, **kwargs),
                           clone_override=True)
-
-
-    def dframe(self):
-        """
-        Returns a copy of the internal dframe.
-        """
-        return self.data.copy()
-
-
-    def aggregate(self, dimensions=[], function=None, **reductions):
-        """
-        The aggregate function accepts either a list of Dimensions
-        and a function to apply to find the aggregate across
-        those Dimensions or a list of dimension/function pairs
-        to apply one by one.
-        """
-        if not dimensions and not reductions:
-            raise Exception("Supply either a list of Dimensions or"
-                            "reductions as keyword arguments")
-        reduced = self.data
-        dfnumeric = reduced.applymap(np.isreal).all(axis=0)
-        unreducable = list(dfnumeric[dfnumeric == False].index)
-        if dimensions:
-            if not function:
-                raise Exception("Supply a function to reduce the Dimensions with")
-            reduced = reduced.groupby(dimensions+unreducable, as_index=True).aggregate(function)
-            reduced_indexes = [reduced.index.names.index(d) for d in unreducable if d not in dimensions]
-            reduced = reduced.reset_index(level=reduced_indexes)
-        if reductions:
-            for dim, fn in reductions.items():
-                reduced = reduced.groupby(dim, as_index=True).aggregate(fn)
-                reduced_indexes = [reduced.index.names.index(d) for d in unreducable]
-                reduced = reduced.reset_index(level=reduced_indexes)
-        kdims = [self.get_dimension(d) for d in reduced.columns]
-        return self.clone(reduced, kdims=kdims)
-
-
-    def groupby(self, dimensions, container_type=NdMapping):
-        invalid_dims = list(set(dimensions) - set(self._cached_index_names))
-        if invalid_dims:
-            raise Exception('Following dimensions could not be found %s.'
-                            % invalid_dims)
-
-        index_dims = [self.get_dimension(d) for d in dimensions]
-        mapping = container_type(None, kdims=index_dims)
-        view_dims = set(self._cached_index_names) - set(dimensions)
-        view_dims = [self.get_dimension(d) for d in view_dims]
-        for k, v in self.data.groupby(dimensions):
-            data = v.drop(dimensions, axis=1)
-            mapping[k] = self.clone(data,
-                                    kdims=[self.get_dimension(d)
-                                           for d in data.columns])
-        return mapping
-
 
     def overlay(self, dimensions):
         return self.groupby(dimensions, NdOverlay)
@@ -245,6 +174,12 @@ class DFrame(DataFrameView):
         supplied the data is aggregated for each group along the
         key_dimensions. Also supports a dropna option.
         """
+
+        # Deprecation warning
+        self.warning("The DFrame conversion interface is deprecated "
+                     "and has been superseded by a real integration "
+                     "with pandas.")
+
         if not isinstance(kdims, list): kdims = [kdims]
         if not isinstance(vdims, list): vdims = [vdims]
 
@@ -270,7 +205,7 @@ class DFrame(DataFrameView):
             groups = NdMapping({0: self})
             mdims = ['Default']
         create_kwargs = dict(kdims=key_dims, vdims=val_dims,
-                             view_type=view_type)
+                            view_type=view_type)
         create_kwargs.update(kwargs)
 
         # Convert each element in the HoloMap

@@ -3,6 +3,7 @@ import numpy as np
 
 import param
 
+from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
@@ -31,8 +32,7 @@ class HoloMap(UniformNdMapping):
             with item_check(False):
                 return NdOverlay(self, **kwargs)
         else:
-            dims = [d for d in self._cached_index_names
-                    if d not in dimensions]
+            dims = [d for d in self.kdims if d not in dimensions]
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
 
 
@@ -92,7 +92,7 @@ class HoloMap(UniformNdMapping):
         Helper for __mul__ that returns the list of keys together with
         the dimension labels.
         """
-        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
+        return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
                 for k in self.keys()]
 
 
@@ -108,8 +108,8 @@ class HoloMap(UniformNdMapping):
         with completely different dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
-            self_set = set(self._cached_index_names)
-            other_set = set(other._cached_index_names)
+            self_set = {d.name for d in self.kdims}
+            other_set = {d.name for d in other.kdims}
 
             # Determine which is the subset, to generate list of keys and
             # dimension labels for the new view
@@ -131,10 +131,10 @@ class HoloMap(UniformNdMapping):
                 # Generate keys for both subset and superset and sort them by the dimension index.
                 self_key = tuple(k for p, k in sorted(
                     [(self.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in self._cached_index_names]))
+                     if dim in self.kdims]))
                 other_key = tuple(k for p, k in sorted(
                     [(other.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in other._cached_index_names]))
+                     if dim in other.kdims]))
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
@@ -195,9 +195,9 @@ class HoloMap(UniformNdMapping):
         """
         from .operation import MapOperation
         if not dimensions:
-            dimensions = self._cached_index_names
+            dimensions = self.kdims
         if self.ndims > 1 and len(dimensions) != self.ndims:
-            groups = self.groupby([dim for dim in self._cached_index_names
+            groups = self.groupby([dim for dim in self.kdims
                                    if dim not in dimensions])
         else:
             [self.get_dimension(dim) for dim in dimensions]
@@ -207,7 +207,12 @@ class HoloMap(UniformNdMapping):
             if isinstance(function, MapOperation):
                 collapsed[key] = function(group, **kwargs)
             else:
-                data = group.type.collapse_data([el.data for el in group], function, **kwargs)
+                group_data = [el.data for el in group]
+                args = (group_data, function, group.last.kdims)
+                if hasattr(group.last, 'interface'):
+                    data = group.last.interface.collapse_data(*args, **kwargs)
+                else:
+                    data = group.type.collapse_data(*args, **kwargs)
                 collapsed[key] = group.last.clone(data)
         return collapsed if self.ndims > 1 else collapsed.last
 
@@ -278,7 +283,8 @@ class HoloMap(UniformNdMapping):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = self.clone(shared_data=False)
+        histmaps = [self.clone(shared_data=False)
+                    for d in kwargs.get('dimension', range(1))]
 
         if individually:
             map_range = None
@@ -291,16 +297,27 @@ class HoloMap(UniformNdMapping):
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
             kwargs['index'] = 0
         for k, v in self.data.items():
-            histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
-                                individually=individually, num_bins=num_bins,
-                                style_prefix=style_prefix, **kwargs)
+            hists = v.hist(adjoin=False, bin_range=bin_range,
+                           individually=individually, num_bins=num_bins,
+                           style_prefix=style_prefix, **kwargs)
+            if isinstance(hists, Layout):
+                for i, hist in enumerate(hists):
+                    histmaps[i][k] = hist
+            else:
+                histmaps[0][k] = hists
 
-        if adjoin and issubclass(self.type, (NdOverlay, Overlay)):
-            layout = (self << histmap)
-            layout.main_layer = kwargs['index']
+        if adjoin:
+            layout = self
+            for hist in histmaps:
+                layout = (layout << hist)
+            if issubclass(self.type, (NdOverlay, Overlay)):
+                layout.main_layer = kwargs['index']
             return layout
-
-        return (self << histmap) if adjoin else histmap
+        else:
+            if len(histmaps) > 1:
+                return Layout.from_values(histmaps)
+            else:
+                return histmaps[0]
 
 
 
@@ -313,9 +330,6 @@ class GridSpace(UniformNdMapping):
     two-dimensional space may have to arbitrary dimensions, e.g. for
     2D parameter spaces.
     """
-
-    # NOTE: If further composite types supporting Overlaying and Layout these
-    #       classes may be moved to core/composite.py
 
     kdims = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
                        bounds=(1,2))
@@ -361,7 +375,7 @@ class GridSpace(UniformNdMapping):
         ndims = self.ndims
         if all(not isinstance(el, slice) for el in key):
             dim_inds = []
-            for dim in self._cached_index_names:
+            for dim in self.kdims:
                 dim_type = self.get_dimension_type(dim)
                 if isinstance(dim_type, type) and issubclass(dim_type, Number):
                     dim_inds.append(self.get_dimension_index(dim))
@@ -440,3 +454,24 @@ class GridSpace(UniformNdMapping):
         if self.ndims == 1:
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
+
+
+
+class GridMatrix(GridSpace):
+    """
+    GridMatrix is container type for heterogeneous Element types
+    laid out in a grid. Unlike a GridSpace the axes of the Grid
+    must not represent an actual coordinate space, but may be used
+    to plot various dimensions against each other. The GridMatrix
+    is usually constructed using the gridmatrix operation, which
+    will generate a GridMatrix plotting each dimension in an
+    Element against each other.
+    """
+
+
+    def _item_check(self, dim_vals, data):
+        if not traversal.uniform(NdMapping([(0, self), (1, data)])):
+            raise ValueError("HoloMaps dimensions must be consistent in %s." %
+                             type(self).__name__)
+        NdMapping._item_check(self, dim_vals, data)
+

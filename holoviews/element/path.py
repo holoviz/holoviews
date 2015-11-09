@@ -52,6 +52,7 @@ class Path(Element2D):
 
 
     def __getitem__(self, key):
+        if key in self.dimensions(): return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
@@ -65,7 +66,7 @@ class Path(Element2D):
 
 
     @classmethod
-    def collapse_data(cls, data_list, function=None, **kwargs):
+    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
         if function is None:
             return [path for paths in data_list for path in paths]
         else:

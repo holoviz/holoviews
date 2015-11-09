@@ -11,6 +11,7 @@ try:
 except:
     from collections import OrderedDict
 
+import numpy as np
 import param
 
 from ..core.util import basestring, sanitize_identifier, max_range, find_range
@@ -172,9 +173,13 @@ class Dimension(param.Parameterized):
 
 
     def __eq__(self, other):
-        "Dimensions are sorted alphanumerically by name"
-        return self.name == other.name if isinstance(other, Dimension) else self.name == other
+        "Implements equals operator including sanitized comparison."
+        dim_matches = [self.name, sanitize_identifier(self.name)]
+        return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
 
+    def __ne__(self, other):
+        "Implements not equal operator including sanitized comparison."
+        return not self.__eq__(other)
 
     def __lt__(self, other):
         "Dimensions are sorted alphanumerically by name"
@@ -251,7 +256,8 @@ class LabelledData(param.Parameterized):
         If shared_data is set to True and no data explicitly supplied,
         the clone will share data with the original.
         """
-        settings = dict(self.get_param_values(), **overrides)
+        params = dict(self.get_param_values())
+        settings = dict(params, **overrides)
         if data is None and shared_data:
             data = self.data
         return self.__class__(data, *args, **settings)
@@ -516,8 +522,6 @@ class Dimensioned(LabelledData):
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
-        self._cached_index_names = [d.name for d in self.kdims]
-        self._cached_value_names = [d.name for d in self.vdims]
         self._settings = None
 
 
@@ -533,7 +537,7 @@ class Dimensioned(LabelledData):
         valid_dimensions = []
         for dim in dimensions:
             if isinstance(dim, Dimension): dim = dim.name
-            if dim not in self._cached_index_names:
+            if dim not in self.kdims:
                 raise Exception("Supplied dimensions %s not found." % dim)
             valid_dimensions.append(dim)
         return valid_dimensions
@@ -599,7 +603,7 @@ class Dimensioned(LabelledData):
                 return IndexError('Dimension index out of bounds')
         try:
             sanitized = {sanitize_identifier(kd): kd
-                         for kd in self._cached_index_names}
+                         for kd in self.dimensions('key', True)}
             return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
@@ -651,13 +655,10 @@ class Dimensioned(LabelledData):
         """
 
         # Apply all indexes applying on this object
-        val_dim = ['value'] if self.vdims else []
-        sanitized = {sanitize_identifier(kd): kd
-                     for kd in self._cached_index_names}
-        local_dims = (self._cached_index_names
-                      + list(sanitized.keys()) + val_dim)
+        vdims = self.vdims+['value'] if self.vdims else []
+        kdims = self.kdims
         local_kwargs = {k: v for k, v in kwargs.items()
-                        if k in local_dims}
+                        if k in kdims+vdims}
 
         # Check selection_spec applies
         if selection_specs is not None:
@@ -666,14 +667,16 @@ class Dimensioned(LabelledData):
         else:
             matches = True
 
+        # Apply selection to self
         if local_kwargs and matches:
-            select = [slice(None) for i in range(self.ndims)]
+            ndims = (len(self.dimensions()) if any(d in self.vdims for d in kwargs)
+                     else self.ndims)
+            select = [slice(None) for i in range(ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':
                     select += [val]
                 else:
                     if isinstance(val, tuple): val = slice(*val)
-                    dim = sanitized.get(dim, dim)
                     select[self.get_dimension_index(dim)] = val
             if self._deep_indexable:
                 selection = self.get(tuple(select),
@@ -683,13 +686,15 @@ class Dimensioned(LabelledData):
         else:
             selection = self
 
-        if type(selection) is not type(self):
+        if not isinstance(selection, Dimensioned):
+            return selection
+        elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
             val_dim = ['value'] if selection.vdims else []
             key_dims = selection.dimensions('key', label=True) + val_dim
             if any(kw in key_dims for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
-        elif selection._deep_indexable:
+        elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
@@ -713,7 +718,7 @@ class Dimensioned(LabelledData):
         """
         val = self._cached_constants.get(dimension, None)
         if val:
-            return val
+            return np.array([val])
         else:
             raise Exception("Dimension %s not found in %s." %
                             (dimension, self.__class__.__name__))

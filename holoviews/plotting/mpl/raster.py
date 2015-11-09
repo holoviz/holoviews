@@ -104,7 +104,8 @@ class RasterPlot(ColorbarPlot):
     def _compute_ticks(self, element, ranges):
         if isinstance(element, HeatMap):
             xdim, ydim = element.kdims
-            dim1_keys, dim2_keys = element.dense_keys()
+            dim1_keys, dim2_keys = [element.dimension_values(i, True)
+                                    for i in range(2)]
             num_x, num_y = len(dim1_keys), len(dim2_keys)
             x0, y0, x1, y1 = element.extents
             xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
@@ -120,23 +121,16 @@ class RasterPlot(ColorbarPlot):
     def _annotate_values(self, element):
         axis = self.handles['axis']
         val_dim = element.vdims[0]
-        dim1_keys, dim2_keys = element.dense_keys()
-        num_x, num_y = len(dim1_keys), len(dim2_keys)
+        d1keys, d2keys, vals = [element.dimension_values(i) for i in range(3)]
+        d1uniq, d2uniq = [element.dimension_values(i, True) for i in range(2)]
+        num_x, num_y = len(d1uniq), len(d2uniq)
         xstep, ystep = 1.0/num_x, 1.0/num_y
         xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
         ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
-        coords = product(dim1_keys, dim2_keys)
         plot_coords = product(xpos, ypos)
-        for plot_coord, coord in zip(plot_coords, coords):
-            if isinstance(element, HeatMap):
-                val = element._data.get(coord, np.NaN)
-                val = val[0] if isinstance(val, tuple) else val
-            else:
-                val = element[coord]
-            val = val_dim.type(val) if val_dim.type else val
-            val = val[0] if isinstance(val, tuple) else val
-            text = val_dim.pprint_value(val)
-            text = '' if val is np.nan else text
+        for plot_coord, v in zip(plot_coords, vals):
+            text = val_dim.pprint_value(v)
+            text = '' if v is np.nan else text
             if plot_coord not in self.handles['annotations']:
                 annotation = axis.annotate(text, xy=plot_coord,
                                            xycoords='axes fraction',

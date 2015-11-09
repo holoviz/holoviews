@@ -67,10 +67,6 @@ class TimeSeries(Element2D):
         raise NotImplementedError('Reduction of TimeSeries not '
                                   'implemented.')
 
-    @property
-    def ylabel(self):
-        return str(self.vdims[0])
-
 
 
 class Bivariate(Chart):
@@ -103,29 +99,25 @@ class Distribution(Chart):
 
     vdims = param.List(default=[Dimension('Frequency')])
 
-    def _validate_data(self, data):
-        data = np.expand_dims(data, 1) if data.ndim == 1 else data
-        if not data.shape[1] == 1:
-            raise ValueError("Distribution only support single dimensional arrays.")
-        return data
-
+    def __init__(self, data, **params):
+        super(Distribution, self).__init__(data, **params)
+        self.data = self.interface.reindex(self, [0], [])
 
     def range(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
-        dim = self.get_dimension(dim_idx)
-        if dim.range != (None, None):
-            return dim.range
-        elif dim_idx == 0:
-            return (np.nanmin(self.data), np.nanmax(self.data))
-        elif dim_idx == 1:
-            return (None, None)
+        if dim_idx == 1:
+            dim = self.get_dimension(dim_idx)
+            if dim.range != (None, None):
+                return dim.range
+            else:
+                return (None, None)
         else:
             return super(Distribution, self).dimension_values(dimension)
 
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 0:
-            return self.data
+            return self.interface.values(self, 0)
         elif dim_idx == 1:
             return []
         else:
@@ -201,20 +193,6 @@ class DFrame(PandasDFrame):
         return TimeSeries(curve_map.overlay(kdims[1]),
                           kdims=[self.get_dimension(dim) for dim in kdims],
                           **kwargs)
-
-    @property
-    def ylabel(self):
-        return self.x2 if self.x2 else self.y
-
-    @property
-    def ylim(self):
-        if self._ylim:
-            return self._ylim
-        elif self.x2 or self.y:
-            ydata = self.data[self.x2 if self.x2 else self.y]
-            return min(ydata), max(ydata)
-        else:
-            return None
 
 
 __all__ = ['DFrame', 'Bivariate', 'Distribution',

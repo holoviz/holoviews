@@ -1,13 +1,14 @@
-from ...core import Store, Overlay, NdOverlay, Layout, AdjointLayout, GridSpace
+from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
+                     GridSpace, NdElement, Columns, GridMatrix)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
                         ErrorBars, Text, HLine, VLine, Spline,
-                        Table, ItemTable, Surface, Scatter3D)
+                        Table, ItemTable, Surface, Scatter3D, Trisurface)
 from ...core.options import Options, Cycle, OptionTree
 from ...interface import DFrame
 from ..plot import PlotSelector
-from ..mpl import SurfacePlot, Scatter3DPlot
+from ..mpl import SurfacePlot, Scatter3DPlot, TrisurfacePlot
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
@@ -23,20 +24,26 @@ Store.renderers['bokeh'] = BokehRenderer
 
 Store.register({Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
+                GridSpace: GridPlot,
+                GridMatrix: GridPlot,
+                AdjointLayout: AdjointLayoutPlot,
+                Layout: LayoutPlot,
+
+                # Charts
                 Curve: CurvePlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
+                ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
-                HLine: LineAnnotationPlot,
-                VLine: LineAnnotationPlot,
-                GridSpace: GridPlot,
+
+                # Rasters
                 Image: RasterPlot,
                 RGB: RGBPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
                 Histogram: HistogramPlot,
-                AdjointLayout: AdjointLayoutPlot,
-                Layout: LayoutPlot,
+
+                # Paths
                 Path: PathPlot,
                 Contours: PathPlot,
                 Path:     PathPlot,
@@ -44,18 +51,30 @@ Store.register({Overlay: OverlayPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
-                ErrorBars: ErrorPlot,
+
+                # Annotations
+                HLine: LineAnnotationPlot,
+                VLine: LineAnnotationPlot,
                 Text: TextPlot,
                 Spline: SplinePlot,
+
+                # Tabular
                 Table: TablePlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot,
+                NdElement: TablePlot,
+                Columns: TablePlot,
+
+                # Wrapped mpl 3d plots
                 Surface: PlotSelector(lambda x: 'bokeh',
                                       [('mpl', SurfacePlot),
                                        ('bokeh', BokehMPLRawWrapper)], True),
                 Scatter3D: PlotSelector(lambda x: 'bokeh',
                                         [('mpl', Scatter3DPlot),
-                                         ('bokeh', BokehMPLRawWrapper)], True)},
+                                         ('bokeh', BokehMPLRawWrapper)], True),
+                Trisurface: PlotSelector(lambda x: 'bokeh',
+                                         [('mpl', TrisurfacePlot),
+                                          ('bokeh', BokehMPLRawWrapper)], True)},
                'bokeh')
 
 

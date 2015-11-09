@@ -8,6 +8,21 @@ from collections import defaultdict
 import numpy as np
 import param
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+try:
+    import dask.dataframe as dd
+except ImportError:
+    dd = None
+
+try:
+    from blaze import bz
+except ImportError:
+    bz = None
+
 # Python3 compatibility
 basestring = str if sys.version_info.major == 3 else basestring
 
@@ -246,64 +261,76 @@ def find_minmax(lims, olims):
 
 
 def find_range(values, soft_range=[]):
-   """
-   Safely finds either the numerical min and max of
-   a set of values, falling back to the first and
-   the last value in the sorted list of values.
-   """
-   try:
-      values = np.array(values)
-      values = np.squeeze(values) if len(values.shape) > 1 else values
-      values = np.concatenate([values, soft_range])
-      return np.nanmin(values), np.nanmax(values)
-   except:
-      try:
-         values = sorted(values)
-         return (values[0], values[-1])
-      except:
-         return (None, None)
+    """
+    Safely finds either the numerical min and max of
+    a set of values, falling back to the first and
+    the last value in the sorted list of values.
+    """
+    try:
+        values = np.array(values)
+        values = np.squeeze(values) if len(values.shape) > 1 else values
+        if len(soft_range):
+            values = np.concatenate([values, soft_range])
+        if values.dtype.kind == 'M':
+            return values.min(), values.max()
+        return np.nanmin(values), np.nanmax(values)
+    except:
+        try:
+            values = sorted(values)
+            return (values[0], values[-1])
+        except:
+            return (None, None)
 
 
 def max_range(ranges):
-   """
-   Computes the maximal lower and upper bounds from a list bounds.
-   """
-   try:
-      with warnings.catch_warnings():
-         warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-         arr = np.array(ranges, dtype=np.float)
-         return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
-   except:
-      return (np.NaN, np.NaN)
+    """
+    Computes the maximal lower and upper bounds from a list bounds.
+    """
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+            arr = np.array(ranges)
+            if arr.dtype.kind == 'M':
+                return arr[:, 0].min(), arr[:, 1].max()
+            return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
+    except:
+        return (np.NaN, np.NaN)
 
 
 def max_extents(extents, zrange=False):
-   """
-   Computes the maximal extent in 2D and 3D space from
-   list of 4-tuples or 6-tuples. If zrange is enabled
-   all extents are converted to 6-tuples to comput
-   x-, y- and z-limits.
-   """
-
-   if zrange:
-      num = 6
-      inds = [(0, 2), (1, 3)]
-      extents = [e if len(e) == 6 else (e[0], e[1], None,
-                                        e[2], e[3], None)
-                 for e in extents]
-   else:
-      num = 4
-      inds = [(0, 2), (1, 3)]
-   arr = np.array(extents, dtype=np.float, ndmin=2)
-   extents = [np.NaN] * num
-   if 0 in arr.shape:
-      return extents
-   with warnings.catch_warnings():
-      warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-      for lower, upper in inds:
-         extents[lower] = np.nanmin(arr[:, lower])
-         extents[upper] = np.nanmax(arr[:, upper])
-   return tuple(extents)
+    """
+    Computes the maximal extent in 2D and 3D space from
+    list of 4-tuples or 6-tuples. If zrange is enabled
+    all extents are converted to 6-tuples to comput
+    x-, y- and z-limits.
+    """
+    if zrange:
+        num = 6
+        inds = [(0, 2), (1, 3)]
+        extents = [e if len(e) == 6 else (e[0], e[1], None,
+                                          e[2], e[3], None)
+                   for e in extents]
+    else:
+        num = 4
+        inds = [(0, 2), (1, 3)]
+    arr = list(zip(*extents)) if extents else []
+    extents = [np.NaN] * num
+    if len(arr) == 0:
+        return extents
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+        for lidx, uidx in inds:
+            lower = [v for v in arr[lidx] if v is not None]
+            upper = [v for v in arr[uidx] if v is not None]
+            if lower and isinstance(lower[0], np.datetime64):
+                extents[lidx] = np.min(lower)
+            elif lower:
+                extents[lidx] = np.nanmin(lower)
+            if upper and isinstance(upper[0], np.datetime64):
+                extents[uidx] = np.max(upper)
+            elif upper:
+                extents[uidx] = np.nanmax(upper)
+    return tuple(extents)
 
 
 def int_to_alpha(n, upper=True):
@@ -390,16 +417,26 @@ def python2sort(x,key=None):
     return itertools.chain.from_iterable(sorted(group, key=key) for group in groups)
 
 
-def dimension_sort(odict, dimensions, categorical, cached_values):
+def dimension_sort(odict, kdims, vdims, categorical, key_index, cached_values):
     """
     Sorts data by key using usual Python tuple sorting semantics
     or sorts in categorical order for any categorical Dimensions.
     """
     sortkws = {}
-    if categorical:
-       sortkws['key'] = lambda x: tuple(cached_values[d.name].index(x[0][i])
-                                        if d.values else x[0][i]
-                                        for i, d in enumerate(dimensions))
+    ndims = len(kdims)
+    dimensions = kdims+vdims
+    indexes = [(dimensions[i], int(i not in range(ndims)),
+                    i if i in range(ndims) else i-ndims)
+                for i in key_index]
+
+    if len(set(key_index)) != len(key_index):
+        raise ValueError("Cannot sort on duplicated dimensions")
+    elif categorical:
+       sortkws['key'] = lambda x: tuple(cached_values[dim.name].index(x[t][d])
+                                        if dim.values else x[t][d]
+                                        for i, (dim, t, d) in enumerate(indexes))
+    elif key_index != list(range(len(kdims+vdims))):
+        sortkws['key'] = lambda x: tuple(x[t][d] for _, t, d in indexes)
     if sys.version_info.major == 3:
         return python2sort(odict.items(), **sortkws)
     else:
@@ -570,3 +607,21 @@ def find_file(folder, filename):
         for filename in fnmatch.filter(filenames, filename):
             matches.append(os.path.join(root, filename))
     return matches[-1]
+
+
+def is_dataframe(data):
+    """
+    Checks whether the supplied data is DatFrame type.
+    """
+    return((pd is not None and isinstance(data, pd.DataFrame)) or
+          (dd is not None and isinstance(data, dd.DataFrame)) or
+          (bz is not None and isinstance(data, bz.Data)))
+
+
+def get_param_values(data):
+    params = dict(kdims=data.kdims, vdims=data.vdims,
+                  label=data.label)
+    if data.group != data.params()['group'].default:
+        params['group'] = data.group
+    return params
+

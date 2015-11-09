@@ -3,11 +3,11 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import OrderedDict, Dimension, UniformNdMapping, Element, Element2D, NdElement, HoloMap
+from ..core import OrderedDict, Dimension, UniformNdMapping, Element, Columns, Element2D, NdElement, HoloMap
 from .tabular import ItemTable, Table
 from .util import compute_edges
 
-class Chart(Element2D):
+class Chart(Columns, Element2D):
     """
     The data held within Chart is a numpy array of shape (N, D),
     where N is the number of samples and D the number of dimensions.
@@ -29,193 +29,22 @@ class Chart(Element2D):
         The value dimensions of the Chart, usually corresponding to a
         number of dependent variables.""")
 
-    _null_value = np.array([[], []]).T # For when data is None
+    def __getitem__(self, index):
+        sliced = super(Chart, self).__getitem__(index)
+        if not isinstance(sliced, Chart):
+            return sliced
 
-    def __init__(self, data, **kwargs):
-        data, params = self._process_data(data)
-        params.update(kwargs)
-        super(Chart, self).__init__(data, **params)
-        self.data = self._validate_data(self.data)
-
-
-    def _convert_element(self, element):
-        if isinstance(element, Chart):
-            return element.data
-        elif isinstance(element, NdElement):
-            return np.vstack([np.concatenate([key, vals])
-                              for key, vals in element.data.items()]).astype(np.float)
-        else:
-            return super(Chart, self)._convert_element(element)
-
-
-    def _process_data(self, data):
-        params = {}
-        if isinstance(data, UniformNdMapping) or (isinstance(data, list) and data
-                                                  and isinstance(data[0], Element2D)):
-            params = dict([v for v in data][0].get_param_values(onlychanged=True))
-            data = np.concatenate([v.data for v in data])
-        elif isinstance(data, Element):
-            pass
-        elif isinstance(data, tuple):
-            data = np.column_stack(data)
-        elif not isinstance(data, np.ndarray):
-            data = self._null_value if (data is None) else list(data)
-            if len(data):
-                data = np.array(data)
-
-        return data, params
-
-
-    def _validate_data(self, data):
-        if data.ndim == 1:
-            data = np.array(list(zip(range(len(data)), data)))
-        if not data.shape[1] == len(self.dimensions()):
-            raise ValueError("Data has to match number of key and value dimensions")
-        return data
-
-
-    def closest(self, coords):
-        """
-        Given single or multiple x-values, returns the list
-        of closest actual samples.
-        """
-        if not isinstance(coords, list): coords = [coords]
-        xs = self.data[:, 0]
-        idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs]
-
-
-    def __getitem__(self, slices):
-        """
-        Implements slicing or indexing of the data by the data x-value.
-        If a single element is indexed reduces the Element2D to a single
-        Scatter object.
-        """
-        if slices is ():
-            return self
-        if not isinstance(slices, tuple): slices = (slices,)
-        if len(slices) > self.ndims:
-            raise Exception("Slice must match number of key dimensions.")
-
-        data = self.data
-        lower_bounds, upper_bounds = [], []
-        for idx, slc in enumerate(slices):
+        if not isinstance(index, tuple): index = (index,)
+        ndims = len(self.extents)//2
+        lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
+        for i, slc in enumerate(index[:ndims]):
             if isinstance(slc, slice):
-                start = -float("inf") if slc.start is None else slc.start
-                stop = float("inf") if slc.stop is None else slc.stop
-
-                clip_start = start <= data[:, idx]
-                clip_stop = data[:, idx] < stop
-                data = data[np.logical_and(clip_start, clip_stop), :]
-                lbound = self.extents[idx]
-                ubound = self.extents[self.ndims:][idx]
-                lower_bounds.append(lbound if slc.start is None else slc.start)
-                upper_bounds.append(ubound if slc.stop is None else slc.stop)
-            else:
-                if self.ndims == 1:
-                    data_index = np.argmin(np.abs(data[:, idx] - slc))
-                    data = data[data_index, :]
-                else:
-                    raise KeyError("Only 1D Chart types may be indexed.")
-        if not any(isinstance(slc, slice) for slc in slices):
-            if data.ndim == 1:
-                data = data[self.ndims:]
-                dims = data.shape[0]
-            else:
-                data = data[:, self.ndims:]
-                dims = data.shape[1]
-            return data[0] if dims == 1 else data
-        if self.ndims == 1:
-            lower_bounds.append(None)
-            upper_bounds.append(None)
-
-        return self.clone(data, extents=tuple(lower_bounds + upper_bounds))
-
-
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        new_data = [arr[:, 1:] for arr in data]
-        if isinstance(function, np.ufunc):
-            collapsed = function.reduce(new_data)
-        else:
-            collapsed = function(np.dstack(new_data), axis=-1, **kwargs)
-        return np.hstack([data[0][:, 0, np.newaxis], collapsed])
-
-
-    def sample(self, samples=[]):
-        """
-        Allows sampling of Chart Elements using the default
-        syntax of providing a map of dimensions and sample pairs.
-        """
-        sample_data = OrderedDict()
-        for sample in samples:
-            data = self[sample]
-            data = data if np.isscalar(data) else tuple(data)
-            sample_data[sample] = data
-        params = dict(self.get_param_values(onlychanged=True))
-        params.pop('extents', None)
-        return Table(sample_data, **dict(params, kdims=self.kdims,
-                                         vdims=self.vdims))
-
-
-    def reduce(self, dimensions=[], function=None, **reduce_map):
-        """
-        Allows collapsing of Chart objects using the supplied map of
-        dimensions and reduce functions.
-        """
-        reduce_map = self._reduce_map(dimensions, function, reduce_map)
-
-        if len(reduce_map) > 1:
-            raise ValueError("Chart Elements may only be reduced to a point.")
-        dim, reduce_fn = list(reduce_map.items())[0]
-        if dim in self._cached_index_names:
-            reduced_data = OrderedDict(zip(self.vdims, reduce_fn(self.data[:, self.ndims:], axis=0)))
-        else:
-            raise Exception("Dimension %s not found in %s" % (dim, type(self).__name__))
-        params = dict(self.get_param_values(onlychanged=True), vdims=self.vdims,
-                      kdims=[])
-        params.pop('extents', None)
-        return ItemTable(reduced_data, **params)
-
-
-    def __len__(self):
-        return len(self.data)
-
-
-    def dimension_values(self, dim):
-        index = self.get_dimension_index(dim)
-        if index < len(self.dimensions()):
-            return self.data[:, index]
-        else:
-            return super(Chart, self).dimension_values(dim)
-
-
-    def range(self, dim, data_range=True):
-        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
-        dim = self.get_dimension(dim_idx)
-        if dim.range != (None, None):
-            return dim.range
-        elif dim_idx < len(self.dimensions()):
-            if self.data.ndim == 1:
-                data = np.atleast_2d(self.data).T
-            else:
-                data = self.data
-            if len(data):
-                data = data[:, dim_idx]
-                data_range = np.nanmin(data), np.nanmax(data)
-            else:
-                data_range = (np.NaN, np.NaN)
-        if data_range:
-            return util.max_range([data_range, dim.soft_range])
-        else:
-            return dim.soft_range
-
-
-    def dframe(self):
-        import pandas as pd
-        columns = [d.name for d in self.dimensions()]
-        return pd.DataFrame(self.data, columns=columns)
-
+                lbound = self.extents[i]
+                ubound = self.extents[ndims:][i]
+                lower_bounds[i] = lbound if slc.start is None else slc.start
+                upper_bounds[i] = ubound if slc.stop is None else slc.stop
+        sliced.extents = tuple(lower_bounds+upper_bounds)
+        return sliced
 
 
 class Scatter(Chart):
@@ -226,12 +55,6 @@ class Scatter(Chart):
 
     group = param.String(default='Scatter', constant=True)
 
-    @classmethod
-    def collapse_data(cls, data, function=None, **kwargs):
-        if function:
-            raise Exception("Scatter elements are inhomogenous and "
-                            "cannot be collapsed with a function.")
-        return np.concatenate(data)
 
 
 class Curve(Chart):
@@ -241,21 +64,6 @@ class Curve(Chart):
     """
 
     group = param.String(default='Curve', constant=True)
-
-    def progressive(self):
-        """
-        Create map indexed by Curve x-axis with progressively expanding number
-        of curve samples.
-        """
-        vmap = HoloMap(None, kdims=self.kdims,
-                       title=self.title+' {dims}')
-        for idx in range(len(self.data)):
-            x = self.data[0]
-            if x in vmap:
-                vmap[x].data.append(self.data[0:idx])
-            else:
-                vmap[x] = self.clone(self.data[0:idx])
-        return vmap
 
 
 
@@ -281,19 +89,22 @@ class ErrorBars(Chart):
     vdims = param.List(default=[Dimension('lerror'), Dimension('uerror')],
                        bounds=(2,2), constant=True)
 
-    def _validate_data(self, data):
-        if data.shape[1] == 3:
-            return np.column_stack([data, data[:, 2]])
-        else:
-            return data
 
+    def __init__(self, data, **params):
+        super(ErrorBars, self).__init__(data, **params)
+        if self.shape[1] == 3:
+            self.data = self.interface.add_dimension(self, self.vdims[1].name,
+                                                     3, self.dimension_values(2))
 
     def range(self, dim, data_range=True):
         drange = super(ErrorBars, self).range(dim, data_range)
         didx = self.get_dimension_index(dim)
         if didx == 1 and data_range:
-            lower = np.nanmin(self.data[:, 1] - self.data[:, 2])
-            upper = np.nanmax(self.data[:, 1] + self.data[:, 3])
+            mean = self.dimension_values(1)
+            neg_error = self.dimension_values(2)
+            pos_error = self.dimension_values(3)
+            lower = np.nanmin(mean-neg_error)
+            upper = np.nanmax(mean+pos_error)
             return util.max_range([(lower, upper), drange])
         else:
             return drange
@@ -315,7 +126,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(NdElement):
+class Bars(Columns):
     """
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value
@@ -359,6 +170,7 @@ class Histogram(Element2D):
         """
         Implements slicing or indexing of the Histogram
         """
+        if key in self.dimensions(): return self.dimension_values(key)
         if key is (): return self # May no longer be necessary
         if isinstance(key, tuple) and len(key) > self.ndims:
             raise Exception("Slice must match number of key dimensions.")
@@ -431,9 +243,9 @@ class Histogram(Element2D):
 
     def dimension_values(self, dim):
         dim = self.get_dimension(dim).name
-        if dim in self._cached_value_names:
+        if dim in self.vdims:
             return self.values
-        elif dim in self._cached_index_names:
+        elif dim in self.kdims:
             return np.convolve(self.edges, np.ones((2,))/2, mode='valid')
         else:
             return super(Histogram, self).dimension_values(dim)
@@ -479,21 +291,13 @@ class Points(Chart):
 
     vdims = param.List(default=[])
 
-
     _min_dims = 2                      # Minimum number of columns
-
-    def __len__(self):
-        return self.data.shape[0]
 
     def __iter__(self):
         i = 0
         while i < len(self):
             yield tuple(self.data[i, ...])
             i += 1
-
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        return Scatter.collapse_data(data, function, **kwargs)
 
 
 
@@ -535,8 +339,6 @@ class VectorField(Points):
     _min_dims = 3                              # Minimum number of columns
 
     def __init__(self, data, **params):
-        if not isinstance(data, np.ndarray):
-            data = np.array([
-                [el for el in (col.flat if isinstance(col,np.ndarray) else col)]
-                for col in data]).T
+        if isinstance(data, list) and all(isinstance(d, np.ndarray) for d in data):
+            data = np.column_stack([d.flat if d.ndim > 1 else d for d in data])
         super(VectorField, self).__init__(data, **params)

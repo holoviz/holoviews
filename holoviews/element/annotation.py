@@ -32,6 +32,7 @@ class Annotation(Element2D):
 
 
     def __getitem__(self, key):
+        if key in self.dimensions(): return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
