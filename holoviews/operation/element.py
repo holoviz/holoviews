@@ -619,12 +619,11 @@ class gridmatrix(param.ParameterizedFunction):
         # Creates a unified Columns.data attribute
         # to draw the data from
         if isinstance(element.data, np.ndarray):
-            if Columns.data_type == 'mapping':
-                el_data = element.mapping()
+            if 'dataframe' in Columns.datatype:
+                el_data = element.table('dataframe')
             else:
-                el_data = element.dframe()
-        else:
-            el_data = element.data
+                el_data = element.table('dictionary')
+        el_data = element.data
 
         # Get dimensions to plot against each other
         dims = [d for d in element.dimensions()
