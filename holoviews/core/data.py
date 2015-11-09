@@ -349,7 +349,7 @@ class DataColumns(param.Parameterized):
         elif isinstance(data, Columns):
             data = data.data
         elif isinstance(data, Element):
-            data = {d: data.dimension_values(d) for d in kdims+vdims}
+            data = tuple(data.dimension_values(d) for d in kdims+vdims)
 
         # Set interface priority order
         if datatype is None:
@@ -526,6 +526,10 @@ class DFColumns(DataColumns):
             vdims = vdims if vdims else vdim_param.default
             columns = [d.name if isinstance(d, Dimension) else d
                        for d in kdims+vdims]
+
+            if isinstance(data, dict):
+                data = OrderedDict([(d.name if isinstance(d, Dimension) else d, v)
+                                    for d, v in data.items()])
             if isinstance(data, tuple):
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
