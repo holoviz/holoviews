@@ -69,6 +69,11 @@ class Columns(Element):
             self.data = NdElement(self.data, kdims=self.kdims,
                                   vdims=self.vdims, group=self.group,
                                   label=self.label)
+            self.interface = NdColumns
+        elif isinstance(self.data, np.ndarray):
+            self.interface = ArrayColumns
+        elif util.is_dataframe(self.data):
+            self.interface = DFColumns
 
 
     def closest(self, coords):
