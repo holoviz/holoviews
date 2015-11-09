@@ -417,7 +417,7 @@ class HeatMap(Raster):
             if unique:
                 return self._data.dimension_values(dim)
             else:
-                return np.flipud(self.data.T).flatten()
+                return np.rot90(self.data, 3).flatten()
         else:
             return super(HeatMap, self).dimension_values(dim)
 
