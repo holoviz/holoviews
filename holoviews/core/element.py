@@ -200,7 +200,7 @@ class Tabular(Element):
 
     @property
     def rows(self):
-        return len(self.data) + 1
+        return len(self) + 1
 
     @property
     def cols(self):
