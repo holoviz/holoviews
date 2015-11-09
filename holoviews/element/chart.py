@@ -31,6 +31,9 @@ class Chart(Columns, Element2D):
 
     def __getitem__(self, index):
         sliced = super(Chart, self).__getitem__(index)
+        if not isinstance(sliced, Chart):
+            return sliced
+
         if not isinstance(index, tuple): index = (index,)
         ndims = len(self.extents)/2
         lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
