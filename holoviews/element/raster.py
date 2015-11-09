@@ -512,6 +512,7 @@ class Image(SheetCoordinateSystem, Raster):
         else:
             getter = [0, 1]
         getter = itemgetter(*sorted(getter))
+        coords = list(coords)
         if len(coords) == 1:
             coords = coords[0]
         if isinstance(coords, tuple):
