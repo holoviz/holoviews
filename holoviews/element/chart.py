@@ -78,8 +78,8 @@ class ErrorBars(Chart):
     def __init__(self, data, **params):
         super(ErrorBars, self).__init__(data, **params)
         if self.shape[1] == 3:
-            data = self.interface.add_dimension(self, self.vdims[1].name,
-                                                3, self.dimension_values(2))
+            self.data = self.interface.add_dimension(self, self.vdims[1].name,
+                                                     3, self.dimension_values(2))
 
     def range(self, dim, data_range=True):
         drange = super(ErrorBars, self).range(dim, data_range)
