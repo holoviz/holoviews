@@ -35,7 +35,7 @@ class Chart(Columns, Element2D):
             return sliced
 
         if not isinstance(index, tuple): index = (index,)
-        ndims = len(self.extents)/2
+        ndims = len(self.extents)//2
         lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
         for i, slc in enumerate(index[:ndims]):
             if isinstance(slc, slice):
