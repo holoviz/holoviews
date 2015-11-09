@@ -36,6 +36,8 @@ class Chart(Columns, Element2D):
         lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
         for i, slc in enumerate(index[:ndims]):
             if isinstance(slc, slice):
+                lbound = self.extents[i]
+                ubound = self.extents[ndims:][i]
                 lower_bounds[i] = lbound if slc.start is None else slc.start
                 upper_bounds[i] = ubound if slc.stop is None else slc.stop
         sliced.extents = tuple(lower_bounds+upper_bounds)
