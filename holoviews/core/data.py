@@ -1,6 +1,6 @@
 """
-The data module provides utility classes to interface with various
-data backends.
+The data module provides utility classes to interface with various data
+backends.
 """
 
 import sys
@@ -578,10 +578,9 @@ class DFColumns(DataColumns):
     @classmethod
     def reduce(cls, columns, reduce_dims, function=None):
         """
-        The aggregate function accepts either a list of Dimensions
-        and a function to apply to find the aggregate across
-        those Dimensions or a list of dimension/function pairs
-        to apply one by one.
+        The aggregate function accepts either a list of Dimensions and a
+        function to apply to find the aggregate across those Dimensions
+        or a list of dimension/function pairs to apply one by one.
         """
         kdims = [kdim.name for kdim in columns.kdims if kdim not in reduce_dims]
         vdims = columns.dimensions('value', True)
@@ -776,7 +775,8 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def groupby(cls, columns, dimensions, container_type=HoloMap, group_type=None, raw=False, **kwargs):
+    def groupby(cls, columns, dimensions, container_type=HoloMap,
+                group_type=None, raw=False, **kwargs):
         data = columns.data
 
         # Get dimension objects, labels, indexes and data
