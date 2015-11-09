@@ -20,6 +20,7 @@ import param
 
 from ..core import ViewableElement, NdMapping, Columns, NdOverlay,\
     NdLayout, GridSpace, NdElement, HoloMap
+from ..core.data import DFColumns
 from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
                        VectorField, HeatMap, Scatter3D, Surface)
 
@@ -85,6 +86,7 @@ class DataFrameView(Columns):
                 dims[list(data.columns).index(name)] = dim
 
         ViewableElement.__init__(self, data, kdims=dims, **params)
+        self.interface = DFColumns
         self.data.columns = self.dimensions('key', True)
 
 
