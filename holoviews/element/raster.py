@@ -402,7 +402,7 @@ class HeatMap(Raster):
     def dense_keys(self):
         d1keys = np.unique(self._data.dimension_values(0))
         d2keys = np.unique(self._data.dimension_values(1))
-        return zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys])
+        return list(zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys]))
 
 
     def dimension_values(self, dim, unique=False):
