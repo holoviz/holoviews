@@ -171,7 +171,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
         data = zip(keys, values)
         overrides = dict(kdims=kdims, vdims=vdims, **kwargs)
-        return NdElement(data, **dict(get_param_values(self), overrides))
+        return NdElement(data, **dict(get_param_values(self), **overrides))
 
 
     def array(self, dimensions=[]):
