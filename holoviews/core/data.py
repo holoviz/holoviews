@@ -335,8 +335,8 @@ class DataColumns(param.Parameterized):
         # Process params and dimensions
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
-            kdims = pvals.get('kdims', kdims)
-            vdims = pvals.get('vdims', vdims)
+            kdims = pvals.get('kdims') if kdims is None else kdims
+            vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
         if isinstance(data, NdElement):
@@ -344,8 +344,7 @@ class DataColumns(param.Parameterized):
         elif isinstance(data, Columns):
             data = data.data
         elif isinstance(data, Element):
-            dimensions = data.dimensions(label=True)
-            data = tuple(data.dimension_values(d) for d in data.dimensions())
+            data = {d: data.dimension_values(d) for d in kdims+vdims}
 
         # Set interface priority order
         if datatype is None:
@@ -419,6 +418,10 @@ class NdColumns(DataColumns):
             element_params = eltype.params()
             kdims = kdims if kdims else element_params['kdims'].default
             vdims = vdims if vdims else element_params['vdims'].default
+
+        if isinstance(data, dict) and all(d in data for d in kdims+vdims):
+            data = tuple(data.get(d.name if isinstance(d, Dimension) else d)
+                         for d in dimensions)
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
@@ -688,7 +691,13 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
-        if isinstance(data, tuple):
+        if isinstance(data, dict):
+            dimensions = kdims + vdims
+            if all(d in data for d in dimensions):
+                columns = [data.get(d.name if isinstance(d, Dimension) else d)
+                           for d in dimensions]
+                data = np.column_stack(columns)
+        elif isinstance(data, tuple):
             try:
                 data = np.column_stack(data)
             except:
