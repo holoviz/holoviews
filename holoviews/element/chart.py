@@ -29,7 +29,17 @@ class Chart(Columns, Element2D):
         The value dimensions of the Chart, usually corresponding to a
         number of dependent variables.""")
 
-    _null_value = np.array([[], []]).T # For when data is None
+    def __getitem__(self, index):
+        sliced = super(Chart, self).__getitem__(index)
+        if not isinstance(index, tuple): index = (index,)
+        ndims = len(self.extents)/2
+        lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
+        for i, slc in enumerate(index[:ndims]):
+            if isinstance(slc, slice):
+                lower_bounds[i] = lbound if slc.start is None else slc.start
+                upper_bounds[i] = ubound if slc.stop is None else slc.stop
+        sliced.extents = tuple(lower_bounds+upper_bounds)
+        return sliced
 
 
 class Scatter(Chart):
