@@ -351,6 +351,9 @@ class DataColumns(param.Parameterized):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
+        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, list)))
+              and sys.version_info.major >= 3):
+            data = list(data)
 
         # Set interface priority order
         if datatype is None:
@@ -410,8 +413,6 @@ class DataColumns(param.Parameterized):
 
 
 
-
-
 class NdColumns(DataColumns):
 
     types = (NdElement,)
@@ -430,8 +431,6 @@ class NdColumns(DataColumns):
                          for d in dimensions)
 
         if not isinstance(data, (NdElement, dict)):
-            if sys.version_info.major >= 3:
-                data = list(data)
             # If ndim > 2 data is assumed to be a mapping
             if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])):
                 pass
