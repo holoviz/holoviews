@@ -121,11 +121,14 @@ class Arrow(Annotation):
 
     direction = param.ObjectSelector(default='<',
                                      objects=['<', '^', '>', 'v'], doc="""
-        The cardinal direction in which the arrow is pointing.""")
+        The cardinal direction in which the arrow is pointing. Accepted
+        arrow directions are '<', '^', '>' and 'v'.""")
 
     arrowstyle = param.ObjectSelector(default='->',
-                                       objects=['-', '->', '-[', '-|>', '<->', '<|-|>'], doc="""
-       The arrowstyle used to draw the arrow.""")
+                                      objects=['-', '->', '-[', '-|>', '<->', '<|-|>'],
+                                      doc="""
+        The arrowstyle used to draw the arrow. Accepted arrow styles are
+        '-', '->', '-[', '-|>', '<->' and '<|-|>'""")
 
     points = param.Number(default=40, doc="Font size of arrow text (if any).")
 
@@ -165,11 +168,13 @@ class Text(Annotation):
 
     halign= param.ObjectSelector(default='center',
                                  objects= ['left', 'right', 'center'], doc="""
-       The horizontal alignment position of the displayed text.""")
+       The horizontal alignment position of the displayed text. Allowed values
+       are 'left', 'right' and 'center'.""")
 
     valign= param.ObjectSelector(default='center',
                                  objects= ['top', 'bottom', 'center'], doc="""
-       The vertical alignment position of the displayed text.""")
+       The vertical alignment position of the displayed text. Allowed values
+       are 'center', 'top' and 'bottom'.""")
 
     group = param.String(default='Text', constant=True)
 
