@@ -557,7 +557,11 @@ class collapse(ElementOperation):
         each x-value.""")
 
     def _process(self, overlay, key=None):
-        return hv.HoloMap(overlay).collapse(function=self.p.fn)
+        if isinstance(overlay, NdOverlay):
+            collapse_map = hv.HoloMap(overlay)
+        else:
+            collapse_map = hv.HoloMap({i: el for i, el in enumerate(overlay)})
+        return collapse_map.collapse(function=self.p.fn)
 
 
 class gridmatrix(param.ParameterizedFunction):
