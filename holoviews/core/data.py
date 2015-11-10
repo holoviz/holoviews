@@ -621,8 +621,6 @@ class DFColumns(DataColumns):
         element_kwargs = dict(util.get_param_values(columns),
                               kdims=element_dims)
         element_kwargs.update(kwargs)
-        names = [d.name for d in columns.dimensions()
-                 if d not in dimensions]
         map_data = [(k, group_type(v, **element_kwargs))
                     for k, v in columns.data.groupby(dimensions)]
         with item_check(False), sorted_context(False):
