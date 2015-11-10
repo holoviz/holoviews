@@ -275,15 +275,15 @@ class Columns(Element):
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
+        if group_type is None: group_type = type(self)
+
         dimensions = [self.get_dimension(d).name for d in dimensions]
         invalid_dims = list(set(dimensions) - set(self.dimensions('key', True)))
         if invalid_dims:
             raise Exception('Following dimensions could not be found:\n%s.'
                             % invalid_dims)
-        if group_type is None:
-            group_type = type(self)
-        return self.interface.groupby(self, dimensions, container_type, group_type, **kwargs)
-
+        return self.interface.groupby(self, dimensions, container_type,
+                                      group_type, **kwargs)
 
     @classmethod
     def concat(cls, columns_objs):
@@ -618,13 +618,19 @@ class DFColumns(DataColumns):
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
 
-        element_kwargs = dict(util.get_param_values(columns),
-                              kdims=element_dims)
-        element_kwargs.update(kwargs)
-        map_data = [(k, group_type(v, **element_kwargs))
-                    for k, v in columns.data.groupby(dimensions)]
-        with item_check(False), sorted_context(False):
-            return container_type(map_data, kdims=index_dims)
+        group_kwargs = {}
+        if group_type != 'raw' and issubclass(group_type, Element):
+            group_kwargs = dict(util.get_param_values(columns),
+                                kdims=element_dims)
+        group_kwargs.update(kwargs)
+
+        data = [(k, group_type(v, **group_kwargs)) for k, v in
+                columns.data.groupby(dimensions)]
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(data, kdims=index_dims)
+        else:
+            return container_type(data)
 
 
     @classmethod
@@ -810,28 +816,33 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def groupby(cls, columns, dimensions, container_type=HoloMap,
-                group_type=None, raw=False, **kwargs):
+    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
         data = columns.data
 
         # Get dimension objects, labels, indexes and data
         dimensions = [columns.get_dimension(d) for d in dimensions]
         dim_idxs = [columns.get_dimension_index(d) for d in dimensions]
         ndims = len(dimensions)
-        kwargs['kdims'] = [kdim for kdim in columns.kdims
-                           if kdim not in dimensions]
+        kdims = [kdim for kdim in columns.kdims
+                 if kdim not in dimensions]
+        vdims = columns.vdims
 
         # Find unique entries along supplied dimensions
         # by creating a view that treats the selected
         # groupby keys as a single object.
         indices = data[:, dim_idxs].copy()
-        view = indices.view(np.dtype((np.void, indices.dtype.itemsize * indices.shape[1])))
+        group_shape = indices.dtype.itemsize * indices.shape[1]
+        view = indices.view(np.dtype((np.void, group_shape)))
         _, idx = np.unique(view, return_index=True)
         idx.sort()
         unique_indices = indices[idx]
 
-        params = util.get_param_values(columns)
-        params.update(kwargs)
+        # Get group
+        group_kwargs = {}
+        if group_type != 'raw' and issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(columns))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
 
         # Iterate over the unique entries building masks
         # to apply the group selection
@@ -840,18 +851,19 @@ class ArrayColumns(DataColumns):
             mask = np.logical_and.reduce([data[:, i] == group[i]
                                          for i in range(ndims)])
             group_data = data[mask, ndims:]
-            if not raw:
-                if group_type is None:
-                    group_data = columns.clone(group_data, **params)
+            if not group_type == 'raw':
+                if issubclass(group_type, dict):
+                    group_data = {d.name: group_data[:, i] for i, d in
+                                  enumerate(kdims+vdims)}
                 else:
-                    group_data = group_type(group_data, **params)
+                    group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(group), group_data))
 
-        if raw:
-            return grouped_data
-        else:
+        if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(grouped_data, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
 
 
     @classmethod
@@ -873,7 +885,7 @@ class ArrayColumns(DataColumns):
         joined_data = Columns(data, kdims=kdims, vdims=vdims)
 
         rows = []
-        for k, group in cls.groupby(joined_data, kdims, raw=True):
+        for k, group in cls.groupby(joined_data, kdims, list, 'raw'):
             row = np.zeros(ndims)
             row[:nkdims] = np.array(k)
             if isinstance(function, np.ufunc):
@@ -921,7 +933,7 @@ class ArrayColumns(DataColumns):
         if not isinstance(dimensions, Iterable): dimensions = [dimensions]
         rows = []
         reindexed = columns.reindex(dimensions)
-        for k, group in cls.groupby(reindexed, dimensions, raw=True):
+        for k, group in cls.groupby(reindexed, dimensions, list, 'raw'):
             if isinstance(function, np.ufunc):
                 reduced = function.reduce(group, axis=0)
             else:
