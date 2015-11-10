@@ -18,7 +18,7 @@ from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import BokehPlot
-from .util import mpl_to_bokeh
+from .util import mpl_to_bokeh, convert_datetime
 
 
 # Define shared style properties for bokeh plots
@@ -86,12 +86,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         A list of plugin tools to use on the plot.""")
 
     xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom',
-                                          'bare', 'top-bare',
-                                          'bottom-bare',
-                                          None], doc="""
-        Whether and where to display the xaxis, bare options allow
-        suppressing all axis labels including ticks and xlabel.""")
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -105,12 +104,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         bokeh ticking behavior is applied.""")
 
     yaxis = param.ObjectSelector(default='left',
-                                 objects=['left', 'right', 'bare',
-                                          'left-bare', 'right-bare',
-                                          None],
-                                 doc="""
-        Whether and where to display the yaxis, bare options allow
-        suppressing all axis labels including ticks and ylabel.""")
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
@@ -170,13 +168,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if plot.yaxis[0].axis_label == xlabel:
                     plot_ranges['x_range'] = plot.y_range
 
+        if element.get_dimension_type(0) is np.datetime64:
+            x_axis_type = 'datetime'
+        else:
+            x_axis_type = 'log' if self.logx else 'auto'
+        if element.get_dimension_type(1) is np.datetime64:
+            y_axis_type = 'datetime'
+        else:
+            y_axis_type = 'log' if self.logy else 'auto'
+
         if not 'x_range' in plot_ranges:
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
-                if low == high and low is not None:
+                if x_axis_type == 'datetime':
+                    low = convert_datetime(low)
+                    high = convert_datetime(high)
+                elif low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -192,7 +202,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
-                if low == high and low is not None:
+                if y_axis_type == 'datetime':
+                    low = convert_datetime(low)
+                    high = convert_datetime(high)
+                elif low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
@@ -205,8 +218,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                           end=yrange.start)
             else:
                 plot_ranges['y_range'] = yrange[::-1]
-        x_axis_type = 'log' if self.logx else 'auto'
-        y_axis_type = 'log' if self.logy else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -354,7 +365,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
-        properties['legend'] = element.label
+
+        if self.overlay_dims:
+            legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                self.overlay_dims.items()])
+        else:
+            legend = element.label
+        properties['legend'] = legend
         properties['source'] = source
         return properties
 
@@ -373,6 +390,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get element key and ranges for frame
         element = self.hmap.last
         key = self.keys[-1]
+        self.current_frame = element
+        self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
@@ -390,6 +409,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties = self._glyph_properties(plot, element, source, ranges)
         self._init_glyph(plot, mapping, properties)
         glyph = plot.renderers[-1].glyph
+        self.handles['glyph_renderer'] = plot.renderers[-1]
         self.handles['glyph']  = glyph
 
         # Update plot, source and glyph
@@ -557,7 +577,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
     def _process_legend(self):
         plot = self.handles['plot']
-        if not self.show_legend or len(plot.legend) >= 1:
+        if not self.show_legend or len(plot.legend) == 0:
             for l in plot.legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0

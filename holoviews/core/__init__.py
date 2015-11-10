@@ -1,4 +1,5 @@
 from .boundingregion import *  # pyflakes:ignore (API import)
+from .data import *            # pyflakes:ignore (API import)
 from .dimension import *       # pyflakes:ignore (API import)
 from .element import *         # pyflakes:ignore (API import)
 from .layout import *          # pyflakes:ignore (API import)

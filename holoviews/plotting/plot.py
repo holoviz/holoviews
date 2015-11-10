@@ -17,7 +17,7 @@ from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
-from ..element import Table
+from ..element import Table, Annotation
 from .util import get_dynamic_interval
 
 
@@ -163,6 +163,7 @@ class DimensionedPlot(Plot):
         self.label = None
         self.current_frame = None
         self.current_key = None
+        self.ranges = {}
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -271,7 +272,7 @@ class DimensionedPlot(Plot):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = {} if ranges is None else dict(ranges)
+        ranges = self.ranges if ranges is None else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -283,15 +284,20 @@ class DimensionedPlot(Plot):
         elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
-            if group in ranges:
-                continue # Skip if ranges are already computed
-            elif not framewise and not self.dynamic: # Traverse to get all elements
+            elements = []
+            # Skip if ranges are cached or already computed by a
+            # higher-level container object.
+            if group in ranges and (not framewise or ranges is not self.ranges):
+                continue
+            elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
-                elements = self._get_frame(key).traverse(return_fn, [group])
+                frame = self._get_frame(key)
+                elements = [] if frame is None else frame.traverse(return_fn, [group])
             if not axiswise or ((not framewise or len(elements) == 1)
                                 and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
+        self.ranges.update(ranges)
         return ranges
 
 
@@ -397,10 +403,12 @@ class GenericElementPlot(DimensionedPlot):
         Whether to apply extent overrides on the Elements""")
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
-                 overlaid=0, cyclic_index=0, zorder=0, style=None, **params):
+                 overlaid=0, cyclic_index=0, zorder=0, style=None, overlay_dims={},
+                 **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
+        self.overlay_dims = overlay_dims
         dynamic = element.interval if isinstance(element, DynamicMap) else None
         if not isinstance(element, (HoloMap, DynamicMap)):
             self.hmap = HoloMap(initial_items=(0, element),
@@ -638,8 +646,12 @@ class GenericOverlayPlot(GenericElementPlot):
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
+
+            opts = {}
+            if overlay_type == 2:
+                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
-            plotopts = dict(keys=self.keys, style=style, cyclic_index=cyclic_index,
+            plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
@@ -771,6 +783,7 @@ class GenericLayoutPlot(GenericCompositePlot):
             raise ValueError("GenericLayoutPlot only accepts Layout objects.")
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
+
         self.layout = layout
         self.subplots = {}
         self.rows, self.cols = layout.shape

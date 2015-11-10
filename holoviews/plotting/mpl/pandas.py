@@ -30,8 +30,9 @@ class DFrameViewPlot(ElementPlot):
     plot_type = param.ObjectSelector(default='scatter_matrix',
                                      objects=['plot', 'boxplot',
                                               'hist', 'scatter_matrix',
-                                              'autocorrelation_plot'],
-                                     doc="""Selects which Pandas plot type to use.""")
+                                              'autocorrelation_plot'], doc="""
+       Selects which Pandas plot type to use, valid options include: 'plot',
+       'boxplot', 'hist', 'scatter_matrix' and 'autocorrelation_plot'.""")
 
     dframe_options = {'plot': ['kind', 'stacked', 'xerr',
                                'yerr', 'share_x', 'share_y',

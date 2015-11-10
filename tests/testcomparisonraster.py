@@ -101,7 +101,7 @@ class BasicRasterComparisonTest(RasterTestCase):
             self.assertEqual(self.mat1, self.mat2)
             raise AssertionError("Array mismatch not raised")
         except AssertionError as e:
-            if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
+            if not str(e).startswith('Image not almost equal to 6 decimals\n'):
                 raise self.failureException("Image data mismatch error not raised.")
 
     def test_bounds_mismatch(self):
@@ -124,8 +124,8 @@ class RasterOverlayComparisonTest(RasterOverlayTestCase):
         try:
             self.assertEqual(self.overlay1_depth2, self.overlay2_depth2)
         except AssertionError as e:
-            if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
-                raise self.failureException("Image data mismatch error not raised.")
+            if not str(e).startswith('Image not almost equal to 6 decimals\n'):
+                raise self.failureException("Image mismatch error not raised.")
 
 
 
@@ -167,5 +167,5 @@ class RasterMapComparisonTest(RasterMapTestCase):
             self.assertEqual(self.map1_1D, self.map4_1D)
             raise AssertionError("Pane mismatch in array data not raised.")
         except AssertionError as e:
-            if not str(e).startswith('Image data not almost equal to 6 decimals\n'):
+            if not str(e).startswith('Image not almost equal to 6 decimals\n'):
                 raise self.failureException("Image mismatch error not raised.")

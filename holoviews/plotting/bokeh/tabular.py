@@ -18,7 +18,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     def get_data(self, element, ranges=None):
         dims = element.dimensions()
-        return ({d.name: element.dimension_values(d.name) for d in dims},
+        return ({d.name: element.dimension_values(d) for d in dims},
                 {d.name: d.name for d in dims})
 
 
@@ -29,6 +29,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
         # Get element key and ranges for frame
         element = self.hmap.last
         key = self.keys[-1]
+        self.current_frame = element
+        self.current_key = key
 
         data, mapping = self.get_data(element, ranges)
         if source is None:
@@ -41,6 +43,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **properties)
         self.handles['plot'] = table
+        self.handles['glyph_renderer'] = table
         self.drawn = True
 
         return table

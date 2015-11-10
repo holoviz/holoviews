@@ -126,11 +126,9 @@ class Scatter3DPlot(Plot3D, PointPlot):
         return self._finalize_axis(key, ranges=ranges)
 
     def update_handles(self, axis, points, key, ranges=None):
-        ndims = points.data.shape[1]
-        xs = points.data[:, 0] if len(points.data) else []
-        ys = points.data[:, 1] if len(points.data) else []
-        zs = points.data[:, 2] if len(points.data) else []
-        cs = points.data[:, self.color_index] if self.color_index < ndims else None
+        ndims = points.shape[1]
+        xs, ys, zs = (points.dimension_values(i) for i in range(3))
+        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
@@ -165,7 +163,8 @@ class SurfacePlot(Plot3D):
     plot_type = param.ObjectSelector(default='surface',
                                      objects=['surface', 'wireframe',
                                               'contour'], doc="""
-        Specifies the type of visualization for the Surface object.""")
+        Specifies the type of visualization for the Surface object.
+        Valid values are 'surface', 'wireframe' and 'contour'.""")
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride']

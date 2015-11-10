@@ -75,7 +75,7 @@ class CompositeOverlay(ViewableElement, Composable):
         if not found:
             return super(CompositeOverlay, self).dimension_values(dimension)
         values = [v for v in values if v is not None and len(v)]
-        return np.concatenate(values) if len(values) else []
+        return np.concatenate(values) if len(values) else np.array()
 
 
 
@@ -155,7 +155,7 @@ class Overlay(Layout, CompositeOverlay):
                             "and cannot be collapsed.")
         else:
             return elements[0].clone(types[0].collapse_data([el.data for el in elements],
-                                                            function))
+                                                            function, self.kdims))
 
     @property
     def group(self):
