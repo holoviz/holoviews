@@ -29,6 +29,11 @@ class BokehPlot(DimensionedPlot):
     height = param.Integer(default=300, doc="""
         Height of the plot in pixels""")
 
+    shared_datasource = param.Boolean(default=True, doc="""
+        Whether Elements drawing the data from the same object should
+        share their Bokeh data source allowing for linked brushing
+        and other linked behaviors.""")
+
     renderer = BokehRenderer
 
     def get_data(self, element, ranges=None):
@@ -89,7 +94,7 @@ class BokehPlot(DimensionedPlot):
         from the same object.
         """
         get_sources = lambda x: (id(x.current_frame.data), x)
-        filter_fn = lambda x: (x.current_frame and
+        filter_fn = lambda x: (x.shared_datasource and x.current_frame and
                                not isinstance(x.current_frame.data, np.ndarray)
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])
@@ -116,11 +121,6 @@ class GridPlot(BokehPlot, GenericCompositePlot):
     Plot a group of elements in a grid layout based on a GridSpace element
     object.
     """
-
-    shared_datasource = param.Boolean(default=True, doc="""
-        Whether Elements drawing the data from the same object should
-        share their Bokeh data source allowing for linked brushing
-        and other linked behaviors.""")
 
     def __init__(self, layout, ranges=None, keys=None, dimensions=None,
                  layout_num=1, **params):
