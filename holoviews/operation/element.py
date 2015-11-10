@@ -542,40 +542,22 @@ class histogram(ElementOperation):
 #==================#
 
 
-class collapse_curve(ElementOperation):
+class collapse(ElementOperation):
     """
-    Given an overlay of Curves, compute a new curve which is collapsed
-    for each x-value given a specified function.
+    Given an overlay of Columns types, collapse into single Columns
+    object. Collapsing aggregates over the key dimensions of each
+    object applying the supplied fn to each group.
 
     This is an example of an ElementOperation that does not involve
     any Raster types.
     """
 
-    output_type = Curve
-
     fn = param.Callable(default=np.mean, doc="""
         The function that is used to collapse the curve y-values for
         each x-value.""")
 
-    group = param.String(default='Collapses', doc="""
-       The group assigned to the collapsed curve output.""")
-
     def _process(self, overlay, key=None):
-
-        for curve in overlay:
-            if not isinstance(curve, Curve):
-                raise ValueError("The collapse_curve operation requires Curves as input.")
-            if not all(curve.data[:,0] == overlay.get(0).data[:,0]):
-                raise ValueError("All input curves must have same x-axis values.")
-
-        data = []
-        for i, xval in enumerate(overlay.get(0).data[:,0]):
-            yval = self.p.fn([c.data[i,1]  for c in overlay])
-            data.append((xval, yval))
-
-        return Curve(np.array(data), group=self.p.group,
-                     label=self.get_overlay_label(overlay))
-
+        return hv.HoloMap(overlay).collapse(function=self.p.fn)
 
 
 class gridmatrix(param.ParameterizedFunction):
