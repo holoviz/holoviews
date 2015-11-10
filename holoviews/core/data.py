@@ -391,8 +391,7 @@ class DataColumns(param.Parameterized):
         return a boolean mask over the rows in the Columns object that
         have been selected.
         """
-        selected = []
-        mask = True
+        mask = np.ones(len(columns), dtype=np.bool)
         for dim, k in selection.items():
             if isinstance(k, tuple):
                 k = slice(*k)
@@ -408,9 +407,26 @@ class DataColumns(param.Parameterized):
                     iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
             else:
-                if dim in columns.kdims: selected.append(dim)
-                mask &= arr == k
-        return mask, selected
+                if columns.ndims == 1:
+                    data_index = np.argmin(np.abs(arr - k))
+                    mask = np.zeros(len(columns), dtype=np.bool)
+                    mask[data_index] = True
+                else:
+                    mask &= arr == k
+        return mask
+
+
+    @classmethod
+    def indexed(cls, columns, selection):
+        """
+        Given a Columns object and selection to be applied returns
+        boolean to indicate whether a scalar value has been indexed.
+        """
+        selected = list(selection.keys())
+        all_scalar = all(not isinstance(sel, (tuple, slice, set, list))
+                         for sel in selection.values())
+        all_kdims = all(d in selected for d in columns.kdims)
+        return all_scalar and all_kdims and len(columns.vdims) == 1
 
 
     @classmethod
@@ -660,11 +676,11 @@ class DFColumns(DataColumns):
     @classmethod
     def select(cls, columns, **selection):
         df = columns.data
-        mask, selected = cls.select_mask(columns, selection)
+        mask = cls.select_mask(columns, selection)
+        indexed = cls.indexed(columns, selection)
         df = df.ix[mask]
-        if len(set(selected)) == columns.ndims:
-            if len(df) and len(columns.vdims) == 1:
-                df = df[columns.vdims[0].name].iloc[0]
+        if indexed and len(df) == 1:
+            return df[columns.vdims[0].name].iloc[0]
         return df
 
 
@@ -838,14 +854,11 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def select(cls, columns, **selection):
-        data = columns.data
-        mask, selected = cls.select_mask(columns, selection)
-        if mask is not True:
-            data = data[mask, :]
-        data = np.atleast_2d(data)
-        if len(data) and len(set(selected)) == columns.ndims:
-            if len(data) == 1 and len(columns.vdims) == 1:
-                data = data[0, columns.ndims]
+        mask = cls.select_mask(columns, selection)
+        indexed = cls.indexed(columns, selection)
+        data = np.atleast_2d(columns.data[mask, :])
+        if len(data) == 1 and indexed:
+            data = data[0, columns.ndims]
         return data
 
 
