@@ -244,6 +244,8 @@ class Columns(Element):
         and a function to apply or a mapping between the dimensions and
         functions to apply along each dimension.
         """
+        if any(dim in self.vdims for dim in dimensions):
+            raise Exception("Reduce cannot be applied to value dimensions")
         reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
         reduced = self
         for reduce_fn, group in reduce_map:
@@ -261,6 +263,8 @@ class Columns(Element):
         Aggregates over the supplied key dimensions with the defined
         function.
         """
+        if function is None:
+            raise ValueError("The aggregate method requires a function to be specified")
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not dimensions: dimensions = self.kdims
         aggregated = self.interface.aggregate(self, dimensions, function)
