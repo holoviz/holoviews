@@ -618,7 +618,7 @@ class VectorFieldPlot(ElementPlot):
     color_dim = param.ObjectSelector(default=None,
                                      objects=['angle', 'magnitude', None], doc="""
        Which of the polar vector components is mapped to the color
-       dimension (if any)""")
+       dimension (if any), valid values are 'angle' and 'magnitude'.""")
 
     arrow_heads = param.Boolean(default=True, doc="""
        Whether or not to draw arrow heads. If arrowheads are enabled,

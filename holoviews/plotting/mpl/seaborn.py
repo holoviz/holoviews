@@ -203,7 +203,10 @@ class SNSFramePlot(DFrameViewPlot):
                                      doc="""
         Selects which Seaborn plot type to use, when visualizing the
         SNSFrame. The options that can be passed to the plot_type are
-        defined in dframe_options.""")
+        defined in dframe_options. Valid options are 'interact', 'regplot',
+        'lmplot', 'corrplot', 'plot', 'boxplot', 'hist', 'scatter_matrix',
+        'autocorrelation_plot', 'pairgrid', 'facetgrid', 'pairplot',
+        'violinplot' and 'factorplot'""")
 
     dframe_options = dict(DFrameViewPlot.dframe_options,
                           **{'regplot':   RegressionPlot.style_opts,

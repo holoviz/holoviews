@@ -86,12 +86,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         A list of plugin tools to use on the plot.""")
 
     xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom',
-                                          'bare', 'top-bare',
-                                          'bottom-bare',
-                                          None], doc="""
-        Whether and where to display the xaxis, bare options allow
-        suppressing all axis labels including ticks and xlabel.""")
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -105,12 +104,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         bokeh ticking behavior is applied.""")
 
     yaxis = param.ObjectSelector(default='left',
-                                 objects=['left', 'right', 'bare',
-                                          'left-bare', 'right-bare',
-                                          None],
-                                 doc="""
-        Whether and where to display the yaxis, bare options allow
-        suppressing all axis labels including ticks and ylabel.""")
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")

@@ -50,7 +50,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
-        adjoined plots when appropriate.""")
+        adjoined plots when appropriate valid options are 'horizontal'
+        and 'vertical'.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -62,13 +63,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel.""")
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel.""")
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
@@ -547,7 +550,9 @@ class LegendPlot(ElementPlot):
                                            default='inner', doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
-        legend_specs class attribute.""")
+        legend_specs class attribute. By default, 'inner', 'right',
+        'bottom', 'top', 'left', 'best', 'top_right', 'top_left',
+        'bottom_right' and 'bottom_left' are supported.""")
 
     legend_specs = {'inner': {},
                     'best': {},

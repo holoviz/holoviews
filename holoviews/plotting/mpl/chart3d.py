@@ -163,7 +163,8 @@ class SurfacePlot(Plot3D):
     plot_type = param.ObjectSelector(default='surface',
                                      objects=['surface', 'wireframe',
                                               'contour'], doc="""
-        Specifies the type of visualization for the Surface object.""")
+        Specifies the type of visualization for the Surface object.
+        Valid values are 'surface', 'wireframe' and 'contour'.""")
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride']

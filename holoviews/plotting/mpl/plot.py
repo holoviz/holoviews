@@ -77,7 +77,7 @@ class MPLPlot(DimensionedPlot):
     projection = param.ObjectSelector(default=None,
                                       objects=['3d', 'polar', None], doc="""
         The projection of the plot axis, default of None is equivalent to
-        2D plot, 3D and polar plots are also supported.""")
+        2D plot, '3d' and 'polar' are also supported.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
@@ -242,11 +242,13 @@ class GridPlot(CompositePlot):
 
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
-        Whether and where to display the xaxis.""")
+        Whether and where to display the xaxis, supported options are
+        'bottom', 'top' and None.""")
 
     yaxis = param.ObjectSelector(default='left',
                                  objects=['left', 'right', None], doc="""
-        Whether and where to display the yaxis.""")
+        Whether and where to display the yaxis, supported options are
+        'left', 'right' and None.""")
 
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
