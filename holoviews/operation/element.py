@@ -544,9 +544,9 @@ class histogram(ElementOperation):
 
 class collapse(ElementOperation):
     """
-    Given an overlay of Columns types, collapse into single Columns
-    object. Collapsing aggregates over the key dimensions of each
-    object applying the supplied fn to each group.
+    Given an overlay of Element types, collapse into single Element
+    object using supplied function. Collapsing aggregates over the
+    key dimensions of each object applying the supplied fn to each group.
 
     This is an example of an ElementOperation that does not involve
     any Raster types.
@@ -558,9 +558,9 @@ class collapse(ElementOperation):
 
     def _process(self, overlay, key=None):
         if isinstance(overlay, NdOverlay):
-            collapse_map = hv.HoloMap(overlay)
+            collapse_map = HoloMap(overlay)
         else:
-            collapse_map = hv.HoloMap({i: el for i, el in enumerate(overlay)})
+            collapse_map = HoloMap({i: el for i, el in enumerate(overlay)})
         return collapse_map.collapse(function=self.p.fn)
 
 
