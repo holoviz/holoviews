@@ -385,6 +385,12 @@ class DataColumns(param.Parameterized):
 
     @classmethod
     def select_mask(cls, columns, selection):
+        """
+        Given a Columns object and a dictionary with dimension keys and
+        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        return a boolean mask over the rows in the Columns object that
+        have been selected.
+        """
         selected = []
         mask = True
         for dim, k in selection.items():
