@@ -384,6 +384,30 @@ class DataColumns(param.Parameterized):
 
 
     @classmethod
+    def select_mask(cls, columns, selection):
+        selected = []
+        mask = True
+        for dim, k in selection.items():
+            if isinstance(k, tuple):
+                k = slice(*k)
+            arr = cls.values(columns, dim)
+            if isinstance(k, slice):
+                if k.start is not None:
+                    mask &= k.start <= arr
+                if k.stop is not None:
+                    mask &= arr < k.stop
+            elif isinstance(k, (set, list)):
+                iter_slcs = []
+                for ik in k:
+                    iter_slcs.append(arr == ik)
+                mask &= np.logical_or.reduce(iter_slcs)
+            else:
+                if dim in columns.kdims: selected.append(dim)
+                mask &= arr == k
+        return mask, selected
+
+
+    @classmethod
     def range(cls, columns, dimension):
         column = columns.dimension_values(dimension)
         if columns.get_dimension_type(dimension) is np.datetime64:
@@ -628,28 +652,11 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, selection_specs=None, **select):
+    def select(cls, columns, **selection):
         df = columns.data
-        selected_kdims = []
-        mask = True
-        for dim, k in select.items():
-            if isinstance(k, tuple):
-                k = slice(*k)
-            if isinstance(k, slice):
-                if k.start is not None:
-                    mask &= k.start <= df[dim]
-                if k.stop is not None:
-                    mask &= df[dim] < k.stop
-            elif isinstance(k, (set, list)):
-                iter_slcs = []
-                for ik in k:
-                    iter_slcs.append(df[dim] == ik)
-                mask &= np.logical_or.reduce(iter_slcs)
-            else:
-                if dim in columns.kdims: selected_kdims.append(dim)
-                mask &= df[dim] == k
+        mask, selected = cls.select_mask(columns, selection)
         df = df.ix[mask]
-        if len(set(selected_kdims)) == columns.ndims:
+        if len(set(selected)) == columns.ndims:
             if len(df) and len(columns.vdims) == 1:
                 df = df[columns.vdims[0].name].iloc[0]
         return df
@@ -826,32 +833,11 @@ class ArrayColumns(DataColumns):
     @classmethod
     def select(cls, columns, **selection):
         data = columns.data
-        mask = True
-        selected_kdims = []
-        value = selection.pop('value', None)
-        for d, slc in selection.items():
-            idx = columns.get_dimension_index(d)
-            if isinstance(slc, tuple):
-                slc = slice(*slc)
-            if isinstance(slc, slice):
-                if slc.start is not None:
-                    mask &= slc.start <= data[:, idx]
-                if slc.stop is not None:
-                    mask &= data[:, idx] < slc.stop
-            elif isinstance(slc, (set, list)):
-                mask &= np.in1d(data[:, idx], list(slc))
-            else:
-                if d in columns.kdims: selected_kdims.append(d)
-                if columns.ndims == 1:
-                    data_index = np.argmin(np.abs(data[:, idx] - slc))
-                    data = data[data_index, :]
-                    break
-                else:
-                    mask &= data[:, idx] == slc
+        mask, selected = cls.select_mask(columns, selection)
         if mask is not True:
             data = data[mask, :]
         data = np.atleast_2d(data)
-        if len(data) and len(set(selected_kdims)) == columns.ndims:
+        if len(data) and len(set(selected)) == columns.ndims:
             if len(data) == 1 and len(columns.vdims) == 1:
                 data = data[0, columns.ndims]
         return data
