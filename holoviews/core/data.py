@@ -346,6 +346,10 @@ class Columns(Element):
             dimensions = [self.get_dimension(d).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
 
+    def columns(self, dimensions=None):
+        if dimensions is None: dimensions = self.dimensions()
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        return {d.name: self.dimension_values(d) for d in dimensions}
 
 
 
@@ -468,6 +472,10 @@ class DataColumns(param.Parameterized):
     @classmethod
     def dframe(cls, columns, dimensions):
         return Element.dframe(columns, dimensions)
+
+    @classmethod
+    def columns(cls, columns, dimensions):
+        return Element.columns(columns, dimensions)
 
     @classmethod
     def shape(cls, columns):
