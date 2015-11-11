@@ -5,6 +5,7 @@ import colorsys
 import param
 
 from ..core import util
+from ..core.data import DFColumns # FIXME: Waiting for new interface
 from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -382,7 +383,8 @@ class HeatMap(Raster):
         d2keys = data.dimension_values(1, True)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
         dense_data = data.clone(coords)
-        data = data.concat([data, dense_data]).aggregate(data.kdims, np.nanmean).sort(data.kdims)
+        concat_data = DFColumns.concat([data, dense_data])
+        data = data.clone(concat_data).aggregate(data.kdims, np.nanmean).sort(data.kdims)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
         return data, np.flipud(array.T), dimensions
 

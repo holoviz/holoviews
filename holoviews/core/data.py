@@ -294,24 +294,6 @@ class Columns(Element):
         return self.interface.groupby(self, dimensions, container_type,
                                       group_type, **kwargs)
 
-    @classmethod
-    def concat(cls, columns_objs):
-        """
-        Concatenates a list of Columns objects. If data types don't
-        match all types will be converted to that of the first object
-        before concatenation.
-        """
-        columns = columns_objs[0]
-        if len({col.interface for col in columns_objs}) > 1:
-            if isinstance(columns.data, NdElement):
-                columns_objs = [co.table('dictionary') for co in columns_objs]
-            elif isinstance(columns.data, np.ndarray):
-                columns_objs = [co.table('array') for co in columns_objs]
-            elif util.is_dataframe(data[0]):
-                columns_objs = [co.table('dataframe') for co in columns_objs]
-        return columns.clone(columns.interface.concat(columns_objs))
-
-
     def __len__(self):
         """
         Returns the number of rows in the Columns object.
@@ -564,8 +546,8 @@ class NdColumns(DataColumns):
 
     @classmethod
     def concat(cls, columns_objs):
-        return [(k[1:], v) for col in columns_objs
-                for k, v in col.data.data.items()]
+        cast_objs = cls.cast(columns_objs)
+        return [(k[1:], v) for col in cast_objs for k, v in col.data.data.items()]
 
     @classmethod
     def sort(cls, columns, by=[]):
@@ -664,7 +646,8 @@ class DFColumns(DataColumns):
 
     @classmethod
     def concat(cls, columns_objs):
-        return pd.concat([col.data for col in columns_objs])
+        cast_objs = cls.cast(columns_objs)
+        return pd.concat([col.data for col in cast_objs])
 
 
     @classmethod
@@ -845,7 +828,8 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def concat(cls, columns_objs):
-        return np.concatenate([col.data for col in columns_objs])
+        cast_objs = cls.cast(columns_objs)
+        return np.concatenate([col.data for col in cast_objs])
 
 
     @classmethod
