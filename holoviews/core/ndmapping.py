@@ -817,7 +817,7 @@ class UniformNdMapping(NdMapping):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            key_dims = reversed(list(zip(key, self.dimensions('key', label))))
+            key_dims = reversed(list(zip(key, self.dimensions('key', True))))
             for val, dim in key_dims:
                 dimn = 1
                 while dim in view_frame:
