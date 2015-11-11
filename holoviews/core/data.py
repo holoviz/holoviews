@@ -475,6 +475,28 @@ class DataColumns(param.Parameterized):
                 return column[0], column[-1]
 
     @classmethod
+    def concatenate(cls, columns, datatype=None):
+        """
+        Utility function to concatenate a list of Column objects,
+        returning a new Columns object. Note that this is unlike the
+        .concat method which only concatenates the data.
+        """
+        if len(set(type(c) for c in columns)) != 1:
+               raise Exception("All inputs must be same type in order to concatenate")
+
+        interfaces = set(c.interface for c in columns)
+        if len(interfaces)!=1 and datatype is None:
+            raise Exception("Please specify the concatenated datatype")
+        elif len(interfaces)!=1:
+            interface = cls.interfaces[datatype]
+        else:
+            interface = interfaces.pop()
+
+        concat_data = interface.concat(columns)
+        return columns[0].clone(concat_data)
+
+
+    @classmethod
     def array(cls, columns, dimensions):
         return Element.array(columns, dimensions)
 

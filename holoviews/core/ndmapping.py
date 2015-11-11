@@ -432,7 +432,7 @@ class MultiDimensionalMapping(Dimensioned):
             for idx, (dim, val) in enumerate(zip(self.kdims, key)):
                 value = value.add_dimension(dim, idx, val)
             tables.append(value)
-        return value.concat(tables)
+        return value.interface.concatenate(tables)
 
 
     def dframe(self):
