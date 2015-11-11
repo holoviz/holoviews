@@ -82,19 +82,13 @@ class ErrorBars(Chart):
         object.""")
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2, 2), constant=True, doc="""
+                       bounds=(1, 2), constant=True, doc="""
         The Dimensions corresponding to the x- and y-positions of
         the error bars.""")
 
     vdims = param.List(default=[Dimension('lerror'), Dimension('uerror')],
-                       bounds=(2,2), constant=True)
+                       bounds=(1,2), constant=True)
 
-
-    def __init__(self, data, **params):
-        super(ErrorBars, self).__init__(data, **params)
-        if self.shape[1] == 3:
-            self.data = self.interface.add_dimension(self, self.vdims[1].name,
-                                                     3, self.dimension_values(2))
 
     def range(self, dim, data_range=True):
         drange = super(ErrorBars, self).range(dim, data_range)
@@ -102,7 +96,8 @@ class ErrorBars(Chart):
         if didx == 1 and data_range:
             mean = self.dimension_values(1)
             neg_error = self.dimension_values(2)
-            pos_error = self.dimension_values(3)
+            pos_idx = 3 if len(self.dimensions()) > 3 else 2
+            pos_error = self.dimension_values(pos_idx)
             lower = np.nanmin(mean-neg_error)
             upper = np.nanmax(mean+pos_error)
             return util.max_range([(lower, upper), drange])

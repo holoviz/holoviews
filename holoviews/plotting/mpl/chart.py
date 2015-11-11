@@ -169,9 +169,11 @@ class ErrorPlot(ChartPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
+        dims = element.dimensions()
         error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
                             zorder=self.zorder)
-        error_kwargs['yerr'] = element.data[:, 2:4].T
+        yerr = element.array(dimensions=dims[2:4])
+        error_kwargs['yerr'] = yerr.T if len(dims) > 3 else yerr
         _, (bottoms, tops), verts = axis.errorbar(element.dimension_values(0),
                                                   element.dimension_values(1),
                                                   **error_kwargs)
@@ -183,31 +185,37 @@ class ErrorPlot(ChartPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        data = element.data
         bottoms = self.handles['bottoms']
         tops = self.handles['tops']
         verts = self.handles['verts']
         paths = verts.get_paths()
+
+        xvals = element.dimension_values(0)
+        mean = element.dimension_values(1)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+
         if self.horizontal:
-            bdata = data[:, 0] - data[:, 2]
-            tdata = data[:, 0] + data[:, 3]
+            bdata = xvals - neg_error
+            tdata = xvals + pos_error
             tops.set_xdata(bdata)
-            tops.set_ydata(data[:, 1])
+            tops.set_ydata(mean)
             bottoms.set_xdata(tdata)
-            bottoms.set_ydata(data[:, 1])
+            bottoms.set_ydata(mean)
             for i, path in enumerate(paths):
-                path.vertices = np.array([[bdata[i], data[i, 1]],
-                                          [tdata[i], data[i, 1]]])
+                path.vertices = np.array([[bdata[i], mean[i]],
+                                          [tdata[i], mean[i]]])
         else:
-            bdata = data[:, 1] - data[:, 2]
-            tdata = data[:, 1] + data[:, 3]
-            bottoms.set_xdata(data[:, 0])
+            bdata = mean - neg_error
+            tdata = mean + pos_error
+            bottoms.set_xdata(xvals)
             bottoms.set_ydata(bdata)
-            tops.set_xdata(data[:, 0])
+            tops.set_xdata(xvals)
             tops.set_ydata(tdata)
             for i, path in enumerate(paths):
-                path.vertices = np.array([[data[i, 0], bdata[i]],
-                                          [data[i, 0], tdata[i]]])
+                path.vertices = np.array([[xvals[i], bdata[i]],
+                                          [xvals[i], tdata[i]]])
 
 
 class SpreadPlot(ChartPlot):
@@ -238,11 +246,15 @@ class SpreadPlot(ChartPlot):
     def update_handles(self, axis, element, key, ranges=None):
         if 'paths' in self.handles:
             self.handles['paths'].remove()
-        yvals = element.data[:, 1]
-        paths = axis.fill_between(element.dimension_values(0),
-                                  yvals-element.dimension_values(2),
-                                  yvals+element.dimension_values(3),
-                                  zorder=self.zorder,
+
+        xvals = element.dimension_values(0)
+        mean = element.dimension_values(1)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+
+        paths = axis.fill_between(xvals, mean-neg_error,
+                                  mean+pos_error, zorder=self.zorder,
                                   label=element.label if self.show_legend else None,
                                   **self.style[self.cyclic_index])
         self.handles['paths'] = paths
