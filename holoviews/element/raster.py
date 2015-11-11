@@ -388,7 +388,7 @@ class HeatMap(Raster):
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
-        if not data and shared_data:
+        if (data is None) and shared_data:
             data = self._data
         return super(HeatMap, self).clone(data, shared_data)
 
