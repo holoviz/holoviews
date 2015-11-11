@@ -363,6 +363,33 @@ class DataColumns(param.Parameterized):
     def register(cls, interface):
         cls.interfaces[interface.datatype] = interface
 
+
+    @classmethod
+    def cast(cls, columns, datatype=None, cast_type=None):
+        """
+        Given a list of Columns objects, cast them to the specified
+        datatype (by default the format matching the current interface)
+        with the given cast_type (if specified).
+        """
+        classes = {type(c) for c in columns}
+        if len(classes) > 1:
+            raise Exception("Please supply the common cast type")
+        else:
+            cast_type = classes.pop()
+
+        if datatype is None:
+           datatype = cls.datatype
+
+        unchanged = all({c.interface==cls for c in columns})
+        if unchanged and set(cast_type)==classes:
+            return columns
+        elif unchanged:
+            return [cast_type(co, **dict(util.get_param_values(co)) ) for co in columns]
+
+        return [cast_type(co.columns(), datatype=datatype,
+                          **dict(util.get_param_values(co))) for co in columns]
+
+
     @classmethod
     def initialize(cls, eltype, data, kdims, vdims, datatype=None):
         # Process params and dimensions
