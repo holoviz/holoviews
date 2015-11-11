@@ -386,7 +386,7 @@ class DataColumns(param.Parameterized):
         elif unchanged:
             return [cast_type(co, **dict(util.get_param_values(co)) ) for co in columns]
 
-        return [cast_type(co.columns(), datatype=datatype,
+        return [cast_type(co.columns(), datatype=[datatype],
                           **dict(util.get_param_values(co))) for co in columns]
 
 
