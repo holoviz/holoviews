@@ -353,6 +353,12 @@ class DataColumns(param.Parameterized):
 
     interfaces = {}
 
+    datatype = None
+
+    @classmethod
+    def register(cls, interface):
+        cls.interfaces[interface.datatype] = interface
+
     @classmethod
     def initialize(cls, eltype, data, kdims, vdims, datatype=None):
         # Process params and dimensions
@@ -481,6 +487,8 @@ class NdColumns(DataColumns):
 
     types = (NdElement,)
 
+    datatype = 'dictionary'
+
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         if isinstance(data, NdElement):
@@ -569,6 +577,8 @@ class NdColumns(DataColumns):
 class DFColumns(DataColumns):
 
     types = (pd.DataFrame if pd else None,)
+
+    datatype = 'dataframe'
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -749,6 +759,8 @@ class DFColumns(DataColumns):
 class ArrayColumns(DataColumns):
 
     types = (np.ndarray,)
+
+    datatype = 'array'
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -953,8 +965,8 @@ class ArrayColumns(DataColumns):
 
 
 # Register available interfaces
-DataColumns.interfaces.update([('array', ArrayColumns),
-                               ('dictionary', NdColumns)])
+DataColumns.register(ArrayColumns)
+DataColumns.register(NdColumns)
 if pd:
-    DataColumns.interfaces['dataframe'] = DFColumns
+    DataColumns.register(DFColumns)
 
