@@ -411,12 +411,13 @@ class DataColumns(param.Parameterized):
                     iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
             else:
-                if columns.ndims == 1:
+                index_mask = arr == k
+                if columns.ndims == 1 and np.sum(index_mask) == 0:
                     data_index = np.argmin(np.abs(arr - k))
                     mask = np.zeros(len(columns), dtype=np.bool)
                     mask[data_index] = True
                 else:
-                    mask &= arr == k
+                    mask &= index_mask
         return mask
 
 
