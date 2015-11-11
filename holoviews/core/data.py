@@ -463,7 +463,7 @@ class DataColumns(param.Parameterized):
 
     @classmethod
     def array(cls, columns, dimensions):
-        return Element.dframe(columns, dimensions)
+        return Element.array(columns, dimensions)
 
     @classmethod
     def dframe(cls, columns, dimensions):
