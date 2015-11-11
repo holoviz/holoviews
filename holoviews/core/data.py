@@ -363,7 +363,7 @@ class DataColumns(param.Parameterized):
            datatype = cls.datatype
 
         unchanged = all({c.interface==cls for c in columns})
-        if unchanged and set(cast_type)==classes:
+        if unchanged and set([cast_type])==classes:
             return columns
         elif unchanged:
             return [cast_type(co, **dict(util.get_param_values(co)) ) for co in columns]
