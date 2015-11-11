@@ -273,6 +273,15 @@ class Columns(Element):
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
+        """
+        Return the results of a groupby operation over the specified
+        dimensions as an object of type container_type (expected to be
+        dictionary-like).
+
+        Keys vary over the columns (dimensions) and the corresponding
+        values are collections of group_type (e.g list, tuple)
+        constructed with kwargs (if supplied).
+        """
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
