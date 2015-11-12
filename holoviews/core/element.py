@@ -11,7 +11,8 @@ from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check, sor
 from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import sanitize_identifier, is_dataframe, dimension_sort, get_param_values
+from .util import (sanitize_identifier, is_dataframe, dimension_sort,
+                   get_param_values, dimension_sanitizer)
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -117,7 +118,7 @@ class Element(ViewableElement, Composable, Overlayable):
         if dimensions and reduce_map:
             raise Exception("Pass reduced dimensions either as an argument"
                             "or as part of the kwargs not both.")
-        sanitized_dict = {sanitize_identifier(kd): kd
+        sanitized_dict = {dimension_sanitizer(kd): kd
                           for kd in self.dimensions('key', True)}
         if reduce_map:
             reduce_map = reduce_map.items()

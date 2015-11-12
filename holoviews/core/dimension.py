@@ -14,7 +14,8 @@ except:
 import numpy as np
 import param
 
-from ..core.util import basestring, sanitize_identifier, max_range, find_range
+from ..core.util import (basestring, sanitize_identifier, max_range,
+                         find_range, dimension_sanitizer)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -174,7 +175,7 @@ class Dimension(param.Parameterized):
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, sanitize_identifier(self.name, capitalize=False)]
+        dim_matches = [self.name, dimension_sanitizer(self.name)]
         return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
 
     def __ne__(self, other):
@@ -602,7 +603,7 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            sanitized = {sanitize_identifier(kd, capitalize=False): kd
+            sanitized = {dimension_sanitizer(kd): kd
                          for kd in self.dimensions('key', True)}
             return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
         except ValueError:
@@ -699,7 +700,7 @@ class Dimensioned(LabelledData):
             items = []
             for k, v in selection.items():
                 val_dim = ['value'] if v.vdims else []
-                dims = list(zip(*[(sanitize_identifier(kd), kd)
+                dims = list(zip(*[(dimension_sanitizer(kd), kd)
                                   for kd in v.dimensions('key', label=True)]))
                 kdims, skdims = dims if dims else ([], [])
                 key_dims = list(kdims) + list(skdims) + val_dim

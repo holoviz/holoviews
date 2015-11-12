@@ -244,7 +244,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return self._process_underscores(sanitized + ([chars] if chars else []))
 
 sanitize_identifier = sanitize_identifier_fn.instance()
-
+dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def find_minmax(lims, olims):
     """
