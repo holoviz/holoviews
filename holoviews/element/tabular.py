@@ -227,6 +227,10 @@ class TableConversion(object):
         from .chart import Curve
         return self._conversion(kdims, vdims, mdims, Curve, sort=True, **kwargs)
 
+    def errorbars(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart import ErrorBars
+        return self._conversion(kdims, vdims, mdims, ErrorBars, sort=True, **kwargs)
+
     def distribution(self, dim, mdims=[], **kwargs):
         from ..interface.seaborn import Distribution
         if mdims:
@@ -249,18 +253,6 @@ class TableConversion(object):
         from .chart import Points
         return self._conversion(kdims, vdims, mdims, Points, **kwargs)
 
-    def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Scatter
-        return self._conversion(kdims, vdims, mdims, Scatter, **kwargs)
-
-    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart3d import Scatter3D
-        return self._conversion(kdims, vdims, mdims, Scatter3D, **kwargs)
-
-    def trisurface(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart3d import Trisurface
-        return self._conversion(kdims, vdims, mdims, Trisurface, **kwargs)
-
     def raster(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import Raster
         heatmap = self.heatmap(kdims, vdims, **kwargs)
@@ -269,10 +261,26 @@ class TableConversion(object):
     def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
         return self._convert(kdims, vdims, mdims, Regression, **kwargs)
 
+    def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart import Scatter
+        return self._conversion(kdims, vdims, mdims, Scatter, **kwargs)
+
+    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart3d import Scatter3D
+        return self._conversion(kdims, vdims, mdims, Scatter3D, **kwargs)
+
+    def spread(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart import Spread
+        return self._conversion(kdims, vdims, mdims, Spread, sort=True, **kwargs)
+
     def surface(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Surface
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
+
+    def trisurface(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart3d import Trisurface
+        return self._conversion(kdims, vdims, mdims, Trisurface, **kwargs)
 
     def vectorfield(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import VectorField

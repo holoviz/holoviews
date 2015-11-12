@@ -113,9 +113,16 @@ class SpreadPlot(PolygonPlot):
         super(SpreadPlot, self).__init__(*args, **kwargs)
 
     def get_data(self, element, ranges=None):
-        lower = element.data[:, 1] - element.data[:, 2]
-        upper = element.data[:, 1] + element.data[:, 3]
-        band_x = np.append(element.data[:, 0], element.data[::-1, 0])
+
+        xvals = element.dimension_values(0)
+        mean = element.dimension_values(1)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+
+        lower = mean - neg_error
+        upper = mean + pos_error
+        band_x = np.append(xvals, xvals[::-1])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y]), self._mapping
 
@@ -179,10 +186,16 @@ class ErrorPlot(PathPlot):
     style_opts = ['color'] + line_properties
 
     def get_data(self, element, ranges=None):
-        data = element.data
+        data = element.array(dimensions=element.dimensions()[0:4])
         err_xs = []
         err_ys = []
-        for x, y, neg, pos in data:
+        for row in data:
+            x, y = row[0:2]
+            if len(row) > 3:
+                neg, pos = row[2:]
+            else:
+                neg, pos = row[2], row[2]
+
             if self.horizontal:
                 err_xs.append((x - neg, x + pos))
                 err_ys.append((y, y))

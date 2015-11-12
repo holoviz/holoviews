@@ -432,7 +432,7 @@ class MultiDimensionalMapping(Dimensioned):
             for idx, (dim, val) in enumerate(zip(self.kdims, key)):
                 value = value.add_dimension(dim, idx, val)
             tables.append(value)
-        return value.concat(tables)
+        return value.interface.concatenate(tables)
 
 
     def dframe(self):
@@ -817,7 +817,7 @@ class UniformNdMapping(NdMapping):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            key_dims = reversed(list(zip(key, self.dimensions('key', label))))
+            key_dims = reversed(list(zip(key, self.dimensions('key', True))))
             for val, dim in key_dims:
                 dimn = 1
                 while dim in view_frame:

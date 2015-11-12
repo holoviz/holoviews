@@ -273,6 +273,15 @@ class Columns(Element):
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
+        """
+        Return the results of a groupby operation over the specified
+        dimensions as an object of type container_type (expected to be
+        dictionary-like).
+
+        Keys vary over the columns (dimensions) and the corresponding
+        values are collections of group_type (e.g list, tuple)
+        constructed with kwargs (if supplied).
+        """
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
@@ -284,24 +293,6 @@ class Columns(Element):
                             % invalid_dims)
         return self.interface.groupby(self, dimensions, container_type,
                                       group_type, **kwargs)
-
-    @classmethod
-    def concat(cls, columns_objs):
-        """
-        Concatenates a list of Columns objects. If data types don't
-        match all types will be converted to that of the first object
-        before concatenation.
-        """
-        columns = columns_objs[0]
-        if len({col.interface for col in columns_objs}) > 1:
-            if isinstance(columns.data, NdElement):
-                columns_objs = [co.table('dictionary') for co in columns_objs]
-            elif isinstance(columns.data, np.ndarray):
-                columns_objs = [co.table('array') for co in columns_objs]
-            elif util.is_dataframe(data[0]):
-                columns_objs = [co.table('dataframe') for co in columns_objs]
-        return columns.clone(columns.interface.concat(columns_objs))
-
 
     def __len__(self):
         """
@@ -337,12 +328,49 @@ class Columns(Element):
             dimensions = [self.get_dimension(d).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
 
+    def columns(self, dimensions=None):
+        if dimensions is None: dimensions = self.dimensions()
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        return {d.name: self.dimension_values(d) for d in dimensions}
 
 
 
 class DataColumns(param.Parameterized):
 
     interfaces = {}
+
+    datatype = None
+
+    @classmethod
+    def register(cls, interface):
+        cls.interfaces[interface.datatype] = interface
+
+
+    @classmethod
+    def cast(cls, columns, datatype=None, cast_type=None):
+        """
+        Given a list of Columns objects, cast them to the specified
+        datatype (by default the format matching the current interface)
+        with the given cast_type (if specified).
+        """
+        classes = {type(c) for c in columns}
+        if len(classes) > 1:
+            raise Exception("Please supply the common cast type")
+        else:
+            cast_type = classes.pop()
+
+        if datatype is None:
+           datatype = cls.datatype
+
+        unchanged = all({c.interface==cls for c in columns})
+        if unchanged and set([cast_type])==classes:
+            return columns
+        elif unchanged:
+            return [cast_type(co, **dict(util.get_param_values(co)) ) for co in columns]
+
+        return [cast_type(co.columns(), datatype=[datatype],
+                          **dict(util.get_param_values(co))) for co in columns]
+
 
     @classmethod
     def initialize(cls, eltype, data, kdims, vdims, datatype=None):
@@ -411,12 +439,13 @@ class DataColumns(param.Parameterized):
                     iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
             else:
-                if columns.ndims == 1:
+                index_mask = arr == k
+                if columns.ndims == 1 and np.sum(index_mask) == 0:
                     data_index = np.argmin(np.abs(arr - k))
                     mask = np.zeros(len(columns), dtype=np.bool)
                     mask[data_index] = True
                 else:
-                    mask &= arr == k
+                    mask &= index_mask
         return mask
 
 
@@ -446,12 +475,38 @@ class DataColumns(param.Parameterized):
                 return column[0], column[-1]
 
     @classmethod
+    def concatenate(cls, columns, datatype=None):
+        """
+        Utility function to concatenate a list of Column objects,
+        returning a new Columns object. Note that this is unlike the
+        .concat method which only concatenates the data.
+        """
+        if len(set(type(c) for c in columns)) != 1:
+               raise Exception("All inputs must be same type in order to concatenate")
+
+        interfaces = set(c.interface for c in columns)
+        if len(interfaces)!=1 and datatype is None:
+            raise Exception("Please specify the concatenated datatype")
+        elif len(interfaces)!=1:
+            interface = cls.interfaces[datatype]
+        else:
+            interface = interfaces.pop()
+
+        concat_data = interface.concat(columns)
+        return columns[0].clone(concat_data)
+
+
+    @classmethod
     def array(cls, columns, dimensions):
-        return Element.dframe(columns, dimensions)
+        return Element.array(columns, dimensions)
 
     @classmethod
     def dframe(cls, columns, dimensions):
         return Element.dframe(columns, dimensions)
+
+    @classmethod
+    def columns(cls, columns, dimensions):
+        return Element.columns(columns, dimensions)
 
     @classmethod
     def shape(cls, columns):
@@ -470,6 +525,8 @@ class DataColumns(param.Parameterized):
 class NdColumns(DataColumns):
 
     types = (NdElement,)
+
+    datatype = 'dictionary'
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -511,8 +568,8 @@ class NdColumns(DataColumns):
 
     @classmethod
     def concat(cls, columns_objs):
-        return [(k[1:], v) for col in columns_objs
-                for k, v in col.data.data.items()]
+        cast_objs = cls.cast(columns_objs)
+        return [(k[1:], v) for col in cast_objs for k, v in col.data.data.items()]
 
     @classmethod
     def sort(cls, columns, by=[]):
@@ -559,6 +616,8 @@ class NdColumns(DataColumns):
 class DFColumns(DataColumns):
 
     types = (pd.DataFrame if pd else None,)
+
+    datatype = 'dataframe'
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -609,7 +668,8 @@ class DFColumns(DataColumns):
 
     @classmethod
     def concat(cls, columns_objs):
-        return pd.concat([col.data for col in columns_objs])
+        cast_objs = cls.cast(columns_objs)
+        return pd.concat([col.data for col in cast_objs])
 
 
     @classmethod
@@ -740,6 +800,8 @@ class ArrayColumns(DataColumns):
 
     types = (np.ndarray,)
 
+    datatype = 'array'
+
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         if isinstance(data, dict):
@@ -788,7 +850,8 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def concat(cls, columns_objs):
-        return np.concatenate([col.data for col in columns_objs])
+        cast_objs = cls.cast(columns_objs)
+        return np.concatenate([col.data for col in cast_objs])
 
 
     @classmethod
@@ -848,8 +911,8 @@ class ArrayColumns(DataColumns):
         # to apply the group selection
         grouped_data = []
         for group in unique_indices:
-            mask = np.logical_and.reduce([data[:, i] == group[i]
-                                         for i in range(ndims)])
+            mask = np.logical_and.reduce([data[:, idx] == group[i]
+                                          for i, idx in enumerate(dim_idxs)])
             group_data = data[mask, ndims:]
             if not group_type == 'raw':
                 if issubclass(group_type, dict):
@@ -943,8 +1006,8 @@ class ArrayColumns(DataColumns):
 
 
 # Register available interfaces
-DataColumns.interfaces.update([('array', ArrayColumns),
-                               ('dictionary', NdColumns)])
+DataColumns.register(ArrayColumns)
+DataColumns.register(NdColumns)
 if pd:
-    DataColumns.interfaces['dataframe'] = DFColumns
+    DataColumns.register(DFColumns)
 
