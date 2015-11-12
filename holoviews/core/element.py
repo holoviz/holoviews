@@ -310,7 +310,7 @@ class NdElement(NdMapping, Tabular):
             else:
                 vdims = [d for d in self.vdims if d not in kdims]
         elif kdims is None:
-            kdims = [d for d in self.dimensions if d not in vdims]
+            kdims = [d for d in self.dimensions() if d not in vdims]
         if 'Index' not in kdims: kdims = ['Index'] + kdims
         key_dims = [self.get_dimension(k) for k in kdims]
         val_dims = [self.get_dimension(v) for v in vdims]
