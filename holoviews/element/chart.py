@@ -73,21 +73,19 @@ class ErrorBars(Chart):
     errorbars situated in a 2D space. The errors must be supplied
     as an Nx3 or Nx4 array representing the x/y-positions and
     either the symmetric error or assymetric errors respectively.
-    Internally the data is always held as an Nx4 array with the
-    lower and upper bounds.
     """
 
     group = param.String(default='ErrorBars', constant=True, doc="""
         A string describing the quantitity measured by the ErrorBars
         object.""")
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+    kdims = param.List(default=[Dimension('x')],
                        bounds=(1, 2), constant=True, doc="""
         The Dimensions corresponding to the x- and y-positions of
         the error bars.""")
 
-    vdims = param.List(default=[Dimension('lerror'), Dimension('uerror')],
-                       bounds=(1,2), constant=True)
+    vdims = param.List(default=[Dimension('y'), Dimension('yerror')],
+                       bounds=(1, 3), constant=True)
 
 
     def range(self, dim, data_range=True):
