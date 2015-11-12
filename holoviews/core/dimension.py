@@ -174,7 +174,7 @@ class Dimension(param.Parameterized):
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, sanitize_identifier(self.name)]
+        dim_matches = [self.name, sanitize_identifier(self.name, capitalize=False)]
         return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
 
     def __ne__(self, other):
@@ -602,7 +602,7 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            sanitized = {sanitize_identifier(kd): kd
+            sanitized = {sanitize_identifier(kd, capitalize=False): kd
                          for kd in self.dimensions('key', True)}
             return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
         except ValueError:
