@@ -935,26 +935,6 @@ class ArrayColumns(DataColumns):
         return data
 
 
-    @classmethod
-    def collapse_data(cls, data, function, kdims=None, **kwargs):
-        ndims = data[0].shape[1]
-        nkdims = len(kdims)
-        data = data[0] if len(data) == 0 else np.concatenate(data)
-        vdims = ['Value Dimension %s' % i for i in range(ndims-len(kdims))]
-        joined_data = Columns(data, kdims=kdims, vdims=vdims)
-
-        rows = []
-        for k, group in cls.groupby(joined_data, kdims, list, 'raw'):
-            row = np.zeros(ndims)
-            row[:nkdims] = np.array(k)
-            if isinstance(function, np.ufunc):
-                collapsed = function.reduce(group)
-            else:
-                collapsed = function(group, axis=0, **kwargs)
-            row[nkdims:] = collapsed
-            rows.append(row)
-        return np.array(rows)
-
 
     @classmethod
     def sample(cls, columns, samples=[]):
