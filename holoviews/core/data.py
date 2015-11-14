@@ -251,6 +251,7 @@ class Columns(Element):
         for reduce_fn, group in reduce_map:
             reduced = self.interface.reduce(reduced, group, function)
 
+        reduced = self.interface.unpack_scalar(self, reduced)
         if np.isscalar(reduced):
             return reduced
         else:
@@ -266,10 +267,14 @@ class Columns(Element):
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        if not dimensions: dimensions = self.kdims
         aggregated = self.interface.aggregate(self, dimensions, function)
-        kdims = [self.get_dimension(d) for d in dimensions]
-        return self.clone(aggregated, kdims=kdims)
+        aggregated = self.interface.unpack_scalar(self, aggregated)
+        if np.isscalar(aggregated):
+            return aggregated
+        else:
+            kdims = [self.get_dimension(d) for d in dimensions]
+            return self.clone(aggregated, kdims=kdims)
+
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
@@ -495,6 +500,10 @@ class DataColumns(param.Parameterized):
         concat_data = interface.concat(columns)
         return columns[0].clone(concat_data)
 
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function):
+        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
+        return cls.aggregate(columns, kdims, function)
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -596,10 +605,6 @@ class NdColumns(DataColumns):
         return columns.data.select(**selection)
 
     @classmethod
-    def collapse_data(cls, data, function, kdims=None, **kwargs):
-        return data[0].collapse_data(data, function, kdims, **kwargs)
-
-    @classmethod
     def sample(cls, columns, samples=[]):
         return columns.data.sample(samples)
 
@@ -610,6 +615,10 @@ class NdColumns(DataColumns):
     @classmethod
     def aggregate(cls, columns, dimensions, function):
         return columns.data.aggregate(dimensions, function)
+
+    @classmethod
+    def unpack_scalar(cls, columns, data):
+        return data
 
 
 
@@ -694,38 +703,34 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function=None):
-        """
-        The aggregate function accepts either a list of Dimensions and a
-        function to apply to find the aggregate across those Dimensions
-        or a list of dimension/function pairs to apply one by one.
-        """
-        kdims = [kdim.name for kdim in columns.kdims if kdim not in reduce_dims]
+    def aggregate(cls, columns, dimensions, function):
+        data = columns.data
+        cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', True)
-        if kdims:
-            reduced = columns.data.reindex(columns=kdims+vdims).\
-                      groupby(kdims).aggregate(function).reset_index()
+        reindexed = data.reindex(columns=cols+vdims)
+        if len(dimensions):
+            return reindexed.groupby(cols).aggregate(function).reset_index()
         else:
-            if isinstance(function, np.ufunc):
-                reduced = function.reduce(columns.data, axis=0)
-            else:
-                reduced = function(columns.data, axis=0)[vdims]
-            if len(reduced) == 1:
-                reduced = reduced[0]
-            else:
-                reduced = pd.DataFrame([reduced], columns=vdims)
-        return reduced
+            agg = reindexed.apply(function)
+            return pd.DataFrame.from_items([(col, [v]) for col, v in
+                                            zip(agg.index, agg.values)])
+
+
+    @classmethod
+    def unpack_scalar(cls, columns, data):
+        """
+        Given a columns object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if len(data) != 1 or len(data.columns) > 1:
+            return data
+        return data.iat[0,0]
 
 
     @classmethod
     def reindex(cls, columns, kdims=None, vdims=None):
         # DataFrame based tables don't need to be reindexed
         return columns.data
-
-
-    @classmethod
-    def collapse_data(cls, data, function, kdims, **kwargs):
-        return pd.concat(data).groupby([d.name for d in kdims]).agg(function).reset_index()
 
 
     @classmethod
@@ -758,15 +763,6 @@ class DFColumns(DataColumns):
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
         return np.array(data)
-
-
-    @classmethod
-    def aggregate(cls, columns, dimensions, function):
-        data = columns.data
-        cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', True)
-        return data.reindex(columns=cols+vdims).groupby(cols).\
-            aggregate(function).reset_index()
 
 
     @classmethod
@@ -972,37 +968,30 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
-        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
-        if len(kdims):
-            reindexed = columns.reindex(kdims)
-            reduced = cls.collapse_data([reindexed.data], function, kdims)
-        else:
-            if isinstance(function, np.ufunc):
-                reduced = function.reduce(columns.data, axis=0)
-            else:
-                reduced = function(columns.data, axis=0)
-            reduced = reduced[columns.ndims:]
-        if reduced.ndim == 1:
-            if len(reduced) == 1:
-                return reduced[0]
-            else:
-                return np.atleast_2d(reduced)
-        return reduced
+    def unpack_scalar(cls, columns, data):
+        """
+        Given a columns object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if data.shape == (1, 1):
+            return data[0, 0]
+        return data
 
 
     @classmethod
     def aggregate(cls, columns, dimensions, function):
-        if not isinstance(dimensions, Iterable): dimensions = [dimensions]
-        rows = []
         reindexed = columns.reindex(dimensions)
-        for k, group in cls.groupby(reindexed, dimensions, list, 'raw'):
+        grouped = (cls.groupby(reindexed, dimensions, list, 'raw')
+                   if len(dimensions) else [((), reindexed.data)])
+
+        rows = []
+        for k, group in grouped:
             if isinstance(function, np.ufunc):
                 reduced = function.reduce(group, axis=0)
             else:
                 reduced = function(group, axis=0)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
-        return np.array(rows)
+        return np.atleast_2d(rows)
 
 
 # Register available interfaces
