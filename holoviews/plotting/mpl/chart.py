@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import param
 
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
-from ...core.util import match_spec
+from ...core.util import match_spec, unique_iterator
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
@@ -818,8 +818,7 @@ class BarPlot(LegendPlot):
                 dimensions.append(None)
                 vals = [None]
                 params = {}
-            values[vtype] = NdMapping([(v, None) for v in vals],
-                                      **params).keys()
+            values[vtype] = list(unique_iterator(vals))
         return values, dimensions
 
 
@@ -909,7 +908,7 @@ class BarPlot(LegendPlot):
                 grp = gdim.pprint_value(grp_name)
                 if 'group' in style_groups:
                     idx = style_groups.index('group')
-                    label_key[idx] = grp
+                    label_key[idx] = str(grp)
                     style_key[idx] = grp_name
                 val_key[gi] = grp_name
                 if ci < ndims:
@@ -923,7 +922,7 @@ class BarPlot(LegendPlot):
                     cat = gdim.pprint_value(cat_name)
                     if 'category' in style_groups:
                         idx = style_groups.index('category')
-                        label_key[idx] = cat
+                        label_key[idx] = str(cat)
                         style_key[idx] = cat_name
                     val_key[ci] = cat_name
                     xticks.append((xpos+width/2., cat, 0))
@@ -933,7 +932,7 @@ class BarPlot(LegendPlot):
                         if 'stack' in style_groups:
                             idx = style_groups.index('stack')
                             stk = gdim.pprint_value(stk_name)
-                            label_key[idx] = stk
+                            label_key[idx] = str(stk)
                             style_key[idx] = stk_name
                         val_key[si] = stk_name
                     vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
