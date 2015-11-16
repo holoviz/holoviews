@@ -1027,10 +1027,10 @@ class DictColumns(DataColumns):
             if data.ndim == 1:
                 data = np.column_stack([np.arange(len(data)), data])
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
-        elif not isinstance(data, dict):
-            data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
+        elif not isinstance(data, dict):
+            data = {k: v for k, v in zip(dimensions, zip(*data))}
 
         if not all(d in data for d in dimensions):
             raise ValueError("Columns data did not contain data for all columns.")
