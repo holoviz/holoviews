@@ -608,7 +608,7 @@ class gridmatrix(param.ParameterizedFunction):
             if 'dataframe' in Columns.datatype:
                 el_data = element.table('dataframe')
             else:
-                el_data = element.table('dictionary')
+                el_data = element.table('ndelement')
         el_data = element.data
 
         # Get dimensions to plot against each other

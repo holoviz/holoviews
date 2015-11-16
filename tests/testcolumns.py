@@ -321,7 +321,7 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     """
 
     def setUp(self):
-        Columns.datatype = ['dictionary']
+        Columns.datatype = ['ndelement']
         self.data_instance_type = NdElement
         self.init_data()
 

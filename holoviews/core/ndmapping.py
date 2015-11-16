@@ -426,7 +426,7 @@ class MultiDimensionalMapping(Dimensioned):
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
 
-        datatype = ['dictionary', 'dataframe']
+        datatype = ['ndelement', 'dataframe']
         tables = []
         for key, value in self.data.items():
             value = value.table(datatype=datatype, **kwargs)
