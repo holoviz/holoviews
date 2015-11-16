@@ -5,9 +5,9 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import DFColumns # FIXME: Waiting for new interface
+from ..core.data import DFColumns, ArrayColumns, NdColumns
 from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
-                    Overlay, Element, Columns)
+                    Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
@@ -341,7 +341,7 @@ class QuadMesh(Raster):
 
 
 
-class HeatMap(Raster):
+class HeatMap(Columns, Element2D):
     """
     HeatMap is an atomic Element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -354,76 +354,49 @@ class HeatMap(Raster):
 
     group = param.String(default='HeatMap', constant=True)
 
+    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+
+    vdims = param.List(default=[Dimension('z')])
+
     def __init__(self, data, extents=None, **params):
-        self._data, array, dimensions = self._process_data(data, params)
-        super(HeatMap, self).__init__(array, **dict(params, **dimensions))
-
-
-    def _process_data(self, data, params):
-        dimensions = {group: params.get(group, getattr(self, group))
-                      for group in self._dim_groups[:2]}
-        if isinstance(data, Columns):
-            if 'kdims' not in params:
-                dimensions['kdims'] = data.kdims
-            if 'vdims' not in params:
-                dimensions['vdims'] = data.vdims
-        elif isinstance(data, (dict, OrderedDict, type(None))):
-            data = Columns(data, **dimensions)
-        elif isinstance(data, Element):
-            data = data.table()
-            if not data.ndims == 2:
-                raise TypeError('HeatMap conversion requires 2 key dimensions')
+        super(HeatMap, self).__init__(data, **params)
+        self.raster = self._compute_raster()
+        self.depth = 1
+        if extents is None:
+            (d1, d2) = self.raster.shape[:2]
+            self.extents = (0, 0, d2, d1)
         else:
-            raise TypeError('HeatMap only accepts Columns or dict types.')
+            self.extents = extents
 
-        if len(dimensions['vdims']) > 1:
-            raise ValueError("HeatMap data may only have one value dimension")
 
-        d1keys = data.dimension_values(0, True)
-        d2keys = data.dimension_values(1, True)
+    def _compute_raster(self):
+        d1keys = self.dimension_values(0, True)
+        d2keys = self.dimension_values(1, True)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
-        dense_data = data.clone(coords)
-        concat_data = DFColumns.concat([data, dense_data])
-        data = data.clone(concat_data).aggregate(data.kdims, np.nanmean).sort(data.kdims)
+        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims)
+        concat_data = self.interface.concatenate([Columns(self), dense_data])
+        data = Columns(concat_data, kdims=self.kdims, vdims=self.vdims).aggregate(self.kdims, np.nanmean).sort(self.kdims)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
-        return data, np.flipud(array.T), dimensions
+        return np.flipud(array.T)
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
-        if (data is None) and shared_data:
-            data = self._data
-        return super(HeatMap, self).clone(data, shared_data)
-
-
-    def __getitem__(self, coords):
-        """
-        Slice the underlying NdMapping.
-        """
-        if coords in self.dimensions(): return self.dimension_values(coords)
-        return self.clone(self._data.select(**dict(zip(self._data.kdims, coords))))
+    def __setstate__(self, state):
+        if '_data' in state:
+            state['data'] = data.data
+        self.__dict__ = state
+        if isinstance(self.data, NdElement):
+            self.interface = NdColumns
+        elif isinstance(self.data, np.ndarray):
+            self.interface = ArrayColumns
+        elif util.is_dataframe(self.data):
+            self.interface = DFColumns
+        self.raster = self._compute_raster()
 
 
     def dense_keys(self):
-        d1keys = np.unique(self._data.dimension_values(0))
-        d2keys = np.unique(self._data.dimension_values(1))
+        d1keys = self.dimension_values(0, True)
+        d2keys = self.dimension_values(1, True)
         return list(zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys]))
-
-
-    def dimension_values(self, dim, unique=False):
-        dim = self.get_dimension(dim).name
-        if dim in self.kdims:
-            if unique:
-                return np.unique(self._data.dimension_values(dim))
-            else:
-                idx = self.get_dimension_index(dim)
-                return self.dense_keys()[idx]
-        elif dim in self.vdims:
-            if unique:
-                return self._data.dimension_values(dim)
-            else:
-                return np.rot90(self.data, 3).flatten()
-        else:
-            return super(HeatMap, self).dimension_values(dim)
 
 
     def dframe(self, dense=False):

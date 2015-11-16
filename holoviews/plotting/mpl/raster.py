@@ -78,7 +78,7 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, RGB):
             data = element.rgb.data
         elif isinstance(element, HeatMap):
-            data = element.data
+            data = element.raster
             data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
             cmap_name = opts.pop('cmap', None)
             cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
@@ -104,7 +104,7 @@ class RasterPlot(ColorbarPlot):
     def _compute_ticks(self, element, ranges):
         if isinstance(element, HeatMap):
             xdim, ydim = element.kdims
-            dim1_keys, dim2_keys = [element.dimension_values(i, True)
+            dim1_keys, dim2_keys = [np.unique(element.dimension_values(i))
                                     for i in range(2)]
             num_x, num_y = len(dim1_keys), len(dim2_keys)
             x0, y0, x1, y1 = element.extents
