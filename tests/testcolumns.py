@@ -105,12 +105,12 @@ class HomogeneousColumnTypes(object):
         self.compare_columns(collapsed, expected)
 
     def test_columns_slice_hm(self):
-        columns_slice = Columns(zip(range(5, 9), [2*i for i in range(5, 9)]),
+        columns_slice = Columns({'x':range(5, 9), 'y':[2*i for i in range(5, 9)]},
                                 kdims=['x'], vdims=['y'])
         self.assertEqual(self.columns_hm[5:9], columns_slice)
 
     def test_columns_1D_reduce_hm(self):
-        columns = Columns((self.xs, self.y_ints), kdims=['x'], vdims=['y'])
+        columns = Columns({'x':self.xs, 'y':self.y_ints}, kdims=['x'], vdims=['y'])
         self.assertEqual(columns.reduce('x', np.mean), 10)
 
     def test_columns_2D_reduce_hm(self):
