@@ -1069,10 +1069,8 @@ class DictColumns(DataColumns):
 
     @classmethod
     def array(cls, columns, dimensions):
-        if dimensions:
-            return np.column_stack(columns.data[dim] for dim in dimensions)
-        else:
-            return np.column_stack(columns.data.values())
+        if not dimensions: dimensions = columns.dimensions(label=True)
+        return np.column_stack(columns.data[dim] for dim in dimensions)
 
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values):
@@ -1101,8 +1099,9 @@ class DictColumns(DataColumns):
     def sort(cls, columns, by=[]):
         data = cls.array(columns, None)
         idxs = [columns.get_dimension_index(dim) for dim in by]
-        arr = data[np.lexsort(np.flipud(data[:, idxs].T))]
-        return OrderedDict([(d, arr[:, i]) for i, d in enumerate(columns.data)])
+        sort = np.lexsort(np.flipud(data[:, idxs].T))
+        return OrderedDict([(d, v[np.lexsort(np.flipud(data[:, idxs].T))])
+                            for d, v in columns.data.items()])
 
     @classmethod
     def values(cls, columns, dim):
@@ -1114,21 +1113,6 @@ class DictColumns(DataColumns):
         # DataFrame based tables don't need to be reindexed
         return OrderedDict([(d, columns.dimension_values(d))
                             for d in kdims+vdims])
-
-
-    @classmethod
-    def groupby(cls, columns, dimensions, container_type=HoloMap, group_type=None, **kwargs):
-        unique = OrderedDict()
-        for i in range(len(columns)):
-            key = tuple(columns.data[d][i] for d in dimensions)
-            unique[key] = None
-
-        for unique_key in unique:
-            selection = dict(zip(dimensions, unique_key))
-            mask = cls.select_mask(columns, selection)
-            matches = zip(cls.values(columns, d)[mask] for d in dimensions)
-            unique[unique_key] = matches
-        return unique
 
 
     @classmethod
@@ -1154,7 +1138,7 @@ class DictColumns(DataColumns):
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(columns, dict(zip(dimensions, unique_key)))
-            group_data = {d.name:columns[d.name][mask] for d in kdims+vdims}
+            group_data = OrderedDict(((d.name, columns[d.name][mask]) for d in kdims+vdims))
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -1193,17 +1177,22 @@ class DictColumns(DataColumns):
 
     @classmethod
     def aggregate(cls, columns, kdims, function):
-        vdims = [d.name for d in columns.vdims]
-        groups = cls.groupby(columns, kdims , OrderedDict,dict)
-        aggregated = OrderedDict([(k,[]) for k in kdims+vdims])
+        kdims = [columns.get_dimension(d).name for d in kdims]
+        vdims = columns.dimensions('value', True)
+        groups = cls.groupby(columns, kdims, list, OrderedDict)
+        aggregated = OrderedDict([(k, []) for k in kdims+vdims])
 
-        for key, group in groups.items():
+        for key, group in groups:
             key = key if isinstance(key, tuple) else (key,)
             for kdim, val in zip(kdims, key):
                 aggregated[kdim].append(val)
             for vdim, arr in group.items():
-                if vdim in vdims:
-                    aggregated[vdim].append(function(arr))
+                if vdim in columns.vdims:
+                    if isinstance(function, np.ufunc):
+                        reduced = function.reduce(arr)
+                    else:
+                        reduced = function(arr)
+                    aggregated[vdim].append(reduced)
         return aggregated
 
 
