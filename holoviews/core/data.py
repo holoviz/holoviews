@@ -1099,9 +1099,8 @@ class DictColumns(DataColumns):
     def sort(cls, columns, by=[]):
         data = cls.array(columns, None)
         idxs = [columns.get_dimension_index(dim) for dim in by]
-        sort = np.lexsort(np.flipud(data[:, idxs].T))
-        return OrderedDict([(d, v[np.lexsort(np.flipud(data[:, idxs].T))])
-                            for d, v in columns.data.items()])
+        sorting = np.lexsort(np.flipud(data[:, idxs].T))
+        return OrderedDict([(d, v[sorting]) for d, v in columns.data.items()])
 
     @classmethod
     def values(cls, columns, dim):
