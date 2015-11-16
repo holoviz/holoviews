@@ -694,7 +694,7 @@ class DFColumns(DataColumns):
         group_kwargs.update(kwargs)
 
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                columns.data.groupby(dimensions)]
+                columns.data.groupby(dimensions, sort=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
@@ -709,7 +709,7 @@ class DFColumns(DataColumns):
         vdims = columns.dimensions('value', True)
         reindexed = data.reindex(columns=cols+vdims)
         if len(dimensions):
-            return reindexed.groupby(cols).aggregate(function).reset_index()
+            return reindexed.groupby(cols, sort=False).aggregate(function).reset_index()
         else:
             agg = reindexed.apply(function)
             return pd.DataFrame.from_items([(col, [v]) for col, v in
