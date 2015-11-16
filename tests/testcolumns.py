@@ -53,7 +53,7 @@ class HomogeneousColumnTypes(object):
         "Tests support for homogeneous DataFrames"
         if pd is None:
             raise SkipTest("Pandas not available")
-        columns = Columns(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}))
+        columns = Columns(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}), kdims=['x', 'x2'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     # Properties and information
@@ -172,7 +172,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         "Tests support for heterogeneous DataFrames"
         if pd is None:
             raise SkipTest("Pandas not available")
-        columns = Columns(pd.DataFrame({'x':self.xs, 'y':self.ys}))
+        columns = Columns(pd.DataFrame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     # Test literal formats
@@ -341,8 +341,6 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         self.data_instance_type = NdElement
         self.init_data()
 
-    def test_columns_dataframe_init_ht(self): pass # Delete once supported!
-    def test_columns_dataframe_init_hm(self): pass # Delete once supported!
     def test_columns_array_init_ht(self): pass     # Delete once supported!
     def test_columns_array_init_hm(self): pass     # Delete once supported!
     def test_columns_implicit_indexing_init(self): pass # Delete once supported!

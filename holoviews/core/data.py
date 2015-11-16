@@ -546,10 +546,11 @@ class NdColumns(DataColumns):
             kdims = kdims if kdims else element_params['kdims'].default
             vdims = vdims if vdims else element_params['vdims'].default
 
-        dimensions = kdims + vdims
-        if isinstance(data, dict) and all(d in data for d in kdims+vdims):
-            data = tuple(data.get(d.name if isinstance(d, Dimension) else d)
-                         for d in dimensions)
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if ((isinstance(data, dict) or util.is_dataframe(data)) and
+            all(d in data for d in dimensions)):
+            data = tuple(data.get(d) for d in dimensions)
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
@@ -801,12 +802,16 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
-        if isinstance(data, dict):
-            dimensions = kdims + vdims
-            if all(d in data for d in dimensions):
-                columns = [data.get(d.name if isinstance(d, Dimension) else d)
-                           for d in dimensions]
-                data = np.column_stack(columns)
+        element_params = eltype.params()
+        kdims = kdims if kdims else element_params['kdims'].default
+        vdims = vdims if vdims else element_params['vdims'].default
+
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if ((isinstance(data, dict) or util.is_dataframe(data)) and
+            all(d in data for d in dimensions)):
+            columns = [data[d] for d in dimensions]
+            data = np.column_stack(columns)
         elif isinstance(data, tuple):
             try:
                 data = np.column_stack(data)
