@@ -317,38 +317,6 @@ class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
         self.init_data()
 
 
-
-class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
-    """
-    Test of the NdColumns interface (mostly for backwards compatibility)
-    """
-
-    def setUp(self):
-        Columns.datatype = ['ndelement']
-        self.data_instance_type = NdElement
-        self.init_data()
-
-    def test_columns_implicit_indexing_init(self): pass # Delete once supported!
-
-    # Literal formats that have been previously been supported but
-    # currently are only supported via NdElement.
-
-    def test_columns_odict_init(self):
-        columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(columns.data, NdElement))
-
-    def test_columns_dict_init(self):
-        columns = Columns(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(columns.data, NdElement))
-
-    def test_columns_double_zip_init(self):
-        columns = Columns(zip(zip(self.gender, self.age),
-                              zip(self.weight, self.height)),
-                          kdims=self.kdims, vdims=self.vdims)
-        self.assertTrue(isinstance(columns.data, NdElement))
-
-
-
 class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     """
     Test of the pandas DFColumns interface.
@@ -388,3 +356,34 @@ class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
 
     def test_columns_dataframe_init_hm(self): pass
     def test_columns_dataframe_init_ht(self): pass
+
+
+
+class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+    """
+    Test of the NdColumns interface (mostly for backwards compatibility)
+    """
+
+    def setUp(self):
+        Columns.datatype = ['ndelement']
+        self.data_instance_type = NdElement
+        self.init_data()
+
+    def test_columns_implicit_indexing_init(self): pass # Delete once supported!
+
+    # Literal formats that have been previously been supported but
+    # currently are only supported via NdElement.
+
+    def test_columns_odict_init(self):
+        columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(columns.data, NdElement))
+
+    def test_columns_dict_init(self):
+        columns = Columns(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(columns.data, NdElement))
+
+    def test_columns_double_zip_init(self):
+        columns = Columns(zip(zip(self.gender, self.age),
+                              zip(self.weight, self.height)),
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertTrue(isinstance(columns.data, NdElement))
