@@ -44,7 +44,7 @@ class Columns(Element):
     of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'ndelement', 'dataframe' ],
+    datatype = param.List(['array', 'dictionary', 'dataframe' ],
         doc=""" A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
@@ -1207,10 +1207,9 @@ class DictColumns(DataColumns):
         return aggregated
 
 
-DataColumns.register(DictColumns)
-
 
 # Register available interfaces
+DataColumns.register(DictColumns)
 DataColumns.register(ArrayColumns)
 DataColumns.register(NdColumns)
 if pd:
