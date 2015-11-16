@@ -1037,9 +1037,14 @@ class DictColumns(DataColumns):
 
         if not isinstance(data, cls.types):
             raise ValueError("DictColumns interface couldn't convert data.""")
-        elif isinstance(data, odict_types):
-            data = OrderedDict([(d.name, np.array(data.get(d.name))) for d in kdims+vdims])
+        elif isinstance(data, dict):
+            unpacked = [(d, np.array(data[d])) for d in data]
+            if isinstance(data, odict_types):
+                data.update(unpacked)
+            else:
+                data = OrderedDict([(d, np.array(data[d])) for d in dimensions])
         return data, kdims, vdims
+
 
     @classmethod
     def unpack_scalar(cls, columns, data):
