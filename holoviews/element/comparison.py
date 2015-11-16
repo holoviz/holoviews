@@ -447,7 +447,7 @@ class Comparison(ComparisonInterface):
                                      + " First has type %s, and second has type %s."
                                      % (d1, d2))
             if d1.dtype.kind in 'SUOV':
-                if np.all(d1 != d2):
+                if list(d1) == list(d2):
                     cls.failureException("Columns along dimension %s not equal." % dim)
             else:
                 cls.compare_arrays(d1, d2, msg)
