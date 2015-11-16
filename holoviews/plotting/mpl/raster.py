@@ -121,8 +121,9 @@ class RasterPlot(ColorbarPlot):
     def _annotate_values(self, element):
         axis = self.handles['axis']
         val_dim = element.vdims[0]
-        d1keys, d2keys, vals = [element.dimension_values(i) for i in range(3)]
-        d1uniq, d2uniq = [element.dimension_values(i, True) for i in range(2)]
+        d1keys, d2keys = element.dense_keys()
+        vals = np.rot90(element.raster, 3).flatten()
+        d1uniq, d2uniq = [np.unique(element.dimension_values(i)) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
         xstep, ystep = 1.0/num_x, 1.0/num_y
         xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)

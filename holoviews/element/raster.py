@@ -374,8 +374,8 @@ class HeatMap(Columns, Element2D):
         d2keys = self.dimension_values(1, True)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
         dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims)
-        concat_data = self.interface.concatenate([Columns(self), dense_data])
-        data = Columns(concat_data, kdims=self.kdims, vdims=self.vdims).aggregate(self.kdims, np.nanmean).sort(self.kdims)
+        concat_data = self.interface.concatenate([Columns(self), dense_data], datatype='dictionary')
+        data = concat_data.aggregate(self.kdims, np.nanmean).sort(self.kdims)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
         return np.flipud(array.T)
 
