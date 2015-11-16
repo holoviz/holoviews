@@ -388,7 +388,7 @@ class DataColumns(param.Parameterized):
 
         # Process Element data
         if isinstance(data, NdElement):
-            pass
+            kdims = [kdim for kdim in kdims if kdim != 'Index']
         elif isinstance(data, Columns):
             data = data.data
         elif isinstance(data, Element):
@@ -659,9 +659,9 @@ class DFColumns(DataColumns):
             columns = [d.name if isinstance(d, Dimension) else d
                        for d in kdims+vdims]
 
-            if isinstance(data, dict):
-                data = OrderedDict([(d.name if isinstance(d, Dimension) else d, v)
-                                    for d, v in data.items()])
+            if ((isinstance(data, dict) and all(c in data for c in columns)) or
+                (isinstance(data, NdElement) and all(c in data.dimensions() for c in columns))):
+                data = OrderedDict(((d, data[d]) for d in columns))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     data = (range(len(data)), data)
@@ -815,8 +815,10 @@ class ArrayColumns(DataColumns):
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
-        kdims = kdims if kdims else element_params['kdims'].default
-        vdims = vdims if vdims else element_params['vdims'].default
+        if kdims is None:
+            kdims = eltype.kdims
+        if vdims is None:
+            vdims = eltype.vdims
 
         dimensions = [d.name if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
@@ -1012,19 +1014,24 @@ class DictColumns(DataColumns):
         if vdims is None:
             vdims = eltype.vdims
 
-        if isinstance(data, np.ndarray) and data.shape[1] != len(kdims + vdims):
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if isinstance(data, tuple):
+            data = {d: v for d, v in zip(dimensions, data)}
+        elif ((util.is_dataframe(data) and all(d in data for d in dimensions)) or
+              (isinstance(data, NdElement) and all(d in data.dimensions() for d in dimensions))):
+            data = {d: data[d] for d in dimensions}
+        elif isinstance(data, np.ndarray) and data.shape[1] != len(kdims + vdims):
             raise ValueError("Columns not of correct length")
         elif isinstance(data, np.ndarray):
-            data = {k:data[:,i] for i,k in enumerate(kdims+vdims)}
+            data = {k: data[:,i] for i,k in enumerate(dimensions)}
+        elif not isinstance(data, odict_types+(dict,)):
+            data = {k: v for k, v in zip(dimensions, zip(*data))}
 
-        if len(data) != len(kdims + vdims):
+        if len(data) != len(dimensions):
             raise ValueError("Columns not of correct length")
 
-        if isinstance(data, tuple):
-            # For tuple format, e.g. Curve((xs,ys))
-            data = OrderedDict(zip([d.name for d in kdims+vdims],
-                                   [np.array(d) for d in data]))
-        elif not isinstance(data, cls.types):
+        if not isinstance(data, cls.types):
             raise ValueError("DictColumns interface couldn't convert data.""")
         elif isinstance(data, odict_types):
             data = OrderedDict([(d.name, np.array(data.get(d.name))) for d in kdims+vdims])

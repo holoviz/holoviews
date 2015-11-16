@@ -44,19 +44,22 @@ class HomogeneousColumnTypes(object):
 
     def test_columns_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
-        columns = Columns(np.array(zip(self.xs, self.xs_2)), kdims=['x', 'x2'])
+        columns = Columns(np.array(zip(self.xs, self.xs_2)),
+                          kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     def test_columns_ndelement_init_hm(self):
         "Tests support for homogeneous NdElement (backwards compatibility)"
-        columns = Columns(NdElement(zip(self.xs, self.xs_2)), kdims=['x', 'x2'])
+        columns = Columns(NdElement(zip(self.xs, self.xs_2),
+                                    kdims=['x'], vdims=['x2']))
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     def test_columns_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
         if pd is None:
             raise SkipTest("Pandas not available")
-        columns = Columns(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}), kdims=['x', 'x2'])
+        columns = Columns(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+                          kdims=['x'], vdims=[ 'x2'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     # Properties and information
@@ -161,7 +164,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
 
     def test_columns_ndelement_init_ht(self):
         "Tests support for heterogeneous NdElement (backwards compatibility)"
-        columns = Columns(NdElement(zip(self.xs, self.ys)))
+        columns = Columns(NdElement(zip(self.xs, self.ys), kdims=['x'], vdims=['y']))
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     def test_columns_dataframe_init_ht(self):
@@ -329,8 +332,6 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         self.data_instance_type = pd.DataFrame
         self.init_data()
 
-    def test_columns_ndelement_init_hm(self): pass
-    def test_columns_ndelement_init_ht(self): pass
     def test_columns_implicit_indexing_init(self): pass
 
 
@@ -345,17 +346,8 @@ class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         self.data_instance_type = (dict, cyODict, OrderedDict)
         self.init_data()
 
-    def test_columns_ndelement_init_hm(self): pass
-    def test_columns_ndelement_init_ht(self): pass
     def test_columns_implicit_indexing_init(self): pass
-    def test_columns_array_init_hm(self): pass
 
-    def test_columns_tuple_init(self): pass
-    def test_columns_simple_zip_init(self):pass
-    def test_columns_zip_init(self):pass
-
-    def test_columns_dataframe_init_hm(self): pass
-    def test_columns_dataframe_init_ht(self): pass
 
 
 
