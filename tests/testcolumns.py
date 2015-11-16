@@ -194,6 +194,14 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
+    def test_columns_odict_init(self):
+        columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(columns.data, self.data_instance_type))
+
+    def test_columns_dict_init(self):
+        columns = Columns(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(columns.data, self.data_instance_type))
+
     # Operations
 
     def test_columns_sort_vdim_ht(self):
@@ -358,14 +366,6 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
 
     # Literal formats that have been previously been supported but
     # currently are only supported via NdElement.
-
-    def test_columns_odict_init(self):
-        columns = Columns(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(columns.data, NdElement))
-
-    def test_columns_dict_init(self):
-        columns = Columns(dict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
-        self.assertTrue(isinstance(columns.data, NdElement))
 
     def test_columns_double_zip_init(self):
         columns = Columns(zip(zip(self.gender, self.age),

@@ -27,6 +27,7 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
+from .util import wrap_tuple
 
 
 class Columns(Element):
@@ -664,6 +665,10 @@ class DFColumns(DataColumns):
             if ((isinstance(data, dict) and all(c in data for c in columns)) or
                 (isinstance(data, NdElement) and all(c in data.dimensions() for c in columns))):
                 data = OrderedDict(((d, data[d]) for d in columns))
+            elif isinstance(data, dict) and not all(d in data for d in columns):
+                column_data = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                                    for k, v in data.items()))
+                data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     data = (range(len(data)), data)
@@ -827,6 +832,10 @@ class ArrayColumns(DataColumns):
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
             columns = [data[d] for d in dimensions]
+            data = np.column_stack(columns)
+        elif isinstance(data, dict) and not all(d in data for d in dimensions):
+            columns = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                            for k, v in data.items()))
             data = np.column_stack(columns)
         elif isinstance(data, tuple):
             try:
@@ -1031,9 +1040,10 @@ class DictColumns(DataColumns):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
         elif not isinstance(data, dict):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
-
-        if not all(d in data for d in dimensions):
-            raise ValueError("Columns data did not contain data for all columns.")
+        elif isinstance(data, dict) and not all(d in data for d in dimensions):
+            dict_data = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                              for k, v in data.items()))
+            data = {k: np.array(v) for k, v in zip(dimensions, dict_data)}
 
         if not isinstance(data, cls.types):
             raise ValueError("DictColumns interface couldn't convert data.""")

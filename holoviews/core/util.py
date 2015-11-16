@@ -625,3 +625,7 @@ def get_param_values(data):
         params['group'] = data.group
     return params
 
+
+def wrap_tuple(unwrapped):
+    """ Wraps any non-tuple types in a tuple """
+    return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
