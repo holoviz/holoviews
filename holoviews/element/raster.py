@@ -5,7 +5,7 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import DFColumns, ArrayColumns, NdColumns
+from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
 from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -386,7 +386,9 @@ class HeatMap(Columns, Element2D):
             if isinstance(data, NdMapping):
                 items = [tuple(k)+((v,) if np.isscalar(v) else tuple(v))
                          for k, v in data.items()]
-                data = Columns(items, kdims=data.kdims, vdims=self.vdims).data
+                kdims = state['kdims'] if 'kdims' in state else self.kdims
+                vdims = state['vdims'] if 'vdims' in state else self.vdims
+                data = Columns(items, kdims=kdims, vdims=vdims).data
             state['data'] = data
         self.__dict__ = state
         if isinstance(self.data, NdElement):
@@ -395,7 +397,13 @@ class HeatMap(Columns, Element2D):
             self.interface = ArrayColumns
         elif util.is_dataframe(self.data):
             self.interface = DFColumns
+        elif isinstance(self.data, dict):
+            self.interface = DictColumns
+        self.depth = 1
         self.raster = self._compute_raster()
+        if 'extents' not in state:
+            (d1, d2) = self.raster.shape[:2]
+            self.extents = (0, 0, d2, d1)
 
 
     def dense_keys(self):
