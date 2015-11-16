@@ -142,7 +142,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Raster] =      cls.compare_raster
         cls.equality_type_funcs[QuadMesh] =    cls.compare_quadmesh
         cls.equality_type_funcs[Surface] =     cls.compare_surface
-        cls.equality_type_funcs[HeatMap] =     cls.compare_heatmap
+        cls.equality_type_funcs[HeatMap] =     cls.compare_columns
 
         # Charts
         cls.equality_type_funcs[Columns] =      cls.compare_columns
