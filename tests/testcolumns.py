@@ -96,13 +96,6 @@ class HomogeneousColumnTypes(object):
         self.assertEqual(table.kdims[1], 'z')
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
 
-    def test_columns_collapse_hm(self):
-        collapsed = HoloMap({i: Columns(np.array(zip(self.xs, np.array(self.y_ints)*i)),
-                                        kdims=['x'], vdims=['y'])
-                             for i in range(10)}, kdims=['z']).collapse('z', np.mean)
-        expected = Columns(np.array(zip(self.xs, [4.5*el for el in self.y_ints])),
-                           kdims=['x'], vdims=['y'])
-        self.compare_columns(collapsed, expected)
 
     def test_columns_slice_hm(self):
         columns_slice = Columns({'x':range(5, 9), 'y':[2*i for i in range(5, 9)]},
@@ -266,13 +259,6 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         table = self.columns_ht.add_dimension('z', 1, range(1,12))
         self.assertEqual(table.kdims[1], 'z')
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
-
-    def test_columns_collapse_ht(self):
-        collapsed = HoloMap({i: Columns({'x':self.xs, 'y':self.ys*i},
-                                        kdims=['x'], vdims=['y'])
-                             for i in range(10)}, kdims=['z']).collapse('z', np.mean)
-        expected = Columns({'x':self.xs, 'y':self.ys*4.5}, kdims=['x'], vdims=['y'])
-        self.compare_columns(collapsed, expected)
 
     # Indexing
 
