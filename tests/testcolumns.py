@@ -41,12 +41,12 @@ class HomogeneousColumnTypes(object):
 
     def test_columns_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
-        columns = Columns(np.array(zip(self.xs, self.xs_2)))
+        columns = Columns(np.array(zip(self.xs, self.xs_2)), kdims=['x', 'x2'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     def test_columns_ndelement_init_hm(self):
         "Tests support for homogeneous NdElement (backwards compatibility)"
-        columns = Columns(NdElement(zip(self.xs, self.xs_2)))
+        columns = Columns(NdElement(zip(self.xs, self.xs_2)), kdims=['x', 'x2'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     def test_columns_dataframe_init_hm(self):
@@ -327,8 +327,6 @@ class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
         self.data_instance_type = np.ndarray
         self.init_data()
 
-    def test_columns_dataframe_init_hm(self): pass # Delete once supported!
-
 
 
 class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
@@ -341,8 +339,6 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         self.data_instance_type = NdElement
         self.init_data()
 
-    def test_columns_array_init_ht(self): pass     # Delete once supported!
-    def test_columns_array_init_hm(self): pass     # Delete once supported!
     def test_columns_implicit_indexing_init(self): pass # Delete once supported!
 
     # Literal formats that have been previously been supported but
@@ -379,4 +375,3 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     def test_columns_ndelement_init_hm(self): pass
     def test_columns_ndelement_init_ht(self): pass
     def test_columns_implicit_indexing_init(self): pass
-    def test_columns_array_init_hm(self): pass

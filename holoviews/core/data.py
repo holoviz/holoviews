@@ -551,6 +551,11 @@ class NdColumns(DataColumns):
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
             data = tuple(data.get(d) for d in dimensions)
+        elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                data = (range(len(data)), data)
+            else:
+                data = tuple(data[:, i]  for i in range(data.shape[1]))
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
@@ -656,6 +661,12 @@ class DFColumns(DataColumns):
             if isinstance(data, dict):
                 data = OrderedDict([(d.name if isinstance(d, Dimension) else d, v)
                                     for d, v in data.items()])
+            elif isinstance(data, np.ndarray):
+                if data.ndim == 1:
+                    data = (range(len(data)), data)
+                else:
+                    data = tuple(data[:, i]  for i in range(data.shape[1]))
+
             if isinstance(data, tuple):
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
