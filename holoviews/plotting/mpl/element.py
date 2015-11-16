@@ -311,7 +311,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_xticks(xticks)
                 axis.set_xticklabels(xlabels)
 
-        if self.xticks != 0:
+        if self.xticks != 0 or xticks:
             for tick in axis.get_xticklabels():
                 tick.set_rotation(self.xrotation)
 
@@ -340,7 +340,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_yticks(yticks)
                 axis.set_yticklabels(ylabels)
 
-        if self.yticks != 0:
+        if self.yticks != 0 or yticks:
             for tick in axis.get_yticklabels():
                 tick.set_rotation(self.yrotation)
 

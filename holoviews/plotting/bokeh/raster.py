@@ -96,7 +96,7 @@ class HeatmapPlot(ElementPlot):
 
     def _axes_props(self, plots, subplots, element, ranges):
         labels = self._axis_labels(element, plots)
-        xvals, yvals = [element.dimension_values(i, True) for i in range(2)]
+        xvals, yvals = [np.unique(element.dimension_values(i)) for i in range(2)]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges
@@ -107,7 +107,7 @@ class HeatmapPlot(ElementPlot):
         cmap = style.get('palette', style.get('cmap', None))
         cmap = get_cmap(cmap)
         x, y, z = element.dimensions(label=True)
-        zvals = element.dimension_values(z)
+        zvals = np.rot90(element.raster, 3).flatten()
         colors = map_colors(zvals, ranges[z], cmap)
         xvals, yvals = [[str(v) for v in element.dimension_values(i)]
                         for i in range(2)]

@@ -142,7 +142,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Raster] =      cls.compare_raster
         cls.equality_type_funcs[QuadMesh] =    cls.compare_quadmesh
         cls.equality_type_funcs[Surface] =     cls.compare_surface
-        cls.equality_type_funcs[HeatMap] =     cls.compare_heatmap
+        cls.equality_type_funcs[HeatMap] =     cls.compare_columns
 
         # Charts
         cls.equality_type_funcs[Columns] =      cls.compare_columns
@@ -447,7 +447,7 @@ class Comparison(ComparisonInterface):
                                      + " First has type %s, and second has type %s."
                                      % (d1, d2))
             if d1.dtype.kind in 'SUOV':
-                if np.all(d1 != d2):
+                if list(d1) == list(d2):
                     cls.failureException("Columns along dimension %s not equal." % dim)
             else:
                 cls.compare_arrays(d1, d2, msg)

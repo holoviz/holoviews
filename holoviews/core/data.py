@@ -5,8 +5,8 @@ backends.
 
 import sys
 from distutils.version import LooseVersion
-from collections import defaultdict, Iterable
-from itertools import groupby
+from collections import defaultdict, Iterable, OrderedDict
+from itertools import groupby, compress
 
 try:
     import itertools.izip as zip
@@ -21,8 +21,9 @@ except ImportError:
 
 import param
 
-from .dimension import OrderedDict, Dimension
+from .dimension import Dimension
 from .element import Element, NdElement
+from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
@@ -251,6 +252,7 @@ class Columns(Element):
         for reduce_fn, group in reduce_map:
             reduced = self.interface.reduce(reduced, group, function)
 
+        reduced = self.interface.unpack_scalar(self, reduced)
         if np.isscalar(reduced):
             return reduced
         else:
@@ -266,10 +268,14 @@ class Columns(Element):
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        if not dimensions: dimensions = self.kdims
         aggregated = self.interface.aggregate(self, dimensions, function)
-        kdims = [self.get_dimension(d) for d in dimensions]
-        return self.clone(aggregated, kdims=kdims)
+        aggregated = self.interface.unpack_scalar(self, aggregated)
+        if np.isscalar(aggregated):
+            return aggregated
+        else:
+            kdims = [self.get_dimension(d) for d in dimensions]
+            return self.clone(aggregated, kdims=kdims)
+
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
@@ -382,12 +388,12 @@ class DataColumns(param.Parameterized):
 
         # Process Element data
         if isinstance(data, NdElement):
-            pass
+            kdims = [kdim for kdim in kdims if kdim != 'Index']
         elif isinstance(data, Columns):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
-        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, list)))
+        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, np.ndarray, list)))
               and sys.version_info.major >= 3):
             data = list(data)
 
@@ -495,6 +501,10 @@ class DataColumns(param.Parameterized):
         concat_data = interface.concat(columns)
         return columns[0].clone(concat_data)
 
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function):
+        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
+        return cls.aggregate(columns, kdims, function)
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -526,7 +536,7 @@ class NdColumns(DataColumns):
 
     types = (NdElement,)
 
-    datatype = 'dictionary'
+    datatype = 'ndelement'
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -537,9 +547,18 @@ class NdColumns(DataColumns):
             kdims = kdims if kdims else element_params['kdims'].default
             vdims = vdims if vdims else element_params['vdims'].default
 
-        if isinstance(data, dict) and all(d in data for d in kdims+vdims):
-            data = tuple(data.get(d.name if isinstance(d, Dimension) else d)
-                         for d in dimensions)
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if ((isinstance(data, dict) or util.is_dataframe(data)) and
+            all(d in data for d in dimensions)):
+            data = tuple(data.get(d) for d in dimensions)
+        elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                data = (np.arange(len(data)), data)
+            else:
+                data = tuple(data[:, i]  for i in range(data.shape[1]))
+        elif isinstance(data, list) and np.isscalar(data[0]):
+            data = (np.arange(len(data)), data)
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
@@ -596,10 +615,6 @@ class NdColumns(DataColumns):
         return columns.data.select(**selection)
 
     @classmethod
-    def collapse_data(cls, data, function, kdims=None, **kwargs):
-        return data[0].collapse_data(data, function, kdims, **kwargs)
-
-    @classmethod
     def sample(cls, columns, samples=[]):
         return columns.data.sample(samples)
 
@@ -610,6 +625,10 @@ class NdColumns(DataColumns):
     @classmethod
     def aggregate(cls, columns, dimensions, function):
         return columns.data.aggregate(dimensions, function)
+
+    @classmethod
+    def unpack_scalar(cls, columns, data):
+        return data
 
 
 
@@ -630,7 +649,7 @@ class DFColumns(DataColumns):
             if kdims and not vdims:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and not kdims:
-                kdims = [c for c in data.columns if c not in kdims][:ndim]
+                kdims = [c for c in data.columns if c not in vdims][:ndim]
             elif not kdims and not vdims:
                 kdims = list(data.columns[:ndim])
                 vdims = list(data.columns[ndim:])
@@ -642,9 +661,15 @@ class DFColumns(DataColumns):
             columns = [d.name if isinstance(d, Dimension) else d
                        for d in kdims+vdims]
 
-            if isinstance(data, dict):
-                data = OrderedDict([(d.name if isinstance(d, Dimension) else d, v)
-                                    for d, v in data.items()])
+            if ((isinstance(data, dict) and all(c in data for c in columns)) or
+                (isinstance(data, NdElement) and all(c in data.dimensions() for c in columns))):
+                data = OrderedDict(((d, data[d]) for d in columns))
+            elif isinstance(data, np.ndarray):
+                if data.ndim == 1:
+                    data = (range(len(data)), data)
+                else:
+                    data = tuple(data[:, i]  for i in range(data.shape[1]))
+
             if isinstance(data, tuple):
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
@@ -685,7 +710,7 @@ class DFColumns(DataColumns):
         group_kwargs.update(kwargs)
 
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                columns.data.groupby(dimensions)]
+                columns.data.groupby(dimensions, sort=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
@@ -694,38 +719,34 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function=None):
-        """
-        The aggregate function accepts either a list of Dimensions and a
-        function to apply to find the aggregate across those Dimensions
-        or a list of dimension/function pairs to apply one by one.
-        """
-        kdims = [kdim.name for kdim in columns.kdims if kdim not in reduce_dims]
+    def aggregate(cls, columns, dimensions, function):
+        data = columns.data
+        cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', True)
-        if kdims:
-            reduced = columns.data.reindex(columns=kdims+vdims).\
-                      groupby(kdims).aggregate(function).reset_index()
+        reindexed = data.reindex(columns=cols+vdims)
+        if len(dimensions):
+            return reindexed.groupby(cols, sort=False).aggregate(function).reset_index()
         else:
-            if isinstance(function, np.ufunc):
-                reduced = function.reduce(columns.data, axis=0)
-            else:
-                reduced = function(columns.data, axis=0)[vdims]
-            if len(reduced) == 1:
-                reduced = reduced[0]
-            else:
-                reduced = pd.DataFrame([reduced], columns=vdims)
-        return reduced
+            agg = reindexed.apply(function)
+            return pd.DataFrame.from_items([(col, [v]) for col, v in
+                                            zip(agg.index, agg.values)])
+
+
+    @classmethod
+    def unpack_scalar(cls, columns, data):
+        """
+        Given a columns object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if len(data) != 1 or len(data.columns) > 1:
+            return data
+        return data.iat[0,0]
 
 
     @classmethod
     def reindex(cls, columns, kdims=None, vdims=None):
         # DataFrame based tables don't need to be reindexed
         return columns.data
-
-
-    @classmethod
-    def collapse_data(cls, data, function, kdims, **kwargs):
-        return pd.concat(data).groupby([d.name for d in kdims]).agg(function).reset_index()
 
 
     @classmethod
@@ -758,15 +779,6 @@ class DFColumns(DataColumns):
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
         return np.array(data)
-
-
-    @classmethod
-    def aggregate(cls, columns, dimensions, function):
-        data = columns.data
-        cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', True)
-        return data.reindex(columns=cols+vdims).groupby(cols).\
-            aggregate(function).reset_index()
 
 
     @classmethod
@@ -804,12 +816,18 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
-        if isinstance(data, dict):
-            dimensions = kdims + vdims
-            if all(d in data for d in dimensions):
-                columns = [data.get(d.name if isinstance(d, Dimension) else d)
-                           for d in dimensions]
-                data = np.column_stack(columns)
+        element_params = eltype.params()
+        if kdims is None:
+            kdims = eltype.kdims
+        if vdims is None:
+            vdims = eltype.vdims
+
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if ((isinstance(data, dict) or util.is_dataframe(data)) and
+            all(d in data for d in dimensions)):
+            columns = [data[d] for d in dimensions]
+            data = np.column_stack(columns)
         elif isinstance(data, tuple):
             try:
                 data = np.column_stack(data)
@@ -939,26 +957,6 @@ class ArrayColumns(DataColumns):
         return data
 
 
-    @classmethod
-    def collapse_data(cls, data, function, kdims=None, **kwargs):
-        ndims = data[0].shape[1]
-        nkdims = len(kdims)
-        data = data[0] if len(data) == 0 else np.concatenate(data)
-        vdims = ['Value Dimension %s' % i for i in range(ndims-len(kdims))]
-        joined_data = Columns(data, kdims=kdims, vdims=vdims)
-
-        rows = []
-        for k, group in cls.groupby(joined_data, kdims, list, 'raw'):
-            row = np.zeros(ndims)
-            row[:nkdims] = np.array(k)
-            if isinstance(function, np.ufunc):
-                collapsed = function.reduce(group)
-            else:
-                collapsed = function(group, axis=0, **kwargs)
-            row[nkdims:] = collapsed
-            rows.append(row)
-        return np.array(rows)
-
 
     @classmethod
     def sample(cls, columns, samples=[]):
@@ -972,42 +970,247 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
-        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
-        if len(kdims):
-            reindexed = columns.reindex(kdims)
-            reduced = cls.collapse_data([reindexed.data], function, kdims)
-        else:
-            if isinstance(function, np.ufunc):
-                reduced = function.reduce(columns.data, axis=0)
-            else:
-                reduced = function(columns.data, axis=0)
-            reduced = reduced[columns.ndims:]
-        if reduced.ndim == 1:
-            if len(reduced) == 1:
-                return reduced[0]
-            else:
-                return np.atleast_2d(reduced)
-        return reduced
+    def unpack_scalar(cls, columns, data):
+        """
+        Given a columns object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if data.shape == (1, 1):
+            return data[0, 0]
+        return data
 
 
     @classmethod
     def aggregate(cls, columns, dimensions, function):
-        if not isinstance(dimensions, Iterable): dimensions = [dimensions]
-        rows = []
         reindexed = columns.reindex(dimensions)
-        for k, group in cls.groupby(reindexed, dimensions, list, 'raw'):
+        grouped = (cls.groupby(reindexed, dimensions, list, 'raw')
+                   if len(dimensions) else [((), reindexed.data)])
+
+        rows = []
+        for k, group in grouped:
             if isinstance(function, np.ufunc):
                 reduced = function.reduce(group, axis=0)
             else:
                 reduced = function(group, axis=0)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
-        return np.array(rows)
+        return np.atleast_2d(rows)
+
+
+
+class DictColumns(DataColumns):
+    """
+    Interface for simple dictionary-based columns format. The dictionary
+    keys correspond to the column (i.e dimension) names and the values
+    are collections representing the values in that column.
+    """
+
+    types = (dict, OrderedDict, cyODict)
+
+    datatype = 'dictionary'
+
+    @classmethod
+    def reshape(cls, eltype, data, kdims, vdims):
+        odict_types = (OrderedDict, cyODict)
+        if kdims is None:
+            kdims = eltype.kdims
+        if vdims is None:
+            vdims = eltype.vdims
+
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if isinstance(data, tuple):
+            data = {d: v for d, v in zip(dimensions, data)}
+        elif ((util.is_dataframe(data) and all(d in data for d in dimensions)) or
+              (isinstance(data, NdElement) and all(d in data.dimensions() for d in dimensions))):
+            data = {d: data[d] for d in dimensions}
+        elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                data = np.column_stack([np.arange(len(data)), data])
+            data = {k: data[:,i] for i,k in enumerate(dimensions)}
+        elif not isinstance(data, dict):
+            data = {k: v for k, v in zip(dimensions, zip(*data))}
+        elif isinstance(data, list) and np.isscalar(data[0]):
+            data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
+
+        if not all(d in data for d in dimensions):
+            raise ValueError("Columns data did not contain data for all columns.")
+
+        if not isinstance(data, cls.types):
+            raise ValueError("DictColumns interface couldn't convert data.""")
+        elif isinstance(data, dict):
+            unpacked = [(d, np.array(data[d])) for d in data]
+            if isinstance(data, odict_types):
+                data.update(unpacked)
+            else:
+                data = OrderedDict([(d, np.array(data[d])) for d in dimensions])
+        return data, kdims, vdims
+
+
+    @classmethod
+    def unpack_scalar(cls, columns, data):
+        """
+        Given a columns object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if len(data) != 1:
+            return data
+        key = list(data.keys())[0]
+
+        if len(data[key]) == 1 and key in columns.vdims:
+            return data[key][0]
+
+    @classmethod
+    def shape(cls, columns):
+        return cls.length(columns), len(columns.data),
+
+    @classmethod
+    def length(cls, columns):
+        return len(columns.data.values()[0])
+
+    @classmethod
+    def array(cls, columns, dimensions):
+        if dimensions:
+            return np.column_stack(columns.data[dim] for dim in dimensions)
+        else:
+            return np.column_stack(columns.data.values())
+
+    @classmethod
+    def add_dimension(cls, columns, dimension, dim_pos, values):
+        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        data = columns.data.items()
+        if np.isscalar(values):
+            values = np.array([values]*len(columns))
+        data.insert(dim_pos, (dim, values))
+        return OrderedDict(data)
+
+
+    @classmethod
+    def concat(cls, columns_objs):
+        cast_objs = cls.cast(columns_objs)
+        cols = set(tuple(c.data.keys()) for c in cast_objs)
+        if len(cols) != 1:
+            raise Exception("In order to concatenate, all Column objects "
+                            "should have matching set of columns.")
+        concatenated = OrderedDict()
+        for column in cols.pop():
+            concatenated[column] = np.concatenate([obj[column] for obj in cast_objs])
+        return concatenated
+
+
+    @classmethod
+    def sort(cls, columns, by=[]):
+        data = cls.array(columns, None)
+        idxs = [columns.get_dimension_index(dim) for dim in by]
+        arr = data[np.lexsort(np.flipud(data[:, idxs].T))]
+        return OrderedDict([(d, arr[:, i]) for i, d in enumerate(columns.data)])
+
+    @classmethod
+    def values(cls, columns, dim):
+        return np.array(columns.data.get(columns.get_dimension(dim).name))
+
+
+    @classmethod
+    def reindex(cls, columns, kdims, vdims):
+        # DataFrame based tables don't need to be reindexed
+        return OrderedDict([(d, columns.dimension_values(d))
+                            for d in kdims+vdims])
+
+
+    @classmethod
+    def groupby(cls, columns, dimensions, container_type=HoloMap, group_type=None, **kwargs):
+        unique = OrderedDict()
+        for i in range(len(columns)):
+            key = tuple(columns.data[d][i] for d in dimensions)
+            unique[key] = None
+
+        for unique_key in unique:
+            selection = dict(zip(dimensions, unique_key))
+            mask = cls.select_mask(columns, selection)
+            matches = zip(cls.values(columns, d)[mask] for d in dimensions)
+            unique[unique_key] = matches
+        return unique
+
+
+    @classmethod
+    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
+        # Get dimensions information
+        dimensions = [columns.get_dimension(d) for d in dimensions]
+        kdims = [kdim for kdim in columns.kdims if kdim not in dimensions]
+        vdims = columns.vdims
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = dict if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(columns))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
+
+        # Find all the keys along supplied dimensions
+        keys = [tuple(columns.data[d.name][i] for d in dimensions)
+                for i in range(len(columns))]
+
+        # Iterate over the unique entries applying selection masks
+        grouped_data = []
+        for unique_key in util.unique_iterator(keys):
+            mask = cls.select_mask(columns, dict(zip(dimensions, unique_key)))
+            group_data = {d.name:columns[d.name][mask] for d in kdims+vdims}
+            group_data = group_type(group_data, **group_kwargs)
+            grouped_data.append((unique_key, group_data))
+
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(grouped_data, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
+
+
+    @classmethod
+    def select(cls, columns, **selection):
+       mask = cls.select_mask(columns, selection)
+       indexed = cls.indexed(columns, selection)
+       data = OrderedDict((k, list(compress(v, mask))) for k, v in columns.data.items())
+       if indexed and len(data.values()[0]) == 1:
+           return data[columns.vdims[0].name][0]
+       return data
+
+
+    @classmethod
+    def sample(cls, columns, samples=[]):
+        mask = np.zeros(len(columns),  dtype=np.bool)
+        for sample in samples:
+            if np.isscalar(sample): sample = [sample]
+            for i, v in enumerate(sample):
+                name = columns.get_dimension(i).name
+                mask |= (np.array(columns.data[name])==v)
+        return  {k:np.array(col)[mask] for k, col in columns.data.items()}
+
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function):
+        kdims = [d.name for d in columns.kdims]
+        return cls.aggregate(columns,
+                             [d for d in kdims if d not in reduce_dims], function)
+
+    @classmethod
+    def aggregate(cls, columns, kdims, function):
+        vdims = [d.name for d in columns.vdims]
+        groups = cls.groupby(columns, kdims , OrderedDict,dict)
+        aggregated = OrderedDict([(k,[]) for k in kdims+vdims])
+
+        for key, group in groups.items():
+            key = key if isinstance(key, tuple) else (key,)
+            for kdim, val in zip(kdims, key):
+                aggregated[kdim].append(val)
+            for vdim, arr in group.items():
+                if vdim in vdims:
+                    aggregated[vdim].append(function(arr))
+        return aggregated
+
 
 
 # Register available interfaces
+DataColumns.register(DictColumns)
 DataColumns.register(ArrayColumns)
 DataColumns.register(NdColumns)
 if pd:
     DataColumns.register(DFColumns)
-
