@@ -640,7 +640,7 @@ class DFColumns(DataColumns):
             if kdims and not vdims:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and not kdims:
-                kdims = [c for c in data.columns if c not in kdims][:ndim]
+                kdims = [c for c in data.columns if c not in vdims][:ndim]
             elif not kdims and not vdims:
                 kdims = list(data.columns[:ndim])
                 vdims = list(data.columns[ndim:])
