@@ -546,6 +546,7 @@ class NdColumns(DataColumns):
             kdims = kdims if kdims else element_params['kdims'].default
             vdims = vdims if vdims else element_params['vdims'].default
 
+        dimensions = kdims + vdims
         if isinstance(data, dict) and all(d in data for d in kdims+vdims):
             data = tuple(data.get(d.name if isinstance(d, Dimension) else d)
                          for d in dimensions)
