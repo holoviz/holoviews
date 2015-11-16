@@ -393,7 +393,7 @@ class DataColumns(param.Parameterized):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
-        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, list)))
+        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, np.ndarray, list)))
               and sys.version_info.major >= 3):
             data = list(data)
 
@@ -554,9 +554,11 @@ class NdColumns(DataColumns):
             data = tuple(data.get(d) for d in dimensions)
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = (range(len(data)), data)
+                data = (np.arange(len(data)), data)
             else:
                 data = tuple(data[:, i]  for i in range(data.shape[1]))
+        elif isinstance(data, list) and np.isscalar(data[0]):
+            data = (np.arange(len(data)), data)
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
@@ -1021,15 +1023,17 @@ class DictColumns(DataColumns):
         elif ((util.is_dataframe(data) and all(d in data for d in dimensions)) or
               (isinstance(data, NdElement) and all(d in data.dimensions() for d in dimensions))):
             data = {d: data[d] for d in dimensions}
-        elif isinstance(data, np.ndarray) and data.shape[1] != len(kdims + vdims):
-            raise ValueError("Columns not of correct length")
         elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                data = np.column_stack([np.arange(len(data)), data])
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
-        elif not isinstance(data, odict_types+(dict,)):
+        elif not isinstance(data, dict):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
+        elif isinstance(data, list) and np.isscalar(data[0]):
+            data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
 
-        if len(data) != len(dimensions):
-            raise ValueError("Columns not of correct length")
+        if not all(d in data for d in dimensions):
+            raise ValueError("Columns data did not contain data for all columns.")
 
         if not isinstance(data, cls.types):
             raise ValueError("DictColumns interface couldn't convert data.""")

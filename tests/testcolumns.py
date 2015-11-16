@@ -177,8 +177,8 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     # Test literal formats
 
     def test_columns_implicit_indexing_init(self):
-        columns = Columns(self.ys)
-        self.assertTrue(isinstance(columns.data, np.ndarray))
+        columns = Columns(self.ys, kdims=['x'], vdims=['y'])
+        self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
     def test_columns_tuple_init(self):
         columns = Columns((self.xs, self.ys), kdims=['x'], vdims=['y'])
@@ -332,8 +332,6 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         self.data_instance_type = pd.DataFrame
         self.init_data()
 
-    def test_columns_implicit_indexing_init(self): pass
-
 
 
 class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
@@ -346,9 +344,6 @@ class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         self.data_instance_type = (dict, cyODict, OrderedDict)
         self.init_data()
 
-    def test_columns_implicit_indexing_init(self): pass
-
-
 
 
 class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
@@ -360,8 +355,6 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
         Columns.datatype = ['ndelement']
         self.data_instance_type = NdElement
         self.init_data()
-
-    def test_columns_implicit_indexing_init(self): pass # Delete once supported!
 
     # Literal formats that have been previously been supported but
     # currently are only supported via NdElement.
@@ -379,3 +372,4 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
                               zip(self.weight, self.height)),
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(columns.data, NdElement))
+
