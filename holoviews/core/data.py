@@ -5,8 +5,8 @@ backends.
 
 import sys
 from distutils.version import LooseVersion
-from collections import defaultdict, Iterable
-from itertools import groupby
+from collections import defaultdict, Iterable, OrderedDict
+from itertools import groupby, compress
 
 try:
     import itertools.izip as zip
@@ -21,8 +21,9 @@ except ImportError:
 
 import param
 
-from .dimension import OrderedDict, Dimension
+from .dimension import Dimension
 from .element import Element, NdElement
+from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
@@ -991,9 +992,209 @@ class ArrayColumns(DataColumns):
         return np.atleast_2d(rows)
 
 
+
+class DictColumns(DataColumns):
+    """
+    Interface for simple dictionary-based columns format. The dictionary
+    keys correspond to the column (i.e dimension) names and the values
+    are collections representing the values in that column.
+    """
+
+    types = (dict, OrderedDict, cyODict)
+
+    datatype = 'dictionary'
+
+    @classmethod
+    def reshape(cls, eltype, data, kdims, vdims):
+        odict_types = (OrderedDict, cyODict)
+        if kdims is None:
+            kdims = eltype.kdims
+        if vdims is None:
+            vdims = eltype.vdims
+
+        if isinstance(data, np.ndarray) and data.shape[1] != len(kdims + vdims):
+            raise ValueError("Columns not of correct length")
+        elif isinstance(data, np.ndarray):
+            data = {k:data[:,i] for i,k in enumerate(kdims+vdims)}
+
+        if len(data) != len(kdims + vdims):
+            raise ValueError("Columns not of correct length")
+
+        if isinstance(data, tuple):
+            # For tuple format, e.g. Curve((xs,ys))
+            data = OrderedDict(zip([d.name for d in kdims+vdims],
+                                   [np.array(d) for d in data]))
+        elif not isinstance(data, cls.types):
+            raise ValueError("DictColumns interface couldn't convert data.""")
+        elif isinstance(data, odict_types):
+            data = OrderedDict([(d.name, np.array(data.get(d.name))) for d in kdims+vdims])
+        return data, kdims, vdims
+
+    @classmethod
+    def unpack_scalar(cls, columns, data):
+        """
+        Given a columns object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if len(data) != 1:
+            return data
+        key = list(data.keys())[0]
+
+        if len(data[key]) == 1 and key in columns.vdims:
+            return data[key][0]
+
+    @classmethod
+    def shape(cls, columns):
+        return cls.length(columns), len(columns.data),
+
+    @classmethod
+    def length(cls, columns):
+        return len(columns.data.values()[0])
+
+    @classmethod
+    def array(cls, columns, dimensions):
+        if dimensions:
+            return np.column_stack(columns.data[dim] for dim in dimensions)
+        else:
+            return np.column_stack(columns.data.values())
+
+    @classmethod
+    def add_dimension(cls, columns, dimension, dim_pos, values):
+        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        data = columns.data.items()
+        if np.isscalar(values):
+            values = np.array([values]*len(columns))
+        data.insert(dim_pos, (dim, values))
+        return OrderedDict(data)
+
+
+    @classmethod
+    def concat(cls, columns_objs):
+        cast_objs = cls.cast(columns_objs)
+        cols = set(tuple(c.data.keys()) for c in cast_objs)
+        if len(cols) != 1:
+            raise Exception("In order to concatenate, all Column objects "
+                            "should have matching set of columns.")
+        concatenated = OrderedDict()
+        for column in cols.pop():
+            concatenated[column] = np.concatenate([obj[column] for obj in cast_objs])
+        return concatenated
+
+
+    @classmethod
+    def sort(cls, columns, by=[]):
+        data = np.vstack([columns.data[d.name] for d in columns.kdims+columns.vdims]).T
+        idxs = [columns.get_dimension_index(dim) for dim in by]
+        return data[np.lexsort(np.flipud(data[:, idxs].T))]
+
+    @classmethod
+    def values(cls, columns, dim):
+        return np.array(columns.data.get(columns.get_dimension(dim).name))
+
+
+    @classmethod
+    def reindex(cls, columns, kdims, vdims):
+        # DataFrame based tables don't need to be reindexed
+        return OrderedDict([(d, columns.dimension_values(d))
+                            for d in kdims+vdims])
+
+
+    @classmethod
+    def groupby(cls, columns, dimensions, container_type=HoloMap, group_type=None, **kwargs):
+        unique = OrderedDict()
+        for i in range(len(columns)):
+            key = tuple(columns.data[d][i] for d in dimensions)
+            unique[key] = None
+
+        for unique_key in unique:
+            selection = dict(zip(dimensions, unique_key))
+            mask = cls.select_mask(columns, selection)
+            matches = zip(cls.values(columns, d)[mask] for d in dimensions)
+            unique[unique_key] = matches
+        return unique
+
+
+    @classmethod
+    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
+        # Get dimensions information
+        dimensions = [columns.get_dimension(d) for d in dimensions]
+        kdims = [kdim for kdim in columns.kdims if kdim not in dimensions]
+        vdims = columns.vdims
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = dict if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(columns))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
+
+        # Find all the keys along supplied dimensions
+        keys = [tuple(columns.data[d.name][i] for d in dimensions)
+                for i in range(len(columns))]
+
+        # Iterate over the unique entries applying selection masks
+        grouped_data = []
+        for unique_key in util.unique_iterator(keys):
+            mask = cls.select_mask(columns, dict(zip(dimensions, unique_key)))
+            group_data = {d.name:columns[d.name][mask] for d in kdims+vdims}
+            group_data = group_type(group_data, **group_kwargs)
+            grouped_data.append((unique_key, group_data))
+
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(grouped_data, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
+
+
+    @classmethod
+    def select(cls, columns, **selection):
+       mask = cls.select_mask(columns, selection)
+       indexed = cls.indexed(columns, selection)
+       data = OrderedDict((k, list(compress(v, mask))) for k, v in columns.data.items())
+       if indexed and len(data.values()[0]) == 1:
+           return data[columns.vdims[0].name][0]
+       return data
+
+
+    @classmethod
+    def sample(cls, columns, samples=[]):
+        mask = np.zeros(len(columns),  dtype=np.bool)
+        for sample in samples:
+            if np.isscalar(sample): sample = [sample]
+            for i, v in enumerate(sample):
+                name = columns.get_dimension(i).name
+                mask |= (np.array(columns.data[name])==v)
+        return  {k:np.array(col)[mask] for k, col in columns.data.items()}
+
+    @classmethod
+    def reduce(cls, columns, reduce_dims, function):
+        kdims = [d.name for d in columns.kdims]
+        return cls.aggregate(columns,
+                             [d for d in kdims if d not in reduce_dims], function)
+
+    @classmethod
+    def aggregate(cls, columns, kdims, function):
+        vdims = [d.name for d in columns.vdims]
+        groups = cls.groupby(columns, kdims , OrderedDict,dict)
+        aggregated = OrderedDict([(k,[]) for k in kdims+vdims])
+
+        for key, group in groups.items():
+            key = key if isinstance(key, tuple) else (key,)
+            for kdim, val in zip(kdims, key):
+                aggregated[kdim].append(val)
+            for vdim, arr in group.items():
+                if vdim in vdims:
+                    aggregated[vdim].append(function(arr))
+        return aggregated
+
+
+DataColumns.register(DictColumns)
+
+
 # Register available interfaces
 DataColumns.register(ArrayColumns)
 DataColumns.register(NdColumns)
 if pd:
     DataColumns.register(DFColumns)
-

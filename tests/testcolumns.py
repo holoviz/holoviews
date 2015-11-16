@@ -8,6 +8,9 @@ from holoviews import OrderedDict, Columns, Curve, ItemTable, NdElement, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.ndmapping import sorted_context
 
+from collections import OrderedDict
+from holoviews.core.dimension import OrderedDict as cyODict
+
 try:
     import pandas as pd
 except:
@@ -361,3 +364,27 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     def test_columns_ndelement_init_hm(self): pass
     def test_columns_ndelement_init_ht(self): pass
     def test_columns_implicit_indexing_init(self): pass
+
+
+
+class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+    """
+    Test of the generic dictionary interface.
+    """
+
+    def setUp(self):
+        Columns.datatype = ['dictionary']
+        self.data_instance_type = (dict, cyODict, OrderedDict)
+        self.init_data()
+
+    def test_columns_ndelement_init_hm(self): pass
+    def test_columns_ndelement_init_ht(self): pass
+    def test_columns_implicit_indexing_init(self): pass
+    def test_columns_array_init_hm(self): pass
+
+    def test_columns_tuple_init(self): pass
+    def test_columns_simple_zip_init(self):pass
+    def test_columns_zip_init(self):pass
+
+    def test_columns_dataframe_init_hm(self): pass
+    def test_columns_dataframe_init_ht(self): pass
