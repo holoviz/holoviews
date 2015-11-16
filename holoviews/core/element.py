@@ -452,7 +452,7 @@ class NdElement(NdMapping, Tabular):
 
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
+    def reduce(cls, columns, reduce_dims, function, **kwargs):
         """
         This implementation allows reducing dimensions by aggregating
         over all the remaining key dimensions using the collapse_data
@@ -460,16 +460,16 @@ class NdElement(NdMapping, Tabular):
         """
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
         if len(kdims) > 1:
-            reduced = columns.collapse_data([columns], function, kdims)
+            reduced = columns.collapse_data([columns], function, kdims, **kwargs)
             reindexed = reduced.reindex(kdims)
         else:
             reduced = []
             for vdim in columns.vdims:
                 data = columns[vdim.name]
                 if isinstance(function, np.ufunc):
-                    reduced.append(function.reduce(data))
+                    reduced.append(function.reduce(data, **kwargs))
                 else:
-                    reduced.append(function(data))
+                    reduced.append(function(data, **kwargs))
             if len(reduced) == 1:
                 reduced = reduced[0]
             else:
@@ -512,14 +512,14 @@ class NdElement(NdMapping, Tabular):
         return joined_data.clone(collapsed, kdims=kdims)
 
 
-    def aggregate(self, dimensions, function):
+    def aggregate(self, dimensions, function, **kwargs):
         """
         Allows aggregating.
         """
         rows = []
         grouped = self.groupby(dimensions)
         for k, group in grouped.data.items():
-            reduced = group.reduce(group, group.kdims, function)
+            reduced = group.reduce(group, group.kdims, function, **kwargs)
             if not np.isscalar(reduced):
                 reduced = list(reduced.values())[0]
             else:

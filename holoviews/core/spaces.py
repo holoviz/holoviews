@@ -209,7 +209,7 @@ class HoloMap(UniformNdMapping):
                 group_data = [el.data for el in group]
                 args = (group_data, function, group.last.kdims)
                 if hasattr(group.last, 'interface'):
-                    data = group.type(group.table().reduce(dimensions, function))
+                    data = group.type(group.table().aggregate(group.last.kdims, function, **kwargs))
                 else:
                     data = group.type.collapse_data(*args, **kwargs)
                 collapsed[key] = group.last.clone(data)

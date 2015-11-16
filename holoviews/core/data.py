@@ -260,7 +260,7 @@ class Columns(Element):
             return self.clone(reduced, kdims=kdims)
 
 
-    def aggregate(self, dimensions=[], function=None):
+    def aggregate(self, dimensions=[], function=None, **kwargs):
         """
         Aggregates over the supplied key dimensions with the defined
         function.
@@ -268,7 +268,7 @@ class Columns(Element):
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        aggregated = self.interface.aggregate(self, dimensions, function)
+        aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
         if np.isscalar(aggregated):
             return aggregated
@@ -502,9 +502,9 @@ class DataColumns(param.Parameterized):
         return columns[0].clone(concat_data)
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
+    def reduce(cls, columns, reduce_dims, function, **kwargs):
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
-        return cls.aggregate(columns, kdims, function)
+        return cls.aggregate(columns, kdims, function, **kwargs)
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -619,12 +619,12 @@ class NdColumns(DataColumns):
         return columns.data.sample(samples)
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
+    def reduce(cls, columns, reduce_dims, function, **kwargs):
         return columns.data.reduce(columns.data, reduce_dims, function)
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function):
-        return columns.data.aggregate(dimensions, function)
+    def aggregate(cls, columns, dimensions, function, **kwargs):
+        return columns.data.aggregate(dimensions, function, **kwargs)
 
     @classmethod
     def unpack_scalar(cls, columns, data):
@@ -719,15 +719,15 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function):
+    def aggregate(cls, columns, dimensions, function, **kwargs):
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', True)
         reindexed = data.reindex(columns=cols+vdims)
         if len(dimensions):
-            return reindexed.groupby(cols, sort=False).aggregate(function).reset_index()
+            return reindexed.groupby(cols, sort=False).aggregate(function, **kwargs).reset_index()
         else:
-            agg = reindexed.apply(function)
+            agg = reindexed.apply(function, **kwargs)
             return pd.DataFrame.from_items([(col, [v]) for col, v in
                                             zip(agg.index, agg.values)])
 
@@ -981,7 +981,7 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function):
+    def aggregate(cls, columns, dimensions, function, **kwargs):
         reindexed = columns.reindex(dimensions)
         grouped = (cls.groupby(reindexed, dimensions, list, 'raw')
                    if len(dimensions) else [((), reindexed.data)])
@@ -989,9 +989,9 @@ class ArrayColumns(DataColumns):
         rows = []
         for k, group in grouped:
             if isinstance(function, np.ufunc):
-                reduced = function.reduce(group, axis=0)
+                reduced = function.reduce(group, axis=0, **kwargs)
             else:
-                reduced = function(group, axis=0)
+                reduced = function(group, axis=0, **kwargs)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.atleast_2d(rows)
 
@@ -1175,7 +1175,7 @@ class DictColumns(DataColumns):
                              [d for d in kdims if d not in reduce_dims], function)
 
     @classmethod
-    def aggregate(cls, columns, kdims, function):
+    def aggregate(cls, columns, kdims, function, **kwargs):
         kdims = [columns.get_dimension(d).name for d in kdims]
         vdims = columns.dimensions('value', True)
         groups = cls.groupby(columns, kdims, list, OrderedDict)
@@ -1188,9 +1188,9 @@ class DictColumns(DataColumns):
             for vdim, arr in group.items():
                 if vdim in columns.vdims:
                     if isinstance(function, np.ufunc):
-                        reduced = function.reduce(arr)
+                        reduced = function.reduce(arr, **kwargs)
                     else:
-                        reduced = function(arr)
+                        reduced = function(arr, **kwargs)
                     aggregated[vdim].append(reduced)
         return aggregated
 
