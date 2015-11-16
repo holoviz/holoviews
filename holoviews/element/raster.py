@@ -1,3 +1,4 @@
+import warnings
 from operator import itemgetter
 from itertools import product
 import numpy as np
@@ -375,7 +376,9 @@ class HeatMap(Columns, Element2D):
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
         dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims)
         concat_data = self.interface.concatenate([Columns(self), dense_data], datatype='dictionary')
-        data = concat_data.aggregate(self.kdims, np.nanmean).sort(self.kdims)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'Mean of empty slice')
+            data = concat_data.aggregate(self.kdims, np.nanmean).sort(self.kdims)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
         return np.flipud(array.T)
 
@@ -389,6 +392,8 @@ class HeatMap(Columns, Element2D):
                 kdims = state['kdims'] if 'kdims' in state else self.kdims
                 vdims = state['vdims'] if 'vdims' in state else self.vdims
                 data = Columns(items, kdims=kdims, vdims=vdims).data
+            elif isinstance(data, Columns):
+                data = data.data
             state['data'] = data
         self.__dict__ = state
         if isinstance(self.data, NdElement):
