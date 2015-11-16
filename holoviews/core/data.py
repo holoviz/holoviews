@@ -1065,7 +1065,7 @@ class DictColumns(DataColumns):
 
     @classmethod
     def length(cls, columns):
-        return len(columns.data.values()[0])
+        return len(list(columns.data.values())[0])
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -1075,7 +1075,7 @@ class DictColumns(DataColumns):
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
-        data = columns.data.items()
+        data = list(columns.data.items())
         if np.isscalar(values):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
@@ -1153,7 +1153,7 @@ class DictColumns(DataColumns):
        mask = cls.select_mask(columns, selection)
        indexed = cls.indexed(columns, selection)
        data = OrderedDict((k, list(compress(v, mask))) for k, v in columns.data.items())
-       if indexed and len(data.values()[0]) == 1:
+       if indexed and len(list(data.values())[0]) == 1:
            return data[columns.vdims[0].name][0]
        return data
 

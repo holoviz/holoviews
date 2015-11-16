@@ -33,7 +33,7 @@ class HomogeneousColumnTypes(object):
         self.xs_2 = [el**2 for el in self.xs]
 
         self.y_ints = [i*2 for i in range(11)]
-        self.columns_hm = Columns(np.array(zip(self.xs, self.y_ints)),
+        self.columns_hm = Columns(np.column_stack([self.xs, self.y_ints]),
                                   kdims=['x'], vdims=['y'])
 
     def tearDown(self):
@@ -44,7 +44,7 @@ class HomogeneousColumnTypes(object):
 
     def test_columns_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
-        columns = Columns(np.array(zip(self.xs, self.xs_2)),
+        columns = Columns(np.column_stack([self.xs, self.xs_2]),
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))
 
@@ -78,9 +78,9 @@ class HomogeneousColumnTypes(object):
 
     def test_columns_sort_vdim_hm(self):
         xs_2 = np.array(self.xs_2)
-        columns = Columns(np.array(zip(self.xs, -xs_2)),
+        columns = Columns(np.column_stack([self.xs, -xs_2]),
                                  kdims=['x'], vdims=['y'])
-        columns_sorted = Columns(np.array(zip(self.xs[::-1], -xs_2[::-1])),
+        columns_sorted = Columns(np.column_stack([self.xs[::-1], -xs_2[::-1]]),
                                  kdims=['x'], vdims=['y'])
         self.assertEqual(columns.sort('y'), columns_sorted)
 
@@ -250,8 +250,8 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
         with sorted_context(False):
-            grouped = HoloMap({'M': Columns(group1, kdims=['Age'], vdims=self.vdims),
-                               'F': Columns(group2, kdims=['Age'], vdims=self.vdims)},
+            grouped = HoloMap([('M', Columns(group1, kdims=['Age'], vdims=self.vdims)),
+                               ('F', Columns(group2, kdims=['Age'], vdims=self.vdims))],
                               kdims=['Gender'])
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
