@@ -423,12 +423,13 @@ class MultiDimensionalMapping(Dimensioned):
         print(info_str)
 
 
-    def table(self, **kwargs):
+    def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
 
+        datatype = ['dictionary', 'dataframe']
         tables = []
         for key, value in self.data.items():
-            value = value.table(**kwargs)
+            value = value.table(datatype=datatype, **kwargs)
             for idx, (dim, val) in enumerate(zip(self.kdims, key)):
                 value = value.add_dimension(dim, idx, val)
             tables.append(value)
