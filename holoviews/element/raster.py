@@ -382,7 +382,12 @@ class HeatMap(Columns, Element2D):
 
     def __setstate__(self, state):
         if '_data' in state:
-            state['data'] = data.data
+            data = state['_data']
+            if isinstance(data, NdMapping):
+                items = [tuple(k)+((v,) if np.isscalar(v) else tuple(v))
+                         for k, v in data.items()]
+                data = Columns(items, kdims=data.kdims, vdims=self.vdims).data
+            state['data'] = data
         self.__dict__ = state
         if isinstance(self.data, NdElement):
             self.interface = NdColumns
