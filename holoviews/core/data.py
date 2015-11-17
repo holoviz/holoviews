@@ -73,9 +73,9 @@ class Columns(Element):
         """
         self.__dict__ = state
         if isinstance(self.data, OrderedDict):
-            self.data = NdElement(self.data, kdims=self.kdims,
-                                  vdims=self.vdims, group=self.group,
-                                  label=self.label)
+            self.data = Columns(self.data, kdims=self.kdims,
+                                vdims=self.vdims, group=self.group,
+                                label=self.label)
             self.interface = NdColumns
         elif isinstance(self.data, np.ndarray):
             self.interface = ArrayColumns
