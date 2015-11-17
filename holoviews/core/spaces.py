@@ -186,7 +186,7 @@ class HoloMap(UniformNdMapping):
                         drop_constant=drop_constant)()
 
 
-    def collapse(self, dimensions=None, function=None, **kwargs):
+    def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """
         Allows collapsing one of any number of key dimensions
         on the HoloMap. Homogenous Elements may be collapsed by
@@ -209,10 +209,12 @@ class HoloMap(UniformNdMapping):
                 group_data = [el.data for el in group]
                 args = (group_data, function, group.last.kdims)
                 if hasattr(group.last, 'interface'):
-                    data = group.type(group.table().aggregate(group.last.kdims, function, **kwargs))
+                    col_data = group.type(group.table().aggregate(group.last.kdims, function, spreadfn, **kwargs))
+
                 else:
                     data = group.type.collapse_data(*args, **kwargs)
-                collapsed[key] = group.last.clone(data)
+                    col_data = group.last.clone(data)
+                collapsed[key] = col_data
         return collapsed if self.ndims > 1 else collapsed.last
 
 

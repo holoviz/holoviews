@@ -246,7 +246,7 @@ class Columns(Element):
         return self.clone(self.interface.sample(self, samples))
 
 
-    def reduce(self, dimensions=[], function=None, **reduce_map):
+    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):
         """
         Allows reducing the values along one or more key dimension with
         the supplied function. The dimensions may be supplied as a list
@@ -257,10 +257,10 @@ class Columns(Element):
             raise Exception("Reduce cannot be applied to value dimensions")
         function, dims = self._reduce_map(dimensions, function, reduce_map)
         dims = [d for d in self.kdims if d not in dims]
-        return self.aggregate(dims, function)
+        return self.aggregate(dims, function, spreadfn)
 
 
-    def aggregate(self, dimensions=[], function=None, **kwargs):
+    def aggregate(self, dimensions=[], function=None, spreadfn=None, **kwargs):
         """
         Aggregates over the supplied key dimensions with the defined
         function.
@@ -270,11 +270,24 @@ class Columns(Element):
         if not isinstance(dimensions, list): dimensions = [dimensions]
         aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
+
+        kdims = [self.get_dimension(d) for d in dimensions]
+        vdims = self.vdims
+        if spreadfn:
+            error = self.interface.aggregate(self, dimensions, spreadfn)
+            spread_name = spreadfn.__name__
+            ndims = len(vdims)
+            error = self.clone(error, kdims=kdims)
+            combined = self.clone(aggregated, kdims=kdims)
+            for i, d in enumerate(vdims):
+                dim = d('_'.join([d.name, spread_name]))
+                combined = combined.add_dimension(dim, ndims+i, error[d], True)
+            return combined
+
         if np.isscalar(aggregated):
             return aggregated
         else:
-            kdims = [self.get_dimension(d) for d in dimensions]
-            return self.clone(aggregated, kdims=kdims)
+            return self.clone(aggregated, kdims=kdims, vdims=vdims)
 
 
 
