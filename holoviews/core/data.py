@@ -131,7 +131,7 @@ class Columns(Element):
             return dim.soft_range
 
 
-    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """
         Create a new object with an additional key dimensions.  Requires
         the dimension name or object, the desired position in the key
@@ -144,11 +144,18 @@ class Columns(Element):
         if dimension.name in self.kdims:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.kdims[:]
-        dimensions.insert(dim_pos, dimension)
+        if vdim:
+            dims = self.vdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(vdims=dims)
+            dim_pos += self.ndims
+        else:
+            dims = self.kdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(kdims=dims)
 
-        data = self.interface.add_dimension(self, dimension, dim_pos, dim_val)
-        return self.clone(data, kdims=dimensions)
+        data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
+        return self.clone(data, **dimensions)
 
 
     def select(self, selection_specs=None, **selection):
@@ -583,8 +590,8 @@ class NdColumns(DataColumns):
         return (len(columns), len(columns.dimensions()))
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
-        return columns.data.add_dimension(dimension, dim_pos+1, values)
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+        return columns.data.add_dimension(dimension, dim_pos+1, values, vdim)
 
     @classmethod
     def concat(cls, columns_objs):
@@ -798,7 +805,7 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
         data.insert(dim_pos, dimension.name, values)
         return data
@@ -870,7 +877,7 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
 
@@ -1083,7 +1090,7 @@ class DictColumns(DataColumns):
         return np.column_stack(columns.data[dim] for dim in dimensions)
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
         data = list(columns.data.items())
         if np.isscalar(values):

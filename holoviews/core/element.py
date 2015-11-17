@@ -1,5 +1,5 @@
 import operator
-from itertools import groupby
+from itertools import groupby, cycle
 from numbers import Number
 import numpy as np
 
