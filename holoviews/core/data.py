@@ -636,7 +636,10 @@ class NdColumns(DataColumns):
 
     @classmethod
     def unpack_scalar(cls, columns, data):
-        return data
+        if len(data) == 1 and len(data.kdims) == 1 and len(data.vdims) == 1:
+            return list(data.data.values())[0][0]
+        else:
+            return data
 
 
 

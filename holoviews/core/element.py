@@ -451,32 +451,6 @@ class NdElement(NdMapping, Tabular):
         return self.clone(sample_data)
 
 
-    @classmethod
-    def reduce(cls, columns, reduce_dims, function, **kwargs):
-        """
-        This implementation allows reducing dimensions by aggregating
-        over all the remaining key dimensions using the collapse_data
-        method.
-        """
-        kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
-        if len(kdims) > 1:
-            reduced = columns.collapse_data([columns], function, kdims, **kwargs)
-            reindexed = reduced.reindex(kdims)
-        else:
-            reduced = []
-            for vdim in columns.vdims:
-                data = columns[vdim.name]
-                if isinstance(function, np.ufunc):
-                    reduced.append(function.reduce(data, **kwargs))
-                else:
-                    reduced.append(function(data, **kwargs))
-            if len(reduced) == 1:
-                reduced = reduced[0]
-            else:
-                reduced = OrderedDict([((), tuple(reduced))])
-        return reduced
-
-
     def _item_check(self, dim_vals, data):
         if isinstance(data, tuple):
             for el in data:
@@ -485,46 +459,21 @@ class NdElement(NdMapping, Tabular):
         super(NdElement, self)._item_check(dim_vals, data)
 
 
-    @classmethod
-    def collapse_data(cls, data, function, kdims=None, **kwargs):
-        offset = 0
-        joined_data = data[0]
-        if len(data) > 1:
-            concatenated = []
-            for d in data:
-                reindexed = [((i+offset,)+k[1:], v) for i, (k, v) in enumerate(d.data.items())]
-                concatenated += reindexed
-                offset += len(reindexed)
-            joined_data = joined_data.clone(concatenated, kdims=joined_data.kdims)
-
-        collapsed = []
-        vdims = joined_data.dimensions('value', True)
-        group_dims = kdims[1:] if 'Index' in kdims else kdims
-        with sorted_context(False):
-            grouped = joined_data.groupby([d.name for d in group_dims],
-                                          container_type=NdMapping).data.items()
-        for i, (k, group) in enumerate(grouped):
-            if isinstance(function, np.ufunc):
-                reduced = tuple(function.reduce(group[vdim]) for vdim in vdims)
-            else:
-                reduced = tuple(function(group[vdim], **kwargs) for vdim in vdims)
-            collapsed.append(((i,)+k, reduced))
-        return joined_data.clone(collapsed, kdims=kdims)
-
-
     def aggregate(self, dimensions, function, **kwargs):
         """
         Allows aggregating.
         """
         rows = []
-        grouped = self.groupby(dimensions)
+        grouped = self.groupby(dimensions) if len(dimensions) else HoloMap({(): self}, kdims=[])
         for k, group in grouped.data.items():
-            reduced = group.reduce(group, group.kdims, function, **kwargs)
-            if not np.isscalar(reduced):
-                reduced = list(reduced.values())[0]
-            else:
-                reduced = (reduced,)
-            rows.append((k, reduced))
+            reduced = []
+            for vdim in group.vdims:
+                data = group[vdim.name]
+                if isinstance(function, np.ufunc):
+                    reduced.append(function.reduce(data, **kwargs))
+                else:
+                    reduced.append(function(data, **kwargs))
+            rows.append((k, tuple(reduced)))
         return self.clone(rows, kdims=grouped.kdims)
 
 
