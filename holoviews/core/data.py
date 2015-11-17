@@ -255,17 +255,9 @@ class Columns(Element):
         """
         if any(dim in self.vdims for dim in dimensions):
             raise Exception("Reduce cannot be applied to value dimensions")
-        reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
-        reduced = self
-        for reduce_fn, group in reduce_map:
-            reduced = self.interface.reduce(reduced, group, function)
-
-        reduced = self.interface.unpack_scalar(self, reduced)
-        if np.isscalar(reduced):
-            return reduced
-        else:
-            kdims = [kdim for kdim in self.kdims if kdim not in reduce_dims]
-            return self.clone(reduced, kdims=kdims)
+        function, dims = self._reduce_map(dimensions, function, reduce_map)
+        dims = [d for d in self.kdims if d not in dims]
+        return self.aggregate(dims, function)
 
 
     def aggregate(self, dimensions=[], function=None, **kwargs):
@@ -1187,12 +1179,6 @@ class DictColumns(DataColumns):
                 name = columns.get_dimension(i).name
                 mask |= (np.array(columns.data[name])==v)
         return  {k:np.array(col)[mask] for k, col in columns.data.items()}
-
-    @classmethod
-    def reduce(cls, columns, reduce_dims, function):
-        kdims = [d.name for d in columns.kdims]
-        return cls.aggregate(columns,
-                             [d for d in kdims if d not in reduce_dims], function)
 
     @classmethod
     def aggregate(cls, columns, kdims, function, **kwargs):

@@ -136,16 +136,14 @@ class Raster(Element2D):
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
         """
-        dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
+        function, dims = self._reduce_map(dimensions, function, reduce_map)
         if len(dims) == self.ndims:
-            function = reduce_map[0][0]
             if isinstance(function, np.ufunc):
                 return function.reduce(self.data, axis=None)
             else:
                 return function(self.data)
         else:
-            reduce_fn, dimensions = reduce_map[0]
-            dimension = dimensions[0]
+            dimension = dims[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)

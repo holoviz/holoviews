@@ -116,8 +116,11 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def _reduce_map(self, dimensions, function, reduce_map):
         if dimensions and reduce_map:
-            raise Exception("Pass reduced dimensions either as an argument"
+            raise Exception("Pass reduced dimensions either as an argument "
                             "or as part of the kwargs not both.")
+        if len(set(reduce_map.values())) > 1:
+            raise Exception("Cannot define reduce operations with more than "
+                            "one function at a time.")
         sanitized_dict = {dimension_sanitizer(kd): kd
                           for kd in self.dimensions('key', True)}
         if reduce_map:
@@ -130,8 +133,7 @@ class Element(ViewableElement, Composable, Overlayable):
                    for d, fn in reduce_map]
         sanitized = [(sanitized_dict.get(d, d), fn) for d, fn in reduced]
         grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(sanitized, lambda x: x[1])]
-        dims = [d for grp in grouped for d in grp[1]]
-        return dims, grouped
+        return grouped[0]
 
 
     def table(self, datatype=None):
