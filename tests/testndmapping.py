@@ -117,7 +117,7 @@ class HoloMapTest(ComparisonTestCase):
         self.xs = range(11)
         self.y_ints = [i*2 for i in range(11)]
         self.ys = np.linspace(0, 1, 11)
-        self.columns = Columns(np.array(zip(self.xs, self.y_ints)),
+        self.columns = Columns(np.column_stack([self.xs, self.y_ints]),
                                kdims=['x'], vdims=['y'])
 
 

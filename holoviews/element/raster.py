@@ -1,3 +1,4 @@
+import warnings
 from operator import itemgetter
 from itertools import product
 import numpy as np
@@ -5,7 +6,7 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import DFColumns, ArrayColumns, NdColumns
+from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
 from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -135,16 +136,14 @@ class Raster(Element2D):
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
         """
-        dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
+        function, dims = self._reduce_map(dimensions, function, reduce_map)
         if len(dims) == self.ndims:
-            function = reduce_map[0][0]
             if isinstance(function, np.ufunc):
                 return function.reduce(self.data, axis=None)
             else:
                 return function(self.data)
         else:
-            reduce_fn, dimensions = reduce_map[0]
-            dimension = dimensions[0]
+            dimension = dims[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
@@ -360,7 +359,9 @@ class HeatMap(Columns, Element2D):
 
     def __init__(self, data, extents=None, **params):
         super(HeatMap, self).__init__(data, **params)
-        self.raster = self._compute_raster()
+        data, self.raster = self._compute_raster()
+        self.data = data.data
+        self.interface = data.interface
         self.depth = 1
         if extents is None:
             (d1, d2) = self.raster.shape[:2]
@@ -373,11 +374,13 @@ class HeatMap(Columns, Element2D):
         d1keys = self.dimension_values(0, True)
         d2keys = self.dimension_values(1, True)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
-        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims)
-        concat_data = self.interface.concatenate([Columns(self), dense_data])
-        data = Columns(concat_data, kdims=self.kdims, vdims=self.vdims).aggregate(self.kdims, np.nanmean).sort(self.kdims)
+        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=['dictionary'])
+        concat_data = self.interface.concatenate([Columns(self), dense_data], datatype='dictionary')
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'Mean of empty slice')
+            data = concat_data.aggregate(self.kdims, np.nanmean).sort()
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
-        return np.flipud(array.T)
+        return data, np.flipud(array.T)
 
 
     def __setstate__(self, state):
@@ -386,16 +389,33 @@ class HeatMap(Columns, Element2D):
             if isinstance(data, NdMapping):
                 items = [tuple(k)+((v,) if np.isscalar(v) else tuple(v))
                          for k, v in data.items()]
-                data = Columns(items, kdims=data.kdims, vdims=self.vdims).data
+                kdims = state['kdims'] if 'kdims' in state else self.kdims
+                vdims = state['vdims'] if 'vdims' in state else self.vdims
+                data = Columns(items, kdims=kdims, vdims=vdims).data
+            elif isinstance(data, Columns):
+                data = data.data
+                kdims = data.kdims
+                vdims = data.vdims
             state['data'] = data
+            state['kdims'] = kdims
+            state['vdims'] = vdims
         self.__dict__ = state
+
         if isinstance(self.data, NdElement):
             self.interface = NdColumns
         elif isinstance(self.data, np.ndarray):
             self.interface = ArrayColumns
         elif util.is_dataframe(self.data):
             self.interface = DFColumns
-        self.raster = self._compute_raster()
+        elif isinstance(self.data, dict):
+            self.interface = DictColumns
+        self.depth = 1
+        data, self.raster = self._compute_raster()
+        self.interface = data.interface
+        self.data = data.data
+        if 'extents' not in state:
+            (d1, d2) = self.raster.shape[:2]
+            self.extents = (0, 0, d2, d1)
 
 
     def dense_keys(self):

@@ -293,21 +293,31 @@ class MultiDimensionalMapping(Dimensioned):
             return container_type(groups, kdims=dims)
 
 
-    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """
         Create a new object with an additional key dimensions.
         Requires the dimension name or object, the desired position
         in the key dimensions and a key value scalar or sequence of
         the same length as the existing keys.
         """
-        if isinstance(dimension, str):
+        if not isinstance(dimension, Dimension):
             dimension = Dimension(dimension)
 
-        if dimension in self.kdims:
+        if dimension in self.dimensions():
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.kdims[:]
-        dimensions.insert(dim_pos, dimension)
+        if vdim and self._deep_indexable:
+            raise Exception('Cannot add value dimension to object that is deep indexable')
+
+        if vdim:
+            dims = self.vdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(vdims=dims)
+            dim_pos += self.ndims
+        else:
+            dims = self.kdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(kdims=dims)
 
         if np.isscalar(dim_val):
             dim_val = cycle([dim_val])
@@ -318,11 +328,16 @@ class MultiDimensionalMapping(Dimensioned):
 
         items = OrderedDict()
         for dval, (key, val) in zip(dim_val, self.data.items()):
-            new_key = list(key)
-            new_key.insert(dim_pos, dval)
-            items[tuple(new_key)] = val
+            if vdim:
+                new_val = list(val)
+                new_val.insert(dim_pos, dval)
+                items[key] = tuple(new_val)
+            else:
+                new_key = list(key)
+                new_key.insert(dim_pos, dval)
+                items[tuple(new_key)] = val
 
-        return self.clone(items, kdims=dimensions, **kwargs)
+        return self.clone(items, **dict(dimensions, **kwargs))
 
 
     def drop_dimension(self, dimensions):

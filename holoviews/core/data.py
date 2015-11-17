@@ -27,6 +27,7 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
+from .util import wrap_tuple
 
 
 class Columns(Element):
@@ -44,7 +45,7 @@ class Columns(Element):
     of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'dictionary', 'dataframe' ],
+    datatype = param.List(['array', 'dictionary', 'dataframe', 'ndelement'],
         doc=""" A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
@@ -72,9 +73,9 @@ class Columns(Element):
         """
         self.__dict__ = state
         if isinstance(self.data, OrderedDict):
-            self.data = NdElement(self.data, kdims=self.kdims,
-                                  vdims=self.vdims, group=self.group,
-                                  label=self.label)
+            self.data = Columns(self.data, kdims=self.kdims,
+                                vdims=self.vdims, group=self.group,
+                                label=self.label)
             self.interface = NdColumns
         elif isinstance(self.data, np.ndarray):
             self.interface = ArrayColumns
@@ -130,7 +131,7 @@ class Columns(Element):
             return dim.soft_range
 
 
-    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """
         Create a new object with an additional key dimensions.  Requires
         the dimension name or object, the desired position in the key
@@ -143,11 +144,18 @@ class Columns(Element):
         if dimension.name in self.kdims:
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.kdims[:]
-        dimensions.insert(dim_pos, dimension)
+        if vdim:
+            dims = self.vdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(vdims=dims)
+            dim_pos += self.ndims
+        else:
+            dims = self.kdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(kdims=dims)
 
-        data = self.interface.add_dimension(self, dimension, dim_pos, dim_val)
-        return self.clone(data, kdims=dimensions)
+        data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
+        return self.clone(data, **dimensions)
 
 
     def select(self, selection_specs=None, **selection):
@@ -238,7 +246,7 @@ class Columns(Element):
         return self.clone(self.interface.sample(self, samples))
 
 
-    def reduce(self, dimensions=[], function=None, **reduce_map):
+    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):
         """
         Allows reducing the values along one or more key dimension with
         the supplied function. The dimensions may be supplied as a list
@@ -247,20 +255,12 @@ class Columns(Element):
         """
         if any(dim in self.vdims for dim in dimensions):
             raise Exception("Reduce cannot be applied to value dimensions")
-        reduce_dims, reduce_map = self._reduce_map(dimensions, function, reduce_map)
-        reduced = self
-        for reduce_fn, group in reduce_map:
-            reduced = self.interface.reduce(reduced, group, function)
-
-        reduced = self.interface.unpack_scalar(self, reduced)
-        if np.isscalar(reduced):
-            return reduced
-        else:
-            kdims = [kdim for kdim in self.kdims if kdim not in reduce_dims]
-            return self.clone(reduced, kdims=kdims)
+        function, dims = self._reduce_map(dimensions, function, reduce_map)
+        dims = [d for d in self.kdims if d not in dims]
+        return self.aggregate(dims, function, spreadfn)
 
 
-    def aggregate(self, dimensions=[], function=None):
+    def aggregate(self, dimensions=[], function=None, spreadfn=None, **kwargs):
         """
         Aggregates over the supplied key dimensions with the defined
         function.
@@ -268,13 +268,26 @@ class Columns(Element):
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
         if not isinstance(dimensions, list): dimensions = [dimensions]
-        aggregated = self.interface.aggregate(self, dimensions, function)
+        aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
+
+        kdims = [self.get_dimension(d) for d in dimensions]
+        vdims = self.vdims
+        if spreadfn:
+            error = self.interface.aggregate(self, dimensions, spreadfn)
+            spread_name = spreadfn.__name__
+            ndims = len(vdims)
+            error = self.clone(error, kdims=kdims)
+            combined = self.clone(aggregated, kdims=kdims)
+            for i, d in enumerate(vdims):
+                dim = d('_'.join([d.name, spread_name]))
+                combined = combined.add_dimension(dim, ndims+i, error[d], True)
+            return combined
+
         if np.isscalar(aggregated):
             return aggregated
         else:
-            kdims = [self.get_dimension(d) for d in dimensions]
-            return self.clone(aggregated, kdims=kdims)
+            return self.clone(aggregated, kdims=kdims, vdims=vdims)
 
 
 
@@ -502,9 +515,9 @@ class DataColumns(param.Parameterized):
         return columns[0].clone(concat_data)
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
+    def reduce(cls, columns, reduce_dims, function, **kwargs):
         kdims = [kdim for kdim in columns.kdims if kdim not in reduce_dims]
-        return cls.aggregate(columns, kdims, function)
+        return cls.aggregate(columns, kdims, function, **kwargs)
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -582,8 +595,8 @@ class NdColumns(DataColumns):
         return (len(columns), len(columns.dimensions()))
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
-        return columns.data.add_dimension(dimension, dim_pos+1, values)
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+        return columns.data.add_dimension(dimension, dim_pos+1, values, vdim)
 
     @classmethod
     def concat(cls, columns_objs):
@@ -619,16 +632,19 @@ class NdColumns(DataColumns):
         return columns.data.sample(samples)
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
+    def reduce(cls, columns, reduce_dims, function, **kwargs):
         return columns.data.reduce(columns.data, reduce_dims, function)
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function):
-        return columns.data.aggregate(dimensions, function)
+    def aggregate(cls, columns, dimensions, function, **kwargs):
+        return columns.data.aggregate(dimensions, function, **kwargs)
 
     @classmethod
     def unpack_scalar(cls, columns, data):
-        return data
+        if len(data) == 1 and len(data.kdims) == 1 and len(data.vdims) == 1:
+            return list(data.data.values())[0][0]
+        else:
+            return data
 
 
 
@@ -664,6 +680,10 @@ class DFColumns(DataColumns):
             if ((isinstance(data, dict) and all(c in data for c in columns)) or
                 (isinstance(data, NdElement) and all(c in data.dimensions() for c in columns))):
                 data = OrderedDict(((d, data[d]) for d in columns))
+            elif isinstance(data, dict) and not all(d in data for d in columns):
+                column_data = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                                    for k, v in data.items()))
+                data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
                     data = (range(len(data)), data)
@@ -719,15 +739,15 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function):
+    def aggregate(cls, columns, dimensions, function, **kwargs):
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', True)
         reindexed = data.reindex(columns=cols+vdims)
         if len(dimensions):
-            return reindexed.groupby(cols, sort=False).aggregate(function).reset_index()
+            return reindexed.groupby(cols, sort=False).aggregate(function, **kwargs).reset_index()
         else:
-            agg = reindexed.apply(function)
+            agg = reindexed.apply(function, **kwargs)
             return pd.DataFrame.from_items([(col, [v]) for col, v in
                                             zip(agg.index, agg.values)])
 
@@ -793,7 +813,7 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
         data.insert(dim_pos, dimension.name, values)
         return data
@@ -828,6 +848,10 @@ class ArrayColumns(DataColumns):
             all(d in data for d in dimensions)):
             columns = [data[d] for d in dimensions]
             data = np.column_stack(columns)
+        elif isinstance(data, dict) and not all(d in data for d in dimensions):
+            columns = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                            for k, v in data.items()))
+            data = np.column_stack(columns)
         elif isinstance(data, tuple):
             try:
                 data = np.column_stack(data)
@@ -861,7 +885,7 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
 
@@ -981,7 +1005,7 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function):
+    def aggregate(cls, columns, dimensions, function, **kwargs):
         reindexed = columns.reindex(dimensions)
         grouped = (cls.groupby(reindexed, dimensions, list, 'raw')
                    if len(dimensions) else [((), reindexed.data)])
@@ -989,9 +1013,9 @@ class ArrayColumns(DataColumns):
         rows = []
         for k, group in grouped:
             if isinstance(function, np.ufunc):
-                reduced = function.reduce(group, axis=0)
+                reduced = function.reduce(group, axis=0, **kwargs)
             else:
-                reduced = function(group, axis=0)
+                reduced = function(group, axis=0, **kwargs)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.atleast_2d(rows)
 
@@ -1027,13 +1051,14 @@ class DictColumns(DataColumns):
             if data.ndim == 1:
                 data = np.column_stack([np.arange(len(data)), data])
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
-        elif not isinstance(data, dict):
-            data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
-
-        if not all(d in data for d in dimensions):
-            raise ValueError("Columns data did not contain data for all columns.")
+        elif not isinstance(data, dict):
+            data = {k: v for k, v in zip(dimensions, zip(*data))}
+        elif isinstance(data, dict) and not all(d in data for d in dimensions):
+            dict_data = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                              for k, v in data.items()))
+            data = {k: np.array(v) for k, v in zip(dimensions, dict_data)}
 
         if not isinstance(data, cls.types):
             raise ValueError("DictColumns interface couldn't convert data.""")
@@ -1065,19 +1090,17 @@ class DictColumns(DataColumns):
 
     @classmethod
     def length(cls, columns):
-        return len(columns.data.values()[0])
+        return len(list(columns.data.values())[0])
 
     @classmethod
     def array(cls, columns, dimensions):
-        if dimensions:
-            return np.column_stack(columns.data[dim] for dim in dimensions)
-        else:
-            return np.column_stack(columns.data.values())
+        if not dimensions: dimensions = columns.dimensions(label=True)
+        return np.column_stack(columns.data[dim] for dim in dimensions)
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values):
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
-        data = columns.data.items()
+        data = list(columns.data.items())
         if np.isscalar(values):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
@@ -1101,8 +1124,8 @@ class DictColumns(DataColumns):
     def sort(cls, columns, by=[]):
         data = cls.array(columns, None)
         idxs = [columns.get_dimension_index(dim) for dim in by]
-        arr = data[np.lexsort(np.flipud(data[:, idxs].T))]
-        return OrderedDict([(d, arr[:, i]) for i, d in enumerate(columns.data)])
+        sorting = np.lexsort(np.flipud(data[:, idxs].T))
+        return OrderedDict([(d, v[sorting]) for d, v in columns.data.items()])
 
     @classmethod
     def values(cls, columns, dim):
@@ -1114,21 +1137,6 @@ class DictColumns(DataColumns):
         # DataFrame based tables don't need to be reindexed
         return OrderedDict([(d, columns.dimension_values(d))
                             for d in kdims+vdims])
-
-
-    @classmethod
-    def groupby(cls, columns, dimensions, container_type=HoloMap, group_type=None, **kwargs):
-        unique = OrderedDict()
-        for i in range(len(columns)):
-            key = tuple(columns.data[d][i] for d in dimensions)
-            unique[key] = None
-
-        for unique_key in unique:
-            selection = dict(zip(dimensions, unique_key))
-            mask = cls.select_mask(columns, selection)
-            matches = zip(cls.values(columns, d)[mask] for d in dimensions)
-            unique[unique_key] = matches
-        return unique
 
 
     @classmethod
@@ -1154,7 +1162,7 @@ class DictColumns(DataColumns):
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(columns, dict(zip(dimensions, unique_key)))
-            group_data = {d.name:columns[d.name][mask] for d in kdims+vdims}
+            group_data = OrderedDict(((d.name, columns[d.name][mask]) for d in kdims+vdims))
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -1170,7 +1178,7 @@ class DictColumns(DataColumns):
        mask = cls.select_mask(columns, selection)
        indexed = cls.indexed(columns, selection)
        data = OrderedDict((k, list(compress(v, mask))) for k, v in columns.data.items())
-       if indexed and len(data.values()[0]) == 1:
+       if indexed and len(list(data.values())[0]) == 1:
            return data[columns.vdims[0].name][0]
        return data
 
@@ -1186,24 +1194,23 @@ class DictColumns(DataColumns):
         return  {k:np.array(col)[mask] for k, col in columns.data.items()}
 
     @classmethod
-    def reduce(cls, columns, reduce_dims, function):
-        kdims = [d.name for d in columns.kdims]
-        return cls.aggregate(columns,
-                             [d for d in kdims if d not in reduce_dims], function)
+    def aggregate(cls, columns, kdims, function, **kwargs):
+        kdims = [columns.get_dimension(d).name for d in kdims]
+        vdims = columns.dimensions('value', True)
+        groups = cls.groupby(columns, kdims, list, OrderedDict)
+        aggregated = OrderedDict([(k, []) for k in kdims+vdims])
 
-    @classmethod
-    def aggregate(cls, columns, kdims, function):
-        vdims = [d.name for d in columns.vdims]
-        groups = cls.groupby(columns, kdims , OrderedDict,dict)
-        aggregated = OrderedDict([(k,[]) for k in kdims+vdims])
-
-        for key, group in groups.items():
+        for key, group in groups:
             key = key if isinstance(key, tuple) else (key,)
             for kdim, val in zip(kdims, key):
                 aggregated[kdim].append(val)
             for vdim, arr in group.items():
-                if vdim in vdims:
-                    aggregated[vdim].append(function(arr))
+                if vdim in columns.vdims:
+                    if isinstance(function, np.ufunc):
+                        reduced = function.reduce(arr, **kwargs)
+                    else:
+                        reduced = function(arr, **kwargs)
+                    aggregated[vdim].append(reduced)
         return aggregated
 
 
