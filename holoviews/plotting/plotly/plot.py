@@ -154,6 +154,10 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
 
     def initialize_plot(self, ranges=None):
+        return self.generate_plot(self.keys[-1], ranges)
+
+
+    def generate_plot(self, key, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
         passed_plots = []
@@ -163,7 +167,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
-                subplots = subplot.initialize_plot(ranges=ranges)
+                subplots = subplot.generate_plot(key, ranges=ranges)
 
                 # Computes plotting offsets depending on
                 # number of adjoined plots
@@ -209,10 +213,15 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 if plot:
                     fig.append_trace(plot, r+1, c+1)
         fig['layout'].update(height=height, width=width,
-                             title=self._format_title(self.keys[-1]))
+                             title=self._format_title(key))
 
         self.handles['fig'] = fig
         return self.handles['fig']
+
+
+    def update_frame(self, key, ranges=None):
+        return self.generate_plot(key, ranges)
+
 
 
 class AdjointLayoutPlot(PlotlyPlot, GenericCompositePlot):
@@ -242,12 +251,16 @@ class AdjointLayoutPlot(PlotlyPlot, GenericCompositePlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
+        return self.generate_plot(self.keys[-1], ranges)
+
+
+    def generate_plot(self, key, ranges=None):
         adjoined_plots = []
         for pos in ['main', 'right', 'top']:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
-                adjoined_plots.append(subplot.initialize_plot(ranges=ranges))
+                adjoined_plots.append(subplot.generate_plot(key, ranges=ranges))
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots

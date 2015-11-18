@@ -16,12 +16,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        element = self.hmap.last
-        key = self.keys[-1]
-        return self.generate_plot(key, element, ranges)
+        return self.generate_plot(self.keys[-1], ranges)
 
 
-    def generate_plot(self, key, element, ranges):
+    def generate_plot(self, key, ranges):
+        element = self._get_frame(key) if len(self) > 1 else self.hmap.last
         self.current_frame = element
         self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
@@ -56,34 +55,17 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
-        element = self._get_frame(key)
-        self.generate_plot(key, element, ranges)
+        self.generate_plot(key, ranges)
 
         
     
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
-    def initialize_plot(self, ranges=None):
-        key = self.keys[-1]
+    def generate_plot(self, key, ranges):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         graphs = []
         for key, subplot in self.subplots.items():
-            graphs.append(subplot.initialize_plot(ranges))
-
-        layout = self.init_layout(key, None, ranges)
-        fig = go.Figure(data=graphs, layout=layout)
-        self.handles['fig'] = fig
-        return fig
-
-
-class OverlayPlot(GenericOverlayPlot, ElementPlot):
-
-    def initialize_plot(self, ranges=None):
-        key = self.keys[-1]
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        graphs = []
-        for key, subplot in self.subplots.items():
-            graphs.append(subplot.initialize_plot(ranges))
+            graphs.append(subplot.generate_plot(key, ranges))
 
         layout = self.init_layout(key, None, ranges)
         fig = go.Figure(data=graphs, layout=layout)
