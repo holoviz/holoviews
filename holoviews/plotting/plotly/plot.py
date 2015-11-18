@@ -9,3 +9,11 @@ class PlotlyPlot(DimensionedPlot):
     height = param.Integer(default=400)
 
     renderer = PlotlyRenderer
+
+    @property
+    def state(self):
+        """
+        The plotting state that gets updated via the update method and
+        used by the renderer to generate output.
+        """
+        return self.handles['fig']

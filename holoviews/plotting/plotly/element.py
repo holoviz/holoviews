@@ -37,15 +37,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             return fig
         
         return graph
-    
-    @property
-    def state(self):
-        """
-        The plotting state that gets updated via the update method and
-        used by the renderer to generate output.
-        """
-        return self.handles['fig']
-
         
     def init_graph(self, element, ranges):
         pass
