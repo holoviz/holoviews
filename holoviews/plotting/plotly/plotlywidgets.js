@@ -23,8 +23,9 @@ var PlotlyMethods = {
 		$.each(data, function(id, data) {
 			var plot = $('#'+id)[0];
 			plot.data = data.data;
+			plot.layout = data.layout;
+			Plotly.relayout(plot, data.layout);
 			Plotly.redraw(plot);
-			Plotly.relayout(plot, layout);
 		});
     },
     dynamic_update : function(current){
