@@ -255,6 +255,7 @@ class OutputMagic(OptionsMagic):
     _disable_info_output = False
 
     bokeh_loaded = False
+    plotly_loaded = False
 
     #==========================#
     # Backend state management #
@@ -406,6 +407,22 @@ class OutputMagic(OptionsMagic):
                 bokeh.io.load_notebook()
                 if linemagic:
                     cls.bokeh_loaded = True
+        if options['backend']=='plotly':
+            try:
+                import bokeh
+                import bokeh.io
+                if not cls.plotly_loaded:
+                    outputwarning.warning("Some elements and plot options are "
+                                          "not supported by Plotly library and backend.")
+            except:
+                raise ImportError("Could not import plotly.")
+
+            if not cls.plotly_loaded:
+                from ..plotting.plotly.renderer import plotly_include
+                display(HTML(plotly_include()))
+                if linemagic:
+                    cls.plotly_loaded = True
+
         return options
 
 
