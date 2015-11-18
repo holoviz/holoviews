@@ -395,6 +395,62 @@ class GenericElementPlot(DimensionedPlot):
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
 
+    bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
+        If set bgcolor overrides the background color of the axis.""")
+
+    invert_xaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot x-axis.""")
+
+    invert_yaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot y-axis.""")
+
+    logx = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the x-axis of the Chart.""")
+
+    logy  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
+
+    logz  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    xaxis = param.ObjectSelector(default='bottom',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    zaxis = param.Boolean(default=True, doc="""
+        Whether to display the z-axis.""")
+
+    xticks = param.Parameter(default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
+    yticks = param.Parameter(default=None, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
+    zticks = param.Parameter(default=None, doc="""
+        Ticks along z-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  overlaid=0, cyclic_index=0, zorder=0, style=None, overlay_dims={},
                  **params):
