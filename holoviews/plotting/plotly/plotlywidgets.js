@@ -21,7 +21,6 @@ var PlotlyMethods = {
     update : function(current){
 		var data = this.frames[current];
 		$.each(data, function(id, data) {
-			console.log('#'+id)
 			var plot = $('#'+id)[0];
 			plot.data = data.data;
 			plot.layout = data.layout;
