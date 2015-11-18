@@ -18,6 +18,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         # Get element key and ranges for frame
         element = self.hmap.last
         key = self.keys[-1]
+        return self.generate_plot(key, element, ranges)
+
+
+    def generate_plot(self, key, element, ranges):
         self.current_frame = element
         self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
@@ -35,16 +39,26 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             fig = go.Figure(data=[graph], layout=layout)
             self.handles['fig'] = fig
             return fig
-        
         return graph
         
+
     def init_graph(self, element, ranges):
         pass
+
     
     def init_layout(self, key, element, ranges):
         return dict(width=self.width, height=self.height,
                    title=self._format_title(key, separator=' '))
-        
+
+
+    def update_frame(self, key, ranges=None):
+        """
+        Updates an existing plot with data corresponding
+        to the key.
+        """
+        element = self._get_frame(key)
+        self.generate_plot(key, element, ranges)
+
         
     
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
