@@ -1,11 +1,12 @@
 from ...core.options import Store
-from ...core import Overlay, NdOverlay
+from ...core import Overlay, NdOverlay, Layout, NdLayout
 from ...interface.seaborn import *
 from ...element import * 
 from .renderer import PlotlyRenderer
 from .element import *
 from .chart import *
 from .raster import *
+from .plot import *
 
 Store.renderers['plotly'] = PlotlyRenderer
 
@@ -22,4 +23,6 @@ Store.register({Points: PointPlot,
                 ErrorBars: ErrorBarsPlot,
                 Scatter3D: Scatter3dPlot,
                 Overlay: OverlayPlot,
-                NdOverlay: OverlayPlot}, backend='plotly')
+                NdOverlay: OverlayPlot,
+                Layout: LayoutPlot,
+                NdLayout: LayoutPlot}, backend='plotly')
