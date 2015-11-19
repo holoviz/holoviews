@@ -9,7 +9,7 @@ import param
 
 from ..core.options import Store, StoreOptions
 from ..core import Element, ViewableElement, UniformNdMapping, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, displayable, undisplayable_info, CompositeOverlay
+    GridSpace, Layout, CompositeOverlay, DynamicMap, displayable, undisplayable_info
 from ..core.traversal import unique_dimkeys, bijective
 from .magics import OutputMagic, OptsMagic
 
@@ -79,6 +79,7 @@ def display_video(plot, renderer, holomap_format, dpi, fps, css, **kwargs):
 def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
     "Display widgets applicable to the specified element"
     isuniform = plot.uniform
+    dynamic = plot.dynamic
     islinear = bijective(plot.keys)
     if not isuniform and holomap_format == 'widgets':
         param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
@@ -89,6 +90,9 @@ def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
         holomap_format = 'scrubber' if islinear or not isuniform else 'widgets'
 
     widget = 'scrubber' if holomap_format == 'scrubber' else 'selection'
+    if dynamic == 'open': widget = 'scrubber'
+    if dynamic == 'closed': widget = 'selection'
+
     widget_cls = plot.renderer.widgets[widget]
 
     return widget_cls(plot, renderer=renderer, embed=(widget_mode == 'embed'),
@@ -129,7 +133,7 @@ def render_plot(plot, widget_mode, message=None):
 
     renderer = OutputMagic.renderer(dpi=kwargs['dpi'], fps=kwargs['fps'])
     with renderer.state():
-        if len(plot) == 1:
+        if len(plot) == 1 and not plot.dynamic:
             plot.update(0)
             return display_frame(plot, renderer, **kwargs)
         elif widget_mode is not None:
@@ -198,7 +202,7 @@ display_warning = Warning(name='Warning')
 
 @display_hook
 def map_display(vmap, size, max_frames, max_branches, widget_mode):
-    if not isinstance(vmap, HoloMap): return None
+    if not isinstance(vmap, (HoloMap, DynamicMap)): return None
 
     if not displayable(vmap):
         display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
@@ -299,7 +303,7 @@ def display(obj, raw=False, **kwargs):
         html = element_display(obj)
     elif isinstance(obj, (Layout, NdLayout, AdjointLayout)):
         html = layout_display(obj)
-    elif isinstance(obj, HoloMap):
+    elif isinstance(obj, (HoloMap, DynamicMap)):
         html = map_display(obj)
     else:
         return repr(obj) if raw else IPython.display.display(obj, **kwargs)
