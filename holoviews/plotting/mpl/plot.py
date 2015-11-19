@@ -7,16 +7,15 @@ import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # pyflakes:ignore (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
-
 import param
-from ...core import OrderedDict, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Element, CompositeOverlay, Element3D, Empty, Collator
+from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
+                     GridSpace, Element, CompositeOverlay, Element3D,
+                     Empty, Collator)
 from ...core.options import Store, Compositor
+from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
-from ...core.util import int_to_roman,\
-    int_to_alpha, basestring
-
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
+from ..util import get_dynamic_interval
 from .renderer import MPLRenderer
 
 
@@ -77,10 +76,12 @@ class MPLPlot(DimensionedPlot):
     projection = param.ObjectSelector(default=None,
                                       objects=['3d', 'polar', None], doc="""
         The projection of the plot axis, default of None is equivalent to
-        2D plot, 3D and polar plots are also supported.""")
+        2D plot, '3d' and 'polar' are also supported.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
+
+    _close_figures = True
 
     def __init__(self, fig=None, axis=None, **params):
         self._create_fig = True
@@ -162,7 +163,7 @@ class MPLPlot(DimensionedPlot):
             return self.handles['axis']
         else:
             fig = self.handles['fig']
-            plt.close(fig)
+            if self._close_figures: plt.close(fig)
             return fig
 
 
@@ -180,7 +181,7 @@ class MPLPlot(DimensionedPlot):
                                        frames=self.keys,
                                        interval = 1000.0/fps)
         # Close the figure handle
-        plt.close(figure)
+        if self._close_figures: plt.close(figure)
         return anim
 
     def update(self, key):
@@ -240,11 +241,13 @@ class GridPlot(CompositePlot):
 
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
-        Whether and where to display the xaxis.""")
+        Whether and where to display the xaxis, supported options are
+        'bottom', 'top' and None.""")
 
     yaxis = param.ObjectSelector(default='left',
                                  objects=['left', 'right', None], doc="""
-        Whether and where to display the yaxis.""")
+        Whether and where to display the yaxis, supported options are
+        'left', 'right' and None.""")
 
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -256,6 +259,7 @@ class GridPlot(CompositePlot):
                  keys=None, dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
+        dynamic = get_dynamic_interval(layout)
         self.layout = layout
         self.cols, self.rows = layout.shape
         self.layout_num = layout_num
@@ -266,6 +270,7 @@ class GridPlot(CompositePlot):
             params['uniform'] = traversal.uniform(layout)
 
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                       dynamic=dynamic,
                                        **dict(extra_opts, **params))
         # Compute ranges layoutwise
         grid_kwargs = {}
@@ -399,7 +404,7 @@ class GridPlot(CompositePlot):
         self._readjust_axes(axis)
         self.drawn = True
         if self.subplot: return self.handles['axis']
-        plt.close(self.handles['fig'])
+        if self._close_figures: plt.close(self.handles['fig'])
         return self.handles['fig']
 
 

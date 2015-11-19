@@ -2,13 +2,14 @@ from numbers import Number
 import numpy as np
 
 import param
+import types
 
+from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, Overlay, CompositeOverlay, NdOverlay
 from .tree import AttrTree
-
 
 class HoloMap(UniformNdMapping):
     """
@@ -31,8 +32,7 @@ class HoloMap(UniformNdMapping):
             with item_check(False):
                 return NdOverlay(self, **kwargs)
         else:
-            dims = [d for d in self._cached_index_names
-                    if d not in dimensions]
+            dims = [d for d in self.kdims if d not in dimensions]
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
 
 
@@ -92,7 +92,7 @@ class HoloMap(UniformNdMapping):
         Helper for __mul__ that returns the list of keys together with
         the dimension labels.
         """
-        return [tuple(zip(self._cached_index_names, [k] if self.ndims == 1 else k))
+        return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
                 for k in self.keys()]
 
 
@@ -108,8 +108,8 @@ class HoloMap(UniformNdMapping):
         with completely different dimensions aren't overlaid.
         """
         if isinstance(other, self.__class__):
-            self_set = set(self._cached_index_names)
-            other_set = set(other._cached_index_names)
+            self_set = {d.name for d in self.kdims}
+            other_set = {d.name for d in other.kdims}
 
             # Determine which is the subset, to generate list of keys and
             # dimension labels for the new view
@@ -131,10 +131,10 @@ class HoloMap(UniformNdMapping):
                 # Generate keys for both subset and superset and sort them by the dimension index.
                 self_key = tuple(k for p, k in sorted(
                     [(self.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in self._cached_index_names]))
+                     if dim in self.kdims]))
                 other_key = tuple(k for p, k in sorted(
                     [(other.get_dimension_index(dim), v) for dim, v in dim_keys
-                     if dim in other._cached_index_names]))
+                     if dim in other.kdims]))
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
@@ -187,7 +187,7 @@ class HoloMap(UniformNdMapping):
                         drop_constant=drop_constant)()
 
 
-    def collapse(self, dimensions=None, function=None, **kwargs):
+    def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """
         Allows collapsing one of any number of key dimensions
         on the HoloMap. Homogenous Elements may be collapsed by
@@ -195,9 +195,9 @@ class HoloMap(UniformNdMapping):
         """
         from .operation import MapOperation
         if not dimensions:
-            dimensions = self._cached_index_names
+            dimensions = self.kdims
         if self.ndims > 1 and len(dimensions) != self.ndims:
-            groups = self.groupby([dim for dim in self._cached_index_names
+            groups = self.groupby([dim for dim in self.kdims
                                    if dim not in dimensions])
         else:
             [self.get_dimension(dim) for dim in dimensions]
@@ -207,8 +207,15 @@ class HoloMap(UniformNdMapping):
             if isinstance(function, MapOperation):
                 collapsed[key] = function(group, **kwargs)
             else:
-                data = group.type.collapse_data([el.data for el in group], function, **kwargs)
-                collapsed[key] = group.last.clone(data)
+                group_data = [el.data for el in group]
+                args = (group_data, function, group.last.kdims)
+                if hasattr(group.last, 'interface'):
+                    col_data = group.type(group.table().aggregate(group.last.kdims, function, spreadfn, **kwargs))
+
+                else:
+                    data = group.type.collapse_data(*args, **kwargs)
+                    col_data = group.last.clone(data)
+                collapsed[key] = col_data
         return collapsed if self.ndims > 1 else collapsed.last
 
 
@@ -266,8 +273,13 @@ class HoloMap(UniformNdMapping):
         via the kwargs, where the keyword has to match a particular
         dimension in the Elements.
         """
+        from ..element import Table
         reduced_items = [(k, v.reduce(dimensions, function, **reduce_map))
                          for k, v in self.items()]
+        if not isinstance(reduced_items[0][1], Table):
+            params = dict(util.get_param_values(self.last),
+                          kdims=self.kdims, vdims=self.last.vdims)
+            return Table(reduced_items, **params)
         return self.clone(reduced_items).table()
 
 
@@ -278,7 +290,8 @@ class HoloMap(UniformNdMapping):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmap = self.clone(shared_data=False)
+        histmaps = [self.clone(shared_data=False)
+                    for d in kwargs.get('dimension', range(1))]
 
         if individually:
             map_range = None
@@ -291,16 +304,257 @@ class HoloMap(UniformNdMapping):
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
             kwargs['index'] = 0
         for k, v in self.data.items():
-            histmap[k] = v.hist(adjoin=False, bin_range=bin_range,
-                                individually=individually, num_bins=num_bins,
-                                style_prefix=style_prefix, **kwargs)
+            hists = v.hist(adjoin=False, bin_range=bin_range,
+                           individually=individually, num_bins=num_bins,
+                           style_prefix=style_prefix, **kwargs)
+            if isinstance(hists, Layout):
+                for i, hist in enumerate(hists):
+                    histmaps[i][k] = hist
+            else:
+                histmaps[0][k] = hists
 
-        if adjoin and issubclass(self.type, (NdOverlay, Overlay)):
-            layout = (self << histmap)
-            layout.main_layer = kwargs['index']
+        if adjoin:
+            layout = self
+            for hist in histmaps:
+                layout = (layout << hist)
+            if issubclass(self.type, (NdOverlay, Overlay)):
+                layout.main_layer = kwargs['index']
             return layout
+        else:
+            if len(histmaps) > 1:
+                return Layout.from_values(histmaps)
+            else:
+                return histmaps[0]
 
-        return (self << histmap) if adjoin else histmap
+
+
+class DynamicMap(HoloMap):
+    """
+    A DynamicMap is a type of HoloMap where the elements are dynamically
+    generated by a callback which may be either a callable or a
+    generator. A DynamicMap supports two different modes depending on
+    the type of callable supplied and the dimension declarations.
+
+    The 'closed' mode is used when the limits of the parameter space are
+    known upon declaration (as specified by the ranges on the key
+    dimensions) or 'open' which allows the continual generation of
+    elements (e.g as data output by a simulator over an unbounded
+    simulated time dimension).
+
+    Generators always imply open mode but a callable that has any key
+    dimension unbounded in any direction will also be in open
+    mode. Closed mode only applied to callables where all the key
+    dimensions are fully bounded.
+    """
+    _sorted = False
+
+    callback = param.Parameter(doc="""
+        The callable or generator used to generate the elements. In the
+        simplest case where all key dimensions are bounded, this can be
+        a callable that accepts the key dimension values as arguments
+        (in the declared order) and returns the corresponding element.
+
+        For open mode where there is an unbounded key dimension, the
+        return type can specify a key as well as element as the tuple
+        (key, element). If no key is supplied, a simple counter is used
+        instead.
+
+        If the callback is a generator, open mode is used and next() is
+        simply called. If the callback is callable and in open mode, the
+        element counter value will be supplied as the single
+        argument. This can be used to avoid issues where multiple
+        elements in a Layout each call next() leading to uncontrolled
+        changes in simulator state (the counter can be used to indicate
+        simulation time across the layout).
+    """)
+
+    cache_size = param.Integer(default=500, doc="""
+       The number of entries to cache for fast access. This is an LRU
+       cache where the least recently used item is overwritten once
+       the cache is full.""")
+
+    cache_interval = param.Integer(default=1, doc="""
+       When the element counter modulo the cache_interval is zero, the
+       element will be cached and therefore accessible when casting to a
+       HoloMap.  Applicable in open mode only.""")
+
+    def __init__(self, initial_items=None, **params):
+        super(DynamicMap, self).__init__(initial_items, **params)
+        self.counter = 0
+        if self.callback is None:
+            raise Exception("A suitable callback must be "
+                            "declared to create a DynamicMap")
+
+        self.call_mode = self._validate_mode()
+        self.mode = 'closed' if self.call_mode == 'key' else 'open'
+        # Needed to initialize the plotting system
+        if self.call_mode == 'key':
+            self[self._initial_key()]
+        elif self.call_mode == 'counter':
+            self[self.counter]
+            self.counter += 1
+        else:
+            next(self)
+
+
+    def _initial_key(self):
+        """
+        Construct an initial key for closed mode based on the lower
+        range bounds or values on the key dimensions.
+        """
+        key = []
+        for kdim in self.kdims:
+            if kdim.values:
+                key.append(kdim.values[0])
+            elif kdim.range:
+                key.append(kdim.range[0])
+        return tuple(key)
+
+
+    def _validate_mode(self):
+        """
+        Check the key dimensions and callback to determine the calling mode.
+        """
+        isgenerator = isinstance(self.callback, types.GeneratorType)
+        if isgenerator:
+            return 'generator'
+        # Any unbounded kdim (any direction) implies open mode
+        for kdim in self.kdims:
+            if (kdim.values) and kdim.range != (None,None):
+                raise Exception('Dimension cannot have both values and ranges.')
+            elif kdim.values:
+                continue
+            if None in kdim.range:
+                return 'counter'
+        return 'key'
+
+
+    def _validate_key(self, key):
+        """
+        Make sure the supplied key values are within the bounds
+        specified by the corresponding dimension range and soft_range.
+        """
+        key = util.wrap_tuple(key)
+        assert len(key) == len(self.kdims)
+        for ind, val in enumerate(key):
+            kdim = self.kdims[ind]
+            low, high = util.max_range([kdim.range, kdim.soft_range])
+            if low is not np.NaN:
+                if val < low:
+                    raise StopIteration("Key value %s below lower bound %s"
+                                        % (val, low))
+            if high is not np.NaN:
+                if val > high:
+                    raise StopIteration("Key value %s above upper bound %s"
+                                        % (val, high))
+
+
+    def _execute_callback(self, *args):
+        """
+        Execute the callback, validating both the input key and output
+        key where applicable.
+        """
+        if self.call_mode == 'key':
+            self._validate_key(args)      # Validate input key
+
+        if self.call_mode == 'generator':
+            retval = self.callback.next()
+        else:
+            retval = self.callback(*args)
+
+        if self.call_mode=='key':
+            return retval
+
+        if isinstance(retval, tuple):
+            self._validate_key(retval[0]) # Validated output key
+            return retval
+        else:
+            self._validate_key((self.counter,))
+            return (self.counter, retval)
+
+
+    def clone(self, data=None, shared_data=True, *args, **overrides):
+        """
+        Overrides Dimensioned clone to avoid checking items if data
+        is unchanged.
+        """
+        return super(UniformNdMapping, self).clone(data, shared_data,
+                                                   *args, **overrides)
+
+
+    def reset(self):
+        """
+        Return a cleared dynamic map with a cleared cached
+        and a reset counter.
+        """
+        if self.call_mode == 'generator':
+            raise Exception("Cannot reset generators.")
+        self.counter = 0
+        self.data = OrderedDict()
+        return self
+
+
+    def __getitem__(self, key):
+        """
+        Return an element for any key chosen key (in'closed mode') or
+        for a previously generated key that is still in the cache
+        (for one of the 'open' modes)
+        """
+        try:
+            retval = super(DynamicMap,self).__getitem__(key)
+            if isinstance(retval, DynamicMap):
+                return HoloMap(retval)
+            else:
+                return retval
+        except KeyError as e:
+            if self.mode == 'open' and len(self.data)>0:
+                raise KeyError(str(e) + " Note: Cannot index outside "
+                               "available cache over an open interval.")
+        tuple_key = util.wrap_tuple(key)
+        val = self._execute_callback(*tuple_key)
+        if self.call_mode == 'counter':
+            val = val[1]
+
+        self._cache(tuple_key, val)
+        return val
+
+
+    def _cache(self, key, val):
+        """
+        Request that a key/value pair be considered for caching.
+        """
+        if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
+            return
+        if len(self) >= self.cache_size:
+            first_key = self.data.iterkeys().next()
+            self.data.pop(first_key)
+        self.data[key] = val
+
+
+    def next(self):
+        """
+        Interface for 'open' mode. For generators, this simply calls the
+        next() method. For callables callback, the counter is supplied
+        as a single argument.
+        """
+        if self.mode == 'closed':
+            raise Exception("The next() method should only be called in "
+                            "one of the open modes.")
+
+        args = () if self.call_mode == 'generator' else (self.counter,)
+        retval = self._execute_callback(*args)
+
+        (key, val) = (retval if isinstance(retval, tuple)
+                      else (self.counter, retval))
+
+        key = util.wrap_tuple(key)
+        if len(key) != len(self.key_dimensions):
+            raise Exception("Generated key does not match the number of key dimensions")
+
+        self._cache(key, val)
+        self.counter += 1
+        return val
+
 
 
 
@@ -313,9 +567,6 @@ class GridSpace(UniformNdMapping):
     two-dimensional space may have to arbitrary dimensions, e.g. for
     2D parameter spaces.
     """
-
-    # NOTE: If further composite types supporting Overlaying and Layout these
-    #       classes may be moved to core/composite.py
 
     kdims = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
                        bounds=(1,2))
@@ -361,7 +612,7 @@ class GridSpace(UniformNdMapping):
         ndims = self.ndims
         if all(not isinstance(el, slice) for el in key):
             dim_inds = []
-            for dim in self._cached_index_names:
+            for dim in self.kdims:
                 dim_type = self.get_dimension_type(dim)
                 if isinstance(dim_type, type) and issubclass(dim_type, Number):
                     dim_inds.append(self.get_dimension_index(dim))
@@ -440,3 +691,23 @@ class GridSpace(UniformNdMapping):
         if self.ndims == 1:
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
+
+
+
+class GridMatrix(GridSpace):
+    """
+    GridMatrix is container type for heterogeneous Element types
+    laid out in a grid. Unlike a GridSpace the axes of the Grid
+    must not represent an actual coordinate space, but may be used
+    to plot various dimensions against each other. The GridMatrix
+    is usually constructed using the gridmatrix operation, which
+    will generate a GridMatrix plotting each dimension in an
+    Element against each other.
+    """
+
+
+    def _item_check(self, dim_vals, data):
+        if not traversal.uniform(NdMapping([(0, self), (1, data)])):
+            raise ValueError("HoloMaps dimensions must be consistent in %s." %
+                             type(self).__name__)
+        NdMapping._item_check(self, dim_vals, data)

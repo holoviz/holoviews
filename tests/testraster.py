@@ -3,7 +3,7 @@ Unit tests of Raster elements
 """
 
 import numpy as np
-from holoviews.element import Raster, Image
+from holoviews.element import Raster, Image, Curve
 from holoviews.element.comparison import ComparisonTestCase
 
 class TestRaster(ComparisonTestCase):
@@ -29,10 +29,12 @@ class TestRaster(ComparisonTestCase):
 
     def test_raster_sample(self):
         raster = Raster(self.array1)
-        self.assertEqual(raster.sample(y=0).data,
-                         np.array([(0, 0), (1, 1), (2, 2)]))
+        self.assertEqual(raster.sample(y=0),
+                         Curve(np.array([(0, 0), (1, 1), (2, 2)]),
+                               kdims=['x'], vdims=['z']))
 
     def test_image_sample(self):
         image = Image(self.array1)
-        self.assertEqual(image.sample(y=0.25).data,
-                         np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]))
+        self.assertEqual(image.sample(y=0.25),
+                         Curve(np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]),
+                               kdims=['x'], vdims=['z']))

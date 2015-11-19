@@ -1,25 +1,28 @@
+import warnings
+from operator import itemgetter
 from itertools import product
 import numpy as np
 import colorsys
 import param
 
 from ..core import util
-from ..core import OrderedDict, Dimension, NdMapping, Element2D, Overlay, Element
+from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
+from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
+                    Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges
-
+from .util import compute_edges, toarray
 
 class Raster(Element2D):
     """
-    Raster is a basic 2D element type for presenting numpy arrays as
-    two dimensional raster images.
+    Raster is a basic 2D element type for presenting either numpy or
+    dask arrays as two dimensional raster images.
 
-     Arrays with a shape of (N,M) are valid inputs for Raster wheras
-     subclasses of Raster (e.g. RGB) may also accept 3D arrays
-     containing channel information.
+    Arrays with a shape of (N,M) are valid inputs for Raster wheras
+    subclasses of Raster (e.g. RGB) may also accept 3D arrays
+    containing channel information.
 
     Raster does not support slicing like the Image or RGB subclasses
     and the extents are in matrix coordinates if not explicitly
@@ -49,13 +52,14 @@ class Raster(Element2D):
 
 
     def __getitem__(self, slices):
+        if slices in self.dimensions(): return self.dimension_values(slices)
         if not isinstance(slices, tuple): slices = (slices, slice(None))
         slc_types = [isinstance(sl, slice) for sl in slices]
         data = self.data.__getitem__(slices[::-1])
         if all(slc_types):
             return self.clone(data, extents=None)
         elif not any(slc_types):
-            return data
+            return toarray(data, index_value=True)
         else:
             return self.clone(np.expand_dims(data, axis=slc_types.index(True)),
                               extents=None)
@@ -66,7 +70,7 @@ class Raster(Element2D):
 
 
     @classmethod
-    def collapse_data(cls, data_list, function, **kwargs):
+    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
         if isinstance(function, np.ufunc):
             return function.reduce(data_list)
         else:
@@ -94,9 +98,8 @@ class Raster(Element2D):
                 samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
-            table_data = OrderedDict()
-            for c in samples:
-                table_data[c] = self._zdata[self._coord2matrix(c)]
+            table_data = [c+(self._zdata[self._coord2matrix(c)],)
+                          for c in samples]
             params['kdims'] = self.kdims
             return Table(table_data, **params)
         else:
@@ -133,18 +136,17 @@ class Raster(Element2D):
         Optionally a label_prefix can be provided to prepend to
         the result Element label.
         """
-        reduce_map = self._reduce_map(dimensions, function, reduce_map)
-        if len(reduce_map) == self.ndims:
-            reduced_view = self
-            for dim, reduce_fn in reduce_map.items():
-                reduced_view = reduced_view.reduce(**{dim: reduce_fn})
-            return reduced_view
+        function, dims = self._reduce_map(dimensions, function, reduce_map)
+        if len(dims) == self.ndims:
+            if isinstance(function, np.ufunc):
+                return function.reduce(self.data, axis=None)
+            else:
+                return function(self.data)
         else:
-            dimension, reduce_fn = list(reduce_map.items())[0]
+            dimension = dims[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
-            if oidx: x_vals = np.sort(x_vals)
             reduced = reduce_fn(self._zdata, axis=oidx)
             data = zip(x_vals, reduced if not oidx else reduced[::-1])
             params = dict(dict(self.get_param_values(onlychanged=True)),
@@ -159,15 +161,15 @@ class Raster(Element2D):
         The set of samples available along a particular dimension.
         """
         dim_idx = self.get_dimension_index(dim)
-        if dim_idx in [0, 1]:
-            shape = self.data.shape[abs(dim_idx)]
-            dim_max = self.data.shape[abs(dim_idx-1)]
-            coords = list(range(0, dim_max))
-            if not unique:
-                coords = coords * shape
-            return coords if dim_idx else sorted(coords)
+        if unique and dim_idx == 0:
+            return np.array(range(self.data.shape[1]))
+        elif unique and dim_idx == 1:
+            return np.array(range(self.data.shape[0]))
+        elif dim_idx in [0, 1]:
+            D1, D2 = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]]
+            return D1.flatten() if dim_idx == 0 else D2.flatten()
         elif dim_idx == 2:
-            return self.data.T.flatten()
+            return toarray(self.data.T).flatten()
         else:
             return super(Raster, self).dimension_values(dim)
 
@@ -254,6 +256,7 @@ class QuadMesh(Raster):
 
 
     def __getitem__(self, slices):
+        if slices in self.dimensions(): return self.dimension_values(key)
         if not self._grid:
             raise IndexError("Indexing of non-grid based QuadMesh"
                              "currently not supported")
@@ -286,7 +289,7 @@ class QuadMesh(Raster):
 
 
     @classmethod
-    def collapse_data(cls, data_list, function, **kwargs):
+    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
         """
         Allows collapsing the data of a number of QuadMesh
         Elements with a function.
@@ -337,7 +340,7 @@ class QuadMesh(Raster):
 
 
 
-class HeatMap(Raster):
+class HeatMap(Columns, Element2D):
     """
     HeatMap is an atomic Element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -350,77 +353,75 @@ class HeatMap(Raster):
 
     group = param.String(default='HeatMap', constant=True)
 
+    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+
+    vdims = param.List(default=[Dimension('z')])
+
     def __init__(self, data, extents=None, **params):
-        self._data, array, dimensions = self._process_data(data, params)
-        super(HeatMap, self).__init__(array, **dict(params, **dimensions))
-
-
-    def _process_data(self, data, params):
-        dimensions = {group: params.get(group, getattr(self, group))
-                      for group in self._dim_groups[:2]}
-        if isinstance(data, NdMapping):
-            if 'kdims' not in params:
-                dimensions['kdims'] = data.kdims
-            if 'vdims' not in params:
-                dimensions['vdims'] = data.vdims
-        elif isinstance(data, (dict, OrderedDict, type(None))):
-            data = NdMapping(data, **dimensions)
-        elif isinstance(data, Element):
-            data = data.table()
-            if not data.ndims == 2:
-                raise TypeError('HeatMap conversion requires 2 key dimensions')
+        super(HeatMap, self).__init__(data, **params)
+        data, self.raster = self._compute_raster()
+        self.data = data.data
+        self.interface = data.interface
+        self.depth = 1
+        if extents is None:
+            (d1, d2) = self.raster.shape[:2]
+            self.extents = (0, 0, d2, d1)
         else:
-            raise TypeError('HeatMap only accepts dict or NdMapping types.')
-
-        keys = list(data.keys())
-        dim1_keys = NdMapping([(k[0], None) for k in keys],
-                              kdims=[self.kdims[0]]).keys()
-        dim2_keys = NdMapping([(k[1], None) for k in keys],
-                              kdims=[self.kdims[1]]).keys()
-        grid_keys = [((i1, d1), (i2, d2)) for i1, d1 in enumerate(dim1_keys)
-                     for i2, d2 in enumerate(dim2_keys)]
-
-        array = np.zeros((len(dim2_keys), len(dim1_keys)))
-        for (i1, d1), (i2, d2) in grid_keys:
-            val = data.get((d1, d2), np.NaN)
-            array[len(dim2_keys)-i2-1, i1] = val[0] if isinstance(val, tuple) else val
-
-        return data, array, dimensions
+            self.extents = extents
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
-        if not data and shared_data:
-            data = self._data
-        return super(HeatMap, self).clone(data, shared_data)
+    def _compute_raster(self):
+        d1keys = self.dimension_values(0, True)
+        d2keys = self.dimension_values(1, True)
+        coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
+        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=['dictionary'])
+        concat_data = self.interface.concatenate([Columns(self), dense_data], datatype='dictionary')
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'Mean of empty slice')
+            data = concat_data.aggregate(self.kdims, np.nanmean).sort()
+        array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
+        return data, np.flipud(array.T)
 
 
-    def __getitem__(self, coords):
-        """
-        Slice the underlying NdMapping.
-        """
-        return self.clone(self._data.select(**dict(zip(self._data._cached_index_names, coords))))
+    def __setstate__(self, state):
+        if '_data' in state:
+            data = state['_data']
+            if isinstance(data, NdMapping):
+                items = [tuple(k)+((v,) if np.isscalar(v) else tuple(v))
+                         for k, v in data.items()]
+                kdims = state['kdims'] if 'kdims' in state else self.kdims
+                vdims = state['vdims'] if 'vdims' in state else self.vdims
+                data = Columns(items, kdims=kdims, vdims=vdims).data
+            elif isinstance(data, Columns):
+                data = data.data
+                kdims = data.kdims
+                vdims = data.vdims
+            state['data'] = data
+            state['kdims'] = kdims
+            state['vdims'] = vdims
+        self.__dict__ = state
+
+        if isinstance(self.data, NdElement):
+            self.interface = NdColumns
+        elif isinstance(self.data, np.ndarray):
+            self.interface = ArrayColumns
+        elif util.is_dataframe(self.data):
+            self.interface = DFColumns
+        elif isinstance(self.data, dict):
+            self.interface = DictColumns
+        self.depth = 1
+        data, self.raster = self._compute_raster()
+        self.interface = data.interface
+        self.data = data.data
+        if 'extents' not in state:
+            (d1, d2) = self.raster.shape[:2]
+            self.extents = (0, 0, d2, d1)
 
 
     def dense_keys(self):
-        keys = list(self._data.keys())
-        dim1_keys = NdMapping([(k[0], None) for k in keys],
-                              kdims=[self.kdims[0]]).keys()
-        dim2_keys = NdMapping([(k[1], None) for k in keys],
-                              kdims=[self.kdims[1]]).keys()
-        return dim1_keys, dim2_keys
-
-
-    def dimension_values(self, dim, unique=True):
-        dim = self.get_dimension(dim).name
-        if dim in self._cached_index_names:
-            idx = self.get_dimension_index(dim)
-            return [k[idx] for k in self._data.keys()]
-        elif dim in self._cached_value_names:
-            idx = self._cached_value_names.index(dim)
-            return [v[idx] if isinstance(v, tuple) else v
-                    for v in self._data.values()]
-        else:
-            return super(HeatMap, self).dimension_values(dim)
+        d1keys = self.dimension_values(0, True)
+        d2keys = self.dimension_values(1, True)
+        return list(zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys]))
 
 
     def dframe(self, dense=False):
@@ -484,22 +485,49 @@ class Image(SheetCoordinateSystem, Raster):
             return super(Image, self)._convert_element(data)
 
 
-    def closest(self, coords):
+    def closest(self, coords=[], **kwargs):
         """
-        Given a single coordinate tuple (or list of coordinates)
-        return the coordinate (or coordinatess) needed to address the
-        corresponding Image exactly.
+        Given a single coordinate or multiple coordinates as
+        a tuple or list of tuples or keyword arguments matching
+        the dimension closest will find the closest actual x/y
+        coordinates.
         """
-        if isinstance(coords, tuple):
-            return self.closest_cell_center(*coords)
+        if kwargs and coords:
+            raise ValueError("Specify coordinate using as either a list "
+                             "keyword arguments not both")
+        if kwargs:
+            coords = []
+            getter = []
+            for k, v in kwargs.items():
+                idx = self.get_dimension_index(k)
+                if np.isscalar(v):
+                    coords.append((0, v) if idx else (v, 0))
+                else:
+                    if isinstance(coords, tuple):
+                        coords = [(0, c) if idx else (c, 0) for c in v]
+                    if len(coords) not in [0, len(v)]:
+                        raise ValueError("Length of samples must match")
+                    elif len(coords):
+                        coords = [(t[abs(idx-1)], c) if idx else (c, t[abs(idx-1)])
+                                  for c, t in zip(v, coords)]
+                getter.append(idx)
         else:
-            return [self.closest_cell_center(*el) for el in coords]
+            getter = [0, 1]
+        getter = itemgetter(*sorted(getter))
+        coords = list(coords)
+        if len(coords) == 1:
+            coords = coords[0]
+        if isinstance(coords, tuple):
+            return getter(self.closest_cell_center(*coords))
+        else:
+            return [getter(self.closest_cell_center(*el)) for el in coords]
 
 
     def __getitem__(self, coords):
         """
         Slice the underlying numpy array in sheet coordinates.
         """
+        if coords in self.dimensions(): return self.dimension_values(coords)
         if coords is () or coords == slice(None, None):
             return self
 
@@ -528,15 +556,19 @@ class Image(SheetCoordinateSystem, Raster):
         elif dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
             if dim_idx:
-                data_range = (b, t)
+                drange = (b, t)
             else:
-                data_range = (l, r)
+                drange = (l, r)
         elif dim_idx < len(self.vdims) + 2:
             dim_idx -= 2
             data = np.atleast_3d(self.data)[:, :, dim_idx]
-            data_range = (np.nanmin(data), np.nanmax(data))
+            drange = (np.nanmin(data), np.nanmax(data))
         if data_range:
-            return util.max_range([data_range, dim.soft_range])
+            soft_range = [r for r in dim.soft_range if r is not None]
+            if soft_range:
+                return util.max_range([drange, soft_range])
+            else:
+                return drange
         else:
             return dim.soft_range
 
@@ -552,7 +584,7 @@ class Image(SheetCoordinateSystem, Raster):
         dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
-            dim2, dim1 = self.data.shape
+            dim2, dim1 = self.data.shape[:2]
             d1_half_unit = (r - l)/dim1/2.
             d2_half_unit = (t - b)/dim2/2.
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
@@ -690,6 +722,7 @@ class RGB(Image):
         """
         Slice the underlying numpy array in sheet coordinates.
         """
+        if coords in self.dimensions(): return self.dimension_values(coords)
         if not isinstance(coords, slice) and len(coords) > self.ndims:
             value = coords[self.ndims:]
             if len(value) > 1:

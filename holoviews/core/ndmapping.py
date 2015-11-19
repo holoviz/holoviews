@@ -114,8 +114,10 @@ class MultiDimensionalMapping(Dimensioned):
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif not self._check_items and self._instantiated:
-            if isinstance(initial_items, (dict, MultiDimensionalMapping)):
+            if isinstance(initial_items, dict):
                 initial_items = initial_items.items()
+            elif isinstance(initial_items, MultiDimensionalMapping):
+                initial_items = initial_items.data.items()
             self.data = OrderedDict((k if isinstance(k, tuple) else (k,), v)
                                     for k, v in initial_items)
             self._resort()
@@ -159,19 +161,19 @@ class MultiDimensionalMapping(Dimensioned):
 
         # Check and validate for categorical dimensions
         if self._cached_categorical:
-            valid_vals = zip(self._cached_index_names, dim_vals)
+            valid_vals = zip(self.kdims, dim_vals)
         else:
             valid_vals = []
 
         for dim, val in valid_vals:
-            vals = self._cached_index_values[dim]
-            if vals == 'initial': self._cached_index_values[dim] = []
+            vals = self._cached_index_values[dim.name]
+            if vals == 'initial': self._cached_index_values[dim.name] = []
             if not self._instantiated and self.get_dimension(dim).values == 'initial':
                 if val not in vals:
-                    self._cached_index_values[dim].append(val)
+                    self._cached_index_values[dim.name].append(val)
             elif vals and val not in vals:
-                raise KeyError('%s Dimension value %s not in'
-                               ' specified Dimension values.' % (dim, repr(val)))
+                raise KeyError('%s dimension value %s not in'
+                               ' specified dimension values.' % (dim, repr(val)))
 
         # Updates nested data structures rather than simply overriding them.
         if ((dim_vals in self.data)
@@ -247,8 +249,9 @@ class MultiDimensionalMapping(Dimensioned):
 
     def _resort(self):
         if self._sorted:
-            resorted = dimension_sort(self.data, self.kdims,
+            resorted = dimension_sort(self.data, self.kdims, self.vdims,
                                       self._cached_categorical,
+                                      range(self.ndims),
                                       self._cached_index_values)
             self.data = OrderedDict(resorted)
 
@@ -273,6 +276,7 @@ class MultiDimensionalMapping(Dimensioned):
             self.warning('Cannot split Map with only one dimension.')
             return self
 
+        dimensions = [self.get_dimension(d).name for d in dimensions]
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
         dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
@@ -283,40 +287,57 @@ class MultiDimensionalMapping(Dimensioned):
                                   for key in self.data.keys())
         with item_check(False):
             selects = group_select(list(selects))
-            groups = [(k, group_type(v.reindex(inames), **kwargs))
+            groups = [(k, group_type((v.reindex(inames) if isinstance(v, NdMapping)
+                                      else [((), (v,))]), **kwargs))
                       for k, v in iterative_select(self, dimensions, selects)]
             return container_type(groups, kdims=dims)
 
 
-    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """
         Create a new object with an additional key dimensions.
         Requires the dimension name or object, the desired position
         in the key dimensions and a key value scalar or sequence of
         the same length as the existing keys.
         """
-        if isinstance(dimension, str):
+        if not isinstance(dimension, Dimension):
             dimension = Dimension(dimension)
 
-        if dimension.name in self._cached_index_names:
+        if dimension in self.dimensions():
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
 
-        dimensions = self.kdims[:]
-        dimensions.insert(dim_pos, dimension)
+        if vdim and self._deep_indexable:
+            raise Exception('Cannot add value dimension to object that is deep indexable')
 
-        if isinstance(dim_val, list) and not len(dim_val) == len(self):
-            raise ValueError("Added dimension values must be same length"
-                             "as existing keys.")
+        if vdim:
+            dims = self.vdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(vdims=dims)
+            dim_pos += self.ndims
         else:
+            dims = self.kdims[:]
+            dims.insert(dim_pos, dimension)
+            dimensions = dict(kdims=dims)
+
+        if np.isscalar(dim_val):
             dim_val = cycle([dim_val])
+        else:
+            if not len(dim_val) == len(self):
+                raise ValueError("Added dimension values must be same length"
+                                 "as existing keys.")
 
         items = OrderedDict()
         for dval, (key, val) in zip(dim_val, self.data.items()):
-            new_key = list(key)
-            new_key.insert(dim_pos, dval)
-            items[tuple(new_key)] = val
+            if vdim:
+                new_val = list(val)
+                new_val.insert(dim_pos, dval)
+                items[key] = tuple(new_val)
+            else:
+                new_key = list(key)
+                new_key.insert(dim_pos, dval)
+                items[tuple(new_key)] = val
 
-        return self.clone(items, kdims=dimensions, **kwargs)
+        return self.clone(items, **dict(dimensions, **kwargs))
 
 
     def drop_dimension(self, dimensions):
@@ -324,9 +345,8 @@ class MultiDimensionalMapping(Dimensioned):
         Returns a new mapping with the named dimension(s) removed.
         """
         dimensions = [dimensions] if np.isscalar(dimensions) else dimensions
-        dim_labels = [d for d in self._cached_index_names if d not in dimensions]
-        dim_inds = [self.get_dimension_index(d) for d in dim_labels]
-        dims = [self.get_dimension(d) for d in dim_labels]
+        dims = [d for d in self.kdims if d not in dimensions]
+        dim_inds = [self.get_dimension_index(d) for d in dims]
         key_getter = itemgetter(*dim_inds)
         return self.clone([(key_getter(k), v) for k, v in self.data.items()],
                           kdims=dims)
@@ -335,8 +355,8 @@ class MultiDimensionalMapping(Dimensioned):
     def dimension_values(self, dimension):
         "Returns the values along the specified dimension."
         dimension = self.get_dimension(dimension).name
-        if dimension in self._cached_index_names:
-            return [k[self.get_dimension_index(dimension)] for k in self.data.keys()]
+        if dimension in self.kdims:
+            return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
         if dimension in self.dimensions(label=True):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
@@ -355,15 +375,16 @@ class MultiDimensionalMapping(Dimensioned):
         created object as the new labels must be sufficient to address
         each value uniquely.
         """
+        old_kdims = [d.name for d in self.kdims]
         if not len(kdims):
-            kdims = [d for d in self._cached_index_names
+            kdims = [d for d in old_kdims
                      if not len(set(self.dimension_values(d))) == 1]
         indices = [self.get_dimension_index(el) for el in kdims]
 
         keys = [tuple(k[i] for i in indices) for k in self.data.keys()]
         reindexed_items = OrderedDict(
             (k, v) for (k, v) in zip(keys, self.data.values()))
-        reduced_dims = set(self._cached_index_names).difference(kdims)
+        reduced_dims = set([d.name for d in self.kdims]).difference(kdims)
         dimensions = [self.get_dimension(d) for d in kdims
                       if d not in reduced_dims]
 
@@ -417,19 +438,17 @@ class MultiDimensionalMapping(Dimensioned):
         print(info_str)
 
 
-    def table(self, **kwargs):
+    def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
 
-        table = None
+        datatype = ['ndelement', 'dataframe']
+        tables = []
         for key, value in self.data.items():
-            value = value.table(**kwargs)
+            value = value.table(datatype=datatype, **kwargs)
             for idx, (dim, val) in enumerate(zip(self.kdims, key)):
                 value = value.add_dimension(dim, idx, val)
-            if table is None:
-                table = value
-            else:
-                table.update(value)
-        return table
+            tables.append(value)
+        return value.interface.concatenate(tables)
 
 
     def dframe(self):
@@ -438,7 +457,7 @@ class MultiDimensionalMapping(Dimensioned):
             import pandas
         except ImportError:
             raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self._cached_index_names + [self.group]
+        labels = self.dimensions('key', True) + [self.group]
         return pandas.DataFrame(
             [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
@@ -451,8 +470,7 @@ class MultiDimensionalMapping(Dimensioned):
         unchanged after the update.
         """
         if isinstance(other, NdMapping):
-            dims = [d for d in other._cached_index_names
-                    if d not in self._cached_index_names]
+            dims = [d for d in other.kdims if d not in self.kdims]
             if len(dims) == other.ndims:
                 raise KeyError("Cannot update with NdMapping that has"
                                " a different set of key dimensions.")
@@ -556,6 +574,11 @@ class NdMapping(MultiDimensionalMapping):
         """
         if indexslice in [Ellipsis, ()]:
             return self
+        elif isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+            if not len(indexslice) == len(self):
+                raise IndexError("Boolean index must match length of sliced object")
+            selection = zip(indexslice, self.data.items())
+            return self.clone([item for c, item in selection if c])
 
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)
@@ -569,12 +592,17 @@ class NdMapping(MultiDimensionalMapping):
             for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims)):
                 values = self._cached_index_values.get(dim.name, None)
                 items = [(k, v) for k, v in items
-                         if condition(values.index(k[cidx]) if values else k[cidx])]
-            items = [(k, self._dataslice(v, data_slice)) for k, v in items]
-            if len(items) == 0:
+                         if condition(values.index(k[cidx])
+                                      if values else k[cidx])]
+            sliced_items = []
+            for k, v in items:
+                val_slice = self._dataslice(v, data_slice)
+                if val_slice or isinstance(val_slice, tuple):
+                    sliced_items.append((k, val_slice))
+            if len(sliced_items) == 0:
                 raise KeyError('No items within specified slice.')
             with item_check(False):
-                return self.clone(items)
+                return self.clone(sliced_items)
 
 
     def _expand_slice(self, indices):
@@ -805,7 +833,7 @@ class UniformNdMapping(NdMapping):
         dframes = []
         for key, view in self.data.items():
             view_frame = view.dframe()
-            key_dims = reversed(list(zip(key, self._cached_index_names)))
+            key_dims = reversed(list(zip(key, self.dimensions('key', True))))
             for val, dim in key_dims:
                 dimn = 1
                 while dim in view_frame:

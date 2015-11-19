@@ -16,8 +16,9 @@ from ..core.element import Element
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
-from ..core.spaces import HoloMap
+from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table, Annotation
+from .util import get_dynamic_interval
 
 
 class Plot(param.Parameterized):
@@ -146,7 +147,7 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, **params):
+                 style=None, subplots=None, dynamic=False, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -155,12 +156,14 @@ class DimensionedPlot(Plot):
         self.subplot = subplot
         self.keys = keys
         self.uniform = uniform
+        self.dynamic = dynamic
         self.drawn = False
         self.handles = {}
         self.group = None
         self.label = None
         self.current_frame = None
         self.current_key = None
+        self.ranges = {}
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -170,10 +173,12 @@ class DimensionedPlot(Plot):
         """
         Get the state of the Plot for a given frame number.
         """
-        if frame > len(self):
+        if not self.dynamic == 'open' and isinstance(frame, int) and frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
-        self.update_frame(self.keys[frame])
+        if not self.dynamic == 'open' and not isinstance(frame, tuple):
+            frame = self.keys[frame]
+        self.update_frame(frame)
         return self.state
 
 
@@ -185,14 +190,50 @@ class DimensionedPlot(Plot):
         pass
 
 
+    def matches(self, spec):
+        """
+        Matches a specification against the current Plot.
+        """
+        if callable(spec) and not isinstance(spec, type): return spec(self)
+        elif isinstance(spec, type): return isinstance(self, spec)
+        else:
+            raise ValueError("Matching specs have to be either a type or a callable.")
+
+
+    def traverse(self, fn=None, specs=None, full_breadth=True):
+        """
+        Traverses any nested DimensionedPlot returning a list
+        of all plots that match the specs. The specs should
+        be supplied as a list of either Plot types or callables,
+        which should return a boolean given the plot class.
+        """
+        accumulator = []
+        matches = specs is None
+        if not matches:
+            for spec in specs:
+                matches = self.matches(spec)
+                if matches: break
+        if matches:
+            accumulator.append(fn(self) if fn else self)
+
+        # Assumes composite objects are iterables
+        if hasattr(self, 'subplots') and self.subplots:
+            for el in self.subplots.values():
+                accumulator += el.traverse(fn, specs, full_breadth)
+                if not full_breadth: break
+        return accumulator
+
+
     def _frame_title(self, key, group_size=2, separator='\n'):
         """
         Returns the formatted dimension group strings
         for a particular frame.
         """
+        if self.dynamic == 'open' and self.current_key:
+            key = self.current_key
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.uniform or len(self) == 1 or self.subplot:
+        elif not self.dynamic and (not self.uniform or len(self) == 1 or self.subplot):
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
@@ -231,7 +272,7 @@ class DimensionedPlot(Plot):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = {} if ranges is None else dict(ranges)
+        ranges = self.ranges if ranges is None else dict(ranges)
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -243,15 +284,21 @@ class DimensionedPlot(Plot):
         elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
-            if group in ranges:
-                continue # Skip if ranges are already computed
+            elements = []
+            # Skip if ranges are cached or already computed by a
+            # higher-level container object.
+            framewise = framewise or self.dynamic
+            if group in ranges and (not framewise or ranges is not self.ranges):
+                continue
             elif not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
-                elements = self._get_frame(key).traverse(return_fn, [group])
+                frame = self._get_frame(key)
+                elements = [] if frame is None else frame.traverse(return_fn, [group])
             if not axiswise or ((not framewise or len(elements) == 1)
                                 and isinstance(obj, HoloMap)): # Compute new ranges
                 self._compute_group_range(group, elements, ranges)
+        self.ranges.update(ranges)
         return ranges
 
 
@@ -357,11 +404,14 @@ class GenericElementPlot(DimensionedPlot):
         Whether to apply extent overrides on the Elements""")
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
-                 overlaid=0, cyclic_index=0, zorder=0, style=None, **params):
+                 overlaid=0, cyclic_index=0, zorder=0, style=None, overlay_dims={},
+                 **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
-        if not isinstance(element, HoloMap):
+        self.overlay_dims = overlay_dims
+        dynamic = element.mode if isinstance(element, DynamicMap) else None
+        if not isinstance(element, (HoloMap, DynamicMap)):
             self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
         else:
@@ -371,11 +421,28 @@ class GenericElementPlot(DimensionedPlot):
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                                 dynamic=dynamic,
                                                  **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
-        if isinstance(key, int):
+        if self.dynamic:
+            if isinstance(key, tuple):
+                frame = self.hmap[key]
+            elif key < self.hmap.counter:
+                key = self.hmap.keys()[key]
+                frame = self.hmap[key]
+            elif key >= self.hmap.counter:
+                frame = next(self.hmap)
+                key = self.hmap.keys()[-1]
+            if not isinstance(key, tuple): key = (key,)
+            if not key in self.keys:
+                self.keys.append(key)
+            self.current_frame = frame
+            self.current_key = key
+            return frame
+
+        if not self.dynamic and isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
         if key == self.current_key:
@@ -398,7 +465,7 @@ class GenericElementPlot(DimensionedPlot):
         else:
             select = dict(zip(self.hmap.dimensions('key', label=True), key))
         try:
-            selection = self.hmap.select((HoloMap,), **select)
+            selection = self.hmap.select((HoloMap, DynamicMap), **select)
         except KeyError:
             selection = None
         selection = selection.last if isinstance(selection, HoloMap) else selection
@@ -580,8 +647,12 @@ class GenericOverlayPlot(GenericElementPlot):
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
+
+            opts = {}
+            if overlay_type == 2:
+                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
-            plotopts = dict(keys=self.keys, style=style, cyclic_index=cyclic_index,
+            plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
@@ -641,6 +712,8 @@ class GenericCompositePlot(DimensionedPlot):
         Element.
         """
         layout_frame = self.layout.clone(shared_data=False)
+        keyisint = isinstance(key, int)
+        if not isinstance(key, tuple): key = (key,)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
         if key == self.current_key:
@@ -649,7 +722,17 @@ class GenericCompositePlot(DimensionedPlot):
             self.current_key = key
 
         for path, item in self.layout.items():
-            if self.uniform:
+            if self.dynamic == 'open':
+                if keyisint:
+                    counts = item.traverse(lambda x: x.counter, (DynamicMap,))
+                    if key[0] >= counts[0]:
+                        item.traverse(lambda x: next(x), (DynamicMap,))
+                    dim_keys = item.traverse(nthkey_fn, (DynamicMap,))[0]
+                else:
+                    dim_keys = zip([d.name for d in self.dimensions
+                                    if d in item.dimensions('key')], key)
+                self.current_key = tuple(k[1] for k in dim_keys)
+            elif self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
             else:
@@ -707,8 +790,10 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
+        dynamic = get_dynamic_interval(layout)
         dimensions, keys = traversal.unique_dimkeys(layout)
+        uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                             uniform=traversal.uniform(layout),
-                                             **dict(plotopts, **params))
+                                                uniform=uniform, dynamic=dynamic,
+                                                **dict(plotopts, **params))

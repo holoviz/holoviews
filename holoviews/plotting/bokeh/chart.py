@@ -1,5 +1,5 @@
 import numpy as np
-
+from bokeh.models import Circle
 import param
 
 from ...core import Dimension
@@ -8,7 +8,7 @@ from ...element import Chart, Raster, Points, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import map_colors, get_cmap
+from .util import map_colors, get_cmap, mpl_to_bokeh
 
 
 class PointPlot(ElementPlot):
@@ -34,7 +34,8 @@ class PointPlot(ElementPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color',
+                   'unselected_color'] +
                   line_properties + fill_properties)
 
     _plot_method = 'scatter'
@@ -49,23 +50,45 @@ class PointPlot(ElementPlot):
 
         cmap = style.get('palette', style.get('cmap', None))
         if self.color_index < len(dims) and cmap:
-            mapping['color'] = 'color'
+            map_key = 'color_' + dims[self.color_index]
+            mapping['color'] = map_key
             cmap = get_cmap(cmap)
-            colors = element.data[:, self.color_index]
+            colors = element.dimension_values(self.color_index)
             crange = ranges.get(dims[self.color_index], None)
-            data['color'] = map_colors(colors, crange, cmap)
+            data[map_key] = map_colors(colors, crange, cmap)
         if self.size_index < len(dims):
-            mapping['size'] = 'size'
+            map_key = 'size_' + dims[self.size_index]
+            mapping['size'] = map_key
             ms = style.get('size', 1)
-            sizes = element.data[:, self.size_index]
-            data['size'] = compute_sizes(sizes, self.size_fn,
-                                         self.scaling_factor, ms)
-        data[dims[0]] = element.data[:, 0]
-        data[dims[1]] = element.data[:, 1]
+            sizes = element.dimension_values(self.size_index)
+            data[map_key] = compute_sizes(sizes, self.size_fn,
+                                          self.scaling_factor, ms)
+        data[dims[0]] = element.dimension_values(0)
+        data[dims[1]] = element.dimension_values(1)
         if 'hover' in self.tools:
             for d in dims[2:]:
                 data[d] = element.dimension_values(d)
         return data, mapping
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties = mpl_to_bokeh(properties)
+        unselect_color = properties.pop('unselected_color', None)
+        if (any(t in self.tools for t in ['box_select', 'lasso_select'])
+            and unselect_color is not None):
+            source = properties.pop('source')
+            color = properties.pop('color', None)
+            color = mapping.pop('color', color)
+            properties.pop('legend', None)
+            unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
+            selected = Circle(**dict(properties, fill_color=color, **mapping))
+            plot.add_glyph(source, selected, selection_glyph=selected,
+                           nonselection_glyph=unselected)
+        else:
+            getattr(plot, self._plot_method)(**dict(properties, **mapping))
 
 
 
@@ -75,8 +98,11 @@ class CurvePlot(ElementPlot):
     _plot_method = 'line'
 
     def get_data(self, element, ranges=None):
-        return (dict(x=element.data[:, 0], y=element.data[:, 1]),
-                dict(x='x', y='y'))
+        x = element.get_dimension(0).name
+        y = element.get_dimension(1).name
+        return ({x: element.dimension_values(0),
+                 y: element.dimension_values(1)},
+                dict(x=x, y=y))
 
 
 class SpreadPlot(PolygonPlot):
@@ -87,9 +113,16 @@ class SpreadPlot(PolygonPlot):
         super(SpreadPlot, self).__init__(*args, **kwargs)
 
     def get_data(self, element, ranges=None):
-        lower = element.data[:, 1] - element.data[:, 2]
-        upper = element.data[:, 1] + element.data[:, 3]
-        band_x = np.append(element.data[:, 0], element.data[::-1, 0])
+
+        xvals = element.dimension_values(0)
+        mean = element.dimension_values(1)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+
+        lower = mean - neg_error
+        upper = mean + pos_error
+        band_x = np.append(xvals, xvals[::-1])
         band_y = np.append(lower, upper[::-1])
         return dict(xs=[band_x], ys=[band_y]), self._mapping
 
@@ -153,10 +186,16 @@ class ErrorPlot(PathPlot):
     style_opts = ['color'] + line_properties
 
     def get_data(self, element, ranges=None):
-        data = element.data
+        data = element.array(dimensions=element.dimensions()[0:4])
         err_xs = []
         err_ys = []
-        for x, y, neg, pos in data:
+        for row in data:
+            x, y = row[0:2]
+            if len(row) > 3:
+                neg, pos = row[2:]
+            else:
+                neg, pos = row[2], row[2]
+
             if self.horizontal:
                 err_xs.append((x - neg, x + pos))
                 err_ys.append((y, y))

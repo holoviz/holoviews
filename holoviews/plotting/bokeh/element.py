@@ -19,7 +19,7 @@ from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .callbacks import Callbacks
 from .plot import BokehPlot
-from .util import mpl_to_bokeh
+from .util import mpl_to_bokeh, convert_datetime
 
 
 # Define shared style properties for bokeh plots
@@ -91,12 +91,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         A list of plugin tools to use on the plot.""")
 
     xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom',
-                                          'bare', 'top-bare',
-                                          'bottom-bare',
-                                          None], doc="""
-        Whether and where to display the xaxis, bare options allow
-        suppressing all axis labels including ticks and xlabel.""")
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -110,12 +109,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         bokeh ticking behavior is applied.""")
 
     yaxis = param.ObjectSelector(default='left',
-                                 objects=['left', 'right', 'bare',
-                                          'left-bare', 'right-bare',
-                                          None],
-                                 doc="""
-        Whether and where to display the yaxis, bare options allow
-        suppressing all axis labels including ticks and ylabel.""")
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
@@ -131,6 +129,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # A string corresponding to the glyph being drawn by the
     # ElementPlot
     _plot_method = None
+
+    # The plot objects to be updated on each frame
+    # Any entries should be existing keys in the handles
+    # instance attribute.
+    _update_handles = ['source', 'glyph']
 
     def __init__(self, element, plot=None, invert_axes=False,
                  show_labels=['x', 'y'], **params):
@@ -171,12 +174,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if plot.yaxis[0].axis_label == xlabel:
                     plot_ranges['x_range'] = plot.y_range
 
+        if element.get_dimension_type(0) is np.datetime64:
+            x_axis_type = 'datetime'
+        else:
+            x_axis_type = 'log' if self.logx else 'auto'
+        if element.get_dimension_type(1) is np.datetime64:
+            y_axis_type = 'datetime'
+        else:
+            y_axis_type = 'log' if self.logy else 'auto'
+
         if not 'x_range' in plot_ranges:
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
+                if x_axis_type == 'datetime':
+                    low = convert_datetime(low)
+                    high = convert_datetime(high)
+                elif low == high and low is not None:
+                    offset = low*0.1 if low else 0.5
+                    low -= offset
+                    high += offset
                 if all(x is not None for x in (low, high)):
                     plot_ranges['x_range'] = [low, high]
 
@@ -189,6 +208,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
+                if y_axis_type == 'datetime':
+                    low = convert_datetime(low)
+                    high = convert_datetime(high)
+                elif low == high and low is not None:
+                    offset = low*0.1 if low else 0.5
+                    low -= offset
+                    high += offset
                 if all(y is not None for y in (low, high)):
                     plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
@@ -198,8 +224,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                           end=yrange.start)
             else:
                 plot_ranges['y_range'] = yrange[::-1]
-        x_axis_type = 'log' if self.logx else 'auto'
-        y_axis_type = 'log' if self.logy else 'auto'
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -303,6 +327,30 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.yaxis[0].set(**props['y'])
 
 
+    def _update_ranges(self, element, ranges):
+        framewise = self.lookup_options(element, 'norm').options.get('framewise')
+        l, b, r, t = self.get_extents(element, ranges)
+        dims = element.dimensions()
+        dim_ranges = dims[0].range + dims[1].range
+        if not framewise and not self.dynamic:
+            return
+        plot = self.handles['plot']
+        if self.invert_axes:
+            l, b, r, t = b, l, t, r
+        if l == r:
+            offset = abs(l*0.1 if l else 0.5)
+            l -= offset
+            r += offset
+        if b == t:
+            offset = abs(b*0.1 if b else 0.5)
+            b -= offset
+            t += offset
+        plot.x_range.start = l
+        plot.x_range.end   = r
+        plot.y_range.start = b
+        plot.y_range.end   = t
+
+
     def _process_legend(self):
         """
         Disables legends if show_legend is disabled.
@@ -323,7 +371,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
-        properties['legend'] = element.label
+
+        if self.overlay_dims:
+            legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                self.overlay_dims.items()])
+        else:
+            legend = element.label
+        properties['legend'] = legend
         properties['source'] = source
         return properties
 
@@ -362,9 +416,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties = self._glyph_properties(plot, element, source, ranges)
         self._init_glyph(plot, mapping, properties)
         glyph = plot.renderers[-1].glyph
+        self.handles['glyph_renderer'] = plot.renderers[-1]
         self.handles['glyph']  = glyph
 
         # Update plot, source and glyph
+        self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, element)
         if self.callbacks:
@@ -375,15 +431,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
         element = self._get_frame(key)
         if not element:
+            if self.dynamic and self.overlaid:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        if not element:
+            source = self.handles['source']
+            source.data = {k: [] for k in source.data}
             return
 
+        self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
         self.current_ranges = ranges
@@ -392,8 +461,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)
+        if 'glyph' in self.handles:
+            properties = self._glyph_properties(plot, element, source, ranges)
+            self._update_glyph(self.handles['glyph'], properties, mapping)
         if not self.overlaid:
+            self._update_ranges(element, ranges)
             self._update_plot(key, plot, element)
+
+
+    @property
+    def current_handles(self):
+        """
+        Returns a list of the plot objects to update.
+        """
+        handles = []
+        for handle in self._update_handles:
+            if handle in self.handles:
+                handles.append(self.handles[handle])
+
+        if self.overlaid:
+            return handles
+
+        plot = self.state
+        handles.append(plot)
+        if self.current_frame:
+            framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
+            if framewise or self.dynamic:
+                handles += [plot.x_range, plot.y_range]
+        return handles
 
 
 
@@ -462,7 +557,7 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
         return rgbplot.initialize_plot(plot=plot)
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         element = self.get_frame(key)
         if key in self.hmap:
             self.mplplot.update_frame(key, ranges)
@@ -489,9 +584,11 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
     style_opts = legend_dimensions + line_properties + text_properties
 
+    _update_handles = ['source']
+
     def _process_legend(self):
         plot = self.handles['plot']
-        if not self.show_legend or len(plot.legend) >= 1:
+        if not self.show_legend or len(plot.legend) == 0:
             for l in plot.legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
@@ -563,14 +660,21 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return self.handles['plot']
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
         """
-        overlay = self._get_frame(key)
-        for subplot in self.subplots.values():
-            subplot.update_frame(key, ranges)
+        if element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_frame = element
+            self.current_key = key
+            ranges = self.compute_ranges(self.hmap, key, ranges)
+
+        for k, subplot in self.subplots.items():
+            subplot.update_frame(key, ranges, element=element.get(k, None))
         if not self.overlaid and not self.tabs:
-            self._update_plot(key, self.handles['plot'], overlay)
+            self._update_ranges(element, ranges)
+            self._update_plot(key, self.handles['plot'], element)

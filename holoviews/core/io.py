@@ -553,7 +553,7 @@ class FileArchive(Archive):
 
     archive_format = param.ObjectSelector('zip', objects=['zip', 'tar'], doc="""
         The archive format to use if there are multiple files and pack
-        is set to True """)
+        is set to True. Supported formats include 'zip' and 'tar'.""")
 
     pack = param.Boolean(default=False, doc="""
         Whether or not to pack to contents into the specified archive

@@ -114,3 +114,7 @@ def layout_padding(plots):
                 p.ygrid.grid_line_color = None
             expanded_plots[r].append(p)
     return expanded_plots
+
+
+def convert_datetime(time):
+    return time.astype('datetime64[s]').astype(float)*1000

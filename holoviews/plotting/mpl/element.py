@@ -7,7 +7,8 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import OrderedDict, Collator, NdOverlay, HoloMap, CompositeOverlay, Element3D
+from ...core import (OrderedDict, Collator, NdOverlay, HoloMap,
+                     CompositeOverlay, Element3D, Columns, NdElement)
 from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .plot import MPLPlot
@@ -49,7 +50,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                        objects=['horizontal', 'vertical'], doc="""
         The orientation of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
-        adjoined plots when appropriate.""")
+        adjoined plots when appropriate valid options are 'horizontal'
+        and 'vertical'.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -61,13 +63,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
         Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel.""")
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None], doc="""
         Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel.""")
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
@@ -102,7 +106,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    _suppressed = [Table, Collator, ItemTable]
+    _suppressed = [Table, NdElement, Collator, Columns, ItemTable]
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -307,7 +311,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_xticks(xticks)
                 axis.set_xticklabels(xlabels)
 
-        if self.xticks != 0:
+        if self.xticks != 0 or xticks:
             for tick in axis.get_xticklabels():
                 tick.set_rotation(self.xrotation)
 
@@ -336,7 +340,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_yticks(yticks)
                 axis.set_yticklabels(ylabels)
 
-        if self.yticks != 0:
+        if self.yticks != 0 or yticks:
             for tick in axis.get_yticklabels():
                 tick.set_rotation(self.yrotation)
 
@@ -375,7 +379,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if tick_fontsize:  axis.tick_params(**tick_fontsize)
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Set the plot(s) to the given frame number.  Operates by
         manipulating the matplotlib objects held in the self._handles
@@ -384,12 +388,21 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        view = self._get_frame(key)
-        if view is not None:
-            self.set_param(**self.lookup_options(view, 'plot').options)
+        if not element:
+            if self.dynamic and self.overlaid:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        if element is not None:
+            self.set_param(**self.lookup_options(element, 'plot').options)
         axis = self.handles['axis']
 
-        axes_visible = view is not None or self.overlaid
+        axes_visible = element is not None or self.overlaid
         axis.xaxis.set_visible(axes_visible and self.xaxis)
         axis.yaxis.set_visible(axes_visible and self.yaxis)
         axis.patch.set_alpha(np.min([int(axes_visible), 1]))
@@ -397,13 +410,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         for hname, handle in self.handles.items():
             hideable = hasattr(handle, 'set_visible')
             if hname not in ['axis', 'fig'] and hideable:
-                handle.set_visible(view is not None)
-        if view is None:
+                handle.set_visible(element is not None)
+        if element is None:
             return
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
-            ranges = util.match_spec(view, ranges)
-        axis_kwargs = self.update_handles(axis, view, key if view is not None else {}, ranges)
+            ranges = util.match_spec(element, ranges)
+        axis_kwargs = self.update_handles(axis, element, key if element is not None else {}, ranges)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
@@ -546,7 +559,9 @@ class LegendPlot(ElementPlot):
                                            default='inner', doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
-        legend_specs class attribute.""")
+        legend_specs class attribute. By default, 'inner', 'right',
+        'bottom', 'top', 'left', 'best', 'top_right', 'top_left',
+        'bottom_right' and 'bottom_left' are supported.""")
 
     legend_specs = {'inner': {},
                     'best': {},
@@ -649,13 +664,18 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         if self.projection == '3d':
             self.handles['axis'].clear()
 
+        if element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_frame = element
+            self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        for plot in self.subplots.values():
-            plot.update_frame(key, ranges)
+        for k, plot in self.subplots.items():
+            plot.update_frame(key, ranges, element.get(k, None))
 
         self._finalize_axis(key, ranges=ranges)
 

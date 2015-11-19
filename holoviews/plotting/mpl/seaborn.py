@@ -177,7 +177,7 @@ class DistributionPlot(FullRedrawPlot):
 
     def _update_plot(self, axis, view):
         label = view.label if self.overlaid == 1 else ''
-        sns.distplot(view.data, ax=axis, label=label, **self.style)
+        sns.distplot(view.dimension_values(0), ax=axis, label=label, **self.style)
 
 
 
@@ -203,7 +203,10 @@ class SNSFramePlot(DFrameViewPlot):
                                      doc="""
         Selects which Seaborn plot type to use, when visualizing the
         SNSFrame. The options that can be passed to the plot_type are
-        defined in dframe_options.""")
+        defined in dframe_options. Valid options are 'interact', 'regplot',
+        'lmplot', 'corrplot', 'plot', 'boxplot', 'hist', 'scatter_matrix',
+        'autocorrelation_plot', 'pairgrid', 'facetgrid', 'pairplot',
+        'violinplot' and 'factorplot'""")
 
     dframe_options = dict(DFrameViewPlot.dframe_options,
                           **{'regplot':   RegressionPlot.style_opts,
@@ -323,7 +326,8 @@ class SNSFramePlot(DFrameViewPlot):
             for opt, args in map_opts:
                 plot_fn = getattr(sns, args[0]) if hasattr(sns, args[0]) else getattr(plt, args[0])
                 getattr(g, opt)(plot_fn, *args[1:])
-            plt.close(self.handles['fig'])
+            if self._close_fig:
+                plt.close(self.handles['fig'])
             self.handles['fig'] = plt.gcf()
         else:
             super(SNSFramePlot, self)._update_plot(axis, view)

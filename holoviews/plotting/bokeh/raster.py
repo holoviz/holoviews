@@ -12,6 +12,7 @@ class RasterPlot(ElementPlot):
 
     style_opts = ['cmap']
     _plot_method = 'image'
+    _update_handles = ['color_mapper', 'source', 'glyph']
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -41,8 +42,22 @@ class RasterPlot(ElementPlot):
         low, high = ranges.get(val_dim)
         if 'cmap' in properties:
             palette = mplcmap_to_palette(properties.pop('cmap', None))
-        properties['color_mapper'] = LinearColorMapper(palette, low=low, high=high)
+        cmap = LinearColorMapper(palette, low=low, high=high)
+        properties['color_mapper'] = cmap
+        if 'color_mapper' not in self.handles:
+            self.handles['color_mapper'] = cmap
         return properties
+
+
+    def _update_glyph(self, glyph, properties, mapping):
+        allowed_properties = glyph.properties()
+        cmap = properties.pop('color_mapper', None)
+        if cmap:
+            glyph.color_mapper.low = cmap.low
+            glyph.color_mapper.high = cmap.high
+        merged = dict(properties, **mapping)
+        glyph.set(**{k: v for k, v in merged.items()
+                     if k in allowed_properties})
 
 
 class RGBPlot(RasterPlot):
@@ -81,7 +96,7 @@ class HeatmapPlot(ElementPlot):
 
     def _axes_props(self, plots, subplots, element, ranges):
         labels = self._axis_labels(element, plots)
-        xvals, yvals = element.dense_keys()
+        xvals, yvals = [np.unique(element.dimension_values(i)) for i in range(2)]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges
@@ -92,8 +107,9 @@ class HeatmapPlot(ElementPlot):
         cmap = style.get('palette', style.get('cmap', None))
         cmap = get_cmap(cmap)
         x, y, z = element.dimensions(label=True)
-        zvals = np.rot90(element.data, 3).flatten()
+        zvals = np.rot90(element.raster, 3).flatten()
         colors = map_colors(zvals, ranges[z], cmap)
-        xvals, yvals = zip(*product(*element.dense_keys()))
+        xvals, yvals = [[str(v) for v in element.dimension_values(i)]
+                        for i in range(2)]
         return ({x: xvals, y: yvals, z: zvals, 'color': colors},
                 {'x': x, 'y': y, 'fill_color': 'color', 'height': 1, 'width': 1})
