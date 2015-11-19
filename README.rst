@@ -17,7 +17,7 @@ Clone holoviews directly from GitHub with::
 Please visit `our website <http://ioam.github.com/holoviews/>`_ for
 official releases, installation instructions, documentation, and examples.
 
-For general discussion, we have a `gitter channel https://gitter.im/ioam/holoviews`._
+For general discussion, we have a `gitter channel https://gitter.im/ioam/holoviews`_.
 In addition
 we have a `wiki page <https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
 describing current work-in-progress and experimental features. If you find any bugs or 
