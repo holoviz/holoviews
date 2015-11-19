@@ -437,18 +437,16 @@ class DynamicMap(HoloMap):
         key = util.wrap_tuple(key)
         assert len(key) == len(self.kdims)
         for ind, val in enumerate(key):
-            (minv, maxv) = self.kdims[ind].range
-            (mins, maxs) = self.kdims[ind].soft_range
-            if [minv, mins] != [None,None]:
-                min_thresh = min([el for el in [minv,mins] if el is not None])
-                if val < min_thresh:
+            kdim = self.kdims[ind]
+            low, high = util.max_range([kdim.range, kdim.soft_range])
+            if low is not np.NaN:
+                if val < low:
                     raise StopIteration("Key value %s below lower bound %s"
-                                        % (val, min_thresh))
-            if [maxv, maxs] != [None,None]:
-                max_thresh = max([el for el in [maxv,maxs] if el is not None])
-                if val >= max_thresh:
+                                        % (val, low))
+            if high is not np.NaN:
+                if val > high:
                     raise StopIteration("Key value %s above upper bound %s"
-                                        % (val, max_thresh))
+                                        % (val, high))
 
 
     def _execute_callback(self, *args):
