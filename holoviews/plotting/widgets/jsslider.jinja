@@ -71,7 +71,7 @@
                         require(["jQueryUI", "underscore"], function(jUI, _){
                             if (noConflict) $.noConflict(true);
                             var vals = {{ widget_data['vals'] }};
-                            if ({{ dynamic }}) {
+                            if ({{ dynamic }} && vals.constructor !== Array) {
                                 var min = vals[0];
                                 var max = vals[vals.length-1];
                                 var step = {{ widget_data['step'] }};
@@ -87,7 +87,7 @@
                                 step: step,
                                 value: min,
                                 slide: _.throttle(function(event, ui) {
-                                    if ({{ dynamic }}) {
+                                    if ({{ dynamic }} && vals.constructor === Array) {
                                         var dim_val = ui.value
                                     } else {
                                         var dim_val = vals[ui.value];
