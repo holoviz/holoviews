@@ -346,6 +346,7 @@ class DynamicMap(HoloMap):
     mode. Closed mode only applied to callables where all the key
     dimensions are fully bounded.
     """
+    _sorted = False
 
     callback = param.Parameter(doc="""
         The callable or generator used to generate the elements. In the
@@ -515,8 +516,21 @@ class DynamicMap(HoloMap):
         val = self._execute_callback(*tuple_key)
         if self.call_mode == 'counter':
             val = val[1]
-        self.data[tuple_key] = val
+
+        self._cache(tuple_key, val)
         return val
+
+
+    def _cache(self, key, val):
+        """
+        Request that a key/value pair be considered for caching.
+        """
+        if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
+            return
+        if len(self) >= self.cache_size:
+            first_key = self.data.iterkeys().next()
+            self.data.pop(first_key)
+        self.data[key] = val
 
 
     def next(self):
@@ -539,8 +553,7 @@ class DynamicMap(HoloMap):
         if len(key) != len(self.key_dimensions):
             raise Exception("Generated key does not match the number of key dimensions")
 
-        if (self.counter % self.cache_interval)==0:
-            self.data[key] = val
+        self._cache(key, val)
         self.counter += 1
         return val
 
