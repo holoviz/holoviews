@@ -410,7 +410,7 @@ class GenericElementPlot(DimensionedPlot):
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
         self.overlay_dims = overlay_dims
-        dynamic = element.interval if isinstance(element, DynamicMap) else None
+        dynamic = element.mode if isinstance(element, DynamicMap) else None
         if not isinstance(element, (HoloMap, DynamicMap)):
             self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
