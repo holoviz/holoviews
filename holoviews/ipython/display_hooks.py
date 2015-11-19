@@ -291,7 +291,7 @@ def grid_display(grid, size, max_frames, max_branches, widget_mode):
     return render_plot(gridplot, widget_mode)
 
 
-def display(obj, raw=False):
+def display(obj, raw=False, **kwargs):
     """
     Renders any HoloViews object to HTML and displays it
     using the IPython display function. If raw is enabled
@@ -306,7 +306,7 @@ def display(obj, raw=False):
     elif isinstance(obj, (HoloMap, DynamicMap)):
         html = map_display(obj)
     else:
-        return repr(obj) if raw else IPython.display.display(obj)
+        return repr(obj) if raw else IPython.display.display(obj, **kwargs)
     return html if raw else IPython.display.display(IPython.display.HTML(html))
 
 
