@@ -426,7 +426,7 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_frame(self, key):
-        if self.dynamic == 'open':
+        if self.dynamic:
             if isinstance(key, tuple):
                 frame = self.hmap[key]
             elif key < self.hmap.counter:
