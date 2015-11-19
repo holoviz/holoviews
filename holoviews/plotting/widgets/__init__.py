@@ -216,9 +216,10 @@ class SelectionWidget(NdWidget):
                     widget_type = 'dropdown'
                 else:
                     dim_vals = list(dim.range)
+                    int_type = isinstance(dim.type, object) and issubclass(dim.type, np.int64)
                     widget_type = 'slider'
                     dim_range = dim_vals[1] - dim_vals[0]
-                    if not isinstance(dim_range, int):
+                    if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
             else:
                 dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
