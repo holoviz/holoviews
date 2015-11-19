@@ -287,6 +287,7 @@ class DimensionedPlot(Plot):
             elements = []
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
+            framewise = framewise or self.dynamic
             if group in ranges and (not framewise or ranges is not self.ranges):
                 continue
             elif not framewise: # Traverse to get all elements
