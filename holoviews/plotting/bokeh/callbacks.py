@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import CustomJS, PlotObject
+from bokeh.models import CustomJS, PlotObject, TapTool
 from bokeh.protocol import serialize_json
 
 import param
@@ -230,6 +230,9 @@ class Callbacks(param.Parameterized):
         Callback applied to plot x_range, data will supply
         'y_range' as a list of the form [low, high].""")
 
+    tap = param.ClassSelector(class_=(CustomJS, Callback, list), doc="""
+        Callback that gets triggered when user clicks on a glyph.""")
+
     callbacks = {}
 
     plot_callbacks = defaultdict(list)
@@ -312,3 +315,6 @@ class Callbacks(param.Parameterized):
             self._chain_callbacks(plot, plot.state.x_range, xrange_cb)
         if yrange_cb:
             self._chain_callbacks(plot, plot.state.y_range, yrange_cb)
+
+        if self.tap:
+            self._chain_callbacks(plot, plot.state.select(type=TapTool), self.tap)
