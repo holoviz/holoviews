@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import CustomJS, PlotObject, TapTool
+from bokeh.models import CustomJS, PlotObject, TapTool, ColumnDataSource
 from bokeh.protocol import serialize_json
 
 import param
@@ -93,7 +93,7 @@ class Callback(param.ParameterizedFunction):
         to be updated, allowing chaining of callback operations.
         """
         if self.current_data == data:
-            return []
+            return [] if chained else {}
         self.current_data = data
 
         objects = self(data)
@@ -218,6 +218,10 @@ class Callbacks(param.Parameterized):
     to a plot. Callbacks should
     """
 
+    selection = param.ClassSelector(class_=(CustomJS, Callback, list), doc="""
+        Callback that gets triggered when user applies a selection to a
+        data source.""")
+
     ranges = param.ClassSelector(class_=(CustomJS, Callback, list), doc="""
         Callback applied to plot x_range and y_range, data will
         supply 'x_range' and 'y_range' lists of the form [low, high].""")
@@ -243,7 +247,6 @@ class Callbacks(param.Parameterized):
         and javascript, execute once and return bokeh CustomJS
         object to be installed on the appropriate plot object.
         """
-        if isinstance(cb_obj, list): cb_obj = cb_obj[0]
         pycallback.callback_obj = cb_obj
         pycallback.plot = plot
 
@@ -319,4 +322,9 @@ class Callbacks(param.Parameterized):
             self._chain_callbacks(plot, plot.state.y_range, yrange_cb)
 
         if self.tap:
-            self._chain_callbacks(plot, plot.state.select(type=TapTool), self.tap)
+            for tool in plot.state.select(type=TapTool):
+                self._chain_callbacks(plot, tool, self.tap)
+
+        if self.selection:
+            for tool in plot.state.select(type=(ColumnDataSource)):
+                self._chain_callbacks(plot, tool, self.selection)
