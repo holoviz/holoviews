@@ -13,7 +13,7 @@ from ...core import traversal
 from ...core.options import Compositor
 from ...core.util import basestring
 from ..plot import Plot, DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
-from ..util import get_dynamic_interval
+from ..util import get_dynamic_mode
 from .renderer import BokehRenderer
 from .util import layout_padding
 
@@ -126,7 +126,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                  layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        dynamic = get_dynamic_interval(layout)
+        dynamic = get_dynamic_mode(layout)
         self.layout = layout
         self.rows, self.cols = layout.shape
         self.layout_num = layout_num

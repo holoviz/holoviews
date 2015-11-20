@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table, Annotation
-from .util import get_dynamic_interval
+from .util import get_dynamic_mode
 
 
 class Plot(param.Parameterized):
@@ -790,7 +790,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dynamic = get_dynamic_interval(layout)
+        dynamic = get_dynamic_mode(layout)
         dimensions, keys = traversal.unique_dimkeys(layout)
         uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
