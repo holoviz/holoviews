@@ -237,13 +237,15 @@ class Callbacks(param.Parameterized):
 
     plot_callbacks = defaultdict(list)
 
-    def initialize_callback(self, cb_obj, plot, callback):
+    def initialize_callback(self, cb_obj, plot, pycallback):
         """
         Initialize the callback with the appropriate data
         and javascript, execute once and return bokeh CustomJS
         object to be installed on the appropriate plot object.
         """
-        pycallback = callback.instance(callback_obj=cb_obj, plot=plot)
+        if isinstance(cb_obj, list): cb_obj = cb_obj[0]
+        pycallback.callback_obj = cb_obj
+        pycallback.plot = plot
 
         # Register the callback to allow calling it from JS
         cb_id = id(pycallback)
