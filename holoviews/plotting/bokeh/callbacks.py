@@ -65,11 +65,14 @@ class Callback(param.ParameterizedFunction):
     """
 
     IPython_callback = """
-        var argstring = JSON.stringify(data);
-        var kernel = IPython.notebook.kernel;
-        var cmd = "Callbacks.callbacks[{callback_id}].update(" + argstring + ")";
-        var pyimport = "from holoviews.plotting.bokeh import Callbacks;";
-        kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
+        if (!(_.isEmpty(data))) {{
+           var argstring = JSON.stringify(data);
+           argstring = argstring.replace('true', 'True').replace('false','False');
+           var kernel = IPython.notebook.kernel;
+           var cmd = "Callbacks.callbacks[{callback_id}].update(" + argstring + ")";
+           var pyimport = "from holoviews.plotting.bokeh import Callbacks;";
+           kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
+        }}
     """
 
     def __call__(self, data):
