@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table, Annotation
-from .util import get_dynamic_interval
+from .util import get_dynamic_mode
 
 
 class Plot(param.Parameterized):
@@ -410,7 +410,7 @@ class GenericElementPlot(DimensionedPlot):
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
         self.overlay_dims = overlay_dims
-        dynamic = element.mode if isinstance(element, DynamicMap) else None
+
         if not isinstance(element, (HoloMap, DynamicMap)):
             self.hmap = HoloMap(initial_items=(0, element),
                                kdims=['Frame'], id=element.id)
@@ -420,6 +420,8 @@ class GenericElementPlot(DimensionedPlot):
         dimensions = self.hmap.kdims if dimensions is None else dimensions
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
+
+        dynamic = element.mode if isinstance(element, DynamicMap) else False
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
@@ -790,7 +792,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dynamic = get_dynamic_interval(layout)
+        dynamic = get_dynamic_mode(layout)
         dimensions, keys = traversal.unique_dimkeys(layout)
         uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options

@@ -47,13 +47,13 @@ def get_sideplot_ranges(plot, element, main, ranges):
     return range_item, main_range, dim
 
 
-def get_dynamic_interval(composite):
-    "Returns interval of dynamic map objects in given composite object"
-    dynamic_intervals = composite.traverse(lambda x: x.mode, [DynamicMap])
-    if dynamic_intervals and not composite.traverse(lambda x: x, ['HoloMap']):
-        if len(set(dynamic_intervals)) > 1:
-            raise Exception("Cannot display DynamicMap objects with"
-                            "different intervals")
-        return dynamic_intervals[0]
+def get_dynamic_mode(composite):
+    "Returns the common mode of the dynamic maps in given composite object"
+    dynamic_modes = composite.traverse(lambda x: x.mode, [DynamicMap])
+    if dynamic_modes and not composite.traverse(lambda x: x, ['HoloMap']):
+        if len(set(dynamic_modes)) > 1:
+            raise Exception("Cannot display composites of DynamicMap objects "
+                            "with different interval modes (i.e open or closed mode).")
+        return dynamic_modes[0]
     else:
         return None
