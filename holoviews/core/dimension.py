@@ -248,20 +248,27 @@ class LabelledData(param.Parameterized):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
 
-
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
 
         If shared_data is set to True and no data explicitly supplied,
-        the clone will share data with the original.
+        the clone will share data with the original. May also supply
+        a new_type, which will inherit all shared parameters.
         """
         params = dict(self.get_param_values())
+        if new_type is None:
+            clone_type = self.__class__
+        else:
+            clone_type = new_type
+            new_params = new_type.params()
+            params = {k: v for k, v in params.items()
+                      if k in new_params}
         settings = dict(params, **overrides)
         if data is None and shared_data:
             data = self.data
-        return self.__class__(data, *args, **settings)
+        return clone_type(data, *args, **settings)
 
 
     def relabel(self, label=None, group=None, depth=0):
@@ -680,8 +687,9 @@ class Dimensioned(LabelledData):
                     if isinstance(val, tuple): val = slice(*val)
                     select[self.get_dimension_index(dim)] = val
             if self._deep_indexable:
-                selection = self.get(tuple(select),
-                                     self.clone(shared_data=False))
+                selection = self.get(tuple(select), None)
+                if selection is None:
+                    selection = self.clone(shared_data=False)
             else:
                 selection = self[tuple(select)]
         else:

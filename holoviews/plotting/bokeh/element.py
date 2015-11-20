@@ -287,7 +287,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         l, b, r, t = self.get_extents(element, ranges)
         dims = element.dimensions()
         dim_ranges = dims[0].range + dims[1].range
-        if not framewise:
+        if not framewise and not self.dynamic:
             return
         plot = self.handles['plot']
         if self.invert_axes:
@@ -383,17 +383,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None):
+    def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
-        element = self._get_frame(key)
+        if not element:
+            if self.dynamic and self.overlaid:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
         if not element:
             source = self.handles['source']
             source.data = {k: [] for k in source.data}
             return
 
+        self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
@@ -426,7 +436,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         handles.append(plot)
         if self.current_frame:
             framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
-            if framewise:
+            if framewise or self.dynamic:
                 handles += [plot.x_range, plot.y_range]
         return handles
 
@@ -497,7 +507,7 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
         return rgbplot.initialize_plot(plot=plot)
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         element = self.get_frame(key)
         if key in self.hmap:
             self.mplplot.update_frame(key, ranges)
@@ -600,15 +610,21 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return self.handles['plot']
 
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
         state.
         """
-        overlay = self._get_frame(key)
-        for subplot in self.subplots.values():
-            subplot.update_frame(key, ranges)
+        if element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_frame = element
+            self.current_key = key
+            ranges = self.compute_ranges(self.hmap, key, ranges)
+
+        for k, subplot in self.subplots.items():
+            subplot.update_frame(key, ranges, element=element.get(k, None))
         if not self.overlaid and not self.tabs:
-            self._update_ranges(overlay, ranges)
-            self._update_plot(key, self.handles['plot'], overlay)
+            self._update_ranges(element, ranges)
+            self._update_plot(key, self.handles['plot'], element)

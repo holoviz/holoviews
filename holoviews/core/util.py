@@ -289,7 +289,7 @@ def max_range(ranges):
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            arr = np.array(ranges)
+            arr = np.array([r for r in ranges for v in r if v is not None])
             if arr.dtype.kind == 'M':
                 return arr[:, 0].min(), arr[:, 1].max()
             return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))

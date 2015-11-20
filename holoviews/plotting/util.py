@@ -1,4 +1,4 @@
-from ..core import HoloMap, CompositeOverlay
+from ..core import HoloMap, DynamicMap, CompositeOverlay
 from ..core.util import match_spec
 
 def compute_sizes(sizes, size_fn, scaling, base_size):
@@ -45,3 +45,15 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = [ov for ov in range_item
                       if dim in ov.dimensions('all', label=True)][0]
     return range_item, main_range, dim
+
+
+def get_dynamic_mode(composite):
+    "Returns the common mode of the dynamic maps in given composite object"
+    dynamic_modes = composite.traverse(lambda x: x.mode, [DynamicMap])
+    if dynamic_modes and not composite.traverse(lambda x: x, ['HoloMap']):
+        if len(set(dynamic_modes)) > 1:
+            raise Exception("Cannot display composites of DynamicMap objects "
+                            "with different interval modes (i.e open or closed mode).")
+        return dynamic_modes[0]
+    else:
+        return None

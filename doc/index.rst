@@ -117,7 +117,7 @@ data!
 Contributors
 ____________
 
-HoloViews was developed by `Jean-Luc R. Stevens <https://github.com/jlstevens>`_
+HoloViews is developed by `Jean-Luc R. Stevens <https://github.com/jlstevens>`_
 and `Philipp Rudiger <https://github.com/philippjfr>`_,
 in collaboration with `James A. Bednar <http://homepages.inf.ed.ac.uk/jbednar>`_.
 

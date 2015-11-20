@@ -213,7 +213,7 @@ class TableConversion(object):
         if sort:
             return group.map(lambda x: x.sort(), [new_type])
         else:
-            group
+            return group
 
     def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Bars

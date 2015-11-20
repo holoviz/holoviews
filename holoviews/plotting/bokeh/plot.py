@@ -1,4 +1,3 @@
-from collections import defaultdict
 from itertools import groupby
 import numpy as np
 
@@ -8,12 +7,13 @@ from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import Panel, Tabs, DataTable
 
-from ...core import OrderedDict, CompositeOverlay, Element
-from ...core import Store, Layout, AdjointLayout, NdLayout, Empty, GridSpace, HoloMap
-from ...core.options import Compositor
+from ...core import (OrderedDict, CompositeOverlay, Store, Layout,
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
+from ...core.options import Compositor
 from ...core.util import basestring
 from ..plot import Plot, DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
+from ..util import get_dynamic_mode
 from .renderer import BokehRenderer
 from .util import layout_padding
 
@@ -126,6 +126,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                  layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
+        dynamic = get_dynamic_mode(layout)
         self.layout = layout
         self.rows, self.cols = layout.shape
         self.layout_num = layout_num
@@ -136,6 +137,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             params['uniform'] = traversal.uniform(layout)
 
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
+                                       dynamic=dynamic,
                                        **dict(extra_opts, **params))
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
