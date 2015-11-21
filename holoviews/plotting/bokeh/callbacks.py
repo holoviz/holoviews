@@ -42,11 +42,14 @@ class Callback(param.ParameterizedFunction):
     plot_attributes = param.Dict(default={}, doc="""
         Plot attributes returned to the Python callback.""")
 
-    plot = param.ClassSelector(class_=(BokehPlot,), doc="""
+    plots = param.List(default=[], doc="""
         The HoloViews plot object the callback applies to.""")
 
     streams = param.List(default=[], doc="""
         List of streams attached to this callback.""")
+
+    reinitialize = param.Boolean(default=False, doc="""
+        Whether the Callback should be reinitialized per plot instance""")
 
     JS_callback = """
         function callback(msg){
@@ -140,8 +143,8 @@ class DownsampleImage(Callback):
         xstart, xend = data['x_range']
         ystart, yend = data['y_range']
 
-        ranges = self.plot.current_ranges
-        element = self.plot.current_frame
+        ranges = self.plots[0].current_ranges
+        element = self.plots[0].current_frame
 
         # Slice Element to match selected ranges
         xdim, ydim = element.dimensions('key', True)
@@ -161,8 +164,8 @@ class DownsampleImage(Callback):
         resampled = sliced.clone(sliced.data[::steps[0], ::steps[1]])
 
         # Update data source
-        new_data = self.plot.get_data(resampled, ranges)[0]
-        source = self.plot.handles['source']
+        new_data = self.plots[0].get_data(resampled, ranges)[0]
+        source = self.plots[0].handles['source']
         source.data.update(new_data)
         return [source]
 
@@ -184,8 +187,9 @@ class DownsampleColumns(Callback):
         xstart, xend = data['x_range']
         ystart, yend = data['y_range']
 
-        element = self.plot.current_frame
-        ranges  = self.plot.current_ranges
+        plot = self.plots[0]
+        element = plot.current_frame
+        ranges  = plot.current_ranges
 
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
@@ -206,8 +210,8 @@ class DownsampleColumns(Callback):
         sliced = sliced.clone(sliced.data[:self.max_samples, :])
 
         # Update data source
-        new_data = self.plot.get_data(sliced, ranges)[0]
-        source = self.plot.handles['source']
+        new_data = plot.get_data(sliced, ranges)[0]
+        source = plot.handles['source']
         source.data.update(new_data)
         return [source]
 
@@ -247,8 +251,10 @@ class Callbacks(param.Parameterized):
         and javascript, execute once and return bokeh CustomJS
         object to be installed on the appropriate plot object.
         """
+        if pycallback.reinitialize:
+            pycallback = pycallback.instance()
         pycallback.callback_obj = cb_obj
-        pycallback.plot = plot
+        pycallback.plots.append(plot)
 
         # Register the callback to allow calling it from JS
         cb_id = id(pycallback)
