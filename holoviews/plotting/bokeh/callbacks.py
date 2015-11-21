@@ -99,7 +99,12 @@ class Callback(param.ParameterizedFunction):
             return [] if chained else {}
         self.current_data = data
 
-        objects = self(data)
+        try:
+            objects = self(data)
+        except Exception as e:
+            self.exception = e
+            objects = []
+
         for stream in self.streams:
             objects += stream.update(data, True)
 
