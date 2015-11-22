@@ -222,7 +222,7 @@ class SelectionWidget(NdWidget):
                 else:
                     dim_vals = []
                     vals = list(dim.range)
-                    int_type = isinstance(dim.type, object) and issubclass(dim.type, np.int64)
+                    int_type = isinstance(dim.type, type) and issubclass(dim.type, np.int64)
                     widget_type = 'slider'
                     dim_range = vals[1] - vals[0]
                     if not isinstance(dim_range, int) or int_type:
