@@ -71,7 +71,7 @@
                         require(["jQueryUI", "underscore"], function(jUI, _){
                             if (noConflict) $.noConflict(true);
                             var vals = {{ widget_data['vals'] }};
-                            if ({{ dynamic }} && vals.constructor !== Array) {
+                            if ({{ dynamic }}) {
                                 var min = vals[0];
                                 var max = vals[vals.length-1];
                                 var step = {{ widget_data['step'] }};

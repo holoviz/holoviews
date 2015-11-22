@@ -4,7 +4,8 @@ import param
 
 import numpy as np
 from ...core import OrderedDict, NdMapping
-from ...core.util import sanitize_identifier, safe_unicode, basestring
+from ...core.util import (sanitize_identifier, safe_unicode, basestring,
+                          unique_iterator)
 
 def isnumeric(val):
     try:
@@ -220,15 +221,15 @@ class SelectionWidget(NdWidget):
                         dim_vals = dim.values
                         widget_type = 'dropdown'
                 else:
-                    dim_vals = []
-                    vals = list(dim.range)
-                    int_type = isinstance(dim.type, type) and issubclass(dim.type, np.int64)
+                    dim_vals = list(dim.range)
+                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     widget_type = 'slider'
-                    dim_range = vals[1] - vals[0]
+                    dim_range = dim_vals[1] - dim_vals[0]
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
             else:
-                dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
+                dim_vals = (dim.values if dim.values else
+                            unique_iterator(self.mock_obj.dimension_values(dim.name)))
                 if not isinstance(dim_vals[0], basestring) and isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     widget_type = 'slider'
