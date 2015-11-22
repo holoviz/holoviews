@@ -2,6 +2,7 @@ import os, uuid, json, math
 
 import param
 
+import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.util import sanitize_identifier, safe_unicode, basestring
 
