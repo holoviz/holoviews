@@ -229,7 +229,7 @@ class SelectionWidget(NdWidget):
                         step = 10**(round(math.log10(dim_range))-3)
             else:
                 dim_vals = (dim.values if dim.values else
-                            unique_iterator(self.mock_obj.dimension_values(dim.name)))
+                            list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
                 if not isinstance(dim_vals[0], basestring) and isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     widget_type = 'slider'
