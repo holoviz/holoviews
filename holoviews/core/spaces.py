@@ -1,4 +1,5 @@
 from numbers import Number
+import itertools
 import numpy as np
 
 import param
@@ -494,23 +495,73 @@ class DynamicMap(HoloMap):
         return self
 
 
+    def _cross_product(self, tuple_key, cache):
+        """
+        Returns a HoloMap if the key (tuple form) expresses a cross
+        product, otherwise returns None. The cache argument is a
+        dictionary (key:element pairs) of all the data found in the
+        cache for this key.
+
+        Each key inside the cross product is looked up in the cache
+        (self.data) to check if the appropriate element is
+        available. Oherwise the element is computed accordingly.
+        """
+        if self.mode != 'closed': return None
+        if not any(isinstance(el, (list, set)) for el in tuple_key):
+            return None
+        if len(tuple_key)==1:
+            product = tuple_key[0]
+        else:
+            product = itertools.product([util.wrap_tuple(el) for el in tuple_key])
+
+        data = []
+        for inner_key in product:
+            key = util.wrap_tuple(inner_key)
+            if key in cache:
+                val = cache[key]
+            else:
+                val = self._execute_callback(*key)
+            data.append((key, val))
+        return self.clone(data, new_type=HoloMap)
+
+
     def __getitem__(self, key):
         """
         Return an element for any key chosen key (in'closed mode') or
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
+        tuple_key = util.wrap_tuple(key)
+
+        # Validation for closed mode
+        if self.mode == 'closed':
+            # DynamicMap(...)[:] returns a HoloMap of the available (cached) data
+            if key == slice(None, None, None):
+                return HoloMap(self)
+
+            if any(isinstance(el, slice) for el in tuple_key):
+                raise Exception("Slices not supported by DynamicMap in closed mode"
+                                "except for the global slice [:] to convert to HoloMap.")
+
+        # Cache lookup
         try:
-            retval = super(DynamicMap,self).__getitem__(key)
-            if isinstance(retval, DynamicMap):
-                return HoloMap(retval)
-            else:
-                return retval
+            cache = super(DynamicMap,self).__getitem__(key)
+            # Cast available cache in open mode to a HoloMap
+            if isinstance(cache, DynamicMap) and self.mode=='open':
+                cache = HoloMap(cache)
         except KeyError as e:
+            cache = None
             if self.mode == 'open' and len(self.data)>0:
                 raise KeyError(str(e) + " Note: Cannot index outside "
-                               "available cache over an open interval.")
-        tuple_key = util.wrap_tuple(key)
+                               "available cache in open interval mode.")
+
+        # If the key expresses a cross product, compute the elements and return
+        product = self._cross_product(tuple_key, cache.data if cache else {})
+        if product is not None:
+            return product
+
+        # Not a cross product and nothing cached so compute element.
+        if cache: return cache
         val = self._execute_callback(*tuple_key)
         if self.call_mode == 'counter':
             val = val[1]
