@@ -71,13 +71,17 @@
                         require(["jQueryUI", "underscore"], function(jUI, _){
                             if (noConflict) $.noConflict(true);
                             var vals = {{ widget_data['vals'] }};
-                            if ({{ dynamic }}) {
+                            if ({{ dynamic }} && vals.constructor === Array) {
                                 var min = vals[0];
                                 var max = vals[vals.length-1];
                                 var step = {{ widget_data['step'] }};
                             } else {
                                 var min = 0;
-                                var max = vals.length - 1;
+								if ({{ dynamic }}) {
+                                   var max = Object.keys(vals).length - 1;
+								} else {
+								   var max = vals.length - 1;
+								}
                                 var step = 1;
                             }
                             $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
