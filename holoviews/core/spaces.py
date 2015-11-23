@@ -512,7 +512,9 @@ class DynamicMap(HoloMap):
         if len(tuple_key)==1:
             product = tuple_key[0]
         else:
-            product = itertools.product([util.wrap_tuple(el) for el in tuple_key])
+            args = [set(el) if isinstance(el, (list,set))
+                    else set([el]) for el in tuple_key]
+            product = itertools.product(*args)
 
         data = []
         for inner_key in product:
