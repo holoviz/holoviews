@@ -217,11 +217,9 @@ class SelectionWidget(NdWidget):
                            for v in dim.values):
                         dim_vals = {i: v for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
-                        init_dim_vals.append(0)
                     else:
                         dim_vals = dim.values
                         widget_type = 'dropdown'
-                        init_dim_vals.append(dim_vals[0])
                 else:
                     dim_vals = list(dim.range)
                     int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
@@ -229,7 +227,7 @@ class SelectionWidget(NdWidget):
                     dim_range = dim_vals[1] - dim_vals[0]
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
-                    init_dim_vals.append(dim_vals[0])
+                init_dim_vals.append(dim_vals[0])
             else:
                 dim_vals = (dim.values if dim.values else
                             list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
