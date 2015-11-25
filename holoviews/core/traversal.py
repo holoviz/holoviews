@@ -120,10 +120,13 @@ def hierarchical(keys):
         store1 = defaultdict(list)
         store2 = defaultdict(list)
         for v1, v2 in combination:
-            store2[v1].append(v2)
-            if store1[v2]:
+            if v2 not in store2[v1]:
+                store2[v1].append(v2)
+            previous = store1[v2]
+            if previous and previous[0] != v1:
                 hierarchy = False
                 break
-            store1[v2].append(v1)
+            if v1 not in store1[v2]:
+                store1[v2].append(v1)
         hierarchies.append(store2 if hierarchy else {})
     return hierarchies

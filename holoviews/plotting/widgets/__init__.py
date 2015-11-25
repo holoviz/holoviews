@@ -247,7 +247,7 @@ class SelectionWidget(NdWidget):
                 if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     if next_vals:
-                        next_vals = {round(k, 10): list(unique_iterator([round(v, 10) if isnumeric(v) else v for v in vals]))
+                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v for v in vals]
                                      for k, vals in next_vals.items()}
                     widget_type = 'slider'
                 else:
