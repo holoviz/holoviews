@@ -763,6 +763,7 @@ class Store(object):
     """
 
     renderers = {} # The set of available Renderers across all backends.
+    _global_renderers = {}
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.
@@ -789,6 +790,13 @@ class Store(object):
             return cls._options[backend]
         else:
             cls._options[backend] = val
+
+    @classmethod
+    def renderer(cls, backend, renderer=None):
+        if renderer:
+            cls._global_renderers[backend] = renderer
+        else:
+            return cls._global_renderers[backend]
 
     @classmethod
     def custom_options(cls, val=None, backend=None):

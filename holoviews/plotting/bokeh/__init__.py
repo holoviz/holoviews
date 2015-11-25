@@ -21,6 +21,7 @@ from .renderer import BokehRenderer
 from .tabular import TablePlot
 
 Store.renderers['bokeh'] = BokehRenderer
+Store.renderer('bokeh', BokehRenderer.instance())
 
 Store.register({Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
