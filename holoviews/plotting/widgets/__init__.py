@@ -9,6 +9,8 @@ from ...core.util import (sanitize_identifier, safe_unicode, basestring,
 from ...core.traversal import bijective
 
 def isnumeric(val):
+    if isinstance(val, basestring):
+        return False
     try:
         float(val)
         return True
@@ -218,8 +220,7 @@ class SelectionWidget(NdWidget):
             step = 1
             if self.plot.dynamic:
                 if dim.values:
-                    if all(isnumeric(v) and not isinstance(v, basestring)
-                           for v in dim.values):
+                    if all(isnumeric(v) for v in dim.values):
                         dim_vals = {i: v for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
                     else:
@@ -258,7 +259,7 @@ class SelectionWidget(NdWidget):
         key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
-                   if not isinstance(v, basestring) and isnumeric(v) else v for v in k]
+                   if isnumeric(v) else v for v in k]
             key = str(tuple(key))
             key_data[key] = i
         return json.dumps(key_data)
