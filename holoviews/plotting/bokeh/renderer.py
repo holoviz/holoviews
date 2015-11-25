@@ -2,6 +2,7 @@ from ...core import Store, HoloMap, OrderedDict
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
 
+import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
@@ -14,12 +15,19 @@ class BokehRenderer(Renderer):
 
     backend = 'bokeh'
 
+    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
+        Output render format for static figures. If None, no figure
+        rendering will occur. """)
+
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': ['html', 'json']},
                     'holomap': {'default': [None]}}
 
+
     widgets = {'scrubber': BokehScrubberWidget,
                'selection': BokehSelectionWidget}
+
+    _loaded = False
 
     def __call__(self, obj, fmt=None):
         """
@@ -93,3 +101,20 @@ class BokehRenderer(Renderer):
         Returns a tuple of (width, height) in pixels.
         """
         return (plot.state.height, plot.state.height)
+
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validates a dictionary of options set on the backend.
+        """
+        try:
+            import bokeh
+            import bokeh.io
+        except:
+            raise ImportError("Could not import one of bokeh, pandas or scipy.")
+
+        if not cls._loaded:
+            bokeh.io.load_notebook()
+            cls._loaded = True
+

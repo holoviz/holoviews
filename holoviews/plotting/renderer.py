@@ -71,11 +71,12 @@ class Renderer(Exporter):
          The available rendering modes. As a minimum, the 'default'
          mode must be supported.""")
 
-    fig = param.ObjectSelector(default='auto', doc="""
+    fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    holomap = param.ObjectSelector(default='auto', doc="""
+    holomap = param.ObjectSelector(default='auto',
+                                   objects=['scrubber','widgets', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -87,6 +88,8 @@ class Renderer(Exporter):
 
     dpi=param.Integer(None, allow_None=True, doc="""
         The render resolution in dpi (dots per inch)""")
+
+    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'])
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
@@ -257,3 +260,13 @@ class Renderer(Exporter):
         """
         yield
 
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validates a dictionary of options set on the backend.
+        """
+        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
+            outputwarning.warning("PDF output is experimental, may not be supported"
+                                  "by your browser and may change in future.")
+            options['widgets'] = 'live'

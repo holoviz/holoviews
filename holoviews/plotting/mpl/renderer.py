@@ -44,7 +44,7 @@ class MPLRenderer(Renderer):
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='auto',
-                                   objects=['webm','mp4', 'gif', None, 'auto'], doc="""
+                                   objects=['webm','mp4', 'gif','scrubber','widgets', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -287,3 +287,14 @@ class MPLRenderer(Renderer):
             yield
         finally:
             mpl.rcParams = cls._rcParams
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validates a dictionary of options set on the backend.
+        """
+        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
+            outputwarning.warning("PDF output is experimental, may not be supported"
+                                  "by your browser and may change in future.")
+            options['widgets'] = 'live'
+
