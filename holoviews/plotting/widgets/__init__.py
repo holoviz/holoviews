@@ -6,6 +6,7 @@ import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.util import (sanitize_identifier, safe_unicode, basestring,
                           unique_iterator)
+from ...core.traversal import bijective
 
 def isnumeric(val):
     try:
@@ -80,8 +81,12 @@ class NdWidget(param.Parameterized):
         else:
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
-        self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  kdims=self.dimensions)
+        if bijective(self.keys):
+            self.mock_obj = NdMapping([(i, None) for i in range(len(self.keys))],
+                                      kdims=['Index'])
+        else:
+            self.mock_obj = NdMapping([(k, None) for k in self.keys],
+                                      kdims=self.dimensions)
 
         NdWidget.widgets[self.id] = self
 
