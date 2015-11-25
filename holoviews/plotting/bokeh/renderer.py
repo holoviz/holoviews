@@ -21,8 +21,7 @@ class BokehRenderer(Renderer):
 
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': ['html', 'json']},
-                    'holomap': {'default': [None]}}
-
+                    'holomap': {'default': ['scrubber', 'selection']}}
 
     widgets = {'scrubber': BokehScrubberWidget,
                'selection': BokehSelectionWidget}
@@ -38,7 +37,11 @@ class BokehRenderer(Renderer):
         # Example of the return format where the first value is the rendered data.
 
         plot, fmt =  self._validate(obj, fmt)
-        if fmt == 'html':
+
+        if fmt in self.widgets:
+            return self.get_widget(plot, fmt)(), {'file-ext':' html',
+                                                'mime_type': MIME_TYPES['html']}
+        elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
             return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
@@ -50,7 +53,7 @@ class BokehRenderer(Renderer):
                 json = plotobj.vm_serialize(changed_only=True)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
-            return serialize_json(data), {'file-ext':json, 'mime_type':MIME_TYPES[fmt]}
+            return serialize_json(data), {'file-ext':' json', 'mime_type':MIME_TYPES[fmt]}
 
 
     def figure_data(self, plot, fmt='html', **kwargs):

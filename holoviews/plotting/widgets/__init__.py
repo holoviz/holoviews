@@ -4,6 +4,7 @@ import param
 
 import numpy as np
 from ...core import OrderedDict, NdMapping
+from ...core.options import Store
 from ...core.util import (sanitize_identifier, safe_unicode, basestring,
                           unique_iterator)
 from ...core.traversal import hierarchical
@@ -79,7 +80,8 @@ class NdWidget(param.Parameterized):
 
         if self.plot.dynamic: self.embed = False
         if renderer is None:
-            self.renderer = plot.renderer.instance(dpi=self.display_options.get('dpi', 72))
+            backend = Store.current_backend
+            self.renderer = Store.renderers[backend]
         else:
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys

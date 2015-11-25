@@ -14,6 +14,7 @@ from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 
 from . import Plot
+from .util import displayable, collate_object
 
 from param.parameterized import bothmethod
 
@@ -112,6 +113,9 @@ class Renderer(Exporter):
         Helper method to be used in the __call__ method to get a
         suitable plot object and the appropriate format.
         """
+        if not isinstance(obj, Plot) and not displayable(obj):
+            obj = collate_object(obj)
+
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
@@ -119,15 +123,12 @@ class Renderer(Exporter):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
             plot.update(0)
-        elif fmt is None:
-            raise Exception("Format must be specified when supplying a plot instance")
         else:
             plot = obj
 
-        if fmt is None: return (None,None)
-        elif fmt =='auto' and len(plot) == 1:
+        if fmt in ['auto', None] and len(plot) == 1:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt ==  'auto':
+        elif fmt in ['auto', None]:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         all_formats = set(fig_formats + holomap_formats)
@@ -158,6 +159,8 @@ class Renderer(Exporter):
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
 
+        if fmt in self.widgets.keys():
+            fmt = 'html'
         if fmt in ['html', 'json']:
             return figdata
         else:
@@ -176,6 +179,21 @@ class Renderer(Exporter):
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         return tag.format(src=src, mime_type=mime_type, css=css)
+
+
+    def get_widget(self, plot, widget_type):
+        isuniform = plot.uniform
+        dynamic = plot.dynamic
+        if not isuniform and widget_type == 'widgets':
+            param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
+                                        % type(plot).__name__)
+            widget_type = 'scrubber'
+
+        if dynamic == 'open': widget_type = 'scrubber'
+        if dynamic == 'closed': widget_type = 'widgets'
+
+        widget_cls = self.widgets[widget_type]
+        return widget_cls(plot, renderer=self, embed=self.widget_mode == 'embed')
 
 
     @classmethod
@@ -266,7 +284,4 @@ class Renderer(Exporter):
         """
         Validates a dictionary of options set on the backend.
         """
-        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
-            outputwarning.warning("PDF output is experimental, may not be supported"
-                                  "by your browser and may change in future.")
-            options['widgets'] = 'live'
+        pass

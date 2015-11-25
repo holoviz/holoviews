@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import param
 from param.parameterized import bothmethod
 
-from ...core import HoloMap, displayable, undisplayable_info
+from ...core import HoloMap
 from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
@@ -44,7 +44,7 @@ class MPLRenderer(Renderer):
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='auto',
-                                   objects=['webm','mp4', 'gif','scrubber','widgets', None, 'auto'], doc="""
+                                   objects=['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -67,14 +67,14 @@ class MPLRenderer(Renderer):
     mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
                            'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
-                    'holomap': {m:['webm','mp4', 'gif', None, 'auto', 'html']
+                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif', None]
                                 for m in ['default', 'mpld3', 'nbagg']}}
 
     counter = 0
 
     # Define appropriate widget classes
     widgets = {'scrubber': MPLScrubberWidget,
-               'selection': MPLSelectionWidget}
+               'widgets': MPLSelectionWidget}
 
 
     def __call__(self, obj, fmt='auto'):
@@ -82,13 +82,13 @@ class MPLRenderer(Renderer):
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
-        if not isinstance(obj, Plot) and not displayable(obj):
-            raise Exception(undisplayable_info(obj, html=False))
-
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        if fmt in ['png', 'svg', 'pdf', 'html', 'json']:
+        if fmt in self.widgets:
+            return self.get_widget(plot, fmt)(), {'file-ext':' html',
+                                                  'mime_type': MIME_TYPES['html']}
+        elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
             if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
@@ -296,5 +296,3 @@ class MPLRenderer(Renderer):
         if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
             outputwarning.warning("PDF output is experimental, may not be supported"
                                   "by your browser and may change in future.")
-            options['widgets'] = 'live'
-

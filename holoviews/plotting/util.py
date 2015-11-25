@@ -1,5 +1,73 @@
-from ..core import HoloMap, DynamicMap, CompositeOverlay
+from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
+                    GridSpace, NdLayout, )
 from ..core.util import match_spec
+
+
+def displayable(obj):
+    """
+    Predicate that returns whether the object is displayable or not
+    (i.e whether the object obeys the nesting hierarchy
+    """
+    if isinstance(obj, HoloMap):
+        return not (obj.type in [Layout, GridSpace, NdLayout])
+    if isinstance(obj, (GridSpace, Layout, NdLayout)):
+        for el in obj.values():
+            if not displayable(el):
+                return False
+        return True
+    return True
+
+
+def collate_object(obj):
+    if isinstance(obj, HoloMap):
+        display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
+                                "to access your data or control how it appears; "
+                                "we recommend calling .collate() on the HoloMap "
+                                "in order to follow the recommended nesting "
+                                "structure shown in the Composing Data tutorial"
+                                "(http://git.io/vtIQh)" % vmap.type.__name__)
+        return vmap.collate()
+    elif isinstance(obj, (Layout, NdLayout)):
+        try:
+            display_warning.warning(
+                "Layout contains HoloMaps which are not nested in the "
+                "recommended format for accessing your data; calling "
+                ".collate() on these objects will resolve any violations "
+                "of the recommended nesting presented in the Composing Data "
+                "tutorial (http://git.io/vqs03)")
+            expanded = []
+            for el in layout.values():
+                if isinstance(el, HoloMap) and not displayable(el):
+                    collated_layout = Layout.from_values(el.collate())
+                    expanded.extend(collated_layout.values())
+            layout = Layout(expanded)
+        except:
+            raise Exception(undisplayable_info(layout))
+    else:
+        raise Exception(undisplayable_info(layout))
+
+
+def undisplayable_info(obj, html=False):
+    "Generate helpful message regarding an undisplayable object"
+
+    collate = '<tt>collate</tt>' if html else 'collate'
+    info = "For more information, please consult the Composing Data tutorial (http://git.io/vtIQh)"
+    if isinstance(obj, HoloMap):
+        error = "HoloMap of %s objects cannot be displayed." % obj.type.__name__
+        remedy = "Please call the %s method to generate a displayable object" % collate
+    elif isinstance(obj, Layout):
+        error = "Layout containing HoloMaps of Layout or GridSpace objects cannot be displayed."
+        remedy = "Please call the %s method on the appropriate elements." % collate
+    elif isinstance(obj, GridSpace):
+        error = "GridSpace containing HoloMaps of Layouts cannot be displayed."
+        remedy = "Please call the %s method on the appropriate elements." % collate
+
+    if not html:
+        return '\n'.join([error, remedy, info])
+    else:
+        return "<center>{msg}</center>".format(msg=('<br>'.join(
+            ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
+
 
 def compute_sizes(sizes, size_fn, scaling, base_size):
     """
