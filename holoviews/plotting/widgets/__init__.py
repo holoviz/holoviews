@@ -212,7 +212,7 @@ class SelectionWidget(NdWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
-        hierarchy = hierarchical(self.mock_obj.data.keys())
+        hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         next_vals = {}
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
