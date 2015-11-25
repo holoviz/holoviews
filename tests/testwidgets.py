@@ -59,8 +59,8 @@ class TestWidgets(IPTestCase):
 
     def test_selection_widget_1(self):
         html = normalize(SelectionWidget(self.plot1, display_options={'figure_format': 'png'})())
-        self.assertEqual(digest_data(html), 'f13f029fc711f27ccc958eeee1b8d68b74e798cd705302b517709ccf9ba27689')
+        self.assertEqual(digest_data(html), '33d07329931a18a0d80accc34e5d3b512043b7b693ca114b616ba2a2a27c8ca9')
 
     def test_selection_widget_2(self):
         html = normalize(SelectionWidget(self.plot2, display_options={'figure_format': 'png'})())
-        self.assertEqual(digest_data(html), '0bb840f2a0af05c8a55f5f35be679b5b6e1cebf0e411a6d1a40801fc35a19342')
+        self.assertEqual(digest_data(html), '859e6e67eeff3c67805ec3b8a599ae7d038e97e8d74c98e2c8d4811dc553fb61')
