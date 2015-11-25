@@ -6,7 +6,7 @@ import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.util import (sanitize_identifier, safe_unicode, basestring,
                           unique_iterator)
-from ...core.traversal import bijective
+from ...core.traversal import hierarchical
 
 def isnumeric(val):
     if isinstance(val, basestring):
@@ -83,12 +83,8 @@ class NdWidget(param.Parameterized):
         else:
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
-        if bijective(self.keys):
-            self.mock_obj = NdMapping([(i, None) for i in range(len(self.keys))],
-                                      kdims=['Index'])
-        else:
-            self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                      kdims=self.dimensions)
+        self.mock_obj = NdMapping([(k, None) for k in self.keys],
+                                  kdims=self.dimensions)
 
         NdWidget.widgets[self.id] = self
 
@@ -216,8 +212,11 @@ class SelectionWidget(NdWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
+        hierarchy = hierarchical(self.mock_obj.keys())
+        next_vals = {}
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
+            next_dim = ''
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
@@ -235,12 +234,24 @@ class SelectionWidget(NdWidget):
                         step = 10**(round(math.log10(dim_range))-3)
                 init_dim_vals.append(dim_vals[0])
             else:
-                dim_vals = (dim.values if dim.values else
-                            list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
-                if not isinstance(dim_vals[0], basestring) and isnumeric(dim_vals[0]):
+                if next_vals:
+                    dim_vals = next_vals[init_dim_vals[idx-1]]
+                else:
+                    dim_vals = (dim.values if dim.values else
+                                list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
+                if idx < self.mock_obj.ndims-1:
+                    next_vals = hierarchy[idx]
+                    next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
+                else:
+                    next_vals = {}
+                if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
+                    if next_vals:
+                        next_vals = {round(k, 10): list(unique_iterator([round(v, 10) if isnumeric(v) else v for v in vals]))
+                                     for k, vals in next_vals.items()}
                     widget_type = 'slider'
                 else:
+                    next_vals = dict(next_vals)
                     widget_type = 'dropdown'
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = repr([v for v in dim_vals if v is not None])
@@ -248,7 +259,8 @@ class SelectionWidget(NdWidget):
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=sanitize_identifier(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility, step=step)
+                               visibility=visibility, step=step, next_dim=next_dim,
+                               next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
         return widgets, dimensions, init_dim_vals
