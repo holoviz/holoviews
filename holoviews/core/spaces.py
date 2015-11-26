@@ -348,6 +348,8 @@ class DynamicMap(HoloMap):
     dimensions are fully bounded.
     """
     _sorted = False
+    # Declare that callback is a positional parameter (used in clone)
+    _pos_params = ['callback']
 
     callback = param.Parameter(doc="""
         The callable or generator used to generate the elements. In the
@@ -379,8 +381,8 @@ class DynamicMap(HoloMap):
        element will be cached and therefore accessible when casting to a
        HoloMap.  Applicable in open mode only.""")
 
-    def __init__(self, initial_items=None, **params):
-        super(DynamicMap, self).__init__(initial_items, **params)
+    def __init__(self, callback, initial_items=None, **params):
+        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
         self.counter = 0
         if self.callback is None:
             raise Exception("A suitable callback must be "
@@ -474,13 +476,17 @@ class DynamicMap(HoloMap):
             return (self.counter, retval)
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
-        Overrides Dimensioned clone to avoid checking items if data
-        is unchanged.
+        Clone method to adapt the slightly different signature of
+        DynamicMap that also overrides Dimensioned clone to avoid
+        checking items if data is unchanged.
         """
-        return super(UniformNdMapping, self).clone(data, shared_data,
-                                                   *args, **overrides)
+        if data is None and shared_data:
+            data = self.data
+        return super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
+                                                   shared_data, new_type,
+                                                   *(data,) + args, **overrides)
 
 
     def reset(self):
