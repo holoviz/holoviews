@@ -288,8 +288,7 @@ class Callbacks(param.Parameterized):
         code = Callback.JS_callback + code + pycallback.code + self_callback
 
         # Generate CustomJS object
-        customjs = CustomJS(args=dict(source=plot.handles['source'],
-                                      plot=plot.state), code=code)
+        customjs = CustomJS(args=plot.handles, code=code)
 
         # Get initial callback data and call to initialize
         pycallback(data)
