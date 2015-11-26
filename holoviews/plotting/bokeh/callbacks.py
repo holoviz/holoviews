@@ -51,6 +51,10 @@ class Callback(param.ParameterizedFunction):
     reinitialize = param.Boolean(default=False, doc="""
         Whether the Callback should be reinitialized per plot instance""")
 
+    skip_unchanged = param.Boolean(default=False, doc="""
+        Avoid running the callback if the callback data is unchanged.
+        Useful for avoiding infinite loops.""")
+
     JS_callback = """
         function callback(msg){
           if (msg.msg_type == "execute_result") {
@@ -95,8 +99,8 @@ class Callback(param.ParameterizedFunction):
         When chained=True it will return a list of the plot objects
         to be updated, allowing chaining of callback operations.
         """
-        if self.current_data == data:
-            return [] if chained else {}
+        if self.skip_unchanged and self.current_data == data:
+            return [] if chained else "{}"
         self.current_data = data
 
         try:
