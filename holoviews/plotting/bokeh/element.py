@@ -359,6 +359,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
+                l.background_fill_alpha = 0
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -592,6 +593,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             for l in plot.legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
+                l.background_fill_alpha = 0
             return
 
         options = {}

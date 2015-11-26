@@ -147,7 +147,7 @@ class Raster(Element2D):
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
-            reduced = reduce_fn(self._zdata, axis=oidx)
+            reduced = function(self._zdata, axis=oidx)
             data = zip(x_vals, reduced if not oidx else reduced[::-1])
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)

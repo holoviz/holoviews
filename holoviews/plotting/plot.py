@@ -503,7 +503,7 @@ class GenericElementPlot(DimensionedPlot):
 
         if self.apply_extents:
             norm_opts = self.lookup_options(view, 'norm').options
-            if norm_opts.get('framewise', False):
+            if norm_opts.get('framewise', False) or self.dynamic:
                 extents = view.extents
             else:
                 extent_list = self.hmap.traverse(lambda x: x.extents, [Element])

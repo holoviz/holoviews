@@ -2,10 +2,15 @@ import os, uuid, json, math
 
 import param
 
+import numpy as np
 from ...core import OrderedDict, NdMapping
-from ...core.util import sanitize_identifier, safe_unicode, basestring
+from ...core.util import (sanitize_identifier, safe_unicode, basestring,
+                          unique_iterator)
+from ...core.traversal import hierarchical
 
 def isnumeric(val):
+    if isinstance(val, basestring):
+        return False
     try:
         float(val)
         return True
@@ -207,39 +212,55 @@ class SelectionWidget(NdWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
+        hierarchy = hierarchical(list(self.mock_obj.data.keys()))
+        next_vals = {}
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
+            next_dim = ''
             if self.plot.dynamic:
                 if dim.values:
-                    if all(isnumeric(v) and not isinstance(v, basestring)
-                           for v in dim.values):
+                    if all(isnumeric(v) for v in dim.values):
                         dim_vals = {i: v for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
                     else:
                         dim_vals = dim.values
                         widget_type = 'dropdown'
                 else:
-                    dim_vals = []
-                    vals = list(dim.range)
-                    int_type = isinstance(dim.type, object) and issubclass(dim.type, np.int64)
+                    dim_vals = list(dim.range)
+                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     widget_type = 'slider'
-                    dim_range = vals[1] - vals[0]
+                    dim_range = dim_vals[1] - dim_vals[0]
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
+                init_dim_vals.append(dim_vals[0])
             else:
-                dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
-                if not isinstance(dim_vals[0], basestring) and isnumeric(dim_vals[0]):
+                if next_vals:
+                    dim_vals = next_vals[init_dim_vals[idx-1]]
+                else:
+                    dim_vals = (dim.values if dim.values else
+                                list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
+                if idx < self.mock_obj.ndims-1:
+                    next_vals = hierarchy[idx]
+                    next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
+                else:
+                    next_vals = {}
+                if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
+                    if next_vals:
+                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v for v in vals]
+                                     for k, vals in next_vals.items()}
                     widget_type = 'slider'
                 else:
+                    next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-            init_dim_vals.append(dim_vals[0])
-            dim_vals = repr([v for v in dim_vals if v is not None])
+                init_dim_vals.append(dim_vals[0])
+                dim_vals = repr([v for v in dim_vals if v is not None])
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=sanitize_identifier(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility, step=step)
+                               visibility=visibility, step=step, next_dim=next_dim,
+                               next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
         return widgets, dimensions, init_dim_vals
@@ -250,7 +271,7 @@ class SelectionWidget(NdWidget):
         key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
-                   if not isinstance(v, basestring) and isnumeric(v) else v for v in k]
+                   if isnumeric(v) else v for v in k]
             key = str(tuple(key))
             key_data[key] = i
         return json.dumps(key_data)

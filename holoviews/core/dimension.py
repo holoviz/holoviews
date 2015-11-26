@@ -268,7 +268,8 @@ class LabelledData(param.Parameterized):
         settings = dict(params, **overrides)
         if data is None and shared_data:
             data = self.data
-        return clone_type(data, *args, **settings)
+        return clone_type(data, *args, **{k:v for k,v in settings.items()
+                                          if k not in getattr(self, '_pos_params', [])})
 
 
     def relabel(self, label=None, group=None, depth=0):
