@@ -312,7 +312,7 @@ class Callbacks(param.Parameterized):
         for callback in callbacks:
             if isinstance(callback, Callback):
                 jscb, pycb = self.initialize_callback(cb_obj, plot, callback)
-                if chain_callback:
+                if chain_callback and pycb is not chain_callback:
                     chain_callback.streams.append(pycb)
                     chain_callback = pycb
                 else:
