@@ -497,8 +497,8 @@ class DynamicMap(HoloMap):
 
     def _cross_product(self, tuple_key, cache):
         """
-        Returns a HoloMap if the key (tuple form) expresses a cross
-        product, otherwise returns None. The cache argument is a
+        Returns a new DynamicMap if the key (tuple form) expresses a
+        cross product, otherwise returns None. The cache argument is a
         dictionary (key:element pairs) of all the data found in the
         cache for this key.
 
@@ -524,7 +524,7 @@ class DynamicMap(HoloMap):
             else:
                 val = self._execute_callback(*key)
             data.append((key, val))
-        return self.clone(data, new_type=HoloMap)
+        return self.clone(data)
 
 
     def __getitem__(self, key):
@@ -537,20 +537,20 @@ class DynamicMap(HoloMap):
 
         # Validation for closed mode
         if self.mode == 'closed':
-            # DynamicMap(...)[:] returns a HoloMap of the available (cached) data
+            # DynamicMap(...)[:] returns a new DynamicMap with the same cache
             if key == slice(None, None, None):
-                return HoloMap(self)
+                return self.clone(self)
 
             if any(isinstance(el, slice) for el in tuple_key):
-                raise Exception("Slices not supported by DynamicMap in closed mode"
-                                "except for the global slice [:] to convert to HoloMap.")
+                raise Exception("Slices not supported by DynamicMap in closed mode "
+                                "except for the global slice [:] to create a clone.")
 
         # Cache lookup
         try:
             cache = super(DynamicMap,self).__getitem__(key)
-            # Cast available cache in open mode to a HoloMap
+            # Return selected cache items in a new DynamicMap
             if isinstance(cache, DynamicMap) and self.mode=='open':
-                cache = HoloMap(cache)
+                cache = self.clone(cache)
         except KeyError as e:
             cache = None
             if self.mode == 'open' and len(self.data)>0:
