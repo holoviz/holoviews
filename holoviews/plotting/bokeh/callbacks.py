@@ -65,6 +65,8 @@ class Callback(param.ParameterizedFunction):
                   ds.set(value.data);
                 }
             });
+          } else {
+            console.log("Python callback returned unexpected message:", msg)
           }
         }
         callbacks = {iopub: {output: callback}};
