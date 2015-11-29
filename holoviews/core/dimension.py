@@ -392,15 +392,15 @@ class LabelledData(param.Parameterized):
                 matches = [k for k in d if k.startswith('_custom_option')]
                 for match in matches:
                     custom_id = int(match.split('_')[-1])
-
-                    backend_info = (d[match] if all(isinstance(d,dict)
-                                                    for d in d[match].values())
-                                    else {'matplotlib':d[match]})
-
+                    if not isinstance(d[match], dict):
+                        # Backward compatibility before multiple backends
+                        backed_info = {'matplotlib':d[match]}
+                    else:
+                        backend_info = d[match]
                     for backend, info in  backend_info.items():
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
-                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info[backend]
+                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info
 
                     d.pop(match)
 
