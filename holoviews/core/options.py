@@ -853,12 +853,11 @@ class Store(object):
 
     @classmethod
     def lookup_options(cls, backend, obj, group):
-        if obj.id is None:
-            return cls._options[backend].closest(obj, group)
-        elif obj.id in cls._custom_options[backend]:
+        # Current custom_options dict may not have entry for obj.id
+        if obj.id in cls._custom_options[backend]:
             return cls._custom_options[backend][obj.id].closest(obj, group)
         else:
-            raise KeyError("No custom settings defined for object with id %d" % obj.id)
+            return cls._options[backend].closest(obj, group)
 
     @classmethod
     def lookup(cls, backend, obj):
