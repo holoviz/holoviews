@@ -804,8 +804,7 @@ class Store(object):
         Equivalent to pickle.load except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
-                                   if cls.custom_options() else 0)
+        cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.load(filename)
         cls.load_counter_offset = None
         return val
@@ -816,8 +815,7 @@ class Store(object):
         Equivalent to pickle.loads except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
-                                   if cls.custom_options() else 0)
+        cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.loads(pickle_string)
         cls.load_counter_offset = None
         return val
@@ -1062,8 +1060,7 @@ class StoreOptions(object):
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
-        store_ids = Store.custom_options().keys()
-        offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
+        offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids)==0 else obj_ids
         for tree_id in obj_ids:
             if tree_id is not None:
@@ -1171,6 +1168,18 @@ class StoreOptions(object):
 
 
     @classmethod
+    def id_offset(cls):
+        """
+        Compute an appropriate offset for future id values given the set
+        of ids currently defined across backends.
+        """
+        max_ids = []
+        for backend in Store.renderers.keys():
+            store_ids = Store.custom_options(backend=backend).keys()
+            max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
+            max_ids.append(max_id)
+        return max(max_ids)
+
     def set_options(cls, obj, options=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
