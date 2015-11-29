@@ -975,7 +975,8 @@ class StoreOptions(object):
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
         obj.traverse(lambda o: setattr(o, 'id', new_id)
-                     if o.id == match_id else None, specs=set(applied_keys))
+                     if (o.id == match_id) or (match_id is None)
+                     else None, specs=set(applied_keys))
 
     @classmethod
     def capture_ids(cls, obj):
@@ -1071,7 +1072,7 @@ class StoreOptions(object):
             else:
                 clone = OptionTree(groups=Store.options().groups)
                 clones[offset] = clone
-                id_mapping.append((None, offset))
+                id_mapping.append((tree_id, offset))
 
            # Nodes needed to ensure allowed_keywords is respected
             for (k,v) in Store.options().items():
