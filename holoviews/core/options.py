@@ -1062,7 +1062,7 @@ class StoreOptions(object):
         offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids)==0 else obj_ids
         for tree_id in obj_ids:
-            if tree_id is not None:
+            if tree_id is not None and tree_id in Store.custom_options():
                 original = Store.custom_options()[tree_id]
                 clone = OptionTree(items = original.items(),
                                    groups = original.groups)
