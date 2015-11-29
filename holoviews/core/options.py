@@ -1179,6 +1179,26 @@ class StoreOptions(object):
             max_ids.append(max_id)
         return max(max_ids)
 
+
+    @classmethod
+    def update_backends(self, id_mapping, custom_trees):
+        """
+        Given the id_mapping from previous ids to new ids and the new
+        custom tree dictionary, update the current backend with the
+        supplied trees and update the keys in the remaining backends to
+        stay linked with the current object.
+        """
+        # Update the custom option entries for the current backend
+        Store.custom_options().update(custom_trees)
+        # Update the entries in other backends so the ids match correctly
+        for backend in [k for k in Store.renderers.keys() if k != Store.current_backend]:
+            for (old_id, new_id) in id_mapping:
+                tree = Store._custom_options[backend].pop(old_id, None)
+                if tree is not None:
+                    Store._custom_options[backend][new_id] = tree
+
+
+    @classmethod
     def set_options(cls, obj, options=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
@@ -1225,7 +1245,7 @@ class StoreOptions(object):
         options = cls.merge_options(Store.options().groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
-        Store.custom_options().update(custom_trees)
+        cls.update_backends(id_mapping, custom_trees)
         for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj
