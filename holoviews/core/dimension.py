@@ -372,7 +372,8 @@ class LabelledData(param.Parameterized):
                 custom_key = '_custom_option_%d' % obj_dict['id']
                 if custom_key not in obj_dict:
                     obj_dict[custom_key] = {backend:s[obj_dict['id']]
-                                            for backend,s in Store._custom_options.items()}
+                                            for backend,s in Store._custom_options.items()
+                                            if obj_dict['id'] in s}
             else:
                 obj_dict['id'] = None
         except:
