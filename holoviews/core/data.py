@@ -1135,7 +1135,7 @@ class DictColumns(DataColumns):
     @classmethod
     def reindex(cls, columns, kdims, vdims):
         # DataFrame based tables don't need to be reindexed
-        return OrderedDict([(d, columns.dimension_values(d))
+        return OrderedDict([(d.name, columns.dimension_values(d))
                             for d in kdims+vdims])
 
 

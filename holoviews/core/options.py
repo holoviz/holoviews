@@ -804,8 +804,7 @@ class Store(object):
         Equivalent to pickle.load except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
-                                   if cls.custom_options() else 0)
+        cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.load(filename)
         cls.load_counter_offset = None
         return val
@@ -816,8 +815,7 @@ class Store(object):
         Equivalent to pickle.loads except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
-                                   if cls.custom_options() else 0)
+        cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.loads(pickle_string)
         cls.load_counter_offset = None
         return val
@@ -854,12 +852,11 @@ class Store(object):
 
     @classmethod
     def lookup_options(cls, backend, obj, group):
-        if obj.id is None:
-            return cls._options[backend].closest(obj, group)
-        elif obj.id in cls._custom_options[backend]:
+        # Current custom_options dict may not have entry for obj.id
+        if obj.id in cls._custom_options[backend]:
             return cls._custom_options[backend][obj.id].closest(obj, group)
         else:
-            raise KeyError("No custom settings defined for object with id %d" % obj.id)
+            return cls._options[backend].closest(obj, group)
 
     @classmethod
     def lookup(cls, backend, obj):
@@ -977,7 +974,7 @@ class StoreOptions(object):
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
         obj.traverse(lambda o: setattr(o, 'id', new_id)
-                     if o.id == match_id else None, specs=set(applied_keys))
+                      if o.id == match_id else None, specs=set(applied_keys))
 
     @classmethod
     def capture_ids(cls, obj):
@@ -1061,11 +1058,10 @@ class StoreOptions(object):
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
-        store_ids = Store.custom_options().keys()
-        offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
+        offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids)==0 else obj_ids
         for tree_id in obj_ids:
-            if tree_id is not None:
+            if tree_id is not None and tree_id in Store.custom_options():
                 original = Store.custom_options()[tree_id]
                 clone = OptionTree(items = original.items(),
                                    groups = original.groups)
@@ -1074,7 +1070,7 @@ class StoreOptions(object):
             else:
                 clone = OptionTree(groups=Store.options().groups)
                 clones[offset] = clone
-                id_mapping.append((None, offset))
+                id_mapping.append((tree_id, offset))
 
            # Nodes needed to ensure allowed_keywords is respected
             for (k,v) in Store.options().items():
@@ -1170,6 +1166,38 @@ class StoreOptions(object):
 
 
     @classmethod
+    def id_offset(cls):
+        """
+        Compute an appropriate offset for future id values given the set
+        of ids currently defined across backends.
+        """
+        max_ids = []
+        for backend in Store.renderers.keys():
+            store_ids = Store.custom_options(backend=backend).keys()
+            max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
+            max_ids.append(max_id)
+        return max(max_ids)
+
+
+    @classmethod
+    def update_backends(self, id_mapping, custom_trees):
+        """
+        Given the id_mapping from previous ids to new ids and the new
+        custom tree dictionary, update the current backend with the
+        supplied trees and update the keys in the remaining backends to
+        stay linked with the current object.
+        """
+        # Update the custom option entries for the current backend
+        Store.custom_options().update(custom_trees)
+        # Update the entries in other backends so the ids match correctly
+        for backend in [k for k in Store.renderers.keys() if k != Store.current_backend]:
+            for (old_id, new_id) in id_mapping:
+                tree = Store._custom_options[backend].pop(old_id, None)
+                if tree is not None:
+                    Store._custom_options[backend][new_id] = tree
+
+
+    @classmethod
     def set_options(cls, obj, options=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
@@ -1216,7 +1244,7 @@ class StoreOptions(object):
         options = cls.merge_options(Store.options().groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
-        Store.custom_options().update(custom_trees)
+        cls.update_backends(id_mapping, custom_trees)
         for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj

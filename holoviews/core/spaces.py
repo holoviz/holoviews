@@ -348,6 +348,8 @@ class DynamicMap(HoloMap):
     dimensions are fully bounded.
     """
     _sorted = False
+    # Declare that callback is a positional parameter (used in clone)
+    _pos_params = ['callback']
 
     callback = param.Parameter(doc="""
         The callable or generator used to generate the elements. In the
@@ -379,8 +381,8 @@ class DynamicMap(HoloMap):
        element will be cached and therefore accessible when casting to a
        HoloMap.  Applicable in open mode only.""")
 
-    def __init__(self, initial_items=None, **params):
-        super(DynamicMap, self).__init__(initial_items, **params)
+    def __init__(self, callback, initial_items=None, **params):
+        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
         self.counter = 0
         if self.callback is None:
             raise Exception("A suitable callback must be "
@@ -474,13 +476,17 @@ class DynamicMap(HoloMap):
             return (self.counter, retval)
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
-        Overrides Dimensioned clone to avoid checking items if data
-        is unchanged.
+        Clone method to adapt the slightly different signature of
+        DynamicMap that also overrides Dimensioned clone to avoid
+        checking items if data is unchanged.
         """
-        return super(UniformNdMapping, self).clone(data, shared_data,
-                                                   *args, **overrides)
+        if data is None and shared_data:
+            data = self.data
+        return super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
+                                                   shared_data, new_type,
+                                                   *(data,) + args, **overrides)
 
 
     def reset(self):
@@ -497,8 +503,8 @@ class DynamicMap(HoloMap):
 
     def _cross_product(self, tuple_key, cache):
         """
-        Returns a HoloMap if the key (tuple form) expresses a cross
-        product, otherwise returns None. The cache argument is a
+        Returns a new DynamicMap if the key (tuple form) expresses a
+        cross product, otherwise returns None. The cache argument is a
         dictionary (key:element pairs) of all the data found in the
         cache for this key.
 
@@ -524,7 +530,7 @@ class DynamicMap(HoloMap):
             else:
                 val = self._execute_callback(*key)
             data.append((key, val))
-        return self.clone(data, new_type=HoloMap)
+        return self.clone(data)
 
 
     def __getitem__(self, key):
@@ -537,20 +543,20 @@ class DynamicMap(HoloMap):
 
         # Validation for closed mode
         if self.mode == 'closed':
-            # DynamicMap(...)[:] returns a HoloMap of the available (cached) data
+            # DynamicMap(...)[:] returns a new DynamicMap with the same cache
             if key == slice(None, None, None):
-                return HoloMap(self)
+                return self.clone(self)
 
             if any(isinstance(el, slice) for el in tuple_key):
-                raise Exception("Slices not supported by DynamicMap in closed mode"
-                                "except for the global slice [:] to convert to HoloMap.")
+                raise Exception("Slices not supported by DynamicMap in closed mode "
+                                "except for the global slice [:] to create a clone.")
 
         # Cache lookup
         try:
             cache = super(DynamicMap,self).__getitem__(key)
-            # Cast available cache in open mode to a HoloMap
+            # Return selected cache items in a new DynamicMap
             if isinstance(cache, DynamicMap) and self.mode=='open':
-                cache = HoloMap(cache)
+                cache = self.clone(cache)
         except KeyError as e:
             cache = None
             if self.mode == 'open' and len(self.data)>0:

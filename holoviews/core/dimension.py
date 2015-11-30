@@ -268,7 +268,8 @@ class LabelledData(param.Parameterized):
         settings = dict(params, **overrides)
         if data is None and shared_data:
             data = self.data
-        return clone_type(data, *args, **settings)
+        return clone_type(data, *args, **{k:v for k,v in settings.items()
+                                          if k not in getattr(self, '_pos_params', [])})
 
 
     def relabel(self, label=None, group=None, depth=0):
@@ -371,7 +372,8 @@ class LabelledData(param.Parameterized):
                 custom_key = '_custom_option_%d' % obj_dict['id']
                 if custom_key not in obj_dict:
                     obj_dict[custom_key] = {backend:s[obj_dict['id']]
-                                            for backend,s in Store._custom_options.items()}
+                                            for backend,s in Store._custom_options.items()
+                                            if obj_dict['id'] in s}
             else:
                 obj_dict['id'] = None
         except:
@@ -391,15 +393,15 @@ class LabelledData(param.Parameterized):
                 matches = [k for k in d if k.startswith('_custom_option')]
                 for match in matches:
                     custom_id = int(match.split('_')[-1])
-
-                    backend_info = (d[match] if all(isinstance(d,dict)
-                                                    for d in d[match].values())
-                                    else {'matplotlib':d[match]})
-
+                    if not isinstance(d[match], dict):
+                        # Backward compatibility before multiple backends
+                        backed_info = {'matplotlib':d[match]}
+                    else:
+                        backend_info = d[match]
                     for backend, info in  backend_info.items():
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
-                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info[backend]
+                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info
 
                     d.pop(match)
 
