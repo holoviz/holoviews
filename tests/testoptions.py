@@ -1,3 +1,5 @@
+import os
+import pickle
 import numpy as np
 from holoviews import Store, StoreOptions, Histogram, Image
 from holoviews.core.options import OptionError, Cycle, Options, OptionTree
@@ -402,4 +404,54 @@ class TestCrossBackendOptions(ComparisonTestCase):
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
         return img
 
+
+class TestCrossBackendOptionPickling(TestCrossBackendOptions):
+
+    cleanup = ['test_raw_pickle.pkl', 'test_pickle_mpl_bokeh.pkl']
+
+    def tearDown(self):
+        super(TestCrossBackendOptionPickling, self).tearDown()
+        for f in self.cleanup:
+            try:
+                os.remove(f)
+            except:
+                pass
+
+    def test_raw_pickle(self):
+        """
+        Test usual pickle saving and loading (no style information preserved)
+        """
+        fname= 'test_raw_pickle.pkl'
+        raw = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
+        pickle.dump(raw, open(fname,'w'))
+        self.clear_options()
+        img = pickle.load(open(fname,'r'))
+        # Data should match
+        self.assertEqual(raw, img)
+        # But the styles will be lost without using Store.load/Store.dump
+        pickle.current_backend = 'matplotlib'
+        mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
+        self.assertEqual(mpl_opts, {})
+        # ... across all backends
+        Store.current_backend = 'bokeh'
+        bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
+        self.assertEqual(bokeh_opts, {})
+
+    def test_pickle_mpl_bokeh(self):
+        """
+        Test pickle saving and loading with Store (style information preserved)
+        """
+        fname = 'test_pickle_mpl_bokeh.pkl'
+        img = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
+        Store.dump(img, open(fname,'w'))
+        self.clear_options()
+        img = Store.load(open(fname,'r'))
+        # Check it is still blue in matplotlib...
+        Store.current_backend = 'matplotlib'
+        mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
+        self.assertEqual(mpl_opts, {'cmap':'Blues'})
+        # And purple in bokeh..
+        Store.current_backend = 'bokeh'
+        bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
+        self.assertEqual(bokeh_opts, {'cmap':'Purple'})
 
