@@ -376,6 +376,7 @@ class OutputMagic(OptionsMagic):
         backend = cls.options.get('backend', cls.defaults['backend'])
         cls.options = dict(cls.defaults)
         cls._set_render_options(cls.defaults)
+        cls.set_backend(backend)
 
 
     @classmethod
