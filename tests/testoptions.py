@@ -442,10 +442,12 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Test pickle saving and loading with Store (style information preserved)
         """
         fname = 'test_pickle_mpl_bokeh.pkl'
-        img = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
-        Store.dump(img, open(fname,'w'))
+        raw = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
+        Store.dump(raw, open(fname,'w'))
         self.clear_options()
         img = Store.load(open(fname,'r'))
+        # Data should match
+        self.assertEqual(raw, img)
         # Check it is still blue in matplotlib...
         Store.current_backend = 'matplotlib'
         mpl_opts = Store.lookup_options('matplotlib', img, 'style').options
