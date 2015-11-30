@@ -94,6 +94,8 @@ class Renderer(Exporter):
         The widget mode determining whether frames are embedded or generated
         'live' when interacting with the widget.""")
 
+    css = param.Dict(doc="Dictionary of CSS attributes and values to apply to HTML output")
+
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
 

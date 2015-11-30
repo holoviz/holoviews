@@ -348,7 +348,7 @@ class OutputMagic(OptionsMagic):
         split_backend, mode = split if len(split)==2 else (split[0], 'default')
         formats = Store.renderers[split_backend].mode_formats
 
-        render_params = ['fig', 'holomap']
+        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
         for p in render_params:
             if p in cls._backend_options[backend]:
                 opt = cls._backend_options[backend][p]
@@ -385,7 +385,7 @@ class OutputMagic(OptionsMagic):
         split = options['backend'].split(':')
         backend, mode = split if len(split)==2 else (split[0], 'default')
         renderer = Store.renderers[backend]
-        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi']
+        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
         render_options = {k: options[k] for k in render_params}
         renderer.set_param(**dict(render_options, widget_mode=options['widgets'],
                                   mode=mode))
