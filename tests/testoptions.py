@@ -423,9 +423,9 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         """
         fname= 'test_raw_pickle.pkl'
         raw = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
-        pickle.dump(raw, open(fname,'w'))
+        pickle.dump(raw, open(fname,'wb'))
         self.clear_options()
-        img = pickle.load(open(fname,'r'))
+        img = pickle.load(open(fname,'rb'))
         # Data should match
         self.assertEqual(raw, img)
         # But the styles will be lost without using Store.load/Store.dump
@@ -443,9 +443,9 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         """
         fname = 'test_pickle_mpl_bokeh.pkl'
         raw = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
-        Store.dump(raw, open(fname,'w'))
+        Store.dump(raw, open(fname,'wb'))
         self.clear_options()
-        img = Store.load(open(fname,'r'))
+        img = Store.load(open(fname,'rb'))
         # Data should match
         self.assertEqual(raw, img)
         # Check it is still blue in matplotlib...
