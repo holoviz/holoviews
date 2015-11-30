@@ -39,6 +39,51 @@ def process_object(obj):
     OutputMagic.info(obj)
 
 
+def render_object(obj, **kwargs):
+    info = process_object(obj)
+    if info: return info
+
+    if render_anim is not None:
+        return render_anim(obj)
+
+    backend = Store.current_backend
+    return Store.renderers[backend].html(obj, **kwargs)
+
+
+def single_frame_plot(obj):
+    """
+    Returns plot, renderer and format for single frame export.
+    """
+    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+
+    backend = Store.current_backend
+    renderer = Store.renderers[backend]
+
+    plot_cls = renderer.plotting_class(obj)
+    plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
+    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
+    return plot, renderer, fmt
+
+
+def first_frame(obj):
+    "Only display the first frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(0)
+    return renderer.html(plot, fmt)
+
+def middle_frame(obj):
+    "Only display the (approximately) middle frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    middle_frame = int(len(plot) / 2)
+    plot.update(middle_frame)
+    return renderer.html(plot, fmt)
+
+def last_frame(obj):
+    "Only display the last frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(len(plot))
+    return renderer.html(plot, fmt)
+
 #===============#
 # Display hooks #
 #===============#
@@ -69,50 +114,6 @@ def display_hook(fn):
     return wrapped
 
 
-def single_frame_plot(obj):
-    """
-    Returns plot, renderer and format for single frame export.
-    """
-    backend = Store.current_backend
-    renderer = Store.renderers[backend]
-    plot_cls = renderer.plotting_class(obj)
-    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-    plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
-    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
-    return plot, renderer, fmt
-
-
-@display_hook
-def first_frame(obj, max_frames, max_branches):
-    "Only display the first frame of an animated plot"
-    info = process_object(obj)
-    if info: return info
-
-    plot, renderer, fmt = single_frame_plot(obj)
-    plot.update(0)
-    return renderer.html(plot, fmt)
-
-@display_hook
-def middle_frame(obj, max_frames, max_branches):
-    "Only display the (approximately) middle frame of an animated plot"
-    info = process_object(obj)
-    if info: return info
-
-    plot, renderer, fmt = single_frame_plot(obj)
-    middle_frame = int(len(plot) / 2)
-    plot.update(middle_frame)
-    return renderer.html(plot, fmt)
-
-@display_hook
-def last_frame(obj, max_frames, max_branches):
-    info = process_object(obj)
-    if info: return info
-
-    "Only display the last frame of an animated plot"
-    plot, renderer, fmt = single_frame_plot(obj)
-    plot.update(len(plot))
-    return renderer.html(plot, fmt)
-
 class Warning(param.Parameterized): pass
 display_warning = Warning(name='Warning')
 
@@ -124,15 +125,12 @@ def element_display(element, max_frames, max_branches):
 
     backend = Store.current_backend
     renderer = Store.renderers[backend]
-    return renderer.html(element, renderer.fig)
+    return renderer.html(element, fmt=renderer.fig)
 
 
 @display_hook
 def map_display(vmap, max_frames, max_branches):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
-
-    info = process_object(vmap)
-    if info: return info
 
     if len(vmap) == 0:
         return sanitize_HTML(vmap)
@@ -140,8 +138,7 @@ def map_display(vmap, max_frames, max_branches):
         max_frame_warning(max_frames)
         return sanitize_HTML(vmap)
 
-    backend = Store.current_backend
-    return Store.renderers[backend].html(vmap)
+    return render_object(vmap)
 
 
 @display_hook
@@ -159,27 +156,19 @@ def layout_display(layout, max_frames, max_branches):
                 max_frame_warning(max_frames)
                 return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
-    info = process_object(layout)
-    if info: return info
-
-    backend = Store.current_backend
-    return Store.renderers[backend].html(layout)
+    return render_object(layout)
 
 
 @display_hook
 def grid_display(grid, max_frames, max_branches):
     if not isinstance(grid, GridSpace): return None
 
-    info = process_object(grid)
-    if info: return info
-
     nframes = len(unique_dimkeys(grid)[1])
     if nframes > max_frames:
         max_frame_warning(max_frames)
         return sanitize_HTML(grid)
 
-    backend = Store.current_backend
-    return Store.renderers[backend].html(grid)
+    return render_object(grid)
 
 
 def display(obj, raw=False, **kwargs):
@@ -188,9 +177,7 @@ def display(obj, raw=False, **kwargs):
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
-    if render_anim is not None and isinstance(obj, LabelledData):
-        html = render_anim(obj)
-    elif isinstance(obj, GridSpace):
+    if isinstance(obj, GridSpace):
         html = grid_display(obj)
     elif isinstance(obj, (CompositeOverlay, ViewableElement)):
         html = element_display(obj)
