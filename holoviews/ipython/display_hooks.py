@@ -124,6 +124,8 @@ def element_display(element, max_frames, max_branches):
     if info: return info
 
     backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
     renderer = Store.renderers[backend]
     return renderer.html(element, fmt=renderer.fig)
 
