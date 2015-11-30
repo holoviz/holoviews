@@ -68,29 +68,31 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
-    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
-         The available rendering modes. As a minimum, the 'default'
-         mode must be supported.""")
+    dpi=param.Integer(None, allow_None=True, doc="""
+        The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
+
+    fps=param.Integer(20, doc="""
+        Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
                                    objects=['scrubber','widgets', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
+    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
+         The available rendering modes. As a minimum, the 'default'
+         mode must be supported.""")
+
     size=param.Integer(100, doc="""
         The rendered size as a percentage size""")
 
-    fps=param.Integer(20, doc="""
-        Rendered fps (frames per second) for animated formats.""")
-
-    dpi=param.Integer(None, allow_None=True, doc="""
-        The render resolution in dpi (dots per inch)""")
-
-    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'])
+    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'], doc="""
+        The widget mode determining whether frames are embedded or generated
+        'live' when interacting with the widget.""")
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")

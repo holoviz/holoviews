@@ -39,7 +39,7 @@ class MPLRenderer(Renderer):
     backend = param.String('matplotlib', doc="The backend name.")
 
     fig = param.ObjectSelector(default='auto',
-                               objects=['png', 'svg', 'pdf', None, 'auto'], doc="""
+                               objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
