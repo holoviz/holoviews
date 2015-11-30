@@ -197,7 +197,8 @@ class OutputMagic(OptionsMagic):
         return backends
 
     def list_formats(format_type):
-        renderer = Store.renderers.values()[0]
+        backend = Store.current_backend
+        renderer = Store.renderers[backend]
         return renderer.params(format_type).objects
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
