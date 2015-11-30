@@ -21,21 +21,35 @@ ABBREVIATE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
-def first_frame(plot, renderer, **kwargs):
-    "Only display the first frame of an animated plot"
-    plot.update(0)
-    return display_frame(plot, renderer, **kwargs)
+def single_frame_plot(obj):
+    """
+    Returns plot, renderer and format for single frame export.
+    """
+    backend = Store.current_backend
+    renderer = Store.renderers[backend]
+    plot_cls = renderer.plotting_class(obj)
+    plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
+    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
+    return plot, renderer, fmt
 
-def middle_frame(plot, renderer, **kwargs):
+def first_frame(obj):
+    "Only display the first frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(0)
+    return renderer.html(plot, fmt)
+
+def middle_frame(obj):
     "Only display the (approximately) middle frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
-    return display_frame(plot, renderer, **kwargs)
+    return renderer.html(plot, fmt)
 
-def last_frame(plot, renderer, **kwargs):
+def last_frame(obj):
     "Only display the last frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
-    return display_frame(plot, renderer, **kwargs)
+    return renderer.html(plot, fmt)
 
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
@@ -85,18 +99,20 @@ def display_hook(fn):
     return wrapped
 
 
+
+class Warning(param.Parameterized): pass
+display_warning = Warning(name='Warning')
+
+
 @display_hook
 def element_display(element, size, max_frames, max_branches):
     info = process_object(element)
     if info: return info
 
     backend = Store.current_backend
-    return Store.renderers[backend].html(element)
+    renderer = Store.renderers[backend]
+    return renderer.html(element, renderer.fig)
 
-
-
-class Warning(param.Parameterized): pass
-display_warning = Warning(name='Warning')
 
 @display_hook
 def map_display(vmap, size, max_frames, max_branches):
@@ -159,7 +175,9 @@ def display(obj, raw=False, **kwargs):
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
-    if isinstance(obj, GridSpace):
+    if render_anim is not None:
+        html = render_anim(obj)
+    elif isinstance(obj, GridSpace):
         html = grid_display(obj)
     elif isinstance(obj, (CompositeOverlay, ViewableElement)):
         html = element_display(obj)
