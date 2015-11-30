@@ -20,6 +20,9 @@ from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
 
+class OutputWarning(param.Parameterized):pass
+outputwarning = OutputWarning(name='Warning')
+
 
 class MPLRenderer(Renderer):
     """
@@ -296,3 +299,9 @@ class MPLRenderer(Renderer):
         if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
             outputwarning.warning("PDF output is experimental, may not be supported"
                                   "by your browser and may change in future.")
+
+        if options['backend']=='matplotlib:nbagg' and options['widgets'] != 'live':
+            outputwarning.warning("The widget mode must be set to 'live' for "
+                                  "matplotlib:nbagg.\nSwitching widget mode to 'live'.")
+            options['widgets'] = 'live'
+        return options

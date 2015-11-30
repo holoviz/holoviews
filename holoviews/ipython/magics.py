@@ -175,9 +175,6 @@ class OptionsMagic(Magics):
         return items
 
 
-class OutputWarning(param.Parameterized):pass
-outputwarning = OutputWarning(name='Warning')
-
 
 @magics_class
 class OutputMagic(OptionsMagic):
@@ -308,8 +305,7 @@ class OutputMagic(OptionsMagic):
     def _validate(cls, options, linemagic):
         "Validation of edge cases and incompatible options"
         backend = Store.current_backend
-        Store.renderers[backend].validate(options)
-        return options
+        return Store.renderers[backend].validate(options)
 
 
     @line_cell_magic

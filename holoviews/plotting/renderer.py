@@ -290,4 +290,4 @@ class Renderer(Exporter):
         """
         Validates a dictionary of options set on the backend.
         """
-        pass
+        return options

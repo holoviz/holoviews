@@ -118,4 +118,4 @@ class BokehRenderer(Renderer):
         if not cls._loaded:
             bokeh.io.load_notebook()
             cls._loaded = True
-
+        return options
