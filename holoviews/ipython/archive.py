@@ -3,7 +3,7 @@ Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
 
-import time, os, traceback
+import time, sys, os, traceback
 import io
 
 from IPython import version_info
@@ -64,12 +64,6 @@ class NotebookArchive(FileArchive):
     """
     exporters = param.List(default=renderers + [Pickler])
 
-    namespace = param.String('hv.archive', doc="""
-        The name of the current in the NotebookArchive instance in the
-        IPython namespace (must be available). Note that the default
-        assumes you are importing holoviews as hv, if not you may need
-        to change this to holoviews.archive instead.""")
-
     skip_notebook_export = param.Boolean(default=False, doc="""
         Whether to skip JavaScript capture of notebook data which may
         be unreliable. Also disabled automatic capture of notebook
@@ -113,6 +107,19 @@ class NotebookArchive(FileArchive):
         self.auto.__func__.__doc__ = 'auto(enabled=Boolean, %s)' % ', '.join(keywords)
 
 
+    def get_namespace(self):
+        """
+        Find the name the user is using to access holoviews.
+        """
+        if 'holoviews' not in sys.modules:
+            raise ImportError('HoloViews does not seem to be imported')
+        matches = [k for k,v in get_ipython().user_ns.items()
+           if not k.startswith('_') and v == sys.modules['holoviews']]
+        if len(matches) == 0:
+            raise Exception("Could not find holoviews module in namespace")
+        return '%s.archive' % matches[0]
+
+
     def last_export_status(self):
         "Helper to show the status of the last call to the export method."
         if self.export_success is True:
@@ -134,6 +141,7 @@ class NotebookArchive(FileArchive):
         Method to enable or disable automatic capture, allowing you to
         simultaneously set the instance parameters.
         """
+        self.namespace = self.get_namespace()
         self.notebook_name = "{notebook}"
         self._timestamp = tuple(time.localtime())
         kernel = r'var kernel = IPython.notebook.kernel; '
@@ -161,7 +169,7 @@ class NotebookArchive(FileArchive):
 
         self.export_success = None
         self._notebook_data = io.StringIO()
-        name = self.namespace
+        name = self.get_namespace()
         # Unfortunate javascript hacks to get at notebook data
         capture_cmd = ((r"var capture = '%s._notebook_data.write(r\"\"\"'" % name)
                        + r"+json_string+'\"\"\".decode(\'utf-8\'))'; ")
