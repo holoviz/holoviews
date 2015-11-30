@@ -97,6 +97,9 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
+            else:
+                options[keyword] = cls.defaults[keyword]
+
         return cls._validate(options, linemagic)
 
     @classmethod
@@ -334,11 +337,12 @@ class OutputMagic(OptionsMagic):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             self.set_backend(self.last_backend)
             OutputMagic.options = restore_copy
+            self._set_render_options(restore_copy)
 
 
     @classmethod
     def update_options(cls, options):
-        backend = options.get('backend', '').split(':')[0]
+        backend = options.get('backend', '')
         if not backend or backend == Store.current_backend:
             return
         cls.set_backend(backend)
@@ -349,16 +353,20 @@ class OutputMagic(OptionsMagic):
         if backend is None:
             backend = cls.options.get('backend', cls.defaults['backend'])
 
-        cls.allowed['fig'] = Store.renderers[backend].params('fig').objects
-        cls.allowed['holomap'] = Store.renderers[backend].params('holomap').objects
+        split = backend.split(':')
+        backend, mode = split if len(split)==2 else (split[0], 'default')
+
+        formats = Store.renderers[backend].mode_formats
+        cls.allowed['fig'] = formats['fig'][mode]
+        cls.allowed['holomap'] = formats['holomap'][mode]
 
         render_params = ['fig', 'holomap']
         for p in render_params:
-            if p in cls._backend_options[backend]:
-                cls.defaults[p] = cls._backend_options[backend][p]
+            if p in cls._backend_options[backend+mode]:
+                cls.defaults[p] = cls._backend_options[backend+mode][p]
             else:
-                cls._backend_options[backend][p] = cls.defaults[p]
-                cls.defaults[p] = Store.renderers[backend].params(p).objects[0]
+                cls._backend_options[Store.current_backend][p] = cls.defaults[p]
+                cls.defaults[p] = formats[p][mode][0]
 
         cls.last_backend = Store.current_backend
         Store.current_backend = backend
