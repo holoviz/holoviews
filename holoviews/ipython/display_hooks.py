@@ -21,46 +21,6 @@ ABBREVIATE_TRACEBACKS=True
 # Helper functions #
 #==================#
 
-def single_frame_plot(obj):
-    """
-    Returns plot, renderer and format for single frame export.
-    """
-    backend = Store.current_backend
-    renderer = Store.renderers[backend]
-    plot_cls = renderer.plotting_class(obj)
-    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-    plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
-    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
-    return plot, renderer, fmt
-
-def first_frame(obj):
-    "Only display the first frame of an animated plot"
-    info = process_object(obj)
-    if info: return info
-
-    plot, renderer, fmt = single_frame_plot(obj)
-    plot.update(0)
-    return renderer.html(plot, fmt)
-
-def middle_frame(obj):
-    "Only display the (approximately) middle frame of an animated plot"
-    info = process_object(obj)
-    if info: return info
-
-    plot, renderer, fmt = single_frame_plot(obj)
-    middle_frame = int(len(plot) / 2)
-    plot.update(middle_frame)
-    return renderer.html(plot, fmt)
-
-def last_frame(obj):
-    info = process_object(obj)
-    if info: return info
-
-    "Only display the last frame of an animated plot"
-    plot, renderer, fmt = single_frame_plot(obj)
-    plot.update(len(plot))
-    return renderer.html(plot, fmt)
-
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
     return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
@@ -109,6 +69,49 @@ def display_hook(fn):
     return wrapped
 
 
+def single_frame_plot(obj):
+    """
+    Returns plot, renderer and format for single frame export.
+    """
+    backend = Store.current_backend
+    renderer = Store.renderers[backend]
+    plot_cls = renderer.plotting_class(obj)
+    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+    plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
+    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
+    return plot, renderer, fmt
+
+
+@display_hook
+def first_frame(obj):
+    "Only display the first frame of an animated plot"
+    info = process_object(obj)
+    if info: return info
+
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(0)
+    return renderer.html(plot, fmt)
+
+@display_hook
+def middle_frame(obj):
+    "Only display the (approximately) middle frame of an animated plot"
+    info = process_object(obj)
+    if info: return info
+
+    plot, renderer, fmt = single_frame_plot(obj)
+    middle_frame = int(len(plot) / 2)
+    plot.update(middle_frame)
+    return renderer.html(plot, fmt)
+
+@display_hook
+def last_frame(obj):
+    info = process_object(obj)
+    if info: return info
+
+    "Only display the last frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(len(plot))
+    return renderer.html(plot, fmt)
 
 class Warning(param.Parameterized): pass
 display_warning = Warning(name='Warning')
