@@ -8,8 +8,9 @@ import IPython
 import param
 
 from ..core.options import Store, StoreOptions
-from ..core import Element, ViewableElement, UniformNdMapping, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, CompositeOverlay, DynamicMap
+from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
+                    HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
+                    CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys, bijective
 from .magics import OutputMagic, OptsMagic
 
@@ -49,7 +50,6 @@ def display_hook(fn):
         optstate = StoreOptions.state(element)
         try:
             html = fn(element,
-                      size=OutputMagic.options['size'],
                       max_frames=OutputMagic.options['max_frames'],
                       max_branches = OutputMagic.options['max_branches'])
             notebook_archive.add(element, html=html)
@@ -83,7 +83,7 @@ def single_frame_plot(obj):
 
 
 @display_hook
-def first_frame(obj):
+def first_frame(obj, max_frames, max_branches):
     "Only display the first frame of an animated plot"
     info = process_object(obj)
     if info: return info
@@ -93,7 +93,7 @@ def first_frame(obj):
     return renderer.html(plot, fmt)
 
 @display_hook
-def middle_frame(obj):
+def middle_frame(obj, max_frames, max_branches):
     "Only display the (approximately) middle frame of an animated plot"
     info = process_object(obj)
     if info: return info
@@ -104,7 +104,7 @@ def middle_frame(obj):
     return renderer.html(plot, fmt)
 
 @display_hook
-def last_frame(obj):
+def last_frame(obj, max_frames, max_branches):
     info = process_object(obj)
     if info: return info
 
@@ -118,7 +118,7 @@ display_warning = Warning(name='Warning')
 
 
 @display_hook
-def element_display(element, size, max_frames, max_branches):
+def element_display(element, max_frames, max_branches):
     info = process_object(element)
     if info: return info
 
@@ -128,7 +128,7 @@ def element_display(element, size, max_frames, max_branches):
 
 
 @display_hook
-def map_display(vmap, size, max_frames, max_branches):
+def map_display(vmap, max_frames, max_branches):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
 
     info = process_object(vmap)
@@ -145,7 +145,7 @@ def map_display(vmap, size, max_frames, max_branches):
 
 
 @display_hook
-def layout_display(layout, size, max_frames, max_branches):
+def layout_display(layout, max_frames, max_branches):
     if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
     if not isinstance(layout, (Layout, NdLayout)): return None
 
@@ -167,7 +167,7 @@ def layout_display(layout, size, max_frames, max_branches):
 
 
 @display_hook
-def grid_display(grid, size, max_frames, max_branches):
+def grid_display(grid, max_frames, max_branches):
     if not isinstance(grid, GridSpace): return None
 
     info = process_object(grid)
@@ -188,7 +188,7 @@ def display(obj, raw=False, **kwargs):
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
-    if render_anim is not None:
+    if render_anim is not None and isinstance(obj, LabelledData):
         html = render_anim(obj)
     elif isinstance(obj, GridSpace):
         html = grid_display(obj)

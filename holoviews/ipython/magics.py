@@ -55,7 +55,7 @@ class OptionsMagic(Magics):
 
 
     @classmethod
-    def update_options(cls, options):
+    def update_options(cls, options, items):
         """
         Allows updating options depending on class attributes
         and unvalidated options.
@@ -65,7 +65,7 @@ class OptionsMagic(Magics):
     def get_options(cls, line, options, linemagic):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
-        cls.update_options(items)
+        options = cls.update_options(options, items)
         for keyword in cls.defaults:
             if keyword in items:
                 value = items[keyword]
@@ -339,11 +339,27 @@ class OutputMagic(OptionsMagic):
 
 
     @classmethod
-    def update_options(cls, options):
-        backend = options.get('backend', '')
+    def update_options(cls, options, items):
+        backend = items.get('backend', '')
         if not backend or backend == Store.current_backend:
-            return
+            return options
+
+        split = backend.split(':')
+        split_backend, mode = split if len(split)==2 else (split[0], 'default')
+        formats = Store.renderers[split_backend].mode_formats
+
+        render_params = ['fig', 'holomap']
+        for p in render_params:
+            if p in cls._backend_options[backend]:
+                opt = cls._backend_options[backend][p]
+                cls.defaults[p] = opt
+                options[p] = opt
+            else:
+                cls._backend_options[Store.current_backend][p] = cls.defaults[p]
+                cls.defaults[p] = formats[p][mode][0]
+                options[p] = formats[p][mode][0]
         cls.set_backend(backend)
+        return options
 
 
     @classmethod
@@ -359,14 +375,6 @@ class OutputMagic(OptionsMagic):
         formats = Store.renderers[backend].mode_formats
         cls.allowed['fig'] = formats['fig'][mode]
         cls.allowed['holomap'] = formats['holomap'][mode]
-
-        render_params = ['fig', 'holomap']
-        for p in render_params:
-            if p in cls._backend_options[backend+mode]:
-                cls.defaults[p] = cls._backend_options[backend+mode][p]
-            else:
-                cls._backend_options[Store.current_backend][p] = cls.defaults[p]
-                cls.defaults[p] = formats[p][mode][0]
 
         cls.last_backend = Store.current_backend
         Store.current_backend = backend
