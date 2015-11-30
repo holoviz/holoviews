@@ -370,8 +370,7 @@ class OutputMagic(OptionsMagic):
         renderer = Store.renderers[backend]
         render_params = ['fig', 'holomap', 'size', 'fps', 'dpi']
         render_options = {k: options[k] for k in render_params}
-        widget_mode = options.pop('widgets')
-        renderer.set_param(**dict(render_options, widget_mode=widget_mode,
+        renderer.set_param(**dict(render_options, widget_mode=options['widgets'],
                                   mode=mode))
 
 
