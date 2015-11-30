@@ -65,7 +65,7 @@ class OptionsMagic(Magics):
     def get_options(cls, line, options, linemagic):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
-        cls.update_options(options)
+        cls.update_options(items)
         for keyword in cls.defaults:
             if keyword in items:
                 value = items[keyword]
@@ -242,8 +242,7 @@ class OutputMagic(OptionsMagic):
     # Backend state management #
     #==========================#
 
-    renderer = None
-
+    last_backend = None
 
     def missing_dependency_exception(value, keyword, allowed):
         raise Exception("Format %r does not appear to be supported." % value)
@@ -322,10 +321,9 @@ class OutputMagic(OptionsMagic):
         restore_copy = OrderedDict(OutputMagic.options.items())
         try:
             options = OrderedDict(OutputMagic.options.items())
-
             new_options = self.get_options(line, options, cell is None)
             self._set_render_options(new_options)
-            self.options = new_options
+            OutputMagic.options = new_options
         except Exception as e:
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
@@ -333,8 +331,8 @@ class OutputMagic(OptionsMagic):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-        else:
-            self.update_allowed()
+            self.set_backend(self.last_backend)
+            OutputMagic.options = restore_copy
 
 
     @classmethod
@@ -342,17 +340,6 @@ class OutputMagic(OptionsMagic):
         backend = options.get('backend', '').split(':')[0]
         if not backend or backend == Store.current_backend:
             return
-
-        cls.allowed['fig'] = Store.renderers[value].params('fig').objects
-        cls.allowed['holomap'] = Store.renderers[value].params('holomap').objects
-
-        render_params = ['fig', 'holomap']
-        for p in render_params:
-            if p in cls._backend_options[backend]:
-                cls.defaults[p] = cls._backend_options[backend][p]
-            else:
-                cls._backend_options[backend][p] = cls.defaults[p]
-                cls.defaults[p] = cls.renderer.params(p).objects[0]
         cls.set_backend(backend)
 
 
@@ -360,6 +347,19 @@ class OutputMagic(OptionsMagic):
     def set_backend(cls, backend=None):
         if backend is None:
             backend = cls.options.get('backend', cls.defaults['backend'])
+
+        cls.allowed['fig'] = Store.renderers[backend].params('fig').objects
+        cls.allowed['holomap'] = Store.renderers[backend].params('holomap').objects
+
+        render_params = ['fig', 'holomap']
+        for p in render_params:
+            if p in cls._backend_options[backend]:
+                cls.defaults[p] = cls._backend_options[backend][p]
+            else:
+                cls._backend_options[backend][p] = cls.defaults[p]
+                cls.defaults[p] = Store.renderers[backend].params(p).objects[0]
+
+        cls.last_backend = Store.current_backend
         Store.current_backend = backend
 
 
