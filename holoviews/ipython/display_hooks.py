@@ -35,18 +35,27 @@ def single_frame_plot(obj):
 
 def first_frame(obj):
     "Only display the first frame of an animated plot"
+    info = process_object(obj)
+    if info: return info
+
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(0)
     return renderer.html(plot, fmt)
 
 def middle_frame(obj):
     "Only display the (approximately) middle frame of an animated plot"
+    info = process_object(obj)
+    if info: return info
+
     plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
     return renderer.html(plot, fmt)
 
 def last_frame(obj):
+    info = process_object(obj)
+    if info: return info
+
     "Only display the last frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
