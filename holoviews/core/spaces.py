@@ -589,6 +589,8 @@ class DynamicMap(HoloMap):
             self.data.pop(first_key)
         self.data[key] = val
 
+    def __iter__(self):
+        return self
 
     def next(self):
         """
@@ -614,6 +616,8 @@ class DynamicMap(HoloMap):
         self.counter += 1
         return val
 
+    # For Python 2 and 3 compatibility
+    __next__ = next
 
 
 
