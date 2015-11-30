@@ -329,14 +329,26 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
         if 'bokeh' not in Store.renderers:
             raise SkipTest("Cross background tests assumes bokeh is available.")
-        self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
-
-        Store.options(val=OptionTree(groups=['plot', 'style']))
+        self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
+                                    groups=['style', 'plot', 'norm'])
+        self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
+                                    groups=['style', 'plot', 'norm'])
+        self.clear_options()
         super(TestCrossBackendOptions, self).setUp()
 
+
+    def clear_options(self):
+        # Clear global options..
+        Store.options(val=OptionTree(groups=['plot', 'style']), backend='matplotlib')
+        Store.options(val=OptionTree(groups=['plot', 'style']), backend='bokeh')
+        # ... and custom options
+        Store.custom_options({}, backend='matplotlib')
+        Store.custom_options({}, backend='bokeh')
+
+
     def tearDown(self):
-        Store.options(val=self.store_copy)
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
         super(TestCrossBackendOptions, self).tearDown()
 
 
@@ -360,6 +372,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
+        return img
 
 
     def test_mpl_bokeh_offset_mpl(self):
@@ -387,3 +400,6 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
+        return img
+
+
