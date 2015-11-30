@@ -21,10 +21,10 @@ class BokehRenderer(Renderer):
 
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
-                    'holomap': {'default': ['scrubber', 'selection', 'auto', None]}}
+                    'holomap': {'default': ['scrubber', 'widgets', 'auto', None]}}
 
     widgets = {'scrubber': BokehScrubberWidget,
-               'selection': BokehSelectionWidget}
+               'widgets': BokehSelectionWidget}
 
     _loaded = False
 
@@ -34,13 +34,11 @@ class BokehRenderer(Renderer):
         backend. The output is not a file format but a suitable,
         in-memory byte stream together with any suitable metadata.
         """
-        # Example of the return format where the first value is the rendered data.
-
         plot, fmt =  self._validate(obj, fmt)
 
         if fmt in self.widgets:
             return self.get_widget(plot, fmt)(), {'file-ext':' html',
-                                                'mime_type': MIME_TYPES['html']}
+                                                  'mime_type': MIME_TYPES['html']}
         elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
