@@ -461,7 +461,7 @@ class DynamicMap(HoloMap):
             self._validate_key(args)      # Validate input key
 
         if self.call_mode == 'generator':
-            retval = self.callback.next()
+            retval = next(self.callback)
         else:
             retval = self.callback(*args)
 
@@ -585,7 +585,7 @@ class DynamicMap(HoloMap):
         if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
             return
         if len(self) >= self.cache_size:
-            first_key = self.data.iterkeys().next()
+            first_key = next(self.data.iterkeys())
             self.data.pop(first_key)
         self.data[key] = val
 
