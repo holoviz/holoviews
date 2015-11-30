@@ -367,7 +367,7 @@ class OutputMagic(OptionsMagic):
                     cls.defaults[p] = opts
                     options[p] = opts
 
-        cls.set_backend(backend)
+        cls.set_backend(split_backend)
         return options
 
 
