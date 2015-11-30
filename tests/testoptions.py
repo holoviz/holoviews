@@ -351,6 +351,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
     def tearDown(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.current_backend = 'matplotlib'
         super(TestCrossBackendOptions, self).tearDown()
 
 
