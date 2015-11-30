@@ -157,7 +157,7 @@ class Renderer(Exporter):
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
 
-    def html(self, obj, fmt=None, css={}):
+    def html(self, obj, fmt=None, css=None):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
@@ -175,6 +175,7 @@ class Renderer(Exporter):
                 w,h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
+        if css is None: css = self.css
         if isinstance(css, dict):
             css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
         else:
