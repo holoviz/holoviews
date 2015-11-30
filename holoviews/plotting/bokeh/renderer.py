@@ -20,8 +20,8 @@ class BokehRenderer(Renderer):
         rendering will occur. """)
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json']},
-                    'holomap': {'default': ['scrubber', 'selection']}}
+    mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
+                    'holomap': {'default': ['scrubber', 'selection', 'auto', None]}}
 
     widgets = {'scrubber': BokehScrubberWidget,
                'selection': BokehSelectionWidget}

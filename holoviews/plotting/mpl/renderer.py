@@ -67,7 +67,7 @@ class MPLRenderer(Renderer):
     mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
                            'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
-                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif', None]
+                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto']
                                 for m in ['default', 'mpld3', 'nbagg']}}
 
     counter = 0

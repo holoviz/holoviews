@@ -101,7 +101,8 @@ class Renderer(Exporter):
         Renderers do not support the saving of object key metadata""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': [None]}, 'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': [None, 'auto']},
+                    'holomap': {'default': [None, 'auto']}}
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'selection': SelectionWidget}
