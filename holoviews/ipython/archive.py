@@ -64,9 +64,11 @@ class NotebookArchive(FileArchive):
     """
     exporters = param.List(default=renderers + [Pickler])
 
-    namespace = param.String('holoviews.archive', doc="""
+    namespace = param.String('hv.archive', doc="""
         The name of the current in the NotebookArchive instance in the
-        IPython namespace that must be available.""")
+        IPython namespace (must be available). Note that the default
+        assumes you are importing holoviews as hv, if not you may need
+        to change this to holoviews.archive instead.""")
 
     skip_notebook_export = param.Boolean(default=False, doc="""
         Whether to skip JavaScript capture of notebook data which may
