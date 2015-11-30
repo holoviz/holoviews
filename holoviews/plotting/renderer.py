@@ -126,7 +126,7 @@ class Renderer(Exporter):
         else:
             plot = obj
 
-        if fmt in ['auto', None] and len(plot) == 1:
+        if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
         elif fmt in ['auto', None]:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
