@@ -28,6 +28,7 @@ def single_frame_plot(obj):
     backend = Store.current_backend
     renderer = Store.renderers[backend]
     plot_cls = renderer.plotting_class(obj)
+    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
     plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
     fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
     return plot, renderer, fmt
