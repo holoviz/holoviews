@@ -340,6 +340,10 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def update_options(cls, options, items):
+        """
+        Switch default options and backend if new backend
+        is supplied in items.
+        """
         backend = items.get('backend', '')
         if not backend or backend == Store.current_backend:
             return options
@@ -347,6 +351,8 @@ class OutputMagic(OptionsMagic):
         split = backend.split(':')
         split_backend, mode = split if len(split)==2 else (split[0], 'default')
         formats = Store.renderers[split_backend].mode_formats
+        cls.allowed['fig'] = formats['fig'][mode]
+        cls.allowed['holomap'] = formats['holomap'][mode]
 
         render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
         for p in render_params:
@@ -358,30 +364,29 @@ class OutputMagic(OptionsMagic):
                 cls._backend_options[Store.current_backend][p] = cls.defaults[p]
                 cls.defaults[p] = formats[p][mode][0]
                 options[p] = formats[p][mode][0]
+
         cls.set_backend(backend)
         return options
 
 
     @classmethod
-    def set_backend(cls, backend=None):
-        if backend is None:
-            backend = cls.options.get('backend', cls.defaults['backend'])
-            cls.options = dict(cls.defaults)
-            cls._set_render_options(cls.defaults)
+    def initialize(cls):
+        backend = cls.options.get('backend', cls.defaults['backend'])
+        cls.options = dict(cls.defaults)
+        cls._set_render_options(cls.defaults)
 
-        split = backend.split(':')
-        backend, mode = split if len(split)==2 else (split[0], 'default')
 
-        formats = Store.renderers[backend].mode_formats
-        cls.allowed['fig'] = formats['fig'][mode]
-        cls.allowed['holomap'] = formats['holomap'][mode]
-
+    @classmethod
+    def set_backend(cls, backend):
         cls.last_backend = Store.current_backend
         Store.current_backend = backend
 
 
     @classmethod
     def _set_render_options(cls, options):
+        """
+        Set options on current Renderer.
+        """
         split = options['backend'].split(':')
         backend, mode = split if len(split)==2 else (split[0], 'default')
         renderer = Store.renderers[backend]
