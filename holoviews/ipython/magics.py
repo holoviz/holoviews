@@ -97,8 +97,6 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-            else:
-                options[keyword] = cls.defaults[keyword]
 
         return cls._validate(options, linemagic)
 
@@ -352,6 +350,8 @@ class OutputMagic(OptionsMagic):
     def set_backend(cls, backend=None):
         if backend is None:
             backend = cls.options.get('backend', cls.defaults['backend'])
+            cls.options = dict(cls.defaults)
+            cls._set_render_options(cls.defaults)
 
         split = backend.split(':')
         backend, mode = split if len(split)==2 else (split[0], 'default')
