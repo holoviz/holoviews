@@ -362,8 +362,10 @@ class OutputMagic(OptionsMagic):
                 options[p] = opt
             else:
                 cls._backend_options[Store.current_backend][p] = cls.defaults[p]
-                cls.defaults[p] = formats[p][mode][0]
-                options[p] = formats[p][mode][0]
+                if p in ['fig', 'holomap']:
+                    opts = formats[p][mode][0]
+                    cls.defaults[p] = opts
+                    options[p] = opts
 
         cls.set_backend(backend)
         return options
