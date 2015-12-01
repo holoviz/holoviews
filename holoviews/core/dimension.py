@@ -25,6 +25,8 @@ from .pprint import PrettyPrinter
 ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
            'constant_dimensions': 'cdims'}
 
+title_format = "{name}: {val}{unit}"
+
 def param_aliases(d):
     """
     Called from __setstate__ in LabelledData in order to load
@@ -89,12 +91,6 @@ class Dimension(param.Parameterized):
         be used to retain a categorical ordering. Setting values to
         'initial' indicates that the values will be added during construction.""")
 
-    format_string = param.String(default="{name}: {val}{unit}", doc="""
-        Format string to specify how pprint_value_string is generated. Valid
-        format keys include: 'name' (Dimension name), 'val' (a
-        particular dimension value to be presented) and 'unit' (the
-        unit string).""")
-
     # Defines default formatting by type
     type_formatters = {}
     unit_format = ' ({unit})'
@@ -150,13 +146,13 @@ class Dimension(param.Parameterized):
 
     def pprint_value_string(self, value):
         """
-        Pretty prints the dimension name and value using the
-        format_string parameter, including the unit string (if
+        Pretty prints the dimension name and value using the global
+        title_format variable, including the unit string (if
         set). Numeric types are printed to the stated rounding level.
         """
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
-        return self.format_string.format(name=self.name, val=value, unit=unit)
+        return title_format.format(name=self.name, val=value, unit=unit)
 
 
     def __hash__(self):
