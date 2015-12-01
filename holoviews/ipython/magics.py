@@ -73,7 +73,7 @@ class OptionsMagic(Magics):
                 if isinstance(allowed, set):  pass
                 elif isinstance(allowed, dict):
                     if not isinstance(value, dict):
-                        raise ValueError("Value %r for %r not a dict type" % value)
+                        raise ValueError("Value %r not a dict type" % value)
                     disallowed = set(value.keys()) - set(allowed.keys())
                     if disallowed:
                         raise ValueError("Keywords %r for %r option not one of %s"
@@ -176,6 +176,30 @@ class OptionsMagic(Magics):
 
 
 
+def list_backends():
+    backends = []
+    for backend in Store.renderers:
+        backends.append(backend)
+        renderer = Store.renderers[backend]
+        modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
+        backends += ['%s:%s' % (backend, mode) for mode in modes]
+    return backends
+
+
+def list_formats(format_type, backend=None):
+    """
+    Returns list of supported formats for a particular
+    backend.
+    """
+    if backend is None:
+        backend = Store.current_backend
+        mode = Store.renderers[backend].mode
+    else:
+        split = backend.split(':')
+        backend, mode = split if len(split)==2 else (split[0], 'default')
+    return Store.renderers[backend].mode_formats[format_type][mode]
+
+
 @magics_class
 class OutputMagic(OptionsMagic):
     """
@@ -184,20 +208,6 @@ class OutputMagic(OptionsMagic):
     """
 
     magic_name = '%output'
-
-    def list_backends():
-        backends = []
-        for backend in Store.renderers:
-            backends.append(backend)
-            renderer = Store.renderers[backend]
-            modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
-            backends += ['%s:%s' % (backend, mode) for mode in modes]
-        return backends
-
-    def list_formats(format_type):
-        backend = Store.current_backend
-        renderer = Store.renderers[backend]
-        return renderer.params(format_type).objects
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'     : list_backends(),
@@ -254,15 +264,6 @@ class OutputMagic(OptionsMagic):
     def __init__(self, *args, **kwargs):
         super(OutputMagic, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
-
-
-    @classmethod
-    def backend(cls):
-        "Convenience method as the backend is accessed frequently"
-        backend =  cls.options['backend'].split(':')[0]
-        if backend not in Store.registry:
-            raise ImportError("The %r backend isn't registered and may not be available." % backend)
-        return backend
 
 
     @classmethod
@@ -344,25 +345,24 @@ class OutputMagic(OptionsMagic):
         if not backend or backend == Store.current_backend:
             return options
 
-        split = backend.split(':')
-        split_backend, mode = split if len(split)==2 else (split[0], 'default')
-        formats = Store.renderers[split_backend].mode_formats
-        cls.allowed['fig'] = formats['fig'][mode]
-        cls.allowed['holomap'] = formats['holomap'][mode]
+        backend_options = cls._backend_options[backend]
+        for p in ['fig', 'holomap']:
+            opts = list_formats(p, list_formats)
+            cls.allowed[p] = opts
+            cls.defaults[p] = opts[0]
+            if p not in backend_options:
+                backend_options[p] = opts[0]
 
+        backend = backend.split(':')[0]
         render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
         for p in render_params:
-            if p in cls._backend_options[backend]:
-                opt = cls._backend_options[backend][p]
+            if p in backend_options:
+                opt = backend_options[p]
                 cls.defaults[p] = opt
-                options[p] = opt
             else:
-                cls._backend_options[Store.current_backend][p] = cls.defaults[p]
-                if p in ['fig', 'holomap']:
-                    opts = formats[p][mode][0]
-                    cls.defaults[p] = opts
-                    options[p] = opts
-
+                opt = cls.defaults[p]
+                backend_options[p] = opt
+            options[p] = opt
         cls.set_backend(split_backend)
         return options
 
