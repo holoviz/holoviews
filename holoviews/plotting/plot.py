@@ -314,8 +314,8 @@ class DimensionedPlot(Plot):
         norm_opts = {}
 
         # Get all elements' type.group.label specs and ids
-        type_val_fn = lambda x: (x.id, (type(x).__name__, util.sanitize_identifier(x.group, escape=False),
-                                        util.sanitize_identifier(x.label, escape=False))) \
+        type_val_fn = lambda x: (x.id, (type(x).__name__, util.group_sanitizer(x.group, escape=False),
+                                        util.label_sanitizer(x.label, escape=False))) \
             if isinstance(x, Element) else None
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
                          if idspec is not None}

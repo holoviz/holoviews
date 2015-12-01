@@ -5,7 +5,7 @@ import param
 import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
-from ...core.util import (sanitize_identifier, safe_unicode, basestring,
+from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
                           unique_iterator)
 from ...core.traversal import hierarchical
 
@@ -259,7 +259,7 @@ class SelectionWidget(NdWidget):
                 dim_vals = repr([v for v in dim_vals if v is not None])
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
-            widget_data = dict(dim=sanitize_identifier(dim_str), dim_label=dim_str,
+            widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
                                next_vals=next_vals)

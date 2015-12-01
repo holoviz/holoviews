@@ -801,11 +801,11 @@ class Dimensioned(LabelledData):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
             elif not any(targets):
                 # Not targets specified - add current object as target
-                sanitized_group = sanitize_identifier(self.group)
+                sanitized_group = group_sanitizer(self.group)
                 if self.label:
                     identifier = ('%s.%s.%s' % (self.__class__.__name__,
                                                 sanitized_group,
-                                                sanitize_identifier(self.label)))
+                                                label_sanitizer(self.label)))
                 elif  sanitized_group != self.__class__.__name__:
                     identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
                 else:

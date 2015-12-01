@@ -418,8 +418,8 @@ def match_spec(element, specification):
     match_tuple = ()
     match = specification.get((), {})
     for spec in [type(element).__name__,
-                 sanitize_identifier(element.group, escape=False),
-                 sanitize_identifier(element.label, escape=False)]:
+                 group_sanitizer(element.group, escape=False),
+                 label_sanitizer(element.label, escape=False)]:
         match_tuple += (spec,)
         if match_tuple in specification:
             match = specification[match_tuple]
