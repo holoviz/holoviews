@@ -252,7 +252,7 @@ class LabelledData(param.Parameterized):
 
         if isinstance(params.get('group',None), tuple):
             (alias, long_name) = params['group']
-            label_sanitizer.add_aliases(**{alias:long_name})
+            group_sanitizer.add_aliases(**{alias:long_name})
             params['group'] = long_name
 
         super(LabelledData, self).__init__(**params)
