@@ -9,6 +9,7 @@ from bokeh.embed import notebook_div
 from bokeh.models import DataSource
 from bokeh.plotting import Figure
 from bokeh.protocol import serialize_json
+from bokeh.resources import CDN
 
 
 class BokehRenderer(Renderer):
@@ -25,6 +26,10 @@ class BokehRenderer(Renderer):
 
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
+
+    js_dependencies = dict(Renderer.js_dependencies, bokeh=CDN.js_files[0])
+
+    css_dependencies = dict(Renderer.css_dependencies, bokeh=CDN.css_files[0])
 
     _loaded = False
 
