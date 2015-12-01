@@ -1,3 +1,5 @@
+import param
+
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout)
 from ..core.util import match_spec
