@@ -27,8 +27,8 @@ def digest_data(data):
 prefixes =  ['anim', '_anim_slider', '_anim_img',
              '_anim_loop_select', 'textInput', '_anim_widget', 'valMap']
 filters  = [re.compile('{p}[a-f0-9]+'.format(p=p)) for p in prefixes]
-filters += [re.compile('new ScrubberWidget\([a-z0-9_, "]+')]
-filters += [re.compile('new SelectionWidget\([a-z0-9_, "]+')]
+filters += [re.compile('new [A-Za-z]+ScrubberWidget\([a-z0-9_, "]+')]
+filters += [re.compile('new [A-Za-z]+SelectionWidget\([a-z0-9_, "]+')]
 
 def normalize(data):
     for f in filters:

@@ -12,6 +12,8 @@ from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
 
+from .testwidgets import normalize
+
 try:
     # Standardize backend due to random inconsistencies
     from matplotlib import pyplot
@@ -86,3 +88,18 @@ class MPLRendererTest(ComparisonTestCase):
         data = self.renderer.instance(size=200)(self.unicode_table, fmt='png')[0]
         self.assertEqual(digest_data(data),
                          'a3dd68a888de14064cb621c14be5b175d96781cdbc932a3f778def34beaee1ff')
+
+    def test_static_html_scrubber(self):
+        data = normalize(self.renderer.static_html(self.map1, fmt='scrubber'))
+        self.assertEqual(digest_data(data),
+                         'c7b5be1f8d2627c15cfda891777b83e6453242c918720938f9fd7455d7cb81a1')
+
+    def test_static_html_widgets(self):
+        data = normalize(self.renderer.static_html(self.map1, fmt='widgets'))
+        self.assertEqual(digest_data(data),
+                         '8ab4e18a25a4946882d71138bb74bd60c65966f2f58300a925b6db35c4ec5e00')
+
+    def test_static_html_gif(self):
+        data = self.renderer.static_html(self.map1, fmt='gif')
+        self.assertEqual(digest_data(data),
+                         'e3e1832186f7e8dcf1fdd915b0c66207b01a74f83ea73441591fd421a7dcfee4')
