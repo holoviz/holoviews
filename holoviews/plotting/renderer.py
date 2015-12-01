@@ -121,10 +121,10 @@ class Renderer(Exporter):
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
 
-    js_dependencies = {'jquery': 'https://code.jquery.com/jquery-2.1.4.min.js',
-                       'require': 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js'}
+    js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
+                       'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
 
-    css_dependencies = {'bootstrap': 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css'}
+    css_dependencies = ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css']
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
@@ -215,11 +215,11 @@ class Renderer(Exporter):
 
         css_html, js_html = '', ''
         js, css = self.embed_assets()
-        for url in self.js_dependencies.values():
+        for url in self.js_dependencies:
             js_html += '<script src="%s" type="text/javascript"></script>' % url
         js_html += '<script type="text/javascript">%s</script>' % js
 
-        for url in self.css_dependencies.values():
+        for url in self.css_dependencies:
             css_html += '<link rel="stylesheet" href="%s">' % url
         css_html += '<style>%s</style>' % css
 
