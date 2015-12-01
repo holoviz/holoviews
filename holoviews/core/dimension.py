@@ -103,7 +103,14 @@ class Dimension(param.Parameterized):
             existing_params = dict(name.get_param_values())
         else:
             existing_params = {'name': name}
-        super(Dimension, self).__init__(**dict(existing_params, **params))
+
+        all_params = dict(existing_params, **params)
+        if isinstance(all_params['name'], tuple):
+            alias, long_name = all_params['name']
+            dimension_sanitizer.add_aliases(**{alias:long_name})
+            all_params['name'] = long_name
+
+        super(Dimension, self).__init__(**all_params)
 
 
     def __call__(self, name=None, **overrides):
