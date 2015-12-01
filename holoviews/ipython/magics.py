@@ -324,7 +324,7 @@ class OutputMagic(OptionsMagic):
             self._set_render_options(new_options)
             OutputMagic.options = new_options
         except Exception as e:
-            self.set_backend(self.last_backend)
+            self.update_options(options, {'backend': restore_copy['backend']})
             OutputMagic.options = restore_copy
             self._set_render_options(restore_copy)
             print('Error: %s' % str(e))
@@ -333,7 +333,7 @@ class OutputMagic(OptionsMagic):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            self.set_backend(self.last_backend)
+            self.update_options(options, {'backend': restore_copy['backend']})
             OutputMagic.options = restore_copy
             self._set_render_options(restore_copy)
 
