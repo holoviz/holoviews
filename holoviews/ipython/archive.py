@@ -114,7 +114,7 @@ class NotebookArchive(FileArchive):
         if 'holoviews' not in sys.modules:
             raise ImportError('HoloViews does not seem to be imported')
         matches = [k for k,v in get_ipython().user_ns.items()
-           if not k.startswith('_') and v == sys.modules['holoviews']]
+           if not k.startswith('_') and v is sys.modules['holoviews']]
         if len(matches) == 0:
             raise Exception("Could not find holoviews module in namespace")
         return '%s.archive' % matches[0]

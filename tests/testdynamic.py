@@ -31,12 +31,6 @@ class DynamicTestGeneratorOpen(ComparisonTestCase):
             if e.__class__ != StopIteration:
                 raise AssertionError("StopIteration was expected, got %s" % e)
 
-    def test_generator_open_iter(self):
-        generator = (Image(sine_array(0,i)) for i in range(10))
-        dmap=DynamicMap(generator) # One call to next in constructor
-        ims = [im for im in dmap]
-        self.assertEquals(len(ims), 9)
-
 
 
 class DynamicTestCallableOpen(ComparisonTestCase):
