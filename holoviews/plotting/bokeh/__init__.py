@@ -11,6 +11,7 @@ from ..plot import PlotSelector
 from ..mpl import SurfacePlot, Scatter3DPlot, TrisurfacePlot
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
+from .callbacks import Callbacks
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     AdjointHistogramPlot)

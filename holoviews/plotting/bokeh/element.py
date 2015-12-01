@@ -17,6 +17,7 @@ from ...core import Store, HoloMap, Overlay
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from .callbacks import Callbacks
 from .plot import BokehPlot
 from .util import mpl_to_bokeh, convert_datetime
 
@@ -36,6 +37,10 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
+
+    callbacks = param.ClassSelector(class_=Callbacks, doc="""
+        Callbacks object defining any javascript callbacks applied
+        to the plot.""")
 
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
@@ -134,6 +139,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  show_labels=['x', 'y'], **params):
         self.invert_axes = invert_axes
         self.show_labels = show_labels
+        self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
 
@@ -391,10 +397,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get element key and ranges for frame
         element = self.hmap.last
         key = self.keys[-1]
-        self.current_frame = element
-        self.current_key = key
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
+        self.current_ranges = ranges
+        self.current_frame = element
+        self.current_key = key
 
         # Initialize plot, source and glyph
         if plot is None:
@@ -417,6 +424,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, element)
+        if self.callbacks:
+            self.callbacks(self)
         self._process_legend()
         self.drawn = True
 
@@ -428,6 +437,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
+        element = self._get_frame(key)
         if not element:
             if self.dynamic and self.overlaid:
                 self.current_key = key
@@ -446,6 +456,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
+        self.current_ranges = ranges
 
         plot = self.handles['plot']
         source = self.handles['source']
