@@ -39,7 +39,7 @@ def process_object(obj):
     OutputMagic.info(obj)
 
 
-def render_object(obj, **kwargs):
+def render(obj, **kwargs):
     info = process_object(obj)
     if info: return info
 
@@ -114,10 +114,6 @@ def display_hook(fn):
     return wrapped
 
 
-class Warning(param.Parameterized): pass
-display_warning = Warning(name='Warning')
-
-
 @display_hook
 def element_display(element, max_frames, max_branches):
     info = process_object(element)
@@ -140,7 +136,7 @@ def map_display(vmap, max_frames, max_branches):
         max_frame_warning(max_frames)
         return sanitize_HTML(vmap)
 
-    return render_object(vmap)
+    return render(vmap)
 
 
 @display_hook
@@ -158,7 +154,7 @@ def layout_display(layout, max_frames, max_branches):
                 max_frame_warning(max_frames)
                 return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
-    return render_object(layout)
+    return render(layout)
 
 
 @display_hook
@@ -170,7 +166,7 @@ def grid_display(grid, max_frames, max_branches):
         max_frame_warning(max_frames)
         return sanitize_HTML(grid)
 
-    return render_object(grid)
+    return render(grid)
 
 
 def display(obj, raw=False, **kwargs):

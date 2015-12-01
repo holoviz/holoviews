@@ -51,7 +51,7 @@ class BokehRenderer(Renderer):
                 json = plotobj.vm_serialize(changed_only=True)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
-            return serialize_json(data), {'file-ext':' json', 'mime_type':MIME_TYPES[fmt]}
+            return serialize_json(data), {'file-ext': 'json', 'mime_type':MIME_TYPES[fmt]}
 
 
     def figure_data(self, plot, fmt='html', **kwargs):

@@ -14,7 +14,7 @@ from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 
 from . import Plot
-from .util import displayable, collate_object
+from .util import displayable, collate
 
 from param.parameterized import bothmethod
 
@@ -119,7 +119,7 @@ class Renderer(Exporter):
         suitable plot object and the appropriate format.
         """
         if not isinstance(obj, Plot) and not displayable(obj):
-            obj = collate_object(obj)
+            obj = collate(obj)
 
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
@@ -288,6 +288,6 @@ class Renderer(Exporter):
     @classmethod
     def validate(cls, options):
         """
-        Validates a dictionary of options set on the backend.
+        Validate an options dictionary for the renderer.
         """
         return options

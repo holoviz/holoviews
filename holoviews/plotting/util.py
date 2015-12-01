@@ -1,5 +1,5 @@
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout, )
+                    GridSpace, NdLayout)
 from ..core.util import match_spec
 
 
@@ -18,7 +18,10 @@ def displayable(obj):
     return True
 
 
-def collate_object(obj):
+class Warning(param.Parameterized): pass
+display_warning = Warning(name='Warning')
+
+def collate(obj):
     if isinstance(obj, HoloMap):
         display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
                                 "to access your data or control how it appears; "
