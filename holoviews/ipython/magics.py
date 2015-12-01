@@ -324,6 +324,9 @@ class OutputMagic(OptionsMagic):
             self._set_render_options(new_options)
             OutputMagic.options = new_options
         except Exception as e:
+            self.set_backend(self.last_backend)
+            OutputMagic.options = restore_copy
+            self._set_render_options(restore_copy)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
             return
@@ -347,7 +350,7 @@ class OutputMagic(OptionsMagic):
 
         backend_options = cls._backend_options[backend]
         for p in ['fig', 'holomap']:
-            opts = list_formats(p, list_formats)
+            opts = list_formats(p, backend)
             cls.allowed[p] = opts
             cls.defaults[p] = opts[0]
             if p not in backend_options:
@@ -363,7 +366,7 @@ class OutputMagic(OptionsMagic):
                 opt = cls.defaults[p]
                 backend_options[p] = opt
             options[p] = opt
-        cls.set_backend(split_backend)
+        cls.set_backend(backend)
         return options
 
 
