@@ -1,8 +1,16 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import CustomJS, PlotObject, TapTool, ColumnDataSource
-from bokeh.protocol import serialize_json
+from bokeh.models import CustomJS, TapTool, ColumnDataSource
+
+try:
+    from bokeh.models import PlotObject
+    from bokeh.protocol import serialize_json
+    old_bokeh = True
+except ImportError:
+    from bokeh.models import Component as PlotObject
+    from bokeh._json_encoder import serialize_json
+    old_bokeh = False
 
 import param
 
@@ -122,7 +130,10 @@ class Callback(param.ParameterizedFunction):
         """
         data = {}
         for obj in objects:
-            json = obj.vm_serialize(changed_only=True)
+            if old_bokeh:
+                json = obj.vm_serialize(changed_only=True)
+            else:
+                json = obj.to_json(False)
             data[obj.ref['id']] = {'type': obj.ref['type'], 'data': json}
         return serialize_json(data)
 

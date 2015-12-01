@@ -8,9 +8,14 @@ from param.parameterized import bothmethod
 from bokeh.embed import notebook_div
 from bokeh.models import DataSource
 from bokeh.plotting import Figure
-from bokeh.protocol import serialize_json
 from bokeh.resources import CDN
 
+try:
+    from bokeh.protocol import serialize_json
+    old_bokeh = True
+except ImportError:
+    from bokeh._json_encoder import serialize_json
+    old_bokeh = False
 
 class BokehRenderer(Renderer):
 
@@ -54,7 +59,10 @@ class BokehRenderer(Renderer):
                            for h in handles]
             data = OrderedDict()
             for plotobj in plotobjects:
-                json = plotobj.vm_serialize(changed_only=True)
+                if old_bokeh:
+                    json = plotobj.vm_serialize(changed_only=True)
+                else:
+                    json = plotobj.to_json(False)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
             return serialize_json(data), {'file-ext': 'json', 'mime_type':MIME_TYPES[fmt]}
