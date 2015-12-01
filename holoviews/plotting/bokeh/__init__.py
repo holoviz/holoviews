@@ -1,5 +1,5 @@
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, NdElement, Columns, GridMatrix)
+                     GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
@@ -29,6 +29,7 @@ Store.register({Overlay: OverlayPlot,
                 GridMatrix: GridPlot,
                 AdjointLayout: AdjointLayoutPlot,
                 Layout: LayoutPlot,
+                NdLayout: LayoutPlot,
 
                 # Charts
                 Curve: CurvePlot,
