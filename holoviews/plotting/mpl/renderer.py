@@ -88,7 +88,8 @@ class MPLRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        if fmt in self.widgets:
+        widgets = list(self.widgets.keys())+['auto']
+        if fmt in widgets:
             return self.get_widget(plot, fmt)(), {'file-ext':' html',
                                                   'mime_type': MIME_TYPES['html']}
         elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:

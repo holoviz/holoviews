@@ -133,7 +133,7 @@ class Renderer(Exporter):
 
         if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt in ['auto', None]:
+        elif fmt is None:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         all_formats = set(fig_formats + holomap_formats)
@@ -188,15 +188,20 @@ class Renderer(Exporter):
 
 
     def get_widget(self, plot, widget_type):
-        isuniform = plot.uniform
         dynamic = plot.dynamic
-        if not isuniform and widget_type == 'widgets':
-            param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
-                                        % type(plot).__name__)
-            widget_type = 'scrubber'
+        if widget_type == 'auto':
+            isuniform = plot.uniform
+            if not isuniform and widget_type == 'widgets':
+                param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
+                                            % type(plot).__name__)
+                widget_type = 'scrubber'
 
-        if dynamic == 'open': widget_type = 'scrubber'
-        if dynamic == 'closed': widget_type = 'widgets'
+            if dynamic == 'open': widget_type = 'scrubber'
+            if dynamic == 'closed': widget_type = 'widgets'
+        elif widget_type == 'widgets' and dynamic == 'open':
+            raise ValueError('Selection widgets not supported in dynamic open mode')
+        elif widget_type == 'scrubber' and dynamic == 'closed':
+            raise ValueError('Scrubber widget not supported in dynamic closed mode')
 
         widget_cls = self.widgets[widget_type]
         return widget_cls(plot, renderer=self, embed=self.widget_mode == 'embed')
