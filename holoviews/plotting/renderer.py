@@ -94,7 +94,8 @@ class Renderer(Exporter):
         The widget mode determining whether frames are embedded or generated
         'live' when interacting with the widget.""")
 
-    css = param.Dict(doc="Dictionary of CSS attributes and values to apply to HTML output")
+    css = param.Dict(default={},
+                     doc="Dictionary of CSS attributes and values to apply to HTML output")
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
@@ -175,7 +176,7 @@ class Renderer(Exporter):
                 w,h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
-        if css is None: css = {}
+        if css is None: css = self.css
         if isinstance(css, dict):
             css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
         else:
