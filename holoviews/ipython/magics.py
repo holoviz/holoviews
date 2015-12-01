@@ -1,4 +1,5 @@
 import time
+from collections import defaultdict
 
 try:
     from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
@@ -52,27 +53,27 @@ class OptionsMagic(Magics):
     # Hidden. Options that won't tab complete (for backward compatibility)
     hidden = {}
 
+
     @classmethod
-    def update_allowed_options(cls, key, value):
+    def update_options(cls, options, items):
         """
-        Hook to allow one key:value pair to updated the allowed state
-        of other possible keys
+        Allows updating options depending on class attributes
+        and unvalidated options.
         """
-        pass
 
     @classmethod
     def get_options(cls, line, options, linemagic):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
+        options = cls.update_options(options, items)
         for keyword in cls.defaults:
             if keyword in items:
                 value = items[keyword]
                 allowed = cls.allowed[keyword]
-                cls.update_allowed_options(keyword, value)
                 if isinstance(allowed, set):  pass
                 elif isinstance(allowed, dict):
                     if not isinstance(value, dict):
-                        raise ValueError("Value %r for %r not a dict type" % value)
+                        raise ValueError("Value %r not a dict type" % value)
                     disallowed = set(value.keys()) - set(allowed.keys())
                     if disallowed:
                         raise ValueError("Keywords %r for %r option not one of %s"
@@ -96,6 +97,7 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
+
         return cls._validate(options, linemagic)
 
     @classmethod
@@ -173,8 +175,29 @@ class OptionsMagic(Magics):
         return items
 
 
-class OutputWarning(param.Parameterized):pass
-outputwarning = OutputWarning(name='Warning')
+
+def list_backends():
+    backends = []
+    for backend in Store.renderers:
+        backends.append(backend)
+        renderer = Store.renderers[backend]
+        modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
+        backends += ['%s:%s' % (backend, mode) for mode in modes]
+    return backends
+
+
+def list_formats(format_type, backend=None):
+    """
+    Returns list of supported formats for a particular
+    backend.
+    """
+    if backend is None:
+        backend = Store.current_backend
+        mode = Store.renderers[backend].mode
+    else:
+        split = backend.split(':')
+        backend, mode = split if len(split)==2 else (split[0], 'default')
+    return Store.renderers[backend].mode_formats[format_type][mode]
 
 
 @magics_class
@@ -185,42 +208,11 @@ class OutputMagic(OptionsMagic):
     """
 
     magic_name = '%output'
-    # Formats that are always available
-    inbuilt_formats= ['auto', 'widgets', 'scrubber', 'repr']
-    # Codec or system-dependent format options
-    optional_formats = ['webm','mp4', 'gif']
-    hidden = {'backend':['nbagg', 'd3']}
-
-    def list_backends():
-        backends = []
-        for backend in Store.renderers:
-            backends.append(backend)
-            renderer = Store.renderers[backend]
-            modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
-            backends += ['%s:%s' % (backend, mode) for mode in modes]
-        return backends
-
-    def get_backend_formats(inbuilt_formats=inbuilt_formats):
-        """
-        Build a dictionary of allowed figure and holomap formats
-        across all the available backends and modes.
-        """
-        formats = {}
-        for renderer in Store.renderers.values():
-            mode_formats = renderer.mode_formats
-            assert sorted(mode_formats['fig'].keys()) == sorted(mode_formats['holomap'].keys())
-            for mode in mode_formats['fig'].keys():
-                key = '%s:%s' % (renderer.backend, mode) if mode != 'default' else renderer.backend
-                formats.update({key: (mode_formats['fig'][mode],
-                                      inbuilt_formats + mode_formats['holomap'][mode])})
-        return formats
-
-
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
-    allowed = {'backend'     : list_backends() + ['nbagg', 'd3'],
-               'fig'         : ['svg', 'png', 'repr', 'pdf', 'html'],
-               'holomap'     : inbuilt_formats,
+    allowed = {'backend'     : list_backends(),
+               'fig'         : list_formats('fig'),
+               'holomap'     : list_formats('holomap'),
                'widgets'     : ['embed', 'live'],
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
@@ -250,57 +242,16 @@ class OutputMagic(OptionsMagic):
                             ('css'         , {})])
 
     options = OrderedDict(defaults.items())
+    _backend_options = defaultdict(dict)
 
     # Used to disable info output in testing
     _disable_info_output = False
-
-    bokeh_loaded = False
 
     #==========================#
     # Backend state management #
     #==========================#
 
-    backend_formats = get_backend_formats()
-    backend_settings = {k:{} for k in backend_formats.keys()}
     last_backend = None
-
-    _backend_aliases = {'d3':'matplotlib:mpld3', 'nbagg':'matplotlib:nbagg'}
-
-    @classmethod
-    def update_allowed_options(cls, key, value):
-        "Update the allowed figure and holomap formats based on the backend"
-        if key != 'backend': return
-        (fig_formats, map_formats) = cls.backend_formats[cls._backend_aliases.get(value, value)]
-        cls.allowed['fig'] = [el for el in fig_formats if el is not None]
-        cls.allowed['holomap'] = [el for el in map_formats if el is not None]
-
-    @classmethod
-    def switch_backend(cls, options):
-        backend = options['backend']
-        Store.current_backend = backend if (':' not in backend) else backend.split(':')[0]
-        unchanged = (cls.last_backend is None) or (backend == cls.last_backend)
-        cls.last_backend = backend
-
-        for i, key in enumerate(['fig', 'holomap']):
-            value = options[key] if unchanged else None
-            allowed = [el for el in cls.backend_formats[backend][i] if el is not None]
-            if value is None:
-                settings = cls.backend_settings[backend]
-                if key not in settings:
-                    # First element of the list is the default format
-                    value = cls.backend_formats[backend][i][0]
-                elif key in settings:
-                    value = settings[key]
-            if (value not in allowed) and (cls.backend_settings[backend][key] in allowed):
-                value = cls.backend_settings[backend][key]
-            if value not in allowed:
-                raise Exception("Option %r not in allowed list: %s" % (value, ', '.join(allowed)))
-            options[key] = value
-            cls.backend_settings[backend][key] = value
-
-
-        return options
-
 
     def missing_dependency_exception(value, keyword, allowed):
         raise Exception("Format %r does not appear to be supported." % value)
@@ -314,32 +265,6 @@ class OutputMagic(OptionsMagic):
         super(OutputMagic, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
 
-    @classmethod
-    def renderer(cls, **options):
-        """
-        Return an appropriate renderer instance using the suitable
-        backend and the appropriate mode.
-        """
-        split = cls.options['backend'].split(':')
-        backend, mode = split if len(split)==2 else (split[0], 'default')
-        return Store.renderers[backend].instance(mode=mode, **options)
-
-    @classmethod
-    def backend(cls):
-        "Convenience method as the backend is accessed frequently"
-        backend =  cls.options['backend'].split(':')[0]
-        if backend not in Store.registry:
-            raise ImportError("The %r backend isn't registered and may not be available." % backend)
-        return backend
-
-
-    @classmethod
-    def register_supported_formats(cls, supported_formats):
-        "Extend available holomap formats with supported format list"
-        if not all(el in cls.optional_formats for el in supported_formats):
-            raise AssertionError("Registering format in list %s not in known formats %s"
-                                 % (supported_formats, cls.optional_formats))
-        cls.allowed['holomap'] = cls.inbuilt_formats + supported_formats
 
     @classmethod
     def info(cls, obj):
@@ -380,33 +305,8 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def _validate(cls, options, linemagic):
         "Validation of edge cases and incompatible options"
-        if options['backend'] in ['d3', 'nbagg']:
-            backend = cls._backend_aliases[options['backend']]
-            outputwarning.warning("'%s' option is to be deprecated. Use '%s'"
-                                  % (options['backend'], backend))
-            options['backend'] = backend
-        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
-            outputwarning.warning("PDF output is experimental, may not be supported"
-                                  "by your browser and may change in future.")
-        if options['backend']=='matplotlib:nbagg' and options['widgets'] != 'live':
-            outputwarning.warning("The widget mode must be set to 'live' for matplotlib:nbagg."
-                                  "\nSwitching widget mode to 'live'.")
-            options['widgets'] = 'live'
-        if options['backend']=='bokeh':
-            try:
-                import bokeh
-                import bokeh.io
-                if not cls.bokeh_loaded:
-                    outputwarning.warning("Some elements and plot options are "
-                                          "not supported by Bokeh library and backend.")
-            except:
-                raise ImportError("Could not import one of bokeh, pandas or scipy.")
-
-            if not cls.bokeh_loaded:
-                bokeh.io.load_notebook()
-                if linemagic:
-                    cls.bokeh_loaded = True
-        return options
+        backend = Store.current_backend
+        return Store.renderers[backend].validate(options)
 
 
     @line_cell_magic
@@ -420,23 +320,82 @@ class OutputMagic(OptionsMagic):
         restore_copy = OrderedDict(OutputMagic.options.items())
         try:
             options = OrderedDict(OutputMagic.options.items())
-
-            if OutputMagic.last_backend is None:
-                options['fig'] = None
-
             new_options = self.get_options(line, options, cell is None)
-            switched_options = self.switch_backend(new_options)
-            OutputMagic.options = switched_options
+            self._set_render_options(new_options)
+            OutputMagic.options = new_options
         except Exception as e:
+            self.set_backend(self.last_backend)
+            OutputMagic.options = restore_copy
+            self._set_render_options(restore_copy)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
             return
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
+            self.set_backend(self.last_backend)
             OutputMagic.options = restore_copy
-            backend = restore_copy['backend']
-            Store.current_backend = backend if (':' not in backend) else backend.split(':')[0]
+            self._set_render_options(restore_copy)
+
+
+    @classmethod
+    def update_options(cls, options, items):
+        """
+        Switch default options and backend if new backend
+        is supplied in items.
+        """
+        backend = items.get('backend', '')
+        if not backend or backend == Store.current_backend:
+            return options
+
+        backend_options = cls._backend_options[backend]
+        for p in ['fig', 'holomap']:
+            opts = list_formats(p, backend)
+            cls.allowed[p] = opts
+            cls.defaults[p] = opts[0]
+            if p not in backend_options:
+                backend_options[p] = opts[0]
+
+        backend = backend.split(':')[0]
+        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
+        for p in render_params:
+            if p in backend_options:
+                opt = backend_options[p]
+                cls.defaults[p] = opt
+            else:
+                opt = cls.defaults[p]
+                backend_options[p] = opt
+            options[p] = opt
+        cls.set_backend(backend)
+        return options
+
+
+    @classmethod
+    def initialize(cls):
+        backend = cls.options.get('backend', cls.defaults['backend'])
+        cls.options = dict(cls.defaults)
+        cls._set_render_options(cls.defaults)
+        cls.set_backend(backend)
+
+
+    @classmethod
+    def set_backend(cls, backend):
+        cls.last_backend = Store.current_backend
+        Store.current_backend = backend
+
+
+    @classmethod
+    def _set_render_options(cls, options):
+        """
+        Set options on current Renderer.
+        """
+        split = options['backend'].split(':')
+        backend, mode = split if len(split)==2 else (split[0], 'default')
+        renderer = Store.renderers[backend]
+        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
+        render_options = {k: options[k] for k in render_params}
+        renderer.set_param(**dict(render_options, widget_mode=options['widgets'],
+                                  mode=mode))
 
 
 @magics_class

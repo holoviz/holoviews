@@ -14,6 +14,7 @@ from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 
 from . import Plot
+from .util import displayable, collate
 
 from param.parameterized import bothmethod
 
@@ -67,26 +68,33 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
-    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
-         The available rendering modes. As a minimum, the 'default'
-         mode must be supported.""")
+    dpi=param.Integer(None, allow_None=True, doc="""
+        The render resolution in dpi (dots per inch)""")
 
-    fig = param.ObjectSelector(default='auto', doc="""
+    fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
-
-    holomap = param.ObjectSelector(default='auto', doc="""
-        Output render multi-frame (typically animated) format. If
-        None, no multi-frame rendering will occur.""")
-
-    size=param.Integer(100, doc="""
-        The rendered size as a percentage size""")
 
     fps=param.Integer(20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
-    dpi=param.Integer(None, allow_None=True, doc="""
-        The render resolution in dpi (dots per inch)""")
+    holomap = param.ObjectSelector(default='auto',
+                                   objects=['scrubber','widgets', None, 'auto'], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
+
+    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
+         The available rendering modes. As a minimum, the 'default'
+         mode must be supported.""")
+
+    size=param.Integer(100, doc="""
+        The rendered size as a percentage size""")
+
+    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'], doc="""
+        The widget mode determining whether frames are embedded or generated
+        'live' when interacting with the widget.""")
+
+    css = param.Dict(doc="Dictionary of CSS attributes and values to apply to HTML output")
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
@@ -95,7 +103,8 @@ class Renderer(Exporter):
         Renderers do not support the saving of object key metadata""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': [None]}, 'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': [None, 'auto']},
+                    'holomap': {'default': [None, 'auto']}}
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'selection': SelectionWidget}
@@ -109,6 +118,9 @@ class Renderer(Exporter):
         Helper method to be used in the __call__ method to get a
         suitable plot object and the appropriate format.
         """
+        if not isinstance(obj, Plot) and not displayable(obj):
+            obj = collate(obj)
+
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
@@ -116,15 +128,12 @@ class Renderer(Exporter):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
             plot.update(0)
-        elif fmt is None:
-            raise Exception("Format must be specified when supplying a plot instance")
         else:
             plot = obj
 
-        if fmt is None: return (None,None)
-        elif fmt =='auto' and len(plot) == 1:
+        if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt ==  'auto':
+        elif fmt is None:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         all_formats = set(fig_formats + holomap_formats)
@@ -148,13 +157,15 @@ class Renderer(Exporter):
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
 
-    def html(self, obj, fmt=None, css={}):
+    def html(self, obj, fmt=None, css=None):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
 
+        if fmt in self.widgets.keys():
+            fmt = 'html'
         if fmt in ['html', 'json']:
             return figdata
         else:
@@ -164,6 +175,7 @@ class Renderer(Exporter):
                 w,h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
+        if css is None: css = self.css
         if isinstance(css, dict):
             css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
         else:
@@ -173,6 +185,26 @@ class Renderer(Exporter):
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         return tag.format(src=src, mime_type=mime_type, css=css)
+
+
+    def get_widget(self, plot, widget_type):
+        dynamic = plot.dynamic
+        if widget_type == 'auto':
+            isuniform = plot.uniform
+            if not isuniform:
+                widget_type = 'scrubber'
+            else:
+                widget_type = 'widgets'
+
+            if dynamic == 'open': widget_type = 'scrubber'
+            if dynamic == 'closed': widget_type = 'widgets'
+        elif widget_type == 'widgets' and dynamic == 'open':
+            raise ValueError('Selection widgets not supported in dynamic open mode')
+        elif widget_type == 'scrubber' and dynamic == 'closed':
+            raise ValueError('Scrubber widget not supported in dynamic closed mode')
+
+        widget_cls = self.widgets[widget_type]
+        return widget_cls(plot, renderer=self, embed=self.widget_mode == 'embed')
 
 
     @classmethod
@@ -257,3 +289,10 @@ class Renderer(Exporter):
         """
         yield
 
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validate an options dictionary for the renderer.
+        """
+        return options

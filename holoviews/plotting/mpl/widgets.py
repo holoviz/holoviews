@@ -62,13 +62,13 @@ class MPLWidget(NdWidget):
     def _plot_figure(self, idx):
         with self.renderer.state():
             self.plot.update(idx)
-            css = self.display_options.get('css', {})
             if self.renderer.mode == 'mpld3':
                 figure_format = 'json'
+            elif self.renderer.fig == 'auto':
+                figure_format = self.renderer.params('fig').objects[0]
             else:
-                figure_format = self.display_options.get('figure_format',
-                                                         self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css)
+                figure_format = self.renderer.fig
+            return self.renderer.html(self.plot, figure_format)
 
 
     def update(self, key):

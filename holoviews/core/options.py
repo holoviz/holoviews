@@ -820,7 +820,6 @@ class Store(object):
         cls.load_counter_offset = None
         return val
 
-
     @classmethod
     def dump(cls, obj, filename, protocol=0):
         """

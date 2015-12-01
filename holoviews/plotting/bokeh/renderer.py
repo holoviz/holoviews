@@ -2,6 +2,7 @@ from ...core import Store, HoloMap, OrderedDict
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
 
+import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
@@ -14,12 +15,18 @@ class BokehRenderer(Renderer):
 
     backend = 'bokeh'
 
+    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
+        Output render format for static figures. If None, no figure
+        rendering will occur. """)
+
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json']},
-                    'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
+                    'holomap': {'default': ['scrubber', 'widgets', 'auto', None]}}
 
     widgets = {'scrubber': BokehScrubberWidget,
-               'selection': BokehSelectionWidget}
+               'widgets': BokehSelectionWidget}
+
+    _loaded = False
 
     def __call__(self, obj, fmt=None):
         """
@@ -27,10 +34,13 @@ class BokehRenderer(Renderer):
         backend. The output is not a file format but a suitable,
         in-memory byte stream together with any suitable metadata.
         """
-        # Example of the return format where the first value is the rendered data.
-
         plot, fmt =  self._validate(obj, fmt)
-        if fmt == 'html':
+
+        widgets = list(self.widgets.keys())+['auto']
+        if fmt in widgets:
+            return self.get_widget(plot, fmt)(), {'file-ext':' html',
+                                                  'mime_type': MIME_TYPES['html']}
+        elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
             return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
@@ -42,7 +52,7 @@ class BokehRenderer(Renderer):
                 json = plotobj.vm_serialize(changed_only=True)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
-            return serialize_json(data), {'file-ext':json, 'mime_type':MIME_TYPES[fmt]}
+            return serialize_json(data), {'file-ext': 'json', 'mime_type':MIME_TYPES[fmt]}
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
@@ -93,3 +103,20 @@ class BokehRenderer(Renderer):
         Returns a tuple of (width, height) in pixels.
         """
         return (plot.state.height, plot.state.height)
+
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validates a dictionary of options set on the backend.
+        """
+        try:
+            import bokeh
+            import bokeh.io
+        except:
+            raise ImportError("Could not import one of bokeh, pandas or scipy.")
+
+        if not cls._loaded:
+            bokeh.io.load_notebook()
+            cls._loaded = True
+        return options

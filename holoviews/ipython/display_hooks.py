@@ -8,8 +8,9 @@ import IPython
 import param
 
 from ..core.options import Store, StoreOptions
-from ..core import Element, ViewableElement, UniformNdMapping, HoloMap, AdjointLayout, NdLayout,\
-    GridSpace, Layout, CompositeOverlay, DynamicMap, displayable, undisplayable_info
+from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
+                    HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
+                    CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys, bijective
 from .magics import OutputMagic, OptsMagic
 
@@ -20,22 +21,6 @@ ABBREVIATE_TRACEBACKS=True
 #==================#
 # Helper functions #
 #==================#
-
-def first_frame(plot, renderer, **kwargs):
-    "Only display the first frame of an animated plot"
-    plot.update(0)
-    return display_frame(plot, renderer, **kwargs)
-
-def middle_frame(plot, renderer, **kwargs):
-    "Only display the (approximately) middle frame of an animated plot"
-    middle_frame = int(len(plot) / 2)
-    plot.update(middle_frame)
-    return display_frame(plot, renderer, **kwargs)
-
-def last_frame(plot, renderer, **kwargs):
-    "Only display the last frame of an animated plot"
-    plot.update(len(plot))
-    return display_frame(plot, renderer, **kwargs)
 
 def sanitize_HTML(obj):
     "Sanitize text output for HTML display"
@@ -54,92 +39,50 @@ def process_object(obj):
     OutputMagic.info(obj)
 
 
-#==================================================#
-# HTML/Javascript generation given a Plot instance #
-#==================================================#
+def render(obj, **kwargs):
+    info = process_object(obj)
+    if info: return info
+
+    if render_anim is not None:
+        return render_anim(obj)
+
+    backend = Store.current_backend
+    return Store.renderers[backend].html(obj, **kwargs)
 
 
-def display_video(plot, renderer, holomap_format, dpi, fps, css, **kwargs):
+def single_frame_plot(obj):
     """
-    Allows the animation render policy to be changed, e.g to show only
-    the middle frame using middle_frame for testing notebooks.
-
-    See render_anim variable below (default is display_video)
+    Returns plot, renderer and format for single frame export.
     """
-    if OutputMagic.options['holomap'] == 'repr': return None
-    try:
-        if render_anim is not None:
-            return render_anim(plot, renderer, dpi=dpi, css=css, **kwargs)
-        return renderer.html(plot, holomap_format, css)
-    except Exception as e:
-        plot.update(0)
-        return str(e)+'<br/>'+display_frame(plot, renderer,  dpi=dpi, css=css, **kwargs)
+    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+
+    backend = Store.current_backend
+    renderer = Store.renderers[backend]
+
+    plot_cls = renderer.plotting_class(obj)
+    plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
+    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
+    return plot, renderer, fmt
 
 
-def display_widgets(plot, renderer, holomap_format, widget_mode, **kwargs):
-    "Display widgets applicable to the specified element"
-    isuniform = plot.uniform
-    dynamic = plot.dynamic
-    islinear = bijective(plot.keys)
-    if not isuniform and holomap_format == 'widgets':
-        param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
-                                    % type(plot).__name__)
-        holomap_format = 'scrubber'
+def first_frame(obj):
+    "Only display the first frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(0)
+    return renderer.html(plot, fmt)
 
-    if holomap_format == 'auto':
-        holomap_format = 'scrubber' if islinear or not isuniform else 'widgets'
+def middle_frame(obj):
+    "Only display the (approximately) middle frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    middle_frame = int(len(plot) / 2)
+    plot.update(middle_frame)
+    return renderer.html(plot, fmt)
 
-    widget = 'scrubber' if holomap_format == 'scrubber' else 'selection'
-    if dynamic == 'open': widget = 'scrubber'
-    if dynamic == 'closed': widget = 'selection'
-
-    widget_cls = plot.renderer.widgets[widget]
-
-    return widget_cls(plot, renderer=renderer, embed=(widget_mode == 'embed'),
-                      display_options=kwargs)()
-
-
-
-def display_frame(plot, renderer, figure_format, backend, dpi, css, message, **kwargs):
-    """
-    Display specified element as a figure. Note the plot instance
-    needs to be initialized appropriately first.
-    """
-    html = renderer.html(plot, figure_format, css)
-    return html if (message is None) else '<b>%s</b></br>%s' % (message, html)
-
-
-def render_plot(plot, widget_mode, message=None):
-    """
-    Used by the display hooks to render a plot according to the
-    following policy:
-
-    1. If there is a single frame, render it as a figure.
-    2. If in widget mode, render as a widget
-    3. Otherwise render it as an animation, falling back to a figure
-    if there is an exception.
-    """
-
-    figure_format =  OutputMagic.options['fig']
-    if figure_format == 'repr': return None
-    kwargs = dict(widget_mode=widget_mode,
-                  message=message,
-                  figure_format = figure_format,
-                  holomap_format= OutputMagic.options['holomap'],
-                  backend =       OutputMagic.options['backend'],
-                  dpi=            OutputMagic.options['dpi'],
-                  css=            OutputMagic.options['css'],
-                  fps=            OutputMagic.options['fps'])
-
-    renderer = OutputMagic.renderer(dpi=kwargs['dpi'], fps=kwargs['fps'])
-    with renderer.state():
-        if len(plot) == 1 and not plot.dynamic:
-            plot.update(0)
-            return display_frame(plot, renderer, **kwargs)
-        elif widget_mode is not None:
-            return display_widgets(plot, renderer, **kwargs)
-        else:
-            return display_video(plot, renderer, **kwargs)
+def last_frame(obj):
+    "Only display the last frame of an animated plot"
+    plot, renderer, fmt = single_frame_plot(obj)
+    plot.update(len(plot))
+    return renderer.html(plot, fmt)
 
 #===============#
 # Display hooks #
@@ -151,24 +94,13 @@ def display_hook(fn):
     def wrapped(element):
         optstate = StoreOptions.state(element)
         try:
-            widget_mode = OutputMagic.options['widgets']
-            # If widget_mode is None, widgets are not being used
-            widget_mode = (widget_mode if OutputMagic.options['holomap']
-                           in OutputMagic.inbuilt_formats else None)
             html = fn(element,
-                      size=OutputMagic.options['size'],
                       max_frames=OutputMagic.options['max_frames'],
-                      max_branches = OutputMagic.options['max_branches'],
-                      widget_mode = widget_mode)
+                      max_branches = OutputMagic.options['max_branches'])
             notebook_archive.add(element, html=html)
-            keys = ['fig', 'holomap', 'size', 'fps', 'dpi']
             filename = OutputMagic.options['filename']
             if filename:
-                options = {k:OutputMagic.options[k] for k in keys}
-                if options['holomap']  in OutputMagic.inbuilt_formats:
-                    options['holomap'] = None
-
-                OutputMagic.renderer(**options).save(element, filename)
+                Store.renderers[Store.current_backend].save(element, filename)
 
             return html
         except Exception as e:
@@ -183,82 +115,36 @@ def display_hook(fn):
 
 
 @display_hook
-def element_display(element,size, max_frames, max_branches, widget_mode):
-    if not isinstance(element, ViewableElement): return None
-    if type(element) == Element:                 return None
+def element_display(element, max_frames, max_branches):
     info = process_object(element)
     if info: return info
 
-    if element.__class__ not in Store.registry[OutputMagic.backend()]: return None
-    plot_class = Store.registry[OutputMagic.backend()][element.__class__]
-    element_plot = plot_class(element,
-                              **OutputMagic.renderer().plot_options(element, size))
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    return renderer.html(element, fmt=renderer.fig)
 
-    return render_plot(element_plot, False)
-
-
-class Warning(param.Parameterized): pass
-display_warning = Warning(name='Warning')
 
 @display_hook
-def map_display(vmap, size, max_frames, max_branches, widget_mode):
+def map_display(vmap, max_frames, max_branches):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
 
-    if not displayable(vmap):
-        display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
-                                "to access your data or control how it appears; "
-                                "we recommend calling .collate() on the HoloMap "
-                                "in order to follow the recommended nesting "
-                                "structure shown in the Composing Data tutorial"
-                                "(http://git.io/vtIQh)" % vmap.type.__name__)
-        return display(vmap.collate(), raw=True)
-
-    info = process_object(vmap)
-    if info: return info
-    if vmap.type not in Store.registry[OutputMagic.backend()]:  return None
-
-    plot_class = Store.registry[OutputMagic.backend()][vmap.type]
-    mapplot = plot_class(vmap, **OutputMagic.renderer().plot_options(vmap, size))
-    if len(mapplot) == 0:
+    if len(vmap) == 0:
         return sanitize_HTML(vmap)
-    elif len(mapplot) > max_frames:
+    elif len(vmap) > max_frames:
         max_frame_warning(max_frames)
         return sanitize_HTML(vmap)
 
-    return render_plot(mapplot, widget_mode)
+    return render(vmap)
 
 
 @display_hook
-def layout_display(layout, size, max_frames, max_branches, widget_mode):
+def layout_display(layout, max_frames, max_branches):
     if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
     if not isinstance(layout, (Layout, NdLayout)): return None
 
-    if not displayable(layout):
-        try:
-            display_warning.warning(
-                "Layout contains HoloMaps which are not nested in the "
-                "recommended format for accessing your data; calling "
-                ".collate() on these objects will resolve any violations "
-                "of the recommended nesting presented in the Composing Data "
-                "tutorial (http://git.io/vqs03)")
-            expanded = []
-            for el in layout.values():
-                if isinstance(el, HoloMap) and not displayable(el):
-                    collated_layout = Layout.from_values(el.collate())
-                    expanded.extend(collated_layout.values())
-            layout = Layout(expanded)
-        except:
-            return undisplayable_info(layout, html=True)
-
     nframes = len(unique_dimkeys(layout)[1])
-
-    info = process_object(layout)
-    if info: return info
-
-    plot_class = Store.registry[OutputMagic.backend()][Layout]
-    layoutplot = plot_class(layout,
-                            **OutputMagic.renderer().plot_options(layout, size))
-
     if isinstance(layout, Layout):
         if layout._display == 'auto':
             branches = len(set([path[0] for path in list(layout.data.keys())]))
@@ -268,27 +154,19 @@ def layout_display(layout, size, max_frames, max_branches, widget_mode):
                 max_frame_warning(max_frames)
                 return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
-    return render_plot(layoutplot, widget_mode)
+    return render(layout)
 
 
 @display_hook
-def grid_display(grid, size, max_frames, max_branches, widget_mode):
+def grid_display(grid, max_frames, max_branches):
     if not isinstance(grid, GridSpace): return None
 
-    if not displayable(grid):
-        return undisplayable_info(grid, html=True)
-
-    info = process_object(grid)
-    if info: return info
-
-    plot_class = Store.registry[OutputMagic.backend()][GridSpace]
-    gridplot = plot_class(grid, **OutputMagic.renderer().plot_options(grid, size))
-
-    if len(gridplot) > max_frames:
+    nframes = len(unique_dimkeys(grid)[1])
+    if nframes > max_frames:
         max_frame_warning(max_frames)
         return sanitize_HTML(grid)
 
-    return render_plot(gridplot, widget_mode)
+    return render(grid)
 
 
 def display(obj, raw=False, **kwargs):

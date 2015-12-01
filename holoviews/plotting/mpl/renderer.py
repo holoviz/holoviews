@@ -13,12 +13,15 @@ from mpl_toolkits.mplot3d import Axes3D
 import param
 from param.parameterized import bothmethod
 
-from ...core import HoloMap, displayable, undisplayable_info
+from ...core import HoloMap
 from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
+
+class OutputWarning(param.Parameterized):pass
+outputwarning = OutputWarning(name='Warning')
 
 
 class MPLRenderer(Renderer):
@@ -39,12 +42,12 @@ class MPLRenderer(Renderer):
     backend = param.String('matplotlib', doc="The backend name.")
 
     fig = param.ObjectSelector(default='auto',
-                               objects=['png', 'svg', 'pdf', None, 'auto'], doc="""
+                               objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='auto',
-                                   objects=['webm','mp4', 'gif', None, 'auto'], doc="""
+                                   objects=['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -67,14 +70,14 @@ class MPLRenderer(Renderer):
     mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
                            'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
-                    'holomap': {m:['webm','mp4', 'gif', None, 'auto', 'html']
+                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto']
                                 for m in ['default', 'mpld3', 'nbagg']}}
 
     counter = 0
 
     # Define appropriate widget classes
     widgets = {'scrubber': MPLScrubberWidget,
-               'selection': MPLSelectionWidget}
+               'widgets': MPLSelectionWidget}
 
 
     def __call__(self, obj, fmt='auto'):
@@ -82,13 +85,14 @@ class MPLRenderer(Renderer):
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
-        if not isinstance(obj, Plot) and not displayable(obj):
-            raise Exception(undisplayable_info(obj, html=False))
-
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        if fmt in ['png', 'svg', 'pdf', 'html', 'json']:
+        widgets = list(self.widgets.keys())+['auto']
+        if fmt in widgets:
+            return self.get_widget(plot, fmt)(), {'file-ext':' html',
+                                                  'mime_type': MIME_TYPES['html']}
+        elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
             if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
@@ -287,3 +291,18 @@ class MPLRenderer(Renderer):
             yield
         finally:
             mpl.rcParams = cls._rcParams
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validates a dictionary of options set on the backend.
+        """
+        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
+            outputwarning.warning("PDF output is experimental, may not be supported"
+                                  "by your browser and may change in future.")
+
+        if options['backend']=='matplotlib:nbagg' and options['widgets'] != 'live':
+            outputwarning.warning("The widget mode must be set to 'live' for "
+                                  "matplotlib:nbagg.\nSwitching widget mode to 'live'.")
+            options['widgets'] = 'live'
+        return options

@@ -93,7 +93,7 @@ def load_ipython_extension(ip):
         _loaded = True
         param_ext.load_ipython_extension(ip, verbose=False)
         load_magics(ip)
-        OutputMagic.register_supported_formats(OutputMagic.optional_formats)
+        OutputMagic.initialize()
         set_display_hooks(ip)
         load_notebook()
 

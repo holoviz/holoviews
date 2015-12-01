@@ -20,7 +20,7 @@ from .raster import RasterPlot, RGBPlot, HeatmapPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 
-Store.renderers['bokeh'] = BokehRenderer
+Store.renderers['bokeh'] = BokehRenderer.instance()
 
 Store.register({Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
