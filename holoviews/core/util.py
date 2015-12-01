@@ -114,9 +114,31 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        Whether leading underscores should be allowed to be sanitized
        with the leading prefix.""")
 
+    aliases = param.Dict(default={}, doc="""
+       A dictionary of aliases mapping long strings to their short,
+       sanitized equivalents""")
+
     prefix = 'A_'
 
     _lookup_table = {}
+
+
+    @param.parameterized.bothmethod
+    def add_aliases(self_or_cls, **kwargs):
+        """
+        Conveniently add new aliases as keyword arguments. For instance
+        you can add one new alias with add_aliases(short='Longer string')
+        """
+        self_or_cls.aliases.update({v:k for k,v in kwargs.items()})
+
+    @param.parameterized.bothmethod
+    def remove_aliases(self_or_cls, aliases):
+        """
+        Remove a list of aliases.
+        """
+        for k,v in self_or_cls.aliases.items():
+            if v in aliases:
+                self_or_cls.aliases.pop(k)
 
     @param.parameterized.bothmethod
     def allowable(self_or_cls, name, disable_leading_underscore=None):
@@ -177,6 +199,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     def __call__(self, name, escape=True, version=None):
         if name in [None, '']:
            return name
+        elif name in self.aliases:
+            return self.aliases[name]
         elif name in self._lookup_table:
            return self._lookup_table[name]
         name = safe_unicode(name)
@@ -244,6 +268,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return self._process_underscores(sanitized + ([chars] if chars else []))
 
 sanitize_identifier = sanitize_identifier_fn.instance()
+
+
+group_sanitizer = sanitize_identifier_fn.instance()
+label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def find_minmax(lims, olims):
