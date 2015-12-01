@@ -107,7 +107,7 @@ class Renderer(Exporter):
                     'holomap': {'default': [None, 'auto']}}
 
     # Define appropriate widget classes
-    widgets = {'scrubber': ScrubberWidget, 'selection': SelectionWidget}
+    widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
