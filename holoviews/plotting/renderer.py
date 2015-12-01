@@ -50,6 +50,17 @@ MIME_TYPES = {
     'json':  None
 }
 
+static_template = """
+<html>
+  <head>
+    {css}
+    {js}
+  </head>
+  <body>
+    {html}
+  </body>
+</html>
+"""
 
 class Renderer(Exporter):
     """
@@ -109,6 +120,11 @@ class Renderer(Exporter):
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
+
+    js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
+                       'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
+
+    css_dependencies = ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css']
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
@@ -186,6 +202,31 @@ class Renderer(Exporter):
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         return tag.format(src=src, mime_type=mime_type, css=css)
+
+
+    def static_html(self, obj, fmt=None, template=None):
+        """
+        Generates a static HTML with the rendered object in
+        the supplied format. Allows supplying a template
+        formatting string with fields to interpolate 'js',
+        'css' and the main 'html'.
+        """
+        cls_type = type(self)
+
+        css_html, js_html = '', ''
+        js, css = self.embed_assets()
+        for url in self.js_dependencies:
+            js_html += '<script src="%s" type="text/javascript"></script>' % url
+        js_html += '<script type="text/javascript">%s</script>' % js
+
+        for url in self.css_dependencies:
+            css_html += '<link rel="stylesheet" href="%s">' % url
+        css_html += '<style>%s</style>' % css
+
+        if template is None: template = static_template
+
+        html = self.html(obj, fmt)
+        return template.format(js=js_html, css=css_html, html=html)
 
 
     def get_widget(self, plot, widget_type):
