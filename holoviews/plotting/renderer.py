@@ -211,22 +211,14 @@ class Renderer(Exporter):
         'css' and the main 'html'.
         """
         cls_type = type(self)
-        renderers = (cls_type,) + cls_type.__bases__
 
         css_html, js_html = '', ''
         js, css = self.embed_assets()
-        js_urls = []
-        for r in renderers:
-            js_urls += r.js_dependencies.values()
-
-        for url in set(js_urls):
+        for url in self.js_dependencies.values():
             js_html += '<script src="%s" type="text/javascript"></script>' % url
         js_html += '<script type="text/javascript">%s</script>' % js
 
-        css_urls = []
-        for r in renderers:
-            css_urls += r.css_dependencies.values()
-        for url in set(css_urls):
+        for url in self.css_dependencies.values():
             css_html += '<link rel="stylesheet" href="%s">' % url
         css_html += '<style>%s</style>' % css
 
