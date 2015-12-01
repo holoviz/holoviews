@@ -65,7 +65,7 @@ class Dimension(param.Parameterized):
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
 
-    formatter = param.Callable(default=None, doc="""
+    value_format = param.Callable(default=None, doc="""
         Formatting function applied to each value before display.""")
 
     range = param.Tuple(default=(None, None), doc="""
@@ -128,7 +128,8 @@ class Dimension(param.Parameterized):
         Applies the defined formatting to the value.
         """
         own_type = type(value) if self.type is None else self.type
-        formatter = self.formatter if self.formatter else self.type_formatters.get(own_type)
+        formatter = (self.value_format if self.value_format
+                     else self.type_formatters.get(own_type))
         if formatter:
             if callable(formatter):
                 return formatter(value)
