@@ -191,10 +191,10 @@ class Renderer(Exporter):
         dynamic = plot.dynamic
         if widget_type == 'auto':
             isuniform = plot.uniform
-            if not isuniform and widget_type == 'widgets':
-                param.Parameterized.warning("%s is not uniform, falling back to scrubber widget."
-                                            % type(plot).__name__)
+            if not isuniform:
                 widget_type = 'scrubber'
+            else:
+                widget_type = 'widgets'
 
             if dynamic == 'open': widget_type = 'scrubber'
             if dynamic == 'closed': widget_type = 'widgets'
