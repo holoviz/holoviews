@@ -18,9 +18,8 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         self.dimension6 = Dimension('dim1', cyclic=True, range=(0,1))
         self.dimension7 = Dimension('dim1', cyclic=True, range=(0,1), unit='ms')
         self.dimension8 = Dimension('dim1', values=['a', 'b'])
-        self.dimension9 = Dimension('dim1', format_string='{name}')
-        self.dimension10 = Dimension('dim1', type=int)
-        self.dimension11 = Dimension('dim1', type=float)
+        self.dimension9 = Dimension('dim1', type=int)
+        self.dimension10 = Dimension('dim1', type=float)
 
     def test_dimension_comparison_equal1(self):
         self.assertEqual(self.dimension1, self.dimension1)
@@ -69,15 +68,9 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         except AssertionError as e:
             self.assertEqual(str(e), "Dimension value declarations mismatched: [] != ['a', 'b']")
 
-    def test_dimension_comparison_format_unequal(self):
-        try:
-            self.assertEqual(self.dimension4, self.dimension9)
-        except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension format string declarations mismatched: {name}: {val}{unit} != {name}')
-
     def test_dimension_comparison_types_unequal(self):
         try:
-            self.assertEqual(self.dimension10, self.dimension11)
+            self.assertEqual(self.dimension9, self.dimension10)
         except AssertionError as e:
             self.assertEqual(str(e)[:39], "Dimension type declarations mismatched:")
 
