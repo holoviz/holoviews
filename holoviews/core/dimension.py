@@ -324,8 +324,9 @@ class LabelledData(param.Parameterized):
         self_spec = match_fn(split_spec)
         unescaped_match = match_fn(specification[:len(split_spec)]) == self_spec
         if unescaped_match: return True
-        identifier_specification = tuple(sanitize_identifier(ident, escape=False)
-                                         for ident in specification)
+        sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
+        identifier_specification = tuple(fn(ident, escape=False)
+                                         for ident, fn in zip(specification, sanitizers))
         identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
         return identifier_match
 
