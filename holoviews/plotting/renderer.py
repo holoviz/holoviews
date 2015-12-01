@@ -175,7 +175,7 @@ class Renderer(Exporter):
                 w,h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
-        if css is None: css = self.css
+        if css is None: css = {}
         if isinstance(css, dict):
             css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
         else:
