@@ -332,7 +332,8 @@ class Layout(AttrTree, Dimensioned):
 
     @classmethod
     def new_path(cls, path, item, paths, count):
-        path = tuple(sanitize_identifier(p) for p in path)
+        sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
+        path = tuple(fn(p) for (p, fn) in zip(path, sanitizers))
         while any(path[:i] in paths or path in [p[:i] for p in paths]
                   for i in range(1,len(path)+1)):
             path = path[:2]
