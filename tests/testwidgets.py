@@ -6,6 +6,7 @@ from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
+from nose.plugins.attrib import attr
 try:
     from holoviews.ipython import IPTestCase
     from holoviews.plotting.mpl.widgets import ScrubberWidget, SelectionWidget
@@ -36,6 +37,7 @@ def normalize(data):
     # Hack around inconsistencies in jinja between Python 2 and 3
     return data.replace('0.0', '0').replace('1.0', '1')
 
+@attr(optional=1)
 class TestWidgets(IPTestCase):
 
     def setUp(self):
