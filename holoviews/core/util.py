@@ -54,7 +54,7 @@ class Aliases(object):
     of setting tuples in the constructor, you could use
     ``aliases.water`` if you first define:
 
-    >>> aliases = Aliases(water='H_2O', sugar='C_6H_{12}O_6')
+    >>> aliases = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
     >>> aliases.water
     ('water', 'H_2O')
 
