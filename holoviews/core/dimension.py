@@ -14,7 +14,8 @@ except:
 import numpy as np
 import param
 
-from ..core.util import (basestring, sanitize_identifier, max_range,
+from ..core.util import (basestring, sanitize_identifier,
+                         group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
@@ -244,11 +245,21 @@ class LabelledData(param.Parameterized):
         """
         self.data = data
         self.id = id
+        if isinstance(params.get('label',None), tuple):
+            (alias, long_name) = params['label']
+            label_sanitizer.add_aliases(**{alias:long_name})
+            params['label'] = long_name
+
+        if isinstance(params.get('group',None), tuple):
+            (alias, long_name) = params['group']
+            label_sanitizer.add_aliases(**{alias:long_name})
+            params['group'] = long_name
+
         super(LabelledData, self).__init__(**params)
-        if not sanitize_identifier.allowable(self.group):
+        if not group_sanitizer.allowable(self.group):
             raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
-        elif not sanitize_identifier.allowable(self.label):
+        elif not label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
 
