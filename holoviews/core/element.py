@@ -342,12 +342,12 @@ class NdElement(NdMapping, Tabular):
         return reindexed
 
 
-    def _add_item(self, key, value, sort=True):
+    def _add_item(self, key, value, sort=True, update=True):
         value = (value,) if np.isscalar(value) else tuple(value)
         if len(value) != len(self.vdims):
             raise ValueError("%s values must match value dimensions"
                              % type(self).__name__)
-        super(NdElement, self)._add_item(key, value, sort)
+        super(NdElement, self)._add_item(key, value, sort, update)
 
 
     def _filter_columns(self, index, col_names):
@@ -598,8 +598,8 @@ class Collator(NdElement):
         return accumulator
 
 
-    def _add_item(self, key, value, sort=True):
-        NdMapping._add_item(self, key, value, sort)
+    def _add_item(self, key, value, sort=True, update=True):
+        NdMapping._add_item(self, key, value, sort, update)
 
 
     @property
