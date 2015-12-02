@@ -27,7 +27,7 @@ from .element import *                                               # pyflakes:
 try:
     from .ipython import load_notebook
 except:
-    class _load_notebook_fn(param.ParameterizedObject):
+    class _load_notebook_fn(param.ParameterizedFunction):
         def __call__(**opts):
             raise Exception("IPython notebook not available")
     load_notebook = _load_notebook_fn.instance()

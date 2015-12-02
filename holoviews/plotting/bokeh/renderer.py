@@ -5,6 +5,7 @@ from .widgets import BokehScrubberWidget, BokehSelectionWidget
 import param
 from param.parameterized import bothmethod
 
+from bokeh.io import load_notebook
 from bokeh.embed import notebook_div
 from bokeh.models import DataSource
 from bokeh.plotting import Figure
@@ -116,3 +117,10 @@ class BokehRenderer(Renderer):
         Returns a tuple of (width, height) in pixels.
         """
         return (plot.state.height, plot.state.height)
+
+    @classmethod
+    def load_nb(cls):
+        """
+        Loads the bokeh notebook resources.
+        """
+        load_notebook()

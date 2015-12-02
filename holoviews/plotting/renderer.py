@@ -338,3 +338,11 @@ class Renderer(Exporter):
         Validate an options dictionary for the renderer.
         """
         return options
+
+
+    @classmethod
+    def load_nb(cls):
+        """
+        Loads any resources required for display of plots
+        in the Jupyter notebook
+        """

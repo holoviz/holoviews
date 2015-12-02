@@ -7,6 +7,7 @@ import jinja2
 from IPython.display import display, HTML
 
 import holoviews
+from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
@@ -93,9 +94,6 @@ class load_notebook_fn(param.ParameterizedFunction):
     and register magics.
     """
 
-    bokeh = param.Boolean(default=False, doc="""Toggle inclusion of BokehJS,
-        required to render plots using the Bokeh backend.""")
-
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
@@ -103,9 +101,14 @@ class load_notebook_fn(param.ParameterizedFunction):
     width = param.Number(default=None, bounds=(0, 100), doc="""
         Width of the notebook as a percentage of the browser screen window width.""")
 
+    ip = param.Parameter(default=None, doc="IPython kernel instance")
+
     _loaded = False
 
-    def __call__(self, ip=None, **params):
+    def __call__(self, *resources, **params):
+        if not resources:
+            resources = ['holoviews']
+        ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
 
         if load_notebook_fn._loaded == False:
@@ -124,16 +127,18 @@ class load_notebook_fn(param.ParameterizedFunction):
         if css:
             display(HTML(css))
 
-        load_hvjs(logo=p.logo)
-        if p.bokeh:
-            import bokeh.io
-            bokeh.io.load_notebook()
-        
+        resources = list(resources)
+        if 'holoviews' in resources:
+            resources.pop(resources.index('holoviews'))
+            load_hvjs(logo=p.logo)
+        for backend in resources:
+            Store.renderers[backend].load_nb()
+
 
 load_notebook = load_notebook_fn.instance()
 
 def load_ipython_extension(ip):
-    load_notebook(ip)
+    load_notebook(ip=ip)
 
 def unload_ipython_extension(ip):
     load_notebook_fn._loaded = False
