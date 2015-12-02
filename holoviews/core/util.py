@@ -33,13 +33,15 @@ def process_ellipses(obj, key):
     Helper function to pad a __getitem__ key with the right number of
     empty slices (i.e :) when the key contains an Elipsis (...).
     """
-    key = wrap_tuple(key)
-    if key.count(Ellipsis)!=1:
+    wrapped_key = wrap_tuple(key)
+    if wrapped_key.count(Ellipsis)== 0:
+        return key
+    if wrapped_key.count(Ellipsis)!=1:
         raise Exception("Only one ellipsis allowed at a time.")
     dim_count = len(obj.dimensions())
-    index = key.index(Ellipsis)
-    head = key[:index]
-    tail = key[index+1:]
+    index = wrapped_key.index(Ellipsis)
+    head = wrapped_key[:index]
+    tail = wrapped_key[index+1:]
     middle = (slice(None),) * (dim_count - (len(head) + len(tail)))
     return head + middle + tail
 
