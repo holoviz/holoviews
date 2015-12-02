@@ -28,7 +28,7 @@ from .element import Collator
 from .layout import Layout
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .options import Store
-from .util import unique_iterator, sanitize_identifier
+from .util import unique_iterator, sanitize_identifier, group_sanitizer, label_sanitizer
 
 
 class Reference(param.Parameterized):
@@ -336,8 +336,8 @@ class Pickler(Exporter):
                 components = list(obj.data.values())
                 entries = entries if len(entries) > 1 else [entries[0]+'(L)']
             else:
-                entries = ['%s.%s' % (sanitize_identifier(obj.group, False),
-                                      sanitize_identifier(obj.label, False))]
+                entries = ['%s.%s' % (group_sanitizer(obj.group, False),
+                                      label_sanitizer(obj.label, False))]
                 components = [obj]
 
             for component, entry in zip(components, entries):

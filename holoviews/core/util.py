@@ -46,6 +46,27 @@ def capitalize_unicode_name(s):
     return s[:index] + tail
 
 
+class Aliases(object):
+    """
+    Helper class useful for defining a set of alias tuples on a single object.
+
+    For instance, when defining a group or label with an alias, instead
+    of setting tuples in the constructor, you could use
+    ``aliases.water`` if you first define:
+
+    >>> aliases = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
+    >>> aliases.water
+    ('water', 'H_2O')
+
+    This may be used to conveniently define aliases for groups, labels
+    or dimension names.
+    """
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, (k,v))
+
+
+
 class sanitize_identifier_fn(param.ParameterizedFunction):
     """
     Sanitizes group/label values for use in AttrTree attribute
@@ -114,9 +135,31 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        Whether leading underscores should be allowed to be sanitized
        with the leading prefix.""")
 
+    aliases = param.Dict(default={}, doc="""
+       A dictionary of aliases mapping long strings to their short,
+       sanitized equivalents""")
+
     prefix = 'A_'
 
     _lookup_table = {}
+
+
+    @param.parameterized.bothmethod
+    def add_aliases(self_or_cls, **kwargs):
+        """
+        Conveniently add new aliases as keyword arguments. For instance
+        you can add one new alias with add_aliases(short='Longer string')
+        """
+        self_or_cls.aliases.update({v:k for k,v in kwargs.items()})
+
+    @param.parameterized.bothmethod
+    def remove_aliases(self_or_cls, aliases):
+        """
+        Remove a list of aliases.
+        """
+        for k,v in self_or_cls.aliases.items():
+            if v in aliases:
+                self_or_cls.aliases.pop(k)
 
     @param.parameterized.bothmethod
     def allowable(self_or_cls, name, disable_leading_underscore=None):
@@ -177,6 +220,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     def __call__(self, name, escape=True, version=None):
         if name in [None, '']:
            return name
+        elif name in self.aliases:
+            return self.aliases[name]
         elif name in self._lookup_table:
            return self._lookup_table[name]
         name = safe_unicode(name)
@@ -244,6 +289,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return self._process_underscores(sanitized + ([chars] if chars else []))
 
 sanitize_identifier = sanitize_identifier_fn.instance()
+
+
+group_sanitizer = sanitize_identifier_fn.instance()
+label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def find_minmax(lims, olims):
@@ -390,8 +439,8 @@ def match_spec(element, specification):
     match_tuple = ()
     match = specification.get((), {})
     for spec in [type(element).__name__,
-                 sanitize_identifier(element.group, escape=False),
-                 sanitize_identifier(element.label, escape=False)]:
+                 group_sanitizer(element.group, escape=False),
+                 label_sanitizer(element.label, escape=False)]:
         match_tuple += (spec,)
         if match_tuple in specification:
             match = specification[match_tuple]

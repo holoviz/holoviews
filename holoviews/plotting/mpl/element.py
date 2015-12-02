@@ -146,8 +146,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 xformat, yformat = None, None
                 if xdim is None:
                     pass
-                elif xdim.formatter:
-                    xformat = xdim.formatter
+                elif xdim.value_format:
+                    xformat = xdim.value_format
                 elif xdim.type in xdim.type_formatters:
                     xformat = xdim.type_formatters[xdim.type]
                 if xformat:
@@ -155,8 +155,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
                 if ydim is None:
                     pass
-                elif ydim.formatter:
-                    yformat = ydim.formatter
+                elif ydim.value_format:
+                    yformat = ydim.value_format
                 elif ydim.type in ydim.type_formatters:
                     yformat = ydim.type_formatters[ydim.type]
                 if yformat:
