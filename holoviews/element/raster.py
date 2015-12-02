@@ -228,6 +228,9 @@ class QuadMesh(Raster):
         self._grid = self.data[0].ndim == 1
 
 
+    @property
+    def depth(self): return 1
+
     def _process_data(self, data):
         data = tuple(np.array(el) for el in data)
         x, y, zarray = data
