@@ -229,11 +229,10 @@ class Columns(Element):
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
         if value_select:
-            values = data.dimension_values(value_select)
-            if len(values) > 1:
-                return values
+            if len(data) == 1:
+                return data[value_select][0]
             else:
-                return values[0]
+                return data.reindex(vdims=[value_select])
         return data
 
 
