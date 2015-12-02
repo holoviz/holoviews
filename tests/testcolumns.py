@@ -311,6 +311,24 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     def test_columns_index_column_ht(self):
         self.compare_arrays(self.columns_ht['y'], self.ys)
 
+    def test_columns_boolean_index(self):
+        row = self.table[np.array([True, True, False])]
+        indexed = Columns({'Gender':['M','M'],'Age':[10,16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(row, indexed)
+
+    def test_columns_value_dim_index(self):
+        row = self.table[:, :, 'Weight']
+        indexed = Columns({'Gender':['M','M','F'],'Age':[10,16, 12],
+                           'Weight':[15,18, 10]},
+                          kdims=self.kdims, vdims=self.vdims[:1])
+        self.assertEquals(row, indexed)
+
+    def test_columns_value_dim_scalar_index(self):
+        row = self.table['M', 10, 'Weight']
+        self.assertEquals(row, 15)
+
     # Casting
 
     def test_columns_array_ht(self):
