@@ -27,7 +27,6 @@ var BokehMethods = {
 		if (data !== undefined) {
 			if (data.root !== undefined) {
 				doc = Bokeh.index[data.root].model.document;
-				delete data.root;
 				$.each(data, function(id, value) {
 					ds = doc.get_model_by_id(id);
 					if (ds != undefined) {

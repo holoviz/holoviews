@@ -457,7 +457,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
         elif len(plots) == 1 and not adjoined:
-            layout_plot = VBox(HBox(children=plots[0]))
+            layout_plot = VBox(children=[HBox(children=plots[0])])
         elif len(plots[0]) == 1:
             layout_plot = VBox(children=[p[0] for p in plots])
         else:
