@@ -30,6 +30,7 @@ class Chart(Columns, Element2D):
         number of dependent variables.""")
 
     def __getitem__(self, index):
+        index = util.process_ellipses(self, index)
         sliced = super(Chart, self).__getitem__(index)
         if not isinstance(sliced, Chart):
             return sliced
