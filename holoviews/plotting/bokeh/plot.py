@@ -216,7 +216,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             else:
                 plots[r].append(None)
                 passed_plots.append(None)
-        self.handles['plot'] = gridplot(plots[::-1])
+        self.handles['plot'] = BokehGridPlot(children=plots[::-1])
         self.handles['plots'] = plots
         if self.shared_datasource:
             self.sync_sources()
@@ -457,7 +457,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
         elif len(plots) == 1 and not adjoined:
-            layout_plot = VBox(HBox(*plots[0]))
+            layout_plot = VBox(HBox(children=plots[0]))
         elif len(plots[0]) == 1:
             layout_plot = VBox(children=[p[0] for p in plots])
         else:
