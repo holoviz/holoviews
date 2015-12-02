@@ -2,6 +2,7 @@ import os
 import base64
 from unittest import SkipTest
 
+import param
 import jinja2
 from IPython.display import display, HTML
 
@@ -66,9 +67,9 @@ class IPTestCase(ComparisonTestCase):
         self.ip.run_line_magic(*args, **kwargs)
 
 
-def load_notebook():
+def load_hvjs(logo=False):
     """
-    Displays javascript and CSS to initialize HoloViews widgets
+    Displays javascript and CSS to initialize HoloViews widgets.
     """
     # Evaluate load_notebook.html template with widgetjs code
     widgetjs, widgetcss = Renderer.embed_assets()
@@ -76,7 +77,8 @@ def load_notebook():
     jinjaEnv = jinja2.Environment(loader=templateLoader)
     template = jinjaEnv.get_template('load_notebook.html')
     display(HTML(template.render({'widgetjs': widgetjs,
-                                  'widgetcss': widgetcss})))
+                                  'widgetcss': widgetcss,
+                                  'logo': logo})))
 
 
 # Populating the namespace for keyword evaluation
@@ -85,18 +87,53 @@ import numpy as np                               # pyflakes:ignore (namespace im
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
-_loaded = False
-def load_ipython_extension(ip):
+class load_notebook_fn(param.ParameterizedFunction):
+    """
+    Parameterized function to initialize notebook resources
+    and register magics.
+    """
 
-    global _loaded
-    if not _loaded:
-        _loaded = True
-        param_ext.load_ipython_extension(ip, verbose=False)
-        load_magics(ip)
-        OutputMagic.initialize()
-        set_display_hooks(ip)
-        load_notebook()
+    bokeh = param.Boolean(default=False, doc="""Toggle inclusion of BokehJS,
+        required to render plots using the Bokeh backend.""")
 
-def unload_ipython_extension(ip):
-    global _loaded
+    css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
+
+    logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
+
+    width = param.Number(default=None, bounds=(0, 100), doc="""
+        Width of the notebook as a percentage of the browser screen window width.""")
+
     _loaded = False
+
+    def __call__(self, **params):
+        p = param.ParamOverrides(self, params)
+
+        if load_notebook_fn._loaded == False:
+            ip = get_ipython()
+            param_ext.load_ipython_extension(ip, verbose=False)
+            load_magics(ip)
+            OutputMagic.initialize()
+            set_display_hooks(ip)
+            load_notebook_fn._loaded = True
+
+        css = ''
+        if p.width is not None:
+            css += '<style>div.container { width: %s%% }</style>' % p.width
+        if p.css:
+            css += '<style>%s</style>' % p.css
+        if css:
+            display(HTML(css))
+
+        load_hvjs(logo=p.logo)
+        if p.bokeh:
+            import bokeh.io
+            bokeh.io.load_notebook()
+        
+
+load_notebook = load_notebook_fn.instance()
+
+def load_ipython_extension(ip):
+    load_notebook()
+    
+def unload_ipython_extension(ip):
+    load_notebook_fn._loaded = False

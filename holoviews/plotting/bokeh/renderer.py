@@ -108,20 +108,3 @@ class BokehRenderer(Renderer):
         Returns a tuple of (width, height) in pixels.
         """
         return (plot.state.height, plot.state.height)
-
-
-    @classmethod
-    def validate(cls, options):
-        """
-        Validates a dictionary of options set on the backend.
-        """
-        try:
-            import bokeh
-            import bokeh.io
-        except:
-            raise ImportError("Could not import one of bokeh, pandas or scipy.")
-
-        if not cls._loaded:
-            bokeh.io.load_notebook()
-            cls._loaded = True
-        return options
