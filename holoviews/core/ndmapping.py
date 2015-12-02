@@ -177,7 +177,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         # Updates nested data structures rather than simply overriding them.
         if (update and (dim_vals in self.data)
-            and isinstance(self.data[dim_vals], (NdMapping, OrderedDict))):
+            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, OrderedDict))):
             self.data[dim_vals].update(data)
         else:
             self.data[dim_vals] = data
