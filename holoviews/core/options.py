@@ -39,7 +39,7 @@ import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import sanitize_identifier
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer
 from .pprint import InfoPrinter
 
 class OptionError(Exception):
@@ -479,8 +479,9 @@ class OptionTree(AttrTree):
         In addition, closest supports custom options by checking the
         object
         """
-        components = (obj.__class__.__name__, sanitize_identifier(obj.group),
-                      sanitize_identifier(obj.label))
+        components = (obj.__class__.__name__,
+                      group_sanitizer(obj.group),
+                      label_sanitizer(obj.label))
         return self.find(components).options(group)
 
 
@@ -700,12 +701,12 @@ class Compositor(param.Parameterized):
             level += 1      # Types match
             if len(spec) == 1: continue
 
-            group = [el.group, sanitize_identifier(el.group, escape=False)]
+            group = [el.group, group_sanitizer(el.group, escape=False)]
             if spec[1] in group: level += 1  # Values match
             else:                     return None
 
             if len(spec) == 3:
-                group = [el.label, sanitize_identifier(el.label, escape=False)]
+                group = [el.label, label_sanitizer(el.label, escape=False)]
                 if (spec[2] in group):
                     level += 1  # Labels match
                 else:
@@ -1176,7 +1177,8 @@ class StoreOptions(object):
             store_ids = Store.custom_options(backend=backend).keys()
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
-        return max(max_ids)
+        # If no backends defined (e.g plotting not imported) return zero
+        return max(max_ids) if len(max_ids) else 0
 
 
     @classmethod

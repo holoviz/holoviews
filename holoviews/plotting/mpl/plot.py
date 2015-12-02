@@ -505,8 +505,8 @@ class GridPlot(CompositePlot):
     def _process_ticklabels(self, labels, dim):
         formatted_labels = []
         for k in labels:
-            if dim and dim.formatter:
-                k = dim.formatter(k)
+            if dim and dim.value_format:
+                k = dim.value_format(k)
             elif not isinstance(k, (str, type(None))):
                 k = self.tick_format % k
             elif k is None:

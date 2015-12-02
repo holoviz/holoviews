@@ -16,7 +16,7 @@ In addition, there are several different ways of
 import re
 # IPython not required to import ParamPager
 from param.ipython import ParamPager
-from holoviews.core.util import sanitize_identifier
+from holoviews.core.util import sanitize_identifier, group_sanitizer, label_sanitizer
 
 
 
@@ -88,8 +88,8 @@ class InfoPrinter(object):
     @classmethod
     def get_target(cls, obj):
         objtype=obj.__class__.__name__
-        group = sanitize_identifier(obj.group)
-        label = ('.'+sanitize_identifier(obj.label) if obj.label else '')
+        group = group_sanitizer(obj.group)
+        label = ('.' + label_sanitizer(obj.label) if obj.label else '')
         target = '{objtype}.{group}{label}'.format(objtype=objtype,
                                                    group=group,
                                                    label=label)

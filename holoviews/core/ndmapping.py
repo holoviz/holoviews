@@ -145,7 +145,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise KeyError('Key has to match number of dimensions.')
 
 
-    def _add_item(self, dim_vals, data, sort=True):
+    def _add_item(self, dim_vals, data, sort=True, update=True):
         """
         Adds item to the data, applying dimension types and ensuring
         key conforms to Dimension type and values.
@@ -176,8 +176,8 @@ class MultiDimensionalMapping(Dimensioned):
                                ' specified dimension values.' % (dim, repr(val)))
 
         # Updates nested data structures rather than simply overriding them.
-        if ((dim_vals in self.data)
-            and isinstance(self.data[dim_vals], (NdMapping, OrderedDict))):
+        if (update and (dim_vals in self.data)
+            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, OrderedDict))):
             self.data[dim_vals].update(data)
         else:
             self.data[dim_vals] = data
@@ -432,8 +432,8 @@ class MultiDimensionalMapping(Dimensioned):
                 info_str += '%s Dimensions: \n' % group.capitalize()
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
-                if d.formatter:
-                    dmin, dmax = d.formatter(dmin), d.formatter(dmax)
+                if d.value_format:
+                    dmin, dmax = d.value_format(dmin), d.value_format(dmax)
                 info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
         print(info_str)
 
@@ -529,7 +529,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __setitem__(self, key, value):
-        self._add_item(key, value)
+        self._add_item(key, value, update=False)
 
 
     def __str__(self):

@@ -248,9 +248,6 @@ class Comparison(ComparisonInterface):
         if dim1.values != dim2.values:
             raise cls.failureException("Dimension value declarations mismatched: %s != %s"
                                        % (dim1.values , dim2.values))
-        if dim1.format_string != dim2.format_string:
-            raise cls.failureException("Dimension format string declarations mismatched: %s != %s"
-                                       % (dim1.format_string , dim2.format_string))
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
