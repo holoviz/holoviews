@@ -27,6 +27,23 @@ except ImportError:
 basestring = str if sys.version_info.major == 3 else basestring
 
 
+
+def process_ellipses(obj, key):
+    """
+    Helper function to pad a __getitem__ key with the right number of
+    empty slices (i.e :) when the key contains an Elipsis (...).
+    """
+    key = wrap_tuple(key)
+    if key.count(Ellipsis)!=1:
+        raise Exception("Only one ellipsis allowed at a time.")
+    dim_count = len(obj.dimensions())
+    index = key.index(Ellipsis)
+    head = key[:index]
+    tail = key[index+1:]
+    middle = (slice(None),) * (dim_count - (len(head) + len(tail)))
+    return head + middle + tail
+
+
 def safe_unicode(value):
    if sys.version_info.major == 3 or not isinstance(value, str): return value
    else: return unicode(value.decode('utf-8'))
