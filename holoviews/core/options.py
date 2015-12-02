@@ -1177,7 +1177,8 @@ class StoreOptions(object):
             store_ids = Store.custom_options(backend=backend).keys()
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
-        return max(max_ids)
+        # If no backends defined (e.g plotting not imported) return zero
+        return max(max_ids) if len(max_ids) else 0
 
 
     @classmethod
