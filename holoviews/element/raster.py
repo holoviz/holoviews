@@ -53,6 +53,7 @@ class Raster(Element2D):
 
     def __getitem__(self, slices):
         if slices in self.dimensions(): return self.dimension_values(slices)
+        slices = util.process_ellipses(self,slices)
         if not isinstance(slices, tuple):
             slices = (slices, slice(None))
         elif len(slices) > (2 + self.depth):
@@ -266,6 +267,7 @@ class QuadMesh(Raster):
 
     def __getitem__(self, slices):
         if slices in self.dimensions(): return self.dimension_values(key)
+        slices = util.process_ellipses(self,slices)
         if not self._grid:
             raise IndexError("Indexing of non-grid based QuadMesh"
                              "currently not supported")
@@ -543,6 +545,7 @@ class Image(SheetCoordinateSystem, Raster):
         Slice the underlying numpy array in sheet coordinates.
         """
         if coords in self.dimensions(): return self.dimension_values(coords)
+        coords = util.process_ellipses(self,coords)
         if coords is () or coords == slice(None, None):
             return self
 
