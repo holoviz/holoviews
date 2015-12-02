@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from bokeh.io import gridplot, vplot, hplot
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
 from bokeh.models.widgets import Panel, Tabs, DataTable
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout,
@@ -457,11 +457,11 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
         elif len(plots) == 1 and not adjoined:
-            layout_plot = vplot(hplot(*plots[0]))
+            layout_plot = VBox(HBox(*plots[0]))
         elif len(plots[0]) == 1:
-            layout_plot = vplot(*[p[0] for p in plots])
+            layout_plot = VBox(children=[p[0] for p in plots])
         else:
-            layout_plot = gridplot(plots)
+            layout_plot = BokehGridPlot(children=plots)
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots

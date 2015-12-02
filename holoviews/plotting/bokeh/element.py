@@ -247,7 +247,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         major, minor = [int(v) for v  in bokeh.__version__.split('.')[0:2]]
         if major > 0 or minor > '10':
             properties['webgl'] = True
-        return bokeh.plotting.figure(x_axis_type=x_axis_type,
+        return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type,
                                      tools=tools, **properties)
 
