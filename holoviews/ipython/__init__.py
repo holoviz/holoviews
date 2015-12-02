@@ -88,7 +88,7 @@ import numpy as np                               # pyflakes:ignore (namespace im
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
-class load_notebook_fn(param.ParameterizedFunction):
+class notebook_extension_fn(param.ParameterizedFunction):
     """
     Parameterized function to initialize notebook resources
     and register magics.
@@ -111,13 +111,13 @@ class load_notebook_fn(param.ParameterizedFunction):
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
 
-        if load_notebook_fn._loaded == False:
+        if notebook_extension_fn._loaded == False:
             ip = get_ipython() if ip is None else ip
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             OutputMagic.initialize()
             set_display_hooks(ip)
-            load_notebook_fn._loaded = True
+            notebook_extension_fn._loaded = True
 
         css = ''
         if p.width is not None:
@@ -135,10 +135,10 @@ class load_notebook_fn(param.ParameterizedFunction):
             Store.renderers[backend].load_nb()
 
 
-load_notebook = load_notebook_fn.instance()
+notebook_extension = notebook_extension_fn.instance()
 
 def load_ipython_extension(ip):
-    load_notebook(ip=ip)
+    notebook_extension(ip=ip)
 
 def unload_ipython_extension(ip):
-    load_notebook_fn._loaded = False
+    notebook_extension_fn._loaded = False

@@ -25,12 +25,12 @@ from .operation import ElementOperation, MapOperation, TreeOperation # pyflakes:
 from .element import *                                               # pyflakes:ignore (API import)
 
 try:
-    from .ipython import load_notebook
+    from .ipython import notebook_extension
 except:
-    class _load_notebook_fn(param.ParameterizedFunction):
+    class _notebook_extension_fn(param.ParameterizedFunction):
         def __call__(**opts):
             raise Exception("IPython notebook not available")
-    load_notebook = _load_notebook_fn.instance()
+    notebook_extension = _notebook_extension_fn.instance()
 
 
 # A single holoviews.rc file may be executed if found.
