@@ -349,7 +349,7 @@ class DynamicMap(HoloMap):
     """
     _sorted = False
     # Declare that callback is a positional parameter (used in clone)
-    _pos_params = ['callback']
+    __pos_params = ['callback']
 
     callback = param.Parameter(doc="""
         The callable or generator used to generate the elements. In the

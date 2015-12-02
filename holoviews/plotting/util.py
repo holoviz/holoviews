@@ -31,7 +31,7 @@ def collate(obj):
                                 "in order to follow the recommended nesting "
                                 "structure shown in the Composing Data tutorial"
                                 "(http://git.io/vtIQh)" % vmap.type.__name__)
-        return vmap.collate()
+        return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
             display_warning.warning(
@@ -41,7 +41,7 @@ def collate(obj):
                 "of the recommended nesting presented in the Composing Data "
                 "tutorial (http://git.io/vqs03)")
             expanded = []
-            for el in layout.values():
+            for el in obj.values():
                 if isinstance(el, HoloMap) and not displayable(el):
                     collated_layout = Layout.from_values(el.collate())
                     expanded.extend(collated_layout.values())
