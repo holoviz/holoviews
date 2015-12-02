@@ -537,6 +537,13 @@ class Image(SheetCoordinateSystem, Raster):
         if coords is () or coords == slice(None, None):
             return self
 
+        if len(coords) > (2 + self.depth):
+            raise Exception("Can only slice %d dimensions" % 2 + self.depth)
+        elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
+            raise Exception("Image only has single selectable channel %r" %
+                            self.vdims[0].name)
+
+        coords = coords[:2]
         if not any([isinstance(el, slice) for el in coords]):
             return self.data[self.sheet2matrixidx(*coords)]
         if all([isinstance(c, slice) for c in coords]):
