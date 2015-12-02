@@ -105,11 +105,11 @@ class load_notebook_fn(param.ParameterizedFunction):
 
     _loaded = False
 
-    def __call__(self, **params):
+    def __call__(self, ip=None, **params):
         p = param.ParamOverrides(self, params)
 
         if load_notebook_fn._loaded == False:
-            ip = get_ipython()
+            ip = get_ipython() if ip is None else ip
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             OutputMagic.initialize()
@@ -133,7 +133,7 @@ class load_notebook_fn(param.ParameterizedFunction):
 load_notebook = load_notebook_fn.instance()
 
 def load_ipython_extension(ip):
-    load_notebook()
-    
+    load_notebook(ip)
+
 def unload_ipython_extension(ip):
     load_notebook_fn._loaded = False
