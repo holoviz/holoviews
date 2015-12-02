@@ -736,19 +736,24 @@ class RGB(Image):
         Slice the underlying numpy array in sheet coordinates.
         """
         if coords in self.dimensions(): return self.dimension_values(coords)
+        coords = util.process_ellipses(self, coords)
         if not isinstance(coords, slice) and len(coords) > self.ndims:
-            value = coords[self.ndims:]
-            if len(value) > 1:
-                raise KeyError("Only one value dimension may be indexed at a time")
-
-            sliced = super(RGB, self).__getitem__(coords[:self.ndims])
-            vidx = self.get_dimension_index(value[0])
-            val_index = vidx - self.ndims
-            data = sliced.data[:,:, val_index]
-            return Image(data, **dict(self.get_param_values(onlychanged=True),
-                                       vdims=[self.vdims[val_index]]))
-        else:
-            return super(RGB, self).__getitem__(coords)
+            values = coords[self.ndims:]
+            channels = [el for el in values if isinstance(el, (str, Dimension))]
+            if len(channels) == 1:
+                sliced = super(RGB, self).__getitem__(coords[:self.ndims])
+                vidx = self.get_dimension_index(channels[0])
+                val_index = vidx - self.ndims
+                data = sliced.data[:,:, val_index]
+                return Image(data, **dict(self.get_param_values(onlychanged=True),
+                                          vdims=[self.vdims[val_index]]))
+            elif len(channels) > 1:
+                raise Exception("Channels can only be selected once in __getitem__")
+            elif all(v==slice(None) for v in values):
+                coords = coords[:self.ndims]
+            else:
+                raise Exception("Only empty value slices currently supported in RGB")
+        return super(RGB, self).__getitem__(coords)
 
 
 class HSV(RGB):
