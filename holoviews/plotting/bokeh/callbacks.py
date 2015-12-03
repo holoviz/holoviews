@@ -47,6 +47,10 @@ class Callback(param.ParameterizedFunction):
 
     current_data = param.Dict(default={})
 
+    initialize_cb = param.Boolean(default=True, doc="""
+        Whether the callback should be initialized when it's first
+        added to a plot""")
+
     plot_attributes = param.Dict(default={}, doc="""
         Plot attributes returned to the Python callback.""")
 
@@ -91,6 +95,15 @@ class Callback(param.ParameterizedFunction):
            kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
         }}
     """
+
+    def initialize(self, data):
+        """
+        Initialize is called when the callback is added to a new plot
+        and the initialize option is enabled. May avoid repeat
+        initialization by setting initialize_cb parameter to False
+        inside this method.
+        """
+
 
     def __call__(self, data):
         """
@@ -201,6 +214,9 @@ class DownsampleColumns(Callback):
     plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
                                           'y_range': ['start', 'end']})
 
+    def initialize(self, data):
+        return self(data)
+
     def __call__(self, data):
         xstart, xend = data['x_range']
         ystart, yend = data['y_range']
@@ -304,7 +320,8 @@ class Callbacks(param.Parameterized):
         customjs = CustomJS(args=plot.handles, code=code)
 
         # Get initial callback data and call to initialize
-        pycallback(data)
+        if pycallback.initialize_cb:
+            pycallback.initialize(data)
 
         return customjs, pycallback
 
