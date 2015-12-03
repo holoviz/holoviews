@@ -169,12 +169,12 @@ class Histogram(Element2D):
         if not isinstance(key, tuple): pass
         elif len(key) == self.ndims + 1:
             if key[-1] != slice(None) and (key[-1] not in self.vdims):
-                raise Exception("%r is the only selectable value dimension" %
+                raise KeyError("%r is the only selectable value dimension" %
                                 self.vdims[0].name)
             key = key[0]
         elif len(key) == self.ndims + 1: key = key[0]
         else:
-            raise Exception("Histogram cannot slice more than %d dimension."
+            raise KeyError("Histogram cannot slice more than %d dimension."
                             % len(self.kdims)+1)
 
         centers = [(float(l)+r)/2 for (l,r) in zip(self.edges, self.edges[1:])]
@@ -196,7 +196,7 @@ class Histogram(Element2D):
             return self.clone((slice_values, slice_edges), extents=extents)
         else:
             if not (self.edges.min() <= key < self.edges.max()):
-                raise Exception("Key value %s is out of the histogram bounds" % key)
+                raise KeyError("Key value %s is out of the histogram bounds" % key)
             idx = np.digitize([key], self.edges)[0]
             return self.values[idx-1 if idx>0 else idx]
 

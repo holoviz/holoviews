@@ -57,9 +57,9 @@ class Raster(Element2D):
         if not isinstance(slices, tuple):
             slices = (slices, slice(None))
         elif len(slices) > (2 + self.depth):
-            raise Exception("Can only slice %d dimensions" % 2 + self.depth)
+            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise Exception("%r is the only selectable value dimension" % self.vdims[0].name)
+            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
 
         slc_types = [isinstance(sl, slice) for sl in slices[:2]]
         data = self.data.__getitem__(slices[:2][::-1])
@@ -269,12 +269,12 @@ class QuadMesh(Raster):
         if slices in self.dimensions(): return self.dimension_values(key)
         slices = util.process_ellipses(self,slices)
         if not self._grid:
-            raise IndexError("Indexing of non-grid based QuadMesh"
+            raise KeyError("Indexing of non-grid based QuadMesh"
                              "currently not supported")
         if len(slices) > (2 + self.depth):
-            raise Exception("Can only slice %d dimensions" % (2 + self.depth))
+            raise KeyError("Can only slice %d dimensions" % (2 + self.depth))
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise Exception("%r is the only selectable value dimension" % self.vdims[0].name)
+            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
         slices = slices[:2]
         if not isinstance(slices, tuple): slices = (slices, slice(None))
         slc_types = [isinstance(sl, slice) for sl in slices]
@@ -549,9 +549,9 @@ class Image(SheetCoordinateSystem, Raster):
             return self
 
         if len(coords) > (2 + self.depth):
-            raise Exception("Can only slice %d dimensions" % 2 + self.depth)
+            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
         elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
-            raise Exception("%r is the only selectable value dimension" % self.vdims[0].name)
+            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
 
         coords = coords[:2]
         if not any([isinstance(el, slice) for el in coords]):
@@ -565,7 +565,7 @@ class Image(SheetCoordinateSystem, Raster):
             yend = t if ycoords.stop is None else min(t, ycoords.stop)
             bounds = BoundingBox(points=((xstart, ystart), (xend, yend)))
         else:
-            raise IndexError('Indexing requires x- and y-slice ranges.')
+            raise KeyError('Indexing requires x- and y-slice ranges.')
 
         return self.clone(Slice(bounds, self).submatrix(self.data),
                           bounds=bounds)
@@ -753,7 +753,7 @@ class RGB(Image):
             if len(channels) == 1:
                 sliced = super(RGB, self).__getitem__(coords[:self.ndims])
                 if channels[0] not in self.vdims:
-                    raise Exception("%r is not an available value dimension"
+                    raise KeyError("%r is not an available value dimension"
                                     % channels[0])
                 vidx = self.get_dimension_index(channels[0])
                 val_index = vidx - self.ndims
@@ -761,11 +761,11 @@ class RGB(Image):
                 return Image(data, **dict(self.get_param_values(onlychanged=True),
                                           vdims=[self.vdims[val_index]]))
             elif len(channels) > 1:
-                raise Exception("Channels can only be selected once in __getitem__")
+                raise KeyError("Channels can only be selected once in __getitem__")
             elif all(v==slice(None) for v in values):
                 coords = coords[:self.ndims]
             else:
-                raise Exception("Only empty value slices currently supported in RGB")
+                raise KeyError("Only empty value slices currently supported in RGB")
         return super(RGB, self).__getitem__(coords)
 
 
