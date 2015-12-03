@@ -572,13 +572,13 @@ class NdMapping(MultiDimensionalMapping):
         data elements, otherwise it will return the requested slice of
         the data.
         """
-        if indexslice in [Ellipsis, ()]:
-            return self
-        elif isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+        if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items())
             return self.clone([item for c, item in selection if c])
+        elif indexslice in [Ellipsis, ()]:
+            return self
 
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)
