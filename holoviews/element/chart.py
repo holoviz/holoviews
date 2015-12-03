@@ -149,7 +149,7 @@ class Histogram(Element2D):
 
     group = param.String(default='Histogram', constant=True)
 
-    vdims = param.List(default=[Dimension('Frequency')])
+    vdims = param.List(default=[Dimension('Frequency')], bounds=(1,1))
 
     def __init__(self, values, edges=None, extents=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)

@@ -220,7 +220,7 @@ class QuadMesh(Raster):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')])
 
-    vdims = param.List(default=[Dimension('z')])
+    vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
     def __init__(self, data, **params):
         data = self._process_data(data)
