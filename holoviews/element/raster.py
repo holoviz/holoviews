@@ -754,6 +754,9 @@ class RGB(Image):
             channels = [el for el in values if isinstance(el, (str, Dimension))]
             if len(channels) == 1:
                 sliced = super(RGB, self).__getitem__(coords[:self.ndims])
+                if channels[0] not in self.vdims:
+                    raise Exception("%r is not an available value dimension"
+                                    % channels[0])
                 vidx = self.get_dimension_index(channels[0])
                 val_index = vidx - self.ndims
                 data = sliced.data[:,:, val_index]
