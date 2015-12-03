@@ -13,7 +13,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select
+from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select, basestring, wrap_tuple, process_ellipses
 
 
 class item_check(object):
@@ -319,7 +319,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if np.isscalar(dim_val):
+        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
@@ -579,6 +579,8 @@ class NdMapping(MultiDimensionalMapping):
             return self.clone([item for c, item in selection if c])
         elif indexslice in [Ellipsis, ()]:
             return self
+        elif Ellipsis in wrap_tuple(indexslice):
+            indexslice = process_ellipses(self, indexslice)
 
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)

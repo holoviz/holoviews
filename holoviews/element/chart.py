@@ -149,7 +149,7 @@ class Histogram(Element2D):
 
     group = param.String(default='Histogram', constant=True)
 
-    vdims = param.List(default=[Dimension('Frequency')])
+    vdims = param.List(default=[Dimension('Frequency')], bounds=(1,1))
 
     def __init__(self, values, edges=None, extents=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)
@@ -164,9 +164,18 @@ class Histogram(Element2D):
         Implements slicing or indexing of the Histogram
         """
         if key in self.dimensions(): return self.dimension_values(key)
-        if key is (): return self # May no longer be necessary
-        if isinstance(key, tuple) and len(key) > self.ndims:
-            raise Exception("Slice must match number of key dimensions.")
+        if key is () or key is Ellipsis: return self # May no longer be necessary
+        key = util.process_ellipses(self, key)
+        if not isinstance(key, tuple): pass
+        elif len(key) == self.ndims + 1:
+            if key[-1] != slice(None) and (key[-1] not in self.vdims):
+                raise KeyError("%r is the only selectable value dimension" %
+                                self.vdims[0].name)
+            key = key[0]
+        elif len(key) == self.ndims + 1: key = key[0]
+        else:
+            raise KeyError("Histogram cannot slice more than %d dimension."
+                            % len(self.kdims)+1)
 
         centers = [(float(l)+r)/2 for (l,r) in zip(self.edges, self.edges[1:])]
         if isinstance(key, slice):
@@ -187,7 +196,7 @@ class Histogram(Element2D):
             return self.clone((slice_values, slice_edges), extents=extents)
         else:
             if not (self.edges.min() <= key < self.edges.max()):
-                raise Exception("Key value %s is out of the histogram bounds" % key)
+                raise KeyError("Key value %s is out of the histogram bounds" % key)
             idx = np.digitize([key], self.edges)[0]
             return self.values[idx-1 if idx>0 else idx]
 

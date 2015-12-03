@@ -27,7 +27,7 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
-from .util import wrap_tuple
+from .util import wrap_tuple, basestring
 
 
 class Columns(Element):
@@ -213,11 +213,13 @@ class Columns(Element):
            (4) A boolean array index matching the length of the Columns
                object.
         """
-        if slices is (): return self
+        slices = util.process_ellipses(self, slices, vdim_selection=True)
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.interface.select(self, selection_mask=slices))
+        elif slices in [(), Ellipsis]:
+            return self
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
         if len(slices) == 1 and slices[0] in self.dimensions():
@@ -225,6 +227,9 @@ class Columns(Element):
         elif len(slices) == self.ndims+1 and slices[self.ndims] in self.dimensions():
             selection = dict(zip(self.dimensions('key', label=True), slices))
             value_select = slices[self.ndims]
+        elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
+                                                        (Dimension,str)):
+            raise Exception("%r is not an available value dimension'" % slices[self.ndims])
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
@@ -1105,7 +1110,7 @@ class DictColumns(DataColumns):
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
         data = list(columns.data.items())
-        if np.isscalar(values):
+        if isinstance(values, basestring) or not hasattr(values, '__iter__'):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)

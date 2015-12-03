@@ -57,7 +57,7 @@ class Path(Element2D):
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
         if not all(isinstance(k, slice) for k in key):
-            raise IndexError("%s only support slice indexing" %
+            raise KeyError("%s only support slice indexing" %
                              self.__class__.__name__)
         xkey, ykey = key
         xstart, xstop = xkey.start, xkey.stop

@@ -34,13 +34,23 @@ var BokehMethods = {
 		} else {
 			var data = this.frames[current];
 		}
-		if (data != undefined) {
-			$.each(data, function(id, value) {
-				var ds = Bokeh.Collections(value.type).get(id);
-				if (ds != undefined) {
-					ds.set(value.data);
-				}
-			});
+		if (data !== undefined) {
+			if (data.root !== undefined) {
+				doc = Bokeh.index[data.root].model.document;
+				$.each(data, function(id, value) {
+					ds = doc.get_model_by_id(id);
+					if (ds != undefined) {
+						ds.set(value.data);
+					}
+				});
+			} else {
+				$.each(data, function(id, value) {
+					var ds = Bokeh.Collections(value.type).get(id);
+					if (ds != undefined) {
+						ds.set(value.data);
+					}
+				});
+			}
 		}
 	},
 	dynamic_update : function(current){

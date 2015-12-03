@@ -61,7 +61,7 @@ class ItemTable(Element):
         if heading is ():
             return self
         if heading not in self.vdims:
-            raise IndexError("%r not in available headings." % heading)
+            raise KeyError("%r not in available headings." % heading)
         return np.array(self.data.get(heading, np.NaN))
 
 
