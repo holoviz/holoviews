@@ -7,9 +7,11 @@ from param.parameterized import bothmethod
 
 from bokeh.io import load_notebook
 from bokeh.embed import notebook_div
+from bokeh.io import load_notebook, Document
 from bokeh.models import DataSource
 from bokeh.plotting import Figure
 from bokeh.resources import CDN
+
 
 try:
     from bokeh.protocol import serialize_json
@@ -66,10 +68,14 @@ class BokehRenderer(Renderer):
                     json = plotobj.to_json(False)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
+            if not old_bokeh:
+                data['root'] = plot.state._id
             return serialize_json(data), {'file-ext': 'json', 'mime_type':MIME_TYPES[fmt]}
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
+        doc = Document()
+        doc.add_root(plot.state)
         return notebook_div(plot.state)
 
 
