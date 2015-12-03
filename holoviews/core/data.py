@@ -218,6 +218,8 @@ class Columns(Element):
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.interface.select(self, selection_mask=slices))
+        elif slices in [(), Ellipsis]:
+            return self
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
         if len(slices) == 1 and slices[0] in self.dimensions():

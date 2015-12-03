@@ -31,8 +31,10 @@ basestring = str if sys.version_info.major == 3 else basestring
 def process_ellipses(obj, key):
     """
     Helper function to pad a __getitem__ key with the right number of
-    empty slices (i.e :) when the key contains an Elipsis (...).
+    empty slices (i.e :) when the key contains an Ellipsis (...).
     """
+    if isinstance(key, np.ndarray) and key.dtype.kind == 'b':
+        return key
     wrapped_key = wrap_tuple(key)
     if wrapped_key.count(Ellipsis)== 0:
         return key
