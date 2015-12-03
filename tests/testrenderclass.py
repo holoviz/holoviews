@@ -92,14 +92,14 @@ class MPLRendererTest(ComparisonTestCase):
     def test_static_html_scrubber(self):
         data = normalize(self.renderer.static_html(self.map1, fmt='scrubber'))
         self.assertEqual(digest_data(data),
-                         'c7b5be1f8d2627c15cfda891777b83e6453242c918720938f9fd7455d7cb81a1')
+                         '4f10ca51f3864a33e5a03adaa959489f2878c57388c10d86bdfab9e128b2e660')
 
     def test_static_html_widgets(self):
         data = normalize(self.renderer.static_html(self.map1, fmt='widgets'))
         self.assertEqual(digest_data(data),
-                         '8ab4e18a25a4946882d71138bb74bd60c65966f2f58300a925b6db35c4ec5e00')
+                         'afdf64f4333173eb3c273087cab74a440668f4803d3728619375ac868326752a')
 
     def test_static_html_gif(self):
         data = self.renderer.static_html(self.map1, fmt='gif')
         self.assertEqual(digest_data(data),
-                         'e3e1832186f7e8dcf1fdd915b0c66207b01a74f83ea73441591fd421a7dcfee4')
+                         '2db8aedc262661707fd072b600456cdadac3de78bcaf3d0270fd75f6cccf4ab7')
