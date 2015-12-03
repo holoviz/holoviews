@@ -24,7 +24,7 @@ import param
 from param.parameterized import bothmethod
 
 from .dimension import LabelledData
-from .element import Collator
+from .element import Collator, Element
 from .layout import Layout
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .options import Store
@@ -417,9 +417,9 @@ class Unpickler(Importer):
         they do not clash with the file metadata. Any key dimension
         may be dropped by name by supplying a drop argument.
         """
-        aslist = not isinstance(files, NdMapping)
-        if aslist:
-            files = Collator(files, vdims=['filename'])
+        aslist = not isinstance(files, (NdMapping, Element))
+        if isinstance(files, Element):
+            files = Collator(files)
             file_kdims = []
         else:
             file_kdims = files.kdims

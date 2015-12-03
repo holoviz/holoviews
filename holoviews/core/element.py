@@ -285,7 +285,12 @@ class NdElement(NdMapping, Tabular):
             data = (((k,), (v,)) for k, v in enumerate(data))
 
         if not isinstance(data, NdElement) and isinstance(data, Element):
-            data = data.mapping()
+            mapping = data.mapping()
+            if 'kdims' not in params:
+                params['kdims'] = mapping.kdims
+            if 'vdims' not in params:
+                params['vdims'] = mapping.vdims
+            data = mapping.data
 
         kdims = params.get('kdims', self.kdims)
         if (data is not None and not isinstance(data, NdMapping)
@@ -392,10 +397,10 @@ class NdElement(NdMapping, Tabular):
         In addition to usual NdMapping indexing, NdElements can be indexed
         by column name (or a slice over column names)
         """
-        if args in self.dimensions():
-            return self.dimension_values(args)
         if isinstance(args, np.ndarray) and args.dtype.kind == 'b':
             return NdMapping.__getitem__(self, args)
+        elif args in self.dimensions():
+            return self.dimension_values(args)
         if not isinstance(args, tuple): args = (args,)
         ndmap_index = args[:self.ndims]
         val_index = args[self.ndims:]

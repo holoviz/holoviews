@@ -47,9 +47,9 @@ def collate(obj):
                     expanded.extend(collated_layout.values())
             layout = Layout(expanded)
         except:
-            raise Exception(undisplayable_info(layout))
+            raise Exception(undisplayable_info(obj))
     else:
-        raise Exception(undisplayable_info(layout))
+        raise Exception(undisplayable_info(obj))
 
 
 def undisplayable_info(obj, html=False):

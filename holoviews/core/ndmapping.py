@@ -13,7 +13,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select
+from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select, basestring
 
 
 class item_check(object):
@@ -319,7 +319,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if np.isscalar(dim_val):
+        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
@@ -572,13 +572,13 @@ class NdMapping(MultiDimensionalMapping):
         data elements, otherwise it will return the requested slice of
         the data.
         """
-        if indexslice in [Ellipsis, ()]:
-            return self
-        elif isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+        if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items())
             return self.clone([item for c, item in selection if c])
+        elif indexslice in [Ellipsis, ()]:
+            return self
 
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)

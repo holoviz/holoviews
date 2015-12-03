@@ -5,6 +5,7 @@ from .widgets import BokehScrubberWidget, BokehSelectionWidget
 import param
 from param.parameterized import bothmethod
 
+from bokeh.io import load_notebook
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, Document, _remove_roots
 from bokeh.models import DataSource
@@ -124,19 +125,9 @@ class BokehRenderer(Renderer):
         """
         return (plot.state.height, plot.state.height)
 
-
     @classmethod
-    def validate(cls, options):
+    def load_nb(cls):
         """
-        Validates a dictionary of options set on the backend.
+        Loads the bokeh notebook resources.
         """
-        try:
-            import bokeh
-            import bokeh.io
-        except:
-            raise ImportError("Could not import one of bokeh, pandas or scipy.")
-
-        if not cls._loaded:
-            bokeh.io.load_notebook()
-            cls._loaded = True
-        return options
+        load_notebook()

@@ -27,7 +27,7 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
-from .util import wrap_tuple
+from .util import wrap_tuple, basestring
 
 
 class Columns(Element):
@@ -217,7 +217,7 @@ class Columns(Element):
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            return self.clone(self.data[slices])
+            return self.clone(self.interface.select(self, selection_mask=slices))
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
         if len(slices) == 1 and slices[0] in self.dimensions():
@@ -229,11 +229,10 @@ class Columns(Element):
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
         if value_select:
-            values = data.dimension_values(value_select)
-            if len(values) > 1:
-                return values
+            if len(data) == 1:
+                return data[value_select][0]
             else:
-                return values[0]
+                return data.reindex(vdims=[value_select])
         return data
 
 
@@ -624,8 +623,11 @@ class NdColumns(DataColumns):
             return columns.data.groupby(dimensions, container_type, group_type, **kwargs)
 
     @classmethod
-    def select(cls, columns, **selection):
-        return columns.data.select(**selection)
+    def select(cls, columns, selection_mask=None, **selection):
+        if selection_mask is None:
+            return columns.data.select(**selection)
+        else:
+            return columns.data[selection_mask]
 
     @classmethod
     def sample(cls, columns, samples=[]):
@@ -783,11 +785,12 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, **selection):
+    def select(cls, columns, selection_mask=None, **selection):
         df = columns.data
-        mask = cls.select_mask(columns, selection)
+        if selection_mask is None:
+            selection_mask = cls.select_mask(columns, selection)
         indexed = cls.indexed(columns, selection)
-        df = df.ix[mask]
+        df = df.ix[selection_mask]
         if indexed and len(df) == 1:
             return df[columns.vdims[0].name].iloc[0]
         return df
@@ -972,10 +975,11 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, **selection):
-        mask = cls.select_mask(columns, selection)
+    def select(cls, columns, selection_mask=None, **selection):
+        if selection_mask is None:
+            selection_mask = cls.select_mask(columns, selection)
         indexed = cls.indexed(columns, selection)
-        data = np.atleast_2d(columns.data[mask, :])
+        data = np.atleast_2d(columns.data[selection_mask, :])
         if len(data) == 1 and indexed:
             data = data[0, columns.ndims]
         return data
@@ -1101,7 +1105,7 @@ class DictColumns(DataColumns):
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
         data = list(columns.data.items())
-        if np.isscalar(values):
+        if isinstance(values, basestring) or not hasattr(values, '__iter__'):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)
@@ -1174,13 +1178,15 @@ class DictColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, **selection):
-       mask = cls.select_mask(columns, selection)
-       indexed = cls.indexed(columns, selection)
-       data = OrderedDict((k, list(compress(v, mask))) for k, v in columns.data.items())
-       if indexed and len(list(data.values())[0]) == 1:
-           return data[columns.vdims[0].name][0]
-       return data
+    def select(cls, columns, selection_mask=None, **selection):
+        if selection_mask is None:
+            selection_mask = cls.select_mask(columns, selection)
+        indexed = cls.indexed(columns, selection)
+        data = OrderedDict((k, list(compress(v, selection_mask)))
+                           for k, v in columns.data.items())
+        if indexed and len(list(data.values())[0]) == 1:
+            return data[columns.vdims[0].name][0]
+        return data
 
 
     @classmethod
