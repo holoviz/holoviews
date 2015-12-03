@@ -47,11 +47,6 @@ class NdWidget(param.Parameterized):
          If export_json is True the json files will be written to this
          directory.""")
 
-    server_url = param.String(default='', doc="""If export_json is
-         True the slider widget will expect to be served the plot data
-         from this URL. Data should be served from:
-         server_url/fig_{id}/{frame}.""")
-
     ##############################
     # Javascript include options #
     ##############################
@@ -110,9 +105,8 @@ class NdWidget(param.Parameterized):
         mode = repr(self.renderer.mode)
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
-                    server=self.server_url, cached=cached,
-                    load_json=load_json, mode=mode, id=self.id,
-                    Nframes=len(self.plot), widget_name=name,
+                    cached=cached, load_json=load_json, mode=mode, id=self.id,
+                    Nframes=len(self.plot), widget_name=name, json_path=self.json_path,
                     widget_template=template, dynamic=dynamic)
 
 
@@ -133,12 +127,6 @@ class NdWidget(param.Parameterized):
     def encode_frames(self, frames):
         if isinstance(frames, dict):
             frames = {idx: frame for idx, frame in frames.items()}
-        if self.export_json:
-            if not os.path.isdir(self.json_path):
-                os.mkdir(self.json_path)
-            with open(self.json_path+'/fig_%s.json' % self.id, 'wb') as f:
-                json.dump(frames, f)
-            frames = {}
         return frames
 
 

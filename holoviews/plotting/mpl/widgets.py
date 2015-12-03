@@ -1,4 +1,4 @@
-import uuid, json, warnings
+import os, uuid, json, warnings
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
@@ -94,14 +94,21 @@ class MPLWidget(NdWidget):
             self.manager.display_js()
             frames = {0: self.comm.html}
         elif self.embed:
-            frames = super(MPLWidget, self).get_frames()
+            return super(MPLWidget, self).get_frames()
         else:
             frames = {0: self._plot_figure(0)}
         return self.encode_frames(frames)
 
 
     def encode_frames(self, frames):
-        if self.renderer.mode == 'mpld3':
+        if self.export_json:
+            path = os.path.join(self.json_path, '%s.json' % self.id)
+            if not os.path.isdir(self.json_path):
+                os.mkdir(self.json_path)
+            with open(path, 'wb') as f:
+                json.dump(frames, f)
+            return {}
+        elif self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
             frames = {idx: frame for idx, frame in frames.items()}

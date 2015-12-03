@@ -1,4 +1,4 @@
-import json
+import os, json
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
@@ -18,7 +18,13 @@ class BokehWidget(NdWidget):
         return dict(data, init_frame=init_frame)
 
     def encode_frames(self, frames):
-        frames = json.dumps(frames).replace('</', r'<\/')
+        if self.export_json:
+            path = os.path.join(self.json_path, '%s.json' % self.id)
+            with open(path, 'wb') as f:
+                json.dump(frames, f)
+            frames = {}
+        else:
+            frames = json.dumps(frames).replace('</', r'<\/')
         return frames
 
     def _plot_figure(self, idx, fig_format='json'):

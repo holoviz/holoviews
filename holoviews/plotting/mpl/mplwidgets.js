@@ -28,16 +28,14 @@ var MPLMethods = {
 	populate_cache : function(idx){
 		var cache_id = this.img_id+"_"+idx;
 		if(this.load_json) {
-			var data_url = "{{ server }}/" + this.fig_id + "/" + idx;
-			if(this.mode == 'mpld3') {
-				$.getJSON(data_url, (function(cache_id) {
-					return function(data) {
-						mpld3.draw_figure(cache_id, data);
-					};
-				}(cache_id)));
-			} else {
-				this.cache[idx].load(data_url);
-			}
+			var data_url = this.json_path + '/' + this.id + '.json';
+			$.getJSON(data_url, $.proxy(function(json_data) {
+				if(this.mode == 'mpld3') {
+					mpld3.draw_figure(cache_id, json_data[idx]);
+				} else {
+					this.cache[idx].html(json_data[idx]);
+				}
+			}, this));
 		} else {
 			if(this.mode == 'mpld3') {
 				mpld3.draw_figure(cache_id, this.frames[idx]);
