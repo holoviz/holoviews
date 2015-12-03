@@ -1105,7 +1105,7 @@ class DictColumns(DataColumns):
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
         data = list(columns.data.items())
-        if hasattr(values, '__iter__'):
+        if not hasattr(values, '__iter__'):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)
