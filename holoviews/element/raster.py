@@ -758,7 +758,7 @@ class RGB(Image):
                 vidx = self.get_dimension_index(channels[0])
                 val_index = vidx - self.ndims
                 data = sliced.data[:,:, val_index]
-                return Image(data, **dict(self.get_param_values(onlychanged=True),
+                return Image(data, **dict(util.get_param_values(self),
                                           vdims=[self.vdims[val_index]]))
             elif len(channels) > 1:
                 raise KeyError("Channels can only be selected once in __getitem__")
