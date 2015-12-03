@@ -49,7 +49,7 @@ class BokehRenderer(Renderer):
 
         widgets = list(self.widgets.keys())+['auto']
         if fmt in widgets:
-            return self.get_widget(plot, fmt)(), {'file-ext':' html',
+            return self.get_widget(plot, fmt)(), {'file-ext':'html',
                                                   'mime_type': MIME_TYPES['html']}
         elif fmt == 'html':
             html = self.figure_data(plot)

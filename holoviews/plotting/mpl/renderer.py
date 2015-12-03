@@ -90,7 +90,7 @@ class MPLRenderer(Renderer):
 
         widgets = list(self.widgets.keys())+['auto']
         if fmt in widgets:
-            return self.get_widget(plot, fmt)(), {'file-ext':' html',
+            return self.get_widget(plot, fmt)(), {'file-ext':'html',
                                                   'mime_type': MIME_TYPES['html']}
         elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
