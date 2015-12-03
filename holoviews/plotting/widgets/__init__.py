@@ -44,8 +44,13 @@ class NdWidget(param.Parameterized):
          a callback from the slider.""")
 
     json_path = param.String(default='./json_figures', doc="""
-         If export_json is True the json files will be written to this
-         directory.""")
+         If export_json is enabled the widget will save the json
+         data to this path. If None data will be accessible via the
+         json_data attribute.""")
+
+    json_relpath = param.String(default=None, doc="""
+         If export_json is enabled the widget JS code will load the data
+         from this relative path, if None defaults to json_path.""")
 
     ##############################
     # Javascript include options #
@@ -73,6 +78,7 @@ class NdWidget(param.Parameterized):
         self.dimensions = plot.dimensions
         self.keys = plot.keys
 
+        self.json_data = {}
         if self.plot.dynamic: self.embed = False
         if renderer is None:
             backend = Store.current_backend
@@ -103,10 +109,11 @@ class NdWidget(param.Parameterized):
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
         mode = repr(self.renderer.mode)
+        json_path = self.json_path if self.json_relpath is None else self.json_relpath
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
-                    Nframes=len(self.plot), widget_name=name, json_path=self.json_path,
+                    Nframes=len(self.plot), widget_name=name, json_path=json_path,
                     widget_template=template, dynamic=dynamic)
 
 
@@ -129,6 +136,18 @@ class NdWidget(param.Parameterized):
             frames = {idx: frame for idx, frame in frames.items()}
         return frames
 
+    def save_json(self, frames):
+        """
+        Saves frames data into a json file at the
+        specified json_path, named with the widget uuid.
+        """
+        if self.json_path is None: return
+        path = os.path.join(self.json_path, '%s.json' % self.id)
+        if not os.path.isdir(self.json_path):
+            os.mkdir(self.json_path)
+        with open(path, 'w') as f:
+            json.dump(frames, f)
+        self.json_data = frames
 
     def _plot_figure(self, idx):
         with self.renderer.state():
