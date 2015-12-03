@@ -164,9 +164,18 @@ class Histogram(Element2D):
         Implements slicing or indexing of the Histogram
         """
         if key in self.dimensions(): return self.dimension_values(key)
-        if key is (): return self # May no longer be necessary
-        if isinstance(key, tuple) and len(key) > self.ndims:
-            raise Exception("Slice must match number of key dimensions.")
+        if key is () or key is Ellipsis: return self # May no longer be necessary
+        key = util.process_ellipses(self, key)
+        if not isinstance(key, tuple): pass
+        elif len(key) == self.ndims + 1:
+            if key[-1] != slice(None) and (key[-1] not in self.vdims):
+                raise Exception("%r is the only selectable value dimension" %
+                                self.vdims[0].name)
+            key = key[0]
+        elif len(key) == self.ndims + 1: key = key[0]
+        else:
+            raise Exception("Histogram cannot slice more than %d dimension."
+                            % len(self.kdims)+1)
 
         centers = [(float(l)+r)/2 for (l,r) in zip(self.edges, self.edges[1:])]
         if isinstance(key, slice):
