@@ -59,7 +59,7 @@ class Raster(Element2D):
         elif len(slices) > (2 + self.depth):
             raise Exception("Can only slice %d dimensions" % 2 + self.depth)
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise Exception("Raster only has single channel %r" % self.vdims[0].name)
+            raise Exception("%r is the only selectable value dimension" % self.vdims[0].name)
 
         slc_types = [isinstance(sl, slice) for sl in slices[:2]]
         data = self.data.__getitem__(slices[:2][::-1])
