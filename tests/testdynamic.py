@@ -21,7 +21,7 @@ class DynamicTestGeneratorOpen(ComparisonTestCase):
     def test_generator_open_stopiteration(self):
         generator = (Image(sine_array(0,i)) for i in range(10))
         dmap=DynamicMap(generator)
-        for i in range(9):
+        for i in range(10):
             el = next(dmap)
             self.assertEqual(type(el), Image)
         try:
