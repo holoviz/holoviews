@@ -28,10 +28,16 @@ basestring = str if sys.version_info.major == 3 else basestring
 
 
 
-def process_ellipses(obj, key):
+def process_ellipses(obj, key, vdim_selection=False):
     """
     Helper function to pad a __getitem__ key with the right number of
     empty slices (i.e :) when the key contains an Ellipsis (...).
+
+    If the vdim_selection flag is true, check if the end of the key
+    contains strings or Dimension objects in obj. If so, extra padding
+    will not be applied for the value dimensions (i.e the resulting key
+    will be exactly one longer than the number of kdims). Note: this
+    flag should not be used for composite types.
     """
     if isinstance(key, np.ndarray) and key.dtype.kind == 'b':
         return key
@@ -44,8 +50,13 @@ def process_ellipses(obj, key):
     index = wrapped_key.index(Ellipsis)
     head = wrapped_key[:index]
     tail = wrapped_key[index+1:]
-    middle = (slice(None),) * (dim_count - (len(head) + len(tail)))
-    return head + middle + tail
+
+    padlen = dim_count - (len(head) + len(tail))
+    if vdim_selection:
+        # If the end of the key (i.e the tail) is in vdims, pad to len(kdims)+1
+        if wrapped_key[-1] in obj.vdims:
+            padlen = (len(obj.kdims) +1 ) - len(head+tail)
+    return head + ((slice(None),) * padlen) + tail
 
 
 def safe_unicode(value):

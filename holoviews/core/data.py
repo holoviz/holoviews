@@ -213,7 +213,7 @@ class Columns(Element):
            (4) A boolean array index matching the length of the Columns
                object.
         """
-        slices = util.process_ellipses(self, slices)
+        slices = util.process_ellipses(self, slices, vdim_selection=True)
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
