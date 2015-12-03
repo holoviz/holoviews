@@ -3,8 +3,7 @@ Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 
-import os
-import base64
+import os, json, base64
 from contextlib import contextmanager
 
 import param
@@ -268,7 +267,8 @@ class Renderer(Exporter):
         return widget_cls(plot, renderer=self, embed=embed, **kwargs)
 
 
-    def export_widgets(self, obj, fmt=None, template=None, json=False, json_path=None):
+    def export_widgets(self, obj, filename, fmt=None, template=None,
+                       json=False, json_path=''):
         """
         Render and export object as a widget to a static HTML
         file. Allows supplying a custom template formatting string
@@ -281,14 +281,22 @@ class Renderer(Exporter):
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
 
+        filedir = os.path.dirname(filename)
+        current_path = os.getcwd()
+        html_path = os.path.abspath(filedir)
+        rel_path = os.path.relpath(html_path, current_path)
+
         if not isinstance(obj, NdWidget):
             kwargs = dict(export_json=json)
-            if json_path is not None:
-                kwargs['json_path'] = json_path
+            kwargs['json_path'] = os.path.join(rel_path, json_path)
+            kwargs['json_relpath'] = json_path
             widget = self.get_widget(obj, fmt, **kwargs)
         else:
             widget = obj
-        return self.static_html(widget, fmt, template)
+
+        html = self.static_html(widget, fmt, template)
+        with open(filename, 'w') as f:
+            f.write(html)
 
 
     @classmethod
