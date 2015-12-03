@@ -274,8 +274,7 @@ class QuadMesh(Raster):
         if len(slices) > (2 + self.depth):
             raise Exception("Can only slice %d dimensions" % (2 + self.depth))
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise Exception("Image only has single selectable channel %r" %
-                            self.vdims[0].name)
+            raise Exception("%r is the only selectable value dimension" % self.vdims[0].name)
         slices = slices[:2]
         if not isinstance(slices, tuple): slices = (slices, slice(None))
         slc_types = [isinstance(sl, slice) for sl in slices]
@@ -552,8 +551,7 @@ class Image(SheetCoordinateSystem, Raster):
         if len(coords) > (2 + self.depth):
             raise Exception("Can only slice %d dimensions" % 2 + self.depth)
         elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
-            raise Exception("Image only has single selectable channel %r" %
-                            self.vdims[0].name)
+            raise Exception("%r is the only selectable value dimension" % self.vdims[0].name)
 
         coords = coords[:2]
         if not any([isinstance(el, slice) for el in coords]):
