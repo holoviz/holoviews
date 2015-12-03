@@ -7,7 +7,7 @@ from param.parameterized import bothmethod
 
 from bokeh.io import load_notebook
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, Document, _remove_roots
+from bokeh.io import load_notebook, Document
 from bokeh.models import DataSource
 from bokeh.plotting import Figure
 from bokeh.resources import CDN
@@ -74,7 +74,6 @@ class BokehRenderer(Renderer):
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        _remove_roots([plot.state])
         doc = Document()
         doc.add_root(plot.state)
         return notebook_div(plot.state)
