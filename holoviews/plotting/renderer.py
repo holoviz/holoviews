@@ -220,10 +220,9 @@ class Renderer(Exporter):
 
     def static_html(self, obj, fmt=None, template=None):
         """
-        Generates a static HTML with the rendered object in
-        the supplied format. Allows supplying a template
-        formatting string with fields to interpolate 'js',
-        'css' and the main 'html'.
+        Generates a static HTML with the rendered object in the
+        supplied format. Allows supplying a template formatting string
+        with fields to interpolate 'js', 'css' and the main 'html'.
         """
         cls_type = type(self)
 
@@ -267,6 +266,29 @@ class Renderer(Exporter):
 
         widget_cls = self.widgets[widget_type]
         return widget_cls(plot, renderer=self, embed=embed, **kwargs)
+
+
+    def export_widgets(self, obj, fmt=None, template=None, json=False, json_path=None):
+        """
+        Render and export object as a widget to a static HTML
+        file. Allows supplying a custom template formatting string
+        with fields to interpolate 'js', 'css' and the main 'html'
+        containing the widget. Also provides options to export widget
+        data to a json file in the supplied json_path (defaults to
+        current path).
+        """
+        if fmt not in self.widgets.keys()+['auto', None]:
+            raise ValueError("Renderer.export_widget may only export "
+                             "registered widget types.")
+
+        if not isinstance(obj, NdWidget):
+            kwargs = dict(export_json=json)
+            if json_path is not None:
+                kwargs['json_path'] = json_path
+            widget = self.get_widget(obj, fmt, **kwargs)
+        else:
+            widget = obj
+        return self.static_html(widget, fmt, template)
 
 
     @classmethod
