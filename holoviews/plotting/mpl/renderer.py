@@ -18,7 +18,7 @@ from ...core.options import Store, StoreOptions
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import MPLSelectionWidget, MPLScrubberWidget
+from .widgets import MPLWidget, MPLSelectionWidget, MPLScrubberWidget
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -78,7 +78,7 @@ class MPLRenderer(Renderer):
     # Define appropriate widget classes
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
-
+    _widget_baseclass = MPLWidget
 
     def __call__(self, obj, fmt='auto'):
         """
@@ -88,10 +88,8 @@ class MPLRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        widgets = list(self.widgets.keys())+['auto']
-        if fmt in widgets:
-            return self.get_widget(plot, fmt)(), {'file-ext':' html',
-                                                  'mime_type': MIME_TYPES['html']}
+        if isinstance(plot, self._widget_baseclass):
+            data = plot()
         elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:

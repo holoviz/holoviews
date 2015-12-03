@@ -1,6 +1,6 @@
 from ...core import Store, HoloMap, OrderedDict
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import BokehScrubberWidget, BokehSelectionWidget
+from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
 
 import param
 from param.parameterized import bothmethod
@@ -20,7 +20,7 @@ except ImportError:
 
 class BokehRenderer(Renderer):
 
-    backend = 'bokeh'
+    backend = param.String(default='bokeh', doc="The backend name.")
 
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
         Output render format for static figures. If None, no figure
@@ -32,6 +32,7 @@ class BokehRenderer(Renderer):
 
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
+    _widgets_baseclass = BokehWidget
 
     js_dependencies = Renderer.js_dependencies + CDN.js_files
 
@@ -46,15 +47,14 @@ class BokehRenderer(Renderer):
         in-memory byte stream together with any suitable metadata.
         """
         plot, fmt =  self._validate(obj, fmt)
+        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        widgets = list(self.widgets.keys())+['auto']
-        if fmt in widgets:
-            return self.get_widget(plot, fmt)(), {'file-ext':' html',
-                                                  'mime_type': MIME_TYPES['html']}
+        if isinstance(plot, self._widget_baseclass):
+            return plot(), info
         elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
-            return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+            return html, info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
@@ -66,7 +66,7 @@ class BokehRenderer(Renderer):
                     json = plotobj.to_json(False)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
-            return serialize_json(data), {'file-ext': 'json', 'mime_type':MIME_TYPES[fmt]}
+            return serialize_json(data), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):

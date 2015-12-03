@@ -11,7 +11,7 @@ import param
 from ..core.io import Exporter
 from ..core.util import find_file
 from .. import Store, Layout, HoloMap, AdjointLayout
-from .widgets import ScrubberWidget, SelectionWidget
+from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
 from .util import displayable, collate
@@ -120,6 +120,7 @@ class Renderer(Exporter):
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
+    _widget_baseclass = NdWidget
 
     js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
                        'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
@@ -130,16 +131,12 @@ class Renderer(Exporter):
         super(Renderer, self).__init__(**params)
 
 
-    def _validate(self, obj, fmt):
+    def get_plot(self, obj):
         """
-        Helper method to be used in the __call__ method to get a
-        suitable plot object and the appropriate format.
+        Given a HoloViews Viewable return a corresponding plot instance.
         """
         if not isinstance(obj, Plot) and not displayable(obj):
             obj = collate(obj)
-
-        fig_formats = self.mode_formats['fig'][self.mode]
-        holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
@@ -147,17 +144,36 @@ class Renderer(Exporter):
             plot.update(0)
         else:
             plot = obj
+        return plot
+
+
+    def _validate(self, obj, fmt):
+        """
+        Helper method to be used in the __call__ method to get a
+        suitable plot or widget object and the appropriate format.
+        """
+        if isinstance(obj, self._widget_baseclass):
+            return obj, 'html'
+        plot = self.get_plot(obj)
+
+        fig_formats = self.mode_formats['fig'][self.mode]
+        holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
         elif fmt is None:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
+        if fmt in self.widgets:
+            plot = self.get_widget(plot, fmt)
+            fmt = 'html'
+
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
             raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
                             % (fmt, self.mode, fig_formats + holomap_formats))
         return plot, fmt
+
 
     def __call__(self, obj, fmt=None):
         """
@@ -181,8 +197,6 @@ class Renderer(Exporter):
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
 
-        if fmt in self.widgets.keys():
-            fmt = 'html'
         if fmt in ['html', 'json']:
             return figdata
         else:
@@ -229,7 +243,9 @@ class Renderer(Exporter):
         return template.format(js=js_html, css=css_html, html=html)
 
 
-    def get_widget(self, plot, widget_type):
+    def get_widget(self, plot, widget_type, **kwargs):
+        if not isinstance(plot, Plot):
+            plot = self.get_plot(plot)
         dynamic = plot.dynamic
         if widget_type == 'auto':
             isuniform = plot.uniform
@@ -244,9 +260,13 @@ class Renderer(Exporter):
             raise ValueError('Selection widgets not supported in dynamic open mode')
         elif widget_type == 'scrubber' and dynamic == 'closed':
             raise ValueError('Scrubber widget not supported in dynamic closed mode')
+        embed = self.widget_mode == 'embed'
+
+        if widget_type in [None, 'auto']:
+            widget_type = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         widget_cls = self.widgets[widget_type]
-        return widget_cls(plot, renderer=self, embed=self.widget_mode == 'embed')
+        return widget_cls(plot, renderer=self, embed=embed, **kwargs)
 
 
     @classmethod
