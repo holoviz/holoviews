@@ -319,7 +319,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if np.isscalar(dim_val):
+        if not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
