@@ -13,7 +13,7 @@ import param
 
 from . import traversal
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select
+from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select, basestring
 
 
 class item_check(object):
@@ -319,7 +319,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if not hasattr(dim_val, '__iter__'):
+        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
