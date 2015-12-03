@@ -20,6 +20,8 @@ class BokehWidget(NdWidget):
     def encode_frames(self, frames):
         if self.export_json:
             path = os.path.join(self.json_path, '%s.json' % self.id)
+            if not os.path.isdir(self.json_path):
+                os.mkdir(self.json_path)
             with open(path, 'wb') as f:
                 json.dump(frames, f)
             frames = {}
