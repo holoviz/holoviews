@@ -79,7 +79,6 @@ class MPLRenderer(Renderer):
     # Define appropriate widget classes
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
-    _widget_baseclass = MPLWidget
 
     def __call__(self, obj, fmt='auto'):
         """
@@ -89,7 +88,7 @@ class MPLRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        if isinstance(plot, self._widget_baseclass):
+        if isinstance(plot, tuple(self.widgets.values())):
             data = plot()
         elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))

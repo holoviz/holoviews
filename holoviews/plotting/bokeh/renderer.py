@@ -33,7 +33,6 @@ class BokehRenderer(Renderer):
 
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
-    _widgets_baseclass = BokehWidget
 
     js_dependencies = Renderer.js_dependencies + CDN.js_files
 
@@ -50,7 +49,7 @@ class BokehRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        if isinstance(plot, self._widget_baseclass):
+        if isinstance(plot, tuple(self.widgets.values())):
             return plot(), info
         elif fmt == 'html':
             html = self.figure_data(plot)

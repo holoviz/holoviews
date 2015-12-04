@@ -122,7 +122,6 @@ class Renderer(Exporter):
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
-    _widget_baseclass = NdWidget
 
     js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
                        'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
@@ -168,7 +167,7 @@ class Renderer(Exporter):
         Helper method to be used in the __call__ method to get a
         suitable plot or widget object and the appropriate format.
         """
-        if isinstance(obj, self._widget_baseclass):
+        if isinstance(obj, tuple(self.widgets.values())):
             return obj, 'html'
         plot = self.get_plot(obj)
 
@@ -275,18 +274,18 @@ class Renderer(Exporter):
             raise ValueError('Selection widgets not supported in dynamic open mode')
         elif widget_type == 'scrubber' and dynamic == 'closed':
             raise ValueError('Scrubber widget not supported in dynamic closed mode')
-        embed = self_or_cls.widget_mode == 'embed'
 
         if widget_type in [None, 'auto']:
             widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
         widget_cls = self_or_cls.widgets[widget_type]
-        return widget_cls(plot, renderer=self_or_cls, embed=embed, **kwargs)
+        return widget_cls(plot, renderer=self_or_cls,
+                          embed=self_or_cls.widget_mode == 'embed', **kwargs)
 
 
     @bothmethod
     def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
-                       json=False, json_path=''):
+                       json=False, json_path='', **kwargs):
         """
         Render and export object as a widget to a static HTML
         file. Allows supplying a custom template formatting string
@@ -299,13 +298,12 @@ class Renderer(Exporter):
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
 
-        filedir = os.path.dirname(filename)
-        current_path = os.getcwd()
-        html_path = os.path.abspath(filedir)
-        rel_path = os.path.relpath(html_path, current_path)
-
         if not isinstance(obj, NdWidget):
-            kwargs = dict(export_json=json)
+            filedir = os.path.dirname(filename)
+            current_path = os.getcwd()
+            html_path = os.path.abspath(filedir)
+            rel_path = os.path.relpath(html_path, current_path)
+            kwargs = dict(kwargs, export_json=json)
             kwargs['json_save_path'] = os.path.join(rel_path, json_path)
             kwargs['json_load_path'] = json_path
             widget = self_or_cls.get_widget(obj, fmt, **kwargs)
@@ -384,14 +382,16 @@ class Renderer(Exporter):
         if info or key:
             raise Exception('MPLRenderer does not support saving metadata to file.')
 
-        plot = self_or_cls.get_plot(obj)
+        with StoreOptions.options(obj, options, **kwargs):
+            plot = self_or_cls.get_plot(obj)
+
         if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
             with StoreOptions.options(obj, options, **kwargs):
                 self_or_cls.export_widgets(plot, basename+'.html', fmt)
             return
 
         with StoreOptions.options(obj, options, **kwargs):
-            rendered = self_or_cls(obj, fmt)
+            rendered = self_or_cls(plot, fmt)
         if rendered is None: return
         (data, info) = rendered
         if isinstance(basename, BytesIO):
