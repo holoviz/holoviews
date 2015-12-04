@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.join(_cwd, '..', 'param'))
 
 import param
 
-__version__ = param.Version(release=(1,3,2), fpath=__file__,
+__version__ = param.Version(release=(1,4,0), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
 from .core import archive                               # pyflakes:ignore (API import)
