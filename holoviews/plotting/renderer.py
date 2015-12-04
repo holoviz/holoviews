@@ -13,6 +13,7 @@ from ..core.util import find_file
 from .. import Store, Layout, HoloMap, AdjointLayout
 from .widgets import ScrubberWidget, SelectionWidget
 
+from .. import DynamicMap
 from . import Plot
 from .util import displayable, collate
 
@@ -140,6 +141,14 @@ class Renderer(Exporter):
 
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
+
+        # Initialize DynamicMaps with first data item
+        dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
+        for dmap in dmaps:
+            if dmap.call_mode == 'key':
+                dmap[dmap._initial_key()]
+            else:
+                next(dmap)
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj

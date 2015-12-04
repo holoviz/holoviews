@@ -390,14 +390,6 @@ class DynamicMap(HoloMap):
 
         self.call_mode = self._validate_mode()
         self.mode = 'closed' if self.call_mode == 'key' else 'open'
-        # Needed to initialize the plotting system
-        if self.call_mode == 'key':
-            self[self._initial_key()]
-        elif self.call_mode == 'counter':
-            self[self.counter]
-            self.counter += 1
-        else:
-            next(self)
 
 
     def _initial_key(self):
