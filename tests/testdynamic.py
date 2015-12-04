@@ -18,6 +18,11 @@ class DynamicTestGeneratorOpen(ComparisonTestCase):
         dmap=DynamicMap(generator)
         self.assertEqual(dmap.mode, 'open')
 
+    def test_generator_open_clone(self):
+        generator = (Image(sine_array(0,i)) for i in range(10))
+        dmap=DynamicMap(generator)
+        self.assertEqual(dmap, dmap.clone())
+
     def test_generator_open_stopiteration(self):
         generator = (Image(sine_array(0,i)) for i in range(10))
         dmap=DynamicMap(generator)
@@ -40,6 +45,12 @@ class DynamicTestCallableOpen(ComparisonTestCase):
         dmap=DynamicMap(fn)
         self.assertEqual(dmap.mode, 'open')
 
+    def test_callable_open_clone(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn)
+        self.assertEqual(dmap, dmap.clone())
+
+
 
 
 class DynamicTestCallableClosed(ComparisonTestCase):
@@ -48,3 +59,8 @@ class DynamicTestCallableClosed(ComparisonTestCase):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap.mode, 'closed')
+
+    def test_generator_closed_clone(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        self.assertEqual(dmap, dmap.clone())
