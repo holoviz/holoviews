@@ -135,7 +135,10 @@ class DimensionedPlot(Plot):
        Finer control is available by supplying a dictionary where any
        unmentioned keys reverts to the default sizes, e.g:
 
-          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
+          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}
+
+       You can set the fontsize of both 'ylabel' and 'xlabel' together
+       using the 'labels' key.""")
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
@@ -257,10 +260,13 @@ class DimensionedPlot(Plot):
         if not self.fontsize:
             return {}
         if isinstance(self.fontsize, dict):
-            if key not in self.fontsize:
-                return {}
-            else:
+            if key in self.fontsize:
                 return {label:self.fontsize[key]}
+            elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
+                return {label:self.fontsize['labels']}
+            else:
+                return {}
+
         return {label:self.fontsize} if common else {}
 
 

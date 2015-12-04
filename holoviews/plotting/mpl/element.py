@@ -301,7 +301,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 else:
                     locator = ticker.MaxNLocator(self.xticks)
                 axis.xaxis.set_major_locator(locator)
-            elif isinstance(self.xticks, list):
+            elif isinstance(self.xticks, (list, tuple)):
                 if all(isinstance(t, tuple) for t in self.xticks):
                     xticks, xlabels = zip(*self.xticks)
                 else:
@@ -330,7 +330,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 else:
                     locator = ticker.MaxNLocator(self.yticks)
                 axis.yaxis.set_major_locator(locator)
-            elif isinstance(self.yticks, list):
+            elif isinstance(self.yticks, (list, tuple)):
                 if all(isinstance(t, tuple) for t in self.yticks):
                     yticks, ylabels = zip(*self.yticks)
                 else:
@@ -361,7 +361,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 else:
                     locator = ticker.MaxNLocator(self.zticks)
                 axis.zaxis.set_major_locator(locator)
-            elif isinstance(self.zticks, list):
+            elif isinstance(self.zticks, (list, tuple)):
                 if all(isinstance(t, tuple) for t in self.zticks):
                     zticks, zlabels = zip(*self.zticks)
                 else:

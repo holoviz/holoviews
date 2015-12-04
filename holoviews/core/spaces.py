@@ -383,8 +383,9 @@ class DynamicMap(HoloMap):
 
     sampled = param.Boolean(default=False, doc="""
        Allows defining a DynamicMap in closed mode without defining the
-       dimension bounds or values. Useful for allowing to let a HoloMap
-       in a composite plot to define the dimension sampling.
+       dimension bounds or values. The DynamicMap may then be explicitly
+       sampled via getitem or the sampling is determined during plotting
+       by a HoloMap with fixed sampling.
        """)
 
     def __init__(self, callback, initial_items=None, **params):

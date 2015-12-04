@@ -1,7 +1,7 @@
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout)
+                    GridSpace, NdLayout, Store)
 from ..core.util import match_spec
 
 
@@ -144,3 +144,17 @@ def initialize_sampled(obj, dimensions, key):
         selection = obj.select([DynamicMap], **select)
     except KeyError:
         pass
+
+
+def save_frames(obj, filename, fmt=None, backend=None, options=None):
+    """
+    Utility to export object to files frame by frame, numbered individually.
+    Will use default backend and figure format by default.
+    """
+    backend = Store.current_backend if backend is None else backend
+    renderer = Store.renderers[backend]
+    fmt = renderer.params('fig').objects[0] if fmt is None else fmt
+    plot = renderer.get_plot(obj)
+    for i in range(len(plot)):
+        plot.update(i)
+        renderer.save(plot, '%s_%s' % (filename, i), fmt=fmt, options=options)
