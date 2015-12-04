@@ -426,7 +426,7 @@ class GenericElementPlot(DimensionedPlot):
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
 
-        dynamic = element.mode if isinstance(element, DynamicMap) else False
+        dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
