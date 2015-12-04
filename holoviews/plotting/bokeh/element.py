@@ -308,7 +308,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['ticker'] = ticker
             elif isinstance(ticker, int):
                 axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
-            elif isinstance(ticker, list):
+            elif isinstance(ticker, (tuple, list)):
                 if all(isinstance(t, tuple) for t in ticker):
                     pass
                 else:
