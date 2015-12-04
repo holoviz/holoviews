@@ -328,6 +328,8 @@ class GridPlot(CompositePlot):
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.lookup_options(view, 'plot').options
+            else:
+                continue
 
             # Create axes
             kwargs = {}
@@ -344,6 +346,7 @@ class GridPlot(CompositePlot):
                 # Disable subplot axes depending on shared axis options
                 # and the position in the grid
                 if (self.shared_xaxis or self.shared_yaxis) and not axiswise:
+
                     if c == 0 and r != 0:
                         subax.xaxis.set_ticks_position('none')
                         kwargs['xaxis'] = 'bottom-bare'
@@ -363,15 +366,19 @@ class GridPlot(CompositePlot):
                 subaxes[(r, c)] = subax
             else:
                 subax = None
+            if c == self.cols - 1 and r == self.rows//2:
+                kwargs['show_legend'] = True
+                kwargs['legend_position'] = 'right'
 
             # Create subplot
             if view is not None:
+                params = dict(fig=self.handles['fig'], axis=subax,
+                              dimensions=self.dimensions, show_title=False,
+                              subplot=not create_axes, ranges=frame_ranges,
+                              uniform=self.uniform, keys=self.keys,
+                              show_legend=False)
                 plotting_class = Store.registry['matplotlib'][vtype]
-                subplot = plotting_class(view, fig=self.handles['fig'], axis=subax,
-                                         dimensions=self.dimensions, show_title=False,
-                                         subplot=not create_axes, ranges=frame_ranges,
-                                         uniform=self.uniform, keys=self.keys,
-                                         show_legend=False, **dict(opts, **kwargs))
+                subplot = plotting_class(view,  **dict(opts, **dict(params, **kwargs)))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.hmap
                 subplots[(r, c)] = subplot
             else:
