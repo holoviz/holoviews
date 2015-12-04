@@ -2,6 +2,7 @@
 """
 Test cases for rendering exporters
 """
+from io import BytesIO
 from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
@@ -92,14 +93,21 @@ class MPLRendererTest(ComparisonTestCase):
     def test_static_html_scrubber(self):
         data = normalize(self.renderer.static_html(self.map1, fmt='scrubber'))
         self.assertEqual(digest_data(data),
-                         '4f10ca51f3864a33e5a03adaa959489f2878c57388c10d86bdfab9e128b2e660')
+                         '631f32e5be35211e49e1dcd13a7ea117331deddafb97fc4815000ca1ed80397f')
 
     def test_static_html_widgets(self):
         data = normalize(self.renderer.static_html(self.map1, fmt='widgets'))
         self.assertEqual(digest_data(data),
-                         'afdf64f4333173eb3c273087cab74a440668f4803d3728619375ac868326752a')
+                         '9c4ac8fc5e5689c4f671b8483b06a7d6042559539b224adf82a3ed4946c8eae6')
 
     def test_static_html_gif(self):
         data = self.renderer.static_html(self.map1, fmt='gif')
         self.assertEqual(digest_data(data),
-                         '2db8aedc262661707fd072b600456cdadac3de78bcaf3d0270fd75f6cccf4ab7')
+                         '9d43822e0f368f3c673b19aaf66d22252849947b7dc4a157306c610c42d319b5')
+
+    def test_export_widgets(self):
+        bytesio = BytesIO()
+        self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
+        data = normalize(bytesio.read())
+        self.assertEqual(digest_data(data),
+                         '91bbc7b4efebd07b1ee595b902d9899b27f2c7e353dfc87c57c2dfd5d0404301')
