@@ -3,15 +3,16 @@ Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 
-import os
-import base64
+from io import BytesIO
+import os, json, base64
 from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
+from ..core.options import Store, StoreOptions
 from ..core.util import find_file
-from .. import Store, Layout, HoloMap, AdjointLayout
-from .widgets import ScrubberWidget, SelectionWidget
+from .. import Layout, HoloMap, AdjointLayout
+from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap
 from . import Plot
@@ -131,16 +132,17 @@ class Renderer(Exporter):
         super(Renderer, self).__init__(**params)
 
 
-    def _validate(self, obj, fmt):
+    @bothmethod
+    def get_plot(self_or_cls, obj):
         """
-        Helper method to be used in the __call__ method to get a
-        suitable plot object and the appropriate format.
+        Given a HoloViews Viewable return a corresponding plot instance.
         """
         if not isinstance(obj, Plot) and not displayable(obj):
             obj = collate(obj)
 
-        fig_formats = self.mode_formats['fig'][self.mode]
-        holomap_formats = self.mode_formats['holomap'][self.mode]
+        mode = self_or_cls.mode
+        fig_formats = self_or_cls.mode_formats['fig'][mode]
+        holomap_formats = self_or_cls.mode_formats['holomap'][mode]
 
         # Initialize DynamicMaps with first data item
         dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
@@ -152,21 +154,41 @@ class Renderer(Exporter):
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-            plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
+            plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
+            plot = self_or_cls.plotting_class(obj)(obj, **plot_opts)
             plot.update(0)
         else:
             plot = obj
+        return plot
+
+
+    def _validate(self, obj, fmt):
+        """
+        Helper method to be used in the __call__ method to get a
+        suitable plot or widget object and the appropriate format.
+        """
+        if isinstance(obj, tuple(self.widgets.values())):
+            return obj, 'html'
+        plot = self.get_plot(obj)
+
+        fig_formats = self.mode_formats['fig'][self.mode]
+        holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
         elif fmt is None:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
+        if fmt in self.widgets:
+            plot = self.get_widget(plot, fmt)
+            fmt = 'html'
+
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
             raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
                             % (fmt, self.mode, fig_formats + holomap_formats))
         return plot, fmt
+
 
     def __call__(self, obj, fmt=None):
         """
@@ -190,8 +212,6 @@ class Renderer(Exporter):
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
 
-        if fmt in self.widgets.keys():
-            fmt = 'html'
         if fmt in ['html', 'json']:
             return figdata
         else:
@@ -215,10 +235,9 @@ class Renderer(Exporter):
 
     def static_html(self, obj, fmt=None, template=None):
         """
-        Generates a static HTML with the rendered object in
-        the supplied format. Allows supplying a template
-        formatting string with fields to interpolate 'js',
-        'css' and the main 'html'.
+        Generates a static HTML with the rendered object in the
+        supplied format. Allows supplying a template formatting string
+        with fields to interpolate 'js', 'css' and the main 'html'.
         """
         cls_type = type(self)
 
@@ -238,7 +257,10 @@ class Renderer(Exporter):
         return template.format(js=js_html, css=css_html, html=html)
 
 
-    def get_widget(self, plot, widget_type):
+    @bothmethod
+    def get_widget(self_or_cls, plot, widget_type, **kwargs):
+        if not isinstance(plot, Plot):
+            plot = self_or_cls.get_plot(plot)
         dynamic = plot.dynamic
         if widget_type == 'auto':
             isuniform = plot.uniform
@@ -246,16 +268,58 @@ class Renderer(Exporter):
                 widget_type = 'scrubber'
             else:
                 widget_type = 'widgets'
-
-            if dynamic == 'open': widget_type = 'scrubber'
-            if dynamic == 'closed': widget_type = 'widgets'
+        elif dynamic == 'open': widget_type = 'scrubber'
+        elif dynamic == 'closed': widget_type = 'widgets'
         elif widget_type == 'widgets' and dynamic == 'open':
             raise ValueError('Selection widgets not supported in dynamic open mode')
         elif widget_type == 'scrubber' and dynamic == 'closed':
             raise ValueError('Scrubber widget not supported in dynamic closed mode')
 
-        widget_cls = self.widgets[widget_type]
-        return widget_cls(plot, renderer=self, embed=self.widget_mode == 'embed')
+        if widget_type in [None, 'auto']:
+            widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
+
+        widget_cls = self_or_cls.widgets[widget_type]
+        return widget_cls(plot, renderer=self_or_cls,
+                          embed=self_or_cls.widget_mode == 'embed', **kwargs)
+
+
+    @bothmethod
+    def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
+                       json=False, json_path='', **kwargs):
+        """
+        Render and export object as a widget to a static HTML
+        file. Allows supplying a custom template formatting string
+        with fields to interpolate 'js', 'css' and the main 'html'
+        containing the widget. Also provides options to export widget
+        data to a json file in the supplied json_path (defaults to
+        current path).
+        """
+        if fmt not in list(self_or_cls.widgets.keys())+['auto', None]:
+            raise ValueError("Renderer.export_widget may only export "
+                             "registered widget types.")
+
+        if not isinstance(obj, NdWidget):
+            if not isinstance(filename, BytesIO):
+                filedir = os.path.dirname(filename)
+                current_path = os.getcwd()
+                html_path = os.path.abspath(filedir)
+                rel_path = os.path.relpath(html_path, current_path)
+                save_path = os.path.join(rel_path, json_path)
+            else:
+                save_path = json_path
+            kwargs['json_save_path'] = json_path
+            kwargs['json_load_path'] = json_path
+            widget = self_or_cls.get_widget(obj, fmt, **kwargs)
+        else:
+            widget = obj
+
+        html = self_or_cls.static_html(widget, fmt, template)
+        if isinstance(filename, BytesIO):
+            filename.write(html)
+            filename.seek(0)
+        else:
+            with open(filename, 'w') as f:
+                f.write(html)
 
 
     @classmethod
@@ -313,12 +377,35 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
+    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
         """
-        Given an object, a basename for the output file, a file format
-        and some options, save the element in a suitable format to disk.
+        Save a HoloViews object to file, either using an explicitly
+        supplied format or to the appropriate default.
         """
-        raise NotImplementedError
+        if info or key:
+            raise Exception('MPLRenderer does not support saving metadata to file.')
+
+        with StoreOptions.options(obj, options, **kwargs):
+            plot = self_or_cls.get_plot(obj)
+
+        if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
+            with StoreOptions.options(obj, options, **kwargs):
+                self_or_cls.export_widgets(plot, basename+'.html', fmt)
+            return
+
+        with StoreOptions.options(obj, options, **kwargs):
+            rendered = self_or_cls(plot, fmt)
+        if rendered is None: return
+        (data, info) = rendered
+        if isinstance(basename, BytesIO):
+            basename.write(data)
+            basename.seek(0)
+        else:
+            encoded = self_or_cls.encode(rendered)
+            filename ='%s.%s' % (basename, info['file-ext'])
+            with open(filename, 'wb') as f:
+                f.write(encoded)
+
 
     @bothmethod
     def get_size(self_or_cls, plot):

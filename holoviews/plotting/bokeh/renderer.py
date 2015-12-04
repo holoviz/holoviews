@@ -1,6 +1,6 @@
 from ...core import Store, HoloMap, OrderedDict
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import BokehScrubberWidget, BokehSelectionWidget
+from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
 
 import param
 from param.parameterized import bothmethod
@@ -12,7 +12,6 @@ from bokeh.models import DataSource
 from bokeh.plotting import Figure
 from bokeh.resources import CDN
 
-
 try:
     from bokeh.protocol import serialize_json
     old_bokeh = True
@@ -22,7 +21,7 @@ except ImportError:
 
 class BokehRenderer(Renderer):
 
-    backend = 'bokeh'
+    backend = param.String(default='bokeh', doc="The backend name.")
 
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
         Output render format for static figures. If None, no figure
@@ -48,15 +47,14 @@ class BokehRenderer(Renderer):
         in-memory byte stream together with any suitable metadata.
         """
         plot, fmt =  self._validate(obj, fmt)
+        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        widgets = list(self.widgets.keys())+['auto']
-        if fmt in widgets:
-            return self.get_widget(plot, fmt)(), {'file-ext':'html',
-                                                  'mime_type': MIME_TYPES['html']}
+        if isinstance(plot, tuple(self.widgets.values())):
+            return plot(), info
         elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
-            return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+            return html, info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
@@ -68,14 +66,13 @@ class BokehRenderer(Renderer):
                     json = plotobj.to_json(False)
                 data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
                                            'data': json}
-            if not old_bokeh:
-                data['root'] = plot.state._id
-            return serialize_json(data), {'file-ext': 'json', 'mime_type':MIME_TYPES[fmt]}
+            return serialize_json(data), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        doc = Document()
-        doc.add_root(plot.state)
+        if not old_bokeh:
+            doc = Document()
+            doc.add_root(plot.state)
         return notebook_div(plot.state)
 
 
@@ -104,14 +101,6 @@ class BokehRenderer(Renderer):
         height = options.get('height', plot.height) * factor
         return dict(options, **{'width':int(width), 'height': int(height)})
 
-
-    @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
-        """
-        Given an object, a basename for the output file, a file format
-        and some options, save the element in a suitable format to disk.
-        """
-        raise NotImplementedError
 
     @bothmethod
     def get_size(self_or_cls, plot):

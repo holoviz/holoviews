@@ -14,11 +14,11 @@ import param
 from param.parameterized import bothmethod
 
 from ...core import HoloMap
-from ...core.options import Store, StoreOptions
+from ...core.options import Store
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import MPLSelectionWidget, MPLScrubberWidget
+from .widgets import MPLWidget, MPLSelectionWidget, MPLScrubberWidget
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -67,10 +67,11 @@ class MPLRenderer(Renderer):
         'scrubber': ('html', None, {'fps': 5}, None)
     }
 
-    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
+    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', 'html', None, 'auto'],
                            'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
-                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto']
+                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                   'html', None, 'auto']
                                 for m in ['default', 'mpld3', 'nbagg']}}
 
     counter = 0
@@ -78,7 +79,6 @@ class MPLRenderer(Renderer):
     # Define appropriate widget classes
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
-
 
     def __call__(self, obj, fmt='auto'):
         """
@@ -88,10 +88,8 @@ class MPLRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        widgets = list(self.widgets.keys())+['auto']
-        if fmt in widgets:
-            return self.get_widget(plot, fmt)(), {'file-ext':'html',
-                                                  'mime_type': MIME_TYPES['html']}
+        if isinstance(plot, tuple(self.widgets.values())):
+            data = plot()
         elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
@@ -132,28 +130,6 @@ class MPLRenderer(Renderer):
 
         return dict({'fig_inches':fig_inches},
                     **Store.lookup_options(cls.backend, obj, 'plot').options)
-
-    @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
-        """
-        Save a HoloViews object to file, either using an explicitly
-        supplied format or to the appropriate default.
-        """
-        if info or key:
-            raise Exception('MPLRenderer does not support saving metadata to file.')
-
-        with StoreOptions.options(obj, options, **kwargs):
-            rendered = self_or_cls(obj, fmt)
-        if rendered is None: return
-        (data, info) = rendered
-        if isinstance(basename, BytesIO):
-            basename.write(data)
-            basename.seek(0)
-        else:
-            encoded = self_or_cls.encode(rendered)
-            filename ='%s.%s' % (basename, info['file-ext'])
-            with open(filename, 'wb') as f:
-                f.write(encoded)
 
 
     @bothmethod

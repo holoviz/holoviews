@@ -43,14 +43,14 @@ class NdWidget(param.Parameterized):
          plots as json files, which can be dynamically loaded through
          a callback from the slider.""")
 
-    json_path = param.String(default='./json_figures', doc="""
-         If export_json is True the json files will be written to this
-         directory.""")
+    json_save_path = param.String(default='./json_figures', doc="""
+         If export_json is enabled the widget will save the json
+         data to this path. If None data will be accessible via the
+         json_data attribute.""")
 
-    server_url = param.String(default='', doc="""If export_json is
-         True the slider widget will expect to be served the plot data
-         from this URL. Data should be served from:
-         server_url/fig_{id}/{frame}.""")
+    json_load_path = param.String(default=None, doc="""
+         If export_json is enabled the widget JS code will load the data
+         from this relative path, if None defaults to json_save_path.""")
 
     ##############################
     # Javascript include options #
@@ -78,6 +78,7 @@ class NdWidget(param.Parameterized):
         self.dimensions = plot.dimensions
         self.keys = plot.keys
 
+        self.json_data = {}
         if self.plot.dynamic: self.embed = False
         if renderer is None:
             backend = Store.current_backend
@@ -108,11 +109,12 @@ class NdWidget(param.Parameterized):
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
         mode = repr(self.renderer.mode)
+        json_path = (self.json_save_path if self.json_load_path is None
+                     else self.json_load_path)
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
-                    server=self.server_url, cached=cached,
-                    load_json=load_json, mode=mode, id=self.id,
-                    Nframes=len(self.plot), widget_name=name,
+                    cached=cached, load_json=load_json, mode=mode, id=self.id,
+                    Nframes=len(self.plot), widget_name=name, json_path=json_path,
                     widget_template=template, dynamic=dynamic)
 
 
@@ -133,14 +135,20 @@ class NdWidget(param.Parameterized):
     def encode_frames(self, frames):
         if isinstance(frames, dict):
             frames = {idx: frame for idx, frame in frames.items()}
-        if self.export_json:
-            if not os.path.isdir(self.json_path):
-                os.mkdir(self.json_path)
-            with open(self.json_path+'/fig_%s.json' % self.id, 'wb') as f:
-                json.dump(frames, f)
-            frames = {}
         return frames
 
+    def save_json(self, frames):
+        """
+        Saves frames data into a json file at the
+        specified json_path, named with the widget uuid.
+        """
+        if self.json_save_path is None: return
+        path = os.path.join(self.json_save_path, '%s.json' % self.id)
+        if not os.path.isdir(self.json_save_path):
+            os.mkdir(self.json_save_path)
+        with open(path, 'w') as f:
+            json.dump(frames, f)
+        self.json_data = frames
 
     def _plot_figure(self, idx):
         with self.renderer.state():

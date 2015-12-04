@@ -1,4 +1,4 @@
-import uuid, json, warnings
+import os, uuid, json, warnings
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
@@ -101,7 +101,10 @@ class MPLWidget(NdWidget):
 
 
     def encode_frames(self, frames):
-        if self.renderer.mode == 'mpld3':
+        if self.export_json:
+            self.save_json(frames)
+            return {}
+        elif self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
             frames = {idx: frame for idx, frame in frames.items()}
