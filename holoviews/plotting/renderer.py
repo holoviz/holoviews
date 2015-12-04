@@ -299,12 +299,15 @@ class Renderer(Exporter):
                              "registered widget types.")
 
         if not isinstance(obj, NdWidget):
-            filedir = os.path.dirname(filename)
-            current_path = os.getcwd()
-            html_path = os.path.abspath(filedir)
-            rel_path = os.path.relpath(html_path, current_path)
-            kwargs = dict(kwargs, export_json=json)
-            kwargs['json_save_path'] = os.path.join(rel_path, json_path)
+            if not isinstance(filename, BytesIO):
+                filedir = os.path.dirname(filename)
+                current_path = os.getcwd()
+                html_path = os.path.abspath(filedir)
+                rel_path = os.path.relpath(html_path, current_path)
+                save_path = os.path.join(rel_path, json_path)
+            else:
+                save_path = json_path
+            kwargs['json_save_path'] = json_path
             kwargs['json_load_path'] = json_path
             widget = self_or_cls.get_widget(obj, fmt, **kwargs)
         else:
@@ -312,7 +315,7 @@ class Renderer(Exporter):
 
         html = self_or_cls.static_html(widget, fmt, template)
         if isinstance(filename, BytesIO):
-            filename.write(data)
+            filename.write(html)
             filename.seek(0)
         else:
             with open(filename, 'w') as f:
