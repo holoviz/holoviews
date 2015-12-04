@@ -92,10 +92,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         default matplotlib ticking behavior is applied.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the yticks.""")
 
     zrotation = param.Integer(default=0, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the zticks.""")
 
     zticks = param.Parameter(default=None, doc="""
         Ticks along z-axis specified as an integer, explicit list of

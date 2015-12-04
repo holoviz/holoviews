@@ -120,7 +120,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether the y-axis of the plot will be a log axis.""")
 
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the yticks.""")
 
     yticks = param.Parameter(default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
