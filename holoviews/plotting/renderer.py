@@ -295,7 +295,7 @@ class Renderer(Exporter):
         data to a json file in the supplied json_path (defaults to
         current path).
         """
-        if fmt not in self_or_cls.widgets.keys()+['auto', None]:
+        if fmt not in list(self_or_cls.widgets.keys())+['auto', None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
 
@@ -385,7 +385,7 @@ class Renderer(Exporter):
             raise Exception('MPLRenderer does not support saving metadata to file.')
 
         plot = self_or_cls.get_plot(obj)
-        if (fmt in self_or_cls.widgets.keys()+['auto']) and len(plot) > 1:
+        if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
             with StoreOptions.options(obj, options, **kwargs):
                 self_or_cls.export_widgets(plot, basename+'.html', fmt)
             return
