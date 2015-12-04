@@ -8,8 +8,9 @@ from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
+from ..core.options import Store, StoreOptions
 from ..core.util import find_file
-from .. import Store, Layout, HoloMap, AdjointLayout
+from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
@@ -358,12 +359,33 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
+    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
         """
-        Given an object, a basename for the output file, a file format
-        and some options, save the element in a suitable format to disk.
+        Save a HoloViews object to file, either using an explicitly
+        supplied format or to the appropriate default.
         """
-        raise NotImplementedError
+        if info or key:
+            raise Exception('MPLRenderer does not support saving metadata to file.')
+
+        plot = self_or_cls.get_plot(obj)
+        if (fmt in self_or_cls.widgets.keys()+['auto']) and len(plot) > 1:
+            with StoreOptions.options(obj, options, **kwargs):
+                self_or_cls.export_widgets(plot, basename+'.html', fmt)
+            return
+
+        with StoreOptions.options(obj, options, **kwargs):
+            rendered = self_or_cls(obj, fmt)
+        if rendered is None: return
+        (data, info) = rendered
+        if isinstance(basename, BytesIO):
+            basename.write(data)
+            basename.seek(0)
+        else:
+            encoded = self_or_cls.encode(rendered)
+            filename ='%s.%s' % (basename, info['file-ext'])
+            with open(filename, 'wb') as f:
+                f.write(encoded)
+
 
     @bothmethod
     def get_size(self_or_cls, plot):

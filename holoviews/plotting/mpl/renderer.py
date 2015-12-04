@@ -14,7 +14,7 @@ import param
 from param.parameterized import bothmethod
 
 from ...core import HoloMap
-from ...core.options import Store, StoreOptions
+from ...core.options import Store
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
@@ -130,28 +130,6 @@ class MPLRenderer(Renderer):
 
         return dict({'fig_inches':fig_inches},
                     **Store.lookup_options(cls.backend, obj, 'plot').options)
-
-    @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
-        """
-        Save a HoloViews object to file, either using an explicitly
-        supplied format or to the appropriate default.
-        """
-        if info or key:
-            raise Exception('MPLRenderer does not support saving metadata to file.')
-
-        with StoreOptions.options(obj, options, **kwargs):
-            rendered = self_or_cls(obj, fmt)
-        if rendered is None: return
-        (data, info) = rendered
-        if isinstance(basename, BytesIO):
-            basename.write(data)
-            basename.seek(0)
-        else:
-            encoded = self_or_cls.encode(rendered)
-            filename ='%s.%s' % (basename, info['file-ext'])
-            with open(filename, 'wb') as f:
-                f.write(encoded)
 
 
     @bothmethod

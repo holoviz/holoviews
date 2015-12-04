@@ -104,14 +104,6 @@ class BokehRenderer(Renderer):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
-        """
-        Given an object, a basename for the output file, a file format
-        and some options, save the element in a suitable format to disk.
-        """
-        raise NotImplementedError
-
-    @bothmethod
     def get_size(self_or_cls, plot):
         """
         Return the display size associated with a plot before
