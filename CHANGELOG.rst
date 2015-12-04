@@ -1,3 +1,66 @@
+Version 1.4.0
+-------------
+
+Over the past few months we have added several major new features and
+with the help of our users have been able to address a number of bugs
+and inconsistencies. We have closed 57 issues and added over 1100 new
+commits.
+
+Major new features:
+
+* Data API: The new data API brings an extensible system of to add new
+  data interfaces to column based Element types. These interfaces
+  allow applying powerful operations on the data independently of the
+  data format. The currently supported datatypes include NumPy, pandas
+  dataframes and a simple dictionary format.
+
+* Backend API: In this release we completely refactored the rendering,
+  plotting and IPython display system to make it easy to add new plotting
+  backends. Data may be styled and pickled for each backend indepenently and
+  renderers now support exporting all plotting data including widgets
+  as standalone HTML files or with separate JSON data.
+
+* Bokeh backend: The first new plotting backend added via the new backend
+  API. Bokeh plots allow for much faster plotting and greater interactivity.
+  Supports most Element types and layouts and provides facilities for sharing
+  axes across plots and linked brushing across plots.
+
+* DynamicMap: The new DynamicMap class allows HoloMap data to be generated
+  on-the-fly while running a Jupyter IPython notebook kernel. Allows
+  visualization of unbounded data streams and exploring large continuous
+  parameter spaces.
+
+Other features:
+
+* Easy definition of custom aliases for group, label and Dimension
+  names, allowing easier use of LaTeX
+* New Trisurface and QuadMesh elements.
+* Widgets now allow expressing hierarchical relationships between
+  dimensions.
+* Added GridMatrix container for heterogeneous Elements and gridmatrix
+  operation to generate scatter matrix showing relationship between
+  dimensions
+* Added operation to get filled contours as Polygons Element
+* Consistent indexing semantics for all Elements.
+
+Experimental features:
+
+* Bokeh callbacks allow adding interactivity by communicating between
+  bokehJS tools and the IPython kernel, e.g. allowing downsampling
+  based on the zoom level.
+
+Bug fixes:
+
+* Colorbars now consistent for all plot configurations.
+
+API Changes:
+
+* Deprecated %load_ext in favor of hv.load_ext function.
+* Dimension formatter parameter now deprecated in favor of value_format
+* Types of Chart and Table Element data now dependent on selected interface
+* DFrame conversion interface deprecated
+
+
 Version 1.3.2
 -------------
 
