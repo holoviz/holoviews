@@ -140,8 +140,9 @@ class Renderer(Exporter):
         if not isinstance(obj, Plot) and not displayable(obj):
             obj = collate(obj)
 
-        fig_formats = self.mode_formats['fig'][self.mode]
-        holomap_formats = self.mode_formats['holomap'][self.mode]
+        mode = self_or_cls.mode
+        fig_formats = self_or_cls.mode_formats['fig'][mode]
+        holomap_formats = self_or_cls.mode_formats['holomap'][mode]
 
         # Initialize DynamicMaps with first data item
         dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
@@ -267,9 +268,8 @@ class Renderer(Exporter):
                 widget_type = 'scrubber'
             else:
                 widget_type = 'widgets'
-
-            if dynamic == 'open': widget_type = 'scrubber'
-            if dynamic == 'closed': widget_type = 'widgets'
+        elif dynamic == 'open': widget_type = 'scrubber'
+        elif dynamic == 'closed': widget_type = 'widgets'
         elif widget_type == 'widgets' and dynamic == 'open':
             raise ValueError('Selection widgets not supported in dynamic open mode')
         elif widget_type == 'scrubber' and dynamic == 'closed':
