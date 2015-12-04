@@ -59,6 +59,8 @@ class BokehRenderer(Renderer):
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
             data = OrderedDict()
+            if not old_bokeh:
+                data['root'] = plot.state._id
             for plotobj in plotobjects:
                 if old_bokeh:
                     json = plotobj.vm_serialize(changed_only=True)

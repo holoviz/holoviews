@@ -262,7 +262,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.show_title:
             plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
-            plot_props['background_fill'] = self.bgcolor
+            plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
             plot_props['min_border'] = self.border
         lod = dict(self.defaults()['lod'], **self.lod)
