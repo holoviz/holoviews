@@ -64,3 +64,17 @@ class DynamicTestCallableClosed(ComparisonTestCase):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap, dmap.clone())
+
+
+class DynamicTestSampledClosed(ComparisonTestCase):
+
+    def test_sampled_closed_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, sampled=True)
+        self.assertEqual(dmap.mode, 'closed')
+
+    def test_sampled_closed_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, sampled=True)
+        self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
+
