@@ -553,6 +553,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
 
+    _disabled_opts = ['size']
+
     def initialize_plot(self, ranges=None):
         points = self.hmap.last
         axis = self.handles['axis']

@@ -921,7 +921,8 @@ class Store(object):
         for view_class, plot in cls.registry[backend].items():
             expanded_opts = [opt for key in plot.style_opts
                              for opt in style_aliases.get(key, [])]
-            style_opts = sorted(set(expanded_opts + plot.style_opts))
+            style_opts = sorted(set(opt for opt in (expanded_opts + plot.style_opts)
+                                    if opt not in plot._disabled_opts))
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
 
             with param.logging_level('CRITICAL'):

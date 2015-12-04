@@ -30,6 +30,9 @@ class Plot(param.Parameterized):
     # A list of style options that may be supplied to the plotting
     # call
     style_opts = []
+    # Sometimes matplotlib doesn't support the common aliases.
+    # Use this list to disable any invalid style options
+    _disabled_opts = []
 
     def initialize_plot(self, ranges=None):
         """
@@ -72,6 +75,8 @@ class PlotSelector(object):
     function of the plotted object. Behaves like a Plot class and
     presents the same parameterized interface.
     """
+
+    _disabled_opts = []
     def __init__(self, selector, plot_classes, allow_mismatch=False):
         """
         The selector function accepts a component instance and returns
