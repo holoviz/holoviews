@@ -300,8 +300,12 @@ class Renderer(Exporter):
             widget = obj
 
         html = self_or_cls.static_html(widget, fmt, template)
-        with open(filename, 'w') as f:
-            f.write(html)
+        if isinstance(filename, BytesIO):
+            filename.write(data)
+            filename.seek(0)
+        else:
+            with open(filename, 'w') as f:
+                f.write(html)
 
 
     @classmethod
