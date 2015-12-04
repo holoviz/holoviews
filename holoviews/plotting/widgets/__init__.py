@@ -43,14 +43,14 @@ class NdWidget(param.Parameterized):
          plots as json files, which can be dynamically loaded through
          a callback from the slider.""")
 
-    json_path = param.String(default='./json_figures', doc="""
+    json_save_path = param.String(default='./json_figures', doc="""
          If export_json is enabled the widget will save the json
          data to this path. If None data will be accessible via the
          json_data attribute.""")
 
-    json_relpath = param.String(default=None, doc="""
+    json_load_path = param.String(default=None, doc="""
          If export_json is enabled the widget JS code will load the data
-         from this relative path, if None defaults to json_path.""")
+         from this relative path, if None defaults to json_save_path.""")
 
     ##############################
     # Javascript include options #
@@ -109,7 +109,8 @@ class NdWidget(param.Parameterized):
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
         mode = repr(self.renderer.mode)
-        json_path = self.json_path if self.json_relpath is None else self.json_relpath
+        json_path = (self.json_save_path if self.json_load_path is None
+                     else self.json_load_path)
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
@@ -141,10 +142,10 @@ class NdWidget(param.Parameterized):
         Saves frames data into a json file at the
         specified json_path, named with the widget uuid.
         """
-        if self.json_path is None: return
-        path = os.path.join(self.json_path, '%s.json' % self.id)
-        if not os.path.isdir(self.json_path):
-            os.mkdir(self.json_path)
+        if self.json_save_path is None: return
+        path = os.path.join(self.json_save_path, '%s.json' % self.id)
+        if not os.path.isdir(self.json_save_path):
+            os.mkdir(self.json_save_path)
         with open(path, 'w') as f:
             json.dump(frames, f)
         self.json_data = frames

@@ -306,8 +306,8 @@ class Renderer(Exporter):
 
         if not isinstance(obj, NdWidget):
             kwargs = dict(export_json=json)
-            kwargs['json_path'] = os.path.join(rel_path, json_path)
-            kwargs['json_relpath'] = json_path
+            kwargs['json_save_path'] = os.path.join(rel_path, json_path)
+            kwargs['json_load_path'] = json_path
             widget = self_or_cls.get_widget(obj, fmt, **kwargs)
         else:
             widget = obj
