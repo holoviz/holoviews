@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table, Annotation
-from .util import get_dynamic_mode
+from .util import get_dynamic_mode, initialize_sampled
 
 
 class Plot(param.Parameterized):
@@ -797,8 +797,11 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dynamic = get_dynamic_mode(layout)
+        dynamic, sampled = get_dynamic_mode(layout)
         dimensions, keys = traversal.unique_dimkeys(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
+
         uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,

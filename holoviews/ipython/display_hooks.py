@@ -129,7 +129,7 @@ def element_display(element, max_frames, max_branches):
 @display_hook
 def map_display(vmap, max_frames, max_branches):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
-    if len(vmap) == 0 and not isinstance(vmap, DynamicMap):
+    if len(vmap) == 0 and (not isinstance(vmap, DynamicMap) or vmap.sampled):
         return sanitize_HTML(vmap)
     elif len(vmap) > max_frames:
         max_frame_warning(max_frames)

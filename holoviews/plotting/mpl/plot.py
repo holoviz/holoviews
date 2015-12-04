@@ -10,12 +10,12 @@ from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Element3D,
-                     Empty, Collator)
+                     Empty, Collator, DynamicMap)
 from ...core.options import Store, Compositor
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
-from ..util import get_dynamic_mode
+from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import MPLRenderer
 
 
@@ -259,7 +259,6 @@ class GridPlot(CompositePlot):
                  keys=None, dimensions=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        dynamic = get_dynamic_mode(layout)
         self.layout = layout
         self.cols, self.rows = layout.shape
         self.layout_num = layout_num
@@ -268,7 +267,9 @@ class GridPlot(CompositePlot):
             dimensions, keys = traversal.unique_dimkeys(layout)
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
-
+        dynamic, sampled = get_dynamic_mode(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
                                        dynamic=dynamic,
                                        **dict(extra_opts, **params))
