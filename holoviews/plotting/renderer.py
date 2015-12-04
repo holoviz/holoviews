@@ -130,7 +130,8 @@ class Renderer(Exporter):
         super(Renderer, self).__init__(**params)
 
 
-    def get_plot(self, obj):
+    @bothmethod
+    def get_plot(self_or_cls, obj):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -139,7 +140,8 @@ class Renderer(Exporter):
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-            plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
+            plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
+            plot = self_or_cls.plotting_class(obj)(obj, **plot_opts)
             plot.update(0)
         else:
             plot = obj
@@ -241,9 +243,10 @@ class Renderer(Exporter):
         return template.format(js=js_html, css=css_html, html=html)
 
 
-    def get_widget(self, plot, widget_type, **kwargs):
+    @bothmethod
+    def get_widget(self_or_cls, plot, widget_type, **kwargs):
         if not isinstance(plot, Plot):
-            plot = self.get_plot(plot)
+            plot = self_or_cls.get_plot(plot)
         dynamic = plot.dynamic
         if widget_type == 'auto':
             isuniform = plot.uniform
@@ -258,16 +261,17 @@ class Renderer(Exporter):
             raise ValueError('Selection widgets not supported in dynamic open mode')
         elif widget_type == 'scrubber' and dynamic == 'closed':
             raise ValueError('Scrubber widget not supported in dynamic closed mode')
-        embed = self.widget_mode == 'embed'
+        embed = self_or_cls.widget_mode == 'embed'
 
         if widget_type in [None, 'auto']:
-            widget_type = holomap_formats[0] if self.holomap=='auto' else self.holomap
+            widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
-        widget_cls = self.widgets[widget_type]
-        return widget_cls(plot, renderer=self, embed=embed, **kwargs)
+        widget_cls = self_or_cls.widgets[widget_type]
+        return widget_cls(plot, renderer=self_or_cls, embed=embed, **kwargs)
 
 
-    def export_widgets(self, obj, filename, fmt=None, template=None,
+    @bothmethod
+    def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
                        json=False, json_path=''):
         """
         Render and export object as a widget to a static HTML
@@ -277,7 +281,7 @@ class Renderer(Exporter):
         data to a json file in the supplied json_path (defaults to
         current path).
         """
-        if fmt not in self.widgets.keys()+['auto', None]:
+        if fmt not in self_or_cls.widgets.keys()+['auto', None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
 
@@ -290,11 +294,11 @@ class Renderer(Exporter):
             kwargs = dict(export_json=json)
             kwargs['json_path'] = os.path.join(rel_path, json_path)
             kwargs['json_relpath'] = json_path
-            widget = self.get_widget(obj, fmt, **kwargs)
+            widget = self_or_cls.get_widget(obj, fmt, **kwargs)
         else:
             widget = obj
 
-        html = self.static_html(widget, fmt, template)
+        html = self_or_cls.static_html(widget, fmt, template)
         with open(filename, 'w') as f:
             f.write(html)
 
