@@ -104,10 +104,9 @@ class MPLRendererTest(ComparisonTestCase):
         data = self.renderer.static_html(self.map1, fmt='gif')
         self.assertEqual(digest_data(data),
                          '9d43822e0f368f3c673b19aaf66d22252849947b7dc4a157306c610c42d319b5')
-
     def test_export_widgets(self):
         bytesio = BytesIO()
-        self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
+        self.renderer.export_widget(self.map1, bytesio, fmt='widgets')
         data = normalize(bytesio.read())
         self.assertEqual(digest_data(data),
                          '91bbc7b4efebd07b1ee595b902d9899b27f2c7e353dfc87c57c2dfd5d0404301')
