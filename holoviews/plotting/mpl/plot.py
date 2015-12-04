@@ -366,8 +366,9 @@ class GridPlot(CompositePlot):
                 subaxes[(r, c)] = subax
             else:
                 subax = None
-            if c == self.cols - 1 and r == self.rows//2:
-                kwargs['show_legend'] = True
+            if issubclass(vtype, CompositeOverlay) and (c == self.cols - 1 and
+                                                        r == self.rows//2):
+                kwargs['show_legend'] = self.show_legend
                 kwargs['legend_position'] = 'right'
 
             # Create subplot
