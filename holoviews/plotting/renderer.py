@@ -3,6 +3,7 @@ Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 
+from io import BytesIO
 import os, json, base64
 from contextlib import contextmanager
 
