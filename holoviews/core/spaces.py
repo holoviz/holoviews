@@ -381,6 +381,13 @@ class DynamicMap(HoloMap):
        element will be cached and therefore accessible when casting to a
        HoloMap.  Applicable in open mode only.""")
 
+    sampled = param.Boolean(default=False, doc="""
+       Allows defining a DynamicMap in closed mode without defining the
+       dimension bounds or values. The DynamicMap may then be explicitly
+       sampled via getitem or the sampling is determined during plotting
+       by a HoloMap with fixed sampling.
+       """)
+
     def __init__(self, callback, initial_items=None, **params):
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
         self.counter = 0
@@ -412,7 +419,12 @@ class DynamicMap(HoloMap):
         """
         isgenerator = isinstance(self.callback, types.GeneratorType)
         if isgenerator:
+            if self.sampled:
+                raise ValueError("Cannot set DynamicMap containing generator "
+                                 "to sampled")
             return 'generator'
+        if self.sampled:
+            return 'key'
         # Any unbounded kdim (any direction) implies open mode
         for kdim in self.kdims:
             if (kdim.values) and kdim.range != (None,None):

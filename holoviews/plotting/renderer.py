@@ -147,6 +147,9 @@ class Renderer(Exporter):
         # Initialize DynamicMaps with first data item
         dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
         for dmap in dmaps:
+            if dmap.sampled:
+                # Skip initialization until plotting code
+                continue
             if dmap.call_mode == 'key':
                 dmap[dmap._initial_key()]
             else:

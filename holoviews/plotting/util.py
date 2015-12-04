@@ -122,14 +122,28 @@ def get_sideplot_ranges(plot, element, main, ranges):
 
 def get_dynamic_mode(composite):
     "Returns the common mode of the dynamic maps in given composite object"
-    dynamic_modes = composite.traverse(lambda x: x.mode, [DynamicMap])
-    if dynamic_modes and not composite.traverse(lambda x: x, ['HoloMap']):
-        if len(set(dynamic_modes)) > 1:
-            raise Exception("Cannot display composites of DynamicMap objects "
-                            "with different interval modes (i.e open or closed mode).")
-        return dynamic_modes[0]
+    dynmaps = composite.traverse(lambda x: x, [DynamicMap])
+    holomaps = composite.traverse(lambda x: x, ['HoloMap'])
+    dynamic_modes = [m.call_mode for m in dynmaps]
+    dynamic_sampled = any(m.sampled for m in dynmaps)
+    if len(set(dynamic_modes)) > 1:
+        raise Exception("Cannot display composites of DynamicMap objects "
+                        "with different interval modes (i.e open or closed mode).")
+    elif dynamic_modes and not holomaps:
+        return 'closed' if dynamic_modes[0] == 'key' else 'open', dynamic_sampled
     else:
-        return None
+        return None, dynamic_sampled
+
+
+def initialize_sampled(obj, dimensions, key):
+    """
+    Initializes any DynamicMaps in sampled mode.
+    """
+    select = dict(zip([d.name for d in dimensions], key))
+    try:
+        selection = obj.select([DynamicMap], **select)
+    except KeyError:
+        pass
 
 
 def save_frames(obj, filename, fmt=None, backend=None, options=None):
