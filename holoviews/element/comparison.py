@@ -24,7 +24,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from . import *    # pyflakes:ignore (All Elements need to support comparison)
 from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
-                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace
+                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace, DynamicMap
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
@@ -178,6 +178,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
         cls.equality_type_funcs[GridSpace] =     cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
+        cls.equality_type_funcs[DynamicMap] =    cls.compare_dynamicmap
 
         # Option objects
         cls.equality_type_funcs[Options] =     cls.compare_options
@@ -326,6 +327,12 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_holomap(cls, el1, el2, msg='HoloMaps'):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_ndmappings(el1, el2, msg)
+
+
+    @classmethod
+    def compare_dynamicmap(cls, el1, el2, msg='DynamicMap'):
         cls.compare_dimensioned(el1, el2)
         cls.compare_ndmappings(el1, el2, msg)
 
