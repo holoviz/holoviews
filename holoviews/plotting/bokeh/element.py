@@ -437,7 +437,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
-        element = self._get_frame(key)
+        if element is None:
+            element = self._get_frame(key)
         if not element:
             if self.dynamic and self.overlaid:
                 self.current_key = key
