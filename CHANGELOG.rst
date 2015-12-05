@@ -35,7 +35,7 @@ Other features:
 * Easy definition of custom aliases for group, label and Dimension
   names, allowing easier use of LaTeX.
 * New Trisurface and QuadMesh elements.
-* Widgets now allow expressing hierarchical relationships betwkeen
+* Widgets now allow expressing hierarchical relationships between
   dimensions.
 * Added GridMatrix container for heterogeneous Elements and gridmatrix
   operation to generate scatter matrix showing relationship between
