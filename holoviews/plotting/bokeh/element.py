@@ -19,6 +19,7 @@ from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .callbacks import Callbacks
 from .plot import BokehPlot
+from .renderer import old_bokeh
 from .util import mpl_to_bokeh, convert_datetime
 
 
@@ -262,7 +263,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.show_title:
             plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
-            plot_props['background_fill_color'] = self.bgcolor
+            bg_attr = 'background_fill'
+            if not old_bokeh: bg_attr += ' _color'
+            plot_props[bg_attr] = self.bgcolor
         if self.border is not None:
             plot_props['min_border'] = self.border
         lod = dict(self.defaults()['lod'], **self.lod)
