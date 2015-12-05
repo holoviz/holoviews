@@ -24,25 +24,28 @@ class ChartPlot(ElementPlot):
 
     def _cyclic_format_x_tick_label(self, x):
         if self.relative_labels:
-            return str(x)
-        return str(int(np.round(180*x/self.cyclic_range[1])))
+            return str(int(x))
+        return str(int(np.rad2deg(x)))
 
 
     def _rotate(self, seq, n=1):
         n = n % len(seq) # n=hop interval
-        return seq[n:] + seq[:n]
+        return seq[n:-1] + seq[:n]
 
-    def _cyclic_reduce_ticks(self, x_values):
+
+    def _cyclic_reduce_ticks(self, x_values, ticks):
         values = []
         labels = []
-        step = self.cyclic_range[1] / (self.xticks - 1)
-        if self.relative_labels:
-            labels.append(-90)
-            label_step = 180 / (self.xticks - 1)
-        else:
-            labels.append(x_values[0])
-            label_step = step
+        crange = self.cyclic_range[1] - self.cyclic_range[0]
+        step = crange / (self.xticks - 1)
+
         values.append(x_values[0])
+        if self.relative_labels:
+            labels.append(-np.rad2deg(crange/2))
+            label_step = np.rad2deg(crange) / (self.xticks - 1)
+        else:
+            labels.append(ticks[0])
+            label_step = step
         for i in range(0, self.xticks - 1):
             labels.append(labels[-1] + label_step)
             values.append(values[-1] + step)
@@ -55,19 +58,17 @@ class ChartPlot(ElementPlot):
         """
         x_values = list(curveview.dimension_values(0))
         y_values = list(curveview.dimension_values(1))
+        crange = self.cyclic_range[1] - self.cyclic_range[0]
         if self.center_cyclic:
             rotate_n = self.peak_argmax+len(x_values)/2
             y_values = self._rotate(y_values, n=rotate_n)
             ticks = self._rotate(x_values, n=rotate_n)
+            ticks = np.array(ticks) - crange
+            ticks = list(ticks) + [ticks[0]]
+            y_values = list(y_values) + [y_values[0]]
         else:
-            ticks = list(x_values)
-
-        ticks.append(ticks[0])
-        x_values.append(x_values[0]+self.cyclic_range[1])
-        y_values.append(y_values[0])
-
-        self.xvalues = x_values
-        return np.vstack([x_values, y_values]).T
+            ticks = x_values
+        return x_values, y_values, ticks
 
 
 class CurvePlot(ChartPlot):
@@ -115,33 +116,40 @@ class CurvePlot(ChartPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        # Create xticks and reorder data if cyclic
-        xticks = None
-        data = element.data
-        if self.cyclic_range is not None:
-            if self.center_cyclic:
-                self.peak_argmax = np.argmax(element.data[:, 1])
-            data = self._cyclic_curves(element)
-            if self.xticks is not None:
-                xticks = self._cyclic_reduce_ticks(self.xvalues)
-
+        xs, ys, xticks = self.get_data(element)
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
         legend = element.label if self.show_legend else ''
-        line_segment = axis.plot(element.dimension_values(0),
-                                 element.dimension_values(1), label=legend,
+        line_segment = axis.plot(xs, ys, label=legend,
                                  zorder=self.zorder, **style)[0]
 
         self.handles['artist'] = line_segment
         return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
+    def get_data(self, element):
+        # Create xticks and reorder data if cyclic
+        xticks = None
+        data = element.data
+        if self.cyclic_range and all(v is not None for v in self.cyclic_range):
+            if self.center_cyclic:
+                self.peak_argmax = np.argmax(element.dimension_values(1))
+            xs, ys, ticks = self._cyclic_curves(element)
+            if self.xticks is not None and not isinstance(self.xticks, (list, tuple)):
+                xticks = self._cyclic_reduce_ticks(xs, ticks)
+        else:
+            xs = element.dimension_values(0)
+            ys = element.dimension_values(1)
+        return xs, ys, xticks
+
+
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        if self.cyclic_range is not None:
-            data = self._cyclic_curves(element)
-        artist.set_xdata(element.dimension_values(0))
-        artist.set_ydata(element.dimension_values(1))
+        xs, ys, xticks = self.get_data(element)
+
+        artist.set_xdata(xs)
+        artist.set_ydata(ys)
+        return {'xticks': xticks}
 
 
 
