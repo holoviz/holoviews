@@ -334,7 +334,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         framewise = self.lookup_options(element, 'norm').options.get('framewise')
         l, b, r, t = self.get_extents(element, ranges)
         dims = element.dimensions()
-        dim_ranges = dims[0].range + dims[1].range
         if not framewise and not self.dynamic:
             return
         plot = self.handles['plot']
@@ -518,9 +517,6 @@ class BokehMPLWrapper(ElementPlot):
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
-        element = self.hmap.last
-        key = self.keys[-1]
-
         self.mplplot.initialize_plot(ranges)
         plot = mpl.to_bokeh(self.mplplot.state)
         self.handles['plot'] = plot
@@ -542,7 +538,6 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         element = self.hmap.last
-        key = self.keys[-1]
         self.mplplot.initialize_plot(ranges)
         plot = self._render_plot(element, plot)
         self.handles['plot'] = plot

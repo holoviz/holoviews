@@ -494,14 +494,11 @@ class SideHistogramPlot(HistogramPlot):
         Use the given cmap to color the bars, applying the correct
         color ranges as necessary.
         """
-        vertical = (self.orientation == 'vertical')
         cmap_range = main_range[1] - main_range[0]
         lower_bound = main_range[0]
         colors = np.array(element.dimension_values(dim))
         colors = (colors - lower_bound) / (cmap_range)
         for c, bar in zip(colors, bars):
-            bar_bin = bar.get_y() if vertical else bar.get_x()
-            width = bar.get_height() if vertical else bar.get_width()
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
@@ -815,11 +812,9 @@ class BarPlot(LegendPlot):
                 dim = dims[vidx]
                 dimensions.append(dim)
                 vals = self.hmap.dimension_values(dim.name)
-                params = dict(kdims=[dim])
             else:
                 dimensions.append(None)
                 vals = [None]
-                params = {}
             values[vtype] = list(unique_iterator(vals))
         return values, dimensions
 

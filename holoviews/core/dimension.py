@@ -413,7 +413,7 @@ class LabelledData(param.Parameterized):
                     custom_id = int(match.split('_')[-1])
                     if not isinstance(d[match], dict):
                         # Backward compatibility before multiple backends
-                        backed_info = {'matplotlib':d[match]}
+                        backend_info = {'matplotlib':d[match]}
                     else:
                         backend_info = d[match]
                     for backend, info in  backend_info.items():

@@ -97,7 +97,6 @@ class DataFrameView(Columns):
                             % invalid_dims)
 
         index_dims = [self.get_dimension(d) for d in dimensions]
-        view_dims = [d for d in self.kdims if d not in dimensions]
         mapping_data = []
         for k, v in self.data.groupby([self.get_dimension(d).name for d in dimensions]):
             data = v.drop(dimensions, axis=1)

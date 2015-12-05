@@ -30,7 +30,7 @@ def collate(obj):
                                 "we recommend calling .collate() on the HoloMap "
                                 "in order to follow the recommended nesting "
                                 "structure shown in the Composing Data tutorial"
-                                "(http://git.io/vtIQh)" % vmap.type.__name__)
+                                "(http://git.io/vtIQh)" % obj.type.__name__)
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
@@ -45,7 +45,7 @@ def collate(obj):
                 if isinstance(el, HoloMap) and not displayable(el):
                     collated_layout = Layout.from_values(el.collate())
                     expanded.extend(collated_layout.values())
-            layout = Layout(expanded)
+            return Layout(expanded)
         except:
             raise Exception(undisplayable_info(obj))
     else:
@@ -91,6 +91,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
     Element the plot is adjoined to and the
     dictionary of ranges.
     """
+    key = plot.current_key
     dims = element.dimensions(label=True)
     dim = dims[1] if dims[1] != 'Frequency' else dims[0]
     range_item = main
@@ -141,7 +142,7 @@ def initialize_sampled(obj, dimensions, key):
     """
     select = dict(zip([d.name for d in dimensions], key))
     try:
-        selection = obj.select([DynamicMap], **select)
+        obj.select([DynamicMap], **select)
     except KeyError:
         pass
 

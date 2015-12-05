@@ -844,7 +844,6 @@ class ArrayColumns(DataColumns):
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
-        element_params = eltype.params()
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:

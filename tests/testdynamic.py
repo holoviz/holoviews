@@ -73,7 +73,7 @@ class DynamicTestSampledClosed(ComparisonTestCase):
         dmap=DynamicMap(fn, sampled=True)
         self.assertEqual(dmap.mode, 'closed')
 
-    def test_sampled_closed_init(self):
+    def test_sampled_closed_resample(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
         self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])

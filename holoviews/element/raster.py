@@ -266,7 +266,7 @@ class QuadMesh(Raster):
 
 
     def __getitem__(self, slices):
-        if slices in self.dimensions(): return self.dimension_values(key)
+        if slices in self.dimensions(): return self.dimension_values(slices)
         slices = util.process_ellipses(self,slices)
         if not self._grid:
             raise KeyError("Indexing of non-grid based QuadMesh"
@@ -310,7 +310,7 @@ class QuadMesh(Raster):
         Allows collapsing the data of a number of QuadMesh
         Elements with a function.
         """
-        if not self._grid:
+        if not all(data[0].ndim == 1 for data in data_list):
             raise Exception("Collapsing of non-grid based QuadMesh"
                             "currently not supported")
         xs, ys, zs = zip(data_list)

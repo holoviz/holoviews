@@ -620,7 +620,6 @@ class gridmatrix(param.ParameterizedFunction):
 
         data = {}
         for d1, d2 in permuted_dims:
-            key = (d1.name, d2.name)
             if d1 == d2:
                 if p.diagonal_type is Histogram:
                     bin_range = ranges.get(d1.name, element.range(d1))

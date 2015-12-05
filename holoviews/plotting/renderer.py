@@ -140,10 +140,6 @@ class Renderer(Exporter):
         if not isinstance(obj, Plot) and not displayable(obj):
             obj = collate(obj)
 
-        mode = self_or_cls.mode
-        fig_formats = self_or_cls.mode_formats['fig'][mode]
-        holomap_formats = self_or_cls.mode_formats['holomap'][mode]
-
         # Initialize DynamicMaps with first data item
         dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
         for dmap in dmaps:
@@ -242,8 +238,6 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        cls_type = type(self)
-
         css_html, js_html = '', ''
         js, css = self.embed_assets()
         for url in self.js_dependencies:
@@ -279,6 +273,7 @@ class Renderer(Exporter):
             raise ValueError('Scrubber widget not supported in dynamic closed mode')
 
         if widget_type in [None, 'auto']:
+            holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]
             widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
         widget_cls = self_or_cls.widgets[widget_type]
@@ -310,7 +305,7 @@ class Renderer(Exporter):
                 save_path = os.path.join(rel_path, json_path)
             else:
                 save_path = json_path
-            kwargs['json_save_path'] = json_path
+            kwargs['json_save_path'] = save_path
             kwargs['json_load_path'] = json_path
             widget = self_or_cls.get_widget(obj, fmt, **kwargs)
         else:
@@ -350,8 +345,8 @@ class Renderer(Exporter):
         Returns JS and CSS and for embedding of widgets.
         """
         # Get all the widgets and find the set of required js widget files
-        widgets = [wdgt for cls in Renderer.__subclasses__()
-                   for wdgt in cls.widgets.values()]
+        widgets = [wdgt for r in Renderer.__subclasses__()
+                   for wdgt in r.widgets.values()]
         css = list({wdgt.css for wdgt in widgets})
         basejs = list({wdgt.basejs for wdgt in widgets})
         extensionjs = list({wdgt.extensionjs for wdgt in widgets})

@@ -248,10 +248,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         state.
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
-        plots = self.handles['plots']
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
-            r = i % self.cols
-            c = i // self.cols
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
@@ -279,7 +276,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
-        gidx = 0
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
@@ -288,7 +284,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
         layout_subplots, layouts, paths = {}, {}, {}
-        inserts_cols = []
         for r, c in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             key, view = layout_items.get((r, c), (None, None))
@@ -341,7 +336,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         empty axes as necessary.
         """
         subplots = {}
-        projections = []
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(adjoined=layout)
         main, main_plot = None, None
@@ -391,7 +385,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             else:
                 adjoint_clone[pos] = subplots[pos].hmap
             if pos == 'main':
-                main = element
                 main_plot = subplot
 
         return subplots, adjoint_clone
@@ -496,7 +489,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         state.
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
-        plots = self.handles['plots']
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:

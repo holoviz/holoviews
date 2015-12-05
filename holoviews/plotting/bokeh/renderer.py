@@ -5,7 +5,6 @@ from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
 import param
 from param.parameterized import bothmethod
 
-from bokeh.io import load_notebook
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, Document
 from bokeh.models import DataSource

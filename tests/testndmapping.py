@@ -110,14 +110,14 @@ class NdIndexableMappingTest(ComparisonTestCase):
 
         self.assertEqual(list(ndmap.keys()), [0, 1])
 
-    def test_setitem_nested(self):
+    def test_setitem_nested_1(self):
         nested1 = MultiDimensionalMapping([('B', 1)])
         ndmap = MultiDimensionalMapping([('A', nested1)])
         nested2 = MultiDimensionalMapping([('B', 2)])
         ndmap['A'] = nested2
         self.assertEqual(ndmap['A'], nested2)
 
-    def test_setitem_nested(self):
+    def test_setitem_nested_2(self):
         nested1 = MultiDimensionalMapping([('B', 1)])
         ndmap = MultiDimensionalMapping([('A', nested1)])
         nested2 = MultiDimensionalMapping([('C', 2)])

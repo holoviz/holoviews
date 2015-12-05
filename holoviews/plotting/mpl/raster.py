@@ -163,7 +163,6 @@ class RasterPlot(ColorbarPlot):
             if type(element) == Raster:
                 b, t = t, b
 
-        val_dim = [d.name for d in element.vdims][0]
         opts = self.style[self.cyclic_index]
 
         clim, norm, opts = self._norm_kwargs(element, ranges, opts)

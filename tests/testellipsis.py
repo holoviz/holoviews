@@ -50,7 +50,7 @@ class TestEllipsisCharts(ComparisonTestCase):
     def test_histogram_ellipsis_slice_value_missing(self):
         frequencies, edges = np.histogram(range(20), 20)
         try:
-            sliced = hv.Histogram(frequencies, edges)[..., 'Non-existent']
+            hv.Histogram(frequencies, edges)[..., 'Non-existent']
             raise AssertionError("No assertion raised")
         except Exception as e:
             if str(e) != repr("'Frequency' is the only selectable value dimension"):

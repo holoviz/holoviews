@@ -55,7 +55,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         element = self._get_frame(key)
-        table = self.handles['plot']
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)

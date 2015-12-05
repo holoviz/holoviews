@@ -28,7 +28,7 @@ def mplcmap_to_palette(cmap):
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
     if colors is None:
-        raise ValueException("Using cmaps on objects requires matplotlib.")
+        raise ValueError("Using cmaps on objects requires matplotlib.")
     colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
     return [colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 

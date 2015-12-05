@@ -54,7 +54,6 @@ class SplinePlot(ElementPlot):
     _plot_method = 'bezier'
 
     def get_data(self, element, ranges=None):
-        plot = self.handles['plot']
         verts = np.array(element.data[0])
         xs, ys = verts[:, 0], verts[:, 1]
         return (dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
