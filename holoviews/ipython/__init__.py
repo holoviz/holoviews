@@ -114,13 +114,13 @@ class notebook_extension(param.ParameterizedFunction):
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
 
-        if self._loaded == False:
+        if notebook_extension._loaded == False:
             ip = get_ipython() if ip is None else ip
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             OutputMagic.initialize()
             set_display_hooks(ip)
-            self._loaded = True
+            notebook_extension._loaded = True
 
         css = ''
         if p.width is not None:
