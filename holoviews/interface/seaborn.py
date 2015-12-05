@@ -101,7 +101,6 @@ class Distribution(Chart):
 
     def __init__(self, data, **params):
         super(Distribution, self).__init__(data, **params)
-        self.data = self.interface.reindex(self, [0], [])
 
     def range(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
@@ -117,9 +116,9 @@ class Distribution(Chart):
     def dimension_values(self, dimension):
         dim_idx = self.get_dimension_index(dimension)
         if dim_idx == 0:
-            return self.interface.values(self, 0)
-        elif dim_idx == 1:
             return []
+        elif dim_idx == 1:
+            return self.interface.values(self, 1)
         else:
             return super(Distribution, self).dimension_values(dimension)
 
