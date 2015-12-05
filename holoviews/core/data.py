@@ -832,7 +832,7 @@ class DFColumns(DataColumns):
         if dimensions:
             return columns.reindex(columns=dimensions)
         else:
-            return columns.data
+            return columns.data.copy()
 
 
 
