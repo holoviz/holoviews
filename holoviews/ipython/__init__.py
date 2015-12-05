@@ -152,7 +152,7 @@ class notebook_extension(param.ParameterizedFunction):
         """
         resources = []
         disabled = []
-        for resource in ['holoviews'] + Store.renderers.keys():
+        for resource in ['holoviews'] + list(Store.renderers.keys()):
             if resource in params:
                 setting = params.pop(resource)
                 if setting is True and resource != 'matplotlib':
@@ -171,7 +171,7 @@ class notebook_extension(param.ParameterizedFunction):
         Generates a docstring that can be used to enable tab-completion
         of resources.
         """
-        elements = ['%s=Boolean' %k for k in Store.renderers.keys()]
+        elements = ['%s=Boolean' %k for k in list(Store.renderers.keys())]
         for name, p in self_or_cls.params().items():
             param_type = p.__class__.__name__
             elements.append("%s=%s" % (name, param_type))
@@ -185,4 +185,4 @@ def load_ipython_extension(ip):
     notebook_extension(ip=ip)
 
 def unload_ipython_extension(ip):
-    notebook_extension_fn._loaded = False
+    notebook_extension._loaded = False
