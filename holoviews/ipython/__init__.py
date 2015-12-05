@@ -4,7 +4,7 @@ from unittest import SkipTest
 
 import param
 import jinja2
-from IPython.display import display, HTML
+from IPython.display import HTML
 
 import holoviews
 from ..core.options import Store
@@ -87,8 +87,8 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
 
 
 # Populating the namespace for keyword evaluation
-from ..core.options import Cycle, Palette, Store # pyflakes:ignore (namespace import)
-import numpy as np                               # pyflakes:ignore (namespace import)
+from ..core.options import Cycle, Palette # pyflakes:ignore (namespace import)
+import numpy as np                        # pyflakes:ignore (namespace import)
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
