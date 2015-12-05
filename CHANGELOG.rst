@@ -12,38 +12,40 @@ Major new features:
   data interfaces to column based Element types. These interfaces
   allow applying powerful operations on the data independently of the
   data format. The currently supported datatypes include NumPy, pandas
-  dataframes and a simple dictionary format.
+  dataframes and a simple dictionary format. (`PR #284 <https://github.com/ioam/holoviews/pull/284>`_)
 
 * Backend API: In this release we completely refactored the rendering,
   plotting and IPython display system to make it easy to add new plotting
   backends. Data may be styled and pickled for each backend independently and
   renderers now support exporting all plotting data including widgets
-  as standalone HTML files or with separate JSON data.
+  as standalone HTML files or with separate JSON data. 
 
 * Bokeh backend: The first new plotting backend added via the new backend
   API. Bokeh plots allow for much faster plotting and greater interactivity.
   Supports most Element types and layouts and provides facilities for sharing
-  axes across plots and linked brushing across plots.
+  axes across plots and linked brushing across plots. (`PR #250 <https://github.com/ioam/holoviews/pull/250>`_)
 
 * DynamicMap: The new DynamicMap class allows HoloMap data to be generated
   on-the-fly while running a Jupyter IPython notebook kernel. Allows
   visualization of unbounded data streams and smooth exploration of large
-  continuous parameter spaces.
+  continuous parameter spaces. (`PR #278 <https://github.com/ioam/holoviews/pull/278>`_)
 
 Other features:
 
 * Easy definition of custom aliases for group, label and Dimension
-  names, allowing easier use of LaTeX
+  names, allowing easier use of LaTeX.
 * New Trisurface and QuadMesh elements.
-* Widgets now allow expressing hierarchical relationships between
+* Widgets now allow expressing hierarchical relationships betwkeen
   dimensions.
 * Added GridMatrix container for heterogeneous Elements and gridmatrix
   operation to generate scatter matrix showing relationship between
   dimensions.
 * Filled contour regions can now be generated using the contours operation.
-* Consistent indexing semantics for all Elements.
+* Consistent indexing semantics for all Elements and support for
+  boolean indexing for Columns and NdMapping types.
 * New hv.notebook_extension function offers a more flexible alternative
-  to %load_ext.
+  to %load_ext, e.g. for loading other extensions
+  hv.notebook_extension(bokeh=True).
 
 Experimental features:
 
@@ -53,16 +55,15 @@ Experimental features:
 
 Notable bug fixes:
 
-* Major speedup rendering large HoloMaps (~ 2-3 times faster)
+* Major speedup rendering large HoloMaps (~ 2-3 times faster).
 * Colorbars now consistent for all plot configurations.
 * Style pickling now works correctly.
 
-
 API Changes:
 
-* Dimension formatter parameter now deprecated in favor of value_format
-* Types of Chart and Table Element data now dependent on selected interface
-* DFrame conversion interface deprecated
+* Dimension formatter parameter now deprecated in favor of value_format.
+* Types of Chart and Table Element data now dependent on selected interface.
+* DFrame conversion interface deprecated in favor of Columns pandas interface.
 
 
 Version 1.3.2
