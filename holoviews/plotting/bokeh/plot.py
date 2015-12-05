@@ -7,11 +7,12 @@ from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
 from bokeh.models.widgets import Panel, Tabs, DataTable
 
-from ...core import (OrderedDict, CompositeOverlay, Store, Layout,
+from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
 from ...core.options import Compositor
 from ...core.util import basestring
+from ...element import Histogram
 from ..plot import Plot, DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
@@ -188,6 +189,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             if 'height' not in kwargs:
                 kwargs['height'] = 125
 
+            if isinstance(layout, GridMatrix):
+                if view.traverse(lambda x: x, [Histogram]):
+                    kwargs['shared_axes'] = False
+
             # Create subplot
             plotting_class = Store.registry[self.renderer.backend].get(vtype, None)
             if plotting_class is None:
@@ -203,7 +208,14 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                                            if isinstance(subplot, GenericCompositePlot)
                                            else subplot.hmap)
                 subplots[coord] = subplot
+        self.sync_tools(subplots)
         return subplots, collapsed_layout
+
+
+    def sync_tools(self, subplots):
+        tools = list({t for p in subplots.values() for t in p.tools})
+        for plot in subplots.values():
+            plot.tools = tools
 
 
     def initialize_plot(self, ranges=None, plots=[]):
