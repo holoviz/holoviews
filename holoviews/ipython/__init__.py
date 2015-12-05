@@ -140,7 +140,7 @@ class notebook_extension(param.ParameterizedFunction):
 
         load_hvjs(logo=p.logo,
                   JS=('holoviews' in resources),
-                  message = '%s successfully loaded' % loaded)
+                  message = '%s successfully loaded in this cell.' % loaded)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb()
 
