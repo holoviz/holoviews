@@ -68,18 +68,22 @@ class IPTestCase(ComparisonTestCase):
         self.ip.run_line_magic(*args, **kwargs)
 
 
-def load_hvjs(logo=False):
+def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
     """
     Displays javascript and CSS to initialize HoloViews widgets.
     """
     # Evaluate load_notebook.html template with widgetjs code
-    widgetjs, widgetcss = Renderer.embed_assets()
+    if JS:
+        widgetjs, widgetcss = Renderer.embed_assets()
+    else:
+        widgetjs, widgetcss = '', ''
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
     jinjaEnv = jinja2.Environment(loader=templateLoader)
     template = jinjaEnv.get_template('load_notebook.html')
     display(HTML(template.render({'widgetjs': widgetjs,
                                   'widgetcss': widgetcss,
-                                  'logo': logo})))
+                                  'logo': logo,
+                                  'message':message})))
 
 
 # Populating the namespace for keyword evaluation
@@ -107,8 +111,6 @@ class notebook_extension(param.ParameterizedFunction):
 
     def __call__(self, **params):
         resources = self._get_resources(params)
-        if not resources:
-            resources = ['holoviews']
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
 
@@ -129,11 +131,18 @@ class notebook_extension(param.ParameterizedFunction):
             display(HTML(css))
 
         resources = list(resources)
-        if 'holoviews' in resources:
-            resources.pop(resources.index('holoviews'))
-            load_hvjs(logo=p.logo)
-        for backend in resources:
-            Store.renderers[backend].load_nb()
+        if len(resources) == 0: return
+
+        # Create a message for the logo (if shown)
+        js_names = {'holoviews':'HoloViewsJS'} # resource : displayed name
+        loaded = ', '.join(js_names[r] if r in js_names else r.capitalize()+'JS'
+                           for r in resources)
+
+        load_hvjs(logo=p.logo,
+                  JS=('holoviews' in resources),
+                  message = '%s successfully loaded' % loaded)
+        for r in [r for r in resources if r != 'holoviews']:
+            Store.renderers[r].load_nb()
 
 
     def _get_resources(self, params):

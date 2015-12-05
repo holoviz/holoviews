@@ -120,4 +120,4 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        load_notebook()
+        load_notebook(hide_banner=True)
