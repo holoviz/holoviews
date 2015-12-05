@@ -82,10 +82,9 @@ We also support the following install option::
   pip install 'holoviews[extras]'
 
 In addition to the required and recommended packages, this command also
-installs the optional `mpld3 <http://mpld3.github.io/>`_, `pandas
-<http://pandas.pydata.org/>`_ and `Seaborn
-<http://stanford.edu/~mwaskom/software/seaborn/index.html>`_
-libraries.
+installs the optional `bokeh <http://bokeh.pydata.org/en/latest/>`_, `mpld3
+<http://mpld3.github.io/>`_, `pandas <http://pandas.pydata.org/>`_ and `Seaborn
+<http://stanford.edu/~mwaskom/software/seaborn/index.html>`_ libraries.
 
 Lastly, to get everything including `cyordereddict
 <https://pypi.python.org/pypi/cyordereddict>`_ to enable optional
