@@ -88,7 +88,7 @@ import numpy as np                               # pyflakes:ignore (namespace im
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
-class notebook_extension_fn(param.ParameterizedFunction):
+class notebook_extension(param.ParameterizedFunction):
     """
     Parameterized function to initialize notebook resources
     and register magics.
@@ -105,19 +105,20 @@ class notebook_extension_fn(param.ParameterizedFunction):
 
     _loaded = False
 
-    def __call__(self, *resources, **params):
+    def __call__(self, **params):
+        resources = self._get_resources(params)
         if not resources:
             resources = ['holoviews']
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
 
-        if notebook_extension_fn._loaded == False:
+        if self._loaded == False:
             ip = get_ipython() if ip is None else ip
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             OutputMagic.initialize()
             set_display_hooks(ip)
-            notebook_extension_fn._loaded = True
+            self._loaded = True
 
         css = ''
         if p.width is not None:
@@ -135,7 +136,41 @@ class notebook_extension_fn(param.ParameterizedFunction):
             Store.renderers[backend].load_nb()
 
 
-notebook_extension = notebook_extension_fn.instance()
+    def _get_resources(self, params):
+        """
+        Finds the list of resources from the keyword parameters and pops
+        them out of the params dictionary.
+        """
+        resources = []
+        disabled = []
+        for resource in ['holoviews'] + Store.renderers.keys():
+            if resource in params:
+                setting = params.pop(resource)
+                if setting is True and resource != 'matplotlib':
+                    resources.append(resource)
+                if setting is False:
+                    disabled.append(resource)
+
+        if ('holoviews' not in disabled) and ('holoviews' not in resources):
+            resources = ['holoviews'] + resources
+        return resources
+
+
+    @param.parameterized.bothmethod
+    def tab_completion_docstring(self_or_cls):
+        """
+        Generates a docstring that can be used to enable tab-completion
+        of resources.
+        """
+        elements = ['%s=Boolean' %k for k in Store.renderers.keys()]
+        for name, p in self_or_cls.params().items():
+            param_type = p.__class__.__name__
+            elements.append("%s=%s" % (name, param_type))
+
+        return "params(%s)" % ', '.join(['holoviews=Boolean'] + elements)
+
+
+notebook_extension.__doc__ = notebook_extension.tab_completion_docstring()
 
 def load_ipython_extension(ip):
     notebook_extension(ip=ip)
