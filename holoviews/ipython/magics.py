@@ -415,7 +415,7 @@ class CompositorMagic(Magics):
     def compositor(self, line):
         if line.strip():
             for definition in CompositorSpec.parse(line.strip(), ns=self.shell.user_ns):
-                group = {'style':Options(), 'style':Options(), 'norm':Options()}
+                group = {'style':Options(), 'plot': Options(), 'norm':Options()}
                 type_name = definition.output_type.__name__
                 Store.options()[type_name + '.' + definition.group] = group
                 Compositor.register(definition)
