@@ -1183,7 +1183,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def update_backends(self, id_mapping, custom_trees):
+    def update_backends(cls, id_mapping, custom_trees):
         """
         Given the id_mapping from previous ids to new ids and the new
         custom tree dictionary, update the current backend with the
