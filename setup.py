@@ -30,7 +30,7 @@ setup_args.update(dict(
     version="1.4.0",
     install_requires = install_requires,
     extras_require = extras_require,
-    description='Composable, declarative data structures for building complex visualizations easily.',
+    description='Stop plotting your data - annotate your data and let it visualize itself.',
     long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
     author= "Jean-Luc Stevens and Philipp Rudiger",
     author_email= "holoviews@googlegroups.com",
