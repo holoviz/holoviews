@@ -16,7 +16,7 @@ Major new features:
 
 * Backend API: In this release we completely refactored the rendering,
   plotting and IPython display system to make it easy to add new plotting
-  backends. Data may be styled and pickled for each backend indepenently and
+  backends. Data may be styled and pickled for each backend independently and
   renderers now support exporting all plotting data including widgets
   as standalone HTML files or with separate JSON data.
 
@@ -27,8 +27,8 @@ Major new features:
 
 * DynamicMap: The new DynamicMap class allows HoloMap data to be generated
   on-the-fly while running a Jupyter IPython notebook kernel. Allows
-  visualization of unbounded data streams and exploring large continuous
-  parameter spaces.
+  visualization of unbounded data streams and smooth exploration of large
+  continuous parameter spaces.
 
 Other features:
 
@@ -39,9 +39,11 @@ Other features:
   dimensions.
 * Added GridMatrix container for heterogeneous Elements and gridmatrix
   operation to generate scatter matrix showing relationship between
-  dimensions
-* Added operation to get filled contours as Polygons Element
+  dimensions.
+* Filled contour regions can now be generated using the contours operation.
 * Consistent indexing semantics for all Elements.
+* New hv.notebook_extension function offers a more flexible alternative
+  to %load_ext.
 
 Experimental features:
 
@@ -49,13 +51,15 @@ Experimental features:
   bokehJS tools and the IPython kernel, e.g. allowing downsampling
   based on the zoom level.
 
-Bug fixes:
+Notable bug fixes:
 
+* Major speedup rendering large HoloMaps (~ 2-3 times faster)
 * Colorbars now consistent for all plot configurations.
+* Style pickling now works correctly.
+
 
 API Changes:
 
-* Deprecated %load_ext in favor of hv.load_ext function.
 * Dimension formatter parameter now deprecated in favor of value_format
 * Types of Chart and Table Element data now dependent on selected interface
 * DFrame conversion interface deprecated
