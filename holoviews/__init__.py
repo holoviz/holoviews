@@ -34,10 +34,9 @@ try:
     import IPython
     from .ipython import notebook_extension
 except ImportError as e:
-    class _notebook_extension_fn(param.ParameterizedFunction):
+    class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **opts):
             raise Exception("IPython notebook not available")
-    notebook_extension = _notebook_extension_fn.instance()
     if str(e) != 'No module named IPython':
         raise e
 
