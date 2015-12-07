@@ -1,6 +1,6 @@
 import numpy as np
 from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
-from bokeh.models import Circle, GlyphRenderer, ColumnDataSource
+from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
 from ...core import Dimension
@@ -228,11 +228,11 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
-        plot = self._init_chart(init_element)
+        plot = self._init_chart(init_element, ranges)
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
                                            if isinstance(r, GlyphRenderer)]
-        self._update_chart(element)
+        self._update_chart(element, ranges)
 
         # Update plot, source and glyph
         self.drawn = True
@@ -260,14 +260,16 @@ class ChartPlot(ElementPlot):
         ranges = match_spec(element, ranges)
         self.current_ranges = ranges
 
-        self._update_chart(element)
+        self._update_chart(element, ranges)
 
-    def _update_chart(self, element):
-        new_chart = self._init_chart(element)
+
+    def _update_chart(self, element, ranges):
+        new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
         old_renderers = old_chart.select(type=GlyphRenderer)
         new_renderers = new_chart.select(type=GlyphRenderer)
 
+        old_chart.y_range.update(**new_chart.y_range.properties_with_values())
         updated = []
         for new_r in new_renderers:
             for old_r in old_renderers:
@@ -302,7 +304,7 @@ class BoxPlot(ChartPlot):
     as they cannot be consistently updated.
     """
 
-    def _init_chart(self, element):
+    def _init_chart(self, element, ranges):
         plot = BokehBoxPlot(element.dframe(),
                             label=element.dimensions('key', True),
                             values=element.dimensions('value', True)[0])
