@@ -253,7 +253,7 @@ class GridPlot(CompositePlot):
         Rotation angle of the xticks.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the yticks.""")
 
     def __init__(self, layout, axis=None, create_axes=True, ranges=None,
                  keys=None, dimensions=None, layout_num=1, **params):
