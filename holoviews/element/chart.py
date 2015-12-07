@@ -139,12 +139,8 @@ class Bars(Columns):
 
 class BoxWhisker(Chart):
     """
-    Bars is an Element type, representing a number of stacked and
-    grouped bars, depending the dimensionality of the key and value
-    dimensions. Bars is useful for categorical data, which may be
-    laid via groups, categories and stacks. Internally Bars is
-    a NdElement with up to three key dimensions and a single value
-    dimension.
+    BoxWhisker represent data as a distributions highlighting
+    the median, mean and various percentiles.
     """
 
     group = param.String(default='BoxWhisker', constant=True)
