@@ -1,5 +1,5 @@
 import numpy as np
-from bokeh.models import Circle
+from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource
 import param
 
@@ -292,4 +292,20 @@ class ChartPlot(ElementPlot):
         plot = self.handles['plot']
         sources = plot.select(type=ColumnDataSource)
         return sources
+
+
+class BarPlot(ChartPlot):
+    """
+    BoxPlot generates a box and whisker plot from a BoxWhisker
+    Element. This allows plotting the median, mean and various
+    percentiles. Displaying outliers is currently not supported
+    as they cannot be consistently updated.
+    """
+
+    def _init_chart(self, element):
+        plot = Bar(element.dframe(),
+                   label=element.dimensions('key', True),
+                   values=element.dimensions('value', True)[0])
+        return plot
+
 
