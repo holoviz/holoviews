@@ -1,11 +1,12 @@
 import numpy as np
 from bokeh.models import Circle
+from bokeh.models import Circle, GlyphRenderer, ColumnDataSource
 import param
 
 from ...core import Dimension
 from ...core.util import max_range
 from ...element import Chart, Raster, Points, Polygons
-from ..util import compute_sizes, get_sideplot_ranges
+from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import map_colors, get_cmap, mpl_to_bokeh
@@ -203,3 +204,92 @@ class ErrorPlot(PathPlot):
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
         return (dict(xs=err_xs, ys=err_ys), self._mapping)
+
+
+
+class ChartPlot(ElementPlot):
+
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        """
+        Initializes a new plot object with the last available frame.
+        """
+        # Get element key and ranges for frame
+        element = self.hmap.last
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+        self.current_ranges = ranges
+        self.current_frame = element
+        self.current_key = key
+
+        # Initialize plot, source and glyph
+        if plot is not None:
+            raise Exception("Can't overlay Bokeh Charts based plot properties")
+
+        init_element = element.clone(element.interface.concat(self.hmap.values()))
+        plot = self._init_chart(init_element)
+        self.handles['plot'] = plot
+        self.handles['glyph_renderers'] = [r for r in plot.renderers
+                                           if isinstance(r, GlyphRenderer)]
+        self._update_chart(element)
+
+        # Update plot, source and glyph
+        self.drawn = True
+
+        return plot
+
+    def update_frame(self, key, ranges=None, plot=None, element=None):
+        """
+        Updates an existing plot with data corresponding
+        to the key.
+        """
+        element = self._get_frame(key)
+        if not element:
+            if self.dynamic and self.overlaid:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        self.set_param(**self.lookup_options(element, 'plot').options)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+        self.current_ranges = ranges
+
+        self._update_chart(element)
+
+    def _update_chart(self, element):
+        new_chart = self._init_chart(element)
+        old_chart = self.handles['plot']
+        old_renderers = old_chart.select(type=GlyphRenderer)
+        new_renderers = new_chart.select(type=GlyphRenderer)
+
+        updated = []
+        for new_r in new_renderers:
+            for old_r in old_renderers:
+                if type(old_r.glyph) == type(new_r.glyph):
+                    old_renderers.pop(old_renderers.index(old_r))
+                    new_props = new_r.properties_with_values()
+                    source = new_props.pop('data_source')
+                    old_r.glyph.update(**new_r.glyph.properties_with_values())
+                    old_r.update(**new_props)
+                    old_r.data_source.data.update(source.data)
+                    updated.append(old_r)
+                    break
+
+        for old_r in old_renderers:
+            if old_r not in updated:
+                emptied = {k: [] for k in old_r.data_source.data}
+                old_r.data_source.data.update(emptied)
+
+
+    @property
+    def current_handles(self):
+        plot = self.handles['plot']
+        sources = plot.select(type=ColumnDataSource)
+        return sources
+
