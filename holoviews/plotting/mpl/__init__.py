@@ -108,6 +108,7 @@ Store.register({Curve: CurvePlot,
                 VectorField: VectorFieldPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
+                BoxWhisker: BoxPlot,
 
                 # General plots
                 GridSpace: GridPlot,

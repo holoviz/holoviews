@@ -294,6 +294,26 @@ class ChartPlot(ElementPlot):
         return sources
 
 
+class BoxPlot(ChartPlot):
+    """
+    BoxPlot generates a box and whisker plot from a BoxWhisker
+    Element. This allows plotting the median, mean and various
+    percentiles. Displaying outliers is currently not supported
+    as they cannot be consistently updated.
+    """
+
+    def _init_chart(self, element):
+        plot = BokehBoxPlot(element.dframe(),
+                            label=element.dimensions('key', True),
+                            values=element.dimensions('value', True)[0])
+
+        # Disable outliers for now as they cannot be consistently updated.
+        plot.renderers = [r for r in plot.renderers
+                          if not (isinstance(r, GlyphRenderer) and
+                                  isinstance(r.glyph, Circle))]
+        return plot
+
+
 class BarPlot(ChartPlot):
     """
     BoxPlot generates a box and whisker plot from a BoxWhisker

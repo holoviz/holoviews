@@ -980,3 +980,52 @@ class BarPlot(LegendPlot):
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
                         prev += height if np.isfinite(height) else 0
+
+
+class BoxPlot(ChartPlot):
+    """
+    BoxPlot plots the ErrorBar Element type and supporting
+    both horizontal and vertical error bars via the 'horizontal'
+    plot option.
+    """
+
+    style_opts = ['notch', 'sym', 'vert', 'whis', 'bootstrap',
+                  'conf_intervals', 'widths', 'showmeans',
+                  'show_caps', 'showfliers', 'boxprops',
+                  'whiskerprops', 'capprops', 'flierprops',
+                  'medianprops', 'meanprops', 'meanline']
+
+
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles['axis']
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        xlabel = ','.join([str(d) for d in element.kdims])
+
+        self.handles['artist'] = self.get_artist(element, axis)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges, xlabel=xlabel)
+
+    def get_artist(self, element, axis):
+        dims = element.dimensions()
+        groups = element.groupby(element.kdims)
+
+        data, labels = [], []
+        for key, group in groups.data.items():
+            label = ','.join([d.pprint_value(v) for d, v in zip(groups.kdims, key)])
+            data.append(group[group.vdims[0]])
+            labels.append(label)
+        boxplot = axis.boxplot(data, labels=labels, **self.style[self.cyclic_index])
+        return boxplot
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        for k, group in self.handles['artist'].items():
+            for v in group:
+                v.remove()
+        self.handles['artist'] = self.get_artist(element, axis)
+

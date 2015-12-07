@@ -137,6 +137,23 @@ class Bars(Columns):
 
 
 
+class BoxWhisker(Chart):
+    """
+    Bars is an Element type, representing a number of stacked and
+    grouped bars, depending the dimensionality of the key and value
+    dimensions. Bars is useful for categorical data, which may be
+    laid via groups, categories and stacks. Internally Bars is
+    a NdElement with up to three key dimensions and a single value
+    dimension.
+    """
+
+    group = param.String(default='BoxWhisker', constant=True)
+
+    kdims = param.List(default=[Dimension('x')], bounds=(0,None))
+
+    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+
+
 class Histogram(Element2D):
     """
     Histogram contains a number of bins, which are defined by the
