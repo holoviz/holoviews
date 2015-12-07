@@ -324,10 +324,30 @@ class BarPlot(ChartPlot):
     as they cannot be consistently updated.
     """
 
-    def _init_chart(self, element):
-        plot = Bar(element.dframe(),
-                   label=element.dimensions('key', True),
-                   values=element.dimensions('value', True)[0])
-        return plot
+    group_index = param.Integer(default=0, doc="""
+       Index of the dimension in the supplied Bars
+       Element, which will be laid out into groups.""")
 
+    category_index = param.Integer(default=1, doc="""
+       Index of the dimension in the supplied Bars
+       Element, which will be laid out into categories.""")
+
+    stack_index = param.Integer(default=2, doc="""
+       Index of the dimension in the supplied Bars
+       Element, which will stacked.""")
+
+    def _init_chart(self, element, ranges):
+        kdims = element.dimensions('key', True)
+        vdim = element.dimensions('value', True)[0]
+        kwargs = {}
+        if self.group_index < element.ndims:
+            kwargs['group'] = kdims[self.group_index]
+        if self.category_index < element.ndims:
+            kwargs['label'] = kdims[self.category_index]
+        if self.stack_index < element.ndims:
+            kwargs['stack'] = kdims[self.stack_index]
+        crange = Range1d(*ranges.get(vdim))
+        plot = Bar(element.dframe(), values=vdim,
+                   continuous_range=crange, **kwargs)
+        return plot
 
