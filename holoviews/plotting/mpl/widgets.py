@@ -104,6 +104,8 @@ class MPLWidget(NdWidget):
         if self.export_json:
             self.save_json(frames)
             return {}
+        elif not isinstance(frames, dict):
+            pass
         elif self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
