@@ -341,6 +341,7 @@ class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
     Test of the ArrayColumns interface.
     """
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['array']
         self.data_instance_type = np.ndarray
         self.init_data()
@@ -354,6 +355,7 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     def setUp(self):
         if pd is None:
             raise SkipTest("Pandas not available")
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['dataframe']
         self.data_instance_type = pd.DataFrame
         self.init_data()
@@ -366,6 +368,7 @@ class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     """
 
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['dictionary']
         self.data_instance_type = (dict, cyODict, OrderedDict)
         self.init_data()
@@ -378,6 +381,7 @@ class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     """
 
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['ndelement']
         self.data_instance_type = NdElement
         self.init_data()
