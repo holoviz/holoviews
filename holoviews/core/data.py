@@ -417,7 +417,8 @@ class DataColumns(param.Parameterized):
         # Set interface priority order
         if datatype is None:
             datatype = eltype.datatype
-        prioritized = [cls.interfaces[p] for p in datatype]
+        prioritized = [cls.interfaces[p] for p in datatype
+                       if p in cls.interfaces]
 
         head = [intfc for intfc in prioritized if type(data) in intfc.types]
         if head:
