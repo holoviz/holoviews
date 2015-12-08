@@ -812,11 +812,13 @@ class DFColumns(DataColumns):
     @classmethod
     def sample(cls, columns, samples=[]):
         data = columns.data
-        mask = np.zeros(cls.length(columns), dtype=bool)
+        mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask = np.logical_or(mask, data.iloc[:, i]==v)
+                sample_mask = np.logical_and(sample_mask, data.iloc[:, i]==v)
+            mask |= sample_mask
         return data[mask]
 
 
@@ -995,9 +997,12 @@ class ArrayColumns(DataColumns):
         data = columns.data
         mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask |= data[:, i]==v
+                sample_mask &= data[:, i]==v
+            mask |= sample_mask
+
         return data[mask]
 
 
@@ -1195,13 +1200,17 @@ class DictColumns(DataColumns):
 
     @classmethod
     def sample(cls, columns, samples=[]):
-        mask = np.zeros(len(columns),  dtype=np.bool)
+        mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
                 name = columns.get_dimension(i).name
-                mask |= (np.array(columns.data[name])==v)
-        return  {k:np.array(col)[mask] for k, col in columns.data.items()}
+                sample_mask &= (np.array(columns.data[name])==v)
+            mask |= sample_mask
+        return {k: np.array(col)[mask]
+                for k, col in columns.data.items()}
+
 
     @classmethod
     def aggregate(cls, columns, kdims, function, **kwargs):
