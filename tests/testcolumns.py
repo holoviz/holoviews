@@ -336,7 +336,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                          np.column_stack([self.xs, self.ys]))
 
 
-class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
+class ArrayColumnsTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the ArrayColumns interface.
     """
@@ -347,7 +347,7 @@ class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
         self.init_data()
 
 
-class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class DFColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the pandas DFColumns interface.
     """
@@ -362,7 +362,7 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
 
 
 
-class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class DictColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the generic dictionary interface.
     """
@@ -375,7 +375,7 @@ class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
 
 
 
-class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class NdColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the NdColumns interface (mostly for backwards compatibility)
     """
