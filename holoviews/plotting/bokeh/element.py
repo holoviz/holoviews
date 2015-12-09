@@ -677,7 +677,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             ranges = self.compute_ranges(self.hmap, key, ranges)
 
         for k, subplot in self.subplots.items():
-            subplot.update_frame(key, ranges, element=element.get(k, None))
+            el = None if element is None else element.get(k, None)
+            subplot.update_frame(key, ranges, element=el)
         if not self.overlaid and not self.tabs:
             self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)
