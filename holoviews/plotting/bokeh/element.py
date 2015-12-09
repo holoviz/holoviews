@@ -627,7 +627,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         """
         tools = []
         for i, subplot in enumerate(self.subplots.values()):
-            tools.extend(subplot._init_tools(element.get(i)))
+            el = element.get(i)
+            if el is not None:
+                tools.extend(subplot._init_tools(el))
         return list(set(tools))
 
 
@@ -677,7 +679,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             ranges = self.compute_ranges(self.hmap, key, ranges)
 
         for k, subplot in self.subplots.items():
-            el = None if element is None else element.get(k, None)
+            el = element.get(k, None) if self.dynamic and element is not None else None
             subplot.update_frame(key, ranges, element=el)
         if not self.overlaid and not self.tabs:
             self._update_ranges(element, ranges)
