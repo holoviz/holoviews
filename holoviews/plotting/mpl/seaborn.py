@@ -177,7 +177,7 @@ class DistributionPlot(FullRedrawPlot):
 
     def _update_plot(self, axis, view):
         label = view.label if self.overlaid == 1 else ''
-        sns.distplot(view.dimension_values(1), ax=axis, label=label, **self.style)
+        sns.distplot(view.dimension_values(0), ax=axis, label=label, **self.style)
 
 
 

@@ -158,6 +158,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _axes_props(self, plots, subplots, element, ranges):
+        dims = element.dimensions()
         xlabel, ylabel, zlabel = self._axis_labels(element, subplots)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
@@ -180,7 +181,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             x_axis_type = 'datetime'
         else:
             x_axis_type = 'log' if self.logx else 'auto'
-        if element.get_dimension_type(1) is np.datetime64:
+
+        if len(dims) > 1 and element.get_dimension_type(1) is np.datetime64:
             y_axis_type = 'datetime'
         else:
             y_axis_type = 'log' if self.logy else 'auto'

@@ -52,6 +52,10 @@ class Columns(Element):
         format listed will be used until a suitable format is found (or
         the data fails to be understood).""")
 
+    # In the 1D case the interfaces should not automatically add x-values
+    # to supplied data
+    _1d = False
+
     def __init__(self, data, **kwargs):
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
@@ -572,7 +576,10 @@ class NdColumns(DataColumns):
             data = tuple(data.get(d) for d in dimensions)
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = (np.arange(len(data)), data)
+                if eltype._1d:
+                    data = np.atleast_2d(data).T
+                else:
+                    data = (np.arange(len(data)), data)
             else:
                 data = tuple(data[:, i]  for i in range(data.shape[1]))
         elif isinstance(data, list) and np.isscalar(data[0]):
@@ -694,7 +701,10 @@ class DFColumns(DataColumns):
                 data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    data = (range(len(data)), data)
+                    if eltype._1d:
+                        data = np.atleast_2d(data).T
+                    else:
+                        data = (range(len(data)), data)
                 else:
                     data = tuple(data[:, i]  for i in range(data.shape[1]))
 
@@ -877,7 +887,10 @@ class ArrayColumns(DataColumns):
         if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
             raise ValueError("ArrayColumns interface could not handle input type.")
         elif data.ndim == 1:
-            data = np.column_stack([np.arange(len(data)), data])
+            if eltype._1d:
+                data = np.atleast_2d(data).T
+            else:
+                data = np.column_stack([np.arange(len(data)), data])
 
         if kdims is None:
             kdims = eltype.kdims
@@ -1063,7 +1076,10 @@ class DictColumns(DataColumns):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = np.column_stack([np.arange(len(data)), data])
+                if eltype._1d:
+                    data = np.atleast_2d(data).T
+                else:
+                    data = np.column_stack([np.arange(len(data)), data])
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}

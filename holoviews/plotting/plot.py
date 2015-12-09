@@ -492,17 +492,21 @@ class GenericElementPlot(DimensionedPlot):
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
         """
+        ndims = len(view.dimensions())
         num = 6 if self.projection == '3d' else 4
         if self.apply_ranges:
             if ranges:
                 dims = view.dimensions()
                 x0, x1 = ranges[dims[0].name]
-                y0, y1 = ranges[dims[1].name]
+                if ndims > 1:
+                    y0, y1 = ranges[dims[1].name]
+                else:
+                    y0, y1 = (np.NaN, np.NaN)
                 if self.projection == '3d':
                     z0, z1 = ranges[dims[2].name]
             else:
                 x0, x1 = view.range(0)
-                y0, y1 = view.range(1)
+                y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
                 if self.projection == '3d':
                     z0, z1 = view.range(2)
             if self.projection == '3d':
