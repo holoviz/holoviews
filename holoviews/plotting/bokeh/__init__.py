@@ -82,7 +82,7 @@ Store.register({Overlay: OverlayPlot,
 
 
 AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
-AdjointLayoutPlot.registry[Spikes] = Spikes
+AdjointLayoutPlot.registry[Spikes] = SpikesPlot
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot

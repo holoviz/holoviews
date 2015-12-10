@@ -140,8 +140,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # instance attribute.
     _update_handles = ['source', 'glyph']
 
-    def __init__(self, element, plot=None, invert_axes=False,
-                 show_labels=['x', 'y'], **params):
+    def __init__(self, element, plot=None, show_labels=['x', 'y'], **params):
         self.show_labels = show_labels
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
