@@ -31,6 +31,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
+    invert_axes = param.ObjectSelector(default=False, doc="""
+        Inverts the axes of the plot. Note that this parameter may not
+        always be respected by all plots but should be respected by
+        adjoined plots when appropriate.""")
+
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -45,13 +50,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the y-axis of the Chart.""")
-
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'], doc="""
-        The orientation of the plot. Note that this parameter may not
-        always be respected by all plots but should be respected by
-        adjoined plots when appropriate valid options are 'horizontal'
-        and 'vertical'.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -139,6 +137,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                            if isinstance(sp.hmap, HoloMap))
             if element is not None and not suppress:
                 xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
+                if self.invert_axes:
+                    xlabel, ylabel = ylabel, xlabel
+
                 self._finalize_limits(axis, element, subplots, ranges)
 
                 # Tick formatting
@@ -227,6 +228,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_zlim((zmin, zmax))
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
             l, r = (c if np.isfinite(c) else None for c in (l, r))
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r

@@ -291,7 +291,7 @@ class HistogramPlot(ChartPlot):
 
         super(HistogramPlot, self).__init__(histograms, **params)
 
-        if self.orientation == 'vertical':
+        if self.invert_axes:
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
@@ -309,7 +309,7 @@ class HistogramPlot(ChartPlot):
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
 
-        if self.orientation == 'vertical':
+        if self.invert_axes:
             self.offset_linefn = self.handles['axis'].axvline
             self.plotfn = self.handles['axis'].barh
         else:
@@ -363,7 +363,7 @@ class HistogramPlot(ChartPlot):
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
         y0 = np.nanmin([0, y0])
-        return (y0, x0, y1, x1) if self.orientation == 'vertical' else (x0, y0, x1, y1)
+        return (x0, y0, x1, y1)
 
 
     def _process_axsettings(self, hist, lims, ticks):
@@ -390,7 +390,7 @@ class HistogramPlot(ChartPlot):
         """
         plot_vals = zip(self.handles['artist'], edges, hvals, widths)
         for bar, edge, height, width in plot_vals:
-            if self.orientation == 'vertical':
+            if self.invert_axes:
                 bar.set_y(edge)
                 bar.set_width(height)
                 bar.set_height(width)
@@ -446,16 +446,6 @@ class SideHistogramPlot(HistogramPlot):
         return edges, hvals, widths, lims
 
 
-    def _process_axsettings(self, hist, lims, ticks):
-        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
-        label = 'ylabel' if self.orientation == 'vertical' else 'xlabel'
-        if not self.show_xlabel:
-            axsettings[label] = ''
-        else:
-            axsettings[label] = str(hist.kdims[0])
-        return axsettings
-
-
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
         super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
         self._update_plot(n, element, self.handles['artist'], lims, ranges)
@@ -494,7 +484,7 @@ class SideHistogramPlot(HistogramPlot):
     def get_extents(self, element, ranges):
         x0, _, x1, _ = element.extents
         _, y1 = element.range(1)
-        return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+        return (x0, 0, x1, y1)
 
 
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
@@ -521,7 +511,7 @@ class SideHistogramPlot(HistogramPlot):
             offset_line.set_visible(False)
         else:
             offset_line.set_visible(True)
-            if self.orientation == 'vertical':
+            if self.invert_axes:
                 offset_line.set_xdata(offset)
             else:
                 offset_line.set_ydata(offset)
