@@ -203,3 +203,53 @@ class ErrorPlot(PathPlot):
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
         return (dict(xs=err_xs, ys=err_ys), self._mapping)
+
+
+class SpikesPlot(PathPlot):
+
+    color_index = param.Integer(default=1, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    spike_height = param.Number(default=0.1)
+
+    yposition = param.Number(default=0.)
+
+    style_opts = (['cmap', 'palette'] + line_properties)
+
+    def get_extents(self, element, ranges):
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
+        if len(element.dimensions()) == 1:
+            b, t = self.yposition, self.yposition+self.spike_height
+        return l, b, r, t
+
+
+    def get_data(self, element, ranges=None):
+        style = self.style[self.cyclic_index]
+        dims = element.dimensions(label=True)
+
+        ypos = self.yposition
+        if len(dims) > 1:
+            xs, ys = zip(*(((x, x), (ypos, ypos+y))
+                           for x, y in element.array()))
+            mapping = dict(xs=dims[0], ys=dims[1])
+            keys = (dims[0], dims[1])
+        else:
+            height = self.spike_height
+            xs, ys = zip(*(((x[0], x[0]), (ypos, ypos+height))
+                           for x in element.array()))
+            mapping = dict(xs=dims[0], ys='heights')
+            keys = (dims[0], 'heights')
+        if self.invert_axes: keys = keys[::-1]
+        data = dict(zip(keys, (xs, ys)))
+
+        cmap = style.get('palette', style.get('cmap', None))        
+        if self.color_index < len(dims) and cmap:
+            cdim = dims[self.color_index]
+            map_key = 'color_' + cdim
+            mapping['color'] = map_key
+            cmap = get_cmap(cmap)
+            colors = element.dimension_values(cdim)
+            crange = ranges.get(cdim, None)
+            data[map_key] = map_colors(colors, crange, cmap)
+
+        return data, mapping

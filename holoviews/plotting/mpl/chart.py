@@ -4,6 +4,7 @@ from itertools import product
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
+from matplotlib.collections import LineCollection
 
 import param
 
@@ -12,6 +13,7 @@ from ...core.util import match_spec, unique_iterator
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .path  import PathPlot
 
 
 class ChartPlot(ElementPlot):
@@ -970,3 +972,105 @@ class BarPlot(LegendPlot):
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
                         prev += height if np.isfinite(height) else 0
+
+
+class SpikesPlot(PathPlot):
+
+    aspect = param.Parameter(default='square', doc="""
+        The aspect ratio mode of the plot. Allows setting an
+        explicit aspect ratio as width/height as well as
+        'square' and 'equal' options.""")
+
+    color_index = param.Integer(default=1, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    spike_height = param.Number(default=0.5)
+
+    yposition = param.Number(default=0)
+
+    style_opts = PathPlot.style_opts + ['cmap']
+
+    def initialize_plot(self, ranges=None):
+        lines = self.hmap.last
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(lines, ranges)
+        style = self.style[self.cyclic_index]
+        label = lines.label if self.show_legend else ''
+
+        data, array, clim = self.get_data(lines, ranges)
+        if array is not None:
+            style['array'] = array
+            style['clim'] = clim
+
+        line_segments = LineCollection(data, label=label,
+                                       zorder=self.zorder, **style)
+        self.handles['artist'] = line_segments
+        self.handles['axis'].add_collection(line_segments)
+
+        return self._finalize_axis(key, ranges=ranges)
+
+
+    def get_data(self, element, ranges):
+        dimensions = element.dimensions(label=True)
+        ndims = len(dimensions)
+
+        ypos = self.yposition
+        if ndims > 1:
+            data = [[(x, ypos), (x, ypos+y)] for x, y in element.array()]
+        else:
+            height = self.spike_height
+            data = [[(x[0], ypos), (x[0], ypos+height)] for x in element.array()]
+
+        if self.invert_axes:
+            data = [(line[0][::-1], line[1][::-1]) for line in data]
+
+        array, clim = None, None
+        if self.color_index < ndims:
+            cdim = dimensions[self.color_index]
+            array = element.dimension_values(cdim)
+            clime = ranges[cdim]
+        return data, array, clim
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        artist = self.handles['artist']
+        data, array, clim = self.get_data(element)
+        artist.set_paths(data)
+        visible = self.style[self.cyclic_index].get('visible', True)
+        artist.set_visible(visible)
+        if array is not None:
+            paths.set_clim(ranges[val_dim])
+            paths.set_array(cs)
+
+
+class MarginalRugPlot(SpikesPlot):
+
+    aspect = param.Parameter(default='auto', doc="""
+        Aspect ratios on SideHistogramPlot should be determined by the
+        AdjointLayoutPlot.""")
+
+    show_title = param.Boolean(default=False, doc="""
+        Titles should be disabled on all SidePlots to avoid clutter.""")
+
+    show_frame = param.Boolean(default=False)
+
+    show_xlabel = param.Boolean(default=False, doc="""
+        Whether to show the x-label of the plot. Disabled by default
+        because plots are often too cramped to fit the title correctly.""")
+
+    xaxis = param.ObjectSelector(default='bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='bare',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+

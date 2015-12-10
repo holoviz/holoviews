@@ -3,7 +3,7 @@ from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours,
                         Path, Box, Bounds, Ellipse, Polygons,
-                        ErrorBars, Text, HLine, VLine, Spline,
+                        ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Surface, Scatter3D, Trisurface)
 from ...core.options import Options, Cycle, OptionTree
 from ...interface import DFrame
@@ -14,7 +14,7 @@ from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callbacks
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    AdjointHistogramPlot)
+                    AdjointHistogramPlot, SpikesPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
@@ -37,6 +37,7 @@ Store.register({Overlay: OverlayPlot,
                 Scatter: PointPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
+                Spikes: SpikesPlot,
 
                 # Rasters
                 Image: RasterPlot,
@@ -81,7 +82,7 @@ Store.register({Overlay: OverlayPlot,
 
 
 AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
-
+AdjointLayoutPlot.registry[Spikes] = Spikes
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
