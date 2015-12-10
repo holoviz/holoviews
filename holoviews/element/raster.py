@@ -433,6 +433,7 @@ class HeatMap(Columns, Element2D):
             (d1, d2) = self.raster.shape[:2]
             self.extents = (0, 0, d2, d1)
 
+        super(HeatMap, self).__setstate__(state)
 
     def dense_keys(self):
         d1keys = self.dimension_values(0, True)
