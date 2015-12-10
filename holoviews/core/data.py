@@ -86,6 +86,7 @@ class Columns(Element):
         elif util.is_dataframe(self.data):
             self.interface = DFColumns
 
+        super(Columns, self).__setstate__(state)
 
     def closest(self, coords):
         """
