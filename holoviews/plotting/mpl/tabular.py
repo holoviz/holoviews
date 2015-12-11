@@ -4,8 +4,9 @@ from matplotlib.table import Table as mpl_Table
 
 import param
 
-from .element import ElementPlot
 from ...core.util import safe_unicode
+from ...core.dimension import Dimension
+from .element import ElementPlot
 
 
 class TablePlot(ElementPlot):
@@ -86,10 +87,10 @@ class TablePlot(ElementPlot):
         if isinstance(value, float):
             formatter = '{:.%df}' % self.float_precision
             formatted = formatter.format(value)
-        elif isinstance(value, str):
-            formatted = safe_unicode(value)
+        elif isinstance(value, Dimension):
+            formatted = safe_unicode(value.pprint_label)
         else:
-            formatted = str(value)
+            formatted = safe_unicode(value)
 
         if len(formatted) > self.max_value_len:
             return formatted[:(self.max_value_len-3)]+'...'

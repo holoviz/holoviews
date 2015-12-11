@@ -3,6 +3,8 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+from __future__ import unicode_literals
+
 import re
 from operator import itemgetter
 
@@ -16,7 +18,8 @@ import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer)
+                         find_range, dimension_sanitizer,
+                         safe_unicode)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -128,7 +131,7 @@ class Dimension(param.Parameterized):
     def pprint_label(self):
         "The pretty-printed label string for the Dimension"
         unit = '' if self.unit is None else self.unit_format.format(unit=self.unit)
-        return self.name + unit
+        return safe_unicode(self.name) + unit
 
 
     def pprint_value(self, value):

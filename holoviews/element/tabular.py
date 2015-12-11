@@ -4,6 +4,7 @@ import param
 
 from ..core import (OrderedDict, Dimension, Element, Columns,
                     Tabular, NdElement, HoloMap)
+from ..core.util import safe_unicode
 
 
 class ItemTable(Element):
@@ -102,7 +103,7 @@ class ItemTable(Element):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return str(self.dimensions('value')[row])
+            return safe_unicode(self.dimensions('value')[row])
         else:
             dim = self.get_dimension(row)
             heading = self.vdims[row]
