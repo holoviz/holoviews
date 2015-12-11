@@ -4,7 +4,7 @@ import param
 
 from ...core import Dimension
 from ...core.util import max_range
-from ...element import Chart, Raster, Points, Polygons
+from ...element import Chart, Raster, Points, Polygons, Spikes
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
@@ -147,13 +147,19 @@ class AdjointHistogramPlot(HistogramPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
-    width = param.Integer(default=125)
+    height = param.Integer(default=125, doc="The height of the plot")
+
+    width = param.Integer(default=125, doc="The width of the plot")
+
+    show_title = param.Boolean(default=False, doc="""
+        Whether to display the plot title.""")
 
     def get_data(self, element, ranges=None):
         if self.invert_axes:
             mapping = dict(top='left', bottom='right', left=0, right='top')
         else:
             mapping = dict(top='top', bottom=0, left='left', right='right')
+
         data = dict(top=element.values, left=element.edges[:-1],
                     right=element.edges[1:])
 
@@ -161,7 +167,7 @@ class AdjointHistogramPlot(HistogramPlot):
         main = self.adjoined.main
         range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
         vals = element.dimension_values(dim)
-        if isinstance(range_item, (Raster, Points, Polygons)):
+        if isinstance(range_item, (Raster, Points, Polygons, Spikes)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
         else:
             style = {}
