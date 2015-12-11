@@ -143,7 +143,7 @@ class HistogramPlot(ElementPlot):
         return (data, mapping)
 
 
-class AdjointHistogramPlot(HistogramPlot):
+class SideHistogramPlot(HistogramPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
@@ -265,7 +265,7 @@ class SpikesPlot(PathPlot):
 
 
 
-class MarginalSpikesPlot(SpikesPlot):
+class SideSpikesPlot(SpikesPlot):
     """
     SpikesPlot with useful defaults for plotting adjoined rug plot.
     """

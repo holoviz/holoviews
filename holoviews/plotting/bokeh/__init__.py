@@ -14,7 +14,7 @@ from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callbacks
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    AdjointHistogramPlot, SpikesPlot, MarginalSpikesPlot)
+                    SideHistogramPlot, SpikesPlot, SideSpikesPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
@@ -81,8 +81,8 @@ Store.register({Overlay: OverlayPlot,
                'bokeh')
 
 
-AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
-AdjointLayoutPlot.registry[Spikes] = MarginalSpikesPlot
+AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
+AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot

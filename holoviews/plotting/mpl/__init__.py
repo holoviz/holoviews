@@ -159,7 +159,7 @@ Store.register({Curve: CurvePlot,
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           GridSpace: GridPlot,
-                          Spikes: MarginalRugPlot})
+                          Spikes: SideSpikesPlot})
 
 options = Store.options(backend='matplotlib')
 

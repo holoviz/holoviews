@@ -1047,7 +1047,7 @@ class SpikesPlot(PathPlot):
             paths.set_array(cs)
 
 
-class MarginalRugPlot(SpikesPlot):
+class SideSpikesPlot(SpikesPlot):
 
     aspect = param.Parameter(default='auto', doc="""
         Aspect ratios on SideHistogramPlot should be determined by the
