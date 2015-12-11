@@ -349,11 +349,12 @@ class VectorField(Points):
 
 class Spikes(Chart):
     """
-    Spikes is a 1D or 2D Element, which represents vertical or
-    horizontal ticks along some dimension.  If an additional dimension
-    is supplied it will be used to specify the height of the
-    lines. The Element may therefore be used to represent 1D
-    distributions, spectrograms or spike trains in electrophysiology.
+    Spikes is a 1D or 2D Element, which represents a series of
+    vertical or horizontal lines distributed along some dimension. If
+    an additional dimension is supplied it will be used to specify the
+    height of the lines. The Element may therefore be used to
+    represent 1D distributions, spectrograms or spike trains in
+    electrophysiology.
     """
 
     group = param.String(default='Spikes', constant=True)
