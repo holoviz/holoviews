@@ -14,7 +14,7 @@ from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callbacks
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    AdjointHistogramPlot, SpikesPlot)
+                    AdjointHistogramPlot, SpikesPlot, MarginalSpikesPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
@@ -82,7 +82,7 @@ Store.register({Overlay: OverlayPlot,
 
 
 AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
-AdjointLayoutPlot.registry[Spikes] = SpikesPlot
+AdjointLayoutPlot.registry[Spikes] = MarginalSpikesPlot
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot

@@ -262,3 +262,28 @@ class SpikesPlot(PathPlot):
             data[map_key] = map_colors(colors, crange, cmap)
 
         return data, mapping
+
+
+
+class MarginalSpikesPlot(SpikesPlot):
+    """
+    SpikesPlot with useful defaults for plotting adjoined rug plot.
+    """
+
+    xaxis = param.ObjectSelector(default='top-bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='right-bare',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    height = param.Integer(default=80, doc="Height of plot")
+
+    width = param.Integer(default=80, doc="Width of plot")
