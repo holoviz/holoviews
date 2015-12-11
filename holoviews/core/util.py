@@ -710,3 +710,47 @@ def get_param_values(data):
 def wrap_tuple(unwrapped):
     """ Wraps any non-tuple types in a tuple """
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
+
+def unpack_group(group, getter):
+    for k, v in group.iterrows():
+        obj = v.values[0]
+        key = getter(k)
+        if hasattr(obj, 'kdims'):
+            yield (key, obj)
+        else:
+            yield [((), (v.ix[0],))]
+
+
+def ndmapping_groupby_pandas(ndmapping, dimensions, container_type, group_type, **kwargs):
+    from .ndmapping import NdMapping
+    idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+    all_dims = [d.name for d in ndmapping.kdims]
+    inds = [ndmapping.get_dimension_index(dim) for dim in idims]
+    getter = operator.itemgetter(*inds)
+    multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(),
+                                            names=all_dims)
+    df = pd.DataFrame(ndmapping.values(), index=multi_index)
+    grouped = ((k, group_type(unpack_group(group, getter), kdims=idims, **kwargs))
+               for k, group in df.groupby(level=[d.name for d in dimensions]))
+    return container_type(grouped, kdims=dimensions)
+
+
+def ndmapping_groupby_python(ndmapping, dimensions, container_type, group_type, **kwargs):
+    inds = [ndmapping.get_dimension_index(dim) for dim in dimensions]
+    idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+    dim_names = [dim.name for dim in dimensions]
+    getter = operator.itemgetter(*inds)
+    selects = unique_iterator(getter(key) if len(inds) > 1 else (key[inds[0]],)
+                              for key in ndmapping.data.keys())
+    selects = group_select(list(selects))
+    groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
+                              else [((), (v,))]), **kwargs))
+              for k, v in iterative_select(ndmapping, dim_names, selects)]
+    return container_type(groups, kdims=dimensions)
+
+
+try:
+    import pandas
+    ndmapping_groupby = ndmapping_groupby_pandas
+except:
+    ndmapping_groupby = ndmapping_groupby_python

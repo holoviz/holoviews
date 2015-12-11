@@ -11,7 +11,7 @@ import numpy as np
 
 import param
 
-from . import traversal
+from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select, basestring, wrap_tuple, process_ellipses
 
@@ -275,22 +275,10 @@ class MultiDimensionalMapping(Dimensioned):
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
             return self
-
-        dimensions = [self.get_dimension(d).name for d in dimensions]
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
-        dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
-                         for dim in dimensions))
-        inames, idims = zip(*((dim.name, dim) for dim in self.kdims
-                              if not dim.name in dimensions))
-        selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
-                                  for key in self.data.keys())
-        with item_check(False):
-            selects = group_select(list(selects))
-            groups = [(k, group_type((v.reindex(inames) if isinstance(v, NdMapping)
-                                      else [((), (v,))]), **kwargs))
-                      for k, v in iterative_select(self, dimensions, selects)]
-            return container_type(groups, kdims=dims)
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        return util.ndmapping_groupby(self, dimensions, container_type, group_type, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
