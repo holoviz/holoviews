@@ -154,6 +154,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
+        cls.equality_type_funcs[Spikes] =       cls.compare_spikes
 
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
@@ -498,6 +499,10 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_bars(cls, el1, el2, msg='Bars'):
+        cls.compare_columns(el1, el2, msg)
+
+    @classmethod
+    def compare_spikes(cls, el1, el2, msg='Spikes'):
         cls.compare_columns(el1, el2, msg)
 
     #=========#
