@@ -1018,7 +1018,7 @@ class SpikesPlot(PathPlot):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
 
-        ypos = self.position
+        pos = self.position
         if ndims > 1:
             data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
         else:
