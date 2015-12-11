@@ -210,16 +210,18 @@ class SpikesPlot(PathPlot):
     color_index = param.Integer(default=1, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    spike_height = param.Number(default=0.1)
+    spike_length = param.Number(default=0.5, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
 
-    yposition = param.Number(default=0.)
+    position = param.Number(default=0., doc="""
+      The position of the lower end of each spike.""")
 
-    style_opts = (['cmap', 'palette'] + line_properties)
+    style_opts = (['color', 'cmap', 'palette'] + line_properties)
 
     def get_extents(self, element, ranges):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
         if len(element.dimensions()) == 1:
-            b, t = self.yposition, self.yposition+self.spike_height
+            b, t = self.position, self.position+self.spike_length
         return l, b, r, t
 
 
@@ -227,18 +229,19 @@ class SpikesPlot(PathPlot):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
-        ypos = self.yposition
+        pos = self.position
         if len(dims) > 1:
-            xs, ys = zip(*(((x, x), (ypos, ypos+y))
+            xs, ys = zip(*(((x, x), (pos, pos+y))
                            for x, y in element.array()))
             mapping = dict(xs=dims[0], ys=dims[1])
             keys = (dims[0], dims[1])
         else:
-            height = self.spike_height
-            xs, ys = zip(*(((x[0], x[0]), (ypos, ypos+height))
+            height = self.spike_length
+            xs, ys = zip(*(((x[0], x[0]), (pos, pos+height))
                            for x in element.array()))
             mapping = dict(xs=dims[0], ys='heights')
             keys = (dims[0], 'heights')
+
         if self.invert_axes: keys = keys[::-1]
         data = dict(zip(keys, (xs, ys)))
 

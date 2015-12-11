@@ -984,9 +984,11 @@ class SpikesPlot(PathPlot):
     color_index = param.Integer(default=1, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    spike_height = param.Number(default=0.5)
+    spike_length = param.Number(default=0.5, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
 
-    yposition = param.Number(default=0)
+    position = param.Number(default=0., doc="""
+      The position of the lower end of each spike.""")
 
     style_opts = PathPlot.style_opts + ['cmap']
 
@@ -1016,12 +1018,12 @@ class SpikesPlot(PathPlot):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
 
-        ypos = self.yposition
+        ypos = self.position
         if ndims > 1:
-            data = [[(x, ypos), (x, ypos+y)] for x, y in element.array()]
+            data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
         else:
-            height = self.spike_height
-            data = [[(x[0], ypos), (x[0], ypos+height)] for x in element.array()]
+            height = self.spike_length
+            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array()]
 
         if self.invert_axes:
             data = [(line[0][::-1], line[1][::-1]) for line in data]
