@@ -115,6 +115,7 @@ options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
 options.Points = Options('style', color=Cycle())
+options.Spikes = Options('style', color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())

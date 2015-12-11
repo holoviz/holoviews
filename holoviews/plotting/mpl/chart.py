@@ -984,7 +984,7 @@ class SpikesPlot(PathPlot):
     color_index = param.Integer(default=1, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    spike_length = param.Number(default=0.5, doc="""
+    spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
 
     position = param.Number(default=0., doc="""
@@ -1052,6 +1052,9 @@ class MarginalRugPlot(SpikesPlot):
     aspect = param.Parameter(default='auto', doc="""
         Aspect ratios on SideHistogramPlot should be determined by the
         AdjointLayoutPlot.""")
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
 
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")
