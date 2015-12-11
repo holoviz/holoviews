@@ -353,13 +353,15 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             if pos != 'main':
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
-                    side_opts = dict(height=main_plot.height, yaxis='right',
-                                     invert_axes=True, width=120, show_labels=['y'],
-                                     xticks=2, show_title=False)
+                    yaxis = 'right-bare' if 'bare' in plot_type.yaxis else 'right'
+                    side_opts = dict(height=main_plot.height, yaxis=yaxis,
+                                     width=plot_type.width, invert_axes=True,
+                                     show_labels=['y'], xticks=1, xaxis=main_plot.xaxis)
                 else:
-                    side_opts = dict(width=main_plot.width, xaxis='top',
-                                     height=120, show_labels=['x'], yticks=2,
-                                     show_title=False)
+                    xaxis = 'top-bare' if 'bare' in plot_type.xaxis else 'top'
+                    side_opts = dict(width=main_plot.width, xaxis=xaxis,
+                                     height=plot_type.height, show_labels=['x'],
+                                     yticks=1, yaxis=main_plot.yaxis)
 
             # Override the plotopts as required
             # Customize plotopts depending on position.

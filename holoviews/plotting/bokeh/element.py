@@ -58,6 +58,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
           {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
 
+    invert_axes = param.Boolean(default=False, doc="""
+        Whether to invert the x- and y-axis""")
+
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -137,9 +140,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # instance attribute.
     _update_handles = ['source', 'glyph']
 
-    def __init__(self, element, plot=None, invert_axes=False,
-                 show_labels=['x', 'y'], **params):
-        self.invert_axes = invert_axes
+    def __init__(self, element, plot=None, show_labels=['x', 'y'], **params):
         self.show_labels = show_labels
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
