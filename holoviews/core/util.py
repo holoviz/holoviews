@@ -735,44 +735,56 @@ def unpack_group(group, getter):
             yield (wrap_tuple(key), obj)
 
 
-def ndmapping_groupby_pandas(ndmapping, dimensions, container_type,
-                             group_type, sort=False, **kwargs):
-    if 'kdims' in kwargs:
-        idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
-    else:
+
+
+class ndmapping_groupby(param.ParameterizedFunction):
+    """
+    Apply a groupby operation to an NdMapping, using pandas to improve
+    performance (if available).
+    """
+
+    def __call__(self, ndmapping, dimensions, container_type,
+                 group_type, sort=False, **kwargs):
+        try:
+            import pandas
+            groupby = self.groupby_pandas
+        except:
+            groupby = self.groupby_python
+        return groupby(ndmapping, dimensions, container_type,
+                       group_type, sort=sort, **kwargs)
+
+    @param.parameterized.bothmethod
+    def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
+                       group_type, sort=False, **kwargs):
+        if 'kdims' in kwargs:
+            idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
+        else:
+            idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+
+        all_dims = [d.name for d in ndmapping.kdims]
+        inds = [ndmapping.get_dimension_index(dim) for dim in idims]
+        getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
+
+        multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
+        df = pd.DataFrame(ndmapping.values(), index=multi_index)
+
+        kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
+        groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+                   for k, group in df.groupby(level=[d.name for d in dimensions]))
+
+        if sort:
+            selects = list(get_unique_keys(ndmapping, dimensions))
+            groups = sorted(groups, key=lambda x: selects.index(x[0]))
+        return container_type(groups, kdims=dimensions)
+
+    @param.parameterized.bothmethod
+    def groupby_python(self_or_cls, ndmapping, dimensions, container_type,
+                       group_type, sort=False, **kwargs):
         idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
-
-    all_dims = [d.name for d in ndmapping.kdims]
-    inds = [ndmapping.get_dimension_index(dim) for dim in idims]
-    getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
-
-    multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
-    df = pd.DataFrame(ndmapping.values(), index=multi_index)
-
-    kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
-    groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
-               for k, group in df.groupby(level=[d.name for d in dimensions]))
-
-    if sort:
-        selects = list(get_unique_keys(ndmapping, dimensions))
-        groups = sorted(groups, key=lambda x: selects.index(x[0]))
-    return container_type(groups, kdims=dimensions)
-
-
-def ndmapping_groupby_python(ndmapping, dimensions, container_type,
-                             group_type, sort=False, **kwargs):
-    idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
-    dim_names = [dim.name for dim in dimensions]
-    selects = get_unique_keys(ndmapping, dimensions)
-    selects = group_select(list(selects))
-    groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
-                              else [((), (v,))]), **kwargs))
-              for k, v in iterative_select(ndmapping, dim_names, selects)]
-    return container_type(groups, kdims=dimensions)
-
-
-try:
-    import pandas
-    ndmapping_groupby = ndmapping_groupby_pandas
-except:
-    ndmapping_groupby = ndmapping_groupby_python
+        dim_names = [dim.name for dim in dimensions]
+        selects = get_unique_keys(ndmapping, dimensions)
+        selects = group_select(list(selects))
+        groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
+                                  else [((), (v,))]), **kwargs))
+                  for k, v in iterative_select(ndmapping, dim_names, selects)]
+        return container_type(groups, kdims=dimensions)
