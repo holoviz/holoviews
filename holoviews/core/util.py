@@ -737,8 +737,11 @@ def unpack_group(group, getter):
 
 def ndmapping_groupby_pandas(ndmapping, dimensions, container_type,
                              group_type, sort=False, **kwargs):
-    idims = [dim for dim in ndmapping.kdims if dim not in dimensions
-             and dim != 'Index']
+    if 'kdims' in kwargs:
+        idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
+    else:
+        idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+
     all_dims = [d.name for d in ndmapping.kdims]
     inds = [ndmapping.get_dimension_index(dim) for dim in idims]
     getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
