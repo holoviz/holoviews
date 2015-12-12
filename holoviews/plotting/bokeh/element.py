@@ -611,6 +611,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if not plot.legend:
             return
         plot.legend[0].set(**options)
+        legend_fontsize = self._fontsize('legend', 'size').get('size',False)
+        if legend_fontsize:
+            plot.legend[0].label_text_font_size = legend_fontsize
+
         plot.legend.orientation = self.legend_position
         legends = plot.legend[0].legends
         new_legends = []

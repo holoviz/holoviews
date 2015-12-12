@@ -646,7 +646,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
             leg = axis.legend(data.keys(), data.values(),
                               title=title, scatterpoints=1,
-                              **leg_spec)
+                              **dict(leg_spec, **self._fontsize('legend')))
             frame = leg.get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')

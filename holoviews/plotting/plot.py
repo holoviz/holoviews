@@ -135,7 +135,7 @@ class DimensionedPlot(Plot):
        Finer control is available by supplying a dictionary where any
        unmentioned keys reverts to the default sizes, e.g:
 
-          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}
+          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5, 'legend':8}
 
        You can set the fontsize of both 'ylabel' and 'xlabel' together
        using the 'labels' key.""")
