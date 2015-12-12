@@ -9,6 +9,11 @@ import numpy as np
 import param
 
 try:
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
+
+try:
     import pandas as pd
 except ImportError:
     pd = None
