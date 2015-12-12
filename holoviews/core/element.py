@@ -284,13 +284,17 @@ class NdElement(NdMapping, Tabular):
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
 
-        if not isinstance(data, NdElement) and isinstance(data, Element):
-            mapping = data.mapping()
+        if isinstance(data, Element):
+            params = dict(get_param_values(data), **params)
+            if isinstance(data, NdElement):
+                mapping = data.mapping()
+                data = mapping.data
+            else:
+                data = data.data
             if 'kdims' not in params:
                 params['kdims'] = mapping.kdims
             if 'vdims' not in params:
                 params['vdims'] = mapping.vdims
-            data = mapping.data
 
         kdims = params.get('kdims', self.kdims)
         if (data is not None and not isinstance(data, NdMapping)

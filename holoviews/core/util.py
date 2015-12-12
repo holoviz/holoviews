@@ -756,7 +756,8 @@ def ndmapping_groupby_pandas(ndmapping, dimensions, container_type,
     return container_type(groups, kdims=dimensions)
 
 
-def ndmapping_groupby_python(ndmapping, dimensions, container_type, group_type, **kwargs):
+def ndmapping_groupby_python(ndmapping, dimensions, container_type,
+                             group_type, sort=False, **kwargs):
     idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
     dim_names = [dim.name for dim in dimensions]
     selects = get_unique_keys(ndmapping, dimensions)
