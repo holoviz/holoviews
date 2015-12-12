@@ -279,8 +279,9 @@ class MultiDimensionalMapping(Dimensioned):
         group_type = group_type if group_type else type(self)
         dimensions = [self.get_dimension(d) for d in dimensions]
         sort = not self._sorted
-        return util.ndmapping_groupby(self, dimensions, container_type,
-                                      group_type, sort=sort, **kwargs)
+        with item_check(False):
+            return util.ndmapping_groupby(self, dimensions, container_type,
+                                          group_type, sort=sort, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
