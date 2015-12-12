@@ -716,6 +716,14 @@ def wrap_tuple(unwrapped):
     """ Wraps any non-tuple types in a tuple """
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
+
+def get_unique_keys(ndmapping, dimensions):
+    inds = [ndmapping.get_dimension_index(dim) for dim in dimensions]
+    getter = operator.itemgetter(*inds)
+    return unique_iterator(getter(key) if len(inds) > 1 else (key[inds[0]],)
+                           for key in ndmapping.data.keys())
+
+
 def unpack_group(group, getter):
     for k, v in group.iterrows():
         obj = v.values[0]
@@ -723,30 +731,35 @@ def unpack_group(group, getter):
         if hasattr(obj, 'kdims'):
             yield (key, obj)
         else:
-            yield [((), (v.ix[0],))]
+            obj = tuple(v)
+            yield (wrap_tuple(key), obj)
 
 
-def ndmapping_groupby_pandas(ndmapping, dimensions, container_type, group_type, **kwargs):
-    from .ndmapping import NdMapping
-    idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+def ndmapping_groupby_pandas(ndmapping, dimensions, container_type,
+                             group_type, sort=False, **kwargs):
+    idims = [dim for dim in ndmapping.kdims if dim not in dimensions
+             and dim != 'Index']
     all_dims = [d.name for d in ndmapping.kdims]
     inds = [ndmapping.get_dimension_index(dim) for dim in idims]
-    getter = operator.itemgetter(*inds)
-    multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(),
-                                            names=all_dims)
+    getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
+
+    multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
     df = pd.DataFrame(ndmapping.values(), index=multi_index)
-    grouped = ((k, group_type(unpack_group(group, getter), kdims=idims, **kwargs))
+
+    kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
+    groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
                for k, group in df.groupby(level=[d.name for d in dimensions]))
-    return container_type(grouped, kdims=dimensions)
+
+    if sort:
+        selects = list(get_unique_keys(ndmapping, dimensions))
+        groups = sorted(groups, key=lambda x: selects.index(x[0]))
+    return container_type(groups, kdims=dimensions)
 
 
 def ndmapping_groupby_python(ndmapping, dimensions, container_type, group_type, **kwargs):
-    inds = [ndmapping.get_dimension_index(dim) for dim in dimensions]
     idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
     dim_names = [dim.name for dim in dimensions]
-    getter = operator.itemgetter(*inds)
-    selects = unique_iterator(getter(key) if len(inds) > 1 else (key[inds[0]],)
-                              for key in ndmapping.data.keys())
+    selects = get_unique_keys(ndmapping, dimensions)
     selects = group_select(list(selects))
     groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
                               else [((), (v,))]), **kwargs))
