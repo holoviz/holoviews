@@ -188,11 +188,57 @@ def display(obj, raw=False, **kwargs):
 
 
 def pprint_display(obj):
-    # If pretty printing is off, return None (will fallback to repr)
+    if 'html' not in Store.display_formats:
+        return None
+
+    # If pretty printing is off, return None (fallback to next display format)
     ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
     return display(obj, raw=True)
+
+
+@display_hook
+def element_png_display(element, max_frames, max_branches):
+    """
+    Used to render elements to PNG if requested in the display formats.
+    """
+    if 'png' not in Store.display_formats:
+        return None
+    info = process_object(element)
+    if info: return info
+
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    # Current renderer does not support PNG
+    if 'png' not in renderer.params('fig').objects:
+        return None
+
+    data, info = renderer(element, fmt='png')
+    return data
+
+
+@display_hook
+def element_svg_display(element, max_frames, max_branches):
+    """
+    Used to render elements to SVG if requested in the display formats.
+    """
+    if 'svg' not in Store.display_formats:
+        return None
+    info = process_object(element)
+    if info: return info
+
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    # Current renderer does not support SVG
+    if 'svg' not in renderer.params('fig').objects:
+        return None
+    data, info = renderer(element, fmt='svg')
+    return data
 
 
 # display_video output by default, but may be set to first_frame,
@@ -205,3 +251,9 @@ def set_display_hooks(ip):
     html_formatter.for_type(UniformNdMapping, pprint_display)
     html_formatter.for_type(AdjointLayout, pprint_display)
     html_formatter.for_type(Layout, pprint_display)
+
+    png_formatter = ip.display_formatter.formatters['image/png']
+    png_formatter.for_type(ViewableElement, element_png_display)
+
+    svg_formatter = ip.display_formatter.formatters['image/svg+xml']
+    svg_formatter.for_type(ViewableElement, element_svg_display)

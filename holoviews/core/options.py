@@ -769,6 +769,10 @@ class Store(object):
     # types grouped by the backend. Set using the register method.
     registry = {}
 
+    # A list of formats to be published for display on the frontend (e.g
+    # IPython Notebook or a GUI application)
+    display_formats = ['html']
+
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
     _options = {}
