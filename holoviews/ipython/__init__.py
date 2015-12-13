@@ -119,8 +119,8 @@ class notebook_extension(param.ParameterizedFunction):
 
     _loaded = False
 
-    def __call__(self, **params):
-        resources = self._get_resources(params)
+    def __call__(self, *args, **params):
+        resources = self._get_resources(args, params)
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
         Store.display_formats = p.display_formats
@@ -162,7 +162,7 @@ class notebook_extension(param.ParameterizedFunction):
             Store.renderers[r].load_nb()
 
 
-    def _get_resources(self, params):
+    def _get_resources(self, args, params):
         """
         Finds the list of resources from the keyword parameters and pops
         them out of the params dictionary.
@@ -170,13 +170,23 @@ class notebook_extension(param.ParameterizedFunction):
         resources = []
         disabled = []
         for resource in ['holoviews'] + list(Store.renderers.keys()):
+            if resource in args:
+                resources.append(resource)
+
             if resource in params:
                 setting = params.pop(resource)
                 if setting is True and resource != 'matplotlib':
-                    resources.append(resource)
+                    if resource not in resources:
+                        resources.append(resource)
                 if setting is False:
                     disabled.append(resource)
 
+        unmatched_args = set(args) - set(resources)
+        if unmatched_args:
+            display(HTML('<b>Warning:</b> Unrecognized resources %s'
+                         % ', '.join(unmatched_args)))
+
+        resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
             resources = ['holoviews'] + resources
         return resources
