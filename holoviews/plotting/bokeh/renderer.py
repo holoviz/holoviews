@@ -1,5 +1,6 @@
 from ...core import Store, HoloMap, OrderedDict
 from ..renderer import Renderer, MIME_TYPES
+from .util import plot_to_dict, old_bokeh, serialize_json
 from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
 
 import param
@@ -11,12 +12,6 @@ from bokeh.models import DataSource
 from bokeh.plotting import Figure
 from bokeh.resources import CDN
 
-try:
-    from bokeh.protocol import serialize_json
-    old_bokeh = True
-except ImportError:
-    from bokeh._json_encoder import serialize_json
-    old_bokeh = False
 
 class BokehRenderer(Renderer):
 
@@ -55,18 +50,7 @@ class BokehRenderer(Renderer):
             html = '<center>%s</center>' % html
             return html, info
         elif fmt == 'json':
-            plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
-                           for h in handles]
-            data = OrderedDict()
-            if not old_bokeh:
-                data['root'] = plot.state._id
-            for plotobj in plotobjects:
-                if old_bokeh:
-                    json = plotobj.vm_serialize(changed_only=True)
-                else:
-                    json = plotobj.to_json(False)
-                data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
-                                           'data': json}
+            data = plot_to_dict(plot)
             return serialize_json(data), info
 
 
