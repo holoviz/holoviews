@@ -10,6 +10,15 @@ except ImportError:
 from bokeh.enums import Palette
 from bokeh.plotting import figure, Plot
 
+from ...core import OrderedDict
+
+try:
+    from bokeh.protocol import serialize_json
+    old_bokeh = True
+except ImportError:
+    from bokeh._json_encoder import serialize_json
+    old_bokeh = False
+
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
            'd': {'marker': 'diamond'},
@@ -118,3 +127,24 @@ def layout_padding(plots):
 
 def convert_datetime(time):
     return time.astype('datetime64[s]').astype(float)*1000
+
+
+def plot_to_dict(plot):
+    """
+    Gets the current bokeh plot objects from a HoloViews plot and
+    converts it to a dictionary, which may subsequently be converted
+    to json.
+    """
+    plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
+                           for h in handles]
+    data = OrderedDict()
+    if not old_bokeh:
+        data['root'] = plot.state._id
+    for plotobj in plotobjects:
+        if old_bokeh:
+            json = plotobj.vm_serialize(changed_only=True)
+        else:
+            json = plotobj.to_json(False)
+        data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
+                                   'data': json}
+    return data

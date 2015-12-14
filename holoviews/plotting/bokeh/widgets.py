@@ -2,6 +2,7 @@ import os, json
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
+from .util import plot_to_dict
 
 class BokehWidget(NdWidget):
 
@@ -32,6 +33,17 @@ class BokehWidget(NdWidget):
         """
         self.plot.update(idx)
         return self.renderer.html(self.plot, fig_format)
+
+    def update(self, key=None, raw=False):
+        if key is None: key = self.current_key
+        if self.plot.dynamic: key = tuple(key)
+        if key is not None: self.current_key = key
+
+        if raw:
+            self.plot.update(key)
+            return plot_to_dict(self.plot)
+        else:
+            return self._plot_figure(key)
 
 
 class BokehSelectionWidget(BokehWidget, SelectionWidget):

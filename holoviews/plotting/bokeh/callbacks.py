@@ -14,6 +14,8 @@ except ImportError:
 
 import param
 
+from ...core.spaces import Stream
+from ..widgets import NdWidget
 from .plot import BokehPlot
 
 
@@ -137,7 +139,7 @@ class Callback(param.ParameterizedFunction):
             return self.serialize(objects)
 
 
-    def serialize(self, objects):
+    def serialize(self, objects, serialized={}):
         """
         Serializes any Bokeh plot objects passed to it as a list.
         """
@@ -148,7 +150,43 @@ class Callback(param.ParameterizedFunction):
             else:
                 json = obj.to_json(False)
             data[obj.ref['id']] = {'type': obj.ref['type'], 'data': json}
+        data.update(serialized)
         return serialize_json(data)
+
+
+class StreamCallback(Callback, Stream):
+    """
+    The StreamCallbacks are a type of callback, which simply updates
+    the current state of the Stream and then.
+    """
+
+    widget = param.String(default=None)
+
+    def update(self, data, chained=False):
+        """
+        The update method is called by the javascript callback
+        with the supplied data and will return the json serialized
+        string representation of the changes to the Bokeh plot.
+        When chained=True it will return a list of the plot objects
+        to be updated, allowing chaining of callback operations.
+        """
+        if self.skip_unchanged and self.current_data == data:
+            return [] if chained else "{}"
+        self.current_data = data
+
+        objects = self(data)
+
+        for stream in self.streams:
+            objects += stream.update(data, True)
+
+        serialized = {}
+        if self.widget:
+            serialized = NdWidget.widgets[self.widget].update(raw=True)
+
+        if chained:
+            return objects
+        else:
+            return self.serialize(objects, serialized)
 
 
 
