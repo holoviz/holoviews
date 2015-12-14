@@ -524,13 +524,14 @@ class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
+        if plots is None: plots = []
         adjoined_plots = []
         for pos in ['main', 'right', 'top']:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
-                passed_plots = plots + adjoined_plots
+                passed_plots = plots  + adjoined_plots
                 adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
