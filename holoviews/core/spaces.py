@@ -329,6 +329,18 @@ class HoloMap(UniformNdMapping):
 
 
 
+class Stream(param.ParameterizedFunction):
+    """
+    Streams allows holding some state, which is made available
+    to the DynamicMap callback. The Stream state may be updated
+    by a callback on it's own or by any other means.
+    """
+
+    value = param.Parameter(default=None, doc="""
+        Default value of the stream.""")
+
+
+
 class DynamicMap(HoloMap):
     """
     A DynamicMap is a type of HoloMap where the elements are dynamically
@@ -387,6 +399,9 @@ class DynamicMap(HoloMap):
        sampled via getitem or the sampling is determined during plotting
        by a HoloMap with fixed sampling.
        """)
+
+    streams = param.Dict(default={}, doc="""Defines a dictionary of Streams
+       to be attached to this object.""")
 
     def __init__(self, callback, initial_items=None, **params):
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
@@ -467,7 +482,10 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'generator':
             retval = next(self.callback)
         else:
-            retval = self.callback(*args)
+            kwargs = {}
+            if self.streams:
+                kwargs['streams'] = {k: v.value for k, v in self.streams.items()}
+            retval = self.callback(*args, **kwargs)
 
         if self.call_mode=='key':
             return retval
@@ -586,6 +604,8 @@ class DynamicMap(HoloMap):
         """
         Request that a key/value pair be considered for caching.
         """
+        if len(self) and self.streams:
+            return
         if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
             return
         if len(self) >= self.cache_size:
