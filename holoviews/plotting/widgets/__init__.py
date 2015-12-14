@@ -3,7 +3,7 @@ import os, uuid, json, math
 import param
 
 import numpy as np
-from ...core import OrderedDict, NdMapping
+from ...core import OrderedDict, NdMapping, DynamicMap
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
                           unique_iterator)
@@ -77,6 +77,14 @@ class NdWidget(param.Parameterized):
         self.plot = plot
         self.dimensions = plot.dimensions
         self.keys = plot.keys
+
+        if hasattr(plot, 'layout'):
+            dmaps = plot.layout.traverse(lambda x: x, [DynamicMap])
+        else:
+            dmaps = plot.hmap.traverse(lambda x: x, [DynamicMap])
+        for dmap in dmaps:
+            for s in dmap.streams.values():
+                s.widget = self.id
 
         self.json_data = {}
         if self.plot.dynamic: self.embed = False
@@ -265,6 +273,7 @@ class SelectionWidget(NdWidget):
                     widget_type = 'dropdown'
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = repr([v for v in dim_vals if v is not None])
+            self.current_key = tuple(init_dim_vals)
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
