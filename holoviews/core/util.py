@@ -717,6 +717,16 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
+def itervalues(obj):
+    "Get value iterator from dictionary for Python 2 and 3"
+    return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
+
+
+def iterkeys(obj):
+    "Get key iterator from dictionary for Python 2 and 3"
+    return iter(obj.keys()) if sys.version_info.major == 3 else obj.iterkeys()
+
+
 def get_unique_keys(ndmapping, dimensions):
     inds = [ndmapping.get_dimension_index(dim) for dim in dimensions]
     getter = operator.itemgetter(*inds)
