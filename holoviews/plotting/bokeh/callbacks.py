@@ -34,6 +34,9 @@ class Callback(param.ParameterizedFunction):
     modified bokeh plot objects.
     """
 
+    apply_on_update = param.Boolean(default=True, doc="""
+        Whether the callback is applied when the plot is updated""")
+
     callback_obj = param.ClassSelector(class_=(PlotObject,), doc="""
         Bokeh PlotObject the callback is applied to.""")
 
@@ -286,7 +289,7 @@ class Callbacks(param.Parameterized):
         object to be installed on the appropriate plot object.
         """
         if pycallback.reinitialize:
-            pycallback = pycallback.instance()
+            pycallback = pycallback.instance(plots=[])
         pycallback.callback_obj = cb_obj
         pycallback.plots.append(plot)
 
@@ -297,23 +300,20 @@ class Callbacks(param.Parameterized):
 
         # Generate callback JS code to get all the requested data
         self_callback = Callback.IPython_callback.format(callback_id=cb_id)
-        data, code = {}, ''
+        code = ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
             if v is None:
                 code += "data[{key}] = plot.get({key});\n".format(**format_kwargs)
-                data[k] = plot.state.vm_props().get(k)
             else:
                 code += "data[{key}] = {attrs}.map(function(attr) {{" \
                         "  return plot.get({key}).get(attr)" \
                         "}})\n".format(**format_kwargs)
-                data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
-                           for attr in v]
         if pycallback.cb_attributes:
             code += "data['cb_obj'] = {attrs}.map(function(attr) {{"\
                     "  return cb_obj.get(attr)}});\n".format(attrs=repr(pycallback.cb_attributes))
-            data['cb_obj'] = [pycallback.callback_obj.vm_props().get(attr)
-                              for attr in pycallback.cb_attributes]
+
+        data = self._get_data(pycallback, plot)
         code = Callback.JS_callback + code + pycallback.code + self_callback
 
         # Generate CustomJS object
@@ -325,6 +325,19 @@ class Callbacks(param.Parameterized):
 
         return customjs, pycallback
 
+
+    def _get_data(self, pycallback, plot):
+        data = {}
+        for k, v in pycallback.plot_attributes.items():
+            if v is None:
+                data[k] = plot.state.vm_props().get(k)
+            else:
+                data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
+                           for attr in v]
+        if pycallback.cb_attributes:
+            data['cb_obj'] = [pycallback.callback_obj.vm_props().get(attr)
+                              for attr in pycallback.cb_attributes]
+        return data
 
     def _chain_callbacks(self, plot, cb_obj, callbacks):
         """
@@ -368,3 +381,12 @@ class Callbacks(param.Parameterized):
         if self.selection:
             for tool in plot.state.select(type=(ColumnDataSource)):
                 self._chain_callbacks(plot, tool, self.selection)
+
+    def update(self, plot):
+        """
+        Allows updating the callbacks before data is sent to frontend.
+        """
+        for cb in self.callbacks.values():
+            if cb.apply_on_update and plot in cb.plots:
+                data = self._get_data(cb, plot)
+                cb(data)

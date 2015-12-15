@@ -431,6 +431,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_plot(key, plot, element)
         if self.callbacks:
             self.callbacks(self)
+            self.callbacks.update(self)
         self._process_legend()
         self.drawn = True
 
@@ -474,6 +475,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.overlaid:
             self._update_ranges(element, ranges)
             self._update_plot(key, plot, element)
+        if self.callbacks:
+            self.callbacks.update(self)
 
 
     @property
