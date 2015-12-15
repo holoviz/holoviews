@@ -14,6 +14,7 @@ except ImportError:
 
 import param
 
+from ...core.data import ArrayColumns
 from .plot import BokehPlot
 
 
@@ -212,13 +213,24 @@ class DownsampleColumns(Callback):
     up to max_samples.
     """
 
-    max_samples = param.Integer(default=800)
+    max_samples = param.Integer(default=800, doc="""
+        Maximum number of samples to display at the same time.""")
+
+    random_seed = param.Integer(default=42, doc="""
+        Seed used to initialize randomization.""")
+
+    reinitialize = param.Boolean(default=True, doc="""
+        DownsampleColumns should be reinitialized per plot object""")
 
     plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
                                           'y_range': ['start', 'end']})
 
     def initialize(self, data):
-        return self(data)
+        plot = self.plots[0]
+        maxn = np.max([len(el) for el in plot.hmap])
+        np.random.seed(self.random_seed)
+        self.random_index = np.random.choice(maxn, maxn, False)
+
 
     def __call__(self, data):
         xstart, xend = data['x_range']
@@ -226,6 +238,8 @@ class DownsampleColumns(Callback):
 
         plot = self.plots[0]
         element = plot.current_frame
+        if element.interface is not ArrayColumns:
+            element = plot.current_frame.clone(datatype=['array'])
         ranges  = plot.current_ranges
 
         # Slice element to current ranges
@@ -237,14 +251,13 @@ class DownsampleColumns(Callback):
         if len(sliced) > self.max_samples:
             # Randomize element samples and slice to region
             # Randomization consistent to avoid "flicker".
-            np.random.seed(42)
-            inds = np.random.choice(len(element), len(element), False)
+            length = len(element)
+            inds = self.random_index[self.random_index<length]
             data = element.data[inds, :]
-            randomized = element.clone(data)
+            randomized = element.clone(data, datatype=['array'])
             sliced = randomized.select(**{xdim: (xstart, xend),
                                           ydim: (ystart, yend)})
-
-        sliced = sliced.clone(sliced.data[:self.max_samples, :])
+            sliced = sliced.clone(sliced.data[:self.max_samples, :])
 
         # Update data source
         new_data = plot.get_data(sliced, ranges)[0]
