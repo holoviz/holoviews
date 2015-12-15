@@ -469,6 +469,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         source = self.handles['source']
         data, mapping = self.get_data(element, ranges)
         self._update_datasource(source, data)
+
+        self.style = self.lookup_options(element, 'style')
         if 'glyph' in self.handles:
             properties = self._glyph_properties(plot, element, source, ranges)
             self._update_glyph(self.handles['glyph'], properties, mapping)
