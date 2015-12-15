@@ -562,17 +562,19 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ndims = points.shape[1]
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
-        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
+        cs = None
+        if self.color_index is not None and self.color_index < ndims:
+            cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
-        if cs is not None:
-            style['c'] = cs
-        else:
+        if cs is None:
             style['c'] = color
+        else:
+            style['c'] = cs
         edgecolor = style.pop('edgecolors', 'none')
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
