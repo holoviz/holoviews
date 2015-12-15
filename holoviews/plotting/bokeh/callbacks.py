@@ -35,7 +35,7 @@ class Callback(param.ParameterizedFunction):
     modified bokeh plot objects.
     """
 
-    apply_on_update = param.Boolean(default=True, doc="""
+    apply_on_update = param.Boolean(default=False, doc="""
         Whether the callback is applied when the plot is updated""")
 
     callback_obj = param.ClassSelector(class_=(PlotObject,), doc="""
@@ -165,6 +165,10 @@ class DownsampleImage(Callback):
     constraints.
     """
 
+    apply_on_update = param.Boolean(default=True, doc="""
+        Callback should always be applied after each update to
+        downsample the data before it is displayed.""")
+
     max_width = param.Integer(default=250, doc="""
         Maximum plot width in pixels after slicing and downsampling.""")
 
@@ -212,6 +216,10 @@ class DownsampleColumns(Callback):
     the rows and updating the ColumnDataSource with
     up to max_samples.
     """
+
+    apply_on_update = param.Boolean(default=True, doc="""
+        Callback should always be applied after each update to
+        downsample the data before it is displayed.""")
 
     max_samples = param.Integer(default=800, doc="""
         Maximum number of samples to display at the same time.""")
