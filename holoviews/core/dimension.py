@@ -508,7 +508,7 @@ class Dimensioned(LabelledData):
 
     __abstract = True
     _sorted = False
-    _dim_groups = ['kdims', 'vdims', 'cdims', 'ddims']
+    _dim_groups = ['kdims', 'vdims', 'ddims']
     _dim_aliases = dict(key_dimensions='kdims', value_dimensions='vdims',
                         constant_dimensions='cdims', deep_dimensions='ddims')
 
@@ -528,7 +528,7 @@ class Dimensioned(LabelledData):
     def deep_dimensions(self): return self.ddims
 
     def __init__(self, data, **params):
-        for group in self._dim_groups+list(self._dim_aliases.keys()):
+        for group in self._dim_groups+['cdims']+list(self._dim_aliases.keys()):
             if group in ['deep_dimensions', 'ddims']: continue
             if group in params:
                 if group in self._dim_aliases:
