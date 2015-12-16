@@ -3,7 +3,7 @@ from io import BytesIO
 import numpy as np
 import bokeh
 import bokeh.plotting
-from bokeh.models import Range, HoverTool
+from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 from distutils.version import LooseVersion
@@ -372,7 +372,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        return getattr(plot, self._plot_method)(**dict(properties, **mapping))
 
 
     def _glyph_properties(self, plot, element, source, ranges):
@@ -414,16 +414,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._init_axes(plot)
         self.handles['plot'] = plot
 
-        data, mapping = self.get_data(element, ranges)
+        # Get data and initialize data source
+        empty = self.callbacks and self.callbacks.downsample
+        data, mapping = self.get_data(element, ranges, empty)
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = source
 
         properties = self._glyph_properties(plot, element, source, ranges)
-        self._init_glyph(plot, mapping, properties)
-        glyph = plot.renderers[-1].glyph
-        self.handles['glyph_renderer'] = plot.renderers[-1]
+        glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph']  = glyph
+        renderer = plot.renderers[-1]
+        if isinstance(renderer, Renderer):
+            self.handles['glyph_renderer'] = plot.renderers[-1]
 
         # Update plot, source and glyph
         self._update_glyph(glyph, properties, mapping)
@@ -467,7 +470,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         plot = self.handles['plot']
         source = self.handles['source']
-        data, mapping = self.get_data(element, ranges)
+        empty = self.callbacks and self.callbacks.downsample
+        data, mapping = self.get_data(element, ranges, empty)
         self._update_datasource(source, data)
 
         self.style = self.lookup_options(element, 'style')
@@ -636,10 +640,12 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
-        for i, subplot in enumerate(self.subplots.values()):
-            el = element.get(i)
-            if el is not None:
-                tools.extend(subplot._init_tools(el))
+        for key, subplot in self.subplots.items():
+            try:
+                el = element[key]
+            except:
+                el = None
+            tools.extend(subplot._init_tools(el))
         return list(set(tools))
 
 

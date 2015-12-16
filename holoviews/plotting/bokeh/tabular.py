@@ -16,9 +16,9 @@ class TablePlot(BokehPlot, GenericElementPlot):
     style_opts = ['row_headers', 'selectable', 'editable',
                   'sortable', 'fit_columns', 'width', 'height']
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         dims = element.dimensions()
-        return ({d.name: element.dimension_values(d) for d in dims},
+        return ({d.name: [] if empty else element.dimension_values(d) for d in dims},
                 {d.name: d.name for d in dims})
 
 

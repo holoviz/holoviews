@@ -156,7 +156,22 @@ class Callback(param.ParameterizedFunction):
 
 
 
-class DownsampleImage(Callback):
+class DownsampleCallback(Callback):
+    """
+    DownsampleCallbacks can downsample the data before it is
+    plotted and can therefore provide major speed optimizations.
+    """
+
+    apply_on_update = param.Boolean(default=True, doc="""
+        Callback should always be applied after each update to
+        downsample the data before it is displayed.""")
+
+    reinitialize = param.Boolean(default=True, doc="""
+        DownsampleColumns should be reinitialized per plot object""")
+
+
+
+class DownsampleImage(DownsampleCallback):
     """
     Downsamples any Image plot to the specified
     max_width and max_height by slicing the
@@ -164,10 +179,6 @@ class DownsampleImage(Callback):
     and then finding step values matching the
     constraints.
     """
-
-    apply_on_update = param.Boolean(default=True, doc="""
-        Callback should always be applied after each update to
-        downsample the data before it is displayed.""")
 
     max_width = param.Integer(default=250, doc="""
         Maximum plot width in pixels after slicing and downsampling.""")
@@ -210,25 +221,21 @@ class DownsampleImage(Callback):
 
 
 
-class DownsampleColumns(Callback):
+class DownsampleColumns(DownsampleCallback):
     """
     Downsamples any column based Element by randomizing
     the rows and updating the ColumnDataSource with
     up to max_samples.
     """
 
-    apply_on_update = param.Boolean(default=True, doc="""
-        Callback should always be applied after each update to
-        downsample the data before it is displayed.""")
+    compute_ranges = param.Boolean(default=False, doc="""
+        Whether the ranges are recomputed for the sliced region""")
 
     max_samples = param.Integer(default=800, doc="""
         Maximum number of samples to display at the same time.""")
 
     random_seed = param.Integer(default=42, doc="""
         Seed used to initialize randomization.""")
-
-    reinitialize = param.Boolean(default=True, doc="""
-        DownsampleColumns should be reinitialized per plot object""")
 
     plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
                                           'y_range': ['start', 'end']})
@@ -248,12 +255,16 @@ class DownsampleColumns(Callback):
         element = plot.current_frame
         if element.interface is not ArrayColumns:
             element = plot.current_frame.clone(datatype=['array'])
-        ranges  = plot.current_ranges
 
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
         sliced = element.select(**{xdim: (xstart, xend),
                                    ydim: (ystart, yend)})
+
+        if self.compute_ranges:
+            ranges = {d: element.range(d) for d in element.dimensions()}
+        else:
+            ranges  = plot.current_ranges
 
         # Avoid randomizing if possible (expensive)
         if len(sliced) > self.max_samples:
@@ -380,6 +391,11 @@ class Callbacks(param.Parameterized):
                     chain_callback = pycb
             else:
                 cb_obj.callback = callback
+
+    @property
+    def downsample(self):
+        return any(isinstance(v, DownsampleCallback)
+                   for _ , v in self.get_param_values())
 
 
     def __call__(self, plot):
