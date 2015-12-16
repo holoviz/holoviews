@@ -1,4 +1,5 @@
 import numpy as np
+from bokeh.models import BoxAnnotation
 
 from ...element import HLine, VLine
 from .element import ElementPlot, text_properties, line_properties
@@ -23,24 +24,29 @@ class TextPlot(ElementPlot):
 class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
-    _plot_method = 'segment'
 
     def get_data(self, element, ranges=None, empty=False):
         plot = self.handles['plot']
-        if empty:
-            x0, y0, x1, y1 = [], [], [], []
-        elif isinstance(element, HLine):
-            x0 = [plot.x_range.start]
-            y0 = [element.data]
-            x1 = [plot.x_range.end]
-            y1 = [element.data]
+        data, mapping = {}, {}
+        if isinstance(element, HLine):
+            mapping['bottom'] = element.data
+            mapping['top'] = element.data
         elif isinstance(element, VLine):
-            x0 = [element.data]
-            y0 = [plot.y_range.start]
-            x1 = [element.data]
-            y1 = [plot.y_range.end]
-        return (dict(x0=x0, y0=y0, x1=x1, y1=y1),
-                dict(x0='x0', y0='y0', x1='x1', y1='y1'))
+            mapping['left'] = element.data
+            mapping['right'] = element.data
+        return (data, mapping)
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties.pop('source')
+        properties.pop('legend')
+        box = BoxAnnotation(plot=plot, level='overlay',
+                            **dict(mapping, **properties))
+        plot.renderers.append(box)
+        return box
 
 
     def get_extents(self, element, ranges=None):
