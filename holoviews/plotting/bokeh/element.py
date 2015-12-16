@@ -414,7 +414,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._init_axes(plot)
         self.handles['plot'] = plot
 
-        data, mapping = self.get_data(element, ranges)
+        # Get data and initialize data source
+        empty = self.callbacks and self.callbacks.downsample
+        data, mapping = self.get_data(element, ranges, empty)
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = source
@@ -467,7 +469,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         plot = self.handles['plot']
         source = self.handles['source']
-        data, mapping = self.get_data(element, ranges)
+        empty = self.callbacks and self.callbacks.downsample
+        data, mapping = self.get_data(element, ranges, empty)
         self._update_datasource(source, data)
 
         self.style = self.lookup_options(element, 'style')
