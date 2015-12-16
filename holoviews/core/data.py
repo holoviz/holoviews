@@ -348,6 +348,18 @@ class Columns(Element):
             return dim_vals
 
 
+    def get_dimension_type(self, dim):
+        """
+        Returns the specified Dimension type if specified or
+        if the dimension_values types are consistent otherwise
+        None is returned.
+        """
+        dim_obj = self.get_dimension(dim)
+        if dim_obj and dim_obj.type is not None:
+            return dim_obj.type
+        return self.interface.dtype(self, dim)
+
+
     def dframe(self, dimensions=None):
         """
         Returns the data in the form of a DataFrame.
@@ -355,6 +367,7 @@ class Columns(Element):
         if dimensions:
             dimensions = [self.get_dimension(d).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
+
 
     def columns(self, dimensions=None):
         if dimensions is None: dimensions = self.dimensions()
@@ -602,6 +615,9 @@ class NdColumns(DataColumns):
             raise ValueError("NdColumns interface couldn't convert data.""")
         return data, kdims, vdims
 
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        return Dimensioned.get_dimension_type(columns, dim)
 
     @classmethod
     def shape(cls, columns):
@@ -669,6 +685,12 @@ class DFColumns(DataColumns):
     types = (pd.DataFrame if pd else None,)
 
     datatype = 'dataframe'
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        idx = list(columns.data.columns).index(name)
+        return columns.data.dtypes[idx].type
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -855,6 +877,10 @@ class ArrayColumns(DataColumns):
     types = (np.ndarray,)
 
     datatype = 'array'
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        return columns.data.dtype.type
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -1059,6 +1085,11 @@ class DictColumns(DataColumns):
     types = (dict, OrderedDict, cyODict)
 
     datatype = 'dictionary'
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        return columns.data[name].dtype.type
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
