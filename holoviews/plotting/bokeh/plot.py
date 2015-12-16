@@ -37,7 +37,7 @@ class BokehPlot(DimensionedPlot):
 
     renderer = BokehRenderer
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         """
         Returns the data from an element in the appropriate format for
         initializing or updating a ColumnDataSource and a dictionary
