@@ -228,6 +228,8 @@ class DownsampleColumns(DownsampleCallback):
     up to max_samples.
     """
 
+    compute_ranges = param.Boolean(default=False, doc="""
+        Whether the ranges are recomputed for the sliced region""")
 
     max_samples = param.Integer(default=800, doc="""
         Maximum number of samples to display at the same time.""")
@@ -253,12 +255,16 @@ class DownsampleColumns(DownsampleCallback):
         element = plot.current_frame
         if element.interface is not ArrayColumns:
             element = plot.current_frame.clone(datatype=['array'])
-        ranges  = plot.current_ranges
 
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
         sliced = element.select(**{xdim: (xstart, xend),
                                    ydim: (ystart, yend)})
+
+        if self.compute_ranges:
+            ranges = {d: element.range(d) for d in element.dimensions()}
+        else:
+            ranges  = plot.current_ranges
 
         # Avoid randomizing if possible (expensive)
         if len(sliced) > self.max_samples:
