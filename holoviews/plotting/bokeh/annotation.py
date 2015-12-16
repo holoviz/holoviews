@@ -9,8 +9,10 @@ class TextPlot(ElementPlot):
     style_opts = text_properties
     _plot_method = 'text'
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         mapping = dict(x='x', y='y', text='text')
+        if empty:
+            return dict(x=[], y=[], text=[]), mapping
         return (dict(x=[element.x], y=[element.y],
                      text=[element.text]), mapping)
 
@@ -23,19 +25,21 @@ class LineAnnotationPlot(ElementPlot):
     style_opts = line_properties
     _plot_method = 'segment'
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         plot = self.handles['plot']
-        if isinstance(element, HLine):
-            x0 = plot.x_range.start
-            y0 = element.data
-            x1 = plot.x_range.end
-            y1 = element.data
+        if empty:
+            x0, y0, x1, y1 = [], [], [], []
+        elif isinstance(element, HLine):
+            x0 = [plot.x_range.start]
+            y0 = [element.data]
+            x1 = [plot.x_range.end]
+            y1 = [element.data]
         elif isinstance(element, VLine):
-            x0 = element.data
-            y0 = plot.y_range.start
-            x1 = element.data
-            y1 = plot.y_range.end
-        return (dict(x0=[x0], y0=[y0], x1=[x1], y1=[y1]),
+            x0 = [element.data]
+            y0 = [plot.y_range.start]
+            x1 = [element.data]
+            y1 = [plot.y_range.end]
+        return (dict(x0=x0, y0=y0, x1=x1, y1=y1),
                 dict(x0='x0', y0='y0', x1='x1', y1='y1'))
 
 
@@ -53,10 +57,15 @@ class SplinePlot(ElementPlot):
     style_opts = line_properties
     _plot_method = 'bezier'
 
-    def get_data(self, element, ranges=None):
-        verts = np.array(element.data[0])
-        xs, ys = verts[:, 0], verts[:, 1]
-        return (dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
-                     cx0=[xs[1]], cy0=[ys[1]], cx1=[xs[2]], cy1=[ys[2]]),
-                dict(x0='x0', y0='y0', x1='x1', y1='y1',
-                     cx0='cx0', cx1='cx1', cy0='cy0', cy1='cy1'))
+    def get_data(self, element, ranges=None, empty=False):
+        data_attrs = ['x0', 'y0', 'x1', 'y1',
+                      'cx0', 'cx1', 'cy0', 'cy1']
+        if empty:
+            data = {attr: [] for attr in data_attrs}
+        else:
+            verts = np.array(element.data[0])
+            xs, ys = verts[:, 0], verts[:, 1]
+            data = dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
+                        cx0=[xs[1]], cy0=[ys[1]], cx1=[xs[2]], cy1=[ys[2]])
+
+        return (data, dict(zip(data_attrs, data_attrs)))
