@@ -639,10 +639,12 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
-        for i, subplot in enumerate(self.subplots.values()):
-            el = element.get(i)
-            if el is not None:
-                tools.extend(subplot._init_tools(el))
+        for key, subplot in self.subplots.items():
+            try:
+                el = element[key]
+            except:
+                el = None
+            tools.extend(subplot._init_tools(el))
         return list(set(tools))
 
 
