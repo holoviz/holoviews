@@ -755,13 +755,10 @@ class UniformNdMapping(NdMapping):
     def group(self):
         if self._group:
             return self._group
-        else:
-            if len(self):
-                group = get_ndmapping_label(self, 'group')
-                tp = type(el).__name__
-                if tp != group:
-                    return group
+        group =  get_ndmapping_label(self, 'group') if len(self) else None
+        if group is None:
             return type(self).__name__
+        return group
 
 
     @group.setter
@@ -782,6 +779,7 @@ class UniformNdMapping(NdMapping):
                 return '' if label is None else label
             else:
                 return ''
+
 
     @label.setter
     def label(self, label):

@@ -718,11 +718,15 @@ def get_ndmapping_label(ndmapping, attr):
     label attribute from an NdMapping.
     """
     label = None
-    els = itervalues(self.data)
+    els = itervalues(ndmapping.data)
     while label is None:
         el = next(els)
         if not el._auxiliary_component:
             label = getattr(el, attr)
+    if attr == 'group':
+        tp = type(el).__name__
+        if tp == label:
+            return None
     return label
 
 
