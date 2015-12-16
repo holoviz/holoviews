@@ -14,7 +14,8 @@ import param
 from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, itervalues)
+                   basestring, wrap_tuple, process_ellipses, itervalues,
+                   get_ndmapping_label)
 
 
 class item_check(object):
@@ -756,12 +757,7 @@ class UniformNdMapping(NdMapping):
             return self._group
         else:
             if len(self):
-                group = None
-                els = itervalues(self.data)
-                while group is None:
-                    el = next(els)
-                    if not el._auxiliary_component:
-                        group = el.group
+                group = get_ndmapping_label(self, 'group')
                 tp = type(el).__name__
                 if tp != group:
                     return group
@@ -782,12 +778,7 @@ class UniformNdMapping(NdMapping):
             return self._label
         else:
             if len(self):
-                label = None
-                els = itervalues(self.data)
-                while label is None:
-                    el = next(els)
-                    if not el._auxiliary_component:
-                        label = el.label
+                label = get_ndmapping_label(self, 'label')
                 return '' if label is None else label
             else:
                 return ''
