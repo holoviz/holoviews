@@ -21,7 +21,7 @@ except ImportError:
 
 import param
 
-from .dimension import Dimension
+from .dimension import Dimension, Dimensioned
 from .element import Element, NdElement
 from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
@@ -357,7 +357,7 @@ class Columns(Element):
         dim_obj = self.get_dimension(dim)
         if dim_obj and dim_obj.type is not None:
             return dim_obj.type
-        return self.interface.dtype(self, dim)
+        return self.interface.dimension_type(self, dim)
 
 
     def dframe(self, dimensions=None):
