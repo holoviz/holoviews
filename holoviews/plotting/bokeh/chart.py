@@ -91,12 +91,12 @@ class PointPlot(ElementPlot):
             color = mapping.pop('color', color)
             properties.pop('legend', None)
             unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
-            glyph = Circle(**dict(properties, fill_color=color, **mapping))
-            plot.add_glyph(source, selected, selection_glyph=glyph,
-                           nonselection_glyph=unselected)
+            selected = Circle(**dict(properties, fill_color=color, **mapping))
+            renderer = plot.add_glyph(source, selected, selection_glyph=glyph,
+                                      nonselection_glyph=unselected)
         else:
-            glyph = getattr(plot, self._plot_method)(**dict(properties, **mapping))
-        return glyph
+            renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        return renderer, renderer.glyph
 
 
 class CurvePlot(ElementPlot):

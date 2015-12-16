@@ -46,7 +46,7 @@ class LineAnnotationPlot(ElementPlot):
         box = BoxAnnotation(plot=plot, level='overlay',
                             **dict(mapping, **properties))
         plot.renderers.append(box)
-        return box
+        return None, box
 
 
     def get_extents(self, element, ranges=None):

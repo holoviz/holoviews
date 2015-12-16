@@ -108,8 +108,10 @@ class BokehPlot(DimensionedPlot):
                     source_data.update(plot.handles['source'].data)
                 new_source = ColumnDataSource(source_data)
                 for _, plot in group:
-                    renderer = plot.handles['glyph_renderer']
-                    if 'data_source' in renderer.properties():
+                    renderer = plot.handles.get('glyph_renderer')
+                    if renderer is None:
+                        continue
+                    elif 'data_source' in renderer.properties():
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)

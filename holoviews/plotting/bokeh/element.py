@@ -372,7 +372,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        return getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        return renderer, renderer.glyph
 
 
     def _glyph_properties(self, plot, element, source, ranges):
@@ -422,11 +423,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['source'] = source
 
         properties = self._glyph_properties(plot, element, source, ranges)
-        glyph = self._init_glyph(plot, mapping, properties)
-        self.handles['glyph']  = glyph
-        renderer = plot.renderers[-1]
+        renderer, glyph = self._init_glyph(plot, mapping, properties)
+        self.handles['glyph'] = glyph
         if isinstance(renderer, Renderer):
-            self.handles['glyph_renderer'] = plot.renderers[-1]
+            self.handles['glyph_renderer'] = renderer
 
         # Update plot, source and glyph
         self._update_glyph(glyph, properties, mapping)
