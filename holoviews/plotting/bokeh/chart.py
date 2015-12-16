@@ -59,7 +59,7 @@ class PointPlot(ElementPlot):
                 colors = element.dimension_values(self.color_index)
                 crange = ranges.get(dims[self.color_index], None)
                 data[map_key] = map_colors(colors, crange, cmap)
-        if self.size_index < len(dims):
+        if self.size_index < len(dims) and self.scaling_factor != 1:
             map_key = 'size_' + dims[self.size_index]
             mapping['size'] = map_key
             if empty:
@@ -72,8 +72,8 @@ class PointPlot(ElementPlot):
 
         data[dims[0]] = [] if empty else element.dimension_values(0)
         data[dims[1]] = [] if empty else element.dimension_values(1)
-        if 'hover' in self.tools:
-            for d in dims[2:]:
+        if 'hover' in self.tools+self.default_tools:
+            for d in dims:
                 data[d] = [] if empty else element.dimension_values(d)
         return data, mapping
 
