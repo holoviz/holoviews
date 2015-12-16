@@ -712,9 +712,37 @@ def get_param_values(data):
     return params
 
 
+def get_ndmapping_label(ndmapping, attr):
+    """
+    Function to get the first non-auxiliary object
+    label attribute from an NdMapping.
+    """
+    label = None
+    els = itervalues(ndmapping.data)
+    while label is None:
+        el = next(els)
+        if not el._auxiliary_component:
+            label = getattr(el, attr)
+    if attr == 'group':
+        tp = type(el).__name__
+        if tp == label:
+            return None
+    return label
+
+
 def wrap_tuple(unwrapped):
     """ Wraps any non-tuple types in a tuple """
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
+
+
+def itervalues(obj):
+    "Get value iterator from dictionary for Python 2 and 3"
+    return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
+
+
+def iterkeys(obj):
+    "Get key iterator from dictionary for Python 2 and 3"
+    return iter(obj.keys()) if sys.version_info.major == 3 else obj.iterkeys()
 
 
 def get_unique_keys(ndmapping, dimensions):
