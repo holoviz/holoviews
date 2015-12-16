@@ -3,7 +3,7 @@ from io import BytesIO
 import numpy as np
 import bokeh
 import bokeh.plotting
-from bokeh.models import Range, HoverTool
+from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 from distutils.version import LooseVersion
@@ -372,7 +372,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        return getattr(plot, self._plot_method)(**dict(properties, **mapping))
 
 
     def _glyph_properties(self, plot, element, source, ranges):
@@ -422,10 +422,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['source'] = source
 
         properties = self._glyph_properties(plot, element, source, ranges)
-        self._init_glyph(plot, mapping, properties)
-        glyph = plot.renderers[-1].glyph
-        self.handles['glyph_renderer'] = plot.renderers[-1]
+        glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph']  = glyph
+        renderer = plot.renderers[-1]
+        if isinstance(renderer, Renderer):
+            self.handles['glyph_renderer'] = plot.renderers[-1]
 
         # Update plot, source and glyph
         self._update_glyph(glyph, properties, mapping)
