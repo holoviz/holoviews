@@ -14,7 +14,7 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap, Overlay
+from ...core import Store, HoloMap, Overlay, CompositeOverlay
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
