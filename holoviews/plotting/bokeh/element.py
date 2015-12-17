@@ -689,13 +689,14 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         """
         if element is None:
             element = self._get_frame(key)
+            ranges = self.compute_ranges(element, key, ranges)
         else:
             self.current_frame = element
             self.current_key = key
             ranges = self.compute_ranges(self.hmap, key, ranges)
 
         for k, subplot in self.subplots.items():
-            el = element.get(k, None) if self.dynamic and element is not None else None
+            el = element.get(k, None) if isinstance(element, CompositeOverlay) else None
             subplot.update_frame(key, ranges, element=el)
         if not self.overlaid and not self.tabs:
             self._update_ranges(element, ranges)
