@@ -2,7 +2,7 @@
 Definition and registration of display hooks for the IPython Notebook.
 """
 from functools import wraps
-import sys, traceback
+import sys, traceback, inspect
 
 import IPython
 import param
@@ -105,7 +105,12 @@ def display_hook(fn):
             return html
         except Exception as e:
             StoreOptions.state(element, state=optstate)
-            if ABBREVIATE_TRACEBACKS:
+            frame = inspect.trace()[-1]
+            mod = inspect.getmodule(frame[0])
+            module = (mod.__name__ if mod else frame[1]).split('.')[0]
+            backends = Store.renderers.keys()
+            abbreviate =  module in backends
+            if ABBREVIATE_TRACEBACKS and abbreviate:
                 info = dict(name=type(e).__name__,
                             message=str(e).replace('\n','<br>'))
                 return "<b>{name}</b><br>{message}".format(**info)
