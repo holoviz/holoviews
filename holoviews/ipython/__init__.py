@@ -30,7 +30,7 @@ def show_traceback():
     Display the full traceback after an abbreviated traceback has occured.
     """
     from .display_hooks import FULL_TRACEBACK
-    print FULL_TRACEBACK
+    print(FULL_TRACEBACK)
 
 
 class IPTestCase(ComparisonTestCase):
