@@ -14,7 +14,7 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap, Overlay, CompositeOverlay
+from ...core import Store, HoloMap, Overlay, CompositeOverlay, DynamicMap
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -441,19 +441,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def update_frame(self, key, ranges=None, plot=None, element=None):
+    def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
-        if element is None:
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
             element = self._get_frame(key)
-        if not element:
-            if self.dynamic and self.overlaid:
-                self.current_key = key
-                element = self.current_frame
-            else:
-                element = self._get_frame(key)
         else:
             self.current_key = key
             self.current_frame = element
@@ -464,13 +459,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return
 
         self.set_param(**self.lookup_options(element, 'plot').options)
-        ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
         self.current_ranges = ranges
 
         plot = self.handles['plot']
         source = self.handles['source']
-        empty = self.callbacks and self.callbacks.downsample
+        empty = (self.callbacks and self.callbacks.downsample) or empty
         data, mapping = self.get_data(element, ranges, empty)
         self._update_datasource(source, data)
 
@@ -689,15 +683,21 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         """
         if element is None:
             element = self._get_frame(key)
-            ranges = self.compute_ranges(element, key, ranges)
         else:
             self.current_frame = element
             self.current_key = key
-            ranges = self.compute_ranges(self.hmap, key, ranges)
 
+        range_obj = element if isinstance(self.hmap, DynamicMap) else self.hmap
+        ranges = self.compute_ranges(range_obj, key, ranges)
+
+        items = element.items()
         for k, subplot in self.subplots.items():
-            el = element.get(k, None) if isinstance(element, CompositeOverlay) else None
-            subplot.update_frame(key, ranges, element=el)
+            empty = False
+            if isinstance(self.hmap, DynamicMap):
+                el = self.dynamic_update(subplot, k, element, items)
+                empty = el is None
+            subplot.update_frame(key, ranges, element=el, empty=empty)
+
         if not self.overlaid and not self.tabs:
             self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)
