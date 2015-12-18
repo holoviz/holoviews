@@ -660,10 +660,10 @@ class GenericOverlayPlot(GenericElementPlot):
                 continue
 
             if self.hmap.type == Overlay:
-                style_key = (vmap.type.__name__,) + (key,)
+                style_key = (vmap.type.__name__,) + key
             else:
                 if not isinstance(key, tuple): key = (key,)
-                style_key = group_fn(vmap) + (key,)
+                style_key = group_fn(vmap) + key
             group_key = style_key[:length]
             zorder = ordering.index(style_key) + zoffset
             cyclic_index = group_counter[group_key]
@@ -757,11 +757,13 @@ class GenericOverlayPlot(GenericElementPlot):
             if spec[0] == match[0]:
                 new_specs.append((i, spec[1:]))
             else:
-                match_length = max(i for i in range(len(match[0]))
-                                   if (isinstance(match[0], tuple)
-                                       and match[0][:i] == spec[0][:i])
-                                   or (isinstance(match[0], util.basestring)
-                                       and match[0].startswith(spec[0][:i])))
+                if util.isnumber(match[0]) and util.isnumber(spec[0]):
+                    match_length = -abs(match[0]-spec[0])
+                elif all(isinstance(s[0], basestring) for s in [spec, match]):
+                    match_length = max(i for i in range(len(match[0]))
+                                       if match[0].startswith(spec[0][:i]))
+                else:
+                    match_length = 0
                 match_lengths.append((i, match_length, spec[0]))
         if not new_specs:
             if depth == 0:

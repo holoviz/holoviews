@@ -615,7 +615,7 @@ def get_overlay_spec(o, k, v):
     """
     Gets the type.group.label + key spec from an Element in an Overlay.
     """
-    k = (wrap_tuple(k),)
+    k = wrap_tuple(k)
     return ((type(v).__name__, v.group, v.label) + k if len(o.kdims) else
             (type(v).__name__,) + k)
 
