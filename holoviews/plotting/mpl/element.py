@@ -7,7 +7,7 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import (OrderedDict, Collator, NdOverlay, HoloMap,
+from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
                      CompositeOverlay, Element3D, Columns, NdElement)
 from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -124,12 +124,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         When the number of the frame is supplied as n, this method looks
         up and computes the appropriate title, axis labels and axis bounds.
         """
-
+        element = self._get_frame(key)
+        self.current_frame = element
         axis = self.handles['axis']
         if self.bgcolor:
             axis.set_axis_bgcolor(self.bgcolor)
 
-        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
@@ -391,12 +391,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        if not element:
-            if self.dynamic and self.overlaid:
-                self.current_key = key
-                element = self.current_frame
-            else:
-                element = self._get_frame(key)
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
+            element = self._get_frame(key)
         else:
             self.current_key = key
             self.current_frame = element
@@ -679,9 +676,16 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         else:
             self.current_frame = element
             self.current_key = key
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        for k, plot in self.subplots.items():
-            plot.update_frame(key, ranges, element.get(k, None))
+
+        range_obj = element if isinstance(self.hmap, DynamicMap) else self.hmap
+        ranges = self.compute_ranges(range_obj, key, ranges)
+
+        items = element.items()
+        for k, subplot in self.subplots.items():
+            el = element.get(k, None)
+            if isinstance(self.hmap, DynamicMap):
+                el = self.dynamic_update(subplot, k, element, items)
+            subplot.update_frame(key, ranges, el)
 
         self._finalize_axis(key, ranges=ranges)
 
