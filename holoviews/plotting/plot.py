@@ -441,7 +441,10 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_frame(self, key):
-        if self.dynamic:
+        if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
+            self.current_key = key
+            return self.current_frame
+        elif self.dynamic:
             if isinstance(key, tuple):
                 frame = self.hmap[key]
             elif key < self.hmap.counter:
@@ -457,7 +460,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return frame
 
-        if not self.dynamic and isinstance(key, int):
+        if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
         if key == self.current_key:
@@ -657,10 +660,10 @@ class GenericOverlayPlot(GenericElementPlot):
                 continue
 
             if self.hmap.type == Overlay:
-                style_key = (vmap.type.__name__,) + key
+                style_key = (vmap.type.__name__,) + (key,)
             else:
                 if not isinstance(key, tuple): key = (key,)
-                style_key = group_fn(vmap) + key
+                style_key = group_fn(vmap) + (key,)
             group_key = style_key[:length]
             zorder = ordering.index(style_key) + zoffset
             cyclic_index = group_counter[group_key]
@@ -688,8 +691,17 @@ class GenericOverlayPlot(GenericElementPlot):
 
     def get_extents(self, overlay, ranges):
         extents = []
+        items = overlay.items()
         for key, subplot in self.subplots.items():
-            layer = overlay.data.get(key, False)
+            layer = overlay.data.get(key, None)
+            found = False
+            if isinstance(self.hmap, DynamicMap) and layer is None:
+                for i, (k, layer) in enumerate(items):
+                    if isinstance(layer, subplot.hmap.type):
+                        found = True
+                        break
+                if not found:
+                    layer = None
             if layer and subplot.apply_ranges:
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
@@ -720,6 +732,49 @@ class GenericOverlayPlot(GenericElementPlot):
             return title
         else:
             return separator.join([title, dim_title])
+
+
+    def dynamic_update(self, subplot, key, overlay, items):
+        """
+        Function to assign layers in an Overlay to a new plot.
+        """
+        layer = overlay.get(key, None)
+        if layer is None:
+            match_spec = util.get_overlay_spec(self.current_frame,
+                                               util.wrap_tuple(key),
+                                               subplot.current_frame)
+            specs = [(i, util.get_overlay_spec(overlay, util.wrap_tuple(k), el))
+                     for i, (k, el) in enumerate(items)]
+            idx = self.closest_match(match_spec, specs)
+            k, layer = items.pop(idx)
+        return layer
+
+
+    def closest_match(self, match, specs, depth=0):
+        new_specs = []
+        match_lengths = []
+        for i, spec in specs:
+            if spec[0] == match[0]:
+                new_specs.append((i, spec[1:]))
+            else:
+                match_length = max(i for i in range(len(match[0]))
+                                   if (isinstance(match[0], tuple)
+                                       and match[0][:i] == spec[0][:i])
+                                   or (isinstance(match[0], util.basestring)
+                                       and match[0].startswith(spec[0][:i])))
+                match_lengths.append((i, match_length, spec[0]))
+        if not new_specs:
+            if depth == 0:
+                raise Exception("No plot with matching type found, ensure "
+                                "the first frame of the DynamicMap initializes "
+                                "all required plots.")
+            else:
+                return sorted(match_lengths, key=lambda x: -x[1])[0][0]
+        elif new_specs == 1:
+            return new_specs[0][0]
+        else:
+            depth = depth+1
+            return self.closest_match(match[1:], new_specs, depth)
 
 
 
