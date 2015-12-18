@@ -611,6 +611,14 @@ def sort_topologically(graph):
                                     (names_by_level.get(i, None)
                                      for i in itertools.count())))
 
+def get_overlay_spec(o, k, v):
+    """
+    Gets the type.group.label + key spec from an Element in an Overlay.
+    """
+    k = (wrap_tuple(k),)
+    return ((type(v).__name__, v.group, v.label) + k if len(o.kdims) else
+            (type(v).__name__,) + k)
+
 
 def layer_sort(hmap):
    """
@@ -619,8 +627,7 @@ def layer_sort(hmap):
    """
    orderings = {}
    for o in hmap:
-      okeys = [(type(v).__name__, v.group, v.label) + k if len(o.kdims) else
-               (type(v).__name__,) + k for k, v in o.data.items()]
+      okeys = [get_overlay_spec(o, k, v) for k, v in o.data.items()]
       if len(okeys) == 1 and not okeys[0] in orderings:
          orderings[okeys[0]] = []
       else:
