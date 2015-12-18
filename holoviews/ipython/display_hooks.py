@@ -7,7 +7,7 @@ import sys, traceback, inspect
 import IPython
 import param
 
-from ..core.options import Store, StoreOptions
+from ..core.options import Store, StoreOptions, BackendError
 from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -109,7 +109,7 @@ def display_hook(fn):
             mod = inspect.getmodule(frame[0])
             module = (mod.__name__ if mod else frame[1]).split('.')[0]
             backends = Store.renderers.keys()
-            abbreviate =  module in backends
+            abbreviate =  isinstance(e, BackendError) or module in backends
             if ABBREVIATE_TRACEBACKS and abbreviate:
                 info = dict(name=type(e).__name__,
                             message=str(e).replace('\n','<br>'))
