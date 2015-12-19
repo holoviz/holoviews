@@ -92,7 +92,7 @@ class InfoPrinter(object):
         if pattern is not None:
             obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
             if len(obj.params()) <=1:
-                return 'No parameters matching pattern %r' % pattern
+                return None
         param_info = cls.ppager.get_param_info(obj)
         param_list = cls.ppager.param_docstrings(param_info)
         if not show_values:
@@ -145,7 +145,8 @@ class InfoPrinter(object):
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
                 if len(obj.params()) <=1:
-                    return 'No parameters found matching pattern %r' % pattern
+                    return ('No %r parameters found matching pattern %r'
+                            % (name, pattern))
             info = param.ipython.ParamPager()(obj)
             if ansi is False:
                 info = ansi_escape.sub('', info)
@@ -236,11 +237,19 @@ class InfoPrinter(object):
             style_msg = '\t<No style options available>'
 
         param_info = cls.get_parameter_info(plot_class, ansi=ansi, pattern=pattern)
-        return '\n'.join([ cls.heading('Style Options', ansi=ansi, char="-"), '',
-                           style_msg, '',
-                           cls.heading('Plot Options', ansi=ansi, char="-"), '',
-                           "The plot options are the parameters of the plotting class:\n",
-                           param_info])
+        lines = [ cls.heading('Style Options', ansi=ansi, char="-"), '',
+                  style_msg, '',
+                  cls.heading('Plot Options', ansi=ansi, char="-"), '']
+        if param_info is not None:
+            lines += ["The plot options are the parameters of the plotting class:\n",
+                      param_info]
+        elif pattern is not None:
+            lines+= ['No %r parameters found matching pattern %r.'
+                     % (plot_class.__name__, pattern)]
+        else:
+            lines+= ['No %r parameters found.' % plot_class.__name__]
+
+        return '\n'.join(lines)
 
 
 class PrettyPrinter(object):
