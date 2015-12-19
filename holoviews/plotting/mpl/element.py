@@ -11,6 +11,7 @@ from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
                      CompositeOverlay, Element3D, Columns, NdElement)
 from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from ..util import dynamic_update
 from .plot import MPLPlot
 from .util import wrap_formatter
 
@@ -684,8 +685,15 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for k, subplot in self.subplots.items():
             el = element.get(k, None)
             if isinstance(self.hmap, DynamicMap):
-                el = self.dynamic_update(subplot, k, element, items)
+                idx = dynamic_update(self, subplot, k, element, items)
+                if idx is not None:
+                    _, el = items.pop(idx)
             subplot.update_frame(key, ranges, el)
+
+        if isinstance(self.hmap, DynamicMap) and items:
+            raise Exception("Some Elements returned by the dynamic callback "
+                            "were not initialized correctly and could not be "
+                            "rendered.")
 
         self._finalize_axis(key, ranges=ranges)
 

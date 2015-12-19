@@ -734,51 +734,6 @@ class GenericOverlayPlot(GenericElementPlot):
             return separator.join([title, dim_title])
 
 
-    def dynamic_update(self, subplot, key, overlay, items):
-        """
-        Function to assign layers in an Overlay to a new plot.
-        """
-        layer = overlay.get(key, None)
-        if layer is None:
-            match_spec = util.get_overlay_spec(self.current_frame,
-                                               util.wrap_tuple(key),
-                                               subplot.current_frame)
-            specs = [(i, util.get_overlay_spec(overlay, util.wrap_tuple(k), el))
-                     for i, (k, el) in enumerate(items)]
-            idx = self.closest_match(match_spec, specs)
-            k, layer = items.pop(idx)
-        return layer
-
-
-    def closest_match(self, match, specs, depth=0):
-        new_specs = []
-        match_lengths = []
-        for i, spec in specs:
-            if spec[0] == match[0]:
-                new_specs.append((i, spec[1:]))
-            else:
-                if util.isnumber(match[0]) and util.isnumber(spec[0]):
-                    match_length = -abs(match[0]-spec[0])
-                elif all(isinstance(s[0], basestring) for s in [spec, match]):
-                    match_length = max(i for i in range(len(match[0]))
-                                       if match[0].startswith(spec[0][:i]))
-                else:
-                    match_length = 0
-                match_lengths.append((i, match_length, spec[0]))
-        if not new_specs:
-            if depth == 0:
-                raise Exception("No plot with matching type found, ensure "
-                                "the first frame of the DynamicMap initializes "
-                                "all required plots.")
-            else:
-                return sorted(match_lengths, key=lambda x: -x[1])[0][0]
-        elif new_specs == 1:
-            return new_specs[0][0]
-        else:
-            depth = depth+1
-            return self.closest_match(match[1:], new_specs, depth)
-
-
 
 class GenericCompositePlot(DimensionedPlot):
 

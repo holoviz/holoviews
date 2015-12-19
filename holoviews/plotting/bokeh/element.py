@@ -18,6 +18,7 @@ from ...core import Store, HoloMap, Overlay, CompositeOverlay, DynamicMap
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
 from .renderer import old_bokeh
@@ -694,9 +695,17 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         for k, subplot in self.subplots.items():
             empty = False
             if isinstance(self.hmap, DynamicMap):
-                el = self.dynamic_update(subplot, k, element, items)
-                empty = el is None
+                idx = dynamic_update(self, subplot, k, element, items)
+                empty = idx is None
+                if empty:
+                    _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=empty)
+
+
+        if isinstance(self.hmap, DynamicMap) and items:
+            raise Exception("Some Elements returned by the dynamic callback "
+                            "were not initialized correctly and could not be "
+                            "rendered.")
 
         if not self.overlaid and not self.tabs:
             self._update_ranges(element, ranges)
