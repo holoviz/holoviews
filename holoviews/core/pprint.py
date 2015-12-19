@@ -145,7 +145,7 @@ class InfoPrinter(object):
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
                 if len(obj.params()) <=1:
-                    return ('No %r parameters found matching pattern %r'
+                    return ('No %r parameters found matching specified pattern %r'
                             % (name, pattern))
             info = param.ipython.ParamPager()(obj)
             if ansi is False:
@@ -244,7 +244,7 @@ class InfoPrinter(object):
             lines += ["The plot options are the parameters of the plotting class:\n",
                       param_info]
         elif pattern is not None:
-            lines+= ['No %r parameters found matching pattern %r.'
+            lines+= ['No %r parameters found matching specified pattern %r.'
                      % (plot_class.__name__, pattern)]
         else:
             lines+= ['No %r parameters found.' % plot_class.__name__]
