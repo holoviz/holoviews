@@ -316,7 +316,12 @@ class SideSpikesPlot(SpikesPlot):
 
 
 class ChartPlot(ElementPlot):
-
+    """
+    ChartPlot creates and updates Bokeh high-level Chart instances.
+    The current implementation requires creating a new Chart for each
+    frame and updating the existing Chart. Once Bokeh supports updating
+    Charts directly this workaround will no longer be required.
+    """
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -336,6 +341,7 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
+        properties = self.style[self.cyclic_index]
         plot = self._init_chart(init_element, ranges)
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
@@ -363,6 +369,7 @@ class ChartPlot(ElementPlot):
             self.current_key = key
             self.current_frame = element
 
+        self.style = self.lookup_options(element, 'style')
         self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
@@ -412,10 +419,14 @@ class BoxPlot(ChartPlot):
     as they cannot be consistently updated.
     """
 
+    style_opts = ['color', 'whisker_color'] + line_properties
+
     def _init_chart(self, element, ranges):
+        properties = self.style[self.cyclic_index]
         plot = BokehBoxPlot(element.dframe(),
                             label=element.dimensions('key', True),
-                            values=element.dimensions('value', True)[0])
+                            values=element.dimensions('value', True)[0],
+                            **properties)
 
         # Disable outliers for now as they cannot be consistently updated.
         plot.renderers = [r for r in plot.renderers
@@ -426,10 +437,9 @@ class BoxPlot(ChartPlot):
 
 class BarPlot(ChartPlot):
     """
-    BoxPlot generates a box and whisker plot from a BoxWhisker
-    Element. This allows plotting the median, mean and various
-    percentiles. Displaying outliers is currently not supported
-    as they cannot be consistently updated.
+    BarPlot allows generating single- or multi-category
+    bar Charts, by selecting which key dimensions are
+    mapped onto separate groups, categories and stacks.
     """
 
     group_index = param.Integer(default=0, doc="""
@@ -444,10 +454,13 @@ class BarPlot(ChartPlot):
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
+    style_opts = ['bar_width', 'max_height', 'color', 'fill_alpha']
+
     def _init_chart(self, element, ranges):
         kdims = element.dimensions('key', True)
         vdim = element.dimensions('value', True)[0]
-        kwargs = {}
+
+        kwargs = self.style[self.cyclic_index]
         if self.group_index < element.ndims:
             kwargs['group'] = kdims[self.group_index]
         if self.category_index < element.ndims:
