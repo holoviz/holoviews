@@ -126,17 +126,31 @@ class InfoPrinter(object):
 
 
     @classmethod
-    def info(cls, obj, ansi=False, backend='matplotlib', pattern=None):
+    def info(cls, obj, ansi=False, backend='matplotlib', visualization=True, pattern=None):
         """
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
         """
+        ansi_escape = re.compile(r'\x1b[^m]*m')
+
         isclass = isinstance(obj, type)
         name = obj.__name__ if isclass  else obj.__class__.__name__
         plot_class = cls.store.registry[backend].get(obj if isclass else type(obj), None)
         # Special case to handle PlotSelectors
         if hasattr(plot_class, 'plot_classes'):
             plot_class = plot_class.plot_classes.values()[0]
+
+
+        if visualization is False or plot_class is None:
+            if pattern is not None:
+                obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
+                if len(obj.params()) <=1:
+                    return 'No parameters found matching pattern %r' % pattern
+            info = param.ipython.ParamPager()(obj)
+            if ansi is False:
+                info = ansi_escape.sub('', info)
+            return cls.highlight(pattern, info)
+
         heading = name if isclass else '{name}: {group} {label}'.format(name=name,
                                                                         group=obj.group,
                                                                         label=obj.label)
