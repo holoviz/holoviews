@@ -14,6 +14,7 @@ from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
+from .plot import AdjoinedPlot
 
 
 class ChartPlot(ElementPlot):
@@ -417,24 +418,16 @@ class HistogramPlot(ChartPlot):
 
 
 
-class SideHistogramPlot(HistogramPlot):
+class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
-    aspect = param.Parameter(default='auto', doc="""
-        Aspect ratios on SideHistogramPlot should be determined by the
-        AdjointLayoutPlot.""")
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
 
     offset = param.Number(default=0.2, bounds=(0,1), doc="""
         Histogram value offset for a colorbar.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Whether to overlay a grid on the axis.""")
-
-    show_title = param.Boolean(default=False, doc="""
-        Titles should be disabled on all SidePlots to avoid clutter.""")
-
-    show_xlabel = param.Boolean(default=False, doc="""
-        Whether to show the x-label of the plot. Disabled by default
-        because plots are often too cramped to fit the title correctly.""")
 
     def _process_hist(self, hist):
         """
@@ -1055,23 +1048,19 @@ class SpikesPlot(PathPlot):
             artist.set_array(array)
 
 
-class SideSpikesPlot(SpikesPlot):
-
-    aspect = param.Parameter(default='auto', doc="""
-        Aspect ratios on SideHistogramPlot should be determined by the
-        AdjointLayoutPlot.""")
+class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
 
     bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
         Make plot background invisible.""")
 
-    show_title = param.Boolean(default=False, doc="""
-        Titles should be disabled on all SidePlots to avoid clutter.""")
+    border_size = param.Number(default=0, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
 
-    show_frame = param.Boolean(default=False)
+    subplot_size = param.Number(default=0.1, doc="""
+        The size subplots as expressed as a fraction of the main plot.""")
 
-    show_xlabel = param.Boolean(default=False, doc="""
-        Whether to show the x-label of the plot. Disabled by default
-        because plots are often too cramped to fit the title correctly.""")
+    spike_length = param.Number(default=1, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
 
     xaxis = param.ObjectSelector(default='bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
