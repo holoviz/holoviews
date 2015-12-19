@@ -11,6 +11,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlayable, Overlay, CompositeOverlay, NdOverlay
 from .tree import AttrTree
+from .options import Store, StoreOptions
 
 class HoloMap(UniformNdMapping):
     """
@@ -456,6 +457,17 @@ class DynamicMap(HoloMap):
                                         % (val, high))
 
 
+    def _style(self, retval):
+        """
+        Use any applicable OptionTree of the DynamicMap to apply options
+        to the return values of the callback.
+        """
+        if self.id not in Store.custom_options():
+            return retval
+        spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
+        return retval(spec)
+
+
     def _execute_callback(self, *args):
         """
         Execute the callback, validating both the input key and output
@@ -470,14 +482,14 @@ class DynamicMap(HoloMap):
             retval = self.callback(*args)
 
         if self.call_mode=='key':
-            return retval
+            return self._style(retval)
 
         if isinstance(retval, tuple):
             self._validate_key(retval[0]) # Validated output key
-            return retval
+            return self._style(retval)
         else:
             self._validate_key((self.counter,))
-            return (self.counter, retval)
+            return (self.counter, self._style(retval))
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):

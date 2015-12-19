@@ -980,6 +980,21 @@ class StoreOptions(object):
 
 
     @classmethod
+    def tree_to_dict(cls, tree):
+        """
+        Given an OptionTree, convert it into the equivalent dictionary format.
+        """
+        specs = {}
+        for k in tree.keys():
+            spec_key = '.'.join(k)
+            specs[spec_key] = {}
+            for grp in tree[k].groups:
+                kwargs = tree[k].groups[grp].kwargs
+                if kwargs:
+                    specs[spec_key][grp] = kwargs
+        return specs
+
+    @classmethod
     def propagate_ids(cls, obj, match_id, new_id, applied_keys):
         """
         Recursively propagate an id through an object for components
@@ -990,8 +1005,10 @@ class StoreOptions(object):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
-        obj.traverse(lambda o: setattr(o, 'id', new_id)
-                      if o.id == match_id else None, specs=set(applied_keys))
+        def propagate(o):
+            if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
+                setattr(o, 'id', new_id)
+        obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
     @classmethod
     def capture_ids(cls, obj):
