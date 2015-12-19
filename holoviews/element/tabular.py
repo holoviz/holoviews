@@ -219,6 +219,10 @@ class TableConversion(object):
         from .chart import Bars
         return self._conversion(kdims, vdims, mdims, Bars, **kwargs)
 
+    def box(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart import BoxWhisker
+        return self._conversion(kdims, vdims, mdims, BoxWhisker, **kwargs)
+
     def bivariate(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from ..interface.seaborn import Bivariate
         return self._convert(kdims, vdims, mdims, Bivariate, **kwargs)
