@@ -858,12 +858,19 @@ class Store(object):
         return val
 
     @classmethod
-    def info(cls, obj, ansi=True, backend='matplotlib'):
+    def info(cls, obj, ansi=True, backend='matplotlib', visualization=True, pattern=None):
         """
         Show information about a particular object or component class
-        including the applicable style and plot options.
+        including the applicable style and plot options. Returns None if
+        the object is not parameterized.
         """
-        print(InfoPrinter.info(obj, ansi=ansi, backend=backend))
+        parameterized_object = isinstance(obj, param.Parameterized)
+        parameterized_class = (isinstance(obj,type)
+                               and  issubclass(obj,param.Parameterized))
+        if parameterized_object or parameterized_class:
+            return InfoPrinter.info(obj, ansi=ansi, backend=backend,
+                                    visualization=visualization, pattern=pattern)
+        return None
 
 
     @classmethod
