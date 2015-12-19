@@ -83,20 +83,26 @@ class InfoPrinter(object):
     store = None
 
     @classmethod
-    def get_parameter_info(cls, obj, ansi=False,  show_values=True, max_col_len=40):
+    def get_parameter_info(cls, obj, ansi=False,  show_values=True,
+                           pattern=None, max_col_len=40):
         """
         Get parameter information from the supplied class or object.
         """
         if cls.ppager is None: return ''
+        if pattern is not None:
+            obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
+            if len(obj.params()) <=1:
+                return 'No parameters matching pattern %r' % pattern
         param_info = cls.ppager.get_param_info(obj)
         param_list = cls.ppager.param_docstrings(param_info)
         if not show_values:
-            return cls.ansi_escape.sub('', param_list) if not ansi else param_list
+            retval = cls.ansi_escape.sub('', param_list) if not ansi else param_list
+            return cls.highlight(pattern, retval)
         else:
             info = cls.ppager(obj)
             if ansi is False:
                 info = cls.ansi_escape.sub('', info)
-            return info
+            return cls.highlight(pattern, info)
 
     @classmethod
     def heading(cls, heading_text, char='=', level=0, ansi=False):
@@ -117,6 +123,10 @@ class InfoPrinter(object):
         if pattern is None: return string
         return re.sub(pattern, '\033[43;1;30m\g<0>\x1b[0m',
                       string, flags=re.IGNORECASE)
+
+
+    @classmethod
+    def info(cls, obj, ansi=False, backend='matplotlib', pattern=None):
         """
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
@@ -136,7 +146,7 @@ class InfoPrinter(object):
         if not isclass:
             lines += ['', cls.target_info(obj, ansi=ansi)]
         if plot_class is not None:
-            lines += ['', cls.options_info(plot_class, ansi)]
+            lines += ['', cls.options_info(plot_class, ansi, pattern=pattern)]
         return "\n".join(lines)
 
 
@@ -202,7 +212,7 @@ class InfoPrinter(object):
 
 
     @classmethod
-    def options_info(cls, plot_class, ansi=False):
+    def options_info(cls, plot_class, ansi=False, pattern=None):
         if plot_class.style_opts:
             backend_name = plot_class.renderer.backend
             style_info = ("\n(Consult %s's documentation for more information.)" % backend_name)
@@ -211,7 +221,7 @@ class InfoPrinter(object):
         else:
             style_msg = '\t<No style options available>'
 
-        param_info = cls.get_parameter_info(plot_class, ansi=ansi)
+        param_info = cls.get_parameter_info(plot_class, ansi=ansi, pattern=pattern)
         return '\n'.join([ cls.heading('Style Options', ansi=ansi, char="-"), '',
                            style_msg, '',
                            cls.heading('Plot Options', ansi=ansi, char="-"), '',
