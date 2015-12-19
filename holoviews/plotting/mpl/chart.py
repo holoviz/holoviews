@@ -862,18 +862,22 @@ class BarPlot(LegendPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['artist'], xticks, xlabel = self._create_bars(axis, element)
-        return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
+        self.handles['artist'], self.handles['xticks'], xlabel = self._create_bars(axis, element)
+        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'], xlabel=xlabel, ylabel=str(vdim))
 
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
-        ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-        super(BarPlot, self)._finalize_ticks(axis, element, [ticks, labels], yticks, zticks)
-        for t, y in zip(axis.get_xticklabels(), yalignments):
-            t.set_y(y)
+        yalignments = None
+        if xticks is not None:
+            ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
+            xticks = [ticks, labels]
+        super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
+        if yalignments:
+            for t, y in zip(axis.get_xticklabels(), yalignments):
+                t.set_y(y)
 
 
     def _create_bars(self, axis, element):
@@ -948,6 +952,7 @@ class BarPlot(LegendPlot):
                     labels.append(label)
         title = [str(element.kdims[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
+
         if self.show_legend and any(len(l) for l in labels):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
@@ -967,13 +972,14 @@ class BarPlot(LegendPlot):
                 prev = 0
                 for s in self.values['stack']:
                     if s is not None: val_key[si] = s
-                    bar = self.handles['bars'].get(tuple(val_key))
+                    bar = self.handles['artist'].get(tuple(val_key))
                     if bar:
-                        height = element.get(tuple(val_key), np.NaN)
-                        height = height if np.isscalar(height) else height[0]
+                        vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
+                        height = float(vals[0]) if len(vals) else np.NaN
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
                         prev += height if np.isfinite(height) else 0
+        return {'xticks': self.handles['xticks']}
 
 
 class SpikesPlot(PathPlot):
@@ -1120,10 +1126,15 @@ class BoxPlot(ChartPlot):
         groups = element.groupby(element.kdims)
 
         data, labels = [], []
-        for key, group in groups.data.items():
-            key = [k if isinstance(k, basestring) else str(k) for k in key]
-            label = ','.join([safe_unicode(d.pprint_value(v))
-                              for d, v in zip(groups.kdims, key)])
+
+        groups = groups.data.items() if element.kdims else [(element.label, element)]
+        for key, group in groups:
+            if element.kdims:
+                key = [k if isinstance(k, basestring) else str(k) for k in key]
+                label = ','.join([safe_unicode(d.pprint_value(v))
+                                  for d, v in zip(element.kdims, key)])
+            else:
+                label = key
             data.append(group[group.vdims[0]])
             labels.append(label)
         return axis.boxplot(data, labels=labels, vert=not self.invert_axes,
