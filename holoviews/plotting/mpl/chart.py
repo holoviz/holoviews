@@ -1136,3 +1136,31 @@ class BoxPlot(ChartPlot):
                 v.remove()
         self.handles['artist'] = self.get_artist(element, axis)
 
+
+
+class SideBoxPlot(AdjoinedPlot, BoxPlot):
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
+
+    border_size = param.Number(default=0, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
+    xaxis = param.ObjectSelector(default='bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='bare',
+                                 objects=['left', 'right', 'bare', 'left-bare',
+                                          'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    def __init__(self, *args, **kwargs):
+        super(SideBoxPlot, self).__init__(*args, **kwargs)
+        if self.adjoined:
+            self.invert_axes = not self.invert_axes
