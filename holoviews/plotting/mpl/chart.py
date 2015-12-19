@@ -1040,13 +1040,13 @@ class SpikesPlot(PathPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        data, array, clim = self.get_data(element)
+        data, array, clim = self.get_data(element, ranges)
         artist.set_paths(data)
         visible = self.style[self.cyclic_index].get('visible', True)
         artist.set_visible(visible)
         if array is not None:
-            paths.set_clim(ranges[val_dim])
-            paths.set_array(cs)
+            artist.set_clim(clim)
+            artist.set_array(array)
 
 
 class SideSpikesPlot(SpikesPlot):

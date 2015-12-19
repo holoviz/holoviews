@@ -255,6 +255,7 @@ class SpikesPlot(PathPlot):
         pos = self.position
         if empty:
             xs, ys, keys = [], [], []
+            mapping = dict(xs=dims[0], ys=dims[1] if len(dims) > 1 else 'heights')
         elif len(dims) > 1:
             xs, ys = zip(*(((x, x), (pos, pos+y))
                            for x, y in element.array()))
