@@ -58,14 +58,20 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         pass
 
 
-def help(obj, visualization=True, ansi=True, backend='matplotlib', pattern=None):
+def help(obj, visualization=True, ansi=True, backend='matplotlib',
+         recursive=False, pattern=None):
     """
     Extended version of the built-in help that supports parameterized
-    functions and objects. If ansi is set to False, all ANSI color
+    functions and objects. A pattern (regular expression) may be used to
+    filter the output and if recursive is set to True, documentation for
+    the supplied object is shown. Note that the recursive option will
+    only work with an object instance and not a class.
+
+    If ansi is set to False, all ANSI color
     codes are stripped out.
     """
-    info = Store.info(obj, ansi=ansi, backend=backend,
-                      visualization=visualization, pattern=pattern)
+    info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,
+                      recursive=recursive, pattern=pattern)
 
     msg = ( "\nTo view the visualization options applicable to this "
             "object or class, use:\n\n"
