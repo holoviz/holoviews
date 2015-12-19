@@ -878,9 +878,11 @@ class Store(object):
             listed = []
             for c in hierarchy[1:]:
                 if c not in listed:
-                    info +=  ('\n\n' + InfoPrinter.info(c, ansi=ansi, backend=backend,
-                                                        visualization=visualization,
-                                                        pattern=pattern))
+                    inner_info = InfoPrinter.info(c, ansi=ansi, backend=backend,
+                                                  visualization=visualization,
+                                                  pattern=pattern)
+                    black = '\x1b[1;30m%s\x1b[0m' if ansi else '%s'
+                    info +=  '\n\n' + (black % inner_info)
                     listed.append(c)
         return info
 

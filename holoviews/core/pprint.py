@@ -162,8 +162,7 @@ class InfoPrinter(object):
             lines += ['', cls.target_info(obj, ansi=ansi)]
         if plot_class is not None:
             lines += ['', cls.options_info(plot_class, ansi, pattern=pattern)]
-        black = '\x1b[1;30m%s\x1b[0m' if ansi else '%s'
-        return black % "\n".join(lines)
+        return "\n".join(lines)
 
     @classmethod
     def get_target(cls, obj):
