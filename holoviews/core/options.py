@@ -994,8 +994,10 @@ class StoreOptions(object):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
-        obj.traverse(lambda o: setattr(o, 'id', new_id)
-                      if o.id == match_id else None, specs=set(applied_keys))
+        def propagate(o):
+            if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
+                setattr(o, 'id', new_id)
+        obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
     @classmethod
     def capture_ids(cls, obj):
