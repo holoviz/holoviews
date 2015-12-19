@@ -9,7 +9,7 @@ from matplotlib.collections import LineCollection
 import param
 
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
-from ...core.util import match_spec, unique_iterator
+from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
@@ -1090,12 +1090,14 @@ class BoxPlot(ChartPlot):
     plot option.
     """
 
-    style_opts = ['notch', 'sym', 'vert', 'whis', 'bootstrap',
+    style_opts = ['notch', 'sym', 'whis', 'bootstrap',
                   'conf_intervals', 'widths', 'showmeans',
                   'show_caps', 'showfliers', 'boxprops',
                   'whiskerprops', 'capprops', 'flierprops',
                   'medianprops', 'meanprops', 'meanline']
 
+    def get_extents(self, element, ranges):
+        return (np.NaN,)*4
 
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
@@ -1106,10 +1108,12 @@ class BoxPlot(ChartPlot):
         ranges = match_spec(element, ranges)
 
         xlabel = ','.join([str(d) for d in element.kdims])
+        ylabel = str(element.vdims[0])
 
         self.handles['artist'] = self.get_artist(element, axis)
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges, xlabel=xlabel)
+        return self._finalize_axis(self.keys[-1], ranges=ranges, xlabel=xlabel,
+                                   ylabel=ylabel)
 
     def get_artist(self, element, axis):
         dims = element.dimensions()
@@ -1117,11 +1121,13 @@ class BoxPlot(ChartPlot):
 
         data, labels = [], []
         for key, group in groups.data.items():
-            label = ','.join([d.pprint_value(v) for d, v in zip(groups.kdims, key)])
+            key = [k if isinstance(k, basestring) else str(k) for k in key]
+            label = ','.join([safe_unicode(d.pprint_value(v))
+                              for d, v in zip(groups.kdims, key)])
             data.append(group[group.vdims[0]])
             labels.append(label)
-        boxplot = axis.boxplot(data, labels=labels, **self.style[self.cyclic_index])
-        return boxplot
+        return axis.boxplot(data, labels=labels, vert=not self.invert_axes,
+                            **self.style[self.cyclic_index])
 
 
     def update_handles(self, axis, element, key, ranges=None):
