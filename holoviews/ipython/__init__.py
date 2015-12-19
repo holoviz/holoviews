@@ -14,7 +14,7 @@ from ..plotting.renderer import Renderer
 from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
 from .magics import load_magics
-from .display_hooks import display      # pyflakes:ignore (API import)
+from .display_hooks import display  # pyflakes:ignore (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
@@ -23,6 +23,14 @@ from param import ipython as param_ext
 
 Collector.interval_hook = RunProgress
 holoviews.archive = notebook_archive
+
+
+def show_traceback():
+    """
+    Display the full traceback after an abbreviated traceback has occured.
+    """
+    from .display_hooks import FULL_TRACEBACK
+    print(FULL_TRACEBACK)
 
 
 class IPTestCase(ComparisonTestCase):

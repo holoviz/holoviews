@@ -2,12 +2,13 @@
 Definition and registration of display hooks for the IPython Notebook.
 """
 from functools import wraps
-import sys, traceback
+import sys, traceback, inspect, io
 
 import IPython
+from IPython.core.ultratb import AutoFormattedTB
 import param
 
-from ..core.options import Store, StoreOptions
+from ..core.options import Store, StoreOptions, BackendError
 from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -16,7 +17,8 @@ from .magics import OutputMagic, OptsMagic
 
 from .archive import notebook_archive
 # To assist with debugging of display hooks
-ABBREVIATE_TRACEBACKS=True
+FULL_TRACEBACK = None
+ABBREVIATE_TRACEBACKS = True
 
 #==================#
 # Helper functions #
@@ -92,6 +94,7 @@ def last_frame(obj):
 def display_hook(fn):
     @wraps(fn)
     def wrapped(element):
+        global FULL_TRACEBACK
         optstate = StoreOptions.state(element)
         try:
             html = fn(element,
@@ -105,10 +108,21 @@ def display_hook(fn):
             return html
         except Exception as e:
             StoreOptions.state(element, state=optstate)
-            if ABBREVIATE_TRACEBACKS:
+            frame = inspect.trace()[-1]
+            mod = inspect.getmodule(frame[0])
+            module = (mod.__name__ if mod else frame[1]).split('.')[0]
+            backends = Store.renderers.keys()
+            abbreviate =  isinstance(e, BackendError) or module in backends
+            if ABBREVIATE_TRACEBACKS and abbreviate:
+                AutoTB = AutoFormattedTB(mode = 'Verbose',color_scheme='Linux')
+                buff = io.StringIO()
+                AutoTB(out=buff)
+                buff.seek(0)
+                FULL_TRACEBACK = buff.read()
                 info = dict(name=type(e).__name__,
                             message=str(e).replace('\n','<br>'))
-                return "<b>{name}</b><br>{message}".format(**info)
+                msg ='<i> [Call ipython.show_traceback() for details]</i>'
+                return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
             else:
                 traceback.print_exc()
     return wrapped
