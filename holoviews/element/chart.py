@@ -149,6 +149,8 @@ class BoxWhisker(Chart):
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
+    _1d = True
+
 
 class Histogram(Element2D):
     """
