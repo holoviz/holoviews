@@ -98,7 +98,7 @@ class InfoPrinter(object):
 
     @classmethod
     def target_info(cls, obj, ansi=False):
-        if isinstance(obj, type): return '' # < TEST
+        if isinstance(obj, type): return ''
 
         targets = obj.traverse(cls.get_target)
         elements, containers = zip(*targets)
