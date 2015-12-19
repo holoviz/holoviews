@@ -357,3 +357,24 @@ class VectorField(Points):
         if isinstance(data, list) and all(isinstance(d, np.ndarray) for d in data):
             data = np.column_stack([d.flat if d.ndim > 1 else d for d in data])
         super(VectorField, self).__init__(data, **params)
+
+
+
+class Spikes(Chart):
+    """
+    Spikes is a 1D or 2D Element, which represents a series of
+    vertical or horizontal lines distributed along some dimension. If
+    an additional dimension is supplied it will be used to specify the
+    height of the lines. The Element may therefore be used to
+    represent 1D distributions, spectrograms or spike trains in
+    electrophysiology.
+    """
+
+    group = param.String(default='Spikes', constant=True)
+
+    kdims = param.List(default=[Dimension('x')])
+
+    vdims = param.List(default=[])
+
+    _1d = True
+

@@ -11,9 +11,11 @@ import numpy as np
 
 import param
 
-from . import traversal
+from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select, basestring, wrap_tuple, process_ellipses
+from .util import (unique_iterator, sanitize_identifier, dimension_sort,
+                   basestring, wrap_tuple, process_ellipses, itervalues,
+                   get_ndmapping_label)
 
 
 class item_check(object):
@@ -275,22 +277,13 @@ class MultiDimensionalMapping(Dimensioned):
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
             return self
-
-        dimensions = [self.get_dimension(d).name for d in dimensions]
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
-        dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
-                         for dim in dimensions))
-        inames, idims = zip(*((dim.name, dim) for dim in self.kdims
-                              if not dim.name in dimensions))
-        selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
-                                  for key in self.data.keys())
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        sort = not self._sorted
         with item_check(False):
-            selects = group_select(list(selects))
-            groups = [(k, group_type((v.reindex(inames) if isinstance(v, NdMapping)
-                                      else [((), (v,))]), **kwargs))
-                      for k, v in iterative_select(self, dimensions, selects)]
-            return container_type(groups, kdims=dims)
+            return util.ndmapping_groupby(self, dimensions, container_type,
+                                          group_type, sort=sort, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -440,8 +433,9 @@ class MultiDimensionalMapping(Dimensioned):
 
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
+        if datatype is None:
+            datatype = ['dictionary', 'dataframe']
 
-        datatype = ['ndelement', 'dataframe']
         tables = []
         for key, value in self.data.items():
             value = value.table(datatype=datatype, **kwargs)
@@ -761,16 +755,10 @@ class UniformNdMapping(NdMapping):
     def group(self):
         if self._group:
             return self._group
-        else:
-            vals = self.values()
-            groups = {v.group for v in vals
-                      if not v._auxiliary_component}
-            if len(groups) == 1:
-                tp = type(vals[0]).__name__
-                group = list(groups)[0]
-                if tp != group:
-                    return group
+        group =  get_ndmapping_label(self, 'group') if len(self) else None
+        if group is None:
             return type(self).__name__
+        return group
 
 
     @group.setter
@@ -786,12 +774,12 @@ class UniformNdMapping(NdMapping):
         if self._label:
             return self._label
         else:
-            labels = {v.label for v in self.values()
-                      if not v._auxiliary_component}
-            if len(labels) == 1:
-                return list(labels)[0]
+            if len(self):
+                label = get_ndmapping_label(self, 'label')
+                return '' if label is None else label
             else:
                 return ''
+
 
     @label.setter
     def label(self, label):

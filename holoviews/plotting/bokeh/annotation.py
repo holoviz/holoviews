@@ -1,4 +1,5 @@
 import numpy as np
+from bokeh.models import BoxAnnotation
 
 from ...element import HLine, VLine
 from .element import ElementPlot, text_properties, line_properties
@@ -9,8 +10,10 @@ class TextPlot(ElementPlot):
     style_opts = text_properties
     _plot_method = 'text'
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         mapping = dict(x='x', y='y', text='text')
+        if empty:
+            return dict(x=[], y=[], text=[]), mapping
         return (dict(x=[element.x], y=[element.y],
                      text=[element.text]), mapping)
 
@@ -21,22 +24,29 @@ class TextPlot(ElementPlot):
 class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
-    _plot_method = 'segment'
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         plot = self.handles['plot']
+        data, mapping = {}, {}
         if isinstance(element, HLine):
-            x0 = plot.x_range.start
-            y0 = element.data
-            x1 = plot.x_range.end
-            y1 = element.data
+            mapping['bottom'] = element.data
+            mapping['top'] = element.data
         elif isinstance(element, VLine):
-            x0 = element.data
-            y0 = plot.y_range.start
-            x1 = element.data
-            y1 = plot.y_range.end
-        return (dict(x0=[x0], y0=[y0], x1=[x1], y1=[y1]),
-                dict(x0='x0', y0='y0', x1='x1', y1='y1'))
+            mapping['left'] = element.data
+            mapping['right'] = element.data
+        return (data, mapping)
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties.pop('source')
+        properties.pop('legend')
+        box = BoxAnnotation(plot=plot, level='overlay',
+                            **dict(mapping, **properties))
+        plot.renderers.append(box)
+        return None, box
 
 
     def get_extents(self, element, ranges=None):
@@ -53,10 +63,15 @@ class SplinePlot(ElementPlot):
     style_opts = line_properties
     _plot_method = 'bezier'
 
-    def get_data(self, element, ranges=None):
-        verts = np.array(element.data[0])
-        xs, ys = verts[:, 0], verts[:, 1]
-        return (dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
-                     cx0=[xs[1]], cy0=[ys[1]], cx1=[xs[2]], cy1=[ys[2]]),
-                dict(x0='x0', y0='y0', x1='x1', y1='y1',
-                     cx0='cx0', cx1='cx1', cy0='cy0', cy1='cy1'))
+    def get_data(self, element, ranges=None, empty=False):
+        data_attrs = ['x0', 'y0', 'x1', 'y1',
+                      'cx0', 'cx1', 'cy0', 'cy1']
+        if empty:
+            data = {attr: [] for attr in data_attrs}
+        else:
+            verts = np.array(element.data[0])
+            xs, ys = verts[:, 0], verts[:, 1]
+            data = dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
+                        cx0=[xs[1]], cy0=[ys[1]], cx1=[xs[2]], cy1=[ys[2]])
+
+        return (data, dict(zip(data_attrs, data_attrs)))

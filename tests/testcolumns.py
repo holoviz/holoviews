@@ -336,17 +336,18 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                          np.column_stack([self.xs, self.ys]))
 
 
-class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
+class ArrayColumnsTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the ArrayColumns interface.
     """
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['array']
         self.data_instance_type = np.ndarray
         self.init_data()
 
 
-class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class DFColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the pandas DFColumns interface.
     """
@@ -354,30 +355,33 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     def setUp(self):
         if pd is None:
             raise SkipTest("Pandas not available")
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['dataframe']
         self.data_instance_type = pd.DataFrame
         self.init_data()
 
 
 
-class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class DictColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the generic dictionary interface.
     """
 
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['dictionary']
         self.data_instance_type = (dict, cyODict, OrderedDict)
         self.init_data()
 
 
 
-class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class NdColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the NdColumns interface (mostly for backwards compatibility)
     """
 
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['ndelement']
         self.data_instance_type = NdElement
         self.init_data()

@@ -273,7 +273,7 @@ class MPLRenderer(Renderer):
         """
         Validates a dictionary of options set on the backend.
         """
-        if options['fig']=='pdf' and not cls.options['fig'] == 'pdf':
+        if options['fig']=='pdf':
             outputwarning.warning("PDF output is experimental, may not be supported"
                                   "by your browser and may change in future.")
 

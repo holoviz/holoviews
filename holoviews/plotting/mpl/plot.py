@@ -253,7 +253,7 @@ class GridPlot(CompositePlot):
         Rotation angle of the xticks.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the yticks.""")
 
     def __init__(self, layout, axis=None, create_axes=True, ranges=None,
                  keys=None, dimensions=None, layout_num=1, **params):
@@ -988,11 +988,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 if not isinstance(view, GridSpace):
                     override_opts = dict(aspect='square')
             elif pos == 'right':
-                right_opts = dict(orientation='vertical',
-                                  xaxis=None, yaxis='left')
+                right_opts = dict(invert_axes=True,
+                                  xaxis=None)
                 override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
-                top_opts = dict(xaxis='bottom', yaxis=None)
+                top_opts = dict(yaxis=None)
                 override_opts = dict(subplot_opts, **top_opts)
 
             # Override the plotopts as required

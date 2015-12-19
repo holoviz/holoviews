@@ -14,6 +14,7 @@ except ImportError:
 
 import param
 
+from ...core.data import ArrayColumns
 from .plot import BokehPlot
 
 
@@ -33,6 +34,9 @@ class Callback(param.ParameterizedFunction):
     any processing depending on the callback data and return the
     modified bokeh plot objects.
     """
+
+    apply_on_update = param.Boolean(default=False, doc="""
+        Whether the callback is applied when the plot is updated""")
 
     callback_obj = param.ClassSelector(class_=(PlotObject,), doc="""
         Bokeh PlotObject the callback is applied to.""")
@@ -152,7 +156,22 @@ class Callback(param.ParameterizedFunction):
 
 
 
-class DownsampleImage(Callback):
+class DownsampleCallback(Callback):
+    """
+    DownsampleCallbacks can downsample the data before it is
+    plotted and can therefore provide major speed optimizations.
+    """
+
+    apply_on_update = param.Boolean(default=True, doc="""
+        Callback should always be applied after each update to
+        downsample the data before it is displayed.""")
+
+    reinitialize = param.Boolean(default=True, doc="""
+        DownsampleColumns should be reinitialized per plot object""")
+
+
+
+class DownsampleImage(DownsampleCallback):
     """
     Downsamples any Image plot to the specified
     max_width and max_height by slicing the
@@ -202,20 +221,31 @@ class DownsampleImage(Callback):
 
 
 
-class DownsampleColumns(Callback):
+class DownsampleColumns(DownsampleCallback):
     """
     Downsamples any column based Element by randomizing
     the rows and updating the ColumnDataSource with
     up to max_samples.
     """
 
-    max_samples = param.Integer(default=800)
+    compute_ranges = param.Boolean(default=False, doc="""
+        Whether the ranges are recomputed for the sliced region""")
+
+    max_samples = param.Integer(default=800, doc="""
+        Maximum number of samples to display at the same time.""")
+
+    random_seed = param.Integer(default=42, doc="""
+        Seed used to initialize randomization.""")
 
     plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
                                           'y_range': ['start', 'end']})
 
     def initialize(self, data):
-        return self(data)
+        plot = self.plots[0]
+        maxn = np.max([len(el) for el in plot.hmap])
+        np.random.seed(self.random_seed)
+        self.random_index = np.random.choice(maxn, maxn, False)
+
 
     def __call__(self, data):
         xstart, xend = data['x_range']
@@ -223,25 +253,30 @@ class DownsampleColumns(Callback):
 
         plot = self.plots[0]
         element = plot.current_frame
-        ranges  = plot.current_ranges
+        if element.interface is not ArrayColumns:
+            element = plot.current_frame.clone(datatype=['array'])
 
         # Slice element to current ranges
         xdim, ydim = element.dimensions(label=True)[0:2]
         sliced = element.select(**{xdim: (xstart, xend),
                                    ydim: (ystart, yend)})
 
+        if self.compute_ranges:
+            ranges = {d: element.range(d) for d in element.dimensions()}
+        else:
+            ranges  = plot.current_ranges
+
         # Avoid randomizing if possible (expensive)
         if len(sliced) > self.max_samples:
             # Randomize element samples and slice to region
             # Randomization consistent to avoid "flicker".
-            np.random.seed(42)
-            inds = np.random.choice(len(element), len(element), False)
+            length = len(element)
+            inds = self.random_index[self.random_index<length]
             data = element.data[inds, :]
-            randomized = element.clone(data)
+            randomized = element.clone(data, datatype=['array'])
             sliced = randomized.select(**{xdim: (xstart, xend),
                                           ydim: (ystart, yend)})
-
-        sliced = sliced.clone(sliced.data[:self.max_samples, :])
+            sliced = sliced.clone(sliced.data[:self.max_samples, :])
 
         # Update data source
         new_data = plot.get_data(sliced, ranges)[0]
@@ -286,7 +321,7 @@ class Callbacks(param.Parameterized):
         object to be installed on the appropriate plot object.
         """
         if pycallback.reinitialize:
-            pycallback = pycallback.instance()
+            pycallback = pycallback.instance(plots=[])
         pycallback.callback_obj = cb_obj
         pycallback.plots.append(plot)
 
@@ -297,23 +332,20 @@ class Callbacks(param.Parameterized):
 
         # Generate callback JS code to get all the requested data
         self_callback = Callback.IPython_callback.format(callback_id=cb_id)
-        data, code = {}, ''
+        code = ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
             if v is None:
                 code += "data[{key}] = plot.get({key});\n".format(**format_kwargs)
-                data[k] = plot.state.vm_props().get(k)
             else:
                 code += "data[{key}] = {attrs}.map(function(attr) {{" \
                         "  return plot.get({key}).get(attr)" \
                         "}})\n".format(**format_kwargs)
-                data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
-                           for attr in v]
         if pycallback.cb_attributes:
             code += "data['cb_obj'] = {attrs}.map(function(attr) {{"\
                     "  return cb_obj.get(attr)}});\n".format(attrs=repr(pycallback.cb_attributes))
-            data['cb_obj'] = [pycallback.callback_obj.vm_props().get(attr)
-                              for attr in pycallback.cb_attributes]
+
+        data = self._get_data(pycallback, plot)
         code = Callback.JS_callback + code + pycallback.code + self_callback
 
         # Generate CustomJS object
@@ -325,6 +357,19 @@ class Callbacks(param.Parameterized):
 
         return customjs, pycallback
 
+
+    def _get_data(self, pycallback, plot):
+        data = {}
+        for k, v in pycallback.plot_attributes.items():
+            if v is None:
+                data[k] = plot.state.vm_props().get(k)
+            else:
+                data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
+                           for attr in v]
+        if pycallback.cb_attributes:
+            data['cb_obj'] = [pycallback.callback_obj.vm_props().get(attr)
+                              for attr in pycallback.cb_attributes]
+        return data
 
     def _chain_callbacks(self, plot, cb_obj, callbacks):
         """
@@ -347,6 +392,11 @@ class Callbacks(param.Parameterized):
             else:
                 cb_obj.callback = callback
 
+    @property
+    def downsample(self):
+        return any(isinstance(v, DownsampleCallback)
+                   for _ , v in self.get_param_values())
+
 
     def __call__(self, plot):
         """
@@ -368,3 +418,12 @@ class Callbacks(param.Parameterized):
         if self.selection:
             for tool in plot.state.select(type=(ColumnDataSource)):
                 self._chain_callbacks(plot, tool, self.selection)
+
+    def update(self, plot):
+        """
+        Allows updating the callbacks before data is sent to frontend.
+        """
+        for cb in self.callbacks.values():
+            if cb.apply_on_update and plot in cb.plots:
+                data = self._get_data(cb, plot)
+                cb(data)

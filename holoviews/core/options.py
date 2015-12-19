@@ -42,6 +42,17 @@ from .tree import AttrTree
 from .util import sanitize_identifier, group_sanitizer,label_sanitizer
 from .pprint import InfoPrinter
 
+
+class BackendError(Exception):
+    """
+    Custom exception used to generate abbreviated tracebacks when there
+    is an error in the backend. Use to suppress long tracebacks that can
+    easily be caused by the users (e.g a typo in the style options)
+    where the user would be better served by a short error message
+    rather than a long traceback.
+    """
+    pass
+
 class OptionError(Exception):
     """
     Custom exception raised when there is an attempt to apply invalid
@@ -768,6 +779,10 @@ class Store(object):
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.
     registry = {}
+
+    # A list of formats to be published for display on the frontend (e.g
+    # IPython Notebook or a GUI application)
+    display_formats = ['html']
 
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.

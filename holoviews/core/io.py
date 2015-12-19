@@ -420,7 +420,7 @@ class Unpickler(Importer):
         aslist = not isinstance(files, (NdMapping, Element))
         if isinstance(files, Element):
             files = Collator(files)
-            file_kdims = []
+            file_kdims = files.kdims
         else:
             file_kdims = files.kdims
         drop_extra = files.drop if isinstance(files, Collator) else []

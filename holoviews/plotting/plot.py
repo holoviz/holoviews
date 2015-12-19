@@ -135,7 +135,9 @@ class DimensionedPlot(Plot):
        Finer control is available by supplying a dictionary where any
        unmentioned keys reverts to the default sizes, e.g:
 
-          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}
+          {'ticks':20, 'title':15,
+           'ylabel':5, 'xlabel':5,
+           'legend':8, 'legend_title':13}
 
        You can set the fontsize of both 'ylabel' and 'xlabel' together
        using the 'labels' key.""")
@@ -492,17 +494,21 @@ class GenericElementPlot(DimensionedPlot):
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
         """
+        ndims = len(view.dimensions())
         num = 6 if self.projection == '3d' else 4
         if self.apply_ranges:
             if ranges:
                 dims = view.dimensions()
                 x0, x1 = ranges[dims[0].name]
-                y0, y1 = ranges[dims[1].name]
+                if ndims > 1:
+                    y0, y1 = ranges[dims[1].name]
+                else:
+                    y0, y1 = (np.NaN, np.NaN)
                 if self.projection == '3d':
                     z0, z1 = ranges[dims[2].name]
             else:
                 x0, x1 = view.range(0)
-                y0, y1 = view.range(1)
+                y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
                 if self.projection == '3d':
                     z0, z1 = view.range(2)
             if self.projection == '3d':

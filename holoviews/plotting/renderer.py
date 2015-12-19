@@ -210,6 +210,7 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
+        if css is None: css = self.css
 
         if fmt in ['html', 'json']:
             return figdata
@@ -220,7 +221,6 @@ class Renderer(Exporter):
                 w,h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
-        if css is None: css = self.css
         if isinstance(css, dict):
             css = '; '.join("%s: %s" % (k, v) for k, v in css.items())
         else:

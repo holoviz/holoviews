@@ -2,12 +2,13 @@
 Definition and registration of display hooks for the IPython Notebook.
 """
 from functools import wraps
-import sys, traceback
+import sys, traceback, inspect, io
 
 import IPython
+from IPython.core.ultratb import AutoFormattedTB
 import param
 
-from ..core.options import Store, StoreOptions
+from ..core.options import Store, StoreOptions, BackendError
 from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -16,7 +17,8 @@ from .magics import OutputMagic, OptsMagic
 
 from .archive import notebook_archive
 # To assist with debugging of display hooks
-ABBREVIATE_TRACEBACKS=True
+FULL_TRACEBACK = None
+ABBREVIATE_TRACEBACKS = True
 
 #==================#
 # Helper functions #
@@ -92,6 +94,7 @@ def last_frame(obj):
 def display_hook(fn):
     @wraps(fn)
     def wrapped(element):
+        global FULL_TRACEBACK
         optstate = StoreOptions.state(element)
         try:
             html = fn(element,
@@ -105,10 +108,21 @@ def display_hook(fn):
             return html
         except Exception as e:
             StoreOptions.state(element, state=optstate)
-            if ABBREVIATE_TRACEBACKS:
+            frame = inspect.trace()[-1]
+            mod = inspect.getmodule(frame[0])
+            module = (mod.__name__ if mod else frame[1]).split('.')[0]
+            backends = Store.renderers.keys()
+            abbreviate =  isinstance(e, BackendError) or module in backends
+            if ABBREVIATE_TRACEBACKS and abbreviate:
+                AutoTB = AutoFormattedTB(mode = 'Verbose',color_scheme='Linux')
+                buff = io.StringIO()
+                AutoTB(out=buff)
+                buff.seek(0)
+                FULL_TRACEBACK = buff.read()
                 info = dict(name=type(e).__name__,
                             message=str(e).replace('\n','<br>'))
-                return "<b>{name}</b><br>{message}".format(**info)
+                msg ='<i> [Call ipython.show_traceback() for details]</i>'
+                return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
             else:
                 traceback.print_exc()
     return wrapped
@@ -188,11 +202,57 @@ def display(obj, raw=False, **kwargs):
 
 
 def pprint_display(obj):
-    # If pretty printing is off, return None (will fallback to repr)
+    if 'html' not in Store.display_formats:
+        return None
+
+    # If pretty printing is off, return None (fallback to next display format)
     ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
     return display(obj, raw=True)
+
+
+@display_hook
+def element_png_display(element, max_frames, max_branches):
+    """
+    Used to render elements to PNG if requested in the display formats.
+    """
+    if 'png' not in Store.display_formats:
+        return None
+    info = process_object(element)
+    if info: return info
+
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    # Current renderer does not support PNG
+    if 'png' not in renderer.params('fig').objects:
+        return None
+
+    data, info = renderer(element, fmt='png')
+    return data
+
+
+@display_hook
+def element_svg_display(element, max_frames, max_branches):
+    """
+    Used to render elements to SVG if requested in the display formats.
+    """
+    if 'svg' not in Store.display_formats:
+        return None
+    info = process_object(element)
+    if info: return info
+
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    # Current renderer does not support SVG
+    if 'svg' not in renderer.params('fig').objects:
+        return None
+    data, info = renderer(element, fmt='svg')
+    return data
 
 
 # display_video output by default, but may be set to first_frame,
@@ -205,3 +265,9 @@ def set_display_hooks(ip):
     html_formatter.for_type(UniformNdMapping, pprint_display)
     html_formatter.for_type(AdjointLayout, pprint_display)
     html_formatter.for_type(Layout, pprint_display)
+
+    png_formatter = ip.display_formatter.formatters['image/png']
+    png_formatter.for_type(ViewableElement, element_png_display)
+
+    svg_formatter = ip.display_formatter.formatters['image/svg+xml']
+    svg_formatter.for_type(ViewableElement, element_svg_display)

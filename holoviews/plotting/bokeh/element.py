@@ -3,9 +3,10 @@ from io import BytesIO
 import numpy as np
 import bokeh
 import bokeh.plotting
-from bokeh.models import Range, HoverTool
+from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
+from distutils.version import LooseVersion
 
 try:
     from bokeh import mpl
@@ -13,7 +14,7 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap, Overlay
+from ...core import Store, HoloMap, Overlay, CompositeOverlay
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -56,6 +57,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        unmentioned keys reverts to the default sizes, e.g:
 
           {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
+
+    invert_axes = param.Boolean(default=False, doc="""
+        Whether to invert the x- and y-axis""")
 
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
@@ -120,7 +124,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Whether the y-axis of the plot will be a log axis.""")
 
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the yticks.""")
 
     yticks = param.Parameter(default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
@@ -136,9 +140,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # instance attribute.
     _update_handles = ['source', 'glyph']
 
-    def __init__(self, element, plot=None, invert_axes=False,
-                 show_labels=['x', 'y'], **params):
-        self.invert_axes = invert_axes
+    def __init__(self, element, plot=None, show_labels=['x', 'y'], **params):
         self.show_labels = show_labels
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
@@ -157,6 +159,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _axes_props(self, plots, subplots, element, ranges):
+        dims = element.dimensions()
         xlabel, ylabel, zlabel = self._axis_labels(element, subplots)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
@@ -179,7 +182,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             x_axis_type = 'datetime'
         else:
             x_axis_type = 'log' if self.logx else 'auto'
-        if element.get_dimension_type(1) is np.datetime64:
+
+        if len(dims) > 1 and element.get_dimension_type(1) is np.datetime64:
             y_axis_type = 'datetime'
         else:
             y_axis_type = 'log' if self.logy else 'auto'
@@ -245,8 +249,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
-        major, minor = [int(v) for v  in bokeh.__version__.split('.')[0:2]]
-        if major > 0 or minor > '10':
+        if LooseVersion(bokeh.__version__) >= LooseVersion('0.10'):
             properties['webgl'] = True
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type,
@@ -369,7 +372,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        return renderer, renderer.glyph
 
 
     def _glyph_properties(self, plot, element, source, ranges):
@@ -411,16 +415,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._init_axes(plot)
         self.handles['plot'] = plot
 
-        data, mapping = self.get_data(element, ranges)
+        # Get data and initialize data source
+        empty = self.callbacks and self.callbacks.downsample
+        data, mapping = self.get_data(element, ranges, empty)
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = source
 
         properties = self._glyph_properties(plot, element, source, ranges)
-        self._init_glyph(plot, mapping, properties)
-        glyph = plot.renderers[-1].glyph
-        self.handles['glyph_renderer'] = plot.renderers[-1]
-        self.handles['glyph']  = glyph
+        renderer, glyph = self._init_glyph(plot, mapping, properties)
+        self.handles['glyph'] = glyph
+        if isinstance(renderer, Renderer):
+            self.handles['glyph_renderer'] = renderer
 
         # Update plot, source and glyph
         self._update_glyph(glyph, properties, mapping)
@@ -428,6 +434,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_plot(key, plot, element)
         if self.callbacks:
             self.callbacks(self)
+            self.callbacks.update(self)
         self._process_legend()
         self.drawn = True
 
@@ -463,14 +470,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         plot = self.handles['plot']
         source = self.handles['source']
-        data, mapping = self.get_data(element, ranges)
+        empty = self.callbacks and self.callbacks.downsample
+        data, mapping = self.get_data(element, ranges, empty)
         self._update_datasource(source, data)
+
+        self.style = self.lookup_options(element, 'style')
         if 'glyph' in self.handles:
             properties = self._glyph_properties(plot, element, source, ranges)
             self._update_glyph(self.handles['glyph'], properties, mapping)
         if not self.overlaid:
             self._update_ranges(element, ranges)
             self._update_plot(key, plot, element)
+        if self.callbacks:
+            self.callbacks.update(self)
 
 
     @property
@@ -608,6 +620,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if not plot.legend:
             return
         plot.legend[0].set(**options)
+        legend_fontsize = self._fontsize('legend', 'size').get('size',False)
+        if legend_fontsize:
+            plot.legend[0].label_text_font_size = legend_fontsize
+
         plot.legend.orientation = self.legend_position
         legends = plot.legend[0].legends
         new_legends = []
@@ -624,8 +640,12 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
-        for i, subplot in enumerate(self.subplots.values()):
-            tools.extend(subplot._init_tools(element.get(i)))
+        for key, subplot in self.subplots.items():
+            try:
+                el = element[key]
+            except:
+                el = None
+            tools.extend(subplot._init_tools(el))
         return list(set(tools))
 
 
@@ -669,13 +689,15 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         """
         if element is None:
             element = self._get_frame(key)
+            ranges = self.compute_ranges(element, key, ranges)
         else:
             self.current_frame = element
             self.current_key = key
             ranges = self.compute_ranges(self.hmap, key, ranges)
 
         for k, subplot in self.subplots.items():
-            subplot.update_frame(key, ranges, element=element.get(k, None))
+            el = element.get(k, None) if isinstance(element, CompositeOverlay) else None
+            subplot.update_frame(key, ranges, element=el)
         if not self.overlaid and not self.tabs:
             self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)

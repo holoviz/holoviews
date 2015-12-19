@@ -60,6 +60,7 @@ class OptionsMagic(Magics):
         Allows updating options depending on class attributes
         and unvalidated options.
         """
+        pass
 
     @classmethod
     def get_options(cls, line, options, linemagic):
@@ -98,10 +99,10 @@ class OptionsMagic(Magics):
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
 
-        return cls._validate(options, linemagic)
+        return cls._validate(options, items, linemagic)
 
     @classmethod
-    def _validate(cls, options, linemagic):
+    def _validate(cls, options, items, linemagic):
         "Allows subclasses to check options are valid."
         raise NotImplementedError("OptionsMagic is an abstract base class.")
 
@@ -303,8 +304,16 @@ class OutputMagic(OptionsMagic):
 
 
     @classmethod
-    def _validate(cls, options, linemagic):
+    def _validate(cls, options, items, linemagic):
         "Validation of edge cases and incompatible options"
+
+        if 'html' in Store.display_formats:
+            pass
+        elif 'fig' in items and items['fig'] not in Store.display_formats:
+            msg = ("Output magic requesting figure format %r " % items['fig']
+                   + "not in display formats %r" % Store.display_formats)
+            display(HTML("<b>Warning:</b> %s" % msg))
+
         backend = Store.current_backend
         return Store.renderers[backend].validate(options)
 

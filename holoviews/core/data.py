@@ -21,7 +21,7 @@ except ImportError:
 
 import param
 
-from .dimension import Dimension
+from .dimension import Dimension, Dimensioned
 from .element import Element, NdElement
 from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
@@ -51,6 +51,10 @@ class Columns(Element):
         constructor cannot be put into the requested format, the next
         format listed will be used until a suitable format is found (or
         the data fails to be understood).""")
+
+    # In the 1D case the interfaces should not automatically add x-values
+    # to supplied data
+    _1d = False
 
     def __init__(self, data, **kwargs):
         if isinstance(data, Element):
@@ -82,6 +86,7 @@ class Columns(Element):
         elif util.is_dataframe(self.data):
             self.interface = DFColumns
 
+        super(Columns, self).__setstate__(state)
 
     def closest(self, coords):
         """
@@ -343,6 +348,18 @@ class Columns(Element):
             return dim_vals
 
 
+    def get_dimension_type(self, dim):
+        """
+        Returns the specified Dimension type if specified or
+        if the dimension_values types are consistent otherwise
+        None is returned.
+        """
+        dim_obj = self.get_dimension(dim)
+        if dim_obj and dim_obj.type is not None:
+            return dim_obj.type
+        return self.interface.dimension_type(self, dim)
+
+
     def dframe(self, dimensions=None):
         """
         Returns the data in the form of a DataFrame.
@@ -350,6 +367,7 @@ class Columns(Element):
         if dimensions:
             dimensions = [self.get_dimension(d).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
+
 
     def columns(self, dimensions=None):
         if dimensions is None: dimensions = self.dimensions()
@@ -417,7 +435,8 @@ class DataColumns(param.Parameterized):
         # Set interface priority order
         if datatype is None:
             datatype = eltype.datatype
-        prioritized = [cls.interfaces[p] for p in datatype]
+        prioritized = [cls.interfaces[p] for p in datatype
+                       if p in cls.interfaces]
 
         head = [intfc for intfc in prioritized if type(data) in intfc.types]
         if head:
@@ -571,7 +590,10 @@ class NdColumns(DataColumns):
             data = tuple(data.get(d) for d in dimensions)
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = (np.arange(len(data)), data)
+                if eltype._1d:
+                    data = np.atleast_2d(data).T
+                else:
+                    data = (np.arange(len(data)), data)
             else:
                 data = tuple(data[:, i]  for i in range(data.shape[1]))
         elif isinstance(data, list) and np.isscalar(data[0]):
@@ -593,6 +615,9 @@ class NdColumns(DataColumns):
             raise ValueError("NdColumns interface couldn't convert data.""")
         return data, kdims, vdims
 
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        return Dimensioned.get_dimension_type(columns, dim)
 
     @classmethod
     def shape(cls, columns):
@@ -662,6 +687,12 @@ class DFColumns(DataColumns):
     datatype = 'dataframe'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        idx = list(columns.data.columns).index(name)
+        return columns.data.dtypes[idx].type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
@@ -693,7 +724,10 @@ class DFColumns(DataColumns):
                 data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    data = (range(len(data)), data)
+                    if eltype._1d:
+                        data = np.atleast_2d(data).T
+                    else:
+                        data = (range(len(data)), data)
                 else:
                     data = tuple(data[:, i]  for i in range(data.shape[1]))
 
@@ -812,11 +846,13 @@ class DFColumns(DataColumns):
     @classmethod
     def sample(cls, columns, samples=[]):
         data = columns.data
-        mask = np.zeros(cls.length(columns), dtype=bool)
+        mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask = np.logical_or(mask, data.iloc[:, i]==v)
+                sample_mask = np.logical_and(sample_mask, data.iloc[:, i]==v)
+            mask |= sample_mask
         return data[mask]
 
 
@@ -841,6 +877,10 @@ class ArrayColumns(DataColumns):
     types = (np.ndarray,)
 
     datatype = 'array'
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        return columns.data.dtype.type
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -874,7 +914,10 @@ class ArrayColumns(DataColumns):
         if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
             raise ValueError("ArrayColumns interface could not handle input type.")
         elif data.ndim == 1:
-            data = np.column_stack([np.arange(len(data)), data])
+            if eltype._1d:
+                data = np.atleast_2d(data).T
+            else:
+                data = np.column_stack([np.arange(len(data)), data])
 
         if kdims is None:
             kdims = eltype.kdims
@@ -995,9 +1038,12 @@ class ArrayColumns(DataColumns):
         data = columns.data
         mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask |= data[:, i]==v
+                sample_mask &= data[:, i]==v
+            mask |= sample_mask
+
         return data[mask]
 
 
@@ -1041,6 +1087,11 @@ class DictColumns(DataColumns):
     datatype = 'dictionary'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        return columns.data[name].dtype.type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         odict_types = (OrderedDict, cyODict)
         if kdims is None:
@@ -1057,7 +1108,10 @@ class DictColumns(DataColumns):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = np.column_stack([np.arange(len(data)), data])
+                if eltype._1d:
+                    data = np.atleast_2d(data).T
+                else:
+                    data = np.column_stack([np.arange(len(data)), data])
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
@@ -1195,13 +1249,17 @@ class DictColumns(DataColumns):
 
     @classmethod
     def sample(cls, columns, samples=[]):
-        mask = np.zeros(len(columns),  dtype=np.bool)
+        mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
                 name = columns.get_dimension(i).name
-                mask |= (np.array(columns.data[name])==v)
-        return  {k:np.array(col)[mask] for k, col in columns.data.items()}
+                sample_mask &= (np.array(columns.data[name])==v)
+            mask |= sample_mask
+        return {k: np.array(col)[mask]
+                for k, col in columns.data.items()}
+
 
     @classmethod
     def aggregate(cls, columns, kdims, function, **kwargs):

@@ -1,9 +1,9 @@
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
-                        RGB, Histogram, Spread, HeatMap, Contours,
-                        Path, Box, Bounds, Ellipse, Polygons, Bars,
-                        ErrorBars, Text, HLine, VLine, Spline, BoxWhisker,
+                        RGB, Histogram, Spread, HeatMap, Contours, Bars,
+                        Path, Box, Bounds, Ellipse, Polygons, BoxWhisker,
+                        ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Surface, Scatter3D, Trisurface)
 from ...core.options import Options, Cycle, OptionTree
 from ...interface import DFrame
@@ -14,7 +14,7 @@ from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callbacks
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    AdjointHistogramPlot, BoxPlot, BarPlot)
+                    SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot, SideSpikesPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
@@ -37,6 +37,7 @@ Store.register({Overlay: OverlayPlot,
                 Scatter: PointPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
+                Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Bars: BarPlot,
 
@@ -82,8 +83,8 @@ Store.register({Overlay: OverlayPlot,
                'bokeh')
 
 
-AdjointLayoutPlot.registry[Histogram] = AdjointHistogramPlot
-
+AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
+AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
@@ -116,6 +117,7 @@ options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
 options.Points = Options('style', color=Cycle())
+options.Spikes = Options('style', color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
@@ -130,3 +132,8 @@ options.Image = Options('style', cmap='hot')
 options.Raster = Options('style', cmap='hot')
 options.QuadMesh = Options('style', cmap='hot')
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
+
+# Annotations
+options.HLine = Options('style', line_color='black', line_width=3, line_alpha=1)
+options.VLine = Options('style', line_color='black', line_width=3, line_alpha=1)
+

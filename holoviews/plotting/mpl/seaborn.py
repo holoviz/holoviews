@@ -177,7 +177,7 @@ class DistributionPlot(FullRedrawPlot):
 
     def _update_plot(self, axis, view):
         label = view.label if self.overlaid == 1 else ''
-        sns.distplot(view.dimension_values(1), ax=axis, label=label, **self.style)
+        sns.distplot(view.dimension_values(0), ax=axis, label=label, **self.style)
 
 
 
@@ -326,7 +326,7 @@ class SNSFramePlot(DFrameViewPlot):
             for opt, args in map_opts:
                 plot_fn = getattr(sns, args[0]) if hasattr(sns, args[0]) else getattr(plt, args[0])
                 getattr(g, opt)(plot_fn, *args[1:])
-            if self._close_fig:
+            if self._close_figures:
                 plt.close(self.handles['fig'])
             self.handles['fig'] = plt.gcf()
         else:
