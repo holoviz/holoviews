@@ -969,6 +969,21 @@ class StoreOptions(object):
 
 
     @classmethod
+    def tree_to_dict(cls, tree):
+        """
+        Given an OptionTree, convert it into the equivalent dictionary format.
+        """
+        specs = {}
+        for k in tree.keys():
+            spec_key = '.'.join(k)
+            specs[spec_key] = {}
+            for grp in tree[k].groups:
+                kwargs = tree[k].groups[grp].kwargs
+                if kwargs:
+                    specs[spec_key][grp] = kwargs
+        return specs
+
+    @classmethod
     def propagate_ids(cls, obj, match_id, new_id, applied_keys):
         """
         Recursively propagate an id through an object for components
