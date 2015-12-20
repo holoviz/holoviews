@@ -423,8 +423,12 @@ class BoxPlot(ChartPlot):
 
     def _init_chart(self, element, ranges):
         properties = self.style[self.cyclic_index]
-        plot = BokehBoxPlot(element.dframe(),
-                            label=element.dimensions('key', True),
+        dframe = element.dframe()
+        label = element.dimensions('key', True)
+        if len(element.dimensions()) == 1:
+            dframe[''] = ''
+            label = ['']
+        plot = BokehBoxPlot(dframe, label=label,
                             values=element.dimensions('value', True)[0],
                             **properties)
 
