@@ -37,6 +37,12 @@ class BokehPlot(DimensionedPlot):
 
     renderer = BokehRenderer
 
+    def __init__(self, *args, **params):
+        super(BokehPlot, self).__init__(*args, **params)
+        self.document = None
+        self.root = None
+
+
     def get_data(self, element, ranges=None, empty=False):
         """
         Returns the data from an element in the appropriate format for
@@ -45,6 +51,22 @@ class BokehPlot(DimensionedPlot):
         the column in the datasource.
         """
         raise NotImplementedError
+
+
+    def set_document(self, document):
+        """
+        Sets the current document on all subplots.
+        """
+        for plot in self.traverse(lambda x: x):
+            plot.document = document
+
+
+    def set_root(self, root):
+        """
+        Sets the current document on all subplots.
+        """
+        for plot in self.traverse(lambda x: x):
+            plot.root = root
 
 
     def _init_datasource(self, data):
