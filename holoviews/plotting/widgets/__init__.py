@@ -244,7 +244,8 @@ class SelectionWidget(NdWidget):
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
-                        dim_vals = {i: v for i, v in enumerate(dim.values)}
+                        dim_vals = {i: safe_unicode(v) if isinstance(v, basestring) else v
+                                    for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
                     else:
                         dim_vals = dim.values
@@ -256,8 +257,8 @@ class SelectionWidget(NdWidget):
                     dim_range = dim_vals[1] - dim_vals[0]
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
+                    dim_vals = escape_list(dim_vals)
                 init_dim_vals.append(dim_vals[0])
-                dim_vals = escape_list(dim_vals)
             else:
                 if next_vals:
                     dim_vals = next_vals[init_dim_vals[idx-1]]
@@ -289,7 +290,9 @@ class SelectionWidget(NdWidget):
                                next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
-        init_dim_vals = escape_list(init_dim_vals)
+        init_dim_vals = ["'"+safe_unicode(v)+"'" if isinstance(v, basestring) else str(v)
+                         for v in init_dim_vals if v is not None]
+        init_dim_vals = "[" + ", ".join(init_dim_vals) + "]"
         return widgets, dimensions, init_dim_vals
 
 
