@@ -48,7 +48,7 @@ else:
 import param
 from ..core.io import FileArchive, Pickler
 from ..core.options import Store
-from ..plotting.renderer import HTML_TAGS
+from ..plotting.renderer import HTML_TAGS, MIME_TYPES
 
 try:
     # Only matplotlib outputs to graphical file formats at this time
@@ -100,8 +100,7 @@ class NotebookArchive(FileArchive):
         self._replacements = {}
         self._notebook_data = None
         self._timestamp = None
-        self._tags = {val[0]:val[1] for val in HTML_TAGS.values()
-                      if isinstance(val, tuple) and len(val)==2}
+        self._tags = {MIME_TYPES[k]:v for k,v in HTML_TAGS.items() if k in MIME_TYPES}
 
         keywords = ['%s=%s' % (k, v.__class__.__name__) for k,v in self.params().items()]
         self.auto.__func__.__doc__ = 'auto(enabled=Boolean, %s)' % ', '.join(keywords)
@@ -192,12 +191,20 @@ class NotebookArchive(FileArchive):
         "Similar to FileArchive.add but accepts html strings for substitution"
         initial_last_key = list(self._files.keys())[-1] if len(self) else None
         if self._auto:
-            super(NotebookArchive, self).add(obj, filename, data,
-                                             info=dict(info, notebook=self.notebook_name))
-            # Only add substitution if file successfully added to archive.
-            new_last_key = list(self._files.keys())[-1] if len(self) else None
-            if new_last_key != initial_last_key:
-                self._replacements[new_last_key] = html
+            exporters = self.exporters[:]
+            # Can only associate html for one exporter at a time
+            for exporter in exporters:
+                self.exporters = [exporter]
+                super(NotebookArchive, self).add(obj, filename, data,
+                                                 info=dict(info,
+                                                           notebook=self.notebook_name))
+                # Only add substitution if file successfully added to archive.
+                new_last_key = list(self._files.keys())[-1] if len(self) else None
+                if new_last_key != initial_last_key:
+                    self._replacements[new_last_key] = html
+
+            # Restore the full list of exporters
+            self.exporters = exporters
 
 
     # The following methods are executed via JavaScript and so fail
@@ -242,7 +249,9 @@ class NotebookArchive(FileArchive):
                 elif info['mime_type'] not in self._tags: pass
                 else:
                     link_html = self._format(self._tags[info['mime_type']],
-                                             {'src':fpath, 'mime_type':info['mime_type']})
+                                             {'src':fpath,
+                                              'mime_type':info['mime_type'],
+                                              'css':''})
                     substitutions[html_key] = (link_html, fpath)
 
             node = self._get_notebook_node()
