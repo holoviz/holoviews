@@ -75,11 +75,18 @@ class Callback(param.ParameterizedFunction):
         function callback(msg){
           if (msg.msg_type == "execute_result") {
             var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
+            if (data.root !== undefined) {
+              doc = Bokeh.index[data.root].model.document;
+            }
             $.each(data.data, function(i, value) {
-              var ds = Bokeh.Collections(value.type).get(value.id);
-                if (ds != undefined) {
-                  ds.set(value.data);
-                }
+              if (data.root !== undefined) {
+                ds = doc.get_model_by_id(value.id);
+              } else {
+                var ds = Bokeh.Collections(value.type).get(value.id);
+              }
+              if (ds != undefined) {
+                ds.set(value.data);
+              }
             });
           } else {
             console.log("Python callback returned unexpected message:", msg)
@@ -146,6 +153,10 @@ class Callback(param.ParameterizedFunction):
         Serializes any Bokeh plot objects passed to it as a list.
         """
         data = dict(data=[])
+        if not old_bokeh:
+            plot = self.plot[0]
+            data['root'] = plot.state._id
+
         for obj in objects:
             if old_bokeh:
                 json = obj.vm_serialize(changed_only=True)
