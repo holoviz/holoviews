@@ -1,14 +1,15 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
 from collections import defaultdict
+
 import numpy as np
+from bokeh.enums import Palette
+from bokeh.plotting import figure, Plot
 
 try:
     from matplotlib import colors
     import matplotlib.cm as cm
 except ImportError:
     cm, colors = None, None
-
-from bokeh.enums import Palette
-from bokeh.plotting import figure, Plot
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},

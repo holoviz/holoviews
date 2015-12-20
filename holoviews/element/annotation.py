@@ -1,5 +1,6 @@
-import numpy as np
+from __future__ import unicode_literals, division, absolute_import, print_function
 
+import numpy as np
 import param
 
 from ..core import Dimension, Element2D

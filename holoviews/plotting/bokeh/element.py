@@ -1,18 +1,19 @@
-from io import BytesIO
+from __future__ import unicode_literals, division, absolute_import, print_function
 
+from io import BytesIO
+from distutils.version import LooseVersion
+
+import param
 import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
-from distutils.version import LooseVersion
-
 try:
     from bokeh import mpl
 except ImportError:
     mpl = None
-import param
 
 from ...core import Store, HoloMap, Overlay, CompositeOverlay, DynamicMap
 from ...core import util

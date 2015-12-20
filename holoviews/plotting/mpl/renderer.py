@@ -1,15 +1,14 @@
-import sys
+from __future__ import unicode_literals, division, absolute_import, print_function
 
+import sys
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
-
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from mpl_toolkits.mplot3d import Axes3D
-
 import param
 from param.parameterized import bothmethod
 

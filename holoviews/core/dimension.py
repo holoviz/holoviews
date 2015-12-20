@@ -3,6 +3,8 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import re
 from operator import itemgetter
 
@@ -11,7 +13,8 @@ import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer, OrderedDict)
+                         find_range, dimension_sanitizer, safe_unicode,
+			 OrderedDict)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 

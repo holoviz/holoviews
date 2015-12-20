@@ -2,10 +2,11 @@
 AttributeTree, Collector and related classes offer optional functionality
 for holding and collecting DataView objects.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import uuid
 
 import numpy as np
-
 import param
 
 from ..core import Dimension, ViewableElement, UniformNdMapping,\

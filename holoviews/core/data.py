@@ -2,6 +2,7 @@
 The data module provides utility classes to interface with various data
 backends.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import sys
 from distutils.version import LooseVersion

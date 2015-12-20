@@ -3,6 +3,7 @@ Supplies MultiDimensionalMapping and NdMapping which are multi-dimensional
 map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 from collections import Sequence
 from itertools import cycle

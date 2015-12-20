@@ -2,9 +2,9 @@
 Collection of either extremely generic or simple ElementOperation
 examples.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import numpy as np
-
 import param
 from param import _is_number
 

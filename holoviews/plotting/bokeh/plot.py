@@ -1,8 +1,9 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 from itertools import groupby
-import numpy as np
 
 import param
-
+import numpy as np
 from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
 from bokeh.models.widgets import Panel, Tabs, DataTable

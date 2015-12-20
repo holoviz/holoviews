@@ -6,8 +6,7 @@ HoloViews compositioning and animation framework. Additionally, it
 provides methods to apply operations to the underlying data and
 convert it to standard HoloViews View types.
 """
-
-from __future__ import absolute_import
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import numpy as np
 

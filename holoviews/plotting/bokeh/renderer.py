@@ -1,15 +1,16 @@
-from ...core import Store, HoloMap, OrderedDict
-from ..renderer import Renderer, MIME_TYPES
-from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import param
 from param.parameterized import bothmethod
-
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, Document
 from bokeh.models import DataSource
 from bokeh.plotting import Figure
 from bokeh.resources import CDN
+
+from ...core import Store, HoloMap, OrderedDict
+from ..renderer import Renderer, MIME_TYPES
+from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
 
 try:
     from bokeh.protocol import serialize_json

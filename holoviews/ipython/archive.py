@@ -2,9 +2,9 @@
 Implements NotebookArchive used to automatically capture notebook data
 and export it to disk via the display hooks.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
-import time, sys, os, traceback
-import io
+import time, sys, os, traceback, io
 
 from IPython import version_info
 from IPython.display import Javascript, display

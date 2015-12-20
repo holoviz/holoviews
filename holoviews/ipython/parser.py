@@ -8,11 +8,14 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
-import param
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 from itertools import groupby
+
+import param
 import pyparsing as pp
 
-from holoviews.core.options import Options
+from ..core.options import Options
 from ..operation import Compositor
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'

@@ -1,8 +1,10 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import os, uuid, json, math
 
 import param
-
 import numpy as np
+
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
@@ -265,8 +267,10 @@ class SelectionWidget(NdWidget):
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
                 visible = len(dim_vals) > 1
+                dim_vals = [v if isinstance(v, basestring) else str(v)
+                            for v in dim_vals if v is not None]
                 init_dim_vals.append(dim_vals[0])
-                dim_vals = repr([v for v in dim_vals if v is not None])
+                dim_vals = "['" + "', '".join(dim_vals) + "']"
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if visible else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
@@ -275,6 +279,7 @@ class SelectionWidget(NdWidget):
                                next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
+        init_dim_vals = "['" + "', '".join(init_dim_vals) + "']"
         return widgets, dimensions, init_dim_vals
 
 
@@ -284,7 +289,7 @@ class SelectionWidget(NdWidget):
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
                    if isnumeric(v) else v for v in k]
-            key = str(tuple(key))
+            key = "('" + "', '".join(key) + ("',)" if len(key) == 1 else "')")
             key_data[key] = i
         return json.dumps(key_data)
 

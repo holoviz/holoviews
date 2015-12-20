@@ -17,6 +17,8 @@ methods on all objects as comparison opertors only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import numpy as np
 from unittest.util import safe_repr
 from unittest import TestCase

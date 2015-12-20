@@ -1,8 +1,10 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import operator
 from itertools import groupby, cycle
 from numbers import Number
-import numpy as np
 
+import numpy as np
 import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
