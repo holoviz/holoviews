@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import os, uuid, json, math
 
 import param
@@ -17,6 +19,17 @@ def isnumeric(val):
         return True
     except:
         return False
+
+
+def escape_list(vals):
+    """
+    Escapes a list of values to a string, converting to
+    unicode for safety.
+    """
+    vals = [safe_unicode(v) if isinstance(v, basestring) else str(v)
+            for v in vals if v is not None]
+    return "['" + "', '".join(vals) + "']"
+
 
 subdirs = [p[0] for p in os.walk(os.path.join(os.path.split(__file__)[0], '..'))]
 
@@ -244,6 +257,7 @@ class SelectionWidget(NdWidget):
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
                 init_dim_vals.append(dim_vals[0])
+                dim_vals = escape_list(dim_vals)
             else:
                 if next_vals:
                     dim_vals = next_vals[init_dim_vals[idx-1]]
@@ -266,7 +280,7 @@ class SelectionWidget(NdWidget):
                     widget_type = 'dropdown'
                 visible = len(dim_vals) > 1
                 init_dim_vals.append(dim_vals[0])
-                dim_vals = repr([v for v in dim_vals if v is not None])
+                dim_vals = escape_list(dim_vals)
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if visible else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
@@ -275,6 +289,7 @@ class SelectionWidget(NdWidget):
                                next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
+        init_dim_vals = escape_list(init_dim_vals)
         return widgets, dimensions, init_dim_vals
 
 
@@ -283,8 +298,8 @@ class SelectionWidget(NdWidget):
         key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
-                   if isnumeric(v) else v for v in k]
-            key = str(tuple(key))
+                   if isnumeric(v) else safe_unicode(v) for v in k]
+            key = "('" + "', '".join(key) + ("',)" if len(key) == 1 else "')")
             key_data[key] = i
         return json.dumps(key_data)
 
