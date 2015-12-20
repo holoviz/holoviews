@@ -722,7 +722,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # Compute shape of AdjointLayout element
             layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
             layout_type = layout_lens[len(layout_view)]
-            hidx = 0
 
             # Get aspects
             main = layout_view.main
@@ -748,7 +747,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 width_ratios = [4]
                 col_aspect = [main_aspect, 0]
 
-            if layout_type == 'Triple':
+            if layout_type in ['Embedded Dual', 'Triple']:
                 el = layout_view.get('top', None)
                 eltype = type(el)
                 if el and eltype in MPLPlot.sideplots:
@@ -758,13 +757,15 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 else:
                     height_ratios = [1, 4]
                 row_aspect = [1/(4/height_ratios[0]), 1./main_aspect]
+                hidx = 1
             else:
                 height_ratios = [4]
-                row_aspect = [1./main_aspect, 0]
+                row_aspect = [0, 1./main_aspect]
+                hidx = 0
 
             if not isinstance(main_aspect, (basestring, type(None))):
                 width_ratios[0] = (width_ratios[0] * main_aspect)
-                height_ratios[0] = (height_ratios[hidx] * 1./main_aspect)
+                height_ratios[-1] = (height_ratios[-1] * 1./main_aspect)
             layout_shape = (len(width_ratios), len(height_ratios))
 
             # For each row and column record the width and height ratios
@@ -773,7 +774,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             if layout_shape[1] > row_heightratios.get(r, (0, None))[0]:
                 row_heightratios[r] = [layout_shape[1], height_ratios]
             if height_ratios[hidx] > row_heightratios[r][1][hidx]:
-                row_heightratios[r][1][hidx] = height_ratios[hidx]
+                row_heightratios[r][1][-1] = height_ratios[hidx]
 
             if layout_shape[0] > col_widthratios.get(c, (0, None))[0]:
                 col_widthratios[c] = (layout_shape[0], width_ratios)
