@@ -698,7 +698,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         items = element.items()
         for k, subplot in self.subplots.items():
-            empty = False
+            empty, el = False, None
             if isinstance(self.hmap, DynamicMap):
                 idx = dynamic_update(self, subplot, k, element, items)
                 empty = idx is None
